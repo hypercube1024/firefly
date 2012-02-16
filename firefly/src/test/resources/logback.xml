@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+	<!-- For assistance related to logback-translator or configuration  -->
+	<!-- files in general, please contact the logback user mailing list -->
+	<!-- at http://www.qos.ch/mailman/listinfo/logback-user             -->
+	<!--                                                                -->
+	<!-- For professional support please see                            -->
+	<!--    http://www.qos.ch/shop/products/professionalSupport         -->
+	<!--                                                                -->
+<configuration>
+	<property name="LOG_PATTERN" value="%d{HH:mm:ss}-%p-%c\t%m%n"></property>
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${LOG_PATTERN}</pattern>
+		</encoder>
+	</appender>
+	<appender name="LOCAL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<!--
+			See http://logback.qos.ch/manual/appenders.html#RollingFileAppender
+			and
+			http://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy
+		-->
+		<!--for further documentation-->
+		<File>${log.path}</File>
+		<encoder>
+			<pattern>${LOG_PATTERN}</pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>${log.level}</level>
+		</filter>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.path}.%d{yyyy-MM-dd}</fileNamePattern>
+		</rollingPolicy>
+	</appender>
+	<root level="${log.level}">
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="LOCAL_FILE" />
+	</root>
+</configuration>

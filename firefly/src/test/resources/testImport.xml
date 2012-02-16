@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://code.google.com/p/firefly/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://code.google.com/p/firefly/beans http://firefly.googlecode.com/files/beans.xsd">
+	
+	<import resource="testImport1.xml"/>
+	
+	<bean id="person" class="test.component3.Person">
+		<property name="name" value="Jack"/>
+		<property name="age" value="12"/>
+	</bean>
+	<bean id="person2" class="test.component3.Person">
+		<property name="name">
+			<value>Bob</value>
+		</property>
+		<property name="age" value="32"/>
+	</bean>
+
+</beans>

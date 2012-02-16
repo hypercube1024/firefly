@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://code.google.com/p/firefly/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://code.google.com/p/firefly/beans http://firefly.googlecode.com/files/beans.xsd">
+
+	<import resource="error-config5.xml" />
+	<component-scan base-package="test.mixed"/>
+
+	<bean id="orange" class="test.mixed.Food">
+		<property name="name" value="orange"></property>
+		<property name="price" value="3.52"></property>
+	</bean>
+
+	<bean id="strawberry" class="test.mixed.Food">
+		<property name="name" value="strawberry"></property>
+		<property name="price" value="10."></property>
+	</bean>
+
+</beans>

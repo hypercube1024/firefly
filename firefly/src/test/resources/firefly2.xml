@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://code.google.com/p/firefly/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://code.google.com/p/firefly/beans http://firefly.googlecode.com/files/beans.xsd">
+
+	<bean id="collectionService" class="test.component3.CollectionService">
+		<property name="list">
+			<list>
+				<value>s1</value>
+				<value>s2</value>
+			</list>
+		</property>
+		<property name="set">
+			<list>
+				<value type="int">3</value>
+				<value type="int">3</value>
+				<value type="java.lang.String">4sss</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- <bean id="collectionService" class="test.component3.CollectionService">
+		<property name="list">
+			<list>
+				<value>s1</value>
+				<value>s2</value>
+				<list type="java.util.HashSet">
+					<value>s3</value>
+					<value>s4</value>
+					<value>s4</value>
+				</list>
+			</list>
+		</property>
+		<property name="set">
+			<list>
+				<value type="int">3</value>
+				<value type="int">3</value>
+				<value type="int">4</value>
+			</list>
+		</property>
+	</bean> -->
+
+</beans>

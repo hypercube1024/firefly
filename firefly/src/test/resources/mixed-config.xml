@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://code.google.com/p/firefly/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://code.google.com/p/firefly/beans http://firefly.googlecode.com/files/beans.xsd">
+
+	<import resource="mixed-config2.xml"/>
+	<import resource="mixed-config3.xml"/>
+	<import resource="mixed-config4.xml"/>
+	<component-scan base-package="test.mixed"/>
+
+	<bean id="foodRepository" class="test.mixed.impl.FoodRepositoryImpl">
+		<property name="food">
+			<list>
+				<ref bean="apple"/>
+				<ref bean="orange"/>
+				<ref bean="strawberry"/>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="foodService2" class="test.mixed.impl.FoodService2Impl">
+		<property name="foodService">
+			<ref bean="foodService" />
+		</property>
+	</bean>
+
+</beans>
