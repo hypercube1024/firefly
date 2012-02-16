@@ -1,0 +1,5 @@
+#surefire
+#Fri Jun 24 14:26:02 CST 2011
+user.dir=F\:\\develop\\workspace\\firefly-common
+localRepository=F\:\\develop\\apache-maven\\maven_repository
+basedir=F\:\\develop\\workspace\\firefly-common
