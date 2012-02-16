@@ -1,0 +1,123 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.firefly</groupId>
+	<artifactId>firefly-template</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>firefly-template</name>
+	<url>http://maven.apache.org</url>
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<defaultGoal>install</defaultGoal>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<filtering>true</filtering>
+				<directory>src/test/resources</directory>
+			</testResource>
+			<testResource>
+				<filtering>false</filtering>
+				<directory>src/test/template</directory>
+			</testResource>
+		</testResources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.4.3</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<properties>
+		<!-- project -->
+    	<project.groupId>com.firefly</project.groupId>
+    	<project.artifactId>firefly-template</project.artifactId>
+    	
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<log.level>INFO</log.level>
+        <log.path>D:/log/</log.path>
+	</properties>
+	<profiles>
+    	<profile>
+    		<id>mac</id>
+    		<properties>
+    			<log.level>INFO</log.level>
+    			<log.path>/Users/qiupengtao/develop/logs/</log.path>
+    		</properties>
+    	</profile>
+    	<profile>
+    		<id>macdebug</id>
+    		<properties>
+    			<log.level>DEBUG</log.level>
+    			<log.path>/Users/qiupengtao/develop/logs/</log.path>
+    		</properties>
+    	</profile>
+    	<profile>
+    		<id>windebug</id>
+    		<properties>
+    			<log.level>DEBUG</log.level>
+    			<log.path>D:/log/</log.path>
+    		</properties>
+    	</profile>
+    </profiles>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.firefly</groupId>
+			<artifactId>firefly-common</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<!-- junit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-all</artifactId>
+			<version>1.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.freemarker</groupId>
+			<artifactId>freemarker</artifactId>
+			<version>2.3.18</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<distributionManagement>
+    	<repository>
+    		<id>3rdRepo</id>
+    		<name>3rd party</name>
+    		<url>http://localhost:7777/nexus-webapp/content/repositories/thirdparty</url>
+    	</repository>
+    	<snapshotRepository>
+	    	<id>dev</id>
+	    	<name>Snapshots</name>
+	    	<url>http://localhost:7777/nexus-webapp/content/repositories/snapshots</url>
+		</snapshotRepository>
+    </distributionManagement>
+</project>

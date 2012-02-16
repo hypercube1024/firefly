@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<body>
+	<!-- 测试一下换行，
+	换行还不错吧，
+	换行是可以的。 -->
+	
+	<div>
+	<!-- #if ${login} -->
+	Welcome ${user.name}
+	<!-- #else -->
+	您无法访问
+	<!-- #end -->
+	</div>
+	
+	<!-- #if ${user.age} > 15 + 3 -->
+	<div>年龄大于18</div>
+	<!-- #end -->
+	
+	<!-- #if 15*2<=${user.age}  -->
+	<div>年龄不小于30</div>
+	<!-- #end -->
+	
+	<div>${testFunction(3, "hello", user.age)}</div>
+	<div>${testFunction2()}</div>
+	
+	<div>
+	<!-- #if "Pengtao Qiu" == ${user.name} -->
+		城主来了
+	<!-- #elseif ${user.name} == "Bob" -->
+		厨师来了
+	<!-- #elseif ${user.name} == "Jim" -->
+		Jim来了
+	<!-- #else -->
+		小罗罗来了
+	<!-- #end -->
+	</div>
+	<div><!-- #eval 3.0 + 3 * 5.0 / 2.0 --></div>
+</body>
+</html>
