@@ -3,8 +3,6 @@
   <wb-module deploy-name="firefly">
     <wb-resource deploy-path="/" source-path="src/main/java"/>
     <wb-resource deploy-path="/" source-path="src/main/resources"/>
-        <wb-resource deploy-path="/" source-path="/src/test/appHome"/>
-        <wb-resource deploy-path="/" source-path="/src/main/java"/>
-        <wb-resource deploy-path="/" source-path="/src/test/java"/>
+        <wb-resource deploy-path="/" source-path="/"/>
   </wb-module>
 </project-modules>
