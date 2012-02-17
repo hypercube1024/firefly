@@ -7,8 +7,8 @@ import com.firefly.server.ServerBootstrap;
 public class Bootstrap {
 
 	public static void main(String[] args) throws Throwable {
-		String serverHome = new File(new File(Bootstrap.class.getResource("/")
-				.toURI()).getParent(), "/page").getAbsolutePath();
+		String projectHome = new File(Bootstrap.class.getResource("/").toURI()).getParent();
+		String serverHome = new File(projectHome, "/page").getAbsolutePath();
 		ServerBootstrap.start(serverHome, "localhost", 6655);
 	}
 
