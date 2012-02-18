@@ -6,6 +6,9 @@ import com.firefly.server.ServerBootstrap;
 
 public class Bootstrap {
 
+	/**
+	 *test git www
+	 */
 	public static void main(String[] args) throws Throwable {
 		String projectHome = new File(Bootstrap.class.getResource("/").toURI()).getParent();
 		String serverHome = new File(projectHome, "/page").getAbsolutePath();
