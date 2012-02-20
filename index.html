@@ -17,12 +17,33 @@
 		</div>
 		
 		<div id="content">
-			
 			<h2>最近更新</h2>
 			
 			<div class="hentry">
 				<h3 class="entry-title"><a target="_blank" href="https://github.com/hypercube1024/firefly">firefly-1.2发布</a> &#183; <abbr>2012-02-16</abbr></h3>
+				<p>
+				firefly好久没有发布新版本了，距1.1版发布已经有大半年的时间了。
+				1.2版的firefly有了较大的更新，主要是增加了模板引擎和应用服务器，并且和IOC/MVC框架进行了无缝整合。
+				这样web开发的技术栈基本就做全了，firefly也从一个单纯的IOC/MVC框架变成了一个一站式应用程序框架。
+				</p>
+				<p>
+				虽然firefly功能越来越多，但是最求简单好用、高性能的宗旨是不变的。
+				在简化web应用开发的同时，性能上也要做到最好。
+				模板引擎、IOC/MVC框架都可以独立使用。
+				</p>
+				<p>
+				下个版本准备在common模块中增加一个ConcurrentHaspLRUHashMap以及json parser。
+				</p>
 				
+				<p>
+				更新日志：
+				</p>
+				<ol>
+					<li>增加了模板引擎、嵌入式应用服务器两大模块</li>
+					<li>MVC框架小部分功能改进</li>
+					<li>commmon增加了一些工具类</li>
+					<li>bug修复</li>
+				</ol>
 				
 				<div class="separator"></div>
 				<p class="metadata">By <a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a></p>
@@ -43,10 +64,18 @@
 				<h2>What?</h2>
 				<p>
 					<a target="_blank" href="https://github.com/hypercube1024/firefly">Firefly framework</a>是一个一站式应用程序框架。
+					涵盖了web开发的主要技术栈。
 					包含模板引擎、IOC框架、MVC框架，嵌入式应用服务器、常用工具类等模块。
-				</p>
-				<p>firefly使用简单，不依赖第三方包，仅仅依赖jdk，并且性能大幅超越主流的(spring3、struts2) + tomcat架构，详情请看<a target="_blank" href="https://github.com/hypercube1024/firefly/wiki/firefly-performance">性能测试报告</a></p>
-				<p>If you ported The Arialist to CMS/blogging engine, feel free to <a href="mailto:hello@mentariworks.com">let us know</a>.</p>
+				</p>				
+			</div>
+			
+			<div class="widget">
+				<h2>Feature</h2>
+				<ul>
+					<li>使用简单，基于约定优于配置的思想</li>
+					<li>高性能，详情见<a target="_blank" href="https://github.com/hypercube1024/firefly/wiki/firefly-performance">性能测试</a></li>
+					<li>零依赖，仅仅依赖于jdk</li>
+				</ul>
 			</div>
 			
 			<div class="widget">
