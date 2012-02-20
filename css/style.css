@@ -103,7 +103,7 @@ body
 #wrapper
 {
 	width:800px;
-	padding:50px;
+	padding:0 50px;
 	margin:0 auto;
 }
 
@@ -134,8 +134,8 @@ a:hover
 #header
 {
 	height:80px;
-	padding:40px 0 0 0;
-	margin-bottom:30px;
+	padding:20px 0 0 0;
+	margin-bottom:40px;
 }
 
 #header h1 a
