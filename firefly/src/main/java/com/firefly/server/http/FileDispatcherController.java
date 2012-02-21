@@ -3,7 +3,10 @@ package com.firefly.server.http;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,11 +25,11 @@ public class FileDispatcherController implements DispatcherController {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	public static final String CRLF = "\r\n";
+	private static Set<String> ALLOW_METHODS = new HashSet<String>(Arrays.asList("GET", "POST", "HEAD"));
 	private static final String BASE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	private static String RANGE_ERROR_HTML = SystemHtmlPage
-			.systemPageTemplate(
-					416,
-					"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
+	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(416,
+		"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
+	
 	private Config config;
 
 	public FileDispatcherController(Config config) {
@@ -36,6 +39,13 @@ public class FileDispatcherController implements DispatcherController {
 	@Override
 	public void dispatcher(HttpServletRequest request,
 			HttpServletResponse response) {
+		if(!ALLOW_METHODS.contains(request.getMethod())) {
+			response.setHeader("Allow", "GET,POST,HEAD");
+			SystemHtmlPage.responseSystemPage(request, response, config.getEncoding(), 
+					HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only support GET, POST or HEAD method");
+			return;
+		}
+		
 		String path = config.getFileAccessFilter().doFilter(request, response);
 		if (VerifyUtils.isEmpty(path)) {
 			SystemHtmlPage.responseSystemPage(request, response,
