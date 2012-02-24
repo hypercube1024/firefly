@@ -283,7 +283,7 @@ public class FileDispatcherController implements DispatcherController {
 	}
 
 	public static String getRandomString(int length) { // length表示生成字符串的长度
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < length; i++) {
 			int number = (int) RandomUtils.random(0, BASE.length() - 1);
 			sb.append(BASE.charAt(number));
