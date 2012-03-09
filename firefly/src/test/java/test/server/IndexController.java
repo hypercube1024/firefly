@@ -9,6 +9,7 @@ import javax.servlet.http.HttpSession;
 
 import com.firefly.annotation.Controller;
 import com.firefly.annotation.RequestMapping;
+import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.View;
 
 @Controller
@@ -22,6 +23,11 @@ public class IndexController {
 		Cookie cookie = new Cookie("myname", "xiaoqiu");
 		cookie.setMaxAge(5 * 60);
 		response.addCookie(cookie);
+		return "/index.html";
+	}
+	
+	@RequestMapping(value = "/add", method = HttpMethod.POST)
+	public String add(HttpServletRequest request, HttpServletResponse response) {
 		return "/index.html";
 	}
 
