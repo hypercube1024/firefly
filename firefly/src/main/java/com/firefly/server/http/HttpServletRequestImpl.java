@@ -667,7 +667,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 		if (white < 0)
 			white = value.indexOf('\t');
 		if (white >= 0) {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			int len = value.length();
 			for (int i = 0; i < len; i++) {
 				char ch = value.charAt(i);
