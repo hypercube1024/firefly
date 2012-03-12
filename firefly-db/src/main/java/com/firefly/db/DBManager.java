@@ -27,7 +27,7 @@ import com.firefly.utils.log.LogFactory;
  */
 public class DBManager {
 
-	private final static Log log = LogFactory.getInstance().getLog("DBManager");
+	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
     // 线程本地变量，用于存放当前线程获取的数据库连接
 	private final static ThreadLocal<Connection> conns = new ThreadLocal<Connection>();
 	// 数据源
