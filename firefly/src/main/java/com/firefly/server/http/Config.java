@@ -66,7 +66,10 @@ public class Config {
 		@Override
 		public String doFilter(HttpServletRequest request,
 				HttpServletResponse response) {
-			return request.getRequestURI();
+			String fileName = request.getRequestURI();
+			if(fileName.equals("/"))
+				fileName = "/index.html";
+			return fileName;
 		}
 	};
 

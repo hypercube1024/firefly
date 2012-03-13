@@ -47,15 +47,11 @@ public class FileDispatcherController implements DispatcherController {
 		}
 		
 		String path = config.getFileAccessFilter().doFilter(request, response);
-		if (VerifyUtils.isEmpty(path)) {
-			SystemHtmlPage.responseSystemPage(request, response,
-					config.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
-					request.getRequestURI() + " not found");
+		if (VerifyUtils.isEmpty(path))
 			return;
-		}
 
 		File file = new File(config.getServerHome(), path);
-		if (!file.exists()) {
+		if (!file.exists() || file.isDirectory()) {
 			SystemHtmlPage.responseSystemPage(request, response,
 					config.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
