@@ -267,8 +267,8 @@ public final class TcpWorker implements Worker {
 						// Successful write - proceed to the next message.
 						buf.release();
 						session.resetCurrentWriteAndWriteBuffer();
-						// obj = null;
-						// buf = null;
+						obj = null;
+						buf = null;
 					} else {
 						// Not written fully - perhaps the kernel buffer is
 						// full.
@@ -279,10 +279,12 @@ public final class TcpWorker implements Worker {
 				} catch (AsynchronousCloseException e) {
 					// Doesn't need a user attention - ignore.
 				} catch (Throwable t) {
-					buf.release();
+					if(buf != null)
+						buf.release();
+					
 					session.resetCurrentWriteAndWriteBuffer();
-					// buf = null;
-					// obj = null;
+					buf = null;
+					obj = null;
 					eventManager.executeExceptionTask(session, t);
 					if (t instanceof IOException) {
 						log.debug("write0 IOException session close");
