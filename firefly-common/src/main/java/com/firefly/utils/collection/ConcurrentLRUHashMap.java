@@ -16,16 +16,12 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	 */
 
 	/* ---------------- Constants -------------- */
-
-	/**
-* 
-*/
 	private static final long serialVersionUID = -5031526786765467550L;
 
 	/**
 	 * Segement默认最大数
 	 */
-	static final int DEFAULT_SEGEMENT_MAX_CAPACITY = 100;
+	static final int DEFAULT_SEGEMENT_MAX_CAPACITY = 10000;
 
 	/**
 	 * The default load factor for this table, used when not otherwise specified
@@ -159,11 +155,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 
 	/**
 	 * 基于原Segment修改，内部实现一个双向列表
-	 * 
-	 * @author noah
-	 * 
-	 * @param <K>
-	 * @param <V>
 	 */
 	static final class Segment<K, V> extends ReentrantLock implements
 			Serializable {
@@ -246,14 +237,26 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		 * Segement最大容量
 		 */
 		final int maxCapacity;
+		
+		/**
+		 * map回调
+		 */
+		transient LRUMapEventListener listener = new LRUMapEventListener() {
+			@Override
+			public void eliminated(Object key, Object value) {
+			}
+		};
 
-		Segment(int maxCapacity, float lf, ConcurrentLRUHashMap<K, V> lruMap) {
+		Segment(int maxCapacity, float lf, LRUMapEventListener listener) {
 			this.maxCapacity = maxCapacity;
 			loadFactor = lf;
 			setTable(HashEntry.<K, V> newArray(maxCapacity));
 			header = new HashEntry<K, V>(null, -1, null, null);
 			header.linkNext = header;
 			header.linkPrev = header;
+			
+			if(listener != null)
+				this.listener = listener;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -296,27 +299,21 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		/* Specialized implementations of map methods */
 
 		V get(Object key, int hash) {
-			lock();
-			try {
-				if (count != 0) { // read-volatile
-					HashEntry<K, V> e = getFirst(hash);
-					while (e != null) {
-						if (e.hash == hash && key.equals(e.key)) {
-							V v = e.value;
-							// 将节点移动到头节点之前
-							moveNodeToHeader(e);
-//							System.out.println("get -> " + header.linkNext.value + "|" + header.linkPrev.value);
-							if (v != null)
-								return v;
-							return readValueUnderLock(e); // recheck
-						}
-						e = e.next;
+			if (count != 0) { // read-volatile
+				HashEntry<K, V> e = getFirst(hash);
+				while (e != null) {
+					if (e.hash == hash && key.equals(e.key)) {
+						V v = e.value;
+						// 将节点移动到头节点之前
+						moveNodeToHeader(e);
+						if (v != null)
+							return v;
+						return readValueUnderLock(e); // recheck
 					}
+					e = e.next;
 				}
-				return null;
-			} finally {
-				unlock();
 			}
+			return null;
 		}
 
 		/**
@@ -326,8 +323,13 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		 */
 		void moveNodeToHeader(HashEntry<K, V> entry) {
 			// 先移除，然后插入到头节点的前面
-			removeNode(entry);
-			addBefore(entry, header);
+			lock();
+			try {
+				removeNode(entry);
+				addBefore(entry, header);
+			} finally {
+				unlock();
+			}
 		}
 
 		/**
@@ -534,7 +536,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 							HashEntry<K, V> n = newTable[k];
 							HashEntry<K, V> newEntry = new HashEntry<K, V>(
 									p.key, p.hash, n, p.value);
-							// update by Noah
+
 							newEntry.linkNext = p.linkNext;
 							newEntry.linkPrev = p.linkPrev;
 							newTable[k] = newEntry;
@@ -593,6 +595,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		void removeEldestEntry() {
 			if (count > this.maxCapacity) {
 				HashEntry<K, V> eldest = header.linkNext;
+				listener.eliminated(eldest.key, eldest.value);
 				remove(eldest.key, eldest.hash, null);
 			}
 		}
@@ -622,9 +625,11 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	 *            加载因子
 	 * @param concurrencyLevel
 	 *            并发级别
+	 * @param listener
+	 * 			map事件回调
 	 */
 	public ConcurrentLRUHashMap(int segementCapacity, float loadFactor,
-			int concurrencyLevel) {
+			int concurrencyLevel, LRUMapEventListener listener) {
 		if (!(loadFactor > 0) || segementCapacity < 0 || concurrencyLevel <= 0)
 			throw new IllegalArgumentException();
 
@@ -643,8 +648,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		this.segments = Segment.newArray(ssize);
 
 		for (int i = 0; i < this.segments.length; ++i)
-			this.segments[i] = new Segment<K, V>(segementCapacity, loadFactor,
-					this);
+			this.segments[i] = new Segment<K, V>(segementCapacity, loadFactor, listener);
 	}
 
 	/**
@@ -656,7 +660,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	 *            加载因子
 	 */
 	public ConcurrentLRUHashMap(int segementCapacity, float loadFactor) {
-		this(segementCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL);
+		this(segementCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL, null);
 	}
 
 	/**
@@ -666,15 +670,14 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	 *            Segement最大容量
 	 */
 	public ConcurrentLRUHashMap(int segementCapacity) {
-		this(segementCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL);
+		this(segementCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, null);
 	}
 
 	/**
-	 * 使用默认参数，创建一个ConcurrentLRUHashMap，存放元素最大数默认为1600， 加载因子为0.75，并发级别16
+	 * 使用默认参数，创建一个ConcurrentLRUHashMap，存放元素最大数默认为16W， 加载因子为0.75，并发级别16
 	 */
 	public ConcurrentLRUHashMap() {
-		this(DEFAULT_SEGEMENT_MAX_CAPACITY, DEFAULT_LOAD_FACTOR,
-				DEFAULT_CONCURRENCY_LEVEL);
+		this(DEFAULT_SEGEMENT_MAX_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, null);
 	}
 
 	/**

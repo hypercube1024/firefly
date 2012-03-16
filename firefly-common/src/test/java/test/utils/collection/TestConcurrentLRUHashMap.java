@@ -10,7 +10,7 @@ public class TestConcurrentLRUHashMap {
 	
 	@Test
 	public void test() {
-		ConcurrentLRUHashMap<String, String> map = new ConcurrentLRUHashMap<String, String>(3, 0.75f, 1);
+		ConcurrentLRUHashMap<String, String> map = new ConcurrentLRUHashMap<String, String>(3, 0.75f, 1, null);
 		map.put("a1", "hello1");
 		map.put("a2", "hello2");
 		map.put("a3", "hello3");
