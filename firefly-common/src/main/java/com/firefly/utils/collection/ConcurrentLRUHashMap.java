@@ -245,6 +245,11 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 			@Override
 			public void eliminated(Object key, Object value) {
 			}
+
+			@Override
+			public Object getNull(Object key) {
+				return null;
+			}
 		};
 
 		Segment(int maxCapacity, float lf, LRUMapEventListener listener) {
@@ -287,10 +292,11 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		 * reorder a HashEntry initialization with its table assignment, which
 		 * is legal under memory model but is not known to ever occur.
 		 */
+		@SuppressWarnings("unchecked")
 		V readValueUnderLock(HashEntry<K, V> e) {
 			lock();
 			try {
-				return e.value;
+				return e.value == null ? (V) listener.getNull(e.key) : e.value;
 			} finally {
 				unlock();
 			}
@@ -298,6 +304,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 
 		/* Specialized implementations of map methods */
 
+		@SuppressWarnings("unchecked")
 		V get(Object key, int hash) {
 			if (count != 0) { // read-volatile
 				HashEntry<K, V> e = getFirst(hash);
@@ -313,7 +320,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					e = e.next;
 				}
 			}
-			return null;
+			return (V) listener.getNull(key);
 		}
 
 		/**
@@ -472,7 +479,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					count = c; // write-volatile
 					// 添加到双向链
 					addBefore(newEntry, header);
-//					System.out.println("put -> " + header.linkNext.value + "|" + header.linkPrev.value);
 					// 判断是否达到最大值
 					removeEldestEntry();
 				}

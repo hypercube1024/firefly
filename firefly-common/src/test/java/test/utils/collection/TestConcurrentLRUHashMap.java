@@ -5,12 +5,26 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.*;
 import com.firefly.utils.collection.ConcurrentLRUHashMap;
+import com.firefly.utils.collection.LRUMapEventListener;
 
 public class TestConcurrentLRUHashMap {
 	
 	@Test
 	public void test() {
-		ConcurrentLRUHashMap<String, String> map = new ConcurrentLRUHashMap<String, String>(3, 0.75f, 1, null);
+		LRUMapEventListener listener = new LRUMapEventListener(){
+
+			@Override
+			public void eliminated(Object key, Object value) {
+				Assert.assertThat((String)key, is("a2"));
+				Assert.assertThat((String)value, is("hello2"));
+			}
+
+			@Override
+			public Object getNull(Object key) {
+				Assert.assertThat((String)key, is("a2"));
+				return key + " is null";
+			}};
+		ConcurrentLRUHashMap<String, String> map = new ConcurrentLRUHashMap<String, String>(3, 0.75f, 1, listener);
 		map.put("a1", "hello1");
 		map.put("a2", "hello2");
 		map.put("a3", "hello3");
@@ -18,7 +32,7 @@ public class TestConcurrentLRUHashMap {
 		map.put("a4", "hello4");
 		
 		Assert.assertThat(map.get("a1"), is("hello1"));
-		Assert.assertThat(map.get("a2"), nullValue());
+		Assert.assertThat(map.get("a2"), is("a2 is null"));
 	}
 
 }
