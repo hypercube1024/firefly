@@ -312,7 +312,12 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					if (e.hash == hash && key.equals(e.key)) {
 						V v = e.value;
 						// 将节点移动到头节点之前
-						moveNodeToHeader(e);
+						lock();
+						try { 
+							moveNodeToHeader(e); 
+						} finally { 
+							unlock();
+						}
 						if (v != null)
 							return v;
 						return readValueUnderLock(e); // recheck
@@ -330,20 +335,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		 */
 		void moveNodeToHeader(HashEntry<K, V> entry) {
 			// 先移除，然后插入到头节点的前面
-			lock();
-			try {
-				removeNode(entry);
-				addBefore(entry, header);
-			} finally {
-				unlock();
-			}
-		}
-		
-		/**
-		 * 非同步的将节点移动到头结点之前
-		 * @param entry
-		 */
-		void noSyncMoveNodeToHeader(HashEntry<K, V> entry) {
 			removeNode(entry);
 			addBefore(entry, header);
 		}
@@ -378,10 +369,14 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 				HashEntry<K, V> e = getFirst(hash);
 				while (e != null) {
 					if (e.hash == hash && key.equals(e.key)) {
-						moveNodeToHeader(e);
+						lock();
+						try { 
+							moveNodeToHeader(e); 
+						} finally { 
+							unlock();
+						}
 						return true;
 					}
-
 					e = e.next;
 				}
 			}
@@ -398,7 +393,12 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 						if (v == null) // recheck
 							v = readValueUnderLock(e);
 						if (value.equals(v)) {
-							moveNodeToHeader(e);
+							lock();
+							try { 
+								moveNodeToHeader(e); 
+							} finally { 
+								unlock();
+							}
 							return true;
 						}
 					}
@@ -418,8 +418,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 				if (e != null && oldValue.equals(e.value)) {
 					replaced = true;
 					e.value = newValue;
-					// 移动到头部
-					noSyncMoveNodeToHeader(e);
+					moveNodeToHeader(e);
 				}
 				return replaced;
 			} finally {
@@ -438,8 +437,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 				if (e != null) {
 					oldValue = e.value;
 					e.value = newValue;
-					// 移动到头部
-					noSyncMoveNodeToHeader(e);
+					moveNodeToHeader(e);
 				}
 				return oldValue;
 			} finally {
@@ -465,8 +463,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					oldValue = e.value;
 					if (!onlyIfAbsent) {
 						e.value = value;
-						// 移动到头部
-						noSyncMoveNodeToHeader(e);
+						moveNodeToHeader(e);
 					}
 				} else {
 					oldValue = null;
