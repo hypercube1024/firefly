@@ -338,6 +338,15 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 				unlock();
 			}
 		}
+		
+		/**
+		 * 非同步的将节点移动到头结点之前
+		 * @param entry
+		 */
+		void noSyncMoveNodeToHeader(HashEntry<K, V> entry) {
+			removeNode(entry);
+			addBefore(entry, header);
+		}
 
 		/**
 		 * 将第一个参数代表的节点插入到第二个参数代表的节点之前
@@ -365,48 +374,37 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		}
 
 		boolean containsKey(Object key, int hash) {
-			lock();
-			try {
-				if (count != 0) { // read-volatile
-					HashEntry<K, V> e = getFirst(hash);
-					while (e != null) {
-						if (e.hash == hash && key.equals(e.key)) {
-							moveNodeToHeader(e);
-							return true;
-						}
-
-						e = e.next;
+			if (count != 0) { // read-volatile
+				HashEntry<K, V> e = getFirst(hash);
+				while (e != null) {
+					if (e.hash == hash && key.equals(e.key)) {
+						moveNodeToHeader(e);
+						return true;
 					}
+
+					e = e.next;
 				}
-				return false;
-			} finally {
-				unlock();
 			}
+			return false;
 		}
 
 		boolean containsValue(Object value) {
-			lock();
-			try {
-				if (count != 0) { // read-volatile
-					HashEntry<K, V>[] tab = table;
-					int len = tab.length;
-					for (int i = 0; i < len; i++) {
-						for (HashEntry<K, V> e = tab[i]; e != null; e = e.next) {
-							V v = e.value;
-							if (v == null) // recheck
-								v = readValueUnderLock(e);
-							if (value.equals(v)) {
-								moveNodeToHeader(e);
-								return true;
-							}
-
+			if (count != 0) { // read-volatile
+				HashEntry<K, V>[] tab = table;
+				int len = tab.length;
+				for (int i = 0; i < len; i++) {
+					for (HashEntry<K, V> e = tab[i]; e != null; e = e.next) {
+						V v = e.value;
+						if (v == null) // recheck
+							v = readValueUnderLock(e);
+						if (value.equals(v)) {
+							moveNodeToHeader(e);
+							return true;
 						}
 					}
 				}
-				return false;
-			} finally {
-				unlock();
 			}
+			return false;
 		}
 
 		boolean replace(K key, int hash, V oldValue, V newValue) {
@@ -421,7 +419,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					replaced = true;
 					e.value = newValue;
 					// 移动到头部
-					moveNodeToHeader(e);
+					noSyncMoveNodeToHeader(e);
 				}
 				return replaced;
 			} finally {
@@ -441,7 +439,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					oldValue = e.value;
 					e.value = newValue;
 					// 移动到头部
-					moveNodeToHeader(e);
+					noSyncMoveNodeToHeader(e);
 				}
 				return oldValue;
 			} finally {
@@ -468,7 +466,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					if (!onlyIfAbsent) {
 						e.value = value;
 						// 移动到头部
-						moveNodeToHeader(e);
+						noSyncMoveNodeToHeader(e);
 					}
 				} else {
 					oldValue = null;
