@@ -42,8 +42,11 @@ public class TextViewHandle implements ViewHandle {
 			response.setHeader("Content-Type", "text/plain; charset="
 					+ encoding);
 			PrintWriter writer = response.getWriter();
-			writer.print(view.toString());
-			writer.close();
+			try {
+				writer.print(view.toString());
+			} finally {
+				writer.close();
+			}
 		}
 
 	}

@@ -43,8 +43,11 @@ public class JsonViewHandle implements ViewHandle {
 			response.setHeader("Content-Type", "application/json; charset="
 					+ encoding);
 			PrintWriter writer = response.getWriter();
-			writer.print(Json.toJson(view));
-			writer.close();
+			try{
+				writer.print(Json.toJson(view));
+			} finally {
+				writer.close();
+			}
 		}
 	}
 

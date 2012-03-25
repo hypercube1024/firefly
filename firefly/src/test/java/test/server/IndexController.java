@@ -1,6 +1,7 @@
 package test.server;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -64,6 +65,21 @@ public class IndexController {
 			HttpServletResponse response) throws IOException {
 		response.sendRedirect(request.getContextPath()
 				+ request.getServletPath() + "/index");
+		return null;
+	}
+	
+	@RequestMapping(value = "/testc")
+	public String testOutContentLength(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String msg = "<html><body>test Content-Length output</body></html>";
+		response.setCharacterEncoding("UTF-8");
+		response.setHeader("Content-Type", "text/html; charset=UTF-8");
+		response.setHeader("Content-Length", String.valueOf(msg.getBytes("UTF-8").length));
+		PrintWriter writer = response.getWriter();
+		try {
+			writer.print(msg);
+		} finally {
+			writer.close();
+		}
 		return null;
 	}
 

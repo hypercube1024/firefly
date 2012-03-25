@@ -70,15 +70,16 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 	private void createOutput() {
 		if (bufferedOutput == null) {
 			setHeader("Date", GMT_FORMAT.format(new Date()));
-			setHeader("Connection", request.isKeepAlive() ? "keep-alive"
-					: "close");
-			bufferedOutput = new NetBufferedOutputStream(request.session,
-					bufferSize, request.isKeepAlive());
-			out = request.isChunked() ? new ChunkedOutputStream(bufferSize,
-					bufferedOutput, request, this) : new HttpServerOutpuStream(
-					bufferSize, bufferedOutput, request, this);
-			fileOut = new StaticFileOutputStream(bufferSize, bufferedOutput,
-					request, this);
+			setHeader("Connection", request.isKeepAlive() ? "keep-alive" : "close");
+			
+			bufferedOutput = new NetBufferedOutputStream(request.session, bufferSize, request.isKeepAlive());
+			
+			if(request.isChunked() && VerifyUtils.isEmpty(headMap.get("Content-Length")))
+				out = new ChunkedOutputStream(bufferSize, bufferedOutput, request, this);
+			else
+				out = new HttpServerOutpuStream(bufferSize, bufferedOutput, request, this);
+			
+			fileOut = new StaticFileOutputStream(bufferSize, bufferedOutput, request, this);
 			writer = new PrintWriter(out);
 		}
 	}
