@@ -26,6 +26,70 @@ public class JsonStringReader {
 		return false;
 	}
 	
+	public int getMark() {
+		return mark;
+	}
+	
+	public void mark() {
+		mark = pos;
+	}
+	
+	public void reset() {
+		pos = mark;
+	}
+	
+	public char get(int index) {
+		return chars[index];
+	}
+	
+	public boolean isString() {
+		char c = readAndSkipBlank();
+		return c == '"';
+	}
+
+	public boolean isArray() {
+		char c = readAndSkipBlank();
+		return c == '[';
+	}
+
+	public boolean isObject() {
+		char c = readAndSkipBlank();
+		return c == '{';
+	}
+	
+	public boolean isColon() {
+		char c = readAndSkipBlank();
+		return c == ':';
+	}
+	
+	public boolean isComma() {
+		char c = readAndSkipBlank();
+		return c == ',';
+	}
+
+	public int position() {
+		return pos;
+	}
+
+	public int limit() {
+		return limit;
+	}
+
+	public char read() {
+		return chars[pos++];
+	}
+
+	public char readAndSkipBlank() {
+		char c = read();
+		if (c > ' ')
+			return c;
+		for (;;) {
+			c = read();
+			if (c > ' ')
+				return c;
+		}
+	}
+	
 	public int readInt() {
 		int value = 0;
 		char ch = readAndSkipBlank();
@@ -102,37 +166,6 @@ public class JsonStringReader {
 		return negative ? -value : value;
 	}
 
-	public char read() {
-		return chars[pos++];
-	}
-
-	public char readAndSkipBlank() {
-		char c = read();
-		if (c > ' ')
-			return c;
-		for (;;) {
-			c = read();
-			if (c > ' ')
-				return c;
-		}
-	}
-	
-	public int getMark() {
-		return mark;
-	}
-	
-	public void mark() {
-		mark = pos;
-	}
-	
-	public void reset() {
-		pos = mark;
-	}
-	
-	public char get(int index) {
-		return chars[index];
-	}
-
 	public char[] readField(char[] chs) {
 		if(!isString())
 			throw new JsonException("read field error");
@@ -169,39 +202,6 @@ public class JsonStringReader {
 			System.arraycopy(chars, mark, field, 0, fieldLen);
 			return field;
 		}
-	}
-	
-	public boolean isString() {
-		char c = readAndSkipBlank();
-		return c == '"';
-	}
-
-	public boolean isArray() {
-		char c = readAndSkipBlank();
-		return c == '[';
-	}
-
-	public boolean isObject() {
-		char c = readAndSkipBlank();
-		return c == '{';
-	}
-	
-	public boolean isColon() {
-		char c = readAndSkipBlank();
-		return c == ':';
-	}
-	
-	public boolean isComma() {
-		char c = readAndSkipBlank();
-		return c == ',';
-	}
-
-	public int position() {
-		return pos;
-	}
-
-	public int limit() {
-		return limit;
 	}
 
 }
