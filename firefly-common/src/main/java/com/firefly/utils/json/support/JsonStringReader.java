@@ -29,6 +29,9 @@ public class JsonStringReader {
 	public int readInt() {
 		int value = 0;
 		char ch = readAndSkipBlank();
+		boolean isString = (ch == '"');
+		if(isString)
+			ch = readAndSkipBlank();
 		boolean negative = (ch == '-');
 		
 		if(!negative) {
@@ -43,22 +46,30 @@ public class JsonStringReader {
 			if(VerifyUtils.isDigit(ch))
 				value = (value << 3) + (value << 1) + (ch - '0');
 			else {
-				if (isEndFlag(ch))
-					break;
-				else
-					throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+				if(isString) {
+					if(ch == '"')
+						break;
+				} else {
+					if (isEndFlag(ch)) {
+						pos--;
+						break;
+					} else
+						throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+				}
 			}
 			
 			if(pos >= limit)
 				break;
 		}
-		pos--;
 		return negative ? -value : value;
 	}
 	
 	public long readLong() {
 		long value = 0;
 		char ch = readAndSkipBlank();
+		boolean isString = (ch == '"');
+		if(isString)
+			ch = readAndSkipBlank();
 		boolean negative = (ch == '-');
 		
 		if(!negative) {
@@ -73,16 +84,21 @@ public class JsonStringReader {
 			if(VerifyUtils.isDigit(ch))
 				value = (value << 3) + (value << 1) + (ch - '0');
 			else {
-				if (isEndFlag(ch))
-					break;
-				else
-					throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+				if(isString) {
+					if(ch == '"')
+						break;
+				} else {
+					if (isEndFlag(ch)) {
+						pos--;
+						break;
+					} else
+						throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+				}
 			}
 			
 			if(pos >= limit)
 				break;
 		}
-		pos--;
 		return negative ? -value : value;
 	}
 
