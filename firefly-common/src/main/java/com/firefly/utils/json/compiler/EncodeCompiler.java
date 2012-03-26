@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.firefly.utils.json.annotation.Transient;
@@ -18,7 +19,7 @@ public class EncodeCompiler {
 		SerializerMetaInfo[] serializerMetaInfo = null;
 		List<SerializerMetaInfo> fieldList = new ArrayList<SerializerMetaInfo>();
 		
-		boolean first = true;
+//		boolean first = true;
 		for (Method method : clazz.getMethods()) {
 			method.setAccessible(true);
 			String methodName = method.getName();
@@ -64,15 +65,18 @@ public class EncodeCompiler {
 
 			Class<?> fieldClazz = method.getReturnType();
 			SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
-			fieldMetaInfo.setPropertyName(propertyName, first);
+			fieldMetaInfo.setPropertyName(propertyName, false);
 			fieldMetaInfo.setMethod(method);
 			
 			fieldMetaInfo.setSerializer(StateMachine.getSerializerInCompiling(fieldClazz));
 			fieldList.add(fieldMetaInfo);
-			first = false;
 		}
 		
 		serializerMetaInfo = fieldList.toArray(EMPTY_ARRAY);
+		if(serializerMetaInfo.length > 0) {
+			Arrays.sort(serializerMetaInfo);
+			serializerMetaInfo[0].setPropertyName(serializerMetaInfo[0].getPropertyNameString(), true);
+		}
 		return serializerMetaInfo;
 	}
 
