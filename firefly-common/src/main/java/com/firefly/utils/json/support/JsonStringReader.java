@@ -93,6 +93,12 @@ public class JsonStringReader {
 	
 	public int readInt() {
 		int value = 0;
+		mark();
+		if(isNull())
+			return value;
+		else
+			reset();
+		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
 		if(isString)
@@ -131,6 +137,12 @@ public class JsonStringReader {
 	
 	public long readLong() {
 		long value = 0;
+		mark();
+		if(isNull())
+			return value;
+		else
+			reset();
+		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
 		if(isString)

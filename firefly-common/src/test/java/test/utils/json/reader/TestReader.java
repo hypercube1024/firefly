@@ -88,6 +88,19 @@ public class TestReader {
 	}
 	
 	@Test
+	public void testReadInt5() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": null }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readInt(), is(0));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
 	public void testReadLong() {
 		JsonStringReader reader = new JsonStringReader("  { \"testField\": -3334}");
 		Assert.assertThat(reader.isObject(), is(true));
