@@ -7,11 +7,11 @@ import com.firefly.utils.json.exception.JsonException;
 public class JsonStringReader {
 	private char[] chars;
 	private int pos = 0;
-	private int limit;
+	private final int limit;
 	private int mark = 0;
 
 	public JsonStringReader(String str) {
-		chars = str.toCharArray();
+		chars = str.trim().toCharArray();
 		limit = chars.length;
 	}
 	
@@ -206,19 +206,30 @@ public class JsonStringReader {
 	}
 	
 	public boolean isNull() {
-		mark();
 		char ch = readAndSkipBlank();
-		if(ch == 'n' && 'u' == read() && 'l' == read() && 'l' == read()) {
-			return true;
-		} else {
-			reset();
+		if(pos + 3 > limit)
 			return false;
-		}
+		
+		if(ch == 'n' && 'u' == read() && 'l' == read() && 'l' == read()) {
+			if(pos >= limit)
+				return true;
+			
+			ch = readAndSkipBlank();
+			if(isEndFlag(ch)) {
+				pos--;
+				return true;
+			} else
+				return false;
+		} else
+			return false;
 	}
 	
 	public String readString() {
+		mark();
 		if(isNull())
 			return null;
+		else
+			reset();
 		
 		if(!isString())
 			throw new JsonException("read string error");

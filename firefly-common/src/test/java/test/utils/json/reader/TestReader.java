@@ -12,7 +12,7 @@ public class TestReader {
 	public void testReadAndSkipBlank() {
 		JsonStringReader reader = new JsonStringReader("  tt");
 		Assert.assertThat(reader.readAndSkipBlank(), is('t'));
-		Assert.assertThat(reader.position(), is(3));
+		Assert.assertThat(reader.position(), is(1));
 	}
 	
 	@Test
@@ -178,6 +178,18 @@ public class TestReader {
 		Assert.assertThat(s, is("d\nddfd"));
 		ch = reader.readAndSkipBlank();
 		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
+	public void testIsNull2() {
+		JsonStringReader reader = new JsonStringReader("  null ");
+		Assert.assertThat(reader.isNull(), is(true));
+	}
+	
+	@Test
+	public void testIsNull3() {
+		JsonStringReader reader = new JsonStringReader(" nul");
+		Assert.assertThat(reader.isNull(), is(false));
 	}
 	
 	public static void main(String[] args) {
