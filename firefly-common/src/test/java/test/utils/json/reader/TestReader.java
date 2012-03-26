@@ -205,6 +205,71 @@ public class TestReader {
 		Assert.assertThat(reader.isNull(), is(false));
 	}
 	
+	@Test
+	public void testReadBoolean() {
+		JsonStringReader reader = new JsonStringReader("{ \"testField\": true}");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readBoolean(), is(true));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
+	public void testReadBoolean2() {
+		JsonStringReader reader = new JsonStringReader("{ \"testField\": false }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readBoolean(), is(false));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
+	public void testReadBoolean3() {
+		JsonStringReader reader = new JsonStringReader("{ \"testField\": \"true\" }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readBoolean(), is(true));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
+	public void testReadBoolean4() {
+		JsonStringReader reader = new JsonStringReader("{ \"testField\": \"false\" }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readBoolean(), is(false));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
+	public void testReadBoolean5() {
+		JsonStringReader reader = new JsonStringReader("{ \"testField\": null }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readBoolean(), is(false));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
 	public static void main(String[] args) {
 //		char[] str = "0123456789".toCharArray();
 //		for (int i = 0; i < str.length; i++) {

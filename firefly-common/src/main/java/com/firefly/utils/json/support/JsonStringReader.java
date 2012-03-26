@@ -91,6 +91,34 @@ public class JsonStringReader {
 		}
 	}
 	
+	public boolean readBoolean() {
+		boolean ret = false;
+		
+		mark();
+		if(isNull())
+			return ret;
+		else
+			reset();
+		
+		char ch = readAndSkipBlank();
+		boolean isString = (ch == '"');
+		if(isString)
+			ch = readAndSkipBlank();
+		
+		if(ch == 't' && 'r' == read() && 'u' == read() && 'e' == read())
+			ret = true;
+		else if (ch == 'f' && 'a' == read() && 'l' == read() && 's' == read() && 'e' == read())
+			ret = false;
+		
+		if(isString) {
+			ch = readAndSkipBlank();
+			if(ch != '"')
+				throw new JsonException("read boolean error");
+		}
+		
+		return ret;
+	}
+	
 	public int readInt() {
 		int value = 0;
 		mark();
