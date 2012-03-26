@@ -57,7 +57,7 @@ public class TestReader {
 	
 	@Test
 	public void testReadInt2() {
-		JsonStringReader reader = new JsonStringReader("  { \"testField\": \" -333\" }");
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": \" -333\" , \"testField2\": \" -334\" }");
 		Assert.assertThat(reader.isObject(), is(true));
 		char[] t1 = "dsffsfsf".toCharArray();
 		char[] ret = reader.readField(t1);
@@ -65,6 +65,13 @@ public class TestReader {
 		Assert.assertThat(reader.isColon(), is(true));
 		Assert.assertThat(reader.readInt(), is(-333));
 		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is(','));
+		
+		ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField2"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readInt(), is(-334));
+		ch = reader.readAndSkipBlank();
 		Assert.assertThat(ch, is('}'));
 	}
 	
@@ -93,24 +100,70 @@ public class TestReader {
 		Assert.assertThat(ch, is('}'));
 	}
 	
+	@Test
+	public void testReadString() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": \"ddsfseee\",  \"testField2\": \"dddfd\"}");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readString(), is("ddsfseee"));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is(','));
+		
+		ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField2"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readString(), is("dddfd"));
+		ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
+	public void testReadString2() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": \"dds\\\"fseee\",  \"testField2\": \"d\\nddfd\"}");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		String s = reader.readString();
+		System.out.println(s);
+		Assert.assertThat(s, is("dds\"fseee"));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is(','));
+		
+		ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField2"));
+		Assert.assertThat(reader.isColon(), is(true));
+		s = reader.readString();
+		System.out.println(s);
+		Assert.assertThat(s, is("d\nddfd"));
+		ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
 	public static void main(String[] args) {
 //		char[] str = "0123456789".toCharArray();
 //		for (int i = 0; i < str.length; i++) {
 //			System.out.println(str[i] - '0');
 //		}
 		
-		char[] str = "833".toCharArray();
-		int value = 0;
-		for (int i = 0; i < str.length; i++) {
-			value = (value << 3) + (value << 1) + (str[i] - '0');
-			System.out.println(value);
-		}
-		System.out.println(value);
+//		char[] str = "833".toCharArray();
+//		int value = 0;
+//		for (int i = 0; i < str.length; i++) {
+//			value = (value << 3) + (value << 1) + (str[i] - '0');
+//			System.out.println(value);
+//		}
+//		System.out.println(value);
+//		
+//		char c = '-';
+//		System.out.println("char is " + c);
+//		
+//		String ss = "{\"dsf\" : \"dsfsfs\\\"ad\"}";
+//		System.out.println(ss);
 		
-		char c = '-';
-		System.out.println("char is " + c);
 		
-		String ss = "{\"dsf\" : \"dsfsfs\\\"ad\"}";
-		System.out.println(ss);
 	}
 }

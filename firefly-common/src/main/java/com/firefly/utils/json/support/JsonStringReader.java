@@ -1,6 +1,7 @@
 package com.firefly.utils.json.support;
 
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.io.StringWriter;
 import com.firefly.utils.json.exception.JsonException;
 
 public class JsonStringReader {
@@ -202,6 +203,78 @@ public class JsonStringReader {
 			System.arraycopy(chars, mark, field, 0, fieldLen);
 			return field;
 		}
+	}
+	
+	public String readString() {
+		if(!isString())
+			throw new JsonException("read string error");
+		
+		StringWriter writer = new StringWriter();
+		String ret = null;
+		
+		int cur = pos;
+		int len = 0;
+		for(;;) {
+			char ch = chars[cur++];
+			if(ch == '"') {
+				len = cur - pos - 1;
+				writer.write(chars, pos, len);
+				pos = cur;
+				break;
+			} else if(ch == '\\') {
+				switch (chars[cur++]) {
+				case 'b':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('\b');
+					pos = cur;
+					break;
+				case 'n':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('\n');
+					pos = cur;
+					break;
+				case 'r':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('\r');
+					pos = cur;
+					break;
+				case 'f':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('\f');
+					pos = cur;
+					break;
+				case '\\':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('\\');
+					pos = cur;
+					break;
+				case '"':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('"');
+					pos = cur;
+					break;
+				case 't':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('\t');
+					pos = cur;
+					break;
+				}
+			}
+			
+		}
+		try {
+			ret = writer.toString();
+		} finally {
+			writer.close();
+		}
+		return ret;
 	}
 
 }
