@@ -7,22 +7,22 @@ import java.io.IOException;
 
 import com.firefly.utils.json.Serializer;
 import com.firefly.utils.json.compiler.EncodeCompiler;
-import com.firefly.utils.json.support.JsonObjMetaInfo;
+import com.firefly.utils.json.support.SerializerMetaInfo;
 import com.firefly.utils.json.support.JsonStringWriter;
 
 public class ObjectNoCheckSerializer implements Serializer {
 	
-	private JsonObjMetaInfo[] jsonObjMetaInfos;
+	private SerializerMetaInfo[] serializerMetaInfos;
 	
 	public ObjectNoCheckSerializer(Class<?> clazz) {
-		jsonObjMetaInfos = EncodeCompiler.compile(clazz);
+		serializerMetaInfos = EncodeCompiler.compile(clazz);
 	}
 
 	@Override
 	public void convertTo(JsonStringWriter writer, Object obj)
 			throws IOException {
 		writer.append(OBJ_PRE);
-		for(JsonObjMetaInfo metaInfo : jsonObjMetaInfos){
+		for(SerializerMetaInfo metaInfo : serializerMetaInfos){
 			writer.write(metaInfo.getPropertyName());
 			metaInfo.toJson(obj, writer);
 		}

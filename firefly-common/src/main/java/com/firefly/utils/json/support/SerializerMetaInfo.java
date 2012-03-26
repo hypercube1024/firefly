@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 
 import com.firefly.utils.json.Serializer;
 
-public class JsonObjMetaInfo {
+public class SerializerMetaInfo {
 	private char[] propertyName;
 	private Serializer serializer;
 	private Method method;

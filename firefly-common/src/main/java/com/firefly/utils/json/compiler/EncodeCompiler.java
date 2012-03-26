@@ -8,15 +8,15 @@ import java.util.List;
 
 import com.firefly.utils.json.annotation.Transient;
 import com.firefly.utils.json.serializer.StateMachine;
-import com.firefly.utils.json.support.JsonObjMetaInfo;
+import com.firefly.utils.json.support.SerializerMetaInfo;
 
 public class EncodeCompiler {
 	
-	private static final JsonObjMetaInfo[] EMPTY_ARRAY = new JsonObjMetaInfo[0];
+	private static final SerializerMetaInfo[] EMPTY_ARRAY = new SerializerMetaInfo[0];
 	
-	public static JsonObjMetaInfo[] compile(Class<?> clazz) {
-		JsonObjMetaInfo[] jsonObjMetaInfos = null;
-		List<JsonObjMetaInfo> fieldList = new ArrayList<JsonObjMetaInfo>();
+	public static SerializerMetaInfo[] compile(Class<?> clazz) {
+		SerializerMetaInfo[] serializerMetaInfo = null;
+		List<SerializerMetaInfo> fieldList = new ArrayList<SerializerMetaInfo>();
 		
 		boolean first = true;
 		for (Method method : clazz.getMethods()) {
@@ -63,17 +63,17 @@ public class EncodeCompiler {
 				continue;
 
 			Class<?> fieldClazz = method.getReturnType();
-			JsonObjMetaInfo fieldJsonObjMetaInfo = new JsonObjMetaInfo();
-			fieldJsonObjMetaInfo.setPropertyName(propertyName, first);
-			fieldJsonObjMetaInfo.setMethod(method);
+			SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
+			fieldMetaInfo.setPropertyName(propertyName, first);
+			fieldMetaInfo.setMethod(method);
 			
-			fieldJsonObjMetaInfo.setSerializer(StateMachine.getSerializerInCompiling(fieldClazz));
-			fieldList.add(fieldJsonObjMetaInfo);
+			fieldMetaInfo.setSerializer(StateMachine.getSerializerInCompiling(fieldClazz));
+			fieldList.add(fieldMetaInfo);
 			first = false;
 		}
 		
-		jsonObjMetaInfos = fieldList.toArray(EMPTY_ARRAY);
-		return jsonObjMetaInfos;
+		serializerMetaInfo = fieldList.toArray(EMPTY_ARRAY);
+		return serializerMetaInfo;
 	}
 
 }

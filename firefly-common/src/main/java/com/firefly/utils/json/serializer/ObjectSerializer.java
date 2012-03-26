@@ -7,15 +7,15 @@ import java.io.IOException;
 
 import com.firefly.utils.json.Serializer;
 import com.firefly.utils.json.compiler.EncodeCompiler;
-import com.firefly.utils.json.support.JsonObjMetaInfo;
+import com.firefly.utils.json.support.SerializerMetaInfo;
 import com.firefly.utils.json.support.JsonStringWriter;
 
 public class ObjectSerializer implements Serializer {
 	
-	private JsonObjMetaInfo[] jsonObjMetaInfos;
+	private SerializerMetaInfo[] serializerMetaInfos;
 	
 	public ObjectSerializer(Class<?> clazz) {
-		jsonObjMetaInfos = EncodeCompiler.compile(clazz);
+		serializerMetaInfos = EncodeCompiler.compile(clazz);
 	}
 
 	@Override
@@ -27,7 +27,7 @@ public class ObjectSerializer implements Serializer {
 		
 		writer.pushRef(obj);
 		writer.append(OBJ_PRE);
-		for(JsonObjMetaInfo metaInfo : jsonObjMetaInfos){
+		for(SerializerMetaInfo metaInfo : serializerMetaInfos){
 			writer.write(metaInfo.getPropertyName());
 			metaInfo.toJson(obj, writer);
 		}
