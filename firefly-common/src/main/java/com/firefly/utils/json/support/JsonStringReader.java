@@ -11,7 +11,7 @@ public class JsonStringReader {
 	private int mark = 0;
 
 	public JsonStringReader(String str) {
-		chars = str.trim().toCharArray();
+		chars = str.toCharArray();
 		limit = chars.length;
 	}
 	

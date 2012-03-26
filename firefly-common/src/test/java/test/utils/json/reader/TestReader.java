@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.*;
 public class TestReader {
 	@Test
 	public void testReadAndSkipBlank() {
-		JsonStringReader reader = new JsonStringReader("  tt");
+		JsonStringReader reader = new JsonStringReader("  tt".trim());
 		Assert.assertThat(reader.readAndSkipBlank(), is('t'));
 		Assert.assertThat(reader.position(), is(1));
 	}
@@ -182,7 +182,7 @@ public class TestReader {
 	
 	@Test
 	public void testIsNull2() {
-		JsonStringReader reader = new JsonStringReader("  null ");
+		JsonStringReader reader = new JsonStringReader("  null ".trim());
 		Assert.assertThat(reader.isNull(), is(true));
 	}
 	
