@@ -144,6 +144,42 @@ public class TestReader {
 		Assert.assertThat(ch, is('}'));
 	}
 	
+	@Test
+	public void testReadString3() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": null,  \"testField2\": \"d\\nddfd\"}");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		String s = reader.readString();
+		Assert.assertThat(s, nullValue());
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is(','));
+	}
+	
+	@Test
+	public void testIsNull() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": null ,  \"testField2\": \"d\\nddfd\"}");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.isNull(), is(true));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is(','));
+		
+		ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField2"));
+		Assert.assertThat(reader.isColon(), is(true));
+		String s = reader.readString();
+		System.out.println(s);
+		Assert.assertThat(s, is("d\nddfd"));
+		ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
 	public static void main(String[] args) {
 //		char[] str = "0123456789".toCharArray();
 //		for (int i = 0; i < str.length; i++) {

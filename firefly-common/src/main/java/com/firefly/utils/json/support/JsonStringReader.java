@@ -205,7 +205,21 @@ public class JsonStringReader {
 		}
 	}
 	
+	public boolean isNull() {
+		mark();
+		char ch = readAndSkipBlank();
+		if(ch == 'n' && 'u' == read() && 'l' == read() && 'l' == read()) {
+			return true;
+		} else {
+			reset();
+			return false;
+		}
+	}
+	
 	public String readString() {
+		if(isNull())
+			return null;
+		
 		if(!isString())
 			throw new JsonException("read string error");
 		
