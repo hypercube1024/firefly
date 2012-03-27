@@ -17,9 +17,23 @@
 <body>
 ${hello}
 <div>
-<form action="add" method="post">
-hello: <input type="text" name="hello"></input>
-</form>
+<div>
+	<form action="add" method="POST">
+	<div>
+		书名：<input type="text" name="title"></input>
+	</div>
+	<div>
+		价格：<input type="text" name="price"></input>
+	</div>
+	<div>
+		内容：<textarea name="content"></textarea>
+	</div>
+	<div>
+		<input type="submit" value="提交"></input>
+	</div>
+	</form>
+</div>
+
 </div>
 <!-- #include /index_1.html -->
 <!-- #include /index_2.html -->

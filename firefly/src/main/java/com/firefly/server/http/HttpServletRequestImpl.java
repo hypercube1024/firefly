@@ -50,6 +50,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
 	private String characterEncoding, requestedSessionId;
 	private boolean requestedSessionIdFromCookie, requestedSessionIdFromURL;
+	private boolean commit = false;
 	private HttpSession httpSession;
 	private Map<String, List<String>> parameterMap = new HashMap<String, List<String>>();
 	private Map<String, Object> attributeMap = new HashMap<String, Object>();
@@ -777,5 +778,15 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	protected void addLocale(Locale locale) {
 		locales.add(locale);
+	}
+	
+	/**
+	 * 提交到handler处理
+	 */
+	void commit() {
+		if(!commit) {
+			session.fireReceiveMessage(this);
+			commit = true;
+		}
 	}
 }

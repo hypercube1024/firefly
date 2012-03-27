@@ -27,9 +27,12 @@ public class IndexController {
 		return "/index.html";
 	}
 	
-	@RequestMapping(value = "/add", method = HttpMethod.POST)
+	@RequestMapping(value = "/add", method = HttpMethod.POST, view = View.TEXT)
 	public String add(HttpServletRequest request, HttpServletResponse response) {
-		return "/index.html";
+		System.out.println("===========================================================");
+		System.out.println("cdcdc");
+		System.out.println("===========================================================");
+		return request.getParameter("content");
 	}
 
 	@RequestMapping(value = "/login")
