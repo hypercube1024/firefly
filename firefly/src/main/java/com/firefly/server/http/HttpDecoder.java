@@ -1,5 +1,6 @@
 package com.firefly.server.http;
 
+import java.io.IOException;
 import java.io.PipedOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -252,7 +253,12 @@ public class HttpDecoder implements Decoder {
 				req.offset += buf.remaining();
 				byte[] data = new byte[buf.remaining()];
 				buf.get(data);
-				req.pipedOutputStream.write(data);
+				try {
+					req.pipedOutputStream.write(data);
+				} catch(IOException e) {
+					log.error("receive body data error", e);
+					req.pipedOutputStream.close();
+				}
 
 				if (req.offset >= contentLength) {
 					req.pipedOutputStream.close();
