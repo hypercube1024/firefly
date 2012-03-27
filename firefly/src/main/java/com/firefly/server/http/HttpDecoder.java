@@ -88,12 +88,12 @@ public class HttpDecoder implements Decoder {
 				HttpServletRequestImpl req, int httpStatus, String content) {
 			finish(session, req);
 			req.response.scheduleSendError(httpStatus, content);
-			req.commit();
+			req.commitAndAllowDuplicate();
 		}
 
 		protected void response(Session session, HttpServletRequestImpl req) {
 			finish(session, req);
-			req.commit();
+			req.commitAndAllowDuplicate();
 		}
 
 		abstract protected boolean decode(ByteBuffer buf, Session session,
@@ -244,10 +244,11 @@ public class HttpDecoder implements Decoder {
 					return true;
 				}
 
-				req.commit();
 				if (req.pipedOutputStream == null)
-					req.pipedOutputStream = new PipedOutputStream(
-							req.pipedInputStream);
+					req.pipedOutputStream = new PipedOutputStream(req.pipedInputStream);
+				
+				req.commit();
+				
 				req.offset += buf.remaining();
 				byte[] data = new byte[buf.remaining()];
 				buf.get(data);

@@ -18,6 +18,7 @@ public class IndexController {
 
 	@RequestMapping(value = "/index")
 	public String index(HttpServletRequest request, HttpServletResponse response) {
+		System.out.println("into /index");
 		HttpSession session = request.getSession();
 		request.setAttribute("hello", session.getAttribute("name"));
 		response.addCookie(new Cookie("test", "cookie_value"));
@@ -29,10 +30,14 @@ public class IndexController {
 	
 	@RequestMapping(value = "/add", method = HttpMethod.POST, view = View.TEXT)
 	public String add(HttpServletRequest request, HttpServletResponse response) {
-		System.out.println("===========================================================");
-		System.out.println("cdcdc");
-		System.out.println("===========================================================");
+		System.out.println("into /add");
 		return request.getParameter("content");
+	}
+	
+	@RequestMapping(value = "/add2", method = HttpMethod.POST, view = View.TEXT)
+	public String add2(HttpServletRequest request, HttpServletResponse response) {
+		System.out.println("into /add2");
+		return "test add 2";
 	}
 
 	@RequestMapping(value = "/login")

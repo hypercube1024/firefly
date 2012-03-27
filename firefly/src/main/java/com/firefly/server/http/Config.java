@@ -205,7 +205,7 @@ public class Config {
 	}
 
 	public void setHandlerSize(int handlerQueueSize) {
-		this.handlerSize = handlerQueueSize;
+		this.handlerSize = handlerQueueSize > 1 ? handlerQueueSize : 1;
 	}
 
 	public String getContextPath() {

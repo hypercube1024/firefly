@@ -24,6 +24,7 @@ public abstract class RequestHandler {
 
 	protected void doRequest(HttpServletRequestImpl request, int id) throws IOException {
 		long start = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+	
 		if (request.response.system) {
 			request.response.outSystemData();
 		} else {
@@ -32,6 +33,8 @@ public abstract class RequestHandler {
 			else
 				fileController.dispatcher(request, request.response);
 		}
+		request.releaseInputStreamData();
+		
 		long end = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
 		access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 
 				request.session.getSessionId(), 
