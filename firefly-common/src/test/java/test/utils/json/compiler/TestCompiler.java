@@ -2,9 +2,6 @@ package test.utils.json.compiler;
 
 import static org.hamcrest.Matchers.*;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,13 +34,6 @@ public class TestCompiler {
 	}
 	
 	public static void main(String[] args) {
-		ParserMetaInfo[] p = DecodeCompiler.compile(Group.class);
-		System.out.println(p[3].getActualTypeArguments()[0]);
-		System.out.println(User.class);
 		
-		
-//		Class<?>[] clazz = (Class<?>[])paramType[0].getActualTypeArguments();
-//		System.out.println(clazz.length);
-//		System.out.println(clazz[0]);
 	}
 }

@@ -269,27 +269,5 @@ public class TestReader {
 		char ch = reader.readAndSkipBlank();
 		Assert.assertThat(ch, is('}'));
 	}
-	
-	public static void main(String[] args) {
-//		char[] str = "0123456789".toCharArray();
-//		for (int i = 0; i < str.length; i++) {
-//			System.out.println(str[i] - '0');
-//		}
-		
-//		char[] str = "833".toCharArray();
-//		int value = 0;
-//		for (int i = 0; i < str.length; i++) {
-//			value = (value << 3) + (value << 1) + (str[i] - '0');
-//			System.out.println(value);
-//		}
-//		System.out.println(value);
-//		
-//		char c = '-';
-//		System.out.println("char is " + c);
-//		
-//		String ss = "{\"dsf\" : \"dsfsfs\\\"ad\"}";
-//		System.out.println(ss);
-		
-		
-	}
+
 }
