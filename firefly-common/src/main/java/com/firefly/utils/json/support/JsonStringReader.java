@@ -15,18 +15,6 @@ public class JsonStringReader {
 		limit = chars.length;
 	}
 	
-	public boolean isEndFlag(char ch) {
-		switch (ch) {
-		case ',':
-		case '}':
-		case ']':
-		case ' ':
-		case ':':
-			return true;
-		}
-		return false;
-	}
-	
 	public int getMark() {
 		return mark;
 	}
@@ -41,6 +29,26 @@ public class JsonStringReader {
 	
 	public char get(int index) {
 		return chars[index];
+	}
+	
+	public int position() {
+		return pos;
+	}
+
+	public int limit() {
+		return limit;
+	}
+	
+	public boolean isEndFlag(char ch) {
+		switch (ch) {
+		case ',':
+		case '}':
+		case ']':
+		case ' ':
+		case ':':
+			return true;
+		}
+		return false;
 	}
 	
 	public boolean isString() {
@@ -67,13 +75,24 @@ public class JsonStringReader {
 		char c = readAndSkipBlank();
 		return c == ',';
 	}
-
-	public int position() {
-		return pos;
-	}
-
-	public int limit() {
-		return limit;
+	
+	public boolean isNull() {
+		char ch = readAndSkipBlank();
+		if(pos + 3 > limit)
+			return false;
+		
+		if(ch == 'n' && 'u' == read() && 'l' == read() && 'l' == read()) {
+			if(pos >= limit)
+				return true;
+			
+			ch = readAndSkipBlank();
+			if(isEndFlag(ch)) {
+				pos--;
+				return true;
+			} else
+				return false;
+		} else
+			return false;
 	}
 
 	public char read() {
@@ -243,25 +262,6 @@ public class JsonStringReader {
 			System.arraycopy(chars, mark, field, 0, fieldLen);
 			return field;
 		}
-	}
-	
-	public boolean isNull() {
-		char ch = readAndSkipBlank();
-		if(pos + 3 > limit)
-			return false;
-		
-		if(ch == 'n' && 'u' == read() && 'l' == read() && 'l' == read()) {
-			if(pos >= limit)
-				return true;
-			
-			ch = readAndSkipBlank();
-			if(isEndFlag(ch)) {
-				pos--;
-				return true;
-			} else
-				return false;
-		} else
-			return false;
 	}
 	
 	public String readString() {
