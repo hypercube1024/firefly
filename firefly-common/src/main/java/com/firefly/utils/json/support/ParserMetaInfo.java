@@ -4,18 +4,30 @@ import java.lang.reflect.Method;
 
 import com.firefly.utils.json.Parser;
 
-public class ParserMetaInfo {
-	private Class<?> clazz;
+public class ParserMetaInfo implements Comparable<ParserMetaInfo> {
+	private static final Class<?>[] EMPTY = new Class<?>[0];
+	
+	private Class<?>[] actualTypeArguments = EMPTY;
+	private Class<?> type;
 	private Parser parser;
 	private Method method;
-	private String propertyName;
+	private char[] propertyName;
+	private String propertyNameString;
 
-	public Class<?> getClazz() {
-		return clazz;
+	public Class<?>[] getActualTypeArguments() {
+		return actualTypeArguments;
 	}
 
-	public void setClazz(Class<?> clazz) {
-		this.clazz = clazz;
+	public void setActualTypeArguments(Class<?>[] actualTypeArguments) {
+		this.actualTypeArguments = actualTypeArguments;
+	}
+
+	public Class<?> getType() {
+		return type;
+	}
+
+	public void setType(Class<?> type) {
+		this.type = type;
 	}
 
 	public Parser getParser() {
@@ -34,12 +46,22 @@ public class ParserMetaInfo {
 		this.method = method;
 	}
 
-	public String getPropertyName() {
+	public String getPropertyNameString() {
+		return propertyNameString;
+	}
+
+	public void setPropertyNameString(String propertyNameString) {
+		this.propertyNameString = propertyNameString;
+		propertyName = propertyNameString.toCharArray();
+	}
+
+	public char[] getPropertyName() {
 		return propertyName;
 	}
 
-	public void setPropertyName(String propertyName) {
-		this.propertyName = propertyName;
+	@Override
+	public int compareTo(ParserMetaInfo o) {
+		return propertyNameString.compareTo(o.getPropertyNameString());
 	}
 
 }

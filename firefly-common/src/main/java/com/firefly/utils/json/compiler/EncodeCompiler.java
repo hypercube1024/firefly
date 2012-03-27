@@ -16,7 +16,7 @@ public class EncodeCompiler {
 	private static final SerializerMetaInfo[] EMPTY_ARRAY = new SerializerMetaInfo[0];
 	
 	public static SerializerMetaInfo[] compile(Class<?> clazz) {
-		SerializerMetaInfo[] serializerMetaInfo = null;
+		SerializerMetaInfo[] serializerMetaInfos = null;
 		List<SerializerMetaInfo> fieldList = new ArrayList<SerializerMetaInfo>();
 		
 //		boolean first = true;
@@ -72,12 +72,12 @@ public class EncodeCompiler {
 			fieldList.add(fieldMetaInfo);
 		}
 		
-		serializerMetaInfo = fieldList.toArray(EMPTY_ARRAY);
-		if(serializerMetaInfo.length > 0) {
-			Arrays.sort(serializerMetaInfo);
-			serializerMetaInfo[0].setPropertyName(serializerMetaInfo[0].getPropertyNameString(), true);
+		serializerMetaInfos = fieldList.toArray(EMPTY_ARRAY);
+		if(serializerMetaInfos.length > 0) {
+			Arrays.sort(serializerMetaInfos);
+			serializerMetaInfos[0].setPropertyName(serializerMetaInfos[0].getPropertyNameString(), true);
 		}
-		return serializerMetaInfo;
+		return serializerMetaInfos;
 	}
 
 }
