@@ -810,23 +810,5 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 			getInputStream().close();
 		}
 	}
-	
-//	void receive(ByteBuffer buf) throws IOException {
-//		try {
-//			if(!inputStream) {
-//				System.out.println("get data 0");
-//				byte[] data = new byte[buf.remaining()];
-//				buf.get(data);
-//				pipedOutputStream.write(data);
-//				System.out.println("get data 1");
-//			} else {
-//				buf.flip();
-//				System.out.println(buf.hasRemaining());
-//			}
-//		} catch(IOException e) {
-//			log.warn("Data not received");
-//			pipedOutputStream.close();
-//		}
-//	}
 
 }
