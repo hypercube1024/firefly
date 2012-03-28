@@ -26,7 +26,6 @@ public class FileDispatcherController implements DispatcherController {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	public static final String CRLF = "\r\n";
 	private static Set<String> ALLOW_METHODS = new HashSet<String>(Arrays.asList("GET", "POST", "HEAD"));
-	private static final String BASE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(416,
 		"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
 	
@@ -94,7 +93,7 @@ public class FileDispatcherController implements DispatcherController {
 				String byteRangeSet = rangesSpecifier[1].trim();
 				String[] byteRangeSets = StringUtils.split(byteRangeSet, ',');
 				if (byteRangeSets.length > 1) { // multipart/byteranges
-					String boundary = "ff10" + getRandomString(13);
+					String boundary = "ff10" + RandomUtils.randomString(13); 
 					if (byteRangeSets.length > config.getMaxRangeNum()) {
 						log.error("multipart range more than {}",
 								config.getMaxRangeNum());
@@ -276,15 +275,6 @@ public class FileDispatcherController implements DispatcherController {
 				+ contentType + CRLF + "Content-range: bytes " + firstBytePos
 				+ "-" + lastBytePos + "/" + fileLen + CRLF + CRLF;
 		return ret;
-	}
-
-	public static String getRandomString(int length) { // length表示生成字符串的长度
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < length; i++) {
-			int number = (int) RandomUtils.random(0, BASE.length() - 1);
-			sb.append(BASE.charAt(number));
-		}
-		return sb.toString();
 	}
 
 }
