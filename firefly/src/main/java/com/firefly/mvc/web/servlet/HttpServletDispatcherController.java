@@ -47,14 +47,18 @@ public class HttpServletDispatcherController implements DispatcherController {
 		}
 		response.setCharacterEncoding(encoding);
 
-		String uri = request.getRequestURI();
-		String prePath = request.getContextPath() + request.getServletPath();
-		String invokeUri = uri.substring(prePath.length());
-		String key = request.getMethod() + "@" + invokeUri;
-		log.debug("uri map [{}]", key);
+		StringBuilder uriBuilder = new StringBuilder(request.getRequestURI());
+		uriBuilder.delete(0, request.getContextPath().length() + request.getServletPath().length());
+		if(uriBuilder.length() <= 0) {
+			controllerNotFoundResponse(request, response);
+			return true;
+		}
+		String invokeUri = uriBuilder.toString();
+		StringBuilder key = new StringBuilder(invokeUri.length() + 16);
+		key.append(request.getMethod()).append('@').append(invokeUri);
 		
 		// 获取controller
-		MvcMetaInfo mvcMetaInfo = webContext.getBean(key);
+		MvcMetaInfo mvcMetaInfo = webContext.getBean(key.toString());
 		if (mvcMetaInfo == null) {
 			controllerNotFoundResponse(request, response);
 			return true;
