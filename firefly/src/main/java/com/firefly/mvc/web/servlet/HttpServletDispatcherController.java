@@ -27,23 +27,18 @@ public class HttpServletDispatcherController implements DispatcherController {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private WebContext webContext;
-
-	private HttpServletDispatcherController() {
-
+	protected WebContext webContext;
+	
+	public HttpServletDispatcherController(String initParam, ServletContext servletContext) {
+		webContext = new AnnotationWebContext(initParam, servletContext);
 	}
-
-	private static class Holder {
-		private static HttpServletDispatcherController instance = new HttpServletDispatcherController();
-	}
-
-	public static HttpServletDispatcherController getInstance() {
-		return Holder.instance;
+	
+	public HttpServletDispatcherController(WebContext webContext) {
+		this.webContext = webContext;
 	}
 
 	@Override
-	public void dispatcher(HttpServletRequest request,
-			HttpServletResponse response) {
+	public boolean dispatcher(HttpServletRequest request, HttpServletResponse response) {
 		String encoding = webContext.getEncoding();
 		try {
 			request.setCharacterEncoding(encoding);
@@ -63,82 +58,70 @@ public class HttpServletDispatcherController implements DispatcherController {
 
 		log.debug("uri map [{}]", key);
 		MvcMetaInfo mvcMetaInfo = webContext.getBean(key);
-		if (mvcMetaInfo != null) {
-			Object ret = null;
-			Object beforeRet = null; // 前置拦截器的返回值
-			MvcMetaInfo lastBefore = null; // 最后得到的前置拦截器
-			Object afterRet = null; // 后置拦截器的返回值
-			MvcMetaInfo lastAfter = null; // 最后得到的后置拦截器
+		if (mvcMetaInfo == null) {
+			controllerNotFoundResponse(request, response);
+			return true;
+		}
+		
+		Object ret = null;
+		Object beforeRet = null; // 前置拦截器的返回值
+		MvcMetaInfo lastBefore = null; // 最后得到的前置拦截器
+		Object afterRet = null; // 后置拦截器的返回值
+		MvcMetaInfo lastAfter = null; // 最后得到的后置拦截器
 
-			// 前置拦截栈调用
-			if (beforeSet != null) {
-				for (MvcMetaInfo before : beforeSet) {
-					Object[] beforeP = getParams(request, response, before,
-							null);
-					beforeRet = before.invoke(beforeP);
-					if (beforeRet != null) {
-						lastBefore = before;
+		// 前置拦截栈调用
+		if (beforeSet != null) {
+			for (MvcMetaInfo before : beforeSet) {
+				Object[] beforeP = getParams(request, response, before,
+						null);
+				beforeRet = before.invoke(beforeP);
+				if (beforeRet != null) {
+					lastBefore = before;
+					break;
+				}
+			}
+		}
+
+		if (beforeRet == null) {
+			// controller调用
+			Object[] p = getParams(request, response, mvcMetaInfo, null);
+			ret = mvcMetaInfo.invoke(p);
+
+			// 后置拦截栈调用
+			if (afterSet != null) {
+				for (MvcMetaInfo after : afterSet) {
+					Object[] afterP = getParams(request, response, after,
+							ret);
+					afterRet = after.invoke(afterP);
+					if (afterRet != null) {
+						lastAfter = after;
 						break;
 					}
 				}
 			}
-
-			if (beforeRet == null) {
-				// controller调用
-				Object[] p = getParams(request, response, mvcMetaInfo, null);
-				ret = mvcMetaInfo.invoke(p);
-
-				// 后置拦截栈调用
-				if (afterSet != null) {
-					for (MvcMetaInfo after : afterSet) {
-						Object[] afterP = getParams(request, response, after,
-								ret);
-						afterRet = after.invoke(afterP);
-						if (afterRet != null) {
-							lastAfter = after;
-							break;
-						}
-					}
-				}
-			}
-
-			// 视图渲染
-			try {
-				if (afterRet != null) {
-					lastAfter.getViewHandle().render(request, response,
-							afterRet);
-				} else if (beforeRet != null) {
-					lastBefore.getViewHandle().render(request, response,
-							beforeRet);
-				} else {
-					mvcMetaInfo.getViewHandle().render(request, response, ret);
-				}
-			} catch (Throwable t) {
-				log.error("dispatcher error", t);
-			}
-		} else {
-			String msg = request.getRequestURI() + " not register";
-			SystemHtmlPage.responseSystemPage(request, response,
-					webContext.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
-					msg);
 		}
-	}
 
-	public HttpServletDispatcherController init(String initParam,
-			ServletContext servletContext) {
-		webContext = new AnnotationWebContext(initParam, servletContext);
-		return this;
+		// 视图渲染
+		try {
+			if (afterRet != null) {
+				lastAfter.getViewHandle().render(request, response,
+						afterRet);
+			} else if (beforeRet != null) {
+				lastBefore.getViewHandle().render(request, response,
+						beforeRet);
+			} else {
+				mvcMetaInfo.getViewHandle().render(request, response, ret);
+			}
+		} catch (Throwable t) {
+			log.error("dispatcher error", t);
+		}
+		
+		return false;
 	}
-
-	/**
-	 * 用于http服务器
-	 * 
-	 * @param webContext
-	 * @return
-	 */
-	public HttpServletDispatcherController init(WebContext webContext) {
-		this.webContext = webContext;
-		return this;
+	
+	protected void controllerNotFoundResponse(HttpServletRequest request, HttpServletResponse response) {
+		String msg = request.getRequestURI() + " not register";
+		SystemHtmlPage.responseSystemPage(request, response, getEncoding(), HttpServletResponse.SC_NOT_FOUND, msg);
 	}
 
 	/**
@@ -190,4 +173,7 @@ public class HttpServletDispatcherController implements DispatcherController {
 		return p;
 	}
 
+	protected String getEncoding() {
+		return webContext.getEncoding();
+	}
 }

@@ -8,6 +8,7 @@ import com.firefly.server.http.Config;
 import com.firefly.server.http.HttpDecoder;
 import com.firefly.server.http.HttpEncoder;
 import com.firefly.server.http.HttpHandler;
+import com.firefly.server.http.ServerHttpServletDispatcherController;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -33,15 +34,10 @@ public class ServerBootstrap {
 		log.info("http handler num [{}]", config.getHandlerSize());
 
 		long start = System.currentTimeMillis();
-		AnnotationWebContext context = new AnnotationWebContext(
-				config.getConfigFileName(), config.getServerHome());
-		HttpServletDispatcherController controller = HttpServletDispatcherController
-				.getInstance().init(context);
-
+		AnnotationWebContext context = new AnnotationWebContext(config.getConfigFileName(), config.getServerHome());
+		HttpServletDispatcherController controller = new ServerHttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
-
-		Server server = new TcpServer(new HttpDecoder(config),
-				new HttpEncoder(), new HttpHandler(controller, config));
+		Server server = new TcpServer(new HttpDecoder(config), new HttpEncoder(), new HttpHandler(controller, config));
 		server.start(config.getHost(), config.getPort());
 		long end = System.currentTimeMillis();
 		log.info("firefly startup in {} ms", (end - start));

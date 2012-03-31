@@ -36,25 +36,24 @@ public class FileDispatcherController implements DispatcherController {
 	}
 
 	@Override
-	public void dispatcher(HttpServletRequest request,
-			HttpServletResponse response) {
+	public boolean dispatcher(HttpServletRequest request, HttpServletResponse response) {
 		if(!ALLOW_METHODS.contains(request.getMethod())) {
 			response.setHeader("Allow", "GET,POST,HEAD");
 			SystemHtmlPage.responseSystemPage(request, response, config.getEncoding(), 
 					HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only support GET, POST or HEAD method");
-			return;
+			return true;
 		}
 		
 		String path = config.getFileAccessFilter().doFilter(request, response);
 		if (VerifyUtils.isEmpty(path))
-			return;
+			return true;
 
 		File file = new File(config.getServerHome(), path);
 		if (!file.exists() || file.isDirectory()) {
 			SystemHtmlPage.responseSystemPage(request, response,
 					config.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
-			return;
+			return true;
 		}
 
 		String fileSuffix = getFileSuffix(file.getName()).toLowerCase();
@@ -87,7 +86,7 @@ public class FileDispatcherController implements DispatcherController {
 				if (rangesSpecifier.length != 2) {
 					response.setStatus(416);
 					out.write(RANGE_ERROR_HTML.getBytes(config.getEncoding()));
-					return;
+					return false;
 				}
 
 				String byteRangeSet = rangesSpecifier[1].trim();
@@ -100,7 +99,7 @@ public class FileDispatcherController implements DispatcherController {
 						response.setStatus(416);
 						out.write(RANGE_ERROR_HTML.getBytes(config
 								.getEncoding()));
-						return;
+						return false;
 					}
 					// multipart output
 					List<MultipartByteranges> tmpByteRangeSets = new ArrayList<MultipartByteranges>(
@@ -169,7 +168,7 @@ public class FileDispatcherController implements DispatcherController {
 						response.setStatus(416);
 						out.write(RANGE_ERROR_HTML.getBytes(config
 								.getEncoding()));
-						return;
+						return false;
 					}
 				} else {
 					String tmp = byteRangeSets[0].trim();
@@ -180,7 +179,7 @@ public class FileDispatcherController implements DispatcherController {
 							response.setStatus(416);
 							out.write(RANGE_ERROR_HTML.getBytes(config
 									.getEncoding()));
-							return;
+							return false;
 						}
 
 						if (tmp.charAt(0) == '-') {
@@ -195,7 +194,7 @@ public class FileDispatcherController implements DispatcherController {
 							response.setStatus(416);
 							out.write(RANGE_ERROR_HTML.getBytes(config
 									.getEncoding()));
-							return;
+							return false;
 						}
 					} else {
 						long firstBytePos = Long.parseLong(byteRange[0].trim());
@@ -205,7 +204,7 @@ public class FileDispatcherController implements DispatcherController {
 							response.setStatus(416);
 							out.write(RANGE_ERROR_HTML.getBytes(config
 									.getEncoding()));
-							return;
+							return false;
 						}
 
 						if (lastBytePos >= fileLen)
@@ -229,6 +228,7 @@ public class FileDispatcherController implements DispatcherController {
 							"static file output stream close error");
 				}
 		}
+		return false;
 	}
 
 	private void writePartialFile(HttpServletRequest request,

@@ -1,7 +1,10 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
+import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.net.Session;
 import com.firefly.utils.log.Log;
@@ -10,16 +13,11 @@ import com.firefly.utils.log.LogFactory;
 public abstract class RequestHandler {
 	
 	private static Log access = LogFactory.getInstance().getLog("firefly-access");
-	private String appPrefix;
-	private HttpServletDispatcherController servletController;
-	private FileDispatcherController fileController;
+	private List<DispatcherController> controllers = new LinkedList<DispatcherController>();
 	
-	public RequestHandler(String appPrefix,
-			HttpServletDispatcherController servletController,
-			FileDispatcherController fileController) {
-		this.appPrefix = appPrefix;
-		this.servletController = servletController;
-		this.fileController = fileController;
+	public RequestHandler(HttpServletDispatcherController servletController, FileDispatcherController fileController) {
+		controllers.add(servletController);
+		controllers.add(fileController);
 	}
 
 	protected void doRequest(HttpServletRequestImpl request, int id) throws IOException {
@@ -28,10 +26,10 @@ public abstract class RequestHandler {
 		if (request.response.system) {
 			request.response.outSystemData();
 		} else {
-			if (isServlet(request.getRequestURI()))
-				servletController.dispatcher(request, request.response);
-			else
-				fileController.dispatcher(request, request.response);
+			for(DispatcherController controller : controllers) {
+				if(!controller.dispatcher(request, request.response))
+					break;
+			}
 		}
 		request.releaseInputStreamData();
 		
@@ -48,24 +46,6 @@ public abstract class RequestHandler {
 				request.session.getReadBytes(),
 				request.session.getWrittenBytes(),
 				(end - start));
-	}
-	
-	private boolean isServlet(String URI) {
-		if (URI.length() < 2)
-			return false;
-
-		int j = URI.length();
-		for (int i = 1; i < URI.length(); i++) {
-			if (URI.charAt(i) == '/') {
-				j = i;
-				break;
-			}
-		}
-
-		if (j == URI.length())
-			return appPrefix.equals(URI);
-		else
-			return appPrefix.equals(URI.substring(0, j));
 	}
 	
 	abstract public void doRequest(Session session, HttpServletRequestImpl request) throws IOException;

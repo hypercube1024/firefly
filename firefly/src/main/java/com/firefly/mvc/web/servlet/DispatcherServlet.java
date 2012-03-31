@@ -26,7 +26,6 @@ public class DispatcherServlet extends HttpServlet {
 	public void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		processDispatcher(request, response);
-
 	}
 
 	@Override
@@ -58,8 +57,7 @@ public class DispatcherServlet extends HttpServlet {
 		String initParam = this.getInitParameter(INIT_PARAM);
 		log.info("initParam [{}]", initParam);
 		long start = System.currentTimeMillis();
-		dispatcherController = HttpServletDispatcherController.getInstance()
-				.init(initParam, getServletContext());
+		dispatcherController = new HttpServletDispatcherController(initParam, getServletContext());
 		long end = System.currentTimeMillis();
 		log.info("firefly startup in {} ms", (end - start));
 	}

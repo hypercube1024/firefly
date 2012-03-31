@@ -14,10 +14,8 @@ public class QueueRequestHandler extends RequestHandler {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private HttpQueueHandler[] queues;
 
-	public QueueRequestHandler(String appPrefix,
-			HttpServletDispatcherController servletController,
-			FileDispatcherController fileController, int size) {
-		super(appPrefix, servletController, fileController);
+	public QueueRequestHandler(HttpServletDispatcherController servletController, FileDispatcherController fileController, int size) {
+		super(servletController, fileController);
 		queues = new HttpQueueHandler[size];
 		for (int i = 0; i < queues.length; i++) {
 			queues[i] = new HttpQueueHandler(i);

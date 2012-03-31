@@ -13,15 +13,13 @@ public class HttpHandler implements Handler {
 	private RequestHandler requestHandler;
 	private HttpConnectionListener httpConnectionListener;
 
-	public HttpHandler(HttpServletDispatcherController servletController,
-			Config config) {
+	public HttpHandler(HttpServletDispatcherController servletController, Config config) {
 		httpConnectionListener = config.getHttpConnectionListener();
 		String appPrefix = config.getContextPath() + config.getServletPath();
 		if (VerifyUtils.isEmpty(appPrefix))
-			throw new HttpServerException(
-					"context path and servlet path can not be null");
+			throw new HttpServerException("context path and servlet path can not be null");
 
-		requestHandler = new QueueRequestHandler(appPrefix, servletController, new FileDispatcherController(config), config.getHandlerSize());
+		requestHandler = new QueueRequestHandler(servletController, new FileDispatcherController(config), config.getHandlerSize());
 	}
 
 	@Override
