@@ -51,17 +51,20 @@ public class HttpServletDispatcherController implements DispatcherController {
 		String prePath = request.getContextPath() + request.getServletPath();
 		String invokeUri = uri.substring(prePath.length());
 		String key = request.getMethod() + "@" + invokeUri;
-		String beforeIntercept = "b#" + invokeUri;
-		String afterIntercept = "a#" + invokeUri;
-		Set<MvcMetaInfo> beforeSet = webContext.getBean(beforeIntercept);
-		Set<MvcMetaInfo> afterSet = webContext.getBean(afterIntercept);
-
 		log.debug("uri map [{}]", key);
+		
+		// 获取controller
 		MvcMetaInfo mvcMetaInfo = webContext.getBean(key);
 		if (mvcMetaInfo == null) {
 			controllerNotFoundResponse(request, response);
 			return true;
 		}
+		
+		// 获取拦截器
+		String beforeIntercept = "b#" + invokeUri;
+		String afterIntercept = "a#" + invokeUri;
+		Set<MvcMetaInfo> beforeSet = webContext.getBean(beforeIntercept);
+		Set<MvcMetaInfo> afterSet = webContext.getBean(afterIntercept);
 		
 		Object ret = null;
 		Object beforeRet = null; // 前置拦截器的返回值
