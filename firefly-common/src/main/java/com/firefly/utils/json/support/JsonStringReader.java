@@ -230,6 +230,72 @@ public class JsonStringReader {
 		}
 		return negative ? -value : value;
 	}
+	
+	public double readDouble() {
+		double value = 0.0;
+		mark();
+		if(isNull())
+			return value;
+		else
+			reset();
+		
+		char ch = readAndSkipBlank();
+		boolean isString = (ch == '"');
+		if(isString)
+			ch = readAndSkipBlank();
+		pos--;
+		
+		int start = pos;
+		for(;;) {
+			ch = read();
+			if(isString) {
+				if(ch == '"')
+					break;
+			} else {
+				if (isEndFlag(ch)) {
+					pos--;
+					break;
+				}
+			}
+		}
+		
+		int len = isString ? pos - start - 1 : pos - start;
+		String temp = new String(chars, start, len);
+		return Double.parseDouble(temp);
+	}
+	
+	public float readFloat() {
+		float value = 0.0F;
+		mark();
+		if(isNull())
+			return value;
+		else
+			reset();
+		
+		char ch = readAndSkipBlank();
+		boolean isString = (ch == '"');
+		if(isString)
+			ch = readAndSkipBlank();
+		pos--;
+		
+		int start = pos;
+		for(;;) {
+			ch = read();
+			if(isString) {
+				if(ch == '"')
+					break;
+			} else {
+				if (isEndFlag(ch)) {
+					pos--;
+					break;
+				}
+			}
+		}
+		
+		int len = isString ? pos - start - 1 : pos - start;
+		String temp = new String(chars, start, len);
+		return Float.parseFloat(temp);
+	}
 
 	public char[] readField(char[] chs) {
 		if(!isString())

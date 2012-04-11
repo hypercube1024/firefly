@@ -43,6 +43,55 @@ public class TestReader {
 	}
 	
 	@Test
+	public void testReadDouble() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": 3332.44 }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readDouble(), is(3332.44));
+		char ch = reader.readAndSkipBlank();
+		Assert.assertThat(ch, is('}'));
+	}
+	
+	@Test
+	public void testReadDouble2() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": -17.44320 , \"testField2\": \" -334\" }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readDouble(), is(-17.44320));
+		Assert.assertThat(reader.isComma(), is(true));
+		
+		ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField2"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readInt(), is(-334));
+		Assert.assertThat(reader.isObjectEnd(), is(true));
+	}
+	
+	@Test
+	public void testReadFloat() {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": \" -17.44320\" , \"testField2\": \" -334\" }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		char[] ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readFloat(), is(-17.44320F));
+		Assert.assertThat(reader.isComma(), is(true));
+		
+		ret = reader.readField(t1);
+		Assert.assertThat(new String(ret), is("testField2"));
+		Assert.assertThat(reader.isColon(), is(true));
+		Assert.assertThat(reader.readInt(), is(-334));
+		Assert.assertThat(reader.isObjectEnd(), is(true));
+	}
+	
+	@Test
 	public void testReadInt() {
 		JsonStringReader reader = new JsonStringReader("  { \"testField\": 333 }");
 		Assert.assertThat(reader.isObject(), is(true));
@@ -266,6 +315,23 @@ public class TestReader {
 		Assert.assertThat(reader.readBoolean(), is(false));
 		char ch = reader.readAndSkipBlank();
 		Assert.assertThat(ch, is('}'));
+	}
+	
+	public static void main(String[] args) {
+		JsonStringReader reader = new JsonStringReader("  { \"testField\": \"-3332.44\" }");
+		Assert.assertThat(reader.isObject(), is(true));
+		char[] t1 = "dsffsfsf".toCharArray();
+		reader.readField(t1);
+		System.out.println(reader.isColon());
+		System.out.println(reader.readDouble());
+		
+		reader = new JsonStringReader("  { \"testField\": \"  222.44\" }");
+		Assert.assertThat(reader.isObject(), is(true));
+		t1 = "dsffsfsf".toCharArray();
+		reader.readField(t1);
+		System.out.println(reader.isColon());
+		System.out.println(reader.readFloat());
+	
 	}
 
 }
