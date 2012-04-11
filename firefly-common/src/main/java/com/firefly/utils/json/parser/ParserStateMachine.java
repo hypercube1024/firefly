@@ -32,18 +32,23 @@ public class ParserStateMachine {
 	public static Parser getParser(Class<?> clazz) {
 		Parser ret = PARSER_MAP.get(clazz);
 		if(ret == null) {
-			if (clazz.isEnum()) {
-				
-			} else if (Map.class.isAssignableFrom(clazz)) {
-				
-			} else if (Collection.class.isAssignableFrom(clazz)) {
-				
-			} else if (clazz.isArray()) {
-				
-			} else {
-				ret = new ObjectParser();
-				PARSER_MAP.put(clazz, ret);
-				((ObjectParser)ret).init(clazz);
+			synchronized(ParserStateMachine.class) {
+				ret = PARSER_MAP.get(clazz);
+				if(ret == null) {
+					if (clazz.isEnum()) {
+						
+					} else if (Map.class.isAssignableFrom(clazz)) {
+						
+					} else if (Collection.class.isAssignableFrom(clazz)) {
+						
+					} else if (clazz.isArray()) {
+						
+					} else {
+						ret = new ObjectParser();
+						PARSER_MAP.put(clazz, ret);
+						((ObjectParser)ret).init(clazz);
+					}
+				}
 			}
 		}
 		return ret;

@@ -94,9 +94,35 @@ public class TestParser {
 	}
 	
 	public static void main(String[] args) {
-		String jsonStr = "{\"id\":33442,\"date\":null,\"add1\":{}, \"add2\":{}, \"add3\":{}, \"add4\":{}, \"add5\":null,\"add6\":\"sdfsdf\",\"contact2\":{}, \"number\":30,\"height\":null,\"name\":\"PengtaoQiuAlvin\",\"type\":null,\"weight\":40.3}";
+		SimpleObj2 so2 = new SimpleObj2();
+		so2.setId(334);
+		
+		User user = new User();
+		user.setId(2434L);
+		user.setName("Pengtao");
+		so2.setUser(user);
+		
+		Book book = new Book();
+		book.setId(23424);
+		book.setPrice(3.4);
+		book.setSell(true);
+		book.setText("cccccccc");
+		book.setTitle("ddddd");
+		so2.setBook(book);
+		
+		String jsonStr = Json.toJson(so2);
 		System.out.println(jsonStr);
-		SimpleObj temp = Json.toObject(jsonStr, SimpleObj.class);
-		System.out.println(temp.getWeight());
+		
+		SimpleObj2 temp = Json.toObject(jsonStr, SimpleObj2.class);
+		Assert.assertThat(temp.getBook().getPrice(), is(3.4));
+		Assert.assertThat(temp.getBook().getTitle(), nullValue());
+		Assert.assertThat(temp.getId(), is(334));
+		
+		temp = Json.toObject(jsonStr, SimpleObj2.class);
+		temp = Json.toObject(jsonStr, SimpleObj2.class);
+		temp = Json.toObject(jsonStr, SimpleObj2.class);
+		temp = Json.toObject(jsonStr, SimpleObj2.class);
+		temp = Json.toObject(jsonStr, SimpleObj2.class);
+		temp = Json.toObject(jsonStr, SimpleObj2.class);
 	}
 }
