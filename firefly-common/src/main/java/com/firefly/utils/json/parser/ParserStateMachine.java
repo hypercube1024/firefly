@@ -13,7 +13,14 @@ public class ParserStateMachine {
 	
 	static {
 		PARSER_MAP.put(int.class, new IntParser());
+		PARSER_MAP.put(long.class, new LongParser());
+		PARSER_MAP.put(short.class, new ShortParser());
+		
 		PARSER_MAP.put(Integer.class, PARSER_MAP.get(int.class));
+		PARSER_MAP.put(Long.class, PARSER_MAP.get(long.class));
+		PARSER_MAP.put(Short.class, PARSER_MAP.get(short.class));
+		
+		PARSER_MAP.put(String.class, new StringParser());
 	}
 	
 	public static Parser getParser(Class<?> clazz) {
