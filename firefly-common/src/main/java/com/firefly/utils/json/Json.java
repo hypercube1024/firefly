@@ -2,7 +2,9 @@ package com.firefly.utils.json;
 
 import java.io.IOException;
 
-import com.firefly.utils.json.serializer.StateMachine;
+import com.firefly.utils.json.parser.ParserStateMachine;
+import com.firefly.utils.json.serializer.SerialStateMachine;
+import com.firefly.utils.json.support.JsonStringReader;
 import com.firefly.utils.json.support.JsonStringWriter;
 
 
@@ -11,7 +13,7 @@ public abstract class Json {
 		String ret = null;
 		JsonStringWriter writer = new JsonStringWriter();
 		try {
-			StateMachine.toJson(obj, writer);
+			SerialStateMachine.toJson(obj, writer);
 			ret = writer.toString();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -19,5 +21,10 @@ public abstract class Json {
 			writer.close();
 		}
 		return ret;
+	}
+	
+	public static <T> T toObject(String json, Class<T> clazz) {
+		JsonStringReader reader = new JsonStringReader(json);
+		return ParserStateMachine.toObject(reader, clazz);
 	}
 }

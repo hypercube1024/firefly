@@ -1,13 +1,11 @@
 package test.utils.json.compiler;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import test.utils.json.Group;
-import test.utils.json.User;
-
 import com.firefly.utils.json.compiler.DecodeCompiler;
 import com.firefly.utils.json.compiler.EncodeCompiler;
 import com.firefly.utils.json.support.ParserMetaInfo;
@@ -24,16 +22,5 @@ public class TestCompiler {
 			Assert.assertThat(p[i].getPropertyNameString(), is(s[i].getPropertyNameString()));
 			System.out.println(p[i].getPropertyNameString());
 		}
-	}
-	
-	@Test
-	public void test2() {
-		ParserMetaInfo[] p = DecodeCompiler.compile(Group.class);
-		Assert.assertThat(p[3].getActualTypeArguments().length, is(1));
-		Assert.assertThat(p[3].getActualTypeArguments()[0] == User.class, is(true));
-	}
-	
-	public static void main(String[] args) {
-		
 	}
 }

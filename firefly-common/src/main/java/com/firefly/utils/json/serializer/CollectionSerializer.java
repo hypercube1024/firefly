@@ -25,7 +25,7 @@ public class CollectionSerializer implements Serializer {
 
 		writer.append(ARRAY_PRE);
 		for (Iterator<?> it = collection.iterator();;) {
-			StateMachine.toJson(it.next(), writer);
+			SerialStateMachine.toJson(it.next(), writer);
 			if (!it.hasNext()) {
 				writer.append(ARRAY_SUF);
 				return;

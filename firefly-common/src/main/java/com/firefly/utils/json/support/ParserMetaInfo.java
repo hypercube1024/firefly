@@ -5,23 +5,21 @@ import java.lang.reflect.Method;
 import com.firefly.utils.json.Parser;
 
 public class ParserMetaInfo implements Comparable<ParserMetaInfo> {
-	private static final Class<?>[] EMPTY = new Class<?>[0];
-	
-	private Class<?>[] actualTypeArguments = EMPTY;
+
 	private Class<?> type;
 	private Parser parser;
 	private Method method;
 	private char[] propertyName;
 	private String propertyNameString;
-
-	public Class<?>[] getActualTypeArguments() {
-		return actualTypeArguments;
+	
+	public void invoke(Object obj, JsonStringReader reader) {
+		try {
+			method.invoke(obj, parser.convertTo(reader, type));
+		} catch (Throwable e) {
+			e.printStackTrace();
+		} 
 	}
-
-	public void setActualTypeArguments(Class<?>[] actualTypeArguments) {
-		this.actualTypeArguments = actualTypeArguments;
-	}
-
+	
 	public Class<?> getType() {
 		return type;
 	}

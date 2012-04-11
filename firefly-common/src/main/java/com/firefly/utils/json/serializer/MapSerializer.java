@@ -31,7 +31,7 @@ public class MapSerializer implements Serializer {
 		for (Iterator<Entry<?, ?>> it = entrySet.iterator();;) {
 			Entry<?, ?> entry = it.next();
 			writer.write("\"" + entry.getKey() + "\":");
-			StateMachine.toJson(entry.getValue(), writer);
+			SerialStateMachine.toJson(entry.getValue(), writer);
 			if (!it.hasNext()) {
 				writer.append(OBJ_SUF);
 				return;

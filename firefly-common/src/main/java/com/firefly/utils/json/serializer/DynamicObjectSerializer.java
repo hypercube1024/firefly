@@ -10,7 +10,7 @@ public class DynamicObjectSerializer implements Serializer {
 	@Override
 	public void convertTo(JsonStringWriter writer, Object obj)
 			throws IOException {
-		StateMachine.toJson(obj, writer);
+		SerialStateMachine.toJson(obj, writer);
 	}
 
 }

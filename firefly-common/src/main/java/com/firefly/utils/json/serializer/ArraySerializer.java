@@ -24,7 +24,7 @@ public class ArraySerializer implements Serializer {
 
 		writer.append(ARRAY_PRE);
 		for (int i = 0;; i++) {
-			StateMachine.toJson(objArray[i], writer);
+			SerialStateMachine.toJson(objArray[i], writer);
 			if (i == iMax) {
 				writer.append(ARRAY_SUF);
 				return;

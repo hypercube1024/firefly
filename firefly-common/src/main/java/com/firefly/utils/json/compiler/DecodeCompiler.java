@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.firefly.utils.json.exception.JsonException;
+import com.firefly.utils.json.parser.ParserStateMachine;
 import com.firefly.utils.json.support.ParserMetaInfo;
 
 public class DecodeCompiler {
@@ -33,6 +34,7 @@ public class DecodeCompiler {
             parserMetaInfo.setMethod(method);
             Class<?> type =  method.getParameterTypes()[0];
             parserMetaInfo.setType(type);
+            parserMetaInfo.setParser(ParserStateMachine.getParser(type)); // TODO 获取Parser
             
             if (Collection.class.isAssignableFrom(type)) {
             	Type[] types = method.getGenericParameterTypes();
@@ -43,8 +45,8 @@ public class DecodeCompiler {
             	Type[] types2 = paramType.getActualTypeArguments();
             	if(types2.length != 1 || !(types2[0] instanceof Class))
             		throw new JsonException("not support the " + method);
-            	Class<?> actualType = (Class<?>) types2[0];
-            	parserMetaInfo.setActualTypeArguments(new Class<?>[]{ actualType });
+            	Class<?> actualType = (Class<?>) types2[0]; //TODO 获取集合元素Parser
+//            	parserMetaInfo.setActualTypeArguments(new Class<?>[]{ actualType });
             }
             
             list.add(parserMetaInfo);

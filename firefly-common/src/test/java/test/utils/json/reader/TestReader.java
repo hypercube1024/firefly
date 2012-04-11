@@ -64,15 +64,13 @@ public class TestReader {
 		Assert.assertThat(new String(ret), is("testField"));
 		Assert.assertThat(reader.isColon(), is(true));
 		Assert.assertThat(reader.readInt(), is(-333));
-		char ch = reader.readAndSkipBlank();
-		Assert.assertThat(ch, is(','));
+		Assert.assertThat(reader.isComma(), is(true));
 		
 		ret = reader.readField(t1);
 		Assert.assertThat(new String(ret), is("testField2"));
 		Assert.assertThat(reader.isColon(), is(true));
 		Assert.assertThat(reader.readInt(), is(-334));
-		ch = reader.readAndSkipBlank();
-		Assert.assertThat(ch, is('}'));
+		Assert.assertThat(reader.isObjectEnd(), is(true));
 	}
 	
 	@Test

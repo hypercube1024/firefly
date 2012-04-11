@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.firefly.utils.json.annotation.Transient;
-import com.firefly.utils.json.serializer.StateMachine;
+import com.firefly.utils.json.serializer.SerialStateMachine;
 import com.firefly.utils.json.support.SerializerMetaInfo;
 
 public class EncodeCompiler {
@@ -68,7 +68,7 @@ public class EncodeCompiler {
 			fieldMetaInfo.setPropertyName(propertyName, false);
 			fieldMetaInfo.setMethod(method);
 			
-			fieldMetaInfo.setSerializer(StateMachine.getSerializerInCompiling(fieldClazz));
+			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(fieldClazz));
 			fieldList.add(fieldMetaInfo);
 		}
 		

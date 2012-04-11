@@ -66,6 +66,11 @@ public class JsonStringReader {
 		return c == '{';
 	}
 	
+	public boolean isObjectEnd() {
+		char c = readAndSkipBlank();
+		return c == '}';
+	}
+	
 	public boolean isColon() {
 		char c = readAndSkipBlank();
 		return c == ':';
