@@ -59,7 +59,7 @@ public class TestParser {
 	
 	@Test
 	public void test3() {
-		String jsonStr = "{\"id\":33442,\"date\":null,\"number\":30,\"height\":null,\"name\":\"PengtaoQiu\nAlvin\",\"type\":null,\"weight\":40.3}";
+		String jsonStr = "{\"id\":33442,\"date\":null,\"add1\":{}, \"contact2\":{}, \"number\":30,\"height\":null,\"name\":\"PengtaoQiu\nAlvin\",\"type\":null,\"weight\":40.3}";
 		SimpleObj temp = Json.toObject(jsonStr, SimpleObj.class);
 		Assert.assertThat(temp.getName(), is("PengtaoQiu\nAlvin"));
 		Assert.assertThat(temp.getId(), is(33442));

@@ -321,17 +321,99 @@ public class JsonStringReader {
 			return null;
 		} else {
 			char[] field = null;
-			mark();
+			int start = pos;
 			for(;;) {
 				char c = read();
-				if(c == '"') {
+				if(c == '"')
+					break;
+			}
+			int fieldLen = pos - 1 - start;
+			field = new char[fieldLen];
+			System.arraycopy(chars, start, field, 0, fieldLen);
+			return field;
+		}
+	}
+	
+	public char[] readField() {
+		if(!isString())
+			throw new JsonException("read field error");
+		
+		int start = pos;
+		for(;;) {
+			char c = read();
+			if(c == '"')
+				break;
+		}
+		int fieldLen = pos - 1 - start;
+		char[] field = new char[fieldLen];
+		System.arraycopy(chars, start, field, 0, fieldLen);
+		return field;
+	}
+	
+	public void skipValue() {
+		char ch = readAndSkipBlank();
+		switch (ch) {
+		case '"': // 跳过字符串
+			for(;;) {
+				ch = read();
+				if(ch == '"')
+					break;
+				else if(ch == '\\')
+					pos++;
+			}
+			break;
+		case '[': // 跳过数组
+			for(;;) {
+				// 判断空数组
+				mark();
+				ch = readAndSkipBlank();
+				if(ch == ']')
+					break;
+				else
+					reset();
+				
+				skipValue();
+				ch = readAndSkipBlank();
+				if(ch == ']')
+					break;
+				
+				if(ch != ',')
+					throw new JsonException("json string array format error");
+			}
+			break;
+		case '{': // 跳过对象
+			for(;;) {
+				// 判断空对象
+				mark();
+				ch = readAndSkipBlank();
+				if(ch == '}')
+					break;
+				else
+					reset();
+				
+				readField();
+				if(!isColon())
+					throw new JsonException("json string object format error");
+				
+				skipValue();
+				ch = readAndSkipBlank();
+				if(ch == '}')
+					break;
+				
+				if(ch != ',')
+					throw new JsonException("json string object format error");
+			}
+			break;
+
+		default: // 跳过数字或者null
+			for(;;) {
+				ch = read();
+				if(isEndFlag(ch)) {
+					pos--;
 					break;
 				}
 			}
-			int fieldLen = pos - 1 - mark;
-			field = new char[fieldLen];
-			System.arraycopy(chars, mark, field, 0, fieldLen);
-			return field;
+			break;
 		}
 	}
 	
