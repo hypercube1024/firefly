@@ -35,20 +35,15 @@ public class EncodeCompiler {
 
             String propertyName = null;
 			if (methodName.charAt(0) == 'g') {
-				if (methodName.length() < 4 || !Character.isUpperCase(methodName.charAt(3))) {
+				if (methodName.length() < 4 || !Character.isUpperCase(methodName.charAt(3)))
 					continue;
-				}
 
-				propertyName = Character.toLowerCase(methodName
-						.charAt(3)) + methodName.substring(4);
+				propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
 			} else {
-				if (methodName.length() < 3
-						|| !Character.isUpperCase(methodName.charAt(2))) {
+				if (methodName.length() < 3 || !Character.isUpperCase(methodName.charAt(2)))
 					continue;
-				}
 
-				propertyName = Character.toLowerCase(methodName
-						.charAt(2)) + methodName.substring(3);
+				propertyName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
 			}
 			
 			Field field = null;
