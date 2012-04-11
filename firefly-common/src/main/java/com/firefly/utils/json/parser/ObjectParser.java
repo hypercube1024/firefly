@@ -73,28 +73,28 @@ public class ObjectParser implements Parser {
 		if(ch == '}')
 			return obj;
 		
-		if(ch == ',') {// json string 的域数量比元信息多，继续读取
-			for(;;) {
-				char[] field = reader.readField();
-				ParserMetaInfo np = find(field);
-				if(np != null)
-					np.invoke(obj, reader);
-				else
-					reader.skipValue();
-				
-				char c = reader.readAndSkipBlank();
-				if(c == '}') // 读到末尾
-					return obj;
-
-				if(c != ',')
-					throw new JsonException("missing ','");
-				
-				break;
-			}
-		} else
+		if(ch != ',')
 			throw new JsonException("json string is not object format");
 		
-		return obj;
+		for(;;) { // json string 的域数量比元信息多，继续读取
+			char[] field = reader.readField();
+			if(!reader.isColon())
+				throw new JsonException("missing ':'");
+			
+			ParserMetaInfo np = find(field);
+			if(np != null)
+				np.invoke(obj, reader);
+			else
+				reader.skipValue();
+			
+			char c = reader.readAndSkipBlank();
+			if(c == '}') // 读到末尾
+				return obj;
+
+			
+			if(c != ',')
+				throw new JsonException("missing ','");
+		}
 	}
 	
 	private ParserMetaInfo find(char[] field) {

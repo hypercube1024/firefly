@@ -64,7 +64,7 @@ public class DecodeCompiler {
             	Type[] types2 = paramType.getActualTypeArguments();
             	if(types2.length != 1 || !(types2[0] instanceof Class))
             		throw new JsonException("not support the " + method);
-            	Class<?> actualType = (Class<?>) types2[0]; //TODO 获取集合元素Parser
+            	Class<?> elementType = (Class<?>) types2[0]; //TODO 获取集合元素Parser
 //            	parserMetaInfo.setActualTypeArguments(new Class<?>[]{ actualType });
             }
             

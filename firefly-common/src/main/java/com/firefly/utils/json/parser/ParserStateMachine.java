@@ -17,12 +17,14 @@ public class ParserStateMachine {
 		PARSER_MAP.put(short.class, new ShortParser());
 		PARSER_MAP.put(float.class, new FloatParser());
 		PARSER_MAP.put(double.class, new DoubleParser());
+		PARSER_MAP.put(boolean.class, new BooleanParser());
 		
 		PARSER_MAP.put(Integer.class, PARSER_MAP.get(int.class));
 		PARSER_MAP.put(Long.class, PARSER_MAP.get(long.class));
 		PARSER_MAP.put(Short.class, PARSER_MAP.get(short.class));
 		PARSER_MAP.put(Float.class, PARSER_MAP.get(float.class));
 		PARSER_MAP.put(Double.class, PARSER_MAP.get(double.class));
+		PARSER_MAP.put(Boolean.class, PARSER_MAP.get(boolean.class));
 		
 		PARSER_MAP.put(String.class, new StringParser());
 	}
