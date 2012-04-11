@@ -16,6 +16,8 @@ public class TestParser {
 		i.setNumber(30);
 		i.setName("PengtaoQiu\nAlvin");
 		i.setType((short)-33);
+		i.setWeight(55.47f);
+		i.setHeight(170.5);
 		String jsonStr = Json.toJson(i);
 		System.out.println(jsonStr);
 		
@@ -26,6 +28,8 @@ public class TestParser {
 		Assert.assertThat(i2.getDate(), is(0L));
 		Assert.assertThat(i2.getName(), is("PengtaoQiu\nAlvin"));
 		Assert.assertThat(i2.getType(), is((short)-33));
+		Assert.assertThat(i2.getHeight(), is(170.5));
+		Assert.assertThat(i2.getWeight(), is(55.47f));
 	}
 	
 	public static void main(String[] args) {

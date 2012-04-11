@@ -7,13 +7,31 @@ public class SimpleObj {
 	private String name;
 	private Long date;
 	private Short type;
+	private float weight;
+	private Double height;
+
+	public float getWeight() {
+		return weight;
+	}
+
+	public void setWeight(float weight) {
+		this.weight = weight;
+	}
+
+	public Double getHeight() {
+		return height;
+	}
+
+	public void setHeight(Double height) {
+		this.height = height;
+	}
+
+	public void setType(Short type) {
+		this.type = type;
+	}
 
 	public short getType() {
 		return type;
-	}
-
-	public void setType(short type) {
-		this.type = type;
 	}
 
 	public int getNumber() {
