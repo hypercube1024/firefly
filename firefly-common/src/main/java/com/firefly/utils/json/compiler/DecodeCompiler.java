@@ -72,9 +72,10 @@ public class DecodeCompiler {
 		}
 		
 		parserMetaInfos = list.toArray(EMPTY_ARRAY);
-		if(parserMetaInfos.length > 0) {
+		if(parserMetaInfos.length > 0)
 			Arrays.sort(parserMetaInfos);
-		}
+		else 
+			throw new JsonException("not support the " + clazz.getName());
 		return parserMetaInfos;
 	}
 }

@@ -19,7 +19,6 @@ public class EncodeCompiler {
 		SerializerMetaInfo[] serializerMetaInfos = null;
 		List<SerializerMetaInfo> fieldList = new ArrayList<SerializerMetaInfo>();
 		
-//		boolean first = true;
 		for (Method method : clazz.getMethods()) {
 			method.setAccessible(true);
 			String methodName = method.getName();
