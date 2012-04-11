@@ -9,6 +9,24 @@ public class SimpleObj {
 	private Short type;
 	private float weight;
 	private Double height;
+	private SimpleObj contact1;
+	private SimpleObj contact2;
+
+	public SimpleObj getContact1() {
+		return contact1;
+	}
+
+	public void setContact1(SimpleObj contact1) {
+		this.contact1 = contact1;
+	}
+
+	public SimpleObj getContact2() {
+		return contact2;
+	}
+
+	public void setContact2(SimpleObj contact2) {
+		this.contact2 = contact2;
+	}
 
 	public float getWeight() {
 		return weight;
@@ -26,12 +44,12 @@ public class SimpleObj {
 		this.height = height;
 	}
 
-	public void setType(Short type) {
-		this.type = type;
+	public Short getType() {
+		return type;
 	}
 
-	public short getType() {
-		return type;
+	public void setType(Short type) {
+		this.type = type;
 	}
 
 	public int getNumber() {

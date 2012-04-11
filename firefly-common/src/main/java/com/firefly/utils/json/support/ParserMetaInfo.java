@@ -1,6 +1,7 @@
 package com.firefly.utils.json.support;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import com.firefly.utils.json.Parser;
 
@@ -20,6 +21,10 @@ public class ParserMetaInfo implements Comparable<ParserMetaInfo> {
 		} 
 	}
 	
+	public boolean equals(char[] field) {
+		return Arrays.equals(propertyName, field);
+	}
+
 	public Class<?> getType() {
 		return type;
 	}

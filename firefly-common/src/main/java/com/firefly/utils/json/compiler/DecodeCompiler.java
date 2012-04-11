@@ -51,6 +51,7 @@ public class DecodeCompiler {
             
             list.add(parserMetaInfo);
 		}
+		
 		parserMetaInfos = list.toArray(EMPTY_ARRAY);
 		if(parserMetaInfos.length > 0) {
 			Arrays.sort(parserMetaInfos);

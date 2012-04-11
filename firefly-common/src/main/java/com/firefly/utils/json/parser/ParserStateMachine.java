@@ -39,9 +39,10 @@ public class ParserStateMachine {
 			} else if (clazz.isArray()) {
 				
 			} else {
-				ret = new ObjectParser(clazz);
+				ret = new ObjectParser();
+				PARSER_MAP.put(clazz, ret);
+				((ObjectParser)ret).init(clazz);
 			}
-			PARSER_MAP.put(clazz, ret);
 		}
 		return ret;
 	}
