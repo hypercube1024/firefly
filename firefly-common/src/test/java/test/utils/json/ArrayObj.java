@@ -3,6 +3,7 @@ package test.utils.json;
 public class ArrayObj {
 	private Integer[] numbers;
 	private long[][] map;
+	private User[] users;
 
 	public long[][] getMap() {
 		return map;
@@ -18,6 +19,14 @@ public class ArrayObj {
 
 	public void setNumbers(Integer[] numbers) {
 		this.numbers = numbers;
+	}
+
+	public User[] getUsers() {
+		return users;
+	}
+
+	public void setUsers(User[] users) {
+		this.users = users;
 	}
 
 }

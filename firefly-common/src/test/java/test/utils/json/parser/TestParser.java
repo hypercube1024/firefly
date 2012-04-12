@@ -3,6 +3,7 @@ package test.utils.json.parser;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -183,6 +184,15 @@ public class TestParser {
 		long[][] map = new long[][]{{3L, 44L, 55L}, {24, 324, 3}};
 		obj.setMap(map);
 		
+		List<User> users = new ArrayList<User>();
+		for (int j = 0; j < 3; j++) {
+			User user = new User();
+			user.setId((long)j);
+			user.setName("user" + j);
+			users.add(user);
+		}
+		obj.setUsers(users.toArray(new User[0]));
+		
 		String json = Json.toJson(obj);
 		System.out.println(json);
 		
@@ -191,6 +201,9 @@ public class TestParser {
 		Assert.assertThat(obj2.getNumbers().length, is(6));
 		Assert.assertThat(obj2.getMap().length, is(2));
 		Assert.assertThat(obj2.getMap()[0][1], is(44L));
+		Assert.assertThat(obj2.getUsers().length, is(3));
+		Assert.assertThat(obj2.getUsers()[0].getId(), is(0L));
+		Assert.assertThat(obj2.getUsers()[1].getName(), is("user1"));
 	}
 	
 	public static void main(String[] args) throws Throwable {
