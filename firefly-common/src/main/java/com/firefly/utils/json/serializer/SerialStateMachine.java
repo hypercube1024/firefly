@@ -21,7 +21,6 @@ abstract public class SerialStateMachine {
 	private static final Serializer MAP = new MapSerializer();
 	private static final Serializer COLLECTION = new CollectionSerializer();
 	private static final Serializer ARRAY = new ArraySerializer();
-	private static final Serializer ENUM = new EnumSerializer();
 	private static final DynamicObjectSerializer DYNAMIC = new DynamicObjectSerializer();
 
 	static {
@@ -72,7 +71,7 @@ abstract public class SerialStateMachine {
 		Serializer ret = SERIAL_MAP.get(clazz);
 		if (ret == null) {
 			if (clazz.isEnum())
-				ret = ENUM;
+				ret = new EnumSerializer(clazz);
 			else if (Map.class.isAssignableFrom(clazz))
 				ret = MAP;
 			else if (Collection.class.isAssignableFrom(clazz))
@@ -91,7 +90,7 @@ abstract public class SerialStateMachine {
 		Serializer ret = SERIAL_MAP.get(clazz);
 		if (ret == null || ret instanceof ObjectSerializer || ret instanceof ObjectNoCheckSerializer) {
 			if (clazz.isEnum()) {
-				ret = ENUM;
+				ret = new EnumSerializer(clazz);
 				SERIAL_MAP.put(clazz, ret);
 			} else if (Map.class.isAssignableFrom(clazz)) {
 				ret = MAP;

@@ -15,10 +15,14 @@ public class ParserMetaInfo implements Comparable<ParserMetaInfo> {
 	
 	public void invoke(Object obj, JsonStringReader reader) {
 		try {
-			method.invoke(obj, parser.convertTo(reader, type));
+			method.invoke(obj, getValue(reader));
 		} catch (Throwable e) {
 			e.printStackTrace();
 		} 
+	}
+	
+	public Object getValue(JsonStringReader reader) {
+		return parser.convertTo(reader, type);
 	}
 	
 	public boolean equals(char[] field) {

@@ -1,10 +1,19 @@
-package test.utils.json;
+package test.utils.json.parser;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import test.utils.json.Book;
+import test.utils.json.CollectionObj;
+import test.utils.json.SimpleObj;
+import test.utils.json.SimpleObj2;
+import test.utils.json.User;
 
 import com.firefly.utils.json.Json;
 
@@ -94,9 +103,61 @@ public class TestParser {
 		Assert.assertThat(temp.getId(), is(334));
 	}
 	
+	@Test
+	public void test5() {
+List<LinkedList<SimpleObj>> list = new LinkedList<LinkedList<SimpleObj>>();
+		
+		LinkedList<SimpleObj> list1 = new LinkedList<SimpleObj>();
+		for (int j = 0; j < 10; j++) {
+			SimpleObj i = new SimpleObj();
+			i.setAge(10);
+			i.setId(33442 + j);
+			i.setNumber(30);
+			i.setName("PengtaoQiu\nAlvin");
+			
+			SimpleObj i2 = new SimpleObj();
+			i2.setAge(20);
+			i2.setId(12341);
+			i2.setNumber(33);
+			i2.setName("Tom");
+			i.setContact1(i2);
+			list1.add(i);
+		}
+		list.add(list1);
+		
+		list1 = new LinkedList<SimpleObj>();
+		for (int j = 0; j < 10; j++) {
+			SimpleObj i = new SimpleObj();
+			i.setAge(10);
+			i.setId(1000 + j);
+			i.setNumber(30);
+			i.setName("PengtaoQiu\nAlvin");
+			
+			SimpleObj i2 = new SimpleObj();
+			i2.setAge(20);
+			i2.setId(12341);
+			i2.setNumber(33);
+			i2.setName("Tom");
+			i.setContact1(i2);
+			list1.add(i);
+		}
+		list.add(list1);
+		
+		CollectionObj o = new CollectionObj();
+		o.setList(list);
+		String json = Json.toJson(o);
+		System.out.println(json);
+		
+		CollectionObj o2 = Json.toObject(json, CollectionObj.class);
+		System.out.println(o2.getList().get(0).get(0).getId());
+		System.out.println(o2.getList().get(1).get(0).getId());
+		Assert.assertThat(o2.getList().size(), is(2));
+		Assert.assertThat(o2.getList().get(0).size(), is(10));
+		Assert.assertThat(o2.getList().get(0).get(1).getId(), is(33443));
+		Assert.assertThat(o2.getList().get(1).get(1).getId(), is(1001));
+	}
+	
 	public static void main(String[] args) {
-		
-		
 		
 	}
 }
