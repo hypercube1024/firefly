@@ -14,6 +14,9 @@ import test.utils.json.CollectionObj;
 import test.utils.json.SimpleObj;
 import test.utils.json.SimpleObj2;
 import test.utils.json.User;
+import test.utils.json.github.MediaContent;
+import test.utils.json.github.Player;
+import test.utils.json.github.Size;
 
 import com.firefly.utils.json.Json;
 
@@ -105,7 +108,7 @@ public class TestParser {
 	
 	@Test
 	public void test5() {
-List<LinkedList<SimpleObj>> list = new LinkedList<LinkedList<SimpleObj>>();
+		List<LinkedList<SimpleObj>> list = new LinkedList<LinkedList<SimpleObj>>();
 		
 		LinkedList<SimpleObj> list1 = new LinkedList<SimpleObj>();
 		for (int j = 0; j < 10; j++) {
@@ -155,6 +158,19 @@ List<LinkedList<SimpleObj>> list = new LinkedList<LinkedList<SimpleObj>>();
 		Assert.assertThat(o2.getList().get(0).size(), is(10));
 		Assert.assertThat(o2.getList().get(0).get(1).getId(), is(33443));
 		Assert.assertThat(o2.getList().get(1).get(1).getId(), is(1001));
+	}
+	
+	@Test
+	public void test6() {
+		 MediaContent record = MediaContent.createRecord();
+		 String json = Json.toJson(record);
+	     System.out.println(json);
+	     
+	     MediaContent r = Json.toObject(json, MediaContent.class);
+	     Assert.assertThat(r.getMedia().getPlayer(), is(Player.JAVA));
+	     Assert.assertThat(r.getImages().size(), is(2));
+	     Assert.assertThat(r.getImages().get(0).getSize(), is(Size.LARGE));
+	     Assert.assertThat(r.getImages().get(0).getHeight(), is(768));
 	}
 	
 	public static void main(String[] args) {

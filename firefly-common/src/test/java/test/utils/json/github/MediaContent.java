@@ -49,8 +49,12 @@ public class MediaContent {
 //    	System.out.println(list.getClass().getGenericInterfaces());
     	
     	
-        MediaContent record = createRecord();
-        System.out.println(Json.toJson(record));
+    	MediaContent record = createRecord();
+        String json = Json.toJson(record);
+        System.out.println(json);
+        
+        MediaContent r = Json.toObject(json, MediaContent.class);
+        System.out.println(r.getMedia().getPlayer());
 //        
 //        Image image1 = new Image();
 //        image1.setUri("http://javaone.com/keynote_large.jpg");

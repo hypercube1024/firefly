@@ -350,6 +350,10 @@ public class JsonStringReader {
 		return field;
 	}
 	
+	public char[] readEnum() {
+		return readField();
+	}
+	
 	public void skipValue() {
 		char ch = readAndSkipBlank();
 		switch (ch) {

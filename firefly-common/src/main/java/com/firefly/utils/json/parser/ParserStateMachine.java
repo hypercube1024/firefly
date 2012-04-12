@@ -37,7 +37,8 @@ public class ParserStateMachine {
 				ret = PARSER_MAP.get(clazz);
 				if(ret == null) {
 					if (clazz.isEnum()) {
-						
+						ret = new EnumParser(clazz);
+						PARSER_MAP.put(clazz, ret);
 					} else if (Collection.class.isAssignableFrom(clazz) 
 							|| Map.class.isAssignableFrom(clazz)
 							|| clazz.isArray()) {
