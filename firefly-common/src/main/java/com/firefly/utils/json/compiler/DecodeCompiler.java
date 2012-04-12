@@ -68,11 +68,9 @@ public class DecodeCompiler {
             	Type elementType = types2[0];
             	parserMetaInfo.setType(CollectionParser.getImplClass(type));
             	parserMetaInfo.setParser(new CollectionParser(elementType));
-            } else if (type.isArray()) { // TODO 数组元信息构造
-            	
             } else if (Map.class.isAssignableFrom(clazz)) { // TODO Map元信息构造
             	
-            } else { // 获取对象Parser
+            } else { // 获取对象、枚举或者数组Parser
             	parserMetaInfo.setType(type);
             	parserMetaInfo.setParser(ParserStateMachine.getParser(type)); 
             }

@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
+import test.utils.json.ArrayObj;
 import test.utils.json.Book;
 import test.utils.json.CollectionObj;
 import test.utils.json.SimpleObj;
@@ -173,7 +174,26 @@ public class TestParser {
 	     Assert.assertThat(r.getImages().get(0).getHeight(), is(768));
 	}
 	
-	public static void main(String[] args) {
+	@Test
+	public void test7() {
+		ArrayObj obj = new ArrayObj();
+		Integer[] i = new Integer[]{2,3,4,5,6,332};
+		obj.setNumbers(i);
 		
+		long[][] map = new long[][]{{3L, 44L, 55L}, {24, 324, 3}};
+		obj.setMap(map);
+		
+		String json = Json.toJson(obj);
+		System.out.println(json);
+		
+		ArrayObj obj2 = Json.toObject(json, ArrayObj.class);
+		Assert.assertThat(obj2.getNumbers()[3], is(5));
+		Assert.assertThat(obj2.getNumbers().length, is(6));
+		Assert.assertThat(obj2.getMap().length, is(2));
+		Assert.assertThat(obj2.getMap()[0][1], is(44L));
+	}
+	
+	public static void main(String[] args) throws Throwable {
+
 	}
 }

@@ -28,6 +28,22 @@ public class ParserStateMachine {
 		PARSER_MAP.put(Boolean.class, PARSER_MAP.get(boolean.class));
 		
 		PARSER_MAP.put(String.class, new StringParser());
+		
+		PARSER_MAP.put(int[].class, new ArrayParser(int.class));
+		PARSER_MAP.put(long[].class, new ArrayParser(long.class));
+		PARSER_MAP.put(short[].class, new ArrayParser(short.class));
+		PARSER_MAP.put(float[].class, new ArrayParser(float.class));
+		PARSER_MAP.put(double[].class, new ArrayParser(double.class));
+		PARSER_MAP.put(boolean[].class, new ArrayParser(boolean.class));
+		
+		PARSER_MAP.put(Integer[].class, new ArrayParser(Integer.class));
+		PARSER_MAP.put(Long[].class, new ArrayParser(Long.class));
+		PARSER_MAP.put(Short[].class, new ArrayParser(Short.class));
+		PARSER_MAP.put(Float[].class, new ArrayParser(Float.class));
+		PARSER_MAP.put(Double[].class, new ArrayParser(Double.class));
+		PARSER_MAP.put(Boolean[].class, new ArrayParser(Boolean.class));
+		
+		PARSER_MAP.put(String[].class, new ArrayParser(String.class));
 	}
 	
 	public static Parser getParser(Class<?> clazz) {
@@ -40,9 +56,12 @@ public class ParserStateMachine {
 						ret = new EnumParser(clazz);
 						PARSER_MAP.put(clazz, ret);
 					} else if (Collection.class.isAssignableFrom(clazz) 
-							|| Map.class.isAssignableFrom(clazz)
-							|| clazz.isArray()) {
+							|| Map.class.isAssignableFrom(clazz)) {
 						throw new JsonException("not support type " + clazz);
+					} else if (clazz.isArray()) {
+						Class<?> elementClass = clazz.getComponentType();
+						ret = new ArrayParser(elementClass);
+						PARSER_MAP.put(clazz, ret);
 					} else {
 						ret = new ObjectParser();
 						PARSER_MAP.put(clazz, ret);
