@@ -206,6 +206,25 @@ public class TestParser {
 		Assert.assertThat(obj2.getUsers()[1].getName(), is("user1"));
 	}
 	
+	@Test
+	public void test8() {
+		List<User> users = new ArrayList<User>();
+		for (int j = 0; j < 3; j++) {
+			User user = new User();
+			user.setId((long)j);
+			user.setName("user" + j);
+			users.add(user);
+		}
+		User[] u = users.toArray(new User[0]);
+		String json = Json.toJson(u);
+		System.out.println(json);
+		
+		User[] u2 = Json.toObject(json, User[].class);
+		Assert.assertThat(u2.length, is(3));
+		Assert.assertThat(u2[0].getId(), is(0L));
+		Assert.assertThat(u2[1].getName(), is("user1"));
+	}
+	
 	public static void main(String[] args) throws Throwable {
 
 	}
