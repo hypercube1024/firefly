@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.firefly.utils.collection.IdentityHashMap;
 import com.firefly.utils.json.Parser;
+import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.support.JsonStringReader;
 
 public class ParserStateMachine {
@@ -37,12 +38,10 @@ public class ParserStateMachine {
 				if(ret == null) {
 					if (clazz.isEnum()) {
 						
-					} else if (Map.class.isAssignableFrom(clazz)) {
-						
-					} else if (Collection.class.isAssignableFrom(clazz)) {
-						
-					} else if (clazz.isArray()) {
-						
+					} else if (Collection.class.isAssignableFrom(clazz) 
+							|| Map.class.isAssignableFrom(clazz)
+							|| clazz.isArray()) {
+						throw new JsonException("not support type " + clazz);
 					} else {
 						ret = new ObjectParser();
 						PARSER_MAP.put(clazz, ret);
@@ -53,7 +52,6 @@ public class ParserStateMachine {
 		}
 		return ret;
 	}
-	
 	
 	@SuppressWarnings("unchecked")
 	public static <T> T toObject(JsonStringReader reader, Class<?> clazz) {

@@ -9,9 +9,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.firefly.utils.json.annotation.Transient;
 import com.firefly.utils.json.exception.JsonException;
+import com.firefly.utils.json.parser.CollectionParser;
 import com.firefly.utils.json.parser.ParserStateMachine;
 import com.firefly.utils.json.support.ParserMetaInfo;
 
@@ -52,6 +54,7 @@ public class DecodeCompiler {
             parserMetaInfo.setPropertyNameString(propertyName);
             parserMetaInfo.setMethod(method);
             Class<?> type =  method.getParameterTypes()[0];
+            parserMetaInfo.setType(type);
             
             if (Collection.class.isAssignableFrom(type)) {
             	Type[] types = method.getGenericParameterTypes();
@@ -60,14 +63,18 @@ public class DecodeCompiler {
             	
             	ParameterizedType paramType = (ParameterizedType) types[0];
             	Type[] types2 = paramType.getActualTypeArguments();
-            	if(types2.length != 1 || !(types2[0] instanceof Class))
+            	if(types2.length != 1)
             		throw new JsonException("not support the " + method);
             	
-            	Class<?> elementType = (Class<?>) types2[0]; //TODO 获取集合元素Parser
-//            	parserMetaInfo.setActualTypeArguments(new Class<?>[]{ actualType });
+            	Type elementType = types2[0];
+            	
+            	parserMetaInfo.setParser(new CollectionParser(type, elementType));
+            } else if (type.isArray()) { 
+            	// TODO 数组元信息构造
+            } else if (Map.class.isAssignableFrom(clazz)) { 
+            	// TODO Map元信息构造
             } else {
-            	parserMetaInfo.setType(type);
-            	parserMetaInfo.setParser(ParserStateMachine.getParser(type)); // TODO 获取Parser
+            	parserMetaInfo.setParser(ParserStateMachine.getParser(type)); // 获取对象Parser
             }
             
             list.add(parserMetaInfo);

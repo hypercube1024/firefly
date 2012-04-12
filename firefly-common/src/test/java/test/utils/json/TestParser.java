@@ -1,6 +1,7 @@
 package test.utils.json;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -94,35 +95,8 @@ public class TestParser {
 	}
 	
 	public static void main(String[] args) {
-		SimpleObj2 so2 = new SimpleObj2();
-		so2.setId(334);
 		
-		User user = new User();
-		user.setId(2434L);
-		user.setName("Pengtao");
-		so2.setUser(user);
 		
-		Book book = new Book();
-		book.setId(23424);
-		book.setPrice(3.4);
-		book.setSell(true);
-		book.setText("cccccccc");
-		book.setTitle("ddddd");
-		so2.setBook(book);
 		
-		String jsonStr = Json.toJson(so2);
-		System.out.println(jsonStr);
-		
-		SimpleObj2 temp = Json.toObject(jsonStr, SimpleObj2.class);
-		Assert.assertThat(temp.getBook().getPrice(), is(3.4));
-		Assert.assertThat(temp.getBook().getTitle(), nullValue());
-		Assert.assertThat(temp.getId(), is(334));
-		
-		temp = Json.toObject(jsonStr, SimpleObj2.class);
-		temp = Json.toObject(jsonStr, SimpleObj2.class);
-		temp = Json.toObject(jsonStr, SimpleObj2.class);
-		temp = Json.toObject(jsonStr, SimpleObj2.class);
-		temp = Json.toObject(jsonStr, SimpleObj2.class);
-		temp = Json.toObject(jsonStr, SimpleObj2.class);
 	}
 }
