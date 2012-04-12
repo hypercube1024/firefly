@@ -1,15 +1,16 @@
 package test.utils.json;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class CollectionObj {
-	private List<List<SimpleObj>> list;
+	private List<LinkedList<SimpleObj>> list;
 
-	public List<List<SimpleObj>> getList() {
+	public List<LinkedList<SimpleObj>> getList() {
 		return list;
 	}
 
-	public void setList(List<List<SimpleObj>> list) {
+	public void setList(List<LinkedList<SimpleObj>> list) {
 		this.list = list;
 	}
 

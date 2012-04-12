@@ -1,8 +1,9 @@
 package test.utils.json.compiler;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,13 +36,13 @@ public class TestCompiler {
 	public void test2() {
 		ParserMetaInfo[] pp = DecodeCompiler.compile(CollectionObj.class);
 		ParserMetaInfo p = pp[0];
-		Assert.assertThat(p.getType().getName(), is(List.class.getName()));
+		Assert.assertThat(p.getType().getName(), is(ArrayList.class.getName()));
 		
 		Parser parser = p.getParser();
 		if(parser instanceof CollectionParser) {
 			CollectionParser colp = (CollectionParser) parser;
 			p = colp.getElementMetaInfo();
-			Assert.assertThat(p.getType().getName(), is(List.class.getName()));
+			Assert.assertThat(p.getType().getName(), is(LinkedList.class.getName()));
 		}
 		
 		parser = p.getParser();
@@ -56,7 +57,6 @@ public class TestCompiler {
 		ParserMetaInfo[] pp = DecodeCompiler.compile(CollectionObj.class);
 		ParserMetaInfo p = pp[0];
 		test(p);
-		System.out.println(List.class);
 	}
 	
 	public static void test(ParserMetaInfo p) {

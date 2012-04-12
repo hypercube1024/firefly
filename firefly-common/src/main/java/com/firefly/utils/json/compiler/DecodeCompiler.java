@@ -54,7 +54,6 @@ public class DecodeCompiler {
             parserMetaInfo.setPropertyNameString(propertyName);
             parserMetaInfo.setMethod(method);
             Class<?> type =  method.getParameterTypes()[0];
-            parserMetaInfo.setType(type);
             
             if (Collection.class.isAssignableFrom(type)) {
             	Type[] types = method.getGenericParameterTypes();
@@ -67,16 +66,16 @@ public class DecodeCompiler {
             		throw new JsonException("not support the " + method);
             	
             	Type elementType = types2[0];
+            	parserMetaInfo.setType(CollectionParser.getImplClass(type));
+            	parserMetaInfo.setParser(new CollectionParser(elementType));
+            } else if (type.isArray()) { // TODO 数组元信息构造
             	
-            	parserMetaInfo.setParser(new CollectionParser(type, elementType));
-            } else if (type.isArray()) { 
-            	// TODO 数组元信息构造
-            } else if (Map.class.isAssignableFrom(clazz)) { 
-            	// TODO Map元信息构造
-            } else {
-            	parserMetaInfo.setParser(ParserStateMachine.getParser(type)); // 获取对象Parser
+            } else if (Map.class.isAssignableFrom(clazz)) { // TODO Map元信息构造
+            	
+            } else { // 获取对象Parser
+            	parserMetaInfo.setType(type);
+            	parserMetaInfo.setParser(ParserStateMachine.getParser(type)); 
             }
-            
             list.add(parserMetaInfo);
 		}
 		
