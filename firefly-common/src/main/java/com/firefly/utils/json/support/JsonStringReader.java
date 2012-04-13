@@ -334,7 +334,7 @@ public class JsonStringReader {
 		}
 	}
 	
-	public char[] readField() {
+	public char[] readChars() {
 		if(!isString())
 			throw new JsonException("read field error");
 		
@@ -345,13 +345,9 @@ public class JsonStringReader {
 				break;
 		}
 		int fieldLen = pos - 1 - start;
-		char[] field = new char[fieldLen];
-		System.arraycopy(chars, start, field, 0, fieldLen);
-		return field;
-	}
-	
-	public char[] readEnum() {
-		return readField();
+		char[] c = new char[fieldLen];
+		System.arraycopy(chars, start, c, 0, fieldLen);
+		return c;
 	}
 	
 	public void skipValue() {
@@ -395,7 +391,7 @@ public class JsonStringReader {
 				else
 					reset();
 				
-				readField();
+				readChars();
 				if(!isColon())
 					throw new JsonException("json string object format error");
 				

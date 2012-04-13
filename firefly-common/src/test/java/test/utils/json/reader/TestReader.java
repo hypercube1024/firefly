@@ -323,12 +323,12 @@ public class TestReader {
 	public void testSkipValue() {
 		JsonStringReader reader = new JsonStringReader("{ \"testField\": null, \"ssdd\" : \"sdf\\\"sdfsdf\" }");
 		Assert.assertThat(reader.isObject(), is(true));
-		Assert.assertThat(Arrays.equals("testField".toCharArray(), reader.readField()), is(true));
+		Assert.assertThat(Arrays.equals("testField".toCharArray(), reader.readChars()), is(true));
 		Assert.assertThat(reader.isColon(), is(true));
 		reader.skipValue();
 		
 		Assert.assertThat(reader.isComma(), is(true));
-		Assert.assertThat(Arrays.equals("ssdd".toCharArray(), reader.readField()), is(true));
+		Assert.assertThat(Arrays.equals("ssdd".toCharArray(), reader.readChars()), is(true));
 		Assert.assertThat(reader.isColon(), is(true));
 		reader.skipValue();
 		Assert.assertThat(reader.isObjectEnd(), is(true));
@@ -338,12 +338,12 @@ public class TestReader {
 	public void testSkipValue2() {
 		JsonStringReader reader = new JsonStringReader("{ \"testField\": [ [[2 , 3],[3]], [[3,4]] ], \"ssdd\" : \"sdf\\\"sdfsdf\" }");
 		Assert.assertThat(reader.isObject(), is(true));
-		Assert.assertThat(Arrays.equals("testField".toCharArray(), reader.readField()), is(true));
+		Assert.assertThat(Arrays.equals("testField".toCharArray(), reader.readChars()), is(true));
 		Assert.assertThat(reader.isColon(), is(true));
 		reader.skipValue();
 		
 		Assert.assertThat(reader.isComma(), is(true));
-		Assert.assertThat(Arrays.equals("ssdd".toCharArray(), reader.readField()), is(true));
+		Assert.assertThat(Arrays.equals("ssdd".toCharArray(), reader.readChars()), is(true));
 		Assert.assertThat(reader.isColon(), is(true));
 		reader.skipValue();
 		Assert.assertThat(reader.isObjectEnd(), is(true));
@@ -353,12 +353,12 @@ public class TestReader {
 	public void testSkipValue3() {
 		JsonStringReader reader = new JsonStringReader("{ \"testField\": [ [[{} , {\"t1\" : { \"t2\": {\"t3\" : [\"332f\", \"dsfdsf\\\"sd\"] } } }],[]], [[3,4]] ], \"ssdd\" : \"sdf\\\"sdfsdf\" }");
 		Assert.assertThat(reader.isObject(), is(true));
-		Assert.assertThat(Arrays.equals("testField".toCharArray(), reader.readField()), is(true));
+		Assert.assertThat(Arrays.equals("testField".toCharArray(), reader.readChars()), is(true));
 		Assert.assertThat(reader.isColon(), is(true));
 		reader.skipValue();
 		
 		Assert.assertThat(reader.isComma(), is(true));
-		Assert.assertThat(Arrays.equals("ssdd".toCharArray(), reader.readField()), is(true));
+		Assert.assertThat(Arrays.equals("ssdd".toCharArray(), reader.readChars()), is(true));
 		Assert.assertThat(reader.isColon(), is(true));
 		reader.skipValue();
 		Assert.assertThat(reader.isObjectEnd(), is(true));
@@ -367,7 +367,7 @@ public class TestReader {
 	public static void main(String[] args) {
 		JsonStringReader reader = new JsonStringReader("{ \"testField\": [ [[{} , {\"t1\" : { \"t2\": {\"t3\" : [\"332f\", \"dsfdsf\\\"sd\"] } } }],[]], [[3,4]] ], \"ssdd\" : \"sdf\\\"sdfsdf\" }");
 		reader.isObject();
-		reader.readField();
+		reader.readChars();
 		reader.isColon();
 		reader.skipValue();
 		System.out.println(reader.isComma());

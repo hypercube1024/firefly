@@ -26,7 +26,7 @@ public class EnumParser implements Parser {
 
 	@Override
 	public Object convertTo(JsonStringReader reader, Class<?> clazz) {
-		return find(reader.readEnum());
+		return find(reader.readChars());
 	}
 	
 	private Object find(char[] key) {

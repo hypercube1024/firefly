@@ -8,7 +8,7 @@ public class ByteArrayParser implements Parser {
 
 	@Override
 	public Object convertTo(JsonStringReader reader, Class<?> clazz) {
-		return Base64.decode(reader.readString());
+		return Base64.decodeFast(reader.readChars());
 	}
 
 }

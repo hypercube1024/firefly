@@ -77,7 +77,7 @@ public class ObjectParser implements Parser {
 			throw new JsonException("json string is not object format");
 		
 		for(;;) { // json string 的域数量比元信息多，继续读取
-			char[] field = reader.readField();
+			char[] field = reader.readChars();
 			if(!reader.isColon())
 				throw new JsonException("missing ':'");
 			
