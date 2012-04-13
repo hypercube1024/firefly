@@ -38,6 +38,7 @@ abstract public class SerialStateMachine {
 		SERIAL_MAP.put(short[].class, new ShortArraySerializer());
 		SERIAL_MAP.put(boolean[].class, new BooleanArraySerializer());
 		SERIAL_MAP.put(String[].class, new StringArraySerializer());
+		SERIAL_MAP.put(byte[].class, new ByteArraySerializer());
 
 		SERIAL_MAP.put(Long.class, SERIAL_MAP.get(long.class));
 		SERIAL_MAP.put(Integer.class, SERIAL_MAP.get(int.class));

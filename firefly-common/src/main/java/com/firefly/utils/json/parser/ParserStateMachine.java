@@ -37,6 +37,7 @@ public class ParserStateMachine {
 		PARSER_MAP.put(float[].class, new ArrayParser(float.class));
 		PARSER_MAP.put(double[].class, new ArrayParser(double.class));
 		PARSER_MAP.put(boolean[].class, new ArrayParser(boolean.class));
+		PARSER_MAP.put(byte[].class, new ByteArrayParser());
 		
 		PARSER_MAP.put(Integer[].class, new ArrayParser(Integer.class));
 		PARSER_MAP.put(Long[].class, new ArrayParser(Long.class));

@@ -270,10 +270,17 @@ public class TestParser {
 		DateObj obj = new DateObj();
 		obj.setDate(new Date());
 		
+		StringBuilder strBuilder = new StringBuilder(100);
+		for (int i = 0; i < 100; i++) {
+			strBuilder.append(i).append("+");
+		}
+		obj.setByteArr(strBuilder.toString().getBytes("utf-8"));
+		
 		String json = Json.toJson(obj);
 		System.out.println(json);
 		
 		DateObj obj2 = Json.toObject(json, DateObj.class);
 		System.out.println(SafeSimpleDateFormat.defaultDateFormat.format(obj2.getDate()));
+		System.out.println(new String(obj2.getByteArr(), "utf-8"));
 	}
 }
