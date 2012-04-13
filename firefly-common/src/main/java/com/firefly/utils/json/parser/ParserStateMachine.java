@@ -20,6 +20,7 @@ public class ParserStateMachine {
 		PARSER_MAP.put(float.class, new FloatParser());
 		PARSER_MAP.put(double.class, new DoubleParser());
 		PARSER_MAP.put(boolean.class, new BooleanParser());
+		PARSER_MAP.put(char.class, new CharacterParser());
 		
 		PARSER_MAP.put(Integer.class, PARSER_MAP.get(int.class));
 		PARSER_MAP.put(Long.class, PARSER_MAP.get(long.class));
@@ -27,6 +28,7 @@ public class ParserStateMachine {
 		PARSER_MAP.put(Float.class, PARSER_MAP.get(float.class));
 		PARSER_MAP.put(Double.class, PARSER_MAP.get(double.class));
 		PARSER_MAP.put(Boolean.class, PARSER_MAP.get(boolean.class));
+		PARSER_MAP.put(Character.class, PARSER_MAP.get(char.class));
 		
 		PARSER_MAP.put(String.class, new StringParser());
 		PARSER_MAP.put(Date.class, new DateParser());
@@ -38,6 +40,7 @@ public class ParserStateMachine {
 		PARSER_MAP.put(double[].class, new ArrayParser(double.class));
 		PARSER_MAP.put(boolean[].class, new ArrayParser(boolean.class));
 		PARSER_MAP.put(byte[].class, new ByteArrayParser());
+		PARSER_MAP.put(char[].class, new CharArrayParser());
 		
 		PARSER_MAP.put(Integer[].class, new ArrayParser(Integer.class));
 		PARSER_MAP.put(Long[].class, new ArrayParser(Long.class));
