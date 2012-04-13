@@ -1,14 +1,14 @@
 package com.firefly.utils.json.parser;
 
 import java.lang.reflect.Type;
-import java.util.Collection;
+import java.util.Map;
 
 import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.support.JsonStringReader;
 
-public class CollectionParser extends ComplexTypeParser {
+public class MapParser extends ComplexTypeParser {
 	
-	public CollectionParser(Type elementType) {
+	public MapParser(Type elementType) {
 		super(elementType);
 	}
 
@@ -21,29 +21,33 @@ public class CollectionParser extends ComplexTypeParser {
 		else
 			reader.reset();
 		
-		if(!reader.isArray())
-			throw new JsonException("json string is not array format");
+		if(!reader.isObject())
+			throw new JsonException("json string is not object format");
 		
-		Collection obj = null;
+		Map obj = null;
 		try {
-			obj = (Collection)clazz.newInstance();
+			obj = (Map)clazz.newInstance();
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 		
-		// 判断空数组
+		// 判断空对象
 		reader.mark();
 		char c0 = reader.readAndSkipBlank();
-		if(c0 == ']')
+		if(c0 == '}')
 			return obj;
 		else
 			reader.reset();
 		
 		for(;;) {
-			obj.add(elementMetaInfo.getValue(reader));
+			String key = reader.readString();
+			if(!reader.isColon())
+				throw new JsonException("missing ':'");
+			
+			obj.put(key, elementMetaInfo.getValue(reader));
 			
 			char ch = reader.readAndSkipBlank();
-			if(ch == ']')
+			if(ch == '}')
 				return obj;
 
 			if(ch != ',')

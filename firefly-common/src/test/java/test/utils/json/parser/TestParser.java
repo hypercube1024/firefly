@@ -4,8 +4,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -13,6 +15,7 @@ import org.junit.Test;
 import test.utils.json.ArrayObj;
 import test.utils.json.Book;
 import test.utils.json.CollectionObj;
+import test.utils.json.MapObj;
 import test.utils.json.SimpleObj;
 import test.utils.json.SimpleObj2;
 import test.utils.json.User;
@@ -34,7 +37,6 @@ public class TestParser {
 		i.setWeight(55.47f);
 		i.setHeight(170.5);
 		String jsonStr = Json.toJson(i);
-		System.out.println(jsonStr);
 		
 		SimpleObj i2 = Json.toObject(jsonStr, SimpleObj.class);
 		Assert.assertThat(i2.getAge(), is(10));
@@ -62,7 +64,6 @@ public class TestParser {
 		i2.setName("Tom");
 		i.setContact1(i2);
 		String jsonStr = Json.toJson(i);
-		System.out.println(jsonStr);
 		
 		SimpleObj temp = Json.toObject(jsonStr, SimpleObj.class);
 		Assert.assertThat(temp.getId(), is(33442));
@@ -100,7 +101,6 @@ public class TestParser {
 		so2.setBook(book);
 		
 		String jsonStr = Json.toJson(so2);
-		System.out.println(jsonStr);
 		
 		SimpleObj2 temp = Json.toObject(jsonStr, SimpleObj2.class);
 		Assert.assertThat(temp.getBook().getPrice(), is(3.4));
@@ -151,11 +151,8 @@ public class TestParser {
 		CollectionObj o = new CollectionObj();
 		o.setList(list);
 		String json = Json.toJson(o);
-		System.out.println(json);
 		
 		CollectionObj o2 = Json.toObject(json, CollectionObj.class);
-		System.out.println(o2.getList().get(0).get(0).getId());
-		System.out.println(o2.getList().get(1).get(0).getId());
 		Assert.assertThat(o2.getList().size(), is(2));
 		Assert.assertThat(o2.getList().get(0).size(), is(10));
 		Assert.assertThat(o2.getList().get(0).get(1).getId(), is(33443));
@@ -166,7 +163,6 @@ public class TestParser {
 	public void test6() {
 		 MediaContent record = MediaContent.createRecord();
 		 String json = Json.toJson(record);
-	     System.out.println(json);
 	     
 	     MediaContent r = Json.toObject(json, MediaContent.class);
 	     Assert.assertThat(r.getMedia().getPlayer(), is(Player.JAVA));
@@ -194,7 +190,6 @@ public class TestParser {
 		obj.setUsers(users.toArray(new User[0]));
 		
 		String json = Json.toJson(obj);
-		System.out.println(json);
 		
 		ArrayObj obj2 = Json.toObject(json, ArrayObj.class);
 		Assert.assertThat(obj2.getNumbers()[3], is(5));
@@ -217,7 +212,6 @@ public class TestParser {
 		}
 		User[] u = users.toArray(new User[0]);
 		String json = Json.toJson(u);
-		System.out.println(json);
 		
 		User[] u2 = Json.toObject(json, User[].class);
 		Assert.assertThat(u2.length, is(3));
@@ -225,7 +219,88 @@ public class TestParser {
 		Assert.assertThat(u2[1].getName(), is("user1"));
 	}
 	
+	@Test
+	public void test9() {
+		MapObj m = new MapObj();
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		map.put("a1", 40);
+		m.setMap(map);
+		
+		Map<String, User[]> userMap = new HashMap<String, User[]>();
+		List<User> users = new ArrayList<User>();
+		for (int j = 0; j < 3; j++) {
+			User user = new User();
+			user.setId((long)j);
+			user.setName("user" + j);
+			users.add(user);
+		}
+		User[] u = users.toArray(new User[0]);
+		userMap.put("user1", u);
+		
+		users = new ArrayList<User>();
+		for (int j = 10; j < 12; j++) {
+			User user = new User();
+			user.setId((long)j);
+			user.setName("user_b" + j);
+			users.add(user);
+		}
+		u = users.toArray(new User[0]);
+		userMap.put("user2", u);
+		m.setUserMap(userMap);
+		
+		Map<String, int[]> map3 = new HashMap<String, int[]>();
+		map3.put("m31", new int[]{3,4,5,6});
+		map3.put("m32", new int[]{7,8,9});
+		m.setMap3(map3);
+		
+		String json = Json.toJson(m);
+		
+		MapObj m2 = Json.toObject(json, MapObj.class);
+		Assert.assertThat(m2.getMap().get("a1"), is(40));
+		Assert.assertThat(m.getUserMap().get("user1").length, is(3));
+		Assert.assertThat(m.getUserMap().get("user2").length, is(2));
+		Assert.assertThat(m.getUserMap().get("user2")[0].getName(), is("user_b10"));
+		Assert.assertThat(m2.getMap3().get("m31")[3], is(6));
+	}
+	
 	public static void main(String[] args) throws Throwable {
-
+		MapObj m = new MapObj();
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		map.put("a1", 40);
+		m.setMap(map);
+		
+		Map<String, User[]> userMap = new HashMap<String, User[]>();
+		List<User> users = new ArrayList<User>();
+		for (int j = 0; j < 3; j++) {
+			User user = new User();
+			user.setId((long)j);
+			user.setName("user" + j);
+			users.add(user);
+		}
+		User[] u = users.toArray(new User[0]);
+		userMap.put("user1", u);
+		
+		users = new ArrayList<User>();
+		for (int j = 10; j < 12; j++) {
+			User user = new User();
+			user.setId((long)j);
+			user.setName("user_b" + j);
+			users.add(user);
+		}
+		u = users.toArray(new User[0]);
+		userMap.put("user2", u);
+		m.setUserMap(userMap);
+		
+		Map<String, int[]> map3 = new HashMap<String, int[]>();
+		map3.put("m31", new int[]{3,4,5,6});
+		map3.put("m32", new int[]{7,8,9});
+		m.setMap3(map3);
+		
+		String json = Json.toJson(m);
+		System.out.println(json);
+		
+		MapObj m2 = Json.toObject(json, MapObj.class);
+		System.out.println(m2.getUserMap().get("user2")[0].getName());
+		System.out.println(m2.getMap3().get("m31")[3]);
 	}
 }

@@ -14,6 +14,8 @@ import java.util.Map;
 import com.firefly.utils.json.annotation.Transient;
 import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.parser.CollectionParser;
+import com.firefly.utils.json.parser.ComplexTypeParser;
+import com.firefly.utils.json.parser.MapParser;
 import com.firefly.utils.json.parser.ParserStateMachine;
 import com.firefly.utils.json.support.ParserMetaInfo;
 
@@ -66,10 +68,25 @@ public class DecodeCompiler {
             		throw new JsonException("not support the " + method);
             	
             	Type elementType = types2[0];
-            	parserMetaInfo.setType(CollectionParser.getImplClass(type));
+            	parserMetaInfo.setType(ComplexTypeParser.getImplClass(type));
             	parserMetaInfo.setParser(new CollectionParser(elementType));
-            } else if (Map.class.isAssignableFrom(clazz)) { // TODO Map元信息构造
+            } else if (Map.class.isAssignableFrom(type)) { // TODO Map元信息构造
+            	Type[] types = method.getGenericParameterTypes();
+            	if(types.length != 1 || !(types[0] instanceof ParameterizedType))
+            		throw new JsonException("not support the " + method);
             	
+            	ParameterizedType paramType = (ParameterizedType) types[0];
+            	Type[] types2 = paramType.getActualTypeArguments();
+            	if(types2.length != 2)
+            		throw new JsonException("not support the " + method);
+            	
+            	Type key = types2[0];
+            	if (!((key instanceof Class) && key == String.class))
+            		throw new JsonException("not support the " + method);
+            	
+            	Type elementType = types2[1];
+            	parserMetaInfo.setType(ComplexTypeParser.getImplClass(type));
+            	parserMetaInfo.setParser(new MapParser(elementType));
             } else { // 获取对象、枚举或者数组Parser
             	parserMetaInfo.setType(type);
             	parserMetaInfo.setParser(ParserStateMachine.getParser(type)); 
