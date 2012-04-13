@@ -1,6 +1,7 @@
 package com.firefly.utils.json.parser;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 
 import com.firefly.utils.collection.IdentityHashMap;
@@ -28,6 +29,7 @@ public class ParserStateMachine {
 		PARSER_MAP.put(Boolean.class, PARSER_MAP.get(boolean.class));
 		
 		PARSER_MAP.put(String.class, new StringParser());
+		PARSER_MAP.put(Date.class, new DateParser());
 		
 		PARSER_MAP.put(int[].class, new ArrayParser(int.class));
 		PARSER_MAP.put(long[].class, new ArrayParser(long.class));

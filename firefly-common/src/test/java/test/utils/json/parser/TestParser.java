@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.junit.Test;
 import test.utils.json.ArrayObj;
 import test.utils.json.Book;
 import test.utils.json.CollectionObj;
+import test.utils.json.DateObj;
 import test.utils.json.MapObj;
 import test.utils.json.SimpleObj;
 import test.utils.json.SimpleObj2;
@@ -24,6 +26,7 @@ import test.utils.json.github.Player;
 import test.utils.json.github.Size;
 
 import com.firefly.utils.json.Json;
+import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class TestParser {
 	@Test
@@ -264,43 +267,13 @@ public class TestParser {
 	}
 	
 	public static void main(String[] args) throws Throwable {
-		MapObj m = new MapObj();
-		Map<String, Integer> map = new HashMap<String, Integer>();
-		map.put("a1", 40);
-		m.setMap(map);
+		DateObj obj = new DateObj();
+		obj.setDate(new Date());
 		
-		Map<String, User[]> userMap = new HashMap<String, User[]>();
-		List<User> users = new ArrayList<User>();
-		for (int j = 0; j < 3; j++) {
-			User user = new User();
-			user.setId((long)j);
-			user.setName("user" + j);
-			users.add(user);
-		}
-		User[] u = users.toArray(new User[0]);
-		userMap.put("user1", u);
-		
-		users = new ArrayList<User>();
-		for (int j = 10; j < 12; j++) {
-			User user = new User();
-			user.setId((long)j);
-			user.setName("user_b" + j);
-			users.add(user);
-		}
-		u = users.toArray(new User[0]);
-		userMap.put("user2", u);
-		m.setUserMap(userMap);
-		
-		Map<String, int[]> map3 = new HashMap<String, int[]>();
-		map3.put("m31", new int[]{3,4,5,6});
-		map3.put("m32", new int[]{7,8,9});
-		m.setMap3(map3);
-		
-		String json = Json.toJson(m);
+		String json = Json.toJson(obj);
 		System.out.println(json);
 		
-		MapObj m2 = Json.toObject(json, MapObj.class);
-		System.out.println(m2.getUserMap().get("user2")[0].getName());
-		System.out.println(m2.getMap3().get("m31")[3]);
+		DateObj obj2 = Json.toObject(json, DateObj.class);
+		System.out.println(SafeSimpleDateFormat.defaultDateFormat.format(obj2.getDate()));
 	}
 }
