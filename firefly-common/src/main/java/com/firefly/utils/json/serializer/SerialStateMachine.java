@@ -33,10 +33,10 @@ abstract public class SerialStateMachine {
 		SERIAL_MAP.put(String.class, new StringSerializer());
 		SERIAL_MAP.put(Date.class, new DateSerializer());
 		SERIAL_MAP.put(double.class, new StringValueSerializer());
-		SERIAL_MAP.put(long[].class, new LongArraySerializer());
-		SERIAL_MAP.put(int[].class, new IntegerArraySerializer());
-		SERIAL_MAP.put(short[].class, new ShortArraySerializer());
-		SERIAL_MAP.put(boolean[].class, new BooleanArraySerializer());
+		SERIAL_MAP.put(long[].class, new LongArraySerializer(true));
+		SERIAL_MAP.put(int[].class, new IntegerArraySerializer(true));
+		SERIAL_MAP.put(short[].class, new ShortArraySerializer(true));
+		SERIAL_MAP.put(boolean[].class, new BooleanArraySerializer(true));
 		SERIAL_MAP.put(String[].class, new StringArraySerializer());
 		SERIAL_MAP.put(byte[].class, new ByteArraySerializer());
 
@@ -46,10 +46,10 @@ abstract public class SerialStateMachine {
 		SERIAL_MAP.put(Short.class, SERIAL_MAP.get(short.class));
 		SERIAL_MAP.put(Byte.class, SERIAL_MAP.get(byte.class));
 		SERIAL_MAP.put(Boolean.class, SERIAL_MAP.get(boolean.class));
-		SERIAL_MAP.put(Long[].class, SERIAL_MAP.get(long[].class));
-		SERIAL_MAP.put(Integer[].class, SERIAL_MAP.get(int[].class));
-		SERIAL_MAP.put(Short[].class, SERIAL_MAP.get(short[].class));
-		SERIAL_MAP.put(Boolean[].class, SERIAL_MAP.get(Boolean[].class));
+		SERIAL_MAP.put(Long[].class, new LongArraySerializer(false));
+		SERIAL_MAP.put(Integer[].class, new IntegerArraySerializer(false));
+		SERIAL_MAP.put(Short[].class, new ShortArraySerializer(false));
+		SERIAL_MAP.put(Boolean[].class, new BooleanArraySerializer(false));
 
 		SERIAL_MAP.put(StringBuilder.class, SERIAL_MAP.get(String.class));
 		SERIAL_MAP.put(StringBuffer.class, SERIAL_MAP.get(String.class));
