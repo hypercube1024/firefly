@@ -77,6 +77,7 @@ public class QueueRequestHandler extends RequestHandler {
 			throws IOException {
 		int s = currentQueueSize.get();
 		if(s >= config.getMaxHandlerQueueSize()) { // 队列过载保护
+			log.warn("http request queue size is {}, more than {}", s, config.getMaxHandlerQueueSize());
 			request.response.setHeader("Retry-After", "30");
 			SystemHtmlPage.responseSystemPage(request, request.response, config.getEncoding(), 503, "Service unavailable, please try again later.");
 		} else {
