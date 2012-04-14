@@ -16,7 +16,7 @@ public class Config {
 	private String encoding = "UTF-8";
 	private int maxRequestLineLength = 8 * 1024,
 			maxRequestHeadLength = 16 * 1024, maxRangeNum = 8,
-			writeBufferSize = 8 * 1024, handlerSize,
+			writeBufferSize = 8 * 1024, handlerSize, maxHandlerQueueSize,
 			maxSessionInactiveInterval = 10 * 60;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
@@ -311,6 +311,14 @@ public class Config {
 
 	public void setKeepAlive(boolean keepAlive) {
 		this.keepAlive = keepAlive;
+	}
+
+	public int getMaxHandlerQueueSize() {
+		return maxHandlerQueueSize;
+	}
+
+	public void setMaxHandlerQueueSize(int maxHandlerQueueSize) {
+		this.maxHandlerQueueSize = maxHandlerQueueSize;
 	}
 
 }
