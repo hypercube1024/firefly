@@ -39,11 +39,10 @@ public class QueueRequestHandler extends RequestHandler {
 					try {
 						for (HttpServletRequestImpl request = null; (request = queue.poll(
 								1000, TimeUnit.MILLISECONDS)) != null;) {
-							doRequest(request, id);
 							currentQueueSize.decrementAndGet();
+							doRequest(request, id);
 						}
 					} catch (Throwable e) {
-						currentQueueSize.decrementAndGet();
 						log.error("http queue error", e);
 					}
 				}
