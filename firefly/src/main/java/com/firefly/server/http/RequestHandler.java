@@ -1,8 +1,6 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
@@ -13,11 +11,12 @@ import com.firefly.utils.log.LogFactory;
 public abstract class RequestHandler {
 	
 	private static Log access = LogFactory.getInstance().getLog("firefly-access");
-	private List<DispatcherController> controllers = new LinkedList<DispatcherController>();
+	private DispatcherController servletController;
+	private DispatcherController fileController;
 	
 	public RequestHandler(HttpServletDispatcherController servletController, FileDispatcherController fileController) {
-		controllers.add(servletController);
-		controllers.add(fileController);
+		this.servletController = servletController;
+		this.fileController = fileController;
 	}
 
 	protected void doRequest(HttpServletRequestImpl request, int id) throws IOException {
@@ -26,10 +25,8 @@ public abstract class RequestHandler {
 		if (request.response.system) {
 			request.response.outSystemData();
 		} else {
-			for(DispatcherController controller : controllers) {
-				if(!controller.dispatcher(request, request.response))
-					break;
-			}
+			if(servletController.dispatcher(request, request.response))
+				fileController.dispatcher(request, request.response);
 		}
 		request.releaseInputStreamData();
 		
