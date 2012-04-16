@@ -23,8 +23,9 @@ public abstract class Json {
 		return ret;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static <T> T toObject(String json, Class<T> clazz) {
 		JsonStringReader reader = new JsonStringReader(json);
-		return ParserStateMachine.toObject(reader, clazz);
+		return (T) ParserStateMachine.toObject(reader, clazz);
 	}
 }
