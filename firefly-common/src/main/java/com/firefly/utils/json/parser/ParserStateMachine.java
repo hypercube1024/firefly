@@ -12,6 +12,7 @@ import com.firefly.utils.json.support.JsonStringReader;
 public class ParserStateMachine {
 	
 	private static final IdentityHashMap<Class<?>, Parser> PARSER_MAP = new IdentityHashMap<Class<?>, Parser>();
+	private static final Object LOCK = new Object();
 	
 	static {
 		PARSER_MAP.put(int.class, new IntParser());
@@ -55,7 +56,7 @@ public class ParserStateMachine {
 	public static Parser getParser(Class<?> clazz) {
 		Parser ret = PARSER_MAP.get(clazz);
 		if(ret == null) {
-			synchronized(ParserStateMachine.class) {
+			synchronized(LOCK) {
 				ret = PARSER_MAP.get(clazz);
 				if(ret == null) {
 					if (clazz.isEnum()) {
