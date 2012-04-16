@@ -18,6 +18,7 @@ import test.utils.json.Book;
 import test.utils.json.CollectionObj;
 import test.utils.json.DateObj;
 import test.utils.json.MapObj;
+import test.utils.json.Profile;
 import test.utils.json.SimpleObj;
 import test.utils.json.SimpleObj2;
 import test.utils.json.User;
@@ -294,6 +295,14 @@ public class TestParser {
 		SimpleObj2 obj2 = Json.toObject(json, SimpleObj2.class);
 		Assert.assertThat(obj2.getSex(), is('c'));
 		Assert.assertThat(new String(obj2.getSymbol()), is("测试一下"));
+	}
+	
+	@Test
+	public void test12() {
+		String json = "{\"totalreadtime\":5,\"notecount\":27,\"timeintervalreadtime\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,4,0,0,0,0,0,0,0],\"bookcollect\":0,\"screenshotshare\":0,\"readbooktype\":null,\"bookshare\":0,\"readbookcount\":0,\"noteshare\":0}";
+		Profile p = Json.toObject(json, Profile.class);
+		Assert.assertThat(p.getTotalreadtime(), is(5));
+		Assert.assertThat(p.getNotecount(), is(27));
 	}
 
 }

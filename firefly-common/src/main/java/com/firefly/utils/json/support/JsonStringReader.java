@@ -305,7 +305,8 @@ public class JsonStringReader {
 		int len = chs.length;
 		boolean skip = true;
 		
-		if(chars[pos + len] == '"') {
+		int next = pos + len;
+		if(next < limit && chars[next] == '"') {
 			for (int i = 0; i < len; i++) {
 				if (chs[i] != chars[cur++]) {
 					skip = false;
