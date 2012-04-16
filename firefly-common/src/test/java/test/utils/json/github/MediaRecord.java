@@ -1,11 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package test.utils.json.github;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class MediaRecord {
 
@@ -30,28 +23,6 @@ public class MediaRecord {
     private Player value10;
 
     private String value11;
-
-  public static void main(String[] args) throws Throwable {
-//        System.out.println(JsonFactory.loadJsonToken(MediaRecord.class));
-//        MediaRecord media = new MediaRecord();
-//        media.setValue1("http://javaone.com/keynote.mpg");
-//        media.setValue2("Javaone Keynote");
-//        media.setValue3(640);
-//        media.setValue4(480);
-//        media.setValue5("video/mpg4");
-//        media.setValue6(18000000);
-//        media.setValue7(58982400);
-//        media.setValue8(262144);
-//        media.setValue9((new String[]{"BillGates", "SteveJobs"}));
-//        media.setValue10(Player.JAVA);
-//        media.setValue11(null);
-//        MediaRecord record = media;
-//        System.out.println(record);
-//        System.out.println(JsonConvert.convertTo(record));
-//        System.out.println(JsonConvert.convertFrom(record.toString(), record.getClass()));
-//        System.out.println(JSON.toJSONString(record));
-//        Performance.run(10000, record);
-    }
 
     public String getValue1() {
         return value1;
