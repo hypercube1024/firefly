@@ -13,16 +13,16 @@ public class ObjectParser implements Parser {
 	
 	private ParserMetaInfo[] parserMetaInfos;
 	private int max;
-	private Map<String, Integer> map;
+	private Map<String, ParserMetaInfo> map;
 	private boolean useMap;
 	
 	public void init(Class<?> clazz) {
 		parserMetaInfos = DecodeCompiler.compile(clazz);
 		max = parserMetaInfos.length - 1;
 		if(max >= 8) {
-			map = new HashMap<String, Integer>();
-			for (int i = 0; i < parserMetaInfos.length; i++) {
-				map.put(parserMetaInfos[i].getPropertyNameString(), i);
+			map = new HashMap<String, ParserMetaInfo>();
+			for(ParserMetaInfo parserMetaInfo : parserMetaInfos) {
+				map.put(parserMetaInfo.getPropertyNameString(), parserMetaInfo);
 			}
 			useMap = true;
 		}
@@ -111,9 +111,7 @@ public class ObjectParser implements Parser {
 	
 	private ParserMetaInfo find(char[] field) {
 		if(useMap) {
-			Integer index = map.get(new String(field));
-			if(index != null)
-				return parserMetaInfos[index];
+			return map.get(new String(field));
 		} else {
 			for(ParserMetaInfo parserMetaInfo : parserMetaInfos) {
 				if(parserMetaInfo.equals(field))
