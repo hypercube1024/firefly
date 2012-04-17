@@ -299,10 +299,12 @@ public class TestParser {
 	
 	@Test
 	public void test12() {
-		String json = "{\"totalreadtime\":5,\"notecount\":27,\"timeintervalreadtime\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,4,0,0,0,0,0,0,0],\"bookcollect\":0,\"screenshotshare\":0,\"readbooktype\":null,\"bookshare\":0,\"readbookcount\":0,\"noteshare\":0}";
+		String json = "{\"totalreadtime\":5,\"notecount\":27,\"timeintervalreadtime\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,4,0,0,0,0,0,0,0],\"bookcollect\":0,\"screenshotshare\":0,\"readbooktype\":{\"测试\":1,\"测试一下\":23},\"bookshare\":0,\"readbookcount\":0,\"noteshare\":0}";
 		Profile p = Json.toObject(json, Profile.class);
 		Assert.assertThat(p.getTotalreadtime(), is(5));
 		Assert.assertThat(p.getNotecount(), is(27));
+		Assert.assertThat(p.getTimeintervalreadtime().length, is(24));
+		Assert.assertThat(p.getReadbooktype().get("测试一下"), is(23));
 	}
 
 }

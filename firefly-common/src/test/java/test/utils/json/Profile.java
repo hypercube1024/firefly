@@ -92,6 +92,7 @@ public class Profile {
 		String json = "{\"totalreadtime\":5,\"notecount\":27,\"timeintervalreadtime\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,4,0,0,0,0,0,0,0],\"bookcollect\":0,\"screenshotshare\":0,\"readbooktype\":null,\"bookshare\":0,\"readbookcount\":0,\"noteshare\":0}";
 		Profile p = Json.toObject(json, Profile.class);
 		System.out.println(p.getTotalreadtime());
+		System.out.println(p.getTimeintervalreadtime().length);
 //		System.out.println(p.getReadbooktype().get("测试"));
 	}
 

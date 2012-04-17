@@ -1,5 +1,8 @@
 package com.firefly.utils.json.parser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.compiler.DecodeCompiler;
 import com.firefly.utils.json.exception.JsonException;
@@ -10,10 +13,19 @@ public class ObjectParser implements Parser {
 	
 	private ParserMetaInfo[] parserMetaInfos;
 	private int max;
+	private Map<String, Integer> map;
+	private boolean useMap;
 	
 	public void init(Class<?> clazz) {
 		parserMetaInfos = DecodeCompiler.compile(clazz);
 		max = parserMetaInfos.length - 1;
+		if(max >= 8) {
+			map = new HashMap<String, Integer>();
+			for (int i = 0; i < parserMetaInfos.length; i++) {
+				map.put(parserMetaInfos[i].getPropertyNameString(), i);
+			}
+			useMap = true;
+		}
 	}
 
 	@Override
@@ -98,9 +110,15 @@ public class ObjectParser implements Parser {
 	}
 	
 	private ParserMetaInfo find(char[] field) {
-		for(ParserMetaInfo parserMetaInfo : parserMetaInfos) {
-			if(parserMetaInfo.equals(field))
-				return parserMetaInfo;
+		if(useMap) {
+			Integer index = map.get(new String(field));
+			if(index != null)
+				return parserMetaInfos[index];
+		} else {
+			for(ParserMetaInfo parserMetaInfo : parserMetaInfos) {
+				if(parserMetaInfo.equals(field))
+					return parserMetaInfo;
+			}
 		}
 		return null;
 	}
