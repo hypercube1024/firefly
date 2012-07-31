@@ -1,10 +1,13 @@
 package com.firefly.mvc.web.servlet;
 
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -33,12 +36,15 @@ public class SystemHtmlPage {
 
 	public static String systemPageTemplate(int status, String content) {
 		StringBuilder ret = new StringBuilder();
-		ret.append(
-				"<!DOCTYPE html><html><head><title>firefly</title></head><body><h2>HTTP ERROR ")
-				.append(status)
-				.append("</h2><div>")
-				.append(content)
-				.append("</div><hr/><i><small>firefly framework</small></i></body></html>");
+		try {
+			ret.append("<!DOCTYPE html><html><head><title>firefly</title></head><body><h2>HTTP ERROR ")
+			.append(status)
+			.append("</h2><div>")
+			.append(StringUtils.escapeXML(URLDecoder.decode(content, "UTF-8")))
+			.append("</div><hr/><i><small>firefly framework</small></i></body></html>");
+		} catch (UnsupportedEncodingException e) {
+			log.error("url decode error", e);
+		}
 		return ret.toString();
 	}
 }
