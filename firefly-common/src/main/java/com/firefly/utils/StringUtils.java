@@ -532,4 +532,44 @@ public class StringUtils {
 		ret.append(s.substring(cursor, s.length()));
 		return ret.toString();
 	}
+	
+	public static String escapeXML(String str) {
+		if (str == null)
+			return "";
+
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < str.length(); ++i) {
+			char c = str.charAt(i);
+			switch (c) {
+			case '\u00FF':
+			case '\u0024':
+				break;
+			case '&':
+				sb.append("&amp;");
+				break;
+			case '<':
+				sb.append("&lt;");
+				break;
+			case '>':
+				sb.append("&gt;");
+				break;
+			case '\"':
+				sb.append("&quot;");
+				break;
+			case '\'':
+				sb.append("&apos;");
+				break;
+			default:
+				if (c >= '\u0000' && c <= '\u001F')
+					break;
+				if (c >= '\uE000' && c <= '\uF8FF')
+					break;
+				if (c >= '\uFFF0' && c <= '\uFFFF')
+					break;
+				sb.append(c);
+				break;
+			}
+		}
+		return sb.toString();
+	}
 }
