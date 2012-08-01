@@ -472,6 +472,12 @@ public class JsonStringReader {
 					writer.write('\\');
 					pos = cur;
 					break;
+				case '/':
+					len = cur - 2 - pos;
+					writer.write(chars, pos, len);
+					writer.write('/');
+					pos = cur;
+					break;
 				case '"':
 					len = cur - 2 - pos;
 					writer.write(chars, pos, len);

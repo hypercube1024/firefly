@@ -31,6 +31,16 @@ import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class TestParser {
 	@Test
+	public void testStr() {
+		SimpleObj i = new SimpleObj();
+		i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com");
+		String jsonStr = Json.toJson(i);
+		System.out.println(jsonStr);
+		SimpleObj i2 = Json.toObject(jsonStr, SimpleObj.class);
+		Assert.assertThat(i2.getName(), is("PengtaoQiu\nAlvin\nhttp://fireflysource.com"));
+	}
+	
+	@Test
 	public void test() {
 		SimpleObj i = new SimpleObj();
 		i.setAge(10);

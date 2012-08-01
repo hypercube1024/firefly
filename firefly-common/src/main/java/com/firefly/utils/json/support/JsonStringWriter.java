@@ -51,6 +51,10 @@ public class JsonStringWriter extends StringWriter {
 				buf[count++] = '\\';
 				buf[count++] = '\\';
 				break;
+			case '/':
+				buf[count++] = '\\';
+				buf[count++] = '/';
+				break;
 			case '"':
 				buf[count++] = '\\';
 				buf[count++] = '"';
