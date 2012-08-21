@@ -265,7 +265,7 @@ public class TestParser {
 		Map<String, int[]> map3 = new HashMap<String, int[]>();
 		map3.put("m31", new int[]{3,4,5,6});
 		map3.put("m32", new int[]{7,8,9});
-		m.setMap3(map3);
+		m.map3 = map3;
 		
 		String json = Json.toJson(m);
 		
@@ -274,7 +274,7 @@ public class TestParser {
 		Assert.assertThat(m.getUserMap().get("user1").length, is(3));
 		Assert.assertThat(m.getUserMap().get("user2").length, is(2));
 		Assert.assertThat(m.getUserMap().get("user2")[0].getName(), is("user_b10"));
-		Assert.assertThat(m2.getMap3().get("m31")[3], is(6));
+		Assert.assertThat(m2.map3.get("m31")[3], is(6));
 	}
 	
 	@Test

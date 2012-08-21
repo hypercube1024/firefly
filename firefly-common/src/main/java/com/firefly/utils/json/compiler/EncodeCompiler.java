@@ -3,12 +3,13 @@ package com.firefly.utils.json.compiler;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.firefly.utils.json.annotation.Transient;
 import com.firefly.utils.json.serializer.SerialStateMachine;
+import com.firefly.utils.json.support.FieldInvoke;
+import com.firefly.utils.json.support.MethodInvoke;
 import com.firefly.utils.json.support.SerializerMetaInfo;
 
 public class EncodeCompiler {
@@ -17,7 +18,7 @@ public class EncodeCompiler {
 	
 	public static SerializerMetaInfo[] compile(Class<?> clazz) {
 		SerializerMetaInfo[] serializerMetaInfos = null;
-		List<SerializerMetaInfo> fieldList = new ArrayList<SerializerMetaInfo>();
+		Set<SerializerMetaInfo> fieldSet = new TreeSet<SerializerMetaInfo>();
 		
 		for (Method method : clazz.getMethods()) {
 			method.setAccessible(true);
@@ -60,15 +61,26 @@ public class EncodeCompiler {
 			Class<?> fieldClazz = method.getReturnType();
 			SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
 			fieldMetaInfo.setPropertyName(propertyName, false);
-			fieldMetaInfo.setMethod(method);
+			fieldMetaInfo.setPropertyInvoke(new MethodInvoke(method));
 			
 			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(fieldClazz));
-			fieldList.add(fieldMetaInfo);
+			fieldSet.add(fieldMetaInfo);
 		}
 		
-		serializerMetaInfos = fieldList.toArray(EMPTY_ARRAY);
+		for(Field field : clazz.getFields()) { // public字段序列化构造
+			if(Modifier.isTransient(field.getModifiers()) || field.isAnnotationPresent(Transient.class))
+				continue;
+			
+			field.setAccessible(true);
+			SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
+			fieldMetaInfo.setPropertyName(field.getName(), false);
+			fieldMetaInfo.setPropertyInvoke(new FieldInvoke(field));
+			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(field.getType()));
+			fieldSet.add(fieldMetaInfo);
+		}
+		
+		serializerMetaInfos = fieldSet.toArray(EMPTY_ARRAY);
 		if(serializerMetaInfos.length > 0) {
-			Arrays.sort(serializerMetaInfos);
 			serializerMetaInfos[0].setPropertyName(serializerMetaInfos[0].getPropertyNameString(), true);
 		}
 		return serializerMetaInfos;

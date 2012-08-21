@@ -1,13 +1,19 @@
 package test.utils.json;
 
+import java.util.List;
+
 import com.firefly.utils.json.annotation.Transient;
 
 public class Book {
 	@Transient
 	private String text, title;
-	private Integer id;
 	private double price;
 	private Boolean sell;
+	public String author;
+	private Integer id;
+	public int publishingId;
+	public transient Object extInfo;
+	public List<SimpleObj> simpleObjs;
 
 	public String getTitle() {
 		return title;

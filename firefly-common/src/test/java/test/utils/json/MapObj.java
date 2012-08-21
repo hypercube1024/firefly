@@ -8,15 +8,7 @@ public class MapObj {
 	private Map<String, User[]> userMap;
 	private Map<String, Book> bookMap;
 	private Map<String, List<List<SimpleObj>>> map2;
-	private Map<String, int[]> map3;
-
-	public Map<String, int[]> getMap3() {
-		return map3;
-	}
-
-	public void setMap3(Map<String, int[]> map3) {
-		this.map3 = map3;
-	}
+	public Map<String, int[]> map3;
 
 	public Map<String, Integer> getMap() {
 		return map;
