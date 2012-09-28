@@ -7,6 +7,7 @@ import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.net.Session;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public abstract class RequestHandler {
 	
@@ -20,7 +21,7 @@ public abstract class RequestHandler {
 	}
 
 	protected void doRequest(HttpServletRequestImpl request, int id) throws IOException {
-		long start = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+		long start = Millisecond100Clock.currentTimeMillis();
 	
 		if (request.response.system) {
 			request.response.outSystemData();
@@ -30,7 +31,7 @@ public abstract class RequestHandler {
 		}
 		request.releaseInputStreamData();
 		
-		long end = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+		long end = Millisecond100Clock.currentTimeMillis();
 		access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 
 				request.session.getSessionId(), 
 				id, 

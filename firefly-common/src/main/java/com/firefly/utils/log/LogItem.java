@@ -2,10 +2,8 @@ package com.firefly.utils.log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Date;
 
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class LogItem {
 	private String name, content, date, level;
@@ -41,10 +39,13 @@ public class LogItem {
 		this.level = level;
 	}
 
+	public void setDate(String date) {
+		this.date = date;
+	}
+
 	@Override
 	public String toString() {
 		if (logStr == null) {
-			date = SafeSimpleDateFormat.defaultDateFormat.format(new Date());
 			content = StringUtils.replace(content, objs);
 			if (throwable != null) {
 				StringWriter str = new StringWriter();

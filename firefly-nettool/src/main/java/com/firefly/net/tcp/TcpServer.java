@@ -25,6 +25,7 @@ import com.firefly.net.event.ThreadPoolEventManager;
 import com.firefly.net.exception.NetException;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class TcpServer implements Server {
 
@@ -172,6 +173,7 @@ public class TcpServer implements Server {
 			worker.shutdown();
 		}
 		start = false;
+		Millisecond100Clock.stop();
 		log.debug("thread {} is shutdown: {}", bossThread.getName(),
 				bossThread.isInterrupted());
 	}

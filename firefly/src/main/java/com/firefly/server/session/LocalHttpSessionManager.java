@@ -8,6 +8,7 @@ import javax.servlet.http.HttpSessionEvent;
 
 import com.firefly.server.http.Config;
 import com.firefly.utils.time.HashTimeWheel;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class LocalHttpSessionManager implements HttpSessionManager {
 
@@ -45,7 +46,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 		String id = UUID.randomUUID().toString().replace("-", "");
 		long timeout = config.getMaxSessionInactiveInterval() * 1000;
 		HttpSessionImpl session = new HttpSessionImpl(this, id,
-				com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis(),
+				Millisecond100Clock.currentTimeMillis(),
 				config.getMaxSessionInactiveInterval());
 		timeWheel.add(timeout, new TimeoutTask(session));
 		map.put(id, session);
@@ -68,7 +69,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 
 		@Override
 		public void run() {
-			long t = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis()
+			long t = Millisecond100Clock.currentTimeMillis()
 					- session.getLastAccessedTime();
 			long timeout = session.getMaxInactiveInterval() * 1000;
 			// System.out.println(timeout + "|" + t);

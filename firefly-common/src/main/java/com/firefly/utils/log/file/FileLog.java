@@ -11,6 +11,7 @@ import java.util.Queue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.log.LogItem;
+import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class FileLog implements Log {
 	private int level;
@@ -32,8 +33,24 @@ public class FileLog implements Log {
 		if (fileOutput && buffer.size() > 0) {
 			BufferedWriter bufferedWriter = null;
 			try {
-				bufferedWriter = getBufferedWriter();
+				String date = LogFactory.dayDateFormat.format(new Date());
+				bufferedWriter = getBufferedWriter(date);
+				
 				for (LogItem logItem = null; (logItem = buffer.poll()) != null;) {
+					Date d = new Date();
+					String newDate = LogFactory.dayDateFormat.format(d);
+					if(!newDate.equals(date)) {
+						if (bufferedWriter != null)
+							try {
+								bufferedWriter.close();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						date = newDate;
+						bufferedWriter = getBufferedWriter(date);
+					}
+					
+					logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
 					bufferedWriter.append(logItem.toString() + CL);
 				}
 			} catch (IOException e) {
@@ -49,9 +66,9 @@ public class FileLog implements Log {
 		}
 	}
 
-	private BufferedWriter getBufferedWriter() throws IOException {
-		File file = new File(path, name + "."
-				+ LogFactory.dayDateFormat.format(new Date()) + ".txt");
+	private BufferedWriter getBufferedWriter(String date) throws IOException {
+		
+		File file = new File(path, name + "." + date + ".txt");
 		boolean ret = false;
 		if (!file.exists()) {
 			ret = file.createNewFile();

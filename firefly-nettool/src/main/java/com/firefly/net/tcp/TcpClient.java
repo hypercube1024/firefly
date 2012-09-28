@@ -5,6 +5,7 @@ import com.firefly.net.event.CurrentThreadEventManager;
 import com.firefly.net.event.ThreadPoolEventManager;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -98,9 +99,10 @@ public class TcpClient implements Client {
 
 	@Override
 	public void shutdown() {
-		for(Worker worker : workers) {
+		for(Worker worker : workers)
 			worker.shutdown();
-		}
+
+		Millisecond100Clock.stop();
 	}
 
 }

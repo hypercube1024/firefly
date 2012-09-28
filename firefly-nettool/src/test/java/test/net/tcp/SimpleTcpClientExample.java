@@ -6,9 +6,10 @@ import com.firefly.net.support.SimpleTcpClient;
 import com.firefly.net.support.StringLineDecoder;
 import com.firefly.net.support.StringLineEncoder;
 import com.firefly.net.support.TcpConnection;
+import com.firefly.utils.log.LogFactory;
 
 public class SimpleTcpClientExample {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Throwable {
 		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900,
 				new StringLineDecoder(), new StringLineEncoder());
 		TcpConnection c = client.connect();
@@ -49,6 +50,11 @@ public class SimpleTcpClientExample {
 		TcpConnection c2 = client.connect();
 		System.out.println("con2|" + c2.send("getfile"));
 		c2.close(false);
+		
+		Thread.sleep(4000);
+		client.shutdown();
+		LogFactory.getInstance().shutdown();
+//		System.out.println("shutdown");
 
 		
 	}

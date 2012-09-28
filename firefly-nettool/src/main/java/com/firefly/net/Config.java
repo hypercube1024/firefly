@@ -1,12 +1,6 @@
 package com.firefly.net;
 
-import com.firefly.utils.time.TimeProvider;
-
 public class Config {
-	public static final TimeProvider TIME_PROVIDER = new TimeProvider(100);
-	static {
-		TIME_PROVIDER.start();
-	}
 	
 	private int timeout = 10 * 1000;
 	private int handleThreads = -1;

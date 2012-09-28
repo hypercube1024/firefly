@@ -9,6 +9,7 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionContext;
 
 import com.firefly.server.exception.HttpServerException;
+import com.firefly.utils.time.Millisecond100Clock;
 
 @SuppressWarnings("deprecation")
 public class HttpSessionImpl implements HttpSession {
@@ -66,7 +67,7 @@ public class HttpSessionImpl implements HttpSession {
 
 	@Override
 	public Object getAttribute(String name) {
-		lastAccessedTime = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+		lastAccessedTime = Millisecond100Clock.currentTimeMillis();
 		return map.get(name);
 	}
 
@@ -77,19 +78,19 @@ public class HttpSessionImpl implements HttpSession {
 
 	@Override
 	public Enumeration<String> getAttributeNames() {
-		lastAccessedTime = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+		lastAccessedTime = Millisecond100Clock.currentTimeMillis();
 		return map.keys();
 	}
 
 	@Override
 	public String[] getValueNames() {
-		lastAccessedTime = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+		lastAccessedTime = Millisecond100Clock.currentTimeMillis();
 		return map.keySet().toArray(EMPTY_ARR);
 	}
 
 	@Override
 	public void setAttribute(String name, Object value) {
-		lastAccessedTime = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+		lastAccessedTime = Millisecond100Clock.currentTimeMillis();
 		Object v = map.put(name, value);
 		if(v == null)
 			sessionManager.getConfig().getHttpSessionAttributeListener().attributeAdded(new HttpSessionBindingEvent(this, name, value));
@@ -104,7 +105,7 @@ public class HttpSessionImpl implements HttpSession {
 
 	@Override
 	public void removeAttribute(String name) {
-		lastAccessedTime = com.firefly.net.Config.TIME_PROVIDER.currentTimeMillis();
+		lastAccessedTime = Millisecond100Clock.currentTimeMillis();
 		Object value = map.remove(name);
 		if(value != null)
 			sessionManager.getConfig().getHttpSessionAttributeListener().attributeRemoved(new HttpSessionBindingEvent(this, name, value));
