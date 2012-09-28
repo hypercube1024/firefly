@@ -91,7 +91,7 @@ public class QueueRequestHandler extends RequestHandler {
 			SystemHtmlPage.responseSystemPage(request, request.response, config.getEncoding(), 503, "Service unavailable, please try again later.");
 		} else {
 			
-			if(IDEMPOTENT_METHODS.contains(request.getMethod())) { // 等幂方法序列支持pipeline请求
+			if(IDEMPOTENT_METHODS.contains(request.getMethod()) && request.isKeepAlive() ) { // pipeline请求
 				int sessionId = session.getSessionId();
 				int handlerIndex = Math.abs(sessionId) % queues.length;
 				queues[handlerIndex].add(request);
