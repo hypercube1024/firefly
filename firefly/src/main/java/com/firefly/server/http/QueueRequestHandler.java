@@ -1,6 +1,11 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,6 +19,8 @@ import com.firefly.utils.log.LogFactory;
 public class QueueRequestHandler extends RequestHandler {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final Set<String> IDEMPOTENT_METHODS = new HashSet<String>(Arrays.asList("GET", "HEAD", "OPTIONS", "TRACE", "DELETE"));
+	private ExecutorService executor = Executors.newCachedThreadPool();
 	private HttpQueueHandler[] queues;
 	private Config config;
 	private AtomicInteger currentQueueSize = new AtomicInteger();
@@ -70,10 +77,12 @@ public class QueueRequestHandler extends RequestHandler {
 	public void shutdown() {
 		for (HttpQueueHandler h : queues)
 			h.shutdown();
+		
+		executor.shutdown();
 	}
 
 	@Override
-	public void doRequest(Session session, HttpServletRequestImpl request)
+	public void doRequest(Session session, final HttpServletRequestImpl request)
 			throws IOException {
 		int s = currentQueueSize.get();
 		if(s >= config.getMaxHandlerQueueSize()) { // 队列过载保护
@@ -81,9 +90,24 @@ public class QueueRequestHandler extends RequestHandler {
 			request.response.setHeader("Retry-After", "30");
 			SystemHtmlPage.responseSystemPage(request, request.response, config.getEncoding(), 503, "Service unavailable, please try again later.");
 		} else {
-			int sessionId = session.getSessionId();
-			int handlerIndex = Math.abs(sessionId) % queues.length;
-			queues[handlerIndex].add(request);
+			
+			if(IDEMPOTENT_METHODS.contains(request.getMethod())) { // 等幂方法序列支持pipeline请求
+				int sessionId = session.getSessionId();
+				int handlerIndex = Math.abs(sessionId) % queues.length;
+				queues[handlerIndex].add(request);
+			} else {
+				executor.submit(new Runnable(){
+
+					@Override
+					public void run() {
+						try {
+							doRequest(request, -1);
+						} catch (IOException e) {
+							log.error("http handle thread error", e);
+						}
+					}
+				});
+			}
 		}
 	}
 
