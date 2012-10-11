@@ -80,12 +80,10 @@ public class TestVerifyUtils {
 		Assert.assertTrue(VerifyUtils
 				.simpleWildcardMatch("*.java", "toto.java"));
 		Assert.assertFalse(VerifyUtils.simpleWildcardMatch("abc*", ""));
-		Assert
-				.assertTrue(VerifyUtils.simpleWildcardMatch("a*c",
+		Assert.assertTrue(VerifyUtils.simpleWildcardMatch("a*c",
 						"abbbbbccccc"));
 
-		Assert.assertTrue(VerifyUtils
-				.simpleWildcardMatch("abc*xyz", "abcxxxyz"));
+		Assert.assertTrue(VerifyUtils.simpleWildcardMatch("abc*xyz", "abcxxxyz"));
 		Assert.assertTrue(VerifyUtils.simpleWildcardMatch("*xyz", "abcxxxyz"));
 		Assert.assertTrue(VerifyUtils.simpleWildcardMatch("abc**xyz",
 				"abcxxxyz"));
@@ -103,6 +101,8 @@ public class TestVerifyUtils {
 				"aabbccxxxeeyffz"));
 		Assert.assertTrue(VerifyUtils.simpleWildcardMatch("a*b*c*x*yf*ze",
 				"aabbccxxxeeyfze"));
+		Assert.assertTrue(VerifyUtils.simpleWildcardMatch("abc*abc", "abcabcabc"));
+		Assert.assertTrue(VerifyUtils.simpleWildcardMatch("aa*aa", "aaaaa"));
 
 		Assert.assertTrue(VerifyUtils.simpleWildcardMatch(
 				"*LogServerInterface*.java", "_LogServerInterfaceImpl.java"));
@@ -110,5 +110,11 @@ public class TestVerifyUtils {
 				"_LogServerInterfaceImpl.java"));
 		Assert.assertTrue(VerifyUtils
 				.simpleWildcardMatch("abc*xyz", "abcxyxyz"));
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(VerifyUtils.simpleWildcardMatch("abc*abc", "abcabcabc"));
+		System.out.println(VerifyUtils.simpleWildcardMatch("aa*aa", "aaaaaa"));
+		System.out.println(VerifyUtils.simpleWildcardMatch("*aa*", "aaaaaa"));
 	}
 }

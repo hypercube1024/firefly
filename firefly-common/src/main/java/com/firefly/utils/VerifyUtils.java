@@ -33,9 +33,9 @@ abstract public class VerifyUtils {
 			return str.equals(pattern);
 		default:
 			for (String part : array) {
-				currentIndex = str.indexOf(part);
+				currentIndex = str.indexOf(part, lastIndex + 1);
 				if (currentIndex > lastIndex) {
-					lastIndex = currentIndex;
+					lastIndex = currentIndex + part.length() - 1;
 					continue;
 				}
 				return false;
