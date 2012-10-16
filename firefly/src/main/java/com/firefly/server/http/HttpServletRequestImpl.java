@@ -10,12 +10,15 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.servlet.RequestDispatcher;
@@ -45,6 +48,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	Session session;
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final Set<String> IDEMPOTENT_METHODS = new HashSet<String>(Arrays.asList("GET", "HEAD", "OPTIONS", "TRACE", "DELETE"));
 	private StringParser parser = new StringParser();
 	private static final String[] EMPTY_STR_ARR = new String[0];
 	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
@@ -149,6 +153,12 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 					"Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || 
 					( !getProtocol().equals("HTTP/1.0") && !"close".equalsIgnoreCase(getHeader("Connection")) )
 				);
+	}
+	
+	public boolean isSupportPipeline() {
+		return config.isKeepAlive() &&
+				IDEMPOTENT_METHODS.contains(getMethod()) && 
+				( "Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || !getProtocol().equals("HTTP/1.0") );
 	}
 
 	public boolean isChunked() {

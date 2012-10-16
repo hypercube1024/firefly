@@ -1,9 +1,6 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +16,6 @@ import com.firefly.utils.log.LogFactory;
 public class QueueRequestHandler extends RequestHandler {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static final Set<String> IDEMPOTENT_METHODS = new HashSet<String>(Arrays.asList("GET", "HEAD", "OPTIONS", "TRACE", "DELETE"));
 	private ExecutorService executor = Executors.newCachedThreadPool();
 	private HttpQueueHandler[] queues;
 	private Config config;
@@ -91,7 +87,7 @@ public class QueueRequestHandler extends RequestHandler {
 			SystemHtmlPage.responseSystemPage(request, request.response, config.getEncoding(), 503, "Service unavailable, please try again later.");
 		} else {
 			
-			if(IDEMPOTENT_METHODS.contains(request.getMethod()) && request.isKeepAlive() ) { // pipeline请求
+			if(request.isSupportPipeline()) { // pipeline请求
 				int sessionId = session.getSessionId();
 				int handlerIndex = Math.abs(sessionId) % queues.length;
 				queues[handlerIndex].add(request);

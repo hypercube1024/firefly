@@ -27,6 +27,7 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.pattern.Pattern;
 
 /**
  * Web应用上下文默认实现
@@ -196,7 +197,8 @@ public class AnnotationWebContext extends XmlApplicationContext implements
 			uri = uri.substring(0, uri.length() - 1);
 		if (pattern.charAt(pattern.length() - 1) == '/')
 			pattern = pattern.substring(0, pattern.length() - 1);
-		return VerifyUtils.simpleWildcardMatch(pattern, uri);
+		Pattern p = Pattern.compile(pattern, "*");
+		return p.match(uri) != null;
 	}
 
 	private ViewHandle getViewHandle(String view) {

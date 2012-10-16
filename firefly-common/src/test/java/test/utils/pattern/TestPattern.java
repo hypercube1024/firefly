@@ -3,6 +3,8 @@ package test.utils.pattern;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.util.Arrays;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -76,5 +78,38 @@ public class TestPattern {
 		
 		p = Pattern.compile("aa*aa", "*");
 		Assert.assertThat(p.match("aaaaa")[0], is(""));
+	}
+	
+	public static void main(String[] args) {
+		int times = 10000000;
+		
+		java.util.regex.Pattern p0 = java.util.regex.Pattern.compile("(.*)www.(.*).com/(.*)/app(.*)");
+		java.util.regex.Pattern p1 = java.util.regex.Pattern.compile("(.*?)www.(.*?).com/(.*?)/app(.*?)");		
+		Pattern p2 = Pattern.compile("?www.?.com/?/app?", "?");
+		
+		// 贪婪匹配
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			java.util.regex.Matcher m = p0.matcher("http://www.fireflysource.com/cn/app/1334");
+			m.matches();
+			m.group(1);
+		}
+		System.out.println("regex greedy: " + (System.currentTimeMillis() - start));
+		
+		// 勉强匹配
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			java.util.regex.Matcher m = p1.matcher("http://www.fireflysource.com/cn/app/1334");
+			m.matches();
+			m.group(1);
+		}
+		System.out.println("regex reluctant: " + (System.currentTimeMillis() - start));
+		
+		// 简单匹配
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			p2.match("http://www.fireflysource.com/cn/app/1334");
+		}
+		System.out.println("simple: " + (System.currentTimeMillis() - start));
 	}
 }
