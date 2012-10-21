@@ -66,22 +66,6 @@ public class ControllerMetaInfo {
 		return null;
 	}
 	
-//	private PathVariable getPathVariable(Annotation[] annotations) {
-//		for (Annotation a : annotations) {
-//			if (a.annotationType().equals(PathVariable.class))
-//				return (PathVariable) a;
-//		}
-//		return null;
-//	}
-//	
-//	private HttpParam getHttpParam(Annotation[] annotations) {
-//		for (Annotation a : annotations) {
-//			if (a.annotationType().equals(HttpParam.class))
-//				return (HttpParam) a;
-//		}
-//		return null;
-//	}
-	
 	public View invoke(Object[] args) {
 		View ret = null;
 		try {

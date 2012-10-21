@@ -64,7 +64,7 @@ public class HttpServletDispatcherController implements DispatcherController {
 		}
 		
 		Object[] p = getParams(request, response, result);
-		View v = result.resource.getController().invoke(p);
+		View v = result.getController().invoke(p);
 		try {
 			v.render(request, response);
 		} catch (Throwable t) {
@@ -89,7 +89,7 @@ public class HttpServletDispatcherController implements DispatcherController {
 	 */
 	@SuppressWarnings("unchecked")
 	private Object[] getParams(HttpServletRequest request, HttpServletResponse response, Result result) {
-		ControllerMetaInfo info = result.resource.getController();
+		ControllerMetaInfo info = result.getController();
 		byte[] methodParam = info.getMethodParam();
 		ParamMetaInfo[] paramMetaInfos = info.getParamMetaInfos();
 		Object[] p = new Object[methodParam.length];

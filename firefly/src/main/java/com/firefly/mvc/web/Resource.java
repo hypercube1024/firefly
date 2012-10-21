@@ -22,7 +22,6 @@ public class Resource {
 	private ControllerMetaInfo controller;
 	private ResourceSet children = new ResourceSet();
 	
-	
 	public ControllerMetaInfo getController() {
 		return controller;
 	}
@@ -67,8 +66,12 @@ public class Resource {
 	}
 	
 	public static class Result {
-		public Resource resource;
+		private Resource resource;
 		public String[] params;
+		
+		public ControllerMetaInfo getController() {
+			return resource.controller;
+		}
 		
 		@Override
 		public String toString() {
