@@ -68,16 +68,13 @@ public class ConfigReader {
 		Element mvc = dom.element(root, MVC_ELEMENT);
 		if (mvc != null) {
 			String viewPath = mvc.getAttribute(VIEW_PATH_ATTRIBUTE);
-			String viewType = mvc.getAttribute(VIEW_TYPE_ATTRIBUTE);
 			String encoding = mvc.getAttribute(VIEW_ENCODING_ATTRIBUTE);
-			log.debug("mvc viewPath [{}] viewType [{}] encoding [{}]", viewPath, viewType, encoding);
+			log.debug("mvc viewPath [{}] encoding [{}]", viewPath, encoding);
 			
 			if(VerifyUtils.isNotEmpty(viewPath))
 				config.setViewPath(viewPath);
 			if(VerifyUtils.isNotEmpty(encoding))
 				config.setEncoding(encoding);
-			if(VerifyUtils.isNotEmpty(viewType))
-				config.setViewType(viewType);
 		}
 		return config;
 	}

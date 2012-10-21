@@ -1,7 +1,7 @@
 package com.firefly.core.support.annotation;
 
 public class Config {
-	private String viewPath = "/WEB-INF/page", encoding = "UTF-8", viewType = "jsp";
+	private String viewPath = "/WEB-INF/page", encoding = "UTF-8";
 	private String[] paths;
 
 	public String getViewPath() {
@@ -18,14 +18,6 @@ public class Config {
 
 	public void setEncoding(String encoding) {
 		this.encoding = encoding;
-	}
-
-	public String getViewType() {
-		return viewType;
-	}
-
-	public void setViewType(String viewType) {
-		this.viewType = viewType;
 	}
 
 	public String[] getPaths() {

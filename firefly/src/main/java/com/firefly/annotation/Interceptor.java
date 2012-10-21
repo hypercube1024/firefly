@@ -15,8 +15,6 @@ public @interface Interceptor {
 
 	String uri();
 
-	String view() default View.JSP;
-
 	int order() default 0;
 
 }

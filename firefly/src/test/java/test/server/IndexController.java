@@ -12,12 +12,15 @@ import com.firefly.annotation.Controller;
 import com.firefly.annotation.RequestMapping;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.View;
+import com.firefly.mvc.web.view.RedirectView;
+import com.firefly.mvc.web.view.TemplateView;
+import com.firefly.mvc.web.view.TextView;
 
 @Controller
 public class IndexController {
 
 	@RequestMapping(value = "/index")
-	public String index(HttpServletRequest request, HttpServletResponse response) {
+	public View index(HttpServletRequest request, HttpServletResponse response) {
 		System.out.println("into /index");
 		HttpSession session = request.getSession();
 		request.setAttribute("hello", session.getAttribute("name"));
@@ -25,23 +28,23 @@ public class IndexController {
 		Cookie cookie = new Cookie("myname", "xiaoqiu");
 		cookie.setMaxAge(5 * 60);
 		response.addCookie(cookie);
-		return "/index.html";
+		return new TemplateView("/index.html");
 	}
 	
-	@RequestMapping(value = "/add", method = HttpMethod.POST, view = View.TEXT)
-	public String add(HttpServletRequest request, HttpServletResponse response) {
+	@RequestMapping(value = "/add", method = HttpMethod.POST)
+	public View add(HttpServletRequest request, HttpServletResponse response) {
 		System.out.println("into /add");
-		return request.getParameter("content");
+		return new TextView(request.getParameter("content"));
 	}
 	
-	@RequestMapping(value = "/add2", method = HttpMethod.POST, view = View.TEXT)
-	public String add2(HttpServletRequest request, HttpServletResponse response) {
+	@RequestMapping(value = "/add2", method = HttpMethod.POST)
+	public View add2(HttpServletRequest request, HttpServletResponse response) {
 		System.out.println("into /add2");
-		return "test add 2";
+		return new TextView("test add 2");
 	}
 
 	@RequestMapping(value = "/login")
-	public String test(HttpServletRequest request, HttpServletResponse response) {
+	public View test(HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
 		session.setMaxInactiveInterval(15);
 		String name = (String)session.getAttribute("name");
@@ -51,25 +54,25 @@ public class IndexController {
 			session.setAttribute("name", name);
 		}
 		request.setAttribute("name", name);
-		return "/test.html";
+		return new TemplateView("/test.html");
 	}
 	
 	@RequestMapping(value = "/exit")
-	public String exit(HttpServletRequest request, HttpServletResponse response) {
+	public View exit(HttpServletRequest request, HttpServletResponse response) {
 		request.getSession().invalidate();
 		request.setAttribute("name", "exit");
-		return "/test.html";
+		return new TemplateView("/test.html");
 	}
 
 	@RequestMapping(value = "/index2")
-	public String index2(HttpServletRequest request,
+	public View index2(HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
 		response.sendRedirect("index");
 		return null;
 	}
 
 	@RequestMapping(value = "/index3")
-	public String index3(HttpServletRequest request,
+	public View index3(HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
 		response.sendRedirect(request.getContextPath()
 				+ request.getServletPath() + "/index");
@@ -77,7 +80,7 @@ public class IndexController {
 	}
 	
 	@RequestMapping(value = "/testc")
-	public String testOutContentLength(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	public View testOutContentLength(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String msg = "<html><body>test Content-Length output</body></html>";
 		response.setCharacterEncoding("UTF-8");
 		response.setHeader("Content-Type", "text/html; charset=UTF-8");
@@ -91,10 +94,10 @@ public class IndexController {
 		return null;
 	}
 
-	@RequestMapping(value = "/index4", view = View.REDIRECT)
-	public String index4(HttpServletRequest request,
+	@RequestMapping(value = "/index4")
+	public View index4(HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
-		return "/index";
+		return new RedirectView("/index");
 	}
 
 }

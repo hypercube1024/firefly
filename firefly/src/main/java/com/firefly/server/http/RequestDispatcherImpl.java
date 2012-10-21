@@ -9,7 +9,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.firefly.mvc.web.support.view.FFTViewHandle;
+import com.firefly.mvc.web.view.TemplateView;
 
 public class RequestDispatcherImpl implements RequestDispatcher {
 
@@ -20,8 +20,7 @@ public class RequestDispatcherImpl implements RequestDispatcher {
 	public void forward(ServletRequest request, ServletResponse response)
 			throws ServletException, IOException {
 		if (!forward) {
-			FFTViewHandle.getInstance().render((HttpServletRequest) request,
-					(HttpServletResponse) response, path);
+			new TemplateView(path).render((HttpServletRequest) request, (HttpServletResponse) response);
 			forward = true;
 		}
 
@@ -30,8 +29,7 @@ public class RequestDispatcherImpl implements RequestDispatcher {
 	@Override
 	public void include(ServletRequest request, ServletResponse response)
 			throws ServletException, IOException {
-		FFTViewHandle.getInstance().render((HttpServletRequest) request,
-				(HttpServletResponse) response, path);
+		new TemplateView(path).render((HttpServletRequest) request, (HttpServletResponse) response);
 	}
 
 }

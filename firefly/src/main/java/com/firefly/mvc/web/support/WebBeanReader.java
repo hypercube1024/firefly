@@ -32,10 +32,12 @@ public class WebBeanReader extends AnnotationBeanReader {
 				|| c.isAnnotationPresent(Component.class)) {
 			log.info("classes [{}]", c.getName());
 			return componentParser(c);
-		} else if (c.isAnnotationPresent(Interceptor.class)) {
-			log.info("classes [{}]", c.getName());
-			return interceptorParser(c);
-		} else
+		} 
+//		else if (c.isAnnotationPresent(Interceptor.class)) {
+//			log.info("classes [{}]", c.getName());
+//			return interceptorParser(c);
+//		} 
+		else
 			return null;
 	}
 
@@ -53,17 +55,18 @@ public class WebBeanReader extends AnnotationBeanReader {
 		WebBeanDefinition webBeanDefinition = new WebAnnotatedBeanDefinition();
 		setWebBeanDefinition(webBeanDefinition, c);
 
-		List<Method> interceptorMethods = getInterceptors(c);
-		webBeanDefinition.setInterceptorMethods(interceptorMethods);
-
-		String uriPattern = c.getAnnotation(Interceptor.class).uri();
-		webBeanDefinition.setUriPattern(uriPattern);
-
-		String view = c.getAnnotation(Interceptor.class).view();
-		webBeanDefinition.setView(view);
-
-		Integer order = c.getAnnotation(Interceptor.class).order();
-		webBeanDefinition.setOrder(order);
+		// TODO 拦截器
+//		List<Method> interceptorMethods = getInterceptors(c);
+//		webBeanDefinition.setInterceptorMethods(interceptorMethods);
+//
+//		String uriPattern = c.getAnnotation(Interceptor.class).uri();
+//		webBeanDefinition.setUriPattern(uriPattern);
+//
+//		String view = c.getAnnotation(Interceptor.class).view();
+//		webBeanDefinition.setView(view);
+//
+//		Integer order = c.getAnnotation(Interceptor.class).order();
+//		webBeanDefinition.setOrder(order);
 
 		return webBeanDefinition;
 	}

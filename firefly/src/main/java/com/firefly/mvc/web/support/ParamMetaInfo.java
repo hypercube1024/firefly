@@ -13,9 +13,7 @@ public class ParamMetaInfo {
 	private final Map<String, Method> beanSetMethod; // 要注入的bean的set方法
 	private final String attribute; // 要setAttribute的属性
 
-	public ParamMetaInfo(Class<?> paramClass, Map<String, Method> beanSetMethod,
-			String attribute) {
-		super();
+	public ParamMetaInfo(Class<?> paramClass, Map<String, Method> beanSetMethod, String attribute) {
 		this.paramClass = paramClass;
 		this.beanSetMethod = beanSetMethod;
 		this.attribute = attribute;

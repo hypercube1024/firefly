@@ -7,7 +7,7 @@
 		<complexType>
 			<attribute name="view-path" />
 			<attribute name="view-encoding" />
-			<attribute name="view-type" />
+			<!-- <attribute name="view-type" />  -->
 		</complexType>
 	</element>
 	<element name="import">

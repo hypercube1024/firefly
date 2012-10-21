@@ -14,6 +14,4 @@ public @interface RequestMapping {
 	String value() default "";
 
 	String method() default HttpMethod.GET;
-
-	String view() default "";
 }

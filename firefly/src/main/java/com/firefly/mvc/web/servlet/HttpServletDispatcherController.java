@@ -1,7 +1,6 @@
 package com.firefly.mvc.web.servlet;
 
 import java.util.Enumeration;
-import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -9,9 +8,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.DispatcherController;
+import com.firefly.mvc.web.Resource.Result;
+import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebContext;
+import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.MethodParam;
-import com.firefly.mvc.web.support.MvcMetaInfo;
 import com.firefly.mvc.web.support.ParamMetaInfo;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
@@ -53,72 +54,19 @@ public class HttpServletDispatcherController implements DispatcherController {
 			controllerNotFoundResponse(request, response);
 			return true;
 		}
-		String invokeUri = uriBuilder.toString();
-		StringBuilder key = new StringBuilder(invokeUri.length() + 16);
-		key.append(request.getMethod()).append('@').append(invokeUri);
 		
-		// 获取controller
-		MvcMetaInfo mvcMetaInfo = webContext.getBean(key.toString());
-		if (mvcMetaInfo == null) {
+		//TODO 获取controller 
+		String invokeUri = uriBuilder.toString();
+		Result result = webContext.match(invokeUri);
+		if(result == null) {
 			controllerNotFoundResponse(request, response);
 			return true;
 		}
 		
-		// 获取拦截器
-		String beforeIntercept = "b#" + invokeUri;
-		String afterIntercept = "a#" + invokeUri;
-		Set<MvcMetaInfo> beforeSet = webContext.getBean(beforeIntercept);
-		Set<MvcMetaInfo> afterSet = webContext.getBean(afterIntercept);
-		
-		Object ret = null;
-		Object beforeRet = null; // 前置拦截器的返回值
-		MvcMetaInfo lastBefore = null; // 最后得到的前置拦截器
-		Object afterRet = null; // 后置拦截器的返回值
-		MvcMetaInfo lastAfter = null; // 最后得到的后置拦截器
-
-		// 前置拦截栈调用
-		if (beforeSet != null) {
-			for (MvcMetaInfo before : beforeSet) {
-				Object[] beforeP = getParams(request, response, before,
-						null);
-				beforeRet = before.invoke(beforeP);
-				if (beforeRet != null) {
-					lastBefore = before;
-					break;
-				}
-			}
-		}
-
-		if (beforeRet == null) {
-			// controller调用
-			Object[] p = getParams(request, response, mvcMetaInfo, null);
-			ret = mvcMetaInfo.invoke(p);
-
-			// 后置拦截栈调用
-			if (afterSet != null) {
-				for (MvcMetaInfo after : afterSet) {
-					Object[] afterP = getParams(request, response, after,
-							ret);
-					afterRet = after.invoke(afterP);
-					if (afterRet != null) {
-						lastAfter = after;
-						break;
-					}
-				}
-			}
-		}
-
-		// 视图渲染
+		Object[] p = getParams(request, response, result);
+		View v = result.resource.getController().invoke(p);
 		try {
-			if (afterRet != null) {
-				lastAfter.getViewHandle().render(request, response,
-						afterRet);
-			} else if (beforeRet != null) {
-				lastBefore.getViewHandle().render(request, response,
-						beforeRet);
-			} else {
-				mvcMetaInfo.getViewHandle().render(request, response, ret);
-			}
+			v.render(request, response);
 		} catch (Throwable t) {
 			log.error("dispatcher error", t);
 		}
@@ -140,13 +88,12 @@ public class HttpServletDispatcherController implements DispatcherController {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private Object[] getParams(HttpServletRequest request,
-			HttpServletResponse response, MvcMetaInfo mvcMetaInfo,
-			Object controllerReturn) {
-		byte[] methodParam = mvcMetaInfo.getMethodParam();
-		ParamMetaInfo[] paramMetaInfos = mvcMetaInfo.getParamMetaInfos();
+	private Object[] getParams(HttpServletRequest request, HttpServletResponse response, Result result) {
+		ControllerMetaInfo info = result.resource.getController();
+		byte[] methodParam = info.getMethodParam();
+		ParamMetaInfo[] paramMetaInfos = info.getParamMetaInfos();
 		Object[] p = new Object[methodParam.length];
-		boolean firstString = true;
+
 		for (int i = 0; i < p.length; i++) {
 			switch (methodParam[i]) {
 			case MethodParam.REQUEST:
@@ -171,9 +118,8 @@ public class HttpServletDispatcherController implements DispatcherController {
 					request.setAttribute(paramMetaInfo.getAttribute(), p[i]);
 				}
 				break;
-			case MethodParam.CONTROLLER_RETURN:
-				p[i] = firstString ? (String) controllerReturn : null;
-				firstString = false;
+			case MethodParam.PATH_VARIBLE:
+				p[i] = result.params;
 				break;
 			}
 		}
