@@ -89,6 +89,15 @@ public class TestMvc {
 		response = new MockHttpServletResponse();
 		dispatcherController.dispatcher(request, response);
 		Assert.assertThat(response.getAsString(), is("text-xo-333-444"));
+		
+		request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/hello55555/");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod("GET");
+		response = new MockHttpServletResponse();
+		dispatcherController.dispatcher(request, response);
+		Assert.assertThat(response.getAsString(), is("text-55555"));
 	}
 
 	@Test

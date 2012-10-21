@@ -37,6 +37,11 @@ public class HelloController {
 		return new TextView("text-" + args[0] + "-" + args[1] + "-" + args[2]);
 	}
 	
+	@RequestMapping(value = "/hello?")
+	public View text3(HttpServletRequest request, @PathVariable String[] args) {
+		return new TextView("text-" + args[0]);
+	}
+	
 	@RequestMapping(value = "/hello/redirect")
 	public View hello5(HttpServletRequest request,
 			HttpServletResponse response) {
