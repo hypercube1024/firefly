@@ -44,7 +44,6 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 			TemplateView.init(servletContext.getRealPath(getViewPath()), getEncoding());
 		
 		initContext();
-		System.out.println(interceptorList.toString());
 	}
 
 	/**
