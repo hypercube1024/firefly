@@ -2,6 +2,7 @@ package com.firefly.mvc.web;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -9,8 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.firefly.mvc.web.support.ControllerMetaInfo;
+import com.firefly.mvc.web.support.MethodParam;
+import com.firefly.mvc.web.support.ParamMetaInfo;
 import com.firefly.mvc.web.support.URLParser;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.pattern.Pattern;
 
 public class Resource {
@@ -96,7 +103,7 @@ public class Resource {
 		return ret;
 	}
 	
-	public static class Result {
+	public static class Result implements WebHandler {
 		private final Resource resource;
 		private String[] params;
 		
@@ -112,7 +119,60 @@ public class Resource {
 		public String[] getParams() {
 			return params;
 		}
+		
+		@Override
+		public View invoke(HttpServletRequest request, HttpServletResponse response) {
+			Object[] p = getParams(request, response);
+			return getController().invoke(p);
+		}
 
+		/**
+		 * controller方法参数注入
+		 * 
+		 * @param request
+		 * @param response
+		 * @param mvcMetaInfo
+		 * @return
+		 */
+		@SuppressWarnings("unchecked")
+		private Object[] getParams(HttpServletRequest request, HttpServletResponse response) {
+			ControllerMetaInfo info = this.getController();
+			byte[] methodParam = info.getMethodParam();
+			ParamMetaInfo[] paramMetaInfos = info.getParamMetaInfos();
+			Object[] p = new Object[methodParam.length];
+
+			for (int i = 0; i < p.length; i++) {
+				switch (methodParam[i]) {
+				case MethodParam.REQUEST:
+					p[i] = request;
+					break;
+				case MethodParam.RESPONSE:
+					p[i] = response;
+					break;
+				case MethodParam.HTTP_PARAM:
+					// 请求参数封装到javabean
+					Enumeration<String> enumeration = request.getParameterNames();
+					ParamMetaInfo paramMetaInfo = paramMetaInfos[i];
+					p[i] = paramMetaInfo.newParamInstance();
+
+					// 把http参数赋值给参数对象
+					while (enumeration.hasMoreElements()) {
+						String httpParamName = enumeration.nextElement();
+						String paramValue = request.getParameter(httpParamName);
+						paramMetaInfo.setParam(p[i], httpParamName, paramValue);
+					}
+					if (VerifyUtils.isNotEmpty(paramMetaInfo.getAttribute())) {
+						request.setAttribute(paramMetaInfo.getAttribute(), p[i]);
+					}
+					break;
+				case MethodParam.PATH_VARIBLE:
+					p[i] = this.getParams();
+					break;
+				}
+			}
+			return p;
+		}
+		
 		@Override
 		public String toString() {
 			return "Result [resource=" + resource + ", params="

@@ -103,7 +103,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 	}
 	
 	@Override
-	public Result match(String uri) {
+	public WebHandler match(String uri) {
 		return resource.match(uri);
 	}
 

@@ -9,5 +9,5 @@ public interface WebContext extends ApplicationContext {
 
 	String getEncoding();
 	
-	public Result match(String uri);
+	public WebHandler match(String uri);
 }
