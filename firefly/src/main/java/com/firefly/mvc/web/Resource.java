@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.MethodParam;
 import com.firefly.mvc.web.support.ParamMetaInfo;
@@ -23,6 +24,7 @@ import com.firefly.utils.pattern.Pattern;
 public class Resource {
 	public static final String WILDCARD = "?";
 	private static final String[] EMPTY = new String[0];
+	private static String ENCODING;
 	
 	private final Map<String, Result> CONSTANT_URI;
 	
@@ -31,8 +33,9 @@ public class Resource {
 	private ControllerMetaInfo controller;
 	private ResourceSet children = new ResourceSet();
 	
-	public Resource() {
+	public Resource(String encoding) {
 		CONSTANT_URI = new HashMap<String, Result>();
+		ENCODING = encoding;
 	}
 	
 	private Resource(boolean root) {
@@ -41,6 +44,10 @@ public class Resource {
 	
 	public ControllerMetaInfo getController() {
 		return controller;
+	}
+	
+	public String getEncoding() {
+		return ENCODING;
 	}
 
 	public void add(String uri, ControllerMetaInfo c) {
@@ -122,8 +129,19 @@ public class Resource {
 		
 		@Override
 		public View invoke(HttpServletRequest request, HttpServletResponse response) {
-			Object[] p = getParams(request, response);
-			return getController().invoke(p);
+			if(request.getMethod().equals(resource.controller.getHttpMethod())) {
+				Object[] p = getParams(request, response);
+				return getController().invoke(p);
+			}
+			
+			notAllowMethodResponse(request, response);
+			return null;
+		}
+		
+		private void notAllowMethodResponse(HttpServletRequest request, HttpServletResponse response) {
+			response.setHeader("Allow", resource.controller.getHttpMethod());
+			SystemHtmlPage.responseSystemPage(request, response, ENCODING, 
+					HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only support " + resource.controller.getHttpMethod() + " method");
 		}
 
 		/**
@@ -178,6 +196,7 @@ public class Resource {
 			return "Result [resource=" + resource + ", params="
 					+ Arrays.toString(params) + "]";
 		}
+		
 	}
 	
 	private class ResourceSet implements Iterable<Resource>{

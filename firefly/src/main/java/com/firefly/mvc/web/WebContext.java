@@ -1,7 +1,6 @@
 package com.firefly.mvc.web;
 
 import com.firefly.core.ApplicationContext;
-import com.firefly.mvc.web.Resource.Result;
 
 public interface WebContext extends ApplicationContext {
 
@@ -9,5 +8,5 @@ public interface WebContext extends ApplicationContext {
 
 	String getEncoding();
 	
-	public WebHandler match(String uri);
+	WebHandler match(String uri);
 }

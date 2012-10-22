@@ -18,6 +18,43 @@ public class TestMvc {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private static DispatcherController dispatcherController = new HttpServletDispatcherController("firefly-mvc.xml", null);
 	
+	public static void main(String[] args) {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/book/create/");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod(HttpMethod.GET);
+		request.setParameter("title", "good book");
+		request.setParameter("text", "一本好书");
+		request.setParameter("id", "330");
+		request.setParameter("price", "79.9");
+		request.setParameter("sell", "true");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatcher(request, response);
+		
+		System.out.println(response.getAsString());
+		System.out.println(response.getHeader("Allow"));
+	}
+	
+	@Test
+	public void testNotAllowMethod() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/book/create/");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod(HttpMethod.GET);
+		request.setParameter("title", "good book");
+		request.setParameter("text", "一本好书");
+		request.setParameter("id", "330");
+		request.setParameter("price", "79.9");
+		request.setParameter("sell", "true");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatcher(request, response);
+		
+		Assert.assertThat(response.getHeader("Allow"), is("POST"));
+		Assert.assertThat(request.getAttribute("book"), nullValue());
+	}
+	
 	@Test
 	public void testControllerHello() {
 		MockHttpServletRequest request = new MockHttpServletRequest();

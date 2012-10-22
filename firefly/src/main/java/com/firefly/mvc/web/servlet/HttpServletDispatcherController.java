@@ -55,13 +55,15 @@ public class HttpServletDispatcherController implements DispatcherController {
 		if(handler == null) {
 			controllerNotFoundResponse(request, response);
 			return true;
-		}
+		}	
 		
 		View v = handler.invoke(request, response);
-		try {
-			v.render(request, response);
-		} catch (Throwable t) {
-			log.error("dispatcher error", t);
+		if(v != null) {
+			try {
+				v.render(request, response);
+			} catch (Throwable t) {
+				log.error("dispatcher error", t);
+			}
 		}
 		
 		return false;

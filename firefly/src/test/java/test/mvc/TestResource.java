@@ -14,7 +14,7 @@ public class TestResource {
 	
 	@Test
 	public void testResource() throws NoSuchMethodException, SecurityException {
-		Resource resource = new Resource();
+		Resource resource = new Resource("utf-8");
 		resource.add("/user/id-?-?", null);
 		resource.add("/user/id-?-?/?", null);
 		resource.add("/user/add", null);
@@ -36,5 +36,7 @@ public class TestResource {
 		
 		ret = resource.match("/file/info.txt");
 		Assert.assertThat(ret, notNullValue());
+		
+		Assert.assertThat(resource.getEncoding(), is("utf-8"));
 	}
 }

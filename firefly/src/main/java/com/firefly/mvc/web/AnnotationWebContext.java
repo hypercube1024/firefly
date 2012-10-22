@@ -11,7 +11,6 @@ import com.firefly.core.XmlApplicationContext;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.annotation.ConfigReader;
 import com.firefly.core.support.xml.XmlBeanReader;
-import com.firefly.mvc.web.Resource.Result;
 import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.ControllerBeanDefinition;
 import com.firefly.mvc.web.support.WebBeanReader;
@@ -31,10 +30,11 @@ import com.firefly.utils.log.LogFactory;
 public class AnnotationWebContext extends XmlApplicationContext implements WebContext {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private Resource resource = new Resource();
+	private final Resource resource;
 
 	public AnnotationWebContext(String file, ServletContext servletContext) {
 		super(file);
+		resource = new Resource(getEncoding());
 		if (servletContext != null)
 			TemplateView.init(servletContext.getRealPath(getViewPath()), getEncoding());
 		
@@ -51,6 +51,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 	 */
 	public AnnotationWebContext(String file, String serverHome) {
 		super(file);
+		resource = new Resource(getEncoding());
 		TemplateView.init(new File(serverHome, getViewPath()).getAbsolutePath(), getEncoding());
 		initContext();
 	}

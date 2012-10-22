@@ -32,11 +32,10 @@ public class WebBeanReader extends AnnotationBeanReader {
 		if (c.isAnnotationPresent(Controller.class) || c.isAnnotationPresent(Component.class)) {
 			log.info("classes [{}]", c.getName());
 			return componentParser(c);
+		} else if (c.isAnnotationPresent(Interceptor.class)) {
+			log.info("classes [{}]", c.getName());
+			return interceptorParser(c);
 		} 
-//		else if (c.isAnnotationPresent(Interceptor.class)) {
-//			log.info("classes [{}]", c.getName());
-//			return interceptorParser(c);
-//		} 
 		else
 			return null;
 	}
@@ -52,23 +51,17 @@ public class WebBeanReader extends AnnotationBeanReader {
 	}
 
 	private BeanDefinition interceptorParser(Class<?> c) {
-//		ControllerBeanDefinition webBeanDefinition = new ControllerAnnotatedBeanDefinition();
-//		setWebBeanDefinition(webBeanDefinition, c);
+		InterceptorBeanDefinition beanDefinition = new InterceptorAnnotatedBeanDefinition();
+		setWebBeanDefinition(beanDefinition, c);
+		
+		beanDefinition.setDisposeMethod(getInterceptors(c));
 
-		// TODO 拦截器
-//		List<Method> interceptorMethods = getInterceptors(c);
-//		webBeanDefinition.setInterceptorMethods(interceptorMethods);
-//
-//		String uriPattern = c.getAnnotation(Interceptor.class).uri();
-//		webBeanDefinition.setUriPattern(uriPattern);
-//
-//		String view = c.getAnnotation(Interceptor.class).view();
-//		webBeanDefinition.setView(view);
-//
-//		Integer order = c.getAnnotation(Interceptor.class).order();
-//		webBeanDefinition.setOrder(order);
+		String uriPattern = c.getAnnotation(Interceptor.class).uri();
+		beanDefinition.setUriPattern(uriPattern);
 
-		return null;
+		Integer order = c.getAnnotation(Interceptor.class).order();
+		beanDefinition.setOrder(order);
+		return beanDefinition;
 	}
 
 	private void setWebBeanDefinition(AnnotationBeanDefinition beanDefinition,
@@ -117,14 +110,11 @@ public class WebBeanReader extends AnnotationBeanReader {
 		return list;
 	}
 
-//	private List<Method> getInterceptors(Class<?> c) {
-//		Method[] methods = c.getMethods();
-//		List<Method> list = new ArrayList<Method>();
-//		for (Method m : methods) {// 验证方法名
-//			if (m.getName().equals("before") || m.getName().equals("after")) {
-//				list.add(m);
-//			}
-//		}
-//		return list;
-//	}
+	private Method getInterceptors(Class<?> c) {
+		for (Method m : c.getMethods()) {// 验证方法名
+			if (m.getName().equals("dispose"))
+				return m;
+		}
+		return null;
+	}
 }
