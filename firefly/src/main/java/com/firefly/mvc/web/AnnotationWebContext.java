@@ -13,7 +13,7 @@ import com.firefly.core.support.annotation.ConfigReader;
 import com.firefly.core.support.xml.XmlBeanReader;
 import com.firefly.mvc.web.Resource.Result;
 import com.firefly.mvc.web.support.ControllerMetaInfo;
-import com.firefly.mvc.web.support.WebBeanDefinition;
+import com.firefly.mvc.web.support.ControllerBeanDefinition;
 import com.firefly.mvc.web.support.WebBeanReader;
 import com.firefly.mvc.web.view.JsonView;
 import com.firefly.mvc.web.view.JspView;
@@ -61,8 +61,8 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 		JspView.setViewPath(getViewPath());
 
 		for (BeanDefinition beanDef : beanDefinitions) {
-			if (beanDef instanceof WebBeanDefinition) {
-				WebBeanDefinition beanDefinition = (WebBeanDefinition) beanDef;
+			if (beanDef instanceof ControllerBeanDefinition) {
+				ControllerBeanDefinition beanDefinition = (ControllerBeanDefinition) beanDef;
 				List<Method> list = beanDefinition.getReqMethods();
 				if (list != null) {
 					for (Method m : list) {

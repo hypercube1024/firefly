@@ -2,6 +2,7 @@ package test.mvc;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.notNullValue;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,16 +21,20 @@ public class TestResource {
 		
 		resource.add("/shop/fruit/apple/?", null);
 		resource.add("/shop/fruit/banana", null);
+		resource.add("/file/info.txt", null);
 		
-		Result ret = resource.match("/user/id-3344-2222/55555/");
-		Assert.assertThat(ret.params.length, is(3));
-		Assert.assertThat(ret.params[1], is("2222"));
-		Assert.assertThat(ret.params[2], is("55555"));
+		Result ret = resource.match("/user/id-3344-2222/55555");
+		Assert.assertThat(ret.getParams().length, is(3));
+		Assert.assertThat(ret.getParams()[1], is("2222"));
+		Assert.assertThat(ret.getParams()[2], is("55555"));
 		
 		ret = resource.match("/shop/fruit/banana");
-		Assert.assertThat(ret.params.length, is(0));
+		Assert.assertThat(ret.getParams(), nullValue());
 		
 		ret = resource.match("/hello");
 		Assert.assertThat(ret, nullValue());
+		
+		ret = resource.match("/file/info.txt");
+		Assert.assertThat(ret, notNullValue());
 	}
 }

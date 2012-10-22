@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.firefly.core.support.annotation.AnnotatedBeanDefinition;
 
-public class WebAnnotatedBeanDefinition extends AnnotatedBeanDefinition
-		implements WebBeanDefinition {
+public class ControllerAnnotatedBeanDefinition extends AnnotatedBeanDefinition
+		implements ControllerBeanDefinition {
 
 	private List<Method> reqMethods;
 

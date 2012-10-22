@@ -17,33 +17,63 @@ public class Resource {
 	public static final String WILDCARD = "?";
 	private static final String[] EMPTY = new String[0];
 	
-	private String name;
+	private final Map<String, Result> CONSTANT_URI;
+	
+	private String uri;
 	private Pattern pattern;
 	private ControllerMetaInfo controller;
 	private ResourceSet children = new ResourceSet();
+	
+	public Resource() {
+		CONSTANT_URI = new HashMap<String, Result>();
+	}
+	
+	private Resource(boolean root) {
+		CONSTANT_URI = root ? new HashMap<String, Result>() : null;
+	}
 	
 	public ControllerMetaInfo getController() {
 		return controller;
 	}
 
 	public void add(String uri, ControllerMetaInfo c) {
-		Resource current = this;
-		List<String> list = URLParser.parse(uri);
-		int max = list.size() - 1;
-		
-		for (int i = 0; ;i++) {
-			String name = list.get(i);
-			if (i == max) {
-				current = current.children.add(name, c);
-				return;
-			}
+		if(uri.contains(WILDCARD)) {
+			Resource current = this;
+			List<String> list = URLParser.parse(uri);
+			int max = list.size() - 1;
 			
-			current = current.children.add(name, null);;
+			for (int i = 0; ;i++) {
+				String name = list.get(i);
+				if (i == max) {
+					current = current.children.add(name, c);
+					return;
+				}
+				
+				current = current.children.add(name, null);;
+			}
+		} else {
+			char last = uri.charAt(uri.length() - 1);
+			if(last != '/') {
+				uri += "/";
+			}
+			Resource resource = new Resource(false);
+			resource.uri = uri;
+			resource.controller = c;
+			Result result = new Result(resource, null);
+			CONSTANT_URI.put(uri, result);
 		}
 	}
 	
 	public Result match(String uri) {
-		Result ret = null;
+		char last = uri.charAt(uri.length() - 1);
+		if(last != '/') {
+			uri += "/";
+		}
+		
+		Result ret = CONSTANT_URI.get(uri);
+		if(ret != null)
+			return ret;
+		
 		Resource current = this;
 		List<String> list = URLParser.parse(uri);
 		List<String> params = new ArrayList<String>();
@@ -61,27 +91,32 @@ public class Resource {
 			current = ret.resource;
 		}
 		
-		ret.params = params.toArray(EMPTY);
+		if(params.size() > 0)
+			ret.params = params.toArray(EMPTY);
 		return ret;
 	}
 	
 	public static class Result {
-		private Resource resource;
-		public String[] params;
+		private final Resource resource;
+		private String[] params;
+		
+		public Result(Resource resource, String[] params) {
+			this.resource = resource;
+			this.params = params;
+		}
 		
 		public ControllerMetaInfo getController() {
 			return resource.controller;
 		}
 		
+		public String[] getParams() {
+			return params;
+		}
+
 		@Override
 		public String toString() {
 			return "Result [resource=" + resource + ", params="
 					+ Arrays.toString(params) + "]";
-		}
-
-		public Result(Resource resource, String[] params) {
-			this.resource = resource;
-			this.params = params;
 		}
 	}
 	
@@ -107,17 +142,17 @@ public class Resource {
 			return null;
 		}
 
-		private Resource add(String name, ControllerMetaInfo c) {
-			Resource resource = findByName(name);
+		private Resource add(String uri, ControllerMetaInfo c) {
+			Resource resource = findByURI(uri);
 			if(resource == null) {
-				resource = new Resource();
-				resource.name = name;
+				resource = new Resource(false);
+				resource.uri = uri;
 				
-				if(name.contains(WILDCARD)) {
-					resource.pattern = Pattern.compile(resource.name, WILDCARD);
+				if(uri.contains(WILDCARD)) {
+					resource.pattern = Pattern.compile(resource.uri, WILDCARD);
 					list.add(resource);
 				} else {
-					map.put(name, resource);
+					map.put(uri, resource);
 				}
 			}
 			if(c != null)
@@ -125,13 +160,13 @@ public class Resource {
 			return resource;
 		}
 		
-		private Resource findByName(String name) {
-			Resource r = map.get(name);
+		private Resource findByURI(String uri) {
+			Resource r = map.get(uri);
 			if(r != null) {
 				return r;
 			} else {
 				for(Resource res : list) {
-					if(name.equals(res.name))
+					if(uri.equals(res.uri))
 						return res;
 				}
 			}
@@ -178,7 +213,7 @@ public class Resource {
 	
 	private String toString(String l, String append) {
 		StringBuilder s = new StringBuilder();
-		s.append(append + name + "(" + children.isVariable() + ")" + "\r\n");
+		s.append(append + uri + "(" + children.isVariable() + ")" + "\r\n");
 		for(Resource r : children) {
 			s.append(l + r.toString(l + " ", "├"));
 		}
@@ -189,7 +224,7 @@ public class Resource {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((uri == null) ? 0 : uri.hashCode());
 		return result;
 	}
 
@@ -202,10 +237,10 @@ public class Resource {
 		if (getClass() != obj.getClass())
 			return false;
 		Resource other = (Resource) obj;
-		if (name == null) {
-			if (other.name != null)
+		if (uri == null) {
+			if (other.uri != null)
 				return false;
-		} else if (!name.equals(other.name))
+		} else if (!uri.equals(other.uri))
 			return false;
 		return true;
 	}

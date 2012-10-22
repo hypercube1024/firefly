@@ -119,7 +119,7 @@ public class HttpServletDispatcherController implements DispatcherController {
 				}
 				break;
 			case MethodParam.PATH_VARIBLE:
-				p[i] = result.params;
+				p[i] = result.getParams();
 				break;
 			}
 		}

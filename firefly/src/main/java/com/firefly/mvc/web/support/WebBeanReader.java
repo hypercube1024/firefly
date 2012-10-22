@@ -9,6 +9,7 @@ import com.firefly.annotation.Controller;
 import com.firefly.annotation.Interceptor;
 import com.firefly.annotation.RequestMapping;
 import com.firefly.core.support.BeanDefinition;
+import com.firefly.core.support.annotation.AnnotationBeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanReader;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.log.Log;
@@ -28,8 +29,7 @@ public class WebBeanReader extends AnnotationBeanReader {
 
 	@Override
 	protected BeanDefinition getBeanDefinition(Class<?> c) {
-		if (c.isAnnotationPresent(Controller.class)
-				|| c.isAnnotationPresent(Component.class)) {
+		if (c.isAnnotationPresent(Controller.class) || c.isAnnotationPresent(Component.class)) {
 			log.info("classes [{}]", c.getName());
 			return componentParser(c);
 		} 
@@ -43,17 +43,17 @@ public class WebBeanReader extends AnnotationBeanReader {
 
 	@Override
 	protected BeanDefinition componentParser(Class<?> c) {
-		WebBeanDefinition webBeanDefinition = new WebAnnotatedBeanDefinition();
-		setWebBeanDefinition(webBeanDefinition, c);
+		ControllerBeanDefinition beanDefinition = new ControllerAnnotatedBeanDefinition();
+		setWebBeanDefinition(beanDefinition, c);
 
 		List<Method> reqMethods = getReqMethods(c);
-		webBeanDefinition.setReqMethods(reqMethods);
-		return webBeanDefinition;
+		beanDefinition.setReqMethods(reqMethods);
+		return beanDefinition;
 	}
 
 	private BeanDefinition interceptorParser(Class<?> c) {
-		WebBeanDefinition webBeanDefinition = new WebAnnotatedBeanDefinition();
-		setWebBeanDefinition(webBeanDefinition, c);
+//		ControllerBeanDefinition webBeanDefinition = new ControllerAnnotatedBeanDefinition();
+//		setWebBeanDefinition(webBeanDefinition, c);
 
 		// TODO 拦截器
 //		List<Method> interceptorMethods = getInterceptors(c);
@@ -68,28 +68,28 @@ public class WebBeanReader extends AnnotationBeanReader {
 //		Integer order = c.getAnnotation(Interceptor.class).order();
 //		webBeanDefinition.setOrder(order);
 
-		return webBeanDefinition;
+		return null;
 	}
 
-	private void setWebBeanDefinition(WebBeanDefinition webBeanDefinition,
+	private void setWebBeanDefinition(AnnotationBeanDefinition beanDefinition,
 			Class<?> c) {
-		webBeanDefinition.setClassName(c.getName());
+		beanDefinition.setClassName(c.getName());
 
 		String id = getId(c);
-		webBeanDefinition.setId(id);
+		beanDefinition.setId(id);
 
 		String[] names = ReflectUtils.getInterfaceNames(c);
-		webBeanDefinition.setInterfaceNames(names);
+		beanDefinition.setInterfaceNames(names);
 
 		List<Field> fields = getInjectField(c);
-		webBeanDefinition.setInjectFields(fields);
+		beanDefinition.setInjectFields(fields);
 
 		List<Method> methods = getInjectMethod(c);
-		webBeanDefinition.setInjectMethods(methods);
+		beanDefinition.setInjectMethods(methods);
 
 		try {
 			Object object = c.newInstance();
-			webBeanDefinition.setObject(object);
+			beanDefinition.setObject(object);
 		} catch (Throwable t) {
 			log.error("set web bean error", t);
 		}
@@ -117,14 +117,14 @@ public class WebBeanReader extends AnnotationBeanReader {
 		return list;
 	}
 
-	private List<Method> getInterceptors(Class<?> c) {
-		Method[] methods = c.getMethods();
-		List<Method> list = new ArrayList<Method>();
-		for (Method m : methods) {// 验证方法名
-			if (m.getName().equals("before") || m.getName().equals("after")) {
-				list.add(m);
-			}
-		}
-		return list;
-	}
+//	private List<Method> getInterceptors(Class<?> c) {
+//		Method[] methods = c.getMethods();
+//		List<Method> list = new ArrayList<Method>();
+//		for (Method m : methods) {// 验证方法名
+//			if (m.getName().equals("before") || m.getName().equals("after")) {
+//				list.add(m);
+//			}
+//		}
+//		return list;
+//	}
 }
