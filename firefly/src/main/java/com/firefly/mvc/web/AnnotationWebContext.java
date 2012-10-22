@@ -2,6 +2,8 @@ package com.firefly.mvc.web;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.servlet.ServletContext;
@@ -13,6 +15,8 @@ import com.firefly.core.support.annotation.ConfigReader;
 import com.firefly.core.support.xml.XmlBeanReader;
 import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.ControllerBeanDefinition;
+import com.firefly.mvc.web.support.InterceptorBeanDefinition;
+import com.firefly.mvc.web.support.InterceptorMetaInfo;
 import com.firefly.mvc.web.support.WebBeanReader;
 import com.firefly.mvc.web.view.JsonView;
 import com.firefly.mvc.web.view.JspView;
@@ -31,6 +35,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private final Resource resource;
+	private final List<InterceptorMetaInfo> interceptorList = new LinkedList<InterceptorMetaInfo>();
 
 	public AnnotationWebContext(String file, ServletContext servletContext) {
 		super(file);
@@ -39,6 +44,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 			TemplateView.init(servletContext.getRealPath(getViewPath()), getEncoding());
 		
 		initContext();
+		System.out.println(interceptorList.toString());
 	}
 
 	/**
@@ -73,8 +79,19 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 						resource.add(uri, c);
 					}
 				}
+			} else if (beanDef instanceof InterceptorBeanDefinition) {
+				InterceptorBeanDefinition beanDefinition = (InterceptorBeanDefinition) beanDef;
+				if(beanDefinition.getDisposeMethod() != null) {
+					InterceptorMetaInfo interceptor = new InterceptorMetaInfo(beanDefinition.getObject(), 
+							beanDefinition.getDisposeMethod(),
+							beanDefinition.getUriPattern(), 
+							beanDefinition.getOrder());
+					interceptorList.add(interceptor);
+				}
 			}
 		}
+		if(interceptorList.size() > 0)
+			Collections.sort(interceptorList);
 	}
 
 	@Override

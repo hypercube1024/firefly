@@ -9,28 +9,18 @@ import javax.servlet.http.HttpServletResponse;
 import com.firefly.annotation.HttpParam;
 import com.firefly.annotation.PathVariable;
 import com.firefly.annotation.RequestMapping;
-import com.firefly.mvc.web.View;
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 
-public class ControllerMetaInfo {
-	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
-	private final Object object; // controller的实例对象
-	private final Method method; // 请求uri对应的方法
+public class ControllerMetaInfo extends HandlerMetaInfo {
+
 	private final ParamMetaInfo[] paramMetaInfos; // @HttpParam标注的类的元信息
-	private final byte[] methodParam; // 请求方法参数类型
 	private final String httpMethod;
 	
 	public ControllerMetaInfo(Object object, Method method) {
-		this.object = object;
-		this.method = method;
+		super(object, method);
 		this.httpMethod = method.getAnnotation(RequestMapping.class).method();
-		
 		Class<?>[] paraTypes = method.getParameterTypes();
-		methodParam = new byte[paraTypes.length];
+		
 		// 构造参数对象
 		paramMetaInfos = new ParamMetaInfo[paraTypes.length];
 		Annotation[][] annotations = method.getParameterAnnotations();
@@ -65,16 +55,6 @@ public class ControllerMetaInfo {
 		}
 		return null;
 	}
-	
-	public View invoke(Object[] args) {
-		View ret = null;
-		try {
-			ret = (View)method.invoke(object, args);
-		} catch (Throwable t) {
-			log.error("controller invoke error", t);
-		}
-		return ret;
-	}
 
 	public String getHttpMethod() {
 		return httpMethod;
@@ -82,10 +62,6 @@ public class ControllerMetaInfo {
 
 	public ParamMetaInfo[] getParamMetaInfos() {
 		return paramMetaInfos;
-	}
-
-	public byte[] getMethodParam() {
-		return methodParam;
 	}
 
 	@Override

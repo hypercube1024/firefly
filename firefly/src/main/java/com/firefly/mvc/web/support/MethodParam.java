@@ -5,4 +5,5 @@ public interface MethodParam {
 	byte RESPONSE = 0x01;
 	byte HTTP_PARAM = 0x02;
 	byte PATH_VARIBLE = 0x03;
+	byte HANDLER_CHAIN = 0x04;
 }
