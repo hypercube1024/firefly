@@ -1,12 +1,17 @@
 package test.mvc;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 import org.junit.Assert;
 import org.junit.Test;
+
 import test.controller.Book;
+import test.mixed.Food;
 import test.mock.servlet.MockHttpServletRequest;
 import test.mock.servlet.MockHttpServletResponse;
+
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
@@ -34,6 +39,52 @@ public class TestMvc {
 		
 		System.out.println(response.getAsString());
 		System.out.println(response.getHeader("Allow"));
+	}
+	
+	@Test
+	public void testInterceptorChain() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/food/view1");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod("GET");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatcher(request, response);
+		
+		Food food = (Food)request.getAttribute("fruit0");
+		Assert.assertThat(food.getName(), is("apple"));
+		Assert.assertThat(food.getPrice(), is(8.0));
+		
+		food = (Food)request.getAttribute("fruit1");
+		Assert.assertThat(food.getName(), is("ananas"));
+		Assert.assertThat(food.getPrice(), is(4.99));
+		
+		food = Json.toObject(response.getAsString(), Food.class);
+		Assert.assertThat(food.getName(), is("banana"));
+		Assert.assertThat(food.getPrice(), is(3.99));
+	}
+	
+	@Test
+	public void testInterceptor() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/food");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod("GET");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatcher(request, response);
+		
+		Food food = (Food)request.getAttribute("fruit");
+		Assert.assertThat(food.getName(), is("orange"));
+		Assert.assertThat(food.getPrice(), is(3.5));
+		
+		food = (Food)request.getAttribute("fruit0");
+		Assert.assertThat(food.getName(), is("apple"));
+		Assert.assertThat(food.getPrice(), is(8.0));
+		
+		food = (Food)request.getAttribute("strawberry");
+		Assert.assertThat(food.getName(), is("strawberry"));
+		Assert.assertThat(food.getPrice(), is(10.0));
 	}
 	
 	@Test

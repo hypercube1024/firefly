@@ -6,22 +6,24 @@ import test.mixed.Food;
 
 import com.firefly.annotation.Controller;
 import com.firefly.annotation.RequestMapping;
+import com.firefly.mvc.web.View;
+import com.firefly.mvc.web.view.JspView;
 
 @Controller
 public class FoodController {
 
 	@RequestMapping(value = "/food")
-	public String getFood(HttpServletRequest request) {
+	public View getFood(HttpServletRequest request) {
 		Food food = new Food();
 		food.setName("orange");
 		food.setPrice(3.5);
 		request.setAttribute("fruit", food);
-		return "/food.jsp";
+		return new JspView("/food.jsp");
 	}
 	
 	@RequestMapping(value = "/food/view1")
-	public String getFoodView(HttpServletRequest request) {
-		return "/foodView1.jsp";
+	public View getFoodView(HttpServletRequest request) {
+		return new JspView("/foodView1.jsp");
 	}
 	
 }

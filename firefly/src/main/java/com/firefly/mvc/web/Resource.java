@@ -149,7 +149,6 @@ public class Resource {
 		 * 
 		 * @param request
 		 * @param response
-		 * @param mvcMetaInfo
 		 * @return
 		 */
 		@SuppressWarnings("unchecked")

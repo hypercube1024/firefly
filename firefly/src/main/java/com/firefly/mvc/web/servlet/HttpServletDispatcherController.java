@@ -6,9 +6,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.DispatcherController;
+import com.firefly.mvc.web.HandlerChain;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebContext;
-import com.firefly.mvc.web.WebHandler;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -48,24 +48,20 @@ public class HttpServletDispatcherController implements DispatcherController {
 			controllerNotFoundResponse(request, response);
 			return true;
 		}
+
+		HandlerChain chain = webContext.match(uriBuilder.toString());
+		View v = chain.doNext(request, response, chain);
 		
-		//TODO 获取controller 
-		String invokeUri = uriBuilder.toString();
-		WebHandler handler = webContext.match(invokeUri);
-		if(handler == null) {
+		if(v == null) {
 			controllerNotFoundResponse(request, response);
 			return true;
 		}	
 		
-		View v = handler.invoke(request, response);
-		if(v != null) {
-			try {
-				v.render(request, response);
-			} catch (Throwable t) {
-				log.error("dispatcher error", t);
-			}
+		try {
+			v.render(request, response);
+		} catch (Throwable t) {
+			log.error("dispatcher error", t);
 		}
-		
 		return false;
 	}
 	
@@ -74,9 +70,8 @@ public class HttpServletDispatcherController implements DispatcherController {
 		SystemHtmlPage.responseSystemPage(request, response, getEncoding(), HttpServletResponse.SC_NOT_FOUND, msg);
 	}
 
-	
-
 	protected String getEncoding() {
 		return webContext.getEncoding();
 	}
+
 }

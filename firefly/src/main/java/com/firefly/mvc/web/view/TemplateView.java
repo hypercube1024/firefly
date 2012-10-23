@@ -45,42 +45,43 @@ public class TemplateView implements View {
 		if (v == null) {
 			SystemHtmlPage.responseSystemPage(request, response, t.getConfig().getCharset(),
 					HttpServletResponse.SC_NOT_FOUND, "template: " + page + "not found");
-		} else {
-			response.setCharacterEncoding(t.getConfig().getCharset());
-			response.setHeader("Content-Type", "text/html; charset=" + t.getConfig().getCharset());
-			ServletOutputStream out = response.getOutputStream();
-			Model model = new Model() {
+			return;
+		}
+		
+		response.setCharacterEncoding(t.getConfig().getCharset());
+		response.setHeader("Content-Type", "text/html; charset=" + t.getConfig().getCharset());
+		ServletOutputStream out = response.getOutputStream();
+		Model model = new Model() {
 
-				@SuppressWarnings("unchecked")
-				@Override
-				public void clear() {
-					Enumeration<String> e = request.getAttributeNames();
-					while (e.hasMoreElements()) {
-						String name = e.nextElement();
-						request.removeAttribute(name);
-					}
-				}
-
-				@Override
-				public Object get(String name) {
-					return request.getAttribute(name);
-				}
-
-				@Override
-				public void put(String name, Object o) {
-					request.setAttribute(name, o);
-				}
-
-				@Override
-				public void remove(String name) {
+			@SuppressWarnings("unchecked")
+			@Override
+			public void clear() {
+				Enumeration<String> e = request.getAttributeNames();
+				while (e.hasMoreElements()) {
+					String name = e.nextElement();
 					request.removeAttribute(name);
 				}
-			};
-			try {
-				v.render(model, out);
-			} finally {
-				out.close();
 			}
+
+			@Override
+			public Object get(String name) {
+				return request.getAttribute(name);
+			}
+
+			@Override
+			public void put(String name, Object o) {
+				request.setAttribute(name, o);
+			}
+
+			@Override
+			public void remove(String name) {
+				request.removeAttribute(name);
+			}
+		};
+		try {
+			v.render(model, out);
+		} finally {
+			out.close();
 		}
 	}
 
