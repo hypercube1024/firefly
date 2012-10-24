@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.net.Session;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -32,7 +33,7 @@ public abstract class RequestHandler {
 		access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 
 				request.session.getSessionId(), 
 				id, 
-				request.getRemoteAddr(),
+				getClientAddress(request),
 				request.response.getStatus(),
 				request.getProtocol(),
 				request.getMethod(),
@@ -41,6 +42,14 @@ public abstract class RequestHandler {
 				request.session.getReadBytes(),
 				request.session.getWrittenBytes(),
 				(end - start));
+	}
+	
+	private final String getClientAddress(HttpServletRequestImpl request) {
+		String address = request.getHeader("X-Forwarded-For");
+		if(VerifyUtils.isNotEmpty(address))
+			return address;
+
+		return request.getRemoteAddr();
 	}
 	
 	abstract public void doRequest(Session session, HttpServletRequestImpl request) throws IOException;
