@@ -26,7 +26,7 @@ public class ServerAnnotationWebContext extends AnnotationWebContext {
 	public ServerAnnotationWebContext(Config serverConfig) {
 		super(serverConfig.getConfigFileName());
 		TemplateView.init(new File(serverConfig.getServerHome(), getViewPath()).getAbsolutePath(), getEncoding());
-		StaticFileView.init(serverConfig);
+		StaticFileView.init(serverConfig, getViewPath());
 		this.serverConfig = serverConfig;
 	}
 	

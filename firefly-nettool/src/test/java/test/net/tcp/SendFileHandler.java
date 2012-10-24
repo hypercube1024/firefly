@@ -50,7 +50,7 @@ public class SendFileHandler implements Handler {
 			FileRegion fileRegion = null;
 			try {
                 assert raf != null;
-                fileRegion = new FileRegion(raf.getChannel(), 0, raf.length());
+                fileRegion = new FileRegion(raf, 0, raf.length());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

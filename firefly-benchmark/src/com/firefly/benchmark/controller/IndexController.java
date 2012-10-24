@@ -5,12 +5,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.annotation.Controller;
 import com.firefly.annotation.RequestMapping;
+import com.firefly.mvc.web.View;
+import com.firefly.mvc.web.view.TemplateView;
 
 @Controller
 public class IndexController {
 	@RequestMapping(value = "/index")
-	public String index(HttpServletRequest request, HttpServletResponse response) {
+	public View index(HttpServletRequest request, HttpServletResponse response) {
 		request.setAttribute("hello", "hello firefly");
-		return "/index.html";
+		return new TemplateView("/index.html");
 	}
 }

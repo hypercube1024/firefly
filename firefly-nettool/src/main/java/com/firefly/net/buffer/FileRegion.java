@@ -1,6 +1,7 @@
 package com.firefly.net.buffer;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -10,11 +11,13 @@ import com.firefly.utils.log.LogFactory;
 public class FileRegion {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private final FileChannel file;
+	private final RandomAccessFile raf;
 	private final long position;
 	private final long count;
 
-	public FileRegion(FileChannel file, long position, long count) {
-		this.file = file;
+	public FileRegion(RandomAccessFile raf, long position, long count) {
+		this.raf = raf;
+		this.file = raf.getChannel();
 		this.position = position;
 		this.count = count;
 	}
@@ -45,6 +48,7 @@ public class FileRegion {
 		try {
 			log.debug("FileChannel close");
 			file.close();
+			raf.close();
 		} catch (IOException e) {
 			log.error("Failed to close a file.", e);
 		}

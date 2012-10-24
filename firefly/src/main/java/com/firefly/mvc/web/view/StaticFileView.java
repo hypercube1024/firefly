@@ -33,20 +33,30 @@ public class StaticFileView implements View {
 	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(416,
 		"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
 	private static Config CONFIG;
+	private static String TEMPLATE_PATH;
 	private final String inputPath;
 	
 	public StaticFileView(String path) {
 		this.inputPath = path;
 	}
 	
-	public static void init(Config serverConfig) {
+	public static void init(Config serverConfig, String tempPath) {
 		if(CONFIG == null)
 			CONFIG = serverConfig;
+		
+		TEMPLATE_PATH = tempPath;
 	}
 
 	@Override
 	public void render(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		if(inputPath.startsWith(TEMPLATE_PATH)) {
+			SystemHtmlPage.responseSystemPage(request, response,
+					CONFIG.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
+					request.getRequestURI() + " not found");
+			return;
+		}
+		
 		if(!ALLOW_METHODS.contains(request.getMethod())) {
 			response.setHeader("Allow", "GET,POST,HEAD");
 			SystemHtmlPage.responseSystemPage(request, response, CONFIG.getEncoding(), 

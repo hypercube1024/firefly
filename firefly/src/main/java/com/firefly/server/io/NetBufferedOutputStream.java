@@ -49,8 +49,7 @@ public class NetBufferedOutputStream extends OutputStream {
 
 	public void write(File file, long off, long len) throws IOException {
 		flush();
-		RandomAccessFile raf = new RandomAccessFile(file, "r");
-		FileRegion fileRegion = new FileRegion(raf.getChannel(), off, len);
+		FileRegion fileRegion = new FileRegion(new RandomAccessFile(file, "r"), off, len);
 		session.write(fileRegion);
 	}
 
