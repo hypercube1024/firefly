@@ -66,11 +66,8 @@ public class Config {
 	private FileAccessFilter fileAccessFilter = new FileAccessFilter() {
 		@Override
 		public String doFilter(HttpServletRequest request,
-				HttpServletResponse response) {
-			String fileName = request.getRequestURI();
-			if(fileName.equals("/"))
-				fileName = "/index.html";
-			return fileName;
+				HttpServletResponse response, String path) {
+			return path;
 		}
 	};
 

@@ -33,7 +33,7 @@ public class ServerBootstrap {
 		log.info("http handler num [{}]", config.getHandlerSize());
 
 		long start = System.currentTimeMillis();
-		WebContext context = new ServerAnnotationWebContext(config.getConfigFileName(), config.getServerHome());
+		WebContext context = new ServerAnnotationWebContext(config);
 		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
 		Server server = new TcpServer(new HttpDecoder(config), new HttpEncoder(), new HttpHandler(controller, config));

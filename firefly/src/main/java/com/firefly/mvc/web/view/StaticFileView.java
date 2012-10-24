@@ -1,4 +1,4 @@
-package com.firefly.server.http;
+package com.firefly.mvc.web.view;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,12 +8,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.firefly.mvc.web.DispatcherController;
+import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.server.exception.HttpServerException;
+import com.firefly.server.http.Config;
+import com.firefly.server.http.Constants;
+import com.firefly.server.http.HttpServletResponseImpl;
 import com.firefly.server.io.StaticFileOutputStream;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.StringUtils;
@@ -21,37 +25,43 @@ import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class FileDispatcherController implements DispatcherController {
-
+public class StaticFileView implements View {
+	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	public static final String CRLF = "\r\n";
 	private static Set<String> ALLOW_METHODS = new HashSet<String>(Arrays.asList("GET", "POST", "HEAD"));
 	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(416,
 		"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
+	private static Config CONFIG;
+	private final String inputPath;
 	
-	private Config config;
-
-	public FileDispatcherController(Config config) {
-		this.config = config;
+	public StaticFileView(String path) {
+		this.inputPath = path;
+	}
+	
+	public static void init(Config serverConfig) {
+		if(CONFIG == null)
+			CONFIG = serverConfig;
 	}
 
 	@Override
-	public void dispatcher(HttpServletRequest request, HttpServletResponse response) {
+	public void render(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		if(!ALLOW_METHODS.contains(request.getMethod())) {
 			response.setHeader("Allow", "GET,POST,HEAD");
-			SystemHtmlPage.responseSystemPage(request, response, config.getEncoding(), 
+			SystemHtmlPage.responseSystemPage(request, response, CONFIG.getEncoding(), 
 					HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only support GET, POST or HEAD method");
 			return;
 		}
 		
-		String path = config.getFileAccessFilter().doFilter(request, response);
+		String path = CONFIG.getFileAccessFilter().doFilter(request, response, inputPath);
 		if (VerifyUtils.isEmpty(path))
 			return;
-
-		File file = new File(config.getServerHome(), path);
+		
+		File file = new File(CONFIG.getServerHome(), path);
 		if (!file.exists() || file.isDirectory()) {
 			SystemHtmlPage.responseSystemPage(request, response,
-					config.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
+					CONFIG.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
 			return;
 		}
@@ -68,7 +78,7 @@ public class FileDispatcherController implements DispatcherController {
 				response.setHeader("Content-Disposition",
 						"attachment; filename=" + file.getName());
 			} else if ("text".equals(type[0])) {
-				contentType += "; charset=" + config.getEncoding();
+				contentType += "; charset=" + CONFIG.getEncoding();
 			}
 			response.setContentType(contentType);
 		}
@@ -85,7 +95,7 @@ public class FileDispatcherController implements DispatcherController {
 				String[] rangesSpecifier = StringUtils.split(range, '=');
 				if (rangesSpecifier.length != 2) {
 					response.setStatus(416);
-					out.write(RANGE_ERROR_HTML.getBytes(config.getEncoding()));
+					out.write(RANGE_ERROR_HTML.getBytes(CONFIG.getEncoding()));
 					return;
 				}
 
@@ -93,17 +103,17 @@ public class FileDispatcherController implements DispatcherController {
 				String[] byteRangeSets = StringUtils.split(byteRangeSet, ',');
 				if (byteRangeSets.length > 1) { // multipart/byteranges
 					String boundary = "ff10" + RandomUtils.randomString(13); 
-					if (byteRangeSets.length > config.getMaxRangeNum()) {
+					if (byteRangeSets.length > CONFIG.getMaxRangeNum()) {
 						log.error("multipart range more than {}",
-								config.getMaxRangeNum());
+								CONFIG.getMaxRangeNum());
 						response.setStatus(416);
-						out.write(RANGE_ERROR_HTML.getBytes(config
+						out.write(RANGE_ERROR_HTML.getBytes(CONFIG
 								.getEncoding()));
 						return;
 					}
 					// multipart output
 					List<MultipartByteranges> tmpByteRangeSets = new ArrayList<MultipartByteranges>(
-							config.getMaxRangeNum());
+							CONFIG.getMaxRangeNum());
 					// long otherLen = 0;
 					for (String t : byteRangeSets) {
 						String tmp = t.trim();
@@ -157,16 +167,16 @@ public class FileDispatcherController implements DispatcherController {
 
 						for (MultipartByteranges m : tmpByteRangeSets) {
 							long length = m.lastBytePos - m.firstBytePos + 1;
-							out.write(m.head.getBytes(config.getEncoding()));
+							out.write(m.head.getBytes(CONFIG.getEncoding()));
 							out.write(file, m.firstBytePos, length);
 						}
 
 						out.write((CRLF + "--" + boundary + "--" + CRLF)
-								.getBytes(config.getEncoding()));
+								.getBytes(CONFIG.getEncoding()));
 						log.debug("multipart download|{}", range);
 					} else {
 						response.setStatus(416);
-						out.write(RANGE_ERROR_HTML.getBytes(config
+						out.write(RANGE_ERROR_HTML.getBytes(CONFIG
 								.getEncoding()));
 						return;
 					}
@@ -177,7 +187,7 @@ public class FileDispatcherController implements DispatcherController {
 						long pos = Long.parseLong(byteRange[0].trim());
 						if (pos == 0) {
 							response.setStatus(416);
-							out.write(RANGE_ERROR_HTML.getBytes(config
+							out.write(RANGE_ERROR_HTML.getBytes(CONFIG
 									.getEncoding()));
 							return;
 						}
@@ -192,7 +202,7 @@ public class FileDispatcherController implements DispatcherController {
 									fileLen - 1, fileLen);
 						} else {
 							response.setStatus(416);
-							out.write(RANGE_ERROR_HTML.getBytes(config
+							out.write(RANGE_ERROR_HTML.getBytes(CONFIG
 									.getEncoding()));
 							return;
 						}
@@ -202,7 +212,7 @@ public class FileDispatcherController implements DispatcherController {
 						if (firstBytePos > fileLen
 								|| firstBytePos >= lastBytePos) {
 							response.setStatus(416);
-							out.write(RANGE_ERROR_HTML.getBytes(config
+							out.write(RANGE_ERROR_HTML.getBytes(CONFIG
 									.getEncoding()));
 							return;
 						}
@@ -228,9 +238,9 @@ public class FileDispatcherController implements DispatcherController {
 							"static file output stream close error");
 				}
 		}
-		return;
-	}
 
+	}
+	
 	private void writePartialFile(HttpServletRequest request,
 			HttpServletResponse response, StaticFileOutputStream out,
 			File file, long firstBytePos, long lastBytePos, long fileLen)
@@ -239,7 +249,7 @@ public class FileDispatcherController implements DispatcherController {
 		long length = lastBytePos - firstBytePos + 1;
 		if (length <= 0) {
 			response.setStatus(416);
-			out.write(RANGE_ERROR_HTML.getBytes(config.getEncoding()));
+			out.write(RANGE_ERROR_HTML.getBytes(CONFIG.getEncoding()));
 			return;
 		}
 		response.setStatus(206);

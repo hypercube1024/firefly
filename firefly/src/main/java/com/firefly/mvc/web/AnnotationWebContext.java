@@ -26,8 +26,8 @@ import com.firefly.mvc.web.view.JsonView;
 import com.firefly.mvc.web.view.JspView;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+//import com.firefly.utils.log.Log;
+//import com.firefly.utils.log.LogFactory;
 
 /**
  * Web应用上下文默认实现
@@ -37,7 +37,7 @@ import com.firefly.utils.log.LogFactory;
  */
 public class AnnotationWebContext extends XmlApplicationContext implements WebContext {
 	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+//	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	protected final Resource resource;
 	protected final List<InterceptorMetaInfo> interceptorList = new LinkedList<InterceptorMetaInfo>();
 
