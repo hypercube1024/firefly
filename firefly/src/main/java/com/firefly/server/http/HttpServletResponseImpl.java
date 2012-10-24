@@ -373,6 +373,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 		setStatus(sc);
 		systemResponseContent = content;
 		system = true;
+		request.systemReq = true;
 	}
 
 	@Override

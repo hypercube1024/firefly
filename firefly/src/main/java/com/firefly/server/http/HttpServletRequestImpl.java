@@ -37,7 +37,8 @@ import com.firefly.utils.log.LogFactory;
 
 public class HttpServletRequestImpl implements HttpServletRequest {
 	int status, headLength, offset;
-	String method, requestURI, queryString, protocol;
+	String method, requestURI, queryString;
+	String protocol = "HTTP/1.1";
 
 	PipedInputStream pipedInputStream = new PipedInputStream();
 	PipedOutputStream pipedOutputStream;
@@ -46,6 +47,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	HttpServletResponseImpl response;
 	Config config;
 	Session session;
+	boolean systemReq = false;
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private static final Set<String> IDEMPOTENT_METHODS = new HashSet<String>(Arrays.asList("GET", "HEAD", "OPTIONS", "TRACE", "DELETE"));
@@ -148,21 +150,21 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	}
 
 	public boolean isKeepAlive() {
-		return config.isKeepAlive() && 
-				(
+		return !systemReq 
+				&& config.isKeepAlive() 
+				&& (
 					"Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || 
 					( !getProtocol().equals("HTTP/1.0") && !"close".equalsIgnoreCase(getHeader("Connection")) )
 				);
 	}
 	
 	public boolean isSupportPipeline() {
-		return config.isKeepAlive() &&
-				IDEMPOTENT_METHODS.contains(getMethod()) && 
-				( "Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || !getProtocol().equals("HTTP/1.0") );
+		return config.isKeepAlive() && IDEMPOTENT_METHODS.contains(getMethod()) && 
+			( "Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || !getProtocol().equals("HTTP/1.0") );
 	}
 
 	public boolean isChunked() {
-		return !getProtocol().equals("HTTP/1.0");
+		return !systemReq && !getProtocol().equals("HTTP/1.0");
 	}
 
 	@Override

@@ -80,29 +80,31 @@ public class QueueRequestHandler extends RequestHandler {
 	@Override
 	public void doRequest(Session session, final HttpServletRequestImpl request)
 			throws IOException {
-		int s = currentQueueSize.get();
-		if(s >= config.getMaxHandlerQueueSize()) { // 队列过载保护
-			log.warn("http request queue size is {}, more than {}", s, config.getMaxHandlerQueueSize());
-			request.response.setHeader("Retry-After", "30");
-			SystemHtmlPage.responseSystemPage(request, request.response, config.getEncoding(), 503, "Service unavailable, please try again later.");
+		if (request.response.system) { // 系统错误在当前线程响应
+			request.response.outSystemData();
 		} else {
-			
-			if(request.isSupportPipeline()) { // pipeline请求
-				int sessionId = session.getSessionId();
-				int handlerIndex = Math.abs(sessionId) % queues.length;
-				queues[handlerIndex].add(request);
+			int s = currentQueueSize.get();
+			if(s >= config.getMaxHandlerQueueSize()) { // 队列过载保护
+				log.warn("http request queue size is {}, more than {}", s, config.getMaxHandlerQueueSize());
+				request.response.setHeader("Retry-After", "30");
+				SystemHtmlPage.responseSystemPage(request, request.response, config.getEncoding(), 503, "Service unavailable, please try again later.");
 			} else {
-				executor.submit(new Runnable(){
-
-					@Override
-					public void run() {
-						try {
-							doRequest(request, -1);
-						} catch (IOException e) {
-							log.error("http handle thread error", e);
+				if(request.isSupportPipeline()) { // pipeline请求使用队列线程池
+					int sessionId = session.getSessionId();
+					int handlerIndex = Math.abs(sessionId) % queues.length;
+					queues[handlerIndex].add(request);
+				} else { // 使用cache线程池
+					executor.submit(new Runnable(){
+						@Override
+						public void run() {
+							try {
+								doRequest(request, -1);
+							} catch (IOException e) {
+								log.error("http handle thread error", e);
+							}
 						}
-					}
-				});
+					});
+				}
 			}
 		}
 	}

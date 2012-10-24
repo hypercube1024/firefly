@@ -111,8 +111,7 @@ public class HttpDecoder implements Decoder {
 						+ ", it more than " + config.getMaxRequestLineLength()
 						+ "|" + session.getRemoteAddress();
 				log.error(msg);
-				finish(session, req);
-				session.close(true);
+				responseError(session, req, 414, msg);
 				return true;
 			}
 
@@ -128,8 +127,7 @@ public class HttpDecoder implements Decoder {
 						String msg = "request line length is 0|"
 								+ session.getRemoteAddress();
 						log.error(msg);
-						finish(session, req);
-						session.close(true);
+						responseError(session, req, 400, msg);
 						return true;
 					}
 
@@ -139,8 +137,7 @@ public class HttpDecoder implements Decoder {
 								+ requestLine + "|"
 								+ session.getRemoteAddress();
 						log.error(msg);
-						finish(session, req);
-						session.close(true);
+						responseError(session, req, 400, msg);
 						return true;
 					}
 
@@ -148,10 +145,10 @@ public class HttpDecoder implements Decoder {
 					req.method = reqLine[0].toUpperCase();
 					if (s > 0) {
 						req.requestURI = reqLine[1].substring(0, s);
-						req.queryString = reqLine[1].substring(s + 1,
-								reqLine[1].length());
-					} else
+						req.queryString = reqLine[1].substring(s + 1, reqLine[1].length());
+					} else {
 						req.requestURI = reqLine[1];
+					}
 					req.protocol = reqLine[2];
 					return true;
 				}
@@ -191,8 +188,7 @@ public class HttpDecoder implements Decoder {
 					p = i + 1;
 
 					if (VerifyUtils.isEmpty(headLine)) {
-						if (!req.getMethod().equals("POST")
-								&& !req.getMethod().equals("PUT"))
+						if (!req.getMethod().equals("POST") && !req.getMethod().equals("PUT"))
 							response(session, req);
 						return true;
 					} else {
@@ -206,14 +202,12 @@ public class HttpDecoder implements Decoder {
 							return true;
 						}
 
-						String name = headLine.substring(0, h).toLowerCase()
-								.trim();
+						String name = headLine.substring(0, h).toLowerCase().trim();
 						String value = headLine.substring(h + 1).trim();
 						req.headMap.put(name, value);
 						req.offset = len - i - 1;
 
-						if (name.equals("expect") && value.startsWith("100-")
-								&& req.getProtocol().equals("HTTP/1.1"))
+						if (name.equals("expect") && value.startsWith("100-") && req.getProtocol().equals("HTTP/1.1"))
 							response100Continue(session);
 					}
 				}
@@ -221,10 +215,8 @@ public class HttpDecoder implements Decoder {
 			return false;
 		}
 
-		private void response100Continue(Session session)
-				throws UnsupportedEncodingException {
-			session.write(ByteBuffer.wrap("HTTP/1.1 100 Continue\r\n\r\n"
-					.getBytes(config.getEncoding())));
+		private void response100Continue(Session session) throws UnsupportedEncodingException {
+			session.write(ByteBuffer.wrap("HTTP/1.1 100 Continue\r\n\r\n".getBytes(config.getEncoding())));
 		}
 	}
 
