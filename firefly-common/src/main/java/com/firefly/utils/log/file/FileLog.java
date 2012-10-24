@@ -121,8 +121,10 @@ public class FileLog implements Log {
 		item.setContent(str);
 		item.setObjs(objs);
 		item.setThrowable(throwable);
-		if (consoleOutput)
+		if (consoleOutput) {
+			item.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
 			System.out.println(item.toString());
+		}
 		if (fileOutput)
 			LogFactory.getInstance().getLogTask().add(item);
 	}
