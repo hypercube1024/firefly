@@ -3,8 +3,6 @@ package com.firefly.server.http;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
-import com.firefly.server.exception.HttpServerException;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -15,10 +13,6 @@ public class HttpHandler implements Handler {
 
 	public HttpHandler(HttpServletDispatcherController servletController, Config config) {
 		httpConnectionListener = config.getHttpConnectionListener();
-		String appPrefix = config.getContextPath() + config.getServletPath();
-		if (VerifyUtils.isEmpty(appPrefix))
-			throw new HttpServerException("context path and servlet path can not be null");
-
 		requestHandler = new QueueRequestHandler(servletController, config);
 	}
 

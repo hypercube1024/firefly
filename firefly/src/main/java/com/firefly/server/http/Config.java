@@ -23,7 +23,7 @@ public class Config {
 				maxSessionInactiveInterval = 10 * 60;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
-	private String serverHome, host, servletPath = "/app", contextPath = "", sessionIdName = "jsessionid";
+	private String serverHome, host, servletPath = "", contextPath = "", sessionIdName = "jsessionid";
 	private int port;
 	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager(this);
 	private HttpSessionAttributeListener httpSessionAttributeListener = new HttpSessionAttributeListener() {
