@@ -19,7 +19,7 @@ public class HttpHandler implements Handler {
 		if (VerifyUtils.isEmpty(appPrefix))
 			throw new HttpServerException("context path and servlet path can not be null");
 
-		requestHandler = new QueueRequestHandler(servletController, new FileDispatcherController(config), config);
+		requestHandler = new QueueRequestHandler(servletController, config);
 	}
 
 	@Override

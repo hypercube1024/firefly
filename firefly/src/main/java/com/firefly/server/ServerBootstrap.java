@@ -1,6 +1,6 @@
 package com.firefly.server;
 
-import com.firefly.mvc.web.AnnotationWebContext;
+import com.firefly.mvc.web.WebContext;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.TcpServer;
@@ -8,7 +8,6 @@ import com.firefly.server.http.Config;
 import com.firefly.server.http.HttpDecoder;
 import com.firefly.server.http.HttpEncoder;
 import com.firefly.server.http.HttpHandler;
-import com.firefly.server.http.ServerHttpServletDispatcherController;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -34,8 +33,8 @@ public class ServerBootstrap {
 		log.info("http handler num [{}]", config.getHandlerSize());
 
 		long start = System.currentTimeMillis();
-		AnnotationWebContext context = new AnnotationWebContext(config.getConfigFileName(), config.getServerHome());
-		HttpServletDispatcherController controller = new ServerHttpServletDispatcherController(context);
+		WebContext context = new ServerAnnotationWebContext(config.getConfigFileName(), config.getServerHome());
+		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
 		Server server = new TcpServer(new HttpDecoder(config), new HttpEncoder(), new HttpHandler(controller, config));
 		server.start(config.getHost(), config.getPort());

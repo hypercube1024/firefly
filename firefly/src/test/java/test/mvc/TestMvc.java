@@ -12,6 +12,7 @@ import test.mixed.Food;
 import test.mock.servlet.MockHttpServletRequest;
 import test.mock.servlet.MockHttpServletResponse;
 
+import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
@@ -21,7 +22,7 @@ import com.firefly.utils.log.LogFactory;
 
 public class TestMvc {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static DispatcherController dispatcherController = new HttpServletDispatcherController("firefly-mvc.xml", null);
+	private static DispatcherController dispatcherController = new HttpServletDispatcherController(new AnnotationWebContext("firefly-mvc.xml"));
 	
 	public static void main(String[] args) {
 		MockHttpServletRequest request = new MockHttpServletRequest();
@@ -85,6 +86,24 @@ public class TestMvc {
 		food = (Food)request.getAttribute("strawberry");
 		Assert.assertThat(food.getName(), is("strawberry"));
 		Assert.assertThat(food.getPrice(), is(10.0));
+	}
+	
+	@Test
+	public void testNotFoundPage() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/book/create00/");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod(HttpMethod.GET);
+		request.setParameter("title", "good book");
+		request.setParameter("text", "一本好书");
+		request.setParameter("id", "330");
+		request.setParameter("price", "79.9");
+		request.setParameter("sell", "true");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatcher(request, response);
+		
+		Assert.assertThat(response.getStatus(), is(404));
 	}
 	
 	@Test
@@ -203,9 +222,7 @@ public class TestMvc {
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		dispatcherController.dispatcher(request, response);
 		log.info(response.getAsString());
-		Assert.assertThat(
-				response.getAsString().length(),
-				greaterThan(10));
+		Assert.assertThat(response.getAsString().length(), greaterThan(10));
 		Book book = Json.toObject(response.getAsString(), Book.class);
 		Assert.assertThat(book.getId(), is(331));
 		Assert.assertThat(book.getSell(), is(false));
@@ -221,8 +238,6 @@ public class TestMvc {
 		request.setMethod("GET");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		dispatcherController.dispatcher(request, response);
-		log.info(response.getHeader("Location"));
-		Assert.assertThat(response.getHeader("Location"),
-				is("/firefly/app/hello"));
+		Assert.assertThat(response.getHeader("Location"), is("/firefly/app/hello"));
 	}
 }

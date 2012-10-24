@@ -21,8 +21,8 @@ public class QueueRequestHandler extends RequestHandler {
 	private Config config;
 	private AtomicInteger currentQueueSize = new AtomicInteger();
 
-	public QueueRequestHandler(HttpServletDispatcherController servletController, FileDispatcherController fileController, Config config) {
-		super(servletController, fileController);
+	public QueueRequestHandler(HttpServletDispatcherController servletController, Config config) {
+		super(servletController);
 		this.config = config;
 		queues = new HttpQueueHandler[config.getHandlerSize()];
 		for (int i = 0; i < queues.length; i++) {

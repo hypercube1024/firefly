@@ -8,5 +8,5 @@ public interface WebContext extends ApplicationContext {
 
 	String getEncoding();
 	
-	HandlerChain match(String uri);
+	HandlerChain match(String uri, String servletURI);
 }

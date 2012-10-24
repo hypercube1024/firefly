@@ -1,6 +1,5 @@
 package com.firefly.mvc.web;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Iterator;
@@ -16,6 +15,7 @@ import com.firefly.core.XmlApplicationContext;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.annotation.ConfigReader;
 import com.firefly.core.support.xml.XmlBeanReader;
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.ControllerBeanDefinition;
 import com.firefly.mvc.web.support.InterceptorBeanDefinition;
@@ -38,41 +38,23 @@ import com.firefly.utils.log.LogFactory;
 public class AnnotationWebContext extends XmlApplicationContext implements WebContext {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private final Resource resource;
-	private final List<InterceptorMetaInfo> interceptorList = new LinkedList<InterceptorMetaInfo>();
-	private boolean thirdpartyWebServer;
+	protected final Resource resource;
+	protected final List<InterceptorMetaInfo> interceptorList = new LinkedList<InterceptorMetaInfo>();
 
-	public AnnotationWebContext(String file, ServletContext servletContext) {
+	public AnnotationWebContext(String file) {
 		super(file);
 		resource = new Resource(getEncoding());
+		initContext();
+	}
+	
+	public AnnotationWebContext(String file, ServletContext servletContext) {
+		this(file);
+		
 		if (servletContext != null)
 			TemplateView.init(servletContext.getRealPath(getViewPath()), getEncoding());
-		
-		initContext();
-		thirdpartyWebServer = true;
-	}
-
-	/**
-	 * 用于firefly http服务器
-	 * 
-	 * @param file
-	 *            firefly配置文件
-	 * @param serverHome
-	 *            http服务根目录
-	 */
-	public AnnotationWebContext(String file, String serverHome) {
-		super(file);
-		resource = new Resource(getEncoding());
-		TemplateView.init(new File(serverHome, getViewPath()).getAbsolutePath(), getEncoding());
-		initContext();
-		thirdpartyWebServer = false;
 	}
 
 	private void initContext() {
-		TextView.setEncoding(getEncoding());
-		JsonView.setEncoding(getEncoding());
-		JspView.setViewPath(getViewPath());
-
 		for (BeanDefinition beanDef : beanDefinitions) {
 			if (beanDef instanceof ControllerBeanDefinition) {
 				ControllerBeanDefinition beanDefinition = (ControllerBeanDefinition) beanDef;
@@ -99,6 +81,10 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 		}
 		if(interceptorList.size() > 0)
 			Collections.sort(interceptorList);
+		
+		TextView.setEncoding(getEncoding());
+		JsonView.setEncoding(getEncoding());
+		JspView.setViewPath(getViewPath());
 	}
 
 	@Override
@@ -128,11 +114,29 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 	}
 	
 	@Override
-	public HandlerChain match(String uri) {
+	public HandlerChain match(String uri, String servletURI) {
 		final HandlerChainImpl chain = new HandlerChainImpl();
+		addInterceptor(uri, servletURI, chain);
+		addLastHandler(uri, servletURI, chain);
+		chain.init();
+		return chain;
+	}
+	
+	protected void addLastHandler(String uri, String servletURI, final HandlerChainImpl chain) {
+		if(servletURI == null)
+			return;
+		
+		WebHandler last = resource.match(servletURI);
+		if(last != null)
+			chain.add(last);
+	}
+	
+	protected void addInterceptor(String uri, String servletURI, final HandlerChainImpl chain) {
+		if(servletURI == null)
+			return;
 		
 		for(final InterceptorMetaInfo interceptor : interceptorList) {
-			if(interceptor.getPattern().match(uri) != null) {
+			if(interceptor.getPattern().match(servletURI) != null) {
 				chain.add(new WebHandler(){
 
 					@Override
@@ -161,31 +165,30 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 					}
 				});
 			}
-				
 		}
-		
-		WebHandler last = resource.match(uri);
-		if(last != null) {
-			chain.add(last);
-		} else {
-			if(!thirdpartyWebServer) {
-			// TODO 使用firefly httpserver时还要增加文件响应
-			}
-		}
-		
-		chain.init();
-		return chain;
 	}
 	
-	private class HandlerChainImpl implements HandlerChain {
+	protected class HandlerChainImpl implements HandlerChain {
 		private List<WebHandler> list = new LinkedList<WebHandler>();
 		private Iterator<WebHandler> iterator;
 		
-		private void add(WebHandler webHandler) {
+		public void add(WebHandler webHandler) {
 			list.add(webHandler);
 		}
 		
 		private void init() {
+			if(list.size() == 0) { // 没有找到处理器输出404响应
+				list.add(new WebHandler(){
+
+					@Override
+					public View invoke(HttpServletRequest request, HttpServletResponse response) {
+						String msg = request.getRequestURI() + " not found";
+						SystemHtmlPage.responseSystemPage(request, response, getEncoding(), HttpServletResponse.SC_NOT_FOUND, msg);
+						return null;
+					}
+				});
+			}
+			
 			if(iterator == null)
 				iterator = list.iterator();
 		}

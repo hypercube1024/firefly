@@ -13,11 +13,9 @@ public abstract class RequestHandler {
 	
 	private static Log access = LogFactory.getInstance().getLog("firefly-access");
 	private DispatcherController servletController;
-	private DispatcherController fileController;
 	
-	public RequestHandler(HttpServletDispatcherController servletController, FileDispatcherController fileController) {
+	public RequestHandler(HttpServletDispatcherController servletController) {
 		this.servletController = servletController;
-		this.fileController = fileController;
 	}
 
 	protected void doRequest(HttpServletRequestImpl request, int id) throws IOException {
@@ -26,8 +24,7 @@ public abstract class RequestHandler {
 		if (request.response.system) {
 			request.response.outSystemData();
 		} else {
-			if(servletController.dispatcher(request, request.response))
-				fileController.dispatcher(request, request.response);
+			servletController.dispatcher(request, request.response);
 		}
 		request.releaseInputStreamData();
 		

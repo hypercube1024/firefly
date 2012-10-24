@@ -23,7 +23,9 @@ public class FoodInterceptor2 {
 		food.setName("ananas");
 		food.setPrice(4.99);
 		request.setAttribute("fruit1", food);
-		log.info("food interceptor 1 : {}", food);
-		return chain.doNext(request, response, chain);
+		log.info("start food interceptor 1");
+		View view = chain.doNext(request, response, chain);
+		log.info("end food interceptor 1 : {}", food);
+		return view;
 	}
 }

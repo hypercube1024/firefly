@@ -1,10 +1,13 @@
 package com.firefly.mvc.web.servlet;
 
 import java.io.IOException;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -57,7 +60,7 @@ public class DispatcherServlet extends HttpServlet {
 		String initParam = this.getInitParameter(INIT_PARAM);
 		log.info("initParam [{}]", initParam);
 		long start = System.currentTimeMillis();
-		dispatcherController = new HttpServletDispatcherController(initParam, getServletContext());
+		dispatcherController = new HttpServletDispatcherController(new AnnotationWebContext(initParam, getServletContext()));
 		long end = System.currentTimeMillis();
 		log.info("firefly startup in {} ms", (end - start));
 	}
