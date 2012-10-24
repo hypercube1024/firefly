@@ -41,10 +41,11 @@ public class StaticFileView implements View {
 	}
 	
 	public static void init(Config serverConfig, String tempPath) {
-		if(CONFIG == null)
+		if(CONFIG == null && serverConfig != null)
 			CONFIG = serverConfig;
 		
-		TEMPLATE_PATH = tempPath;
+		if(TEMPLATE_PATH == null && tempPath != null)
+			TEMPLATE_PATH = tempPath;
 	}
 
 	@Override
