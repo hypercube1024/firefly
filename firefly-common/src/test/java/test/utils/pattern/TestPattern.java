@@ -3,8 +3,6 @@ package test.utils.pattern;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
-import java.util.Arrays;
-
 import org.junit.Assert;
 import org.junit.Test;
 

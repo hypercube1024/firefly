@@ -44,6 +44,7 @@ public class ServerDebug {
 		System.out.print(new String(ret, "UTF-8"));
 		out.close();
 		in.close();
+		socket.close();
 	}
 
 }
