@@ -2,6 +2,9 @@ package com.firefly.mvc.web.support;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,11 +17,11 @@ import com.firefly.utils.ReflectUtils;
 public class ControllerMetaInfo extends HandlerMetaInfo {
 
 	private final ParamMetaInfo[] paramMetaInfos; // @HttpParam标注的类的元信息
-	private final String httpMethod;
+	private final Set<String> allowHttpMethod;
 	
 	public ControllerMetaInfo(Object object, Method method) {
 		super(object, method);
-		this.httpMethod = method.getAnnotation(RequestMapping.class).method();
+		allowHttpMethod = new HashSet<String>(Arrays.asList(method.getAnnotation(RequestMapping.class).method()));
 		Class<?>[] paraTypes = method.getParameterTypes();
 		
 		// 构造参数对象
@@ -56,18 +59,26 @@ public class ControllerMetaInfo extends HandlerMetaInfo {
 		return null;
 	}
 
-	public String getHttpMethod() {
-		return httpMethod;
-	}
-
 	public ParamMetaInfo[] getParamMetaInfos() {
 		return paramMetaInfos;
+	}
+	
+	public boolean allowMethod(String method) {
+		return allowHttpMethod.contains(method);
+	}
+	
+	public String getAllowMethod() {
+		StringBuilder s = new StringBuilder();
+		for(String m : allowHttpMethod) {
+			s.append(m).append(',');
+		}
+		s.deleteCharAt(s.length() - 1);
+		return s.toString();
 	}
 
 	@Override
 	public String toString() {
-		return "ControllerMetaInfo [method=" + method + ", httpMethod="
-				+ httpMethod + "]";
+		return "ControllerMetaInfo [allowHttpMethod=" + allowHttpMethod + "]";
 	}
-	
+
 }

@@ -63,4 +63,9 @@ public class HelloController {
 	public View getBook(@HttpParam("book") Book book) {
 		return new JsonView(book);
 	}
+	
+	@RequestMapping(value = "/book/testMethod", method = {HttpMethod.GET, HttpMethod.POST})
+	public View testMethod(@HttpParam("book") Book book) {
+		return new JsonView(book);
+	}
 }

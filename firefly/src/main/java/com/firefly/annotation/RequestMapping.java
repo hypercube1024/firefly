@@ -13,5 +13,5 @@ import com.firefly.mvc.web.HttpMethod;
 public @interface RequestMapping {
 	String value() default "";
 
-	String method() default HttpMethod.GET;
+	String[] method() default { HttpMethod.GET };
 }

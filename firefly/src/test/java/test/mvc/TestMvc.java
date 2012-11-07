@@ -26,7 +26,7 @@ public class TestMvc {
 	
 	public static void main(String[] args) {
 		MockHttpServletRequest request = new MockHttpServletRequest();
-		request.setRequestURI("/firefly/app/book/create/");
+		request.setRequestURI("/firefly/app/book/testMethod/");
 		request.setServletPath("/app");
 		request.setContextPath("/firefly");
 		request.setMethod(HttpMethod.GET);
@@ -40,6 +40,25 @@ public class TestMvc {
 		
 		System.out.println(response.getAsString());
 		System.out.println(response.getHeader("Allow"));
+	}
+	
+	@Test
+	public void testAllowMethod() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/book/testMethod/");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod(HttpMethod.PUT);
+		request.setParameter("title", "good book");
+		request.setParameter("text", "一本好书");
+		request.setParameter("id", "330");
+		request.setParameter("price", "79.9");
+		request.setParameter("sell", "true");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatcher(request, response);
+		Assert.assertThat(response.getHeader("Allow"), is("POST,GET"));
+//		System.out.println(response.getAsString());
+//		System.out.println(response.getHeader("Allow"));
 	}
 	
 	@Test

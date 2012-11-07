@@ -129,7 +129,7 @@ public class Resource {
 		
 		@Override
 		public View invoke(HttpServletRequest request, HttpServletResponse response) {
-			if(request.getMethod().equals(resource.controller.getHttpMethod())) {
+			if(resource.controller.allowMethod(request.getMethod())) {
 				Object[] p = getParams(request, response);
 				return getController().invoke(p);
 			}
@@ -139,9 +139,9 @@ public class Resource {
 		}
 		
 		private void notAllowMethodResponse(HttpServletRequest request, HttpServletResponse response) {
-			response.setHeader("Allow", resource.controller.getHttpMethod());
+			response.setHeader("Allow", resource.controller.getAllowMethod());
 			SystemHtmlPage.responseSystemPage(request, response, ENCODING, 
-					HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only support " + resource.controller.getHttpMethod() + " method");
+					HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only support " + resource.controller.getAllowMethod() + " method");
 		}
 
 		/**
