@@ -11,14 +11,15 @@ import java.util.Map.Entry;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.log.file.FileLog;
 import com.firefly.utils.log.file.FileLogTask;
+import com.firefly.utils.log.slf4j.Slf4jLog;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class LogFactory {
 	private Map<String, Log> logMap = new HashMap<String, Log>();
 	private Map<String, Integer> levelMap = new HashMap<String, Integer>();
-	public static final SafeSimpleDateFormat dayDateFormat = new SafeSimpleDateFormat(
-			"yyyy-MM-dd");
+	public static final SafeSimpleDateFormat dayDateFormat = new SafeSimpleDateFormat("yyyy-MM-dd");
 	private LogTask logTask = new FileLogTask();
+	private boolean logbackCanWork = Slf4jLog.canWork();
 
 	private static class Holder {
 		private static LogFactory instance = new LogFactory();
@@ -29,24 +30,27 @@ public class LogFactory {
 	}
 
 	private LogFactory() {
-		levelMap.put("TRACE", Log.TRACE);
-		levelMap.put("DEBUG", Log.DEBUG);
-		levelMap.put("INFO", Log.INFO);
-		levelMap.put("WARN", Log.WARN);
-		levelMap.put("ERROR", Log.ERROR);
-		defaultLog();
+		// 优先使用slf4j，如果类路径下没有slf4j包再初始化firefly框架的日志系统
+		if (!logbackCanWork) {
+			levelMap.put("TRACE", Log.TRACE);
+			levelMap.put("DEBUG", Log.DEBUG);
+			levelMap.put("INFO", Log.INFO);
+			levelMap.put("WARN", Log.WARN);
+			levelMap.put("ERROR", Log.ERROR);
+			defaultLog();
 
-		File configFile = null;
-		try {
-			configFile = new File(LogFactory.class.getClassLoader()
-					.getResource("firefly-log.properties").toURI());
-		} catch (URISyntaxException e1) {
-			e1.printStackTrace();
+			File configFile = null;
+			try {
+				configFile = new File(LogFactory.class.getClassLoader().getResource("firefly-log.properties").toURI());
+			}
+			catch (URISyntaxException e1) {
+				e1.printStackTrace();
+			}
+			if (configFile != null && configFile.exists()) {
+				loadProperties();
+			}
+			logTask.start();
 		}
-		if (configFile != null && configFile.exists()) {
-			loadProperties();
-		}
-		logTask.start();
 	}
 
 	private void defaultLog() {
@@ -63,9 +67,9 @@ public class LogFactory {
 	private void loadProperties() {
 		Properties properties = new Properties();
 		try {
-			properties.load(LogFactory.class.getClassLoader()
-					.getResourceAsStream("firefly-log.properties"));
-		} catch (IOException e) {
+			properties.load(LogFactory.class.getClassLoader().getResourceAsStream("firefly-log.properties"));
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 		for (Entry<Object, Object> entry : properties.entrySet()) {
@@ -75,7 +79,7 @@ public class LogFactory {
 
 			String[] strs = StringUtils.split(value, ',');
 			if (strs.length < 2)
-				throw new LogException("config format error");
+				throw new LogException("config format error! example: firefly-system=DEBUG,console");
 
 			int level = levelMap.get(strs[0]);
 			String path = strs[1];
@@ -91,8 +95,7 @@ public class LogFactory {
 				if (!file.exists()) {
 					boolean mkdirRet = file.mkdir();
 					if (!mkdirRet)
-						throw new LogException("create dir " + path
-								+ " failure");
+						throw new LogException("create dir " + path + " failure");
 				}
 
 				if (!file.isDirectory())
@@ -109,19 +112,30 @@ public class LogFactory {
 	}
 
 	public void flush() {
-		for (Entry<String, Log> entry : logMap.entrySet()) {
-			Log log = entry.getValue();
-			if (log instanceof FileLog) {
-				
-				FileLog fileLog = (FileLog) log;
-				fileLog.flush();
-//				System.out.println(">>> flush all " + fileLog.getName());
+		if (!logbackCanWork)
+			for (Entry<String, Log> entry : logMap.entrySet()) {
+				Log log = entry.getValue();
+				if (log instanceof FileLog) {
+
+					FileLog fileLog = (FileLog) log;
+					fileLog.flush();
+					// System.out.println(">>> flush all " + fileLog.getName());
+				}
 			}
-		}
 	}
 
 	public Log getLog(String name) {
-		return logMap.get(name);
+		if (logMap.containsKey(name))
+			return logMap.get(name);
+		else {
+			if (logbackCanWork) {
+				Log log = new Slf4jLog(name);
+				logMap.put("name", log);
+				return log;
+			}
+			// 如果没有配置过该名称的日志，则缺省使用 defaultLog 输出
+			return logMap.get("firefly-system");
+		}
 	}
 
 	public LogTask getLogTask() {
@@ -129,11 +143,13 @@ public class LogFactory {
 	}
 
 	public void shutdown() {
-		logTask.shutdown();
+		if (!logbackCanWork)
+			logTask.shutdown();
 	}
 
 	public void start() {
-		logTask.start();
+		if (!logbackCanWork)
+			logTask.start();
 	}
 
 }
