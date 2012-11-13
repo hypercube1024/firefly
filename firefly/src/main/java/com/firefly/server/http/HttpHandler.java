@@ -13,7 +13,7 @@ public class HttpHandler implements Handler {
 
 	public HttpHandler(HttpServletDispatcherController servletController, Config config) {
 		httpConnectionListener = config.getHttpConnectionListener();
-		requestHandler = new QueueRequestHandler(servletController, config);
+		requestHandler = new QueueRequestHandler(servletController);
 	}
 
 	@Override

@@ -17,9 +17,7 @@ public class Config {
 	private int maxRequestLineLength = 8 * 1024,
 				maxRequestHeadLength = 16 * 1024, 
 				maxRangeNum = 8,
-				writeBufferSize = 8 * 1024, 
-				handlerSize, 
-				maxHandlerQueueSize = 2000,
+				writeBufferSize = 8 * 1024,
 				maxSessionInactiveInterval = 10 * 60;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
@@ -70,14 +68,6 @@ public class Config {
 			return path;
 		}
 	};
-
-	{
-		int p = Runtime.getRuntime().availableProcessors();
-		if (p > 4)
-			handlerSize = p * 2;
-		else
-			handlerSize = p + 1;
-	}
 
 	public Config() {
 	}
@@ -198,14 +188,6 @@ public class Config {
 		this.fileAccessFilter = fileAccessFilter;
 	}
 
-	public int getHandlerSize() {
-		return handlerSize;
-	}
-
-	public void setHandlerSize(int handlerQueueSize) {
-		this.handlerSize = handlerQueueSize > 1 ? handlerQueueSize : 1;
-	}
-
 	public String getContextPath() {
 		return contextPath;
 	}
@@ -309,14 +291,6 @@ public class Config {
 
 	public void setKeepAlive(boolean keepAlive) {
 		this.keepAlive = keepAlive;
-	}
-
-	public int getMaxHandlerQueueSize() {
-		return maxHandlerQueueSize;
-	}
-
-	public void setMaxHandlerQueueSize(int maxHandlerQueueSize) {
-		this.maxHandlerQueueSize = maxHandlerQueueSize;
 	}
 
 }

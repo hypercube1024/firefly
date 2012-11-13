@@ -19,14 +19,13 @@ public abstract class RequestHandler {
 		this.servletController = servletController;
 	}
 
-	protected void doRequest(HttpServletRequestImpl request, int id) throws IOException {
+	protected void doRequest(HttpServletRequestImpl request) throws IOException {
 		long start = Millisecond100Clock.currentTimeMillis();
 		servletController.dispatcher(request, request.response);
 		request.releaseInputStreamData();
 		long end = Millisecond100Clock.currentTimeMillis();
-		access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 
+		access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 
 				request.session.getSessionId(), 
-				id, 
 				getClientAddress(request),
 				request.response.getStatus(),
 				request.getProtocol(),
