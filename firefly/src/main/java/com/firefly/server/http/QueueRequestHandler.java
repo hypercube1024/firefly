@@ -26,12 +26,12 @@ public class QueueRequestHandler extends RequestHandler {
 	@Override
 	public void doRequest(Session session, final HttpServletRequestImpl request)
 			throws IOException {
-		if (request.response.system) { // 系统错误在当前线程响应
+		if (request.response.system) { // 系统错误响应
 			request.response.outSystemData();
 		} else {
-			if(request.isSupportPipeline()) { // pipeline请求使用队列线程池
+			if(request.isSupportPipeline()) {
 				doRequest(request);
-			} else { // 使用cache线程池
+			} else { // 非等幂请求使用cache线程池
 				executor.submit(new Runnable(){
 					@Override
 					public void run() {

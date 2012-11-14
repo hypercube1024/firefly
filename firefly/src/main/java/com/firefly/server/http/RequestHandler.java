@@ -24,7 +24,7 @@ public abstract class RequestHandler {
 		servletController.dispatcher(request, request.response);
 		request.releaseInputStreamData();
 		long end = Millisecond100Clock.currentTimeMillis();
-		access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 
+		access.info("{}|{}|{}|{}|{}|{}|{}|{}", 
 				request.session.getSessionId(), 
 				getClientAddress(request),
 				request.response.getStatus(),
@@ -32,8 +32,6 @@ public abstract class RequestHandler {
 				request.getMethod(),
 				request.getRequestURI(),
 				request.getQueryString(),
-				request.session.getReadBytes(),
-				request.session.getWrittenBytes(),
 				(end - start));
 	}
 	

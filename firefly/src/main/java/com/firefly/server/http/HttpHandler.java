@@ -23,6 +23,10 @@ public class HttpHandler implements Handler {
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
+		log.info("connection close|{}|{}|{}", 
+				session.getSessionId(), 
+				session.getReadBytes(), 
+				session.getWrittenBytes());
 		httpConnectionListener.connectionClosed(session);
 	}
 

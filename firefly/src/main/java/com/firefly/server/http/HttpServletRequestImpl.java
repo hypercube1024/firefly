@@ -812,7 +812,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 				ServletInputStream input = getInputStream();
 				if(input.available() > 0) {
 					log.warn("release input stream data");
-					byte[] buf = new byte[1024];
+					byte[] buf = new byte[1024 * 8];
 					for (; input.read(buf) != -1;) {
 						
 					}
