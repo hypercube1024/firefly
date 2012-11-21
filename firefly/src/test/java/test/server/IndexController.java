@@ -2,6 +2,7 @@ package test.server;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -9,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.firefly.annotation.Controller;
+import com.firefly.annotation.PathVariable;
 import com.firefly.annotation.RequestMapping;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.View;
@@ -98,6 +100,13 @@ public class IndexController {
 	public View index4(HttpServletRequest request,
 			HttpServletResponse response) throws IOException {
 		return new RedirectView("/index");
+	}
+	
+	@RequestMapping(value = "/document/?/?")
+	public View document(HttpServletRequest request, @PathVariable String[] args) {
+		System.out.println(Arrays.toString(args));
+		request.setAttribute("info", args);
+		return new TemplateView("/index.html");
 	}
 
 }

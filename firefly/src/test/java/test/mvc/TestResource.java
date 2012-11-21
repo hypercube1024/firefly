@@ -18,6 +18,7 @@ public class TestResource {
 		resource.add("/user/id-?-?", null);
 		resource.add("/user/id-?-?/?", null);
 		resource.add("/user/add", null);
+		resource.add("/document/_?/?", null);
 		
 		resource.add("/shop/fruit/apple/?", null);
 		resource.add("/shop/fruit/banana", null);
@@ -35,6 +36,9 @@ public class TestResource {
 		Assert.assertThat(ret, nullValue());
 		
 		ret = resource.match("/file/info.txt");
+		Assert.assertThat(ret, notNullValue());
+		
+		ret = resource.match("/document/_pengpeng");
 		Assert.assertThat(ret, notNullValue());
 		
 		Assert.assertThat(resource.getEncoding(), is("utf-8"));

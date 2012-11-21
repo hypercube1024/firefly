@@ -129,13 +129,19 @@ public class Resource {
 		
 		@Override
 		public View invoke(HttpServletRequest request, HttpServletResponse response) {
-			if(resource.controller.allowMethod(request.getMethod())) {
-				Object[] p = getParams(request, response);
-				return getController().invoke(p);
+			if(resource.controller == null) {
+				String msg = request.getRequestURI() + " not found";
+				SystemHtmlPage.responseSystemPage(request, response, ENCODING, HttpServletResponse.SC_NOT_FOUND, msg);
+				return null;
 			}
 			
-			notAllowMethodResponse(request, response);
-			return null;
+			if(!resource.controller.allowMethod(request.getMethod())) {
+				notAllowMethodResponse(request, response);
+				return null;
+			}
+			
+			Object[] p = getParams(request, response);
+			return getController().invoke(p);
 		}
 		
 		private void notAllowMethodResponse(HttpServletRequest request, HttpServletResponse response) {
