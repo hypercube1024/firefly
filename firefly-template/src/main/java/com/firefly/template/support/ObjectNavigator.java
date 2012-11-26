@@ -247,22 +247,19 @@ public class ObjectNavigator {
 		String element = el.trim();
 		int listOrMapPrefixIndex = element.indexOf('[');
 		if (listOrMapPrefixIndex > 0) { // map or list or array
-			int listOrMapSuffixIndex = element.indexOf(']',
-					listOrMapPrefixIndex);
+			int listOrMapSuffixIndex = element.indexOf(']', listOrMapPrefixIndex);
 			if (listOrMapSuffixIndex != element.length() - 1)
-				throw new ExpressionError("list or map expression error: "
-						+ element);
+				throw new ExpressionError("list or map expression error: " + element);
 
-			String keyEl = element.substring(listOrMapPrefixIndex + 1,
-					listOrMapSuffixIndex);
+			String keyEl = element.substring(listOrMapPrefixIndex + 1, listOrMapSuffixIndex);
 			String p = element.substring(0, listOrMapPrefixIndex);
-			Object obj = root ? ((Model) current).get(p) : getObjectProperty(
-					current, p);
+			Object obj = root ? ((Model) current).get(p) : getObjectProperty(current, p);
+			if(obj == null)
+				return null;
 
 			if (isMapKey(keyEl)) { // map
 				if ((obj instanceof Map))
-					return ((Map<?, ?>) obj).get(keyEl.substring(1,
-							keyEl.length() - 1));
+					return ((Map<?, ?>) obj).get(keyEl.substring(1, keyEl.length() - 1));
 			} else { // list or array
 				int index = Integer.parseInt(keyEl);
 				if ((obj instanceof List))
@@ -271,8 +268,7 @@ public class ObjectNavigator {
 					return getArrayObject(obj, index);
 			}
 		} else if (listOrMapPrefixIndex < 0) { // object
-			return root ? ((Model) current).get(element) : getObjectProperty(
-					current, element);
+			return root ? ((Model) current).get(element) : getObjectProperty(current, element);
 		} else {
 			throw new ExpressionError("expression error: " + element);
 		}
@@ -282,8 +278,7 @@ public class ObjectNavigator {
 	private boolean isMapKey(String el) {
 		char head = el.charAt(0);
 		char tail = el.charAt(el.length() - 1);
-		return ((head == '\'') && (tail == '\''))
-				|| ((head == '"') && (tail == '"'));
+		return ((head == '\'') && (tail == '\'')) || ((head == '"') && (tail == '"'));
 	}
 
 	private Object getObjectProperty(Object current, String propertyName) {
