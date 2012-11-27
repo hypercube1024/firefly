@@ -37,7 +37,6 @@ import com.firefly.mvc.web.view.TextView;
  */
 public class AnnotationWebContext extends XmlApplicationContext implements WebContext {
 	
-//	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	protected final Resource resource;
 	protected final List<InterceptorMetaInfo> interceptorList = new LinkedList<InterceptorMetaInfo>();
 

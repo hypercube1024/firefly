@@ -19,25 +19,33 @@ public class ServerBootstrap {
 		start(config);
 	}
 
-	public static void start(String configFileName, String serverHome,
-			String host, int port) {
+	public static void start(String configFileName, String serverHome, String host, int port) {
 		Config config = new Config(serverHome, host, port);
 		config.setConfigFileName(configFileName);
 		start(config);
 	}
+	
+	public static void start(String configFileName) {
+		long start = System.currentTimeMillis();
+		WebContext context = new ServerAnnotationWebContext(configFileName);
+		init(context, null);
+		long end = System.currentTimeMillis();
+		log.info("firefly startup in {} ms", (end - start));
+	}
 
 	public static void start(Config config) {
-		log.info("server home [{}]", config.getServerHome());
-		log.info("context path [{}]", config.getContextPath());
-		log.info("servlet path [{}]", config.getServletPath());
-
 		long start = System.currentTimeMillis();
 		WebContext context = new ServerAnnotationWebContext(config);
+		init(context, config);
+		long end = System.currentTimeMillis();
+		log.info("firefly startup in {} ms", (end - start));
+	}
+	
+	private static void init(WebContext context, Config config) {
+		config = (config == null ? context.getBean(Config.class) : config);
 		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
 		Server server = new TcpServer(new HttpDecoder(config), new HttpEncoder(), new HttpHandler(controller, config));
 		server.start(config.getHost(), config.getPort());
-		long end = System.currentTimeMillis();
-		log.info("firefly startup in {} ms", (end - start));
 	}
 }

@@ -5,5 +5,12 @@
 
 	<component-scan base-package="test.server"/>
 	<mvc view-path="/template" view-encoding="UTF-8"/>
+	
+	<bean class="com.firefly.server.http.Config">
+		<property name="serverHome" value="/Users/qiupengtao/develop/eclipse_workspace/local_git/firefly/firefly/target/test-classes/page"></property>
+		<property name="host" value="localhost"></property>
+		<property name="port" value="7676"></property>
+		<property name="keepAlive" value="false"></property>
+	</bean>
 
 </beans>
