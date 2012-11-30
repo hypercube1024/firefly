@@ -105,7 +105,7 @@ public class Resource {
 			current = ret.resource;
 		}
 		
-		if(ret.resource.controller == null)
+		if(ret == null || ret.resource.controller == null)
 			return null;
 		
 		if(params.size() > 0)
