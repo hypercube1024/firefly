@@ -47,11 +47,26 @@ public class StaticFileView implements View {
 		if(TEMPLATE_PATH == null && tempPath != null)
 			TEMPLATE_PATH = tempPath;
 	}
+	
+	private static boolean checkPath(String path) {
+		if(path.length() < 3)
+			return true;
+
+		if(path.charAt(0) == '/' && path.charAt(1) == '.') {
+			if(path.charAt(2) == '/') 
+				return false;
+			if(path.length() > 3) {
+				if(path.charAt(2) == '.' || path.charAt(3) == '/')
+					return false;
+			}
+		}
+		return true;
+	}
 
 	@Override
 	public void render(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		if(inputPath.startsWith(TEMPLATE_PATH)) {
+		if(!checkPath(inputPath) || inputPath.startsWith(TEMPLATE_PATH)) {
 			SystemHtmlPage.responseSystemPage(request, response,
 					CONFIG.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
