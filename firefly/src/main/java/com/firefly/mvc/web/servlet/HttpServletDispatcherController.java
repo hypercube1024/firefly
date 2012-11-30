@@ -35,8 +35,13 @@ public class HttpServletDispatcherController implements DispatcherController {
 		HandlerChain chain = webContext.match(request.getRequestURI(), servletURI);
 		View v = chain.doNext(request, response, chain);
 		
-		if(v == null)
+		if(v == null) {
+			if(!response.isCommitted()) {
+				String msg = request.getRequestURI() + " not found";
+				SystemHtmlPage.responseSystemPage(request, response, webContext.getEncoding(), HttpServletResponse.SC_NOT_FOUND, msg);
+			}
 			return;
+		}
 		
 		try {
 			v.render(request, response);
