@@ -241,18 +241,18 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		/**
 		 * map回调
 		 */
-		transient LRUMapEventListener listener = new LRUMapEventListener() {
+		transient LRUMapEventListener<K, V> listener = new LRUMapEventListener<K, V>() {
 			@Override
-			public void eliminated(Object key, Object value) {
+			public void eliminated(K key, V value) {
 			}
 
 			@Override
-			public Object getNull(Object key) {
+			public V getNull(K key) {
 				return null;
 			}
 		};
 
-		Segment(int maxCapacity, float lf, LRUMapEventListener listener) {
+		Segment(int maxCapacity, float lf, LRUMapEventListener<K, V> listener) {
 			this.maxCapacity = maxCapacity;
 			loadFactor = lf;
 			setTable(HashEntry.<K, V> newArray(maxCapacity));
@@ -292,7 +292,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		 * reorder a HashEntry initialization with its table assignment, which
 		 * is legal under memory model but is not known to ever occur.
 		 */
-		@SuppressWarnings("unchecked")
 		V readValueUnderLock(HashEntry<K, V> e) {
 			lock();
 			try {
@@ -325,7 +324,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					e = e.next;
 				}
 			}
-			return (V) listener.getNull(key);
+			return listener.getNull((K)key);
 		}
 
 		/**
@@ -630,7 +629,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	 * 			map事件回调
 	 */
 	public ConcurrentLRUHashMap(int segementCapacity, float loadFactor,
-			int concurrencyLevel, LRUMapEventListener listener) {
+			int concurrencyLevel, LRUMapEventListener<K, V> listener) {
 		if (!(loadFactor > 0) || segementCapacity < 0 || concurrencyLevel <= 0)
 			throw new IllegalArgumentException();
 
@@ -662,6 +661,18 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	 */
 	public ConcurrentLRUHashMap(int segementCapacity, float loadFactor) {
 		this(segementCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL, null);
+	}
+	
+	/**
+	 * 使用指定参数，创建一个ConcurrentLRUHashMap
+	 * 
+	 * @param segementCapacity
+	 * 				Segement最大容量
+	 * @param listener
+	 * 				map事件回调
+	 */
+	public ConcurrentLRUHashMap(int segementCapacity, LRUMapEventListener<K, V> listener) {
+		this(segementCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, listener);
 	}
 
 	/**

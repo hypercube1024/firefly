@@ -1,7 +1,7 @@
 package com.firefly.utils.collection;
 
-public interface LRUMapEventListener {
-	void eliminated(Object key, Object value);
+public interface LRUMapEventListener<K, V> {
+	void eliminated(K key, V value);
 	
-	Object getNull(Object key);
+	V getNull(K key);
 }

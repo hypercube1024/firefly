@@ -11,16 +11,16 @@ public class TestConcurrentLRUHashMap {
 	
 	@Test
 	public void test() {
-		LRUMapEventListener listener = new LRUMapEventListener(){
+		LRUMapEventListener<String, String> listener = new LRUMapEventListener<String, String>(){
 
 			@Override
-			public void eliminated(Object key, Object value) {
+			public void eliminated(String key, String value) {
 				Assert.assertThat((String)key, is("a2"));
 				Assert.assertThat((String)value, is("hello2"));
 			}
 
 			@Override
-			public Object getNull(Object key) {
+			public String getNull(String key) {
 				Assert.assertThat((String)key, is("a2"));
 				return key + " is null";
 			}};
