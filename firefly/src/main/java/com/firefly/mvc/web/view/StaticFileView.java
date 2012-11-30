@@ -48,7 +48,12 @@ public class StaticFileView implements View {
 			TEMPLATE_PATH = tempPath;
 	}
 	
-	private static boolean checkPath(String path) {
+	/**
+	 * 去除../或者./等非法路径，防止任意文件访问漏洞
+	 * @param path 请求文件路径
+	 * @return
+	 */
+	public static boolean checkPath(String path) {
 		if(path.length() < 3)
 			return true;
 

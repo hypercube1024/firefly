@@ -105,6 +105,9 @@ public class Resource {
 			current = ret.resource;
 		}
 		
+		if(ret.resource.controller == null)
+			return null;
+		
 		if(params.size() > 0)
 			ret.params = params.toArray(EMPTY);
 		return ret;
@@ -129,12 +132,6 @@ public class Resource {
 		
 		@Override
 		public View invoke(HttpServletRequest request, HttpServletResponse response) {
-			if(resource.controller == null) {
-				String msg = request.getRequestURI() + " not found";
-				SystemHtmlPage.responseSystemPage(request, response, ENCODING, HttpServletResponse.SC_NOT_FOUND, msg);
-				return null;
-			}
-			
 			if(!resource.controller.allowMethod(request.getMethod())) {
 				notAllowMethodResponse(request, response);
 				return null;

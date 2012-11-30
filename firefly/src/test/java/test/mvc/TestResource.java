@@ -1,28 +1,38 @@
 package test.mvc;
 
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import test.server.IndexController;
+
 import com.firefly.mvc.web.Resource;
 import com.firefly.mvc.web.Resource.Result;
+import com.firefly.mvc.web.support.ControllerMetaInfo;
 
 public class TestResource {
 	
 	@Test
 	public void testResource() throws NoSuchMethodException, SecurityException {
+		IndexController controller = new IndexController();
 		Resource resource = new Resource("utf-8");
-		resource.add("/user/id-?-?", null);
-		resource.add("/user/id-?-?/?", null);
-		resource.add("/user/add", null);
-		resource.add("/document/_?/?", null);
+		ControllerMetaInfo cm = new ControllerMetaInfo(controller, 
+				IndexController.class.getMethod("index4", HttpServletRequest.class, HttpServletResponse.class));
 		
-		resource.add("/shop/fruit/apple/?", null);
-		resource.add("/shop/fruit/banana", null);
-		resource.add("/file/info.txt", null);
+		resource.add("/user/id-?-?", cm);
+		resource.add("/user/id-?-?/?", cm);
+		resource.add("/user/add", cm);
+		resource.add("/document/_?/?", cm);
+		
+		resource.add("/shop/fruit/apple/?", cm);
+		resource.add("/shop/fruit/banana", cm);
+		resource.add("/file/info.txt", cm);
 		
 		Result ret = resource.match("/user/id-3344-2222/55555");
 		Assert.assertThat(ret.getParams().length, is(3));
@@ -39,7 +49,7 @@ public class TestResource {
 		Assert.assertThat(ret, notNullValue());
 		
 		ret = resource.match("/document/_pengpeng");
-		Assert.assertThat(ret, notNullValue());
+		Assert.assertThat(ret, nullValue());
 		
 		Assert.assertThat(resource.getEncoding(), is("utf-8"));
 	}

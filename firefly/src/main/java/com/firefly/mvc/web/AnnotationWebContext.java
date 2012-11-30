@@ -26,8 +26,6 @@ import com.firefly.mvc.web.view.JsonView;
 import com.firefly.mvc.web.view.JspView;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
-//import com.firefly.utils.log.Log;
-//import com.firefly.utils.log.LogFactory;
 
 /**
  * Web应用上下文默认实现
