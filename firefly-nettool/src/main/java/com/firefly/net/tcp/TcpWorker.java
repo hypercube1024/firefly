@@ -38,6 +38,8 @@ import com.firefly.utils.time.Millisecond100Clock;
 public final class TcpWorker implements Worker {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final HashTimeWheel timeWheel = new HashTimeWheel();
+	
 	private final Config config;
 	private final Queue<Runnable> registerTaskQueue = new LinkedTransferQueue<Runnable>();
 	private final Queue<Runnable> writeTaskQueue = new LinkedTransferQueue<Runnable>();
@@ -45,19 +47,21 @@ public final class TcpWorker implements Worker {
 	private final ReceiveBufferPool receiveBufferPool = new SocketReceiveBufferPool();
 	private final SendBufferPool sendBufferPool = new SocketSendBufferPool();
 	private final Selector selector;
-	private final HashTimeWheel timeWheel = new HashTimeWheel();
 	private final int workerId;
 	private volatile int cancelledKeys;
 	private Thread thread;
 	private EventManager eventManager;
 	private boolean start;
+	
+	static {
+		timeWheel.start();
+	}
 
 	public TcpWorker(Config config, int workerId, EventManager eventManager) {
 		try {
 			this.workerId = workerId;
 			this.config = config;
 			this.eventManager = eventManager;
-			timeWheel.start();
 
 			selector = Selector.open();
 			start = true;
@@ -447,13 +451,12 @@ public final class TcpWorker implements Worker {
 
 				SocketAddress localAddress = session.getLocalAddress();
 				SocketAddress remoteAddress = session.getRemoteAddress();
-				if (localAddress == null || remoteAddress == null) {
+				if (localAddress == null || remoteAddress == null)
 					TcpWorker.this.close(key);
-				}
 
 				if (config.getTimeout() > 0)
-					timeWheel.add(config.getTimeout(), new TimeoutTask(session,
-							config.getTimeout()));
+					timeWheel.add(config.getTimeout(), new TimeoutTask(session, config.getTimeout()));
+				
 				eventManager.executeOpenTask(session);
 			} catch (IOException e) {
 				log.error("socketChannel register error", e);
@@ -475,16 +478,12 @@ public final class TcpWorker implements Worker {
 
 		@Override
 		public void run() {
-			long t = Millisecond100Clock.currentTimeMillis()
-					- session.getLastActiveTime();
-			// log.debug("check time: {}", t);
-			if (t > timeout) {
-				// log.debug("check timeout");
+			long t = Millisecond100Clock.currentTimeMillis() - session.getLastActiveTime();
+			if (t >= timeout) {
 				if (session.isOpen())
 					session.close(true);
 			} else {
 				long nextCheckTime = timeout - t;
-				// log.debug("next check time: {}", nextCheckTime);
 				timeWheel.add(nextCheckTime, TimeoutTask.this);
 			}
 

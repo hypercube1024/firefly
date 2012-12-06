@@ -124,8 +124,7 @@ public class TcpServer implements Server {
 						if (selector.select(1000) > 0)
 							selector.selectedKeys().clear();
 
-						SocketChannel socketChannel = serverSocketChannel
-								.accept();
+						SocketChannel socketChannel = serverSocketChannel.accept();
 						if (socketChannel != null) {
 							accept(socketChannel, sessionId);
 							sessionId++;
