@@ -21,6 +21,7 @@ public class Config {
 				maxSessionInactiveInterval = 10 * 60;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
+	private boolean pipeline = false;
 	private String serverHome, host, servletPath = "", contextPath = "", sessionIdName = "jsessionid";
 	private int port;
 	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager(this);
@@ -291,6 +292,14 @@ public class Config {
 
 	public void setKeepAlive(boolean keepAlive) {
 		this.keepAlive = keepAlive;
+	}
+
+	public boolean isPipeline() {
+		return pipeline;
+	}
+
+	public void setPipeline(boolean pipeline) {
+		this.pipeline = pipeline;
 	}
 
 }

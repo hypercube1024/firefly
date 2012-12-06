@@ -23,7 +23,7 @@ public class IndexController {
 
 	@RequestMapping(value = "/index")
 	public View index(HttpServletRequest request, HttpServletResponse response) {
-		System.out.println("into /index");
+		System.out.println("into /index " + Thread.currentThread().getName());
 		HttpSession session = request.getSession();
 		request.setAttribute("hello", session.getAttribute("name"));
 		response.addCookie(new Cookie("test", "cookie_value"));

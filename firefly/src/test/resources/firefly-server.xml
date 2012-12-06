@@ -10,7 +10,8 @@
 		<property name="serverHome" value="/Users/qiupengtao/develop/eclipse_workspace/local_git/firefly/firefly/target/test-classes/page"></property>
 		<property name="host" value="localhost"></property>
 		<property name="port" value="7676"></property>
-		<property name="keepAlive" value="false"></property>
+		<property name="keepAlive" value="true"></property>
+		<property name="pipeline" value="false"></property>
 	</bean>
 
 </beans>

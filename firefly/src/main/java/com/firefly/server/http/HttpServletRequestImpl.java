@@ -152,15 +152,15 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	public boolean isKeepAlive() {
 		return !systemReq 
 				&& config.isKeepAlive() 
-				&& (
-					"Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || 
-					( !getProtocol().equals("HTTP/1.0") && !"close".equalsIgnoreCase(getHeader("Connection")) )
-				);
+				&& ("Keep-Alive".equalsIgnoreCase(getHeader("Connection")) 
+					|| (!getProtocol().equals("HTTP/1.0") && !"close".equalsIgnoreCase(getHeader("Connection"))));
 	}
 	
 	public boolean isSupportPipeline() {
-		return config.isKeepAlive() && IDEMPOTENT_METHODS.contains(getMethod()) && 
-			( "Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || !getProtocol().equals("HTTP/1.0") );
+		return config.isPipeline() 
+				&& config.isKeepAlive() 
+				&& IDEMPOTENT_METHODS.contains(getMethod()) 
+				&& ("Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || !getProtocol().equals("HTTP/1.0"));
 	}
 
 	public boolean isChunked() {
