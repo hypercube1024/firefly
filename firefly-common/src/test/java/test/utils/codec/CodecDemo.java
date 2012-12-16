@@ -1,6 +1,9 @@
 package test.utils.codec;
 
+import java.util.Arrays;
+
 import com.firefly.utils.codec.Base64;
+import com.firefly.utils.codec.HexUtils;
 
 public class CodecDemo {
 
@@ -18,6 +21,11 @@ public class CodecDemo {
 		
 		byte[] b = Base64.decode(ret);
 		System.out.println(new String(b));
+		
+		byte[] b1 = {-128, 3};
+		String s = HexUtils.bytesToHex(b1);
+		System.out.println(s);
+		System.out.println(Arrays.toString(HexUtils.hexToBytes(s)));
 	}
 
 }
