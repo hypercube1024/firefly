@@ -37,13 +37,21 @@ public class DefaultDom implements Dom {
 	@Override
 	public Document getDocument(String file) {
 		Document doc = null;
+		InputStream is = null;
 		try {
-			InputStream is = DefaultDom.class.getResourceAsStream("/" + file);
+			is = DefaultDom.class.getResourceAsStream("/" + file);
 			doc = db.parse(is);
 		} catch (SAXException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			if(is != null)
+				try {
+					is.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 		}
 
 		return doc;

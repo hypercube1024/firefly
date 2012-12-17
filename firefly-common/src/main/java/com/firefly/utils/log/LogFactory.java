@@ -2,11 +2,12 @@ package com.firefly.utils.log;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.log.file.FileLog;
@@ -59,15 +60,28 @@ public class LogFactory {
 		System.out.println(name + "|console");
 		logMap.put(name, fileLog);
 	}
+	
+	private Properties loadProperties0() throws IOException{
+		Properties properties = new Properties();
+		InputStream input = null;
+		try {
+			input = LogFactory.class.getClassLoader().getResourceAsStream("firefly-log.properties");
+			properties.load(input);
+		} finally {
+			if(input != null)
+				input.close();
+		}
+		return properties;
+	}
 
 	private void loadProperties() {
-		Properties properties = new Properties();
+		Properties properties = null;
 		try {
-			properties.load(LogFactory.class.getClassLoader()
-					.getResourceAsStream("firefly-log.properties"));
+			properties = loadProperties0();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 		for (Entry<Object, Object> entry : properties.entrySet()) {
 			String name = (String) entry.getKey();
 			String value = (String) entry.getValue();
