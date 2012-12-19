@@ -72,6 +72,7 @@ public final class TcpWorker implements Worker {
 		}
 	}
 
+	@Override
 	public int getWorkerId() {
 		return workerId;
 	}
@@ -491,6 +492,7 @@ public final class TcpWorker implements Worker {
 
 	}
 
+	@Override
 	public void close(SelectionKey key) {
 		try {
 			key.channel().close();

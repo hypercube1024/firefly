@@ -1,10 +1,12 @@
 package test.http;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.firefly.net.Session;
+import com.firefly.net.buffer.FileRegion;
 import com.firefly.server.http.HttpServletRequestImpl;
 
 public class MockSession implements Session {
@@ -40,12 +42,6 @@ public class MockSession implements Session {
 
 	@Override
 	public void encode(Object message) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void write(Object object) {
 		// TODO Auto-generated method stub
 
 	}
@@ -124,6 +120,18 @@ public class MockSession implements Session {
 	@Override
 	public InetSocketAddress getRemoteAddress() {
 		return new InetSocketAddress("localhost", 9999);
+	}
+
+	@Override
+	public void write(ByteBuffer byteBuffer) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void write(FileRegion fileRegion) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

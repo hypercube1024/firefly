@@ -18,6 +18,7 @@ import com.firefly.net.EventManager;
 import com.firefly.net.ReceiveBufferSizePredictor;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.AdaptiveReceiveBufferSizePredictor;
+import com.firefly.net.buffer.FileRegion;
 import com.firefly.net.buffer.FixedReceiveBufferSizePredictor;
 import com.firefly.net.buffer.SocketSendBufferPool.SendBuffer;
 import com.firefly.utils.ThreadLocalBoolean;
@@ -219,12 +220,21 @@ public final class TcpSession implements Session {
 			eventManager.executeExceptionTask(this, t);
 		}
 	}
-
-	@Override
-	public void write(Object object) {
+	
+	private void write0(Object object) {
 		boolean offered = writeBuffer.offer(object);
 		assert offered;
 		worker.writeFromUserCode(this);
+	}
+	
+	@Override
+	public void write(ByteBuffer byteBuffer) {
+		write0(byteBuffer);
+	}
+	
+	@Override
+	public void write(FileRegion fileRegion) {
+		write0(fileRegion);
 	}
 
 	int getRawInterestOps() {
@@ -240,7 +250,7 @@ public final class TcpSession implements Session {
 		if (immediately)
 			worker.close(selectionKey);
 		else
-			write(CLOSE_FLAG);
+			write0(CLOSE_FLAG);
 	}
 
 	private final class WriteTask implements Runnable {

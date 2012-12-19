@@ -1,6 +1,9 @@
 package com.firefly.net;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+
+import com.firefly.net.buffer.FileRegion;
 
 public interface Session {
 	int CLOSE = 0;
@@ -19,7 +22,9 @@ public interface Session {
 
 	void encode(Object message);
 
-	void write(Object object);
+	void write(ByteBuffer byteBuffer);
+	
+	void write(FileRegion fileRegion);
 
 	int getInterestOps();
 
