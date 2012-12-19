@@ -45,7 +45,7 @@ public class ServerBootstrap {
 		config = (config == null ? context.getBean(Config.class) : config);
 		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
-		Server server = new TcpServer(new HttpDecoder(config), new HttpEncoder(), new HttpHandler(controller, config));
+		Server server = new TcpServer(new HttpDecoder(config), new HttpEncoder(), new HttpHandler(controller, config), config.getMaxConnectionTimeout());
 		server.start(config.getHost(), config.getPort());
 	}
 }

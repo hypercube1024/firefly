@@ -45,6 +45,14 @@ public class TcpServer implements Server {
 		config.setEncoder(encoder);
 		config.setHandler(handler);
 	}
+	
+	public TcpServer(Decoder decoder, Encoder encoder, Handler handler, int timeout) {
+		config = new Config();
+		config.setDecoder(decoder);
+		config.setEncoder(encoder);
+		config.setHandler(handler);
+		config.setTimeout(timeout);
+	}
 
 	@Override
 	public void setConfig(Config config) {

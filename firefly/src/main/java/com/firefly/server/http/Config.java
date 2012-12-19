@@ -19,7 +19,8 @@ public class Config {
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
 				maxSessionInactiveInterval = 10 * 60,
-				maxConnections = 2000;
+				maxConnections = 2000,
+				maxConnectionTimeout = 5 * 1000;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
 	private boolean pipeline = false;
@@ -293,6 +294,14 @@ public class Config {
 
 	public void setMaxConnections(int maxConnections) {
 		this.maxConnections = maxConnections;
+	}
+
+	public int getMaxConnectionTimeout() {
+		return maxConnectionTimeout;
+	}
+
+	public void setMaxConnectionTimeout(int maxConnectionTimeout) {
+		this.maxConnectionTimeout = maxConnectionTimeout;
 	}
 
 	public boolean isKeepAlive() {

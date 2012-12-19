@@ -15,8 +15,7 @@ import com.firefly.utils.log.LogFactory;
 public class HttpDecoder implements Decoder {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private Config config;
-	private AbstractHttpDecoder[] httpDecode = new AbstractHttpDecoder[] {
-			new RequestLineDecoder(), new HeadDecoder(), new BodyDecoder() };
+	private AbstractHttpDecoder[] httpDecode = {new RequestLineDecoder(), new HeadDecoder(), new BodyDecoder()};
 	public static final String HTTP_REQUEST = "http_req";
 	public static final String REMAIN_DATA = "remain_data";
 	private static final byte LINE_LIMITOR = '\n';
