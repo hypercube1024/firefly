@@ -8,27 +8,28 @@ import com.firefly.utils.log.LogFactory;
 
 public class HttpHandler implements Handler {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	
 	private final RequestHandler requestHandler;
 	private final HttpConnectionListener httpConnectionListener;
-	private final Config config;
 
 	public HttpHandler(HttpServletDispatcherController servletController, Config config) {
-		this.config = config;
 		httpConnectionListener = config.getHttpConnectionListener();
 		requestHandler = new QueueRequestHandler(servletController);
 	}
 
 	@Override
 	public void sessionOpened(Session session) throws Throwable {
+		Monitor.CONN_COUNT.incrementAndGet();
 		httpConnectionListener.connectionCreated(session);
 	}
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
-		log.info("connection close|{}|{}|{}", 
+		log.info("connection close|{}|{}|{}|{}", 
 				session.getSessionId(), 
 				session.getReadBytes(), 
-				session.getWrittenBytes());
+				session.getWrittenBytes(),
+				Monitor.CONN_COUNT.decrementAndGet());
 		httpConnectionListener.connectionClosed(session);
 	}
 

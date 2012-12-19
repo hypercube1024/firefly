@@ -22,7 +22,7 @@ public class Config {
 	private Handler handler;
 
 	/**
-	 * @return 连接超时时间
+	 * @return 连接超时时间，单位ms
 	 */
 	public int getTimeout() {
 		return timeout;
@@ -32,7 +32,7 @@ public class Config {
 	 * 设置连接超时时间
 	 * 
 	 * @param timeout
-	 *            超时时间
+	 *            超时时间，单位ms
 	 */
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;

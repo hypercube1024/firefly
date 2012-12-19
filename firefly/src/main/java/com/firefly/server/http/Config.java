@@ -19,7 +19,7 @@ public class Config {
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
 				maxSessionInactiveInterval = 10 * 60,
-				maxConnections = 1;
+				maxConnections = 2000;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
 	private boolean pipeline = false;

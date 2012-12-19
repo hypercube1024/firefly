@@ -182,9 +182,18 @@ public class HttpDecoder implements Decoder {
 					String headLine = new String(data, config.getEncoding()).trim();
 					p = i + 1;
 
-					if (VerifyUtils.isEmpty(headLine)) {
+					if (VerifyUtils.isEmpty(headLine)) { // 头部解码结束
+						if(Monitor.CONN_COUNT.get() > config.getMaxConnections()) {
+							String msg = "connections count more than " + config.getMaxConnections();
+							log.error(msg);
+							req.response.setHeader("Retry-After", "60");
+							responseError(session, req, 503, msg);
+							return true;
+						}
+						
 						if (!req.getMethod().equals("POST") && !req.getMethod().equals("PUT"))
 							response(session, req);
+						
 						return true;
 					}
 					
