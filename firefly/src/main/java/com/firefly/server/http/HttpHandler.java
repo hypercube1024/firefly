@@ -8,10 +8,12 @@ import com.firefly.utils.log.LogFactory;
 
 public class HttpHandler implements Handler {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private RequestHandler requestHandler;
-	private HttpConnectionListener httpConnectionListener;
+	private final RequestHandler requestHandler;
+	private final HttpConnectionListener httpConnectionListener;
+	private final Config config;
 
 	public HttpHandler(HttpServletDispatcherController servletController, Config config) {
+		this.config = config;
 		httpConnectionListener = config.getHttpConnectionListener();
 		requestHandler = new QueueRequestHandler(servletController);
 	}

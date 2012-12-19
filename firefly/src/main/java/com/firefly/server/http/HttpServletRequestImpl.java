@@ -151,8 +151,8 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	public boolean isKeepAlive() {
 		return !systemReq 
-				&& config.isKeepAlive() 
-				&& ("Keep-Alive".equalsIgnoreCase(getHeader("Connection")) 
+				&& config.isKeepAlive()
+				&& ("keep-alive".equalsIgnoreCase(getHeader("Connection")) 
 					|| (!getProtocol().equals("HTTP/1.0") && !"close".equalsIgnoreCase(getHeader("Connection"))));
 	}
 	

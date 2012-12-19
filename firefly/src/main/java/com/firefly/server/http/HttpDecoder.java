@@ -46,8 +46,7 @@ public class HttpDecoder implements Decoder {
 	}
 
 	private HttpServletRequestImpl getHttpServletRequestImpl(Session session) {
-		HttpServletRequestImpl req = (HttpServletRequestImpl) session
-				.getAttribute(HTTP_REQUEST);
+		HttpServletRequestImpl req = (HttpServletRequestImpl) session.getAttribute(HTTP_REQUEST);
 		if (req == null) {
 			req = new HttpServletRequestImpl(session, config);
 			session.setAttribute(HTTP_REQUEST, req);
@@ -85,8 +84,7 @@ public class HttpDecoder implements Decoder {
 			req.status = httpDecode.length;
 		}
 
-		protected void responseError(Session session,
-				HttpServletRequestImpl req, int httpStatus, String content) {
+		protected void responseError(Session session, HttpServletRequestImpl req, int httpStatus, String content) {
 			finish(session, req);
 			req.response.scheduleSendError(httpStatus, content);
 			req.commitAndAllowDuplicate();
@@ -97,8 +95,7 @@ public class HttpDecoder implements Decoder {
 			req.commitAndAllowDuplicate();
 		}
 
-		abstract protected boolean decode(ByteBuffer buf, Session session,
-				HttpServletRequestImpl req) throws Throwable;
+		abstract protected boolean decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable;
 	}
 
 	private class RequestLineDecoder extends AbstractHttpDecoder {
@@ -117,7 +114,6 @@ public class HttpDecoder implements Decoder {
 
 			int len = buf.remaining();
 			for (; req.offset < len; req.offset++) {
-
 				if (buf.get(req.offset) == LINE_LIMITOR) {
 					byte[] data = new byte[req.offset + 1];
 					buf.get(data);
@@ -183,33 +179,32 @@ public class HttpDecoder implements Decoder {
 
 					byte[] data = new byte[parseLen];
 					buf.get(data);
-					String headLine = new String(data, config.getEncoding())
-							.trim();
+					String headLine = new String(data, config.getEncoding()).trim();
 					p = i + 1;
 
 					if (VerifyUtils.isEmpty(headLine)) {
 						if (!req.getMethod().equals("POST") && !req.getMethod().equals("PUT"))
 							response(session, req);
 						return true;
-					} else {
-						int h = headLine.indexOf(':');
-						if (h <= 0) {
-							String msg = "head line format error: " + headLine
-									+ "|" + session.getRemoteAddress() + "|"
-									+ req.getRequestURI();
-							log.error(msg);
-							responseError(session, req, 400, msg);
-							return true;
-						}
-
-						String name = headLine.substring(0, h).toLowerCase().trim();
-						String value = headLine.substring(h + 1).trim();
-						req.headMap.put(name, value);
-						req.offset = len - i - 1;
-
-						if (name.equals("expect") && value.startsWith("100-") && req.getProtocol().equals("HTTP/1.1"))
-							response100Continue(session);
 					}
+					
+					int h = headLine.indexOf(':');
+					if (h <= 0) {
+						String msg = "head line format error: " + headLine
+								+ "|" + session.getRemoteAddress() + "|"
+								+ req.getRequestURI();
+						log.error(msg);
+						responseError(session, req, 400, msg);
+						return true;
+					}
+
+					String name = headLine.substring(0, h).toLowerCase().trim();
+					String value = headLine.substring(h + 1).trim();
+					req.headMap.put(name, value);
+					req.offset = len - i - 1;
+
+					if (name.equals("expect") && value.startsWith("100-") && req.getProtocol().equals("HTTP/1.1"))
+						response100Continue(session);
 				}
 			}
 			return false;

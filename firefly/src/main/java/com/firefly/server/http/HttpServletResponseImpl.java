@@ -69,10 +69,11 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 
 	private void createOutput() {
 		if (bufferedOutput == null) {
+			boolean keepAlive = !"close".equals(headMap.get("Connection")) && request.isKeepAlive();
 			setHeader("Date", GMT_FORMAT.format(new Date()));
-			setHeader("Connection", request.isKeepAlive() ? "keep-alive" : "close");
+			setHeader("Connection", keepAlive ? "keep-alive" : "close");
 			
-			bufferedOutput = new NetBufferedOutputStream(request.session, bufferSize, request.isKeepAlive());
+			bufferedOutput = new NetBufferedOutputStream(request.session, bufferSize, keepAlive);
 			
 			if(request.isChunked() && VerifyUtils.isEmpty(headMap.get("Content-Length")))
 				out = new ChunkedOutputStream(bufferSize, bufferedOutput, request, this);

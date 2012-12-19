@@ -18,7 +18,8 @@ public class Config {
 				maxRequestHeadLength = 16 * 1024, 
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
-				maxSessionInactiveInterval = 10 * 60;
+				maxSessionInactiveInterval = 10 * 60,
+				maxConnections = 1;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
 	private boolean pipeline = false;
@@ -284,6 +285,14 @@ public class Config {
 
 	public void setMaxUploadLength(long maxUploadLength) {
 		this.maxUploadLength = maxUploadLength;
+	}
+	
+	public int getMaxConnections() {
+		return maxConnections;
+	}
+
+	public void setMaxConnections(int maxConnections) {
+		this.maxConnections = maxConnections;
 	}
 
 	public boolean isKeepAlive() {

@@ -33,6 +33,12 @@ public class IndexController {
 		return new TemplateView("/index.html");
 	}
 	
+	@RequestMapping(value = "/index-close")
+	public View indexShort(HttpServletRequest request, HttpServletResponse response) {
+		response.setHeader("Connection", "close");
+		return new TemplateView("/index.html");
+	}
+	
 	@RequestMapping(value = "/add", method = HttpMethod.POST)
 	public View add(HttpServletRequest request, HttpServletResponse response) {
 		System.out.println("into /add");
