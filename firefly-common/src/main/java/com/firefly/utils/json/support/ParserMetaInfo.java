@@ -2,6 +2,7 @@ package com.firefly.utils.json.support;
 
 import java.util.Arrays;
 
+import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 
 public class ParserMetaInfo extends MetaInfo {
@@ -9,7 +10,7 @@ public class ParserMetaInfo extends MetaInfo {
 	private Class<?> type;
 	private Parser parser;
 	
-	public void invoke(Object obj, JsonStringReader reader) {
+	public void invoke(Object obj, JsonReader reader) {
 		try {
 			propertyInvoke.set(obj, getValue(reader));
 		} catch (Throwable e) {
@@ -22,7 +23,7 @@ public class ParserMetaInfo extends MetaInfo {
 		propertyName = propertyNameString.toCharArray();
 	}
 	
-	public Object getValue(JsonStringReader reader) {
+	public Object getValue(JsonReader reader) {
 		return parser.convertTo(reader, type);
 	}
 	

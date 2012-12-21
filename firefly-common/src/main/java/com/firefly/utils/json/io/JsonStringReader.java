@@ -1,10 +1,12 @@
-package com.firefly.utils.json.support;
+package com.firefly.utils.json.io;
+
+import java.io.IOException;
 
 import com.firefly.utils.VerifyUtils;
-import com.firefly.utils.io.StringWriter;
+import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.exception.JsonException;
 
-public class JsonStringReader {
+public class JsonStringReader extends JsonReader {
 	private char[] chars;
 	private int pos = 0;
 	private final int limit;
@@ -15,30 +17,37 @@ public class JsonStringReader {
 		limit = chars.length;
 	}
 	
+	@Override
 	public int getMark() {
 		return mark;
 	}
 	
+	@Override
 	public void mark() {
 		mark = pos;
 	}
 	
+	@Override
 	public void reset() {
 		pos = mark;
 	}
 	
+	@Override
 	public char get(int index) {
 		return chars[index];
 	}
 	
+	@Override
 	public int position() {
 		return pos;
 	}
 
+	@Override
 	public int limit() {
 		return limit;
 	}
 	
+	@Override
 	public boolean isEndFlag(char ch) {
 		switch (ch) {
 		case ',':
@@ -51,36 +60,43 @@ public class JsonStringReader {
 		return false;
 	}
 	
+	@Override
 	public boolean isString() {
 		char c = readAndSkipBlank();
 		return c == '"';
 	}
 
+	@Override
 	public boolean isArray() {
 		char c = readAndSkipBlank();
 		return c == '[';
 	}
 
+	@Override
 	public boolean isObject() {
 		char c = readAndSkipBlank();
 		return c == '{';
 	}
 	
+	@Override
 	public boolean isObjectEnd() {
 		char c = readAndSkipBlank();
 		return c == '}';
 	}
 	
+	@Override
 	public boolean isColon() {
 		char c = readAndSkipBlank();
 		return c == ':';
 	}
 	
+	@Override
 	public boolean isComma() {
 		char c = readAndSkipBlank();
 		return c == ',';
 	}
 	
+	@Override
 	public boolean isNull() {
 		char ch = readAndSkipBlank();
 		if(pos + 3 > limit)
@@ -100,21 +116,24 @@ public class JsonStringReader {
 			return false;
 	}
 
-	public char read() {
+	@Override
+	public int read() {
 		return chars[pos++];
 	}
 
+	@Override
 	public char readAndSkipBlank() {
-		char c = read();
+		char c = (char)read();
 		if (c > ' ')
 			return c;
 		for (;;) {
-			c = read();
+			c = (char)read();
 			if (c > ' ')
 				return c;
 		}
 	}
 	
+	@Override
 	public boolean readBoolean() {
 		boolean ret = false;
 		
@@ -143,6 +162,7 @@ public class JsonStringReader {
 		return ret;
 	}
 	
+	@Override
 	public int readInt() {
 		int value = 0;
 		mark();
@@ -165,7 +185,7 @@ public class JsonStringReader {
 		}
 		
 		for(;;) {
-			ch = read();
+			ch = (char)read();
 			if(VerifyUtils.isDigit(ch))
 				value = (value << 3) + (value << 1) + (ch - '0');
 			else {
@@ -187,6 +207,7 @@ public class JsonStringReader {
 		return negative ? -value : value;
 	}
 	
+	@Override
 	public long readLong() {
 		long value = 0;
 		mark();
@@ -209,7 +230,7 @@ public class JsonStringReader {
 		}
 		
 		for(;;) {
-			ch = read();
+			ch = (char)read();
 			if(VerifyUtils.isDigit(ch))
 				value = (value << 3) + (value << 1) + (ch - '0');
 			else {
@@ -231,6 +252,7 @@ public class JsonStringReader {
 		return negative ? -value : value;
 	}
 	
+	@Override
 	public double readDouble() {
 		double value = 0.0;
 		mark();
@@ -247,7 +269,7 @@ public class JsonStringReader {
 		
 		int start = pos;
 		for(;;) {
-			ch = read();
+			ch = (char)read();
 			if(isString) {
 				if(ch == '"')
 					break;
@@ -264,6 +286,7 @@ public class JsonStringReader {
 		return Double.parseDouble(temp);
 	}
 	
+	@Override
 	public float readFloat() {
 		float value = 0.0F;
 		mark();
@@ -280,7 +303,7 @@ public class JsonStringReader {
 		
 		int start = pos;
 		for(;;) {
-			ch = read();
+			ch = (char)read();
 			if(isString) {
 				if(ch == '"')
 					break;
@@ -297,6 +320,7 @@ public class JsonStringReader {
 		return Float.parseFloat(temp);
 	}
 
+	@Override
 	public char[] readField(char[] chs) {
 		if(!isString())
 			throw new JsonException("read field error");
@@ -324,7 +348,7 @@ public class JsonStringReader {
 			char[] field = null;
 			int start = pos;
 			for(;;) {
-				char c = read();
+				char c = (char)read();
 				if(c == '"')
 					break;
 			}
@@ -335,13 +359,14 @@ public class JsonStringReader {
 		}
 	}
 	
+	@Override
 	public char[] readChars() {
 		if(!isString())
 			throw new JsonException("read field error");
 		
 		int start = pos;
 		for(;;) {
-			char c = read();
+			char c = (char)read();
 			if(c == '"')
 				break;
 		}
@@ -351,12 +376,13 @@ public class JsonStringReader {
 		return c;
 	}
 	
+	@Override
 	public void skipValue() {
 		char ch = readAndSkipBlank();
 		switch (ch) {
 		case '"': // 跳过字符串
 			for(;;) {
-				ch = read();
+				ch = (char)read();
 				if(ch == '"')
 					break;
 				else if(ch == '\\')
@@ -408,7 +434,7 @@ public class JsonStringReader {
 
 		default: // 跳过数字或者null
 			for(;;) {
-				ch = read();
+				ch = (char)read();
 				if(isEndFlag(ch)) {
 					pos--;
 					break;
@@ -418,6 +444,7 @@ public class JsonStringReader {
 		}
 	}
 	
+	@Override
 	public String readString() {
 		mark();
 		if(isNull())
@@ -428,7 +455,7 @@ public class JsonStringReader {
 		if(!isString())
 			throw new JsonException("read string error");
 		
-		StringWriter writer = new StringWriter();
+		JsonStringWriter writer = new JsonStringWriter();
 		String ret = null;
 		
 		int cur = pos;
@@ -500,6 +527,18 @@ public class JsonStringReader {
 			writer.close();
 		}
 		return ret;
+	}
+
+	@Override
+	public int read(char[] cbuf, int off, int len) throws IOException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void close() throws IOException {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

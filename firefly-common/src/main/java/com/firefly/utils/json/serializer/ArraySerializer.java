@@ -7,13 +7,13 @@ import static com.firefly.utils.json.JsonStringSymbol.EMPTY_ARRAY;
 
 import java.io.IOException;
 
+import com.firefly.utils.json.JsonWriter;
 import com.firefly.utils.json.Serializer;
-import com.firefly.utils.json.support.JsonStringWriter;
 
 public class ArraySerializer implements Serializer {
 
 	@Override
-	public void convertTo(JsonStringWriter writer, Object obj)
+	public void convertTo(JsonWriter writer, Object obj)
 			throws IOException {
 		Object[] objArray = (Object[]) obj;
 		int iMax = objArray.length - 1;

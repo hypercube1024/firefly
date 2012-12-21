@@ -3,10 +3,10 @@ package com.firefly.utils.json.parser;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.compiler.DecodeCompiler;
 import com.firefly.utils.json.exception.JsonException;
-import com.firefly.utils.json.support.JsonStringReader;
 import com.firefly.utils.json.support.ParserMetaInfo;
 
 public class ObjectParser implements Parser {
@@ -29,7 +29,7 @@ public class ObjectParser implements Parser {
 	}
 
 	@Override
-	public Object convertTo(JsonStringReader reader, Class<?> clazz) {
+	public Object convertTo(JsonReader reader, Class<?> clazz) {
 		reader.mark();
 		if(reader.isNull())
 			return null;

@@ -1,4 +1,4 @@
-package com.firefly.utils.io;
+package com.firefly.utils.json.io;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

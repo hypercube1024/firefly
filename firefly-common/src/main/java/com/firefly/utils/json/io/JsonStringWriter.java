@@ -1,27 +1,28 @@
-package com.firefly.utils.json.support;
+package com.firefly.utils.json.io;
 
 import java.util.Deque;
 import java.util.LinkedList;
 
-import com.firefly.utils.io.IOUtils;
-import com.firefly.utils.io.StringWriter;
 import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
 import static com.firefly.utils.json.JsonStringSymbol.ARRAY_PRE;
 import static com.firefly.utils.json.JsonStringSymbol.ARRAY_SUF;
 import static com.firefly.utils.json.JsonStringSymbol.SEPARATOR;
 
-public class JsonStringWriter extends StringWriter {
+public class JsonStringWriter extends AbstractJsonStringWriter {
 
 	private Deque<Object> deque = new LinkedList<Object>();
 
+	@Override
 	public void pushRef(Object obj) {
 		deque.addFirst(obj);
 	}
 
+	@Override
 	public boolean existRef(Object obj) {
 		return deque.contains(obj);
 	}
 
+	@Override
 	public void popRef() {
 		deque.removeFirst();
 	}
@@ -72,52 +73,7 @@ public class JsonStringWriter extends StringWriter {
 		buf[count++] = QUOTE;
 	}
 	
-	private void writeJsonString0NoFilter(String value) {
-		int len = value.length();
-		buf[count++] = QUOTE;
-		value.getChars(0, len, buf, count);
-		count += len;
-		buf[count++] = QUOTE;
-	}
-
-	public void writeStringWithQuoteNoFilter(String value) {
-		int newcount = count + value.length() + 2;
-		if (newcount > buf.length) {
-			expandCapacity(newcount);
-		}
-		writeJsonString0NoFilter(value);
-	}
-	
-	public void writeStringArrayNoFilter(String[] array) {
-		int arrayLen = array.length;
-		if (arrayLen == 0) {
-			buf[count++] = ARRAY_PRE;
-			buf[count++] = ARRAY_SUF;
-			return;
-		}
-		
-		int iMax = arrayLen - 1;
-		int totalSize = 2;
-		for (int i = 0; i < arrayLen; i++) {
-			totalSize += array[i].length() + 2 + 1;
-		}
-
-		int newcount = count + totalSize;
-		if (newcount > buf.length) {
-			expandCapacity(newcount);
-		}
-
-		buf[count++] = ARRAY_PRE;
-		for (int i = 0; ; ++i) {
-			writeJsonString0NoFilter(array[i]);
-			if (i == iMax) {
-				buf[count++] = ARRAY_SUF;
-				return;
-			}
-			buf[count++] = SEPARATOR;
-		}
-	}
-	
+	@Override
 	public void writeStringWithQuote(String value) {
 		int newcount = count + value.length() * 2 + 2;
 		if (newcount > buf.length) {
@@ -126,6 +82,7 @@ public class JsonStringWriter extends StringWriter {
 		writeJsonString0(value);
 	}
 
+	@Override
 	public void writeStringArray(String[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -156,6 +113,7 @@ public class JsonStringWriter extends StringWriter {
 		}
 	}
 
+	@Override
 	public void writeIntArray(int[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -164,7 +122,6 @@ public class JsonStringWriter extends StringWriter {
 			return;
 		}
 		int iMax = arrayLen - 1;
-		// System.out.println("current count: " + count);
 		int elementMaxLen = MIN_INT_VALUE.length;
 		int newcount = count + (elementMaxLen + 1) * arrayLen + 2 - 1;
 		if (newcount > buf.length) {
@@ -185,13 +142,13 @@ public class JsonStringWriter extends StringWriter {
 
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;
 		}
 	}
 
+	@Override
 	public void writeIntArray(Integer[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -200,7 +157,6 @@ public class JsonStringWriter extends StringWriter {
 			return;
 		}
 		int iMax = arrayLen - 1;
-		// System.out.println("current count: " + count);
 		int elementMaxLen = MIN_INT_VALUE.length;
 		int newcount = count + (elementMaxLen + 1) * arrayLen + 2 - 1;
 		if (newcount > buf.length) {
@@ -221,13 +177,13 @@ public class JsonStringWriter extends StringWriter {
 
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;
 		}
 	}
 
+	@Override
 	public void writeShortArray(short[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -236,7 +192,6 @@ public class JsonStringWriter extends StringWriter {
 			return;
 		}
 		int iMax = arrayLen - 1;
-		// System.out.println("current count: " + count);
 		int elementMaxLen = MIN_INT_VALUE.length;
 		int newcount = count + (elementMaxLen + 1) * arrayLen + 2 - 1;
 		if (newcount > buf.length) {
@@ -257,13 +212,13 @@ public class JsonStringWriter extends StringWriter {
 
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;
 		}
 	}
 
+	@Override
 	public void writeShortArray(Short[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -272,7 +227,6 @@ public class JsonStringWriter extends StringWriter {
 			return;
 		}
 		int iMax = arrayLen - 1;
-		// System.out.println("current count: " + count);
 		int elementMaxLen = MIN_INT_VALUE.length;
 		int newcount = count + (elementMaxLen + 1) * arrayLen + 2 - 1;
 		if (newcount > buf.length) {
@@ -293,13 +247,13 @@ public class JsonStringWriter extends StringWriter {
 
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;
 		}
 	}
 
+	@Override
 	public void writeLongArray(long[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -308,7 +262,6 @@ public class JsonStringWriter extends StringWriter {
 			return;
 		}
 		int iMax = arrayLen - 1;
-		// System.out.println("current count: " + count);
 		int elementMaxLen = MIN_LONG_VALUE.length;
 		int newcount = count + (elementMaxLen + 1) * arrayLen + 2 - 1;
 		if (newcount > buf.length) {
@@ -329,13 +282,13 @@ public class JsonStringWriter extends StringWriter {
 
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;
 		}
 	}
 
+	@Override
 	public void writeLongArray(Long[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -344,7 +297,6 @@ public class JsonStringWriter extends StringWriter {
 			return;
 		}
 		int iMax = arrayLen - 1;
-		// System.out.println("current count: " + count);
 		int elementMaxLen = MIN_LONG_VALUE.length;
 		int newcount = count + (elementMaxLen + 1) * arrayLen + 2 - 1;
 		if (newcount > buf.length) {
@@ -365,13 +317,13 @@ public class JsonStringWriter extends StringWriter {
 
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;
 		}
 	}
 
+	@Override
 	public void writeBooleanArray(boolean[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -385,7 +337,6 @@ public class JsonStringWriter extends StringWriter {
 			expandCapacity(newcount);
 		}
 
-		// System.out.println("current count: " + count);
 		buf[count++] = ARRAY_PRE;
 		for (int i = 0;; i++) {
 			if (array[i]) {
@@ -402,13 +353,13 @@ public class JsonStringWriter extends StringWriter {
 			}
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;
 		}
 	}
 
+	@Override
 	public void writeBooleanArray(Boolean[] array) {
 		int arrayLen = array.length;
 		if (arrayLen == 0) {
@@ -422,7 +373,6 @@ public class JsonStringWriter extends StringWriter {
 			expandCapacity(newcount);
 		}
 
-		// System.out.println("current count: " + count);
 		buf[count++] = ARRAY_PRE;
 		for (int i = 0;; i++) {
 			if (array[i]) {
@@ -439,7 +389,6 @@ public class JsonStringWriter extends StringWriter {
 			}
 			if (i == iMax) {
 				buf[count++] = ARRAY_SUF;
-				// System.out.println("current count: " + count);
 				return;
 			}
 			buf[count++] = SEPARATOR;

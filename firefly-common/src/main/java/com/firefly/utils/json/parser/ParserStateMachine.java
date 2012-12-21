@@ -5,9 +5,9 @@ import java.util.Date;
 import java.util.Map;
 
 import com.firefly.utils.collection.IdentityHashMap;
+import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.exception.JsonException;
-import com.firefly.utils.json.support.JsonStringReader;
 
 public class ParserStateMachine {
 	
@@ -81,7 +81,7 @@ public class ParserStateMachine {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> T toObject(JsonStringReader reader, Class<?> clazz) {
+	public static <T> T toObject(JsonReader reader, Class<?> clazz) {
 		Parser parser = getParser(clazz);
 		return (T) parser.convertTo(reader, clazz);
 	}

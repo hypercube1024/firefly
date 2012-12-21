@@ -11,9 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.firefly.utils.collection.IdentityHashMap;
+import com.firefly.utils.json.JsonWriter;
 import com.firefly.utils.json.Serializer;
 import com.firefly.utils.json.annotation.CircularReferenceCheck;
-import com.firefly.utils.json.support.JsonStringWriter;
 
 abstract public class SerialStateMachine {
 	private static final IdentityHashMap<Class<?>, Serializer> SERIAL_MAP = new IdentityHashMap<Class<?>, Serializer>();
@@ -109,7 +109,7 @@ abstract public class SerialStateMachine {
 		return ret;
 	}
 
-	public static void toJson(Object obj, JsonStringWriter writer)
+	public static void toJson(Object obj, JsonWriter writer)
 			throws IOException {
 		if (obj == null) {
 			writer.writeNull();

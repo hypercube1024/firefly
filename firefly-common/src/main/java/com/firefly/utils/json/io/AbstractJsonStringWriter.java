@@ -1,11 +1,10 @@
-package com.firefly.utils.io;
+package com.firefly.utils.json.io;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
 import java.lang.ref.SoftReference;
 
-public class StringWriter extends Writer {
+import com.firefly.utils.json.JsonWriter;
+
+abstract public class AbstractJsonStringWriter extends JsonWriter {
 
 	protected char buf[];
 	protected int count;
@@ -17,7 +16,7 @@ public class StringWriter extends Writer {
 	public static final char[] TRUE_VALUE = "true".toCharArray();
 	public static final char[] FALSE_VALUE = "false".toCharArray();
 
-	public StringWriter() {
+	public AbstractJsonStringWriter() {
 		SoftReference<char[]> ref = bufLocal.get();
 
 		if (ref != null) {
@@ -29,7 +28,7 @@ public class StringWriter extends Writer {
 			buf = new char[1024];
 	}
 
-	public StringWriter(int initialSize) {
+	public AbstractJsonStringWriter(int initialSize) {
 		if (initialSize < 0) {
 			throw new IllegalArgumentException("Negative initial size: "
 					+ initialSize);
@@ -85,21 +84,21 @@ public class StringWriter extends Writer {
 	}
 
 	@Override
-	public StringWriter append(CharSequence csq) {
+	public AbstractJsonStringWriter append(CharSequence csq) {
 		String str = csq.toString();
 		write(str, 0, str.length());
 		return this;
 	}
 
 	@Override
-	public StringWriter append(CharSequence csq, int start, int end) {
+	public AbstractJsonStringWriter append(CharSequence csq, int start, int end) {
 		String str = csq.subSequence(start, end).toString();
 		write(str, 0, str.length());
 		return this;
 	}
 
 	@Override
-	public StringWriter append(char c) {
+	public AbstractJsonStringWriter append(char c) {
 		write(c);
 		return this;
 	}
@@ -119,10 +118,12 @@ public class StringWriter extends Writer {
 		bufLocal.set(new SoftReference<char[]>(buf));
 	}
 
+	@Override
 	public void writeNull() {
 		write(NULL);
 	}
 
+	@Override
 	public void writeBoolean(boolean b) {
 		if (b)
 			write(TRUE_VALUE);
@@ -130,19 +131,7 @@ public class StringWriter extends Writer {
 			write(FALSE_VALUE);
 	}
 
-	public void write(char c) {
-		int newcount = count + 1;
-		if (newcount > buf.length) {
-			expandCapacity(newcount);
-		}
-		buf[count] = c;
-		count = newcount;
-	}
-	
-	public void writeChars(char... chs) {
-		write(chs, 0, chs.length);
-	}
-
+	@Override
 	public void writeInt(int i) {
 		if (i == Integer.MIN_VALUE) {
 			write(MIN_INT_VALUE);
@@ -159,14 +148,17 @@ public class StringWriter extends Writer {
 		count = newcount;
 	}
 
+	@Override
 	public void writeShort(short i) {
 		writeInt((int) i);
 	}
 
+	@Override
 	public void writeByte(byte i) {
 		writeInt((int) i);
 	}
 
+	@Override
 	public void writeLong(long i) {
 		if (i == Long.MIN_VALUE) {
 			write(MIN_LONG_VALUE);
@@ -184,23 +176,8 @@ public class StringWriter extends Writer {
 		count = newcount;
 	}
 
-	public void writeTo(Writer out) throws IOException {
-		out.write(buf, 0, count);
-	}
-
-	public void writeTo(OutputStream out, String charset) throws IOException {
-		byte[] bytes = new String(buf, 0, count).getBytes(charset);
-		out.write(bytes);
-	}
-
 	public void reset() {
 		count = 0;
-	}
-
-	public char[] toCharArray() {
-		char[] newValue = new char[count];
-		System.arraycopy(buf, 0, newValue, 0, count);
-		return newValue;
 	}
 
 	public int size() {

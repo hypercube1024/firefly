@@ -2,7 +2,7 @@ package com.firefly.utils.json.serializer;
 
 import java.io.IOException;
 
-import com.firefly.utils.json.support.JsonStringWriter;
+import com.firefly.utils.json.JsonWriter;
 
 public class BooleanArraySerializer extends SimpleArraySerializer {
 
@@ -11,7 +11,7 @@ public class BooleanArraySerializer extends SimpleArraySerializer {
 	}
 
 	@Override
-	public void convertTo(JsonStringWriter writer, Object obj)
+	public void convertTo(JsonWriter writer, Object obj)
 			throws IOException {
 		if(primitive) {
 			writer.writeBooleanArray((boolean[])obj);

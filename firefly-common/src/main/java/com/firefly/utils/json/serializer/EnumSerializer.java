@@ -1,13 +1,13 @@
 package com.firefly.utils.json.serializer;
 
-import static com.firefly.utils.json.JsonStringSymbol.*;
+import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.firefly.utils.json.JsonWriter;
 import com.firefly.utils.json.Serializer;
-import com.firefly.utils.json.support.JsonStringWriter;
 
 public class EnumSerializer implements Serializer {
 	
@@ -27,8 +27,7 @@ public class EnumSerializer implements Serializer {
 	}
 
 	@Override
-	public void convertTo(JsonStringWriter writer, Object obj)
-			throws IOException {
+	public void convertTo(JsonWriter writer, Object obj) throws IOException {
 		writer.write(find(obj).value);
 	}
 	

@@ -4,9 +4,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.exception.JsonException;
-import com.firefly.utils.json.support.JsonStringReader;
 import com.firefly.utils.json.support.ParserMetaInfo;
 
 public class ArrayParser implements Parser {
@@ -20,7 +20,7 @@ public class ArrayParser implements Parser {
 	}
 
 	@Override
-	public Object convertTo(JsonStringReader reader, Class<?> clazz) {
+	public Object convertTo(JsonReader reader, Class<?> clazz) {
 		reader.mark();
 		if(reader.isNull())
 			return null;

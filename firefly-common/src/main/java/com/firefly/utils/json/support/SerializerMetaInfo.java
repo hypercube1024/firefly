@@ -5,6 +5,7 @@ import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
 
 import java.io.IOException;
 
+import com.firefly.utils.json.JsonWriter;
 import com.firefly.utils.json.Serializer;
 
 public class SerializerMetaInfo extends MetaInfo {
@@ -24,7 +25,7 @@ public class SerializerMetaInfo extends MetaInfo {
 		return serializer;
 	}
 
-	public void toJson(Object obj, JsonStringWriter writer)
+	public void toJson(Object obj, JsonWriter writer)
 			throws IOException {
 		Object ret = propertyInvoke.get(obj);
 		if(ret == null) {
