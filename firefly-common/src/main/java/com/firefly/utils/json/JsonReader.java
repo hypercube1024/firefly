@@ -4,11 +4,11 @@ import java.io.Reader;
 
 abstract public class JsonReader extends Reader{
 
-	abstract public int getMark();
+	abstract public int getMarkPos();
 
-	abstract public void mark();
+	abstract public void markPos();
 
-	abstract public void reset();
+	abstract public void resetPos();
 
 	abstract public char get(int index);
 

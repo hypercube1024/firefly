@@ -22,22 +22,22 @@ public class ArrayParser implements Parser {
 
 	@Override
 	public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {
-		reader.mark();
+		reader.markPos();
 		if(reader.isNull())
 			return null;
 		else
-			reader.reset();
+			reader.resetPos();
 		
 		if(!reader.isArray())
 			throw new JsonException("json string is not array format");
 		
 		// 判断空数组
-		reader.mark();
+		reader.markPos();
 		char c0 = reader.readAndSkipBlank();
 		if(c0 == ']')
 			return Array.newInstance(clazz, 0);
 		else
-			reader.reset();
+			reader.resetPos();
 		
 		List<Object> obj = new ArrayList<Object>();
 		

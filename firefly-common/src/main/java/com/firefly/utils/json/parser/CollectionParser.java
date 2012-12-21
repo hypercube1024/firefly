@@ -16,11 +16,11 @@ public class CollectionParser extends ComplexTypeParser {
 	@Override
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {
-		reader.mark();
+		reader.markPos();
 		if(reader.isNull())
 			return null;
 		else
-			reader.reset();
+			reader.resetPos();
 		
 		if(!reader.isArray())
 			throw new JsonException("json string is not array format");
@@ -33,12 +33,12 @@ public class CollectionParser extends ComplexTypeParser {
 		}
 		
 		// 判断空数组
-		reader.mark();
+		reader.markPos();
 		char c0 = reader.readAndSkipBlank();
 		if(c0 == ']')
 			return obj;
 		else
-			reader.reset();
+			reader.resetPos();
 		
 		for(;;) {
 			obj.add(elementMetaInfo.getValue(reader));

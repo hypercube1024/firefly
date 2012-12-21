@@ -18,18 +18,23 @@ public class JsonStringReader extends JsonReader {
 	}
 	
 	@Override
-	public int getMark() {
+	public int getMarkPos() {
 		return mark;
 	}
 	
 	@Override
-	public void mark() {
+	public void markPos() {
 		mark = pos;
 	}
 	
 	@Override
-	public void reset() {
+	public void resetPos() {
 		pos = mark;
+	}
+	
+	@Override
+	public void reset() {
+		resetPos();
 	}
 	
 	@Override
@@ -137,11 +142,11 @@ public class JsonStringReader extends JsonReader {
 	public boolean readBoolean() {
 		boolean ret = false;
 		
-		mark();
+		markPos();
 		if(isNull())
 			return ret;
 		else
-			reset();
+			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -165,11 +170,11 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public int readInt() {
 		int value = 0;
-		mark();
+		markPos();
 		if(isNull())
 			return value;
 		else
-			reset();
+			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -210,11 +215,11 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public long readLong() {
 		long value = 0;
-		mark();
+		markPos();
 		if(isNull())
 			return value;
 		else
-			reset();
+			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -255,11 +260,11 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public double readDouble() {
 		double value = 0.0;
-		mark();
+		markPos();
 		if(isNull())
 			return value;
 		else
-			reset();
+			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -289,11 +294,11 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public float readFloat() {
 		float value = 0.0F;
-		mark();
+		markPos();
 		if(isNull())
 			return value;
 		else
-			reset();
+			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -392,12 +397,12 @@ public class JsonStringReader extends JsonReader {
 		case '[': // 跳过数组
 			for(;;) {
 				// 判断空数组
-				mark();
+				markPos();
 				ch = readAndSkipBlank();
 				if(ch == ']')
 					break;
 				else
-					reset();
+					resetPos();
 				
 				skipValue();
 				ch = readAndSkipBlank();
@@ -411,12 +416,12 @@ public class JsonStringReader extends JsonReader {
 		case '{': // 跳过对象
 			for(;;) {
 				// 判断空对象
-				mark();
+				markPos();
 				ch = readAndSkipBlank();
 				if(ch == '}')
 					break;
 				else
-					reset();
+					resetPos();
 				
 				readChars();
 				if(!isColon())
@@ -446,11 +451,11 @@ public class JsonStringReader extends JsonReader {
 	
 	@Override
 	public String readString() {
-		mark();
+		markPos();
 		if(isNull())
 			return null;
 		else
-			reset();
+			resetPos();
 		
 		if(!isString())
 			throw new JsonException("read string error");

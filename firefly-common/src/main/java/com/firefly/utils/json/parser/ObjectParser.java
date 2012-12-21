@@ -30,11 +30,11 @@ public class ObjectParser implements Parser {
 
 	@Override
 	public Object convertTo(JsonReader reader, Class<?> clazz) {
-		reader.mark();
+		reader.markPos();
 		if(reader.isNull())
 			return null;
 		else
-			reader.reset();
+			reader.resetPos();
 		
 		if(!reader.isObject())
 			throw new JsonException("json string is not object format");
@@ -47,12 +47,12 @@ public class ObjectParser implements Parser {
 		}
 		
 		// 判断空对象
-		reader.mark();
+		reader.markPos();
 		char c0 = reader.readAndSkipBlank();
 		if(c0 == '}')
 			return obj;
 		else
-			reader.reset();
+			reader.resetPos();
 		
 		for (int i = 0;;i++) {
 			ParserMetaInfo parser = parserMetaInfos[i];
