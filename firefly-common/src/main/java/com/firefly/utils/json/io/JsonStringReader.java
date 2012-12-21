@@ -18,38 +18,13 @@ public class JsonStringReader extends JsonReader {
 	}
 	
 	@Override
-	public int getMarkPos() {
-		return mark;
-	}
-	
-	@Override
-	public void markPos() {
+	public void mark(int readAheadLimit) {
 		mark = pos;
 	}
 	
 	@Override
-	public void resetPos() {
-		pos = mark;
-	}
-	
-	@Override
 	public void reset() {
-		resetPos();
-	}
-	
-	@Override
-	public char get(int index) {
-		return chars[index];
-	}
-	
-	@Override
-	public int position() {
-		return pos;
-	}
-
-	@Override
-	public int limit() {
-		return limit;
+		pos = mark;
 	}
 	
 	@Override
@@ -76,6 +51,18 @@ public class JsonStringReader extends JsonReader {
 		char c = readAndSkipBlank();
 		return c == '[';
 	}
+	
+	@Override
+	public boolean isEmptyArray() {
+		mark(1024);
+		char c = readAndSkipBlank();
+		
+		if(c == ']')
+			return true;
+		
+		reset();
+		return false;
+	}
 
 	@Override
 	public boolean isObject() {
@@ -84,9 +71,15 @@ public class JsonStringReader extends JsonReader {
 	}
 	
 	@Override
-	public boolean isObjectEnd() {
+	public boolean isEmptyObject() {
+		mark(1024);
 		char c = readAndSkipBlank();
-		return c == '}';
+		
+		if(c == '}')
+			return true;
+		
+		reset();
+		return false;
 	}
 	
 	@Override
@@ -103,9 +96,12 @@ public class JsonStringReader extends JsonReader {
 	
 	@Override
 	public boolean isNull() {
+		mark(1024);
 		char ch = readAndSkipBlank();
-		if(pos + 3 > limit)
+		if(pos + 3 > limit) {
+			reset();
 			return false;
+		}
 		
 		if(ch == 'n' && 'u' == read() && 'l' == read() && 'l' == read()) {
 			if(pos >= limit)
@@ -115,10 +111,14 @@ public class JsonStringReader extends JsonReader {
 			if(isEndFlag(ch)) {
 				pos--;
 				return true;
-			} else
+			} else {
+				reset();
 				return false;
-		} else
+			}
+		} else {
+			reset();
 			return false;
+		}
 	}
 
 	@Override
@@ -142,11 +142,8 @@ public class JsonStringReader extends JsonReader {
 	public boolean readBoolean() {
 		boolean ret = false;
 		
-		markPos();
 		if(isNull())
 			return ret;
-		else
-			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -170,11 +167,9 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public int readInt() {
 		int value = 0;
-		markPos();
+
 		if(isNull())
 			return value;
-		else
-			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -215,11 +210,9 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public long readLong() {
 		long value = 0;
-		markPos();
+
 		if(isNull())
 			return value;
-		else
-			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -260,11 +253,9 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public double readDouble() {
 		double value = 0.0;
-		markPos();
+
 		if(isNull())
 			return value;
-		else
-			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -294,11 +285,9 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public float readFloat() {
 		float value = 0.0F;
-		markPos();
+
 		if(isNull())
 			return value;
-		else
-			resetPos();
 		
 		char ch = readAndSkipBlank();
 		boolean isString = (ch == '"');
@@ -396,13 +385,8 @@ public class JsonStringReader extends JsonReader {
 			break;
 		case '[': // 跳过数组
 			for(;;) {
-				// 判断空数组
-				markPos();
-				ch = readAndSkipBlank();
-				if(ch == ']')
+				if(isEmptyArray())
 					break;
-				else
-					resetPos();
 				
 				skipValue();
 				ch = readAndSkipBlank();
@@ -415,13 +399,8 @@ public class JsonStringReader extends JsonReader {
 			break;
 		case '{': // 跳过对象
 			for(;;) {
-				// 判断空对象
-				markPos();
-				ch = readAndSkipBlank();
-				if(ch == '}')
+				if(isEmptyObject())
 					break;
-				else
-					resetPos();
 				
 				readChars();
 				if(!isColon())
@@ -451,11 +430,8 @@ public class JsonStringReader extends JsonReader {
 	
 	@Override
 	public String readString() {
-		markPos();
 		if(isNull())
 			return null;
-		else
-			resetPos();
 		
 		if(!isString())
 			throw new JsonException("read string error");
@@ -538,7 +514,7 @@ public class JsonStringReader extends JsonReader {
 	public int read(char[] cbuf, int off, int len) throws IOException {
 		throw new JsonException("method not implements!");
 	}
-
+	
 	@Override
 	public void close() throws IOException {
 		

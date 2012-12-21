@@ -16,11 +16,8 @@ public class MapParser extends ComplexTypeParser {
 	@Override
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {
-		reader.markPos();
 		if(reader.isNull())
 			return null;
-		else
-			reader.resetPos();
 		
 		if(!reader.isObject())
 			throw new JsonException("json string is not object format");
@@ -32,13 +29,8 @@ public class MapParser extends ComplexTypeParser {
 			e.printStackTrace();
 		}
 		
-		// 判断空对象
-		reader.markPos();
-		char c0 = reader.readAndSkipBlank();
-		if(c0 == '}')
+		if(reader.isEmptyObject())
 			return obj;
-		else
-			reader.resetPos();
 		
 		for(;;) {
 			String key = reader.readString();
