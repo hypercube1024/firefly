@@ -109,8 +109,7 @@ abstract public class SerialStateMachine {
 		return ret;
 	}
 
-	public static void toJson(Object obj, JsonWriter writer)
-			throws IOException {
+	public static void toJson(Object obj, JsonWriter writer) throws IOException {
 		if (obj == null) {
 			writer.writeNull();
 			return;

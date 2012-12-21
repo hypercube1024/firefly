@@ -1,5 +1,6 @@
 package com.firefly.utils.json.parser;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class ParserStateMachine {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> T toObject(JsonReader reader, Class<?> clazz) {
+	public static <T> T toObject(JsonReader reader, Class<?> clazz) throws IOException {
 		Parser parser = getParser(clazz);
 		return (T) parser.convertTo(reader, clazz);
 	}

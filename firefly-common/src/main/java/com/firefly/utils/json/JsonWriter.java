@@ -3,6 +3,7 @@ package com.firefly.utils.json;
 import java.io.Writer;
 
 abstract public class JsonWriter extends Writer {
+	
 	abstract public void writeNull();
 	
 	abstract public void writeInt(int i);

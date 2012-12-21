@@ -1,5 +1,6 @@
 package com.firefly.utils.json.support;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import com.firefly.utils.json.JsonReader;
@@ -23,7 +24,7 @@ public class ParserMetaInfo extends MetaInfo {
 		propertyName = propertyNameString.toCharArray();
 	}
 	
-	public Object getValue(JsonReader reader) {
+	public Object getValue(JsonReader reader) throws IOException {
 		return parser.convertTo(reader, type);
 	}
 	

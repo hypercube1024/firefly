@@ -1,5 +1,6 @@
 package com.firefly.utils.json.parser;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,7 @@ public class ArrayParser implements Parser {
 	}
 
 	@Override
-	public Object convertTo(JsonReader reader, Class<?> clazz) {
+	public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {
 		reader.mark();
 		if(reader.isNull())
 			return null;

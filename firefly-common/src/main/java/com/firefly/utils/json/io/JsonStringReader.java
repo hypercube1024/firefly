@@ -531,13 +531,11 @@ public class JsonStringReader extends JsonReader {
 
 	@Override
 	public int read(char[] cbuf, int off, int len) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		throw new JsonException("method not implements!");
 	}
 
 	@Override
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
 		
 	}
 

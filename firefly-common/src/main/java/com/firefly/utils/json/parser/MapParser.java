@@ -1,5 +1,6 @@
 package com.firefly.utils.json.parser;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Map;
 
@@ -14,7 +15,7 @@ public class MapParser extends ComplexTypeParser {
 
 	@Override
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public Object convertTo(JsonReader reader, Class<?> clazz) {
+	public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {
 		reader.mark();
 		if(reader.isNull())
 			return null;
