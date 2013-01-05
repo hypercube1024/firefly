@@ -1,5 +1,6 @@
 package test.server;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -17,6 +18,8 @@ import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.view.RedirectView;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
+import com.firefly.utils.io.FileUtils;
+import com.firefly.utils.io.LineReaderHandler;
 
 @Controller
 public class IndexController {
@@ -113,6 +116,29 @@ public class IndexController {
 		System.out.println(Arrays.toString(args));
 		request.setAttribute("info", args);
 		return new TemplateView("/index.html");
+	}
+	
+	@RequestMapping(value = "/big")
+	public View testBigData(HttpServletRequest request) {
+		final StringBuilder json = new StringBuilder();
+		try {
+			FileUtils.read(new File("/Users/qiupengtao/develop/jsontest.txt"), new LineReaderHandler(){
+
+				@Override
+				public void readline(String text, int num) {
+					json.append(text);
+					
+				}}, "UTF-8");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		String ret = json.toString();
+		return new TextView(ret);
+	}
+	
+	@RequestMapping(value = "/error")
+	public View testError(HttpServletRequest request) {
+		throw new RuntimeException("test error");
 	}
 
 }

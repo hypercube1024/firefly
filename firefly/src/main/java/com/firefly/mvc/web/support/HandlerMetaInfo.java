@@ -4,10 +4,12 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import com.firefly.mvc.web.View;
+import com.firefly.mvc.web.support.exception.WebException;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public abstract class HandlerMetaInfo {
+	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
 	protected final Object object; // controller的实例对象
@@ -24,13 +26,14 @@ public abstract class HandlerMetaInfo {
 		return methodParam;
 	}
 	
-	public View invoke(Object[] args) {
+	public final View invoke(Object[] args) {
 		View ret = null;
 		try {
 			ret = (View)method.invoke(object, args);
-		} catch (Throwable t) {
-			log.error("controller invoke error", t);
-		}
+		} catch (Throwable e) {
+			log.error("handler invoke error", e);
+			throw new WebException("handler invoke error");
+		} 
 		return ret;
 	}
 

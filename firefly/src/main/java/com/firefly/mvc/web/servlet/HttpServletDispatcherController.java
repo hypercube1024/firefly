@@ -2,10 +2,12 @@ package com.firefly.mvc.web.servlet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.HandlerChain;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebContext;
+import com.firefly.mvc.web.support.exception.WebException;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -33,7 +35,16 @@ public class HttpServletDispatcherController implements DispatcherController {
 		uriBuilder.delete(0, request.getContextPath().length() + request.getServletPath().length());
 		String servletURI = uriBuilder.length() <= 0 ? null : uriBuilder.toString();
 		HandlerChain chain = webContext.match(request.getRequestURI(), servletURI);
-		View v = chain.doNext(request, response, chain);
+		View v = null;
+		try {
+			v = chain.doNext(request, response, chain);
+		} catch (WebException e) {
+			if(!response.isCommitted()) {
+				String msg = "Server internal error";
+				SystemHtmlPage.responseSystemPage(request, response, webContext.getEncoding(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+			}
+			return;
+		}
 		
 		if(v == null) {
 			if(!response.isCommitted()) {

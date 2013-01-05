@@ -33,7 +33,8 @@ public class HttpServerOutpuStream extends ServletOutputStream {
 
 	@Override
 	public void write(byte[] b, int off, int len) throws IOException {
-		queue.offer(new ByteArrayChunkedData(b, off, len));
+		ChunkedData c = new ByteArrayChunkedData(b, off, len);
+		queue.offer(c);
 		size += len;
 	}
 
@@ -55,7 +56,6 @@ public class HttpServerOutpuStream extends ServletOutputStream {
 		if (!response.isCommitted()) {
 			response.setHeader("Content-Length", String.valueOf(size));
 			byte[] head = response.getHeadData();
-			// System.out.print(new String(head, "UTF-8"));
 			bufferedOutput.write(head);
 			response.setCommitted(true);
 		}
@@ -94,17 +94,21 @@ public class HttpServerOutpuStream extends ServletOutputStream {
 
 	private class ByteArrayChunkedData extends ChunkedData {
 		private byte[] b;
-		private int off, len;
+		private int len;
 
 		public ByteArrayChunkedData(byte[] b, int off, int len) {
-			this.b = b;
-			this.off = off;
+			this.b = new byte[len];
+			System.arraycopy(b, off, this.b, 0, len);
 			this.len = len;
 		}
 
 		@Override
 		public void write() throws IOException {
-			bufferedOutput.write(b, off, len);
+			bufferedOutput.write(b, 0, len);
+		}
+		
+		public String toString() {
+			return b.toString();
 		}
 	}
 

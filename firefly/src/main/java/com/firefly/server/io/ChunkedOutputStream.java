@@ -21,14 +21,14 @@ public class ChunkedOutputStream extends HttpServerOutpuStream {
 	@Override
 	public void write(int b) throws IOException {
 		super.write(b);
-		if (size > bufferSize)
+		if (size >= bufferSize)
 			flush();
 	}
 	
 	@Override
 	public void write(byte[] b, int off, int len) throws IOException {
 		super.write(b, off, len);
-		if (size > bufferSize)
+		if (size >= bufferSize)
 			flush();
 	}
 
@@ -45,6 +45,7 @@ public class ChunkedOutputStream extends HttpServerOutpuStream {
 			bufferedOutput.write(response.getChunkedSize(size));
 			for (ChunkedData d = null; (d = queue.poll()) != null;)
 				d.write();
+			
 			bufferedOutput.write(crlf);
 			size = 0;
 		}
