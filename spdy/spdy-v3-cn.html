@@ -1,0 +1,1430 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="keywords" content="SPDY, HTTP, Protocol, Draft 3" />
+<meta name="description" content="SPDY Draft 3" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+body {
+  font-family: Helvetica, arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: white;
+  padding: 30px; }
+
+body > *:first-child {
+  margin-top: 0 !important; }
+body > *:last-child {
+  margin-bottom: 0 !important; }
+
+a {
+  color: #4183C4; }
+a.absent {
+  color: #cc0000; }
+a.anchor {
+  display: block;
+  padding-left: 30px;
+  margin-left: -30px;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0; }
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 20px 0 10px;
+  padding: 0;
+  font-weight: bold;
+  -webkit-font-smoothing: antialiased;
+  cursor: text;
+  position: relative; }
+
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
+  text-decoration: none; }
+
+h1 tt, h1 code {
+  font-size: inherit; }
+
+h2 tt, h2 code {
+  font-size: inherit; }
+
+h3 tt, h3 code {
+  font-size: inherit; }
+
+h4 tt, h4 code {
+  font-size: inherit; }
+
+h5 tt, h5 code {
+  font-size: inherit; }
+
+h6 tt, h6 code {
+  font-size: inherit; }
+
+h1 {
+  font-size: 28px;
+  color: black; }
+
+h2 {
+  font-size: 24px;
+  border-bottom: 1px solid #cccccc;
+  color: black; }
+
+h3 {
+  font-size: 18px; }
+
+h4 {
+  font-size: 16px; }
+
+h5 {
+  font-size: 14px; }
+
+h6 {
+  color: #777777;
+  font-size: 14px; }
+
+p, blockquote, ul, ol, dl, li, table, pre {
+  margin: 15px 0; }
+
+hr {
+  background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+  border: 0 none;
+  color: #cccccc;
+  height: 4px;
+  padding: 0;
+}
+
+body > h2:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+body > h1:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+  body > h1:first-child + h2 {
+    margin-top: 0;
+    padding-top: 0; }
+body > h3:first-child, body > h4:first-child, body > h5:first-child, body > h6:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+  margin-top: 0;
+  padding-top: 0; }
+
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
+  margin-top: 0; }
+
+li p.first {
+  display: inline-block; }
+li {
+  margin: 0; }
+ul, ol {
+  padding-left: 30px; }
+
+ul :first-child, ol :first-child {
+  margin-top: 0; }
+
+dl {
+  padding: 0; }
+  dl dt {
+    font-size: 14px;
+    font-weight: bold;
+    font-style: italic;
+    padding: 0;
+    margin: 15px 0 5px; }
+    dl dt:first-child {
+      padding: 0; }
+    dl dt > :first-child {
+      margin-top: 0; }
+    dl dt > :last-child {
+      margin-bottom: 0; }
+  dl dd {
+    margin: 0 0 15px;
+    padding: 0 15px; }
+    dl dd > :first-child {
+      margin-top: 0; }
+    dl dd > :last-child {
+      margin-bottom: 0; }
+
+blockquote {
+  border-left: 4px solid #dddddd;
+  padding: 0 15px;
+  color: #777777; }
+  blockquote > :first-child {
+    margin-top: 0; }
+  blockquote > :last-child {
+    margin-bottom: 0; }
+
+table {
+  padding: 0;border-collapse: collapse; }
+  table tr {
+    border-top: 1px solid #cccccc;
+    background-color: white;
+    margin: 0;
+    padding: 0; }
+    table tr:nth-child(2n) {
+      background-color: #f8f8f8; }
+    table tr th {
+      font-weight: bold;
+      border: 1px solid #cccccc;
+      text-align: left;
+      margin: 0;
+      padding: 6px 13px; }
+    table tr td {
+      border: 1px solid #cccccc;
+      text-align: left;
+      margin: 0;
+      padding: 6px 13px; }
+    table tr th :first-child, table tr td :first-child {
+      margin-top: 0; }
+    table tr th :last-child, table tr td :last-child {
+      margin-bottom: 0; }
+
+img {
+  max-width: 100%; }
+
+span.frame {
+  display: block;
+  overflow: hidden; }
+  span.frame > span {
+    border: 1px solid #dddddd;
+    display: block;
+    float: left;
+    overflow: hidden;
+    margin: 13px 0 0;
+    padding: 7px;
+    width: auto; }
+  span.frame span img {
+    display: block;
+    float: left; }
+  span.frame span span {
+    clear: both;
+    color: #333333;
+    display: block;
+    padding: 5px 0 0; }
+span.align-center {
+  display: block;
+  overflow: hidden;
+  clear: both; }
+  span.align-center > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px auto 0;
+    text-align: center; }
+  span.align-center span img {
+    margin: 0 auto;
+    text-align: center; }
+span.align-right {
+  display: block;
+  overflow: hidden;
+  clear: both; }
+  span.align-right > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px 0 0;
+    text-align: right; }
+  span.align-right span img {
+    margin: 0;
+    text-align: right; }
+span.float-left {
+  display: block;
+  margin-right: 13px;
+  overflow: hidden;
+  float: left; }
+  span.float-left span {
+    margin: 13px 0 0; }
+span.float-right {
+  display: block;
+  margin-left: 13px;
+  overflow: hidden;
+  float: right; }
+  span.float-right > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px auto 0;
+    text-align: right; }
+
+code, tt {
+  margin: 0 2px;
+  padding: 0 5px;
+  white-space: nowrap;
+  border: 1px solid #eaeaea;
+  background-color: #f8f8f8;
+  border-radius: 3px; }
+
+pre code {
+  margin: 0;
+  padding: 0;
+  white-space: pre;
+  border: none;
+  background: transparent; }
+
+.highlight pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+
+pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+  pre code, pre tt {
+    background-color: transparent;
+    border: none; }
+
+@media screen and (min-width: 914px) {
+    body {
+        width: 854px;
+        margin:0 auto;
+    }
+}
+@media print {
+	table, pre {
+		page-break-inside: avoid;
+	}
+}
+</style>
+<title>SPDY协议 - v3</title>
+
+</head>
+<body>
+<h1>SPDY协议 - v3</h1>
+
+<ul>
+<li>原文：<a href="http://www.chromium.org/spdy/spdy-protocol/spdy-protocol-draft3" title="SPDY Protocol - Draft 3">SPDY Protocol - Draft 3</a></li>
+<li>翻译：邱鹏滔（QQ: 95350530，主页：<a href="http://www.fireflysource.com" title="Firefly">www.fireflysource.com</a>）</li>
+</ul>
+
+
+<h1>1 概述</h1>
+
+<p>HTTP协议的瓶颈在于它需要靠很多链接来处理并发。造成这个原因的问题包括连接建立时额外的往返周期，慢启动延迟，以及有限的连接数，客户端要避免打开过多的连接数去连接服务器。HTTP管线化解决了部分问题，但是仅仅局部的运用了多路复用能力。另外，在现有的浏览器上由于中介的干扰，管线化请求被证明是不可用的。</p>
+
+<p>SPDY增加了一个帧层用于多路复用，多个并发流通过一个TCP连接（或者其他可靠传输流）。这个帧层为类似HTTP的请求响应流进行了优化，现在运行在HTTP之上的应用也能运行在SPDY之上，对web应用开发者来说几乎不需要做什么改变。</p>
+
+<p>SPDY会话在HTTP的基础之上提供了四项改进：</p>
+
+<ul>
+<li>多路复用请求：在单个SPDY连接能并发的发起请求，并不限制请求数。</li>
+<li>请求优先级：客户端能请求某个资源被优先传输。这避免了高优先级请求被非关键资源堵塞网络通道的问题。</li>
+<li>头部压缩：客户端现在发送了大量冗余的HTTP头部信息。因为一个页面可能有50到100个子请求，这些数据是巨大的。</li>
+<li>服务端推送流：服务端能向客户端推送数据不需要客户端发起一个请求。</li>
+</ul>
+
+
+<p>SPDY视图保持已有的HTTP语义。所有的特性比如cookies，Etags，Vary headers，Content-Encoding协商，等等。SPDY仅仅替换了网络数据传输的方法。</p>
+
+<h2>1.1 文档结构</h2>
+
+<p>SPDY指南分成两部分：一个帧层，支持在一个TCP连接里多路复用独立的，长度前缀的帧（第2章），和一个HTTP层（第3章）,定义了覆盖在帧层之上的HTTP 请求/响应对的机制。虽然帧层的有些概念独立于HTTP层，但去构建一个通用的帧层不是我们的目标。这个帧层是为HTTP协议和服务端推送技术量身定制的。</p>
+
+<h2>1.2 术语</h2>
+
+<ul>
+<li>客户端：发起SPDY会话的端点。</li>
+<li>连接：在两个端点之间的传输层级别的连接。</li>
+<li>端点：客户端或者服务端。</li>
+<li>帧：一个SPDY会话的头部字节序列。</li>
+<li>服务端：不是启动SPDY会话的那个端点。</li>
+<li>会话：等同于连接。</li>
+<li>会话错误：一个SPDY会话错误。</li>
+<li>流：一个双向字节流穿过一个SPDY会话中的​虚拟通道。</li>
+<li>流错误：一个SPDY流中的错误。</li>
+</ul>
+
+
+<h1>2 SPDY帧层</h1>
+
+<h2>2.1 会话（连接）</h2>
+
+<p>SPDY帧层（或者叫“会话”）运行在一个可靠的传输层之上，比如TCP。客户端是TCP连接发起者。SPDY连接都是持久连接。</p>
+
+<p>为了最好的性能，SPDY期望客户端不要关闭连接直到用户离开这个连接引用的所有页面，或者直到服务端关闭连接。服务端鼓励尽可能长的打开连接，但是，如果需要，能终止发呆连接。当任何一端关闭连接，必须首先发送GOAWAY(2.6.6节)帧，这样端点就能确定在关闭连接前完成请求。</p>
+
+<h2>2.2 帧</h2>
+
+<p>一旦建立连接，客户端和服务端交换帧消息。有两种类型的帧：控制帧（2.2.1节）和数据帧（2.2.2节）。这些帧有一个8字节的公共头。</p>
+
+<p>第一个比特是一个控制位定义一个帧是控制帧还是数据帧。控制帧带一个版本号，帧类型，标志位，和长度。数据帧包含流ID，标志位和公共头部之后的数据长度。这个简单的头读写非常容易。</p>
+
+<p>所有整形值，包括长度，版本，类型，都是网络字节序。SPDY不强迫对齐动态长度的帧。</p>
+
+<h3>2.2.1 控制帧</h3>
+
+<pre><code>+----------------------------------+
+|C| Version(15bits) | Type(16bits) |
++----------------------------------+
+| Flags (8)  |  Length (24 bits)   |
++----------------------------------+
+|               Data               |
++----------------------------------+
+</code></pre>
+
+<p>控制位(Control bit)：'C'位用一个比特定义控制消息。控制帧的值总是1.</p>
+
+<p>版本(Version)：SPDY协议的版本号。这个文档描述的SPDY第三版。</p>
+
+<p>类型(Type)：控制帧的类型。参见（2.6节）有完整控制帧类型列表。</p>
+
+<p>标识(Flags)：和这个帧有关的标识。控制帧和数据帧的标识是不同的。</p>
+
+<p>长度(Length)：一个无符号24bit数字表示之后域的长度。</p>
+
+<p>数据(Data)：控制帧相关的数据。格式和长度取决于控制帧的类型。</p>
+
+<p>控制帧处理需求：</p>
+
+<ul>
+<li>注意，全长控制帧（16MB）对于资源受限的硬件太大。这种情况下，实现可以限制最大帧长度。无论如何，所有实现者必须能接收至少8192字节的控制帧。</li>
+</ul>
+
+
+<h3>2.2.2 数据帧</h3>
+
+<pre><code>+----------------------------------+
+|C|       Stream-ID (31bits)       |
++----------------------------------+
+| Flags (8)  |  Length (24 bits)   |
++----------------------------------+
+|               Data               |
++----------------------------------+
+</code></pre>
+
+<p>控制位(Control bit)：数据帧的值总是0.</p>
+
+<p>流ID(Stream-ID)：一个31bit的值标识这个流。</p>
+
+<p>标识(Flags)：和这个帧有关的标识。有效的标识是：</p>
+
+<ul>
+<li>0x01 = FLAG_FIN - 表示这个帧是流里面最后的帧。参见下面的流关闭（2.3.7节）。</li>
+</ul>
+
+
+<p>长度(Length)：一个无符号24位数字表示之后域的字节长度。数据帧总长度是8byte+数据长度。数据长度为0是有效的。</p>
+
+<p>数据(Data)：存放变长数据。数据长度在长度域定义。</p>
+
+<p>数据帧处理要求：</p>
+
+<ul>
+<li>如果接收到一个数据帧的端点不是打开状态并且没有发送GOAWAY（2.6.6节）帧，它必须发出一个错误码是INVALID_STREAM的流错误（2.4.2节）给对应的流id。</li>
+<li>如果一个端点创建的流在收到SYN_REPLY之前收到一个数据帧，那么这是一个协议错误，并且接受者必须发送一个错误码是PROTOCOL_ERROR的流错误（2.4.2节）给对应的流id。</li>
+<li>实现者注意：如果一个端点的这个流id收到多个非法数据帧，它可以关闭会话。</li>
+</ul>
+
+
+<h2>2.3 流</h2>
+
+<p>流是一些独立的双向数据序列在帧里面，并且有一下一些属性：</p>
+
+<ul>
+<li>流可以在客户端或者服务端创建。</li>
+<li>流可以选择性的带一些键值对的头。</li>
+<li>流能并发的发送数据且交叉在其他流之间。</li>
+<li>流可以被取消。</li>
+</ul>
+
+
+<h3>2.3.1 流帧</h3>
+
+<p>SPDY定义了三种控制帧来管理一个流的生命周期：</p>
+
+<ul>
+<li>SYN_STREAM - 打开一个流</li>
+<li>SYN_REPLY - 远程确认一个新打开的流</li>
+<li>RST_STREAM - 关闭一个流</li>
+</ul>
+
+
+<h3>2.3.2 创建流</h3>
+
+<p>一个流被创建的时候发送一个SYN_STREAM类型的控制帧（2.6.1节）。如果是服务端初始化的流，流id必须是偶数。如果客户端初始化的流，流id必须是奇数。0是非法的流id。流id在连接的两端必须是连续递增的。例如：流2创建之后是流3，流7不能被创建在流9之后。当客户端或服务端的流id超过31位，流就不能创建。</p>
+
+<p>创建新流时，流id必须是增加。如果一端收到一个SYN_STREAM的流id小于之前收到的SYN_STREAM，必须发送PROTOCOL_ERROR会话错误（2.4.1节）。</p>
+
+<p>两个SYN_STREAM有相同的流id要发送一个PROTOCOL_ERROR错误。如果接收方在同一个流里收到第二个SYN_STREAM，它必须发送一个PROTOCOL_ERROR错误。</p>
+
+<p>一旦收到SYN_STREAM，接受者能发送一个REFUSED_STREAM错误码来解除这个流。注意，无论如何，创建端可能已经发送了额外的帧，它不能立刻停止。</p>
+
+<p>一旦流被创建了，创建者可以发送HEADERS或DATA帧，不需要等待接收端的通知。</p>
+
+<h4>2.3.2.1 单相流</h4>
+
+<p>当一端创建的流带着FLAG_UNIDIRECTIONAL标志位，表示创建了一个单项流，创建端能发送一些帧，但接收端不能。接收端隐式的出于半关闭（2.3.6节）状态。</p>
+
+<h4>2.3.2.2 双向流</h4>
+
+<p>SYN_STREAM帧没有使用FLAG_UNIDIRECTIONAL标识表示是双向流。双向流中两端都能发送数据。</p>
+
+<h3>2.3.3 流的优先级</h3>
+
+<p>流的创建者为那个流分配一个优先级。优先级被表示成一个0到7之间的整数。0表示最高优先级，7表示最低优先级。发送者和接受者应该尽力按照优先级次序去处理流。</p>
+
+<h3>2.3.4 流的头部</h3>
+
+<p>流携带一些元数据也就是可选的键值对头部。在流创建之后，并且很长一段时间发送方没有关闭（2.3.7节）或者半关闭（2.3.6节）状态，任意一边都能发送头部帧包含头部数据。多个头部帧能发送头部数据，并且头部帧能交错在数据帧之间。</p>
+
+<h3>2.3.5 流的数据交换</h3>
+
+<p>一旦流被创建，他能被用来发送任意数量的数据。通常这意味着一系列数据帧在这个流上被发送直到一个包含被设置FLAG_FIN标识的帧。FLAG_FIN能被设置在SYN_STREAM（2.6.1节），SYN_REPLY（2.6.2节），HEADERS（2.6.7节）或者一个DATA帧（2.2.2节）。一旦FLAG_FIN被发送，这个流就被认为是半关闭状态。</p>
+
+<h3>2.3.6 半关闭流</h3>
+
+<p>当流的一边发送一个带FLAG_FIN标识的帧，这个流在那端就是半关闭状态。FLAG_FIN的发送者不能在在流上发送更多的帧。当两边都是半关闭状态，这个流就关闭了。</p>
+
+<p>如果一端在流是半关闭状态之后从发送者接收了一帧（例如，那个端点在这个流上先前已经接收一个带FIN标识的帧），它必须发送一个RST_STREAM到发送者并且带着STREAM_ALREADY_CLOSED状态。</p>
+
+<h3>2.3.7 关闭流</h3>
+
+<p>有3个方法终止流</p>
+
+<ul>
+<li>正常终止：正常流终止发生在当发送者和接受者都发送了FLAG_FIN标识处于半关闭状态之后。</li>
+<li>意外终止：客户端或者服务端中的任意一个能发送一个RST_STREAM控制帧在任何时间。一个RST_STREAM包含一个错误码表示失败的原因。当一个RST_STREAM从流的发起端被发送，这表示这个流彻底失败并且这个流将没有更多数据被发送。当一个RST_STREAM从流的接受者被发送，发送者一旦收到这个，应该停止发送任何数据在这个流上。流接受者应该意识到在发送者发送的数据已经在传输中和RST_STREAM被收到之间有时间差。参见流错误处理（2.4.2节）</li>
+<li>TCP连接断开：如果TCP连接在流没有关闭的情况下断开，端点必须假定流是不正常的中断并且可能是不完整的。</li>
+</ul>
+
+
+<p>如果一端在流关闭之后收到一个数据帧，它必须发送一个RST_STREAM告诉发送者并带着PROTOCOL_ERROR状态。</p>
+
+<h2>2.4 错误处理</h2>
+
+<p>SPDY帧层只有两种错误，他们始终是这样处理。这篇说明书中任何有关“会话错误问题”参考2.4.1节。任何“流错误问题”参考2.4.2节。</p>
+
+<h3>2.4.1 会话错误处理</h3>
+
+<p>会话错误是阻止帧层进一步处理或者腐化会话压缩状态的错误。当会话错误发生，端点遇到错误时必须首先发送GOAWAY帧并且带着从远程端点最近收到的流的id，和会话为什么终止的错误码。发送GOAWAY帧之后，端点必须关闭TCP连接。</p>
+
+<p>注意，会话压缩状态取决于两端处理的所有压缩数据。如果一端处理了一部分包含压缩数据的帧并且没有正确的更新压缩状态，之后的控制帧使用压缩将发生错误。实现者应该试着去处理压缩数据，这样的错误可能被作为流错误处理而不是会话错误。</p>
+
+<p>注意，GOAWAY是在会话错误期间被发送的，正在接收的端点可能收不到。这是尽力尝试去通讯关于会话为什么当掉。</p>
+
+<h3>2.4.2 流错误处理</h3>
+
+<p>流错误是关联到特定流id的错误，它不影响帧层正在处理的其他流。发生流错误，端点必须发送一个RST_STREAM帧包含流id以及错误状态和错误原因。发送RST_STREAM之后，流被发送端关闭。发送RST_STREAM之后，如果发送者收到任何除了和RST_STREAM有相同id的其他帧，它将发送额外的RST_STREAM帧。端点不能发送RST_STREAM去响应一个RST_STREAM，这会导致RST_STREAM循环。发送RST_STREAM不会导致会话关闭。</p>
+
+<p>如果一端在相同的流id有多个RST_STREAM帧连续的发送并且是相同的错误，可以合并他们到单个RST_STREAM帧。（这可能发生在流是关闭的，但是远程发送多个数据帧。没有理由为每个帧都发送一个RST_STREAM）。</p>
+
+<h2>2.5 数据流</h2>
+
+<p>因为SPDY的多个逻辑流多路复用TCP的单个数据流，客户端和服务端可以为并发会话智能的交叉数据消息。</p>
+
+<h2>2.6 控制帧类型</h2>
+
+<h3>2.6.1 SYN_STREAM</h3>
+
+<p>SYN_STREAM控制帧允许发送者在两端之间异步的创建流。参见流创建（2.3.2节）</p>
+
+<pre><code>+------------------------------------+
+|1|    version    |         1        |
++------------------------------------+
+|  Flags (8)  |  Length (24 bits)    |
++------------------------------------+
+|X|           Stream-ID (31bits)     |
++------------------------------------+
+|X| Associated-To-Stream-ID (31bits) |
++------------------------------------+
+| Pri|Unused | Slot |                |
++-------------------+                |
+| Number of Name/Value pairs (int32) |   &lt;+
++------------------------------------+    |
+|     Length of name (int32)         |    | This section is the "Name/Value
++------------------------------------+    | Header Block", and is compressed.
+|           Name (string)            |    |
++------------------------------------+    |
+|     Length of value  (int32)       |    |
++------------------------------------+    |
+|          Value   (string)          |    |
++------------------------------------+    |
+|           (repeats)                |   &lt;+
+</code></pre>
+
+<p>标识(Flags)：这个帧相关的标识，合法的标识是：</p>
+
+<ul>
+<li>0x01 = FLAG_FIN - 表示这帧是这个流上面将被传输的最后一帧并且迫使发送者进入半关闭（2.3.6节）状态。</li>
+<li>0x02 = FLAG_UNIDIRECTIONAL - 流创建后带着这个标识迫使接受者进入半关闭（2.3.6节）状态。</li>
+</ul>
+
+
+<p>长度(Length)：这个长度是这帧之后所有域的字节数。SYN_STREAM帧里面，它是10字节加上被压缩键值对的长度。</p>
+
+<p>流id(Stream-ID)：这个流的31位的标识符。这个流id讲被用于这个流里面的所有帧。</p>
+
+<p>关联流id(Associated-To-Stream-ID)：被关联的流的31位的标识符。如果这个流是独立与其他所有流的，它应该为0.</p>
+
+<p>优先级(Priority)：3位的优先级（2.3.3节）域</p>
+
+<p>未设置的(Unused)：5位未设置的空间，预留将来使用。</p>
+
+<p>插槽(Slot)：8位的无符号整形指定被用于这个请求的客户端证书的服务端证书（CREDENTIAL）向量的索引。参见CREDENTIAL帧（2.6.9节）。值是0意味着没有客户端证书被关联到这个流。</p>
+
+<p>键/值头部块(Name/Value Header Block)：SYN_STREAM携带的一组键值对。参见键/值头部块（2.6.10节）</p>
+
+<p>如果一端接收的SYN_STREAM的数据大于实现者的支持，可以发送一个RST_STREAM并包含FRAME_TOO_LARGE错误码。所有实现者必须支持被定义在控制帧章节里的最小长度限制（2.2.1节）</p>
+
+<h3>2.6.2 SYN_REPLY</h3>
+
+<p>SYN_REPLY表示接收一个由SYN_STREAM帧接受者创建的流。</p>
+
+<pre><code>+------------------------------------+
+|1|    version    |         2        |
++------------------------------------+
+|  Flags (8)  |  Length (24 bits)    |
++------------------------------------+
+|X|           Stream-ID (31bits)     |
++------------------------------------+
+| Number of Name/Value pairs (int32) |   &lt;+
++------------------------------------+    |
+|     Length of name (int32)         |    | This section is the "Name/Value
++------------------------------------+    | Header Block", and is compressed.
+|           Name (string)            |    |
++------------------------------------+    |
+|     Length of value  (int32)       |    |
++------------------------------------+    |
+|          Value   (string)          |    |
++------------------------------------+    |
+|           (repeats)                |   &lt;+
+</code></pre>
+
+<p>标识(Flags)：这个帧相关的标识，合法的标识如下：</p>
+
+<ul>
+<li>0x01 = FLAG_FIN - 表示这帧是这个流上面将被传输的最后一帧并且迫使发送者进入半关闭（2.3.6节）状态。</li>
+</ul>
+
+
+<p>长度(Length)：这个帧之后所有域的字节数。SYN_REPLY帧里面，它是4字节加上被压缩的键值对的长度。</p>
+
+<p>流id(Stream-ID)：表示这个流的31位标识符。</p>
+
+<p>如果一端收到多个SYN_REPLY帧有相同的活动流id，它必须发布一个带有STREAM_IN_USE错误码的流错误（2.4.2节）。</p>
+
+<p>键/值头部块(Name/Value Header Block)：SYN_STREAM携带的一组键值对。参见键/值头部块（2.6.10节）。</p>
+
+<p>如果一端收到一个SYN_REPLY大于实现所支持的大小，它可以发送一个带有FRAME_TOO_LARGE错误码的RST_STREAM。所有实现者必须支持被定义在控制帧章节（2.2.1节）中的最小长度限制。</p>
+
+<h3>2.6.3 RST_STREAM</h3>
+
+<p>RST_STREAM帧表示不正常的终止一个流。当它被流的创建者发送，表示创建者希望取消这个流。当它被流的接受者发送，表示一个错误或者接受者不希望接收这个流，所以这个流应该被关闭。</p>
+
+<pre><code>+----------------------------------+
+|1|   version    |         3       |
++----------------------------------+
+| Flags (8)  |         8           |
++----------------------------------+
+|X|          Stream-ID (31bits)    |
++----------------------------------+
+|          Status code             |
++----------------------------------+
+</code></pre>
+
+<p>标识(Flags)：这个帧相关的标识。RST_STREAM没有定义任何标识。它必须为0。</p>
+
+<p>长度(Length)：一个无符号24位的数字表示之后所有域的长度。RST_STREAM控制帧里面这个值一直是8。</p>
+
+<p>流id(Stream-ID)：这个流的31位标识符。</p>
+
+<p>状态码(Status code)：（32位）这个流为什么被终止的标识。状态码定义如下：</p>
+
+<ul>
+<li>1 - PROTOCOL_ERROR. 这是一个常规错误，如果更多指定的错误不能用应该使用它。</li>
+<li>2 - INVALID_STREAM. 当一个帧被接收时流不是活动的应该返回这个状态码。</li>
+<li>3 - REFUSED_STREAM. 表明在任何正在处理完成的流之前这个流被拒绝。</li>
+<li>4 - UNSUPPORTED_VERSION. 表明收到一个流的SPDY版本不支持。</li>
+<li>5 - CANCEL. 被用于流的创建者指定这个流不再需要。</li>
+<li>6 - INTERNAL_ERROR. 正式一个常规错误，被用于当实现者存在内部错误，不是由于协议中的任何事。</li>
+<li>7 - FLOW_CONTROL_ERROR. 端点被检测到它的那头违反了流量控制协议。</li>
+<li>8 - STREAM_IN_USE. 端点收到一个多余的SYN_REPLY.</li>
+<li>9 - STREAM_ALREADY_CLOSED. 当流已经半关闭时，端点收到一个一个数据帧或者SYN_REPLY帧。</li>
+<li>10 - INVALID_CREDENTIALS. 服务端收到一个资源请求发起者没有有效的认证在客户端证书向量当中。</li>
+<li>11 - FRAME_TOO_LARGE. 端点收到一个实现者不能支持的帧。如果FRAME_TOO_LARGE在SYN_STREAM，HEADERS，或者SYN_REPLY帧还没有完全处理结束之前被发送，其他端点的压缩状态将会失去同步。这种情况下，FRAME_TOO_LARGE的发送者必须关闭会话。</li>
+<li>注意：0不是RST_STREAM的有效状态码。</li>
+</ul>
+
+
+<p>一个流在收到RST_STREAM之后，这个流的接受者不能再发送其他的帧，并且这个流进入到关闭状态。</p>
+
+<h3>2.6.4 SETTINGS</h3>
+
+<p>一个设置帧包含一组id/value对的配置数据来告诉两端可以怎样通信。SETTINGS帧不论哪端都能任何时候发送，它能随意的发送并且完全异步的。当服务器是发送端，发送端能请求配置数据在客户端跨SPDY会话持久保存并且在以后的通讯中能返回到服务端。</p>
+
+<p>持久SETTINGS ID/Value对是作用在每个origin/IP对上的。（“origin”是一组URI的模式，主机，和端口。参见
+ERROR：未定义的目标：RFC6454
+ERROR：引用未知元素：）。也就是说，当一个客户端连接到服务器，并且服务器发送持久设置保存在客户端里面，客户端在以后连接到相同的ip和端口时应该返回持久化设置。客户端不能请求服务器使用持久特性的SETTINGS帧，并且服务器必须忽略客户端发送的和持久化相关的标识。</p>
+
+<pre><code>+----------------------------------+
+|1|   version    |         4       |
++----------------------------------+
+| Flags (8)  |  Length (24 bits)   |
++----------------------------------+
+|         Number of entries        |
++----------------------------------+
+|          ID/Value Pairs          |
+|             ...                  |
+</code></pre>
+
+<p>控制位(Control bit)：这个消息一直是1。</p>
+
+<p>版本(Version)：SPDY版本。</p>
+
+<p>类型(Type)：这个消息一直是4.</p>
+
+<p>标识(Flags)：FLAG_SETTINGS_CLEAR_SETTINGS（0x1）：当设置这个值的时候，客户端应该清除所有之前被持久保存的SETTINGS ID/Value对。如果这帧包含ID/Value对并且带着FLAG_SETTINGS_PERSIST_VALUE（0x2）设置，客户端应该首先清除已经存在的，被持久保存的设置，然后保存这帧里设置的值。</p>
+
+<p>长度(Length)：一个无符号24位数表示之后所有域的长度。SETTINGS帧的总数是8字节+长度。</p>
+
+<p>条目数(Number of entries)：32位值表示ID/Value对的条数。</p>
+
+<p>每个ID/Value对如下：</p>
+
+<pre><code> +----------------------------------+
+ | Flags(8) |      ID (24 bits)     |
+ +----------------------------------+
+ |          Value (32 bits)         |
+ +----------------------------------+
+</code></pre>
+
+<p>标识(Flags)：一个8位的值，定义如下：</p>
+
+<ul>
+<li>FLAG_SETTINGS_PERSIST_VALUE(0x1)：当设置的时候，SETTINGS帧的发送者现在请求接受者持久保存ID/Value并且接受者在未来返回它。因为持久化仅仅在客户端实现，这个标识只能在服务端发送。</li>
+<li>FLAG_SETTINGS_PERSISTED(0x2)：当设置的时候，发送者通知接受者这个ID/Value对是之前带着FLAG_SETTINGS_PERSIST_VALUE的发送者发送的发送的，并且发送者现在返回它。因为持久化仅仅在客户端实现，这个标识只能在客户端发送。</li>
+</ul>
+
+
+<p>ID：24位网络字节序。被定义的ID有：</p>
+
+<ul>
+<li>1 - SETTINGS_UPLOAD_BANDWIDTH 发送者发送它来设置这个通道期望的上传带宽。这个数是一个估计值。这个值应该是每秒千字节的整数值，它是发送者预期这个通道的最大上传容量。</li>
+<li>2 - SETTINGS_DOWNLOAD_BANDWIDTH 发送者发送它来设置这个通道期望的下载带宽。这个数是一个估计值。这个值应该是每秒千字节的整数值，它是发送者预期这个通道的最大下载容量</li>
+<li>3 - SETTINGS_ROUND_TRIP_TIME 发送者发送它来设置这个通道期望的回路时间。回路时间的定义是客户端发送一个控制帧到远程然后收到一个响应的最小时间。这个值单位是毫秒。</li>
+<li>4 - SETTINGS_MAX_CONCURRENT_STREAMS 发送者通知远端能允许的最大并发流。默认是无限的，这个值建议不小于100。</li>
+<li>5 - SETTINGS_CURRENT_CWND 发送者通知远端当前的 TCP CWND 值。</li>
+<li>6 - SETTINGS_DOWNLOAD_RETRANS_RATE 发送者通知远端重传比例（被重传的字节 / 总传输字节）</li>
+<li>7 - SETTINGS_INITIAL_WINDOW_SIZE 发送者通知远端新流的初始窗口大小（字节）。</li>
+<li>8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE 服务端通知客户端新的客户端证书向量的大小。</li>
+</ul>
+
+
+<p>Value：32位值。</p>
+
+<p>这个消息有意的设计成在将来是可扩展的用来改进客户端-服务端通信。发送者不需要发送每种类型的ID/Value。发送的这些值必须是精确值。当多个ID/Value对被发送，它们的顺序应该是从最低的id到最高的id。单个SETTINGS帧不能包含多个相同的ID。如果SETTINGS帧的接受者发现多个相同的ID,它必须忽略除第一个之外的其他值。</p>
+
+<p>服务端可以发送多个SETTINGS帧包含不同的ID/Value对。当相同的ID/Value被发送两次，最近收到的值覆盖之前收到的值。如果服务端首先发送ID 1，2，3并带着FLAG_SETTINGS_PERSIST_VALUE标识的SETTINGS帧，然后发送ID 4和5并带着FLAG_PERSIST_VALUE标识的帧，当客户端下次返回持久状态的SETTINGS帧时应该发送所有5个设置（这个例子中是1,2,3,4和5）到服务端。</p>
+
+<h3>2.6.5 PING</h3>
+
+<p>PING控制帧是一种测试发送者最小回路时间的机制。他能从客户端或者服务端被发送。收到PING帧的那端应该尽快的发送一个完全相同的帧给发送者。（如果在这期间有其他数据发送，PING应该有最高优先级）。发送者发送的每个PING应该是以一个唯一的ID。</p>
+
+<pre><code>+----------------------------------+
+|1|   version    |         6       |
++----------------------------------+
+| 0 (flags) |     4 (length)       |
++----------------------------------|
+|            32-bit ID             |
++----------------------------------+
+</code></pre>
+
+<p>控制位(Control bit)：这个消息的控制位总是1。</p>
+
+<p>版本(Version)：SPDY版本号。</p>
+
+<p>类型(Type)：PING消息的类型是6。</p>
+
+<p>长度(Length)：这个帧的长度总是4字节。</p>
+
+<p>ID：PING的唯一标识，用一个无符号32位值表示。当客户端初始化PING，它必须使用奇数ID。当服务端初始化PING，它必须使用偶数。使用奇数/偶数区分是为了避免环形PING。（比如两端同时初始化一个完全相同的PING的时候）。</p>
+
+<p>注意：如果发送者使用过了所有的PING id（例如已经发送过2^31个id），它能从头开始。
+如果服务端收到一个不是自己初始化的偶数PING，它必须忽略那个PING。如果客户端收到一个不是自己初始化的奇数PING，它也必须忽略那个PING。</p>
+
+<h3>2.6.6 GOAWAY</h3>
+
+<p>GOAWAY控制帧是一种通知连接的远端在这个会话上停止创建流的机制。他能在客户端或者服务端被发送。一旦发送，发送者在这个会话上将不能响应任何新的SYN_STREAM。虽然可以为新的流建立一个新的会话，但是GOAWAY帧的接受者在这个会话上不能再发送任何其他的流。这个消息的目的是在之前创建的流正在处理完成期间，允许一端优雅的停止接收新流（或许因为重启或维护）。</p>
+
+<p>在一边正在发送SYN_STREAM时远端的正在发送一个GOAWAY消息会产生冲突。要处理这种情况，GOAWAY包含一个在这个会话中最后的被创建的流的id。如果GOAWAY的接受者在这个会话最后的流id之后发送新的SYN_STREAM，他们不会被服务端处理并且接受者可以忽视这个流。（因为接受者可能之后要在一个新会话中重新创建这个流）</p>
+
+<p>在连接关闭之前两端总是应该发送一个GOAWAY消息以便远端能知道流是否处理完毕。（例如，一个HTTP客户端发送一个POST请求的同时服务端关闭这个连接，如果服务端没有发送GOAWAY帧表示这个连接已经停止工作，客户端就不知道服务端是否处理了这个POST请求。）。</p>
+
+<p>在GOAWAY消息发送之后，发送者必须忽略所有新流的SYN_STREAM帧。</p>
+
+<pre><code>+----------------------------------+
+|1|   version    |         7       |
++----------------------------------+
+| 0 (flags) |     8 (length)       |
++----------------------------------|
+|X|  Last-good-stream-ID (31 bits) |
++----------------------------------+
+|          Status code             |
++----------------------------------+
+</code></pre>
+
+<p>控制位(Control bit)：这个消息的控制位总是1。</p>
+
+<p>版本(Version)：SPDY版本号。</p>
+
+<p>类型(Type)：GOAWAY消息的类型总是7。</p>
+
+<p>长度(Length)：这个帧总是8字节。</p>
+
+<p>最后的流id(Last-good-stream-Id)：GOAWAY消息的发送者最后响应的流id（SYN_REPLY或RST_STREAM）。</p>
+
+<p>状态(Status)：会话关闭的原因：</p>
+
+<ul>
+<li>0 - OK. 正常会话关闭。</li>
+<li>1 - PROTOCOL_ERROR. 这是一个通用错误，并且可以在不能用其他错误表示时使用。</li>
+<li>2 - INTERNAL_ERROR. 这是一个通用错误能被用于实现者发生一个不是由于协议错误导致的内部错误。</li>
+</ul>
+
+
+<h3>2.6.7 HEADERS</h3>
+
+<p>HEADERS帧给一个流扩展额外的头部。它可以在一个存在的流上任何时候随意的发送。头部信息取决于应用程序。这帧的name/value头部块是被压缩的。</p>
+
+<pre><code>+------------------------------------+
+|1|   version     |          8       |
++------------------------------------+
+| Flags (8)  |   Length (24 bits)    |
++------------------------------------+
+|X|          Stream-ID (31bits)      |
++------------------------------------+
+| Number of Name/Value pairs (int32) |   &lt;+
++------------------------------------+    |
+|     Length of name (int32)         |    | This section is the "Name/Value
++------------------------------------+    | Header Block", and is compressed.
+|           Name (string)            |    |
++------------------------------------+    |
+|     Length of value  (int32)       |    |
++------------------------------------+    |
+|          Value   (string)          |    |
++------------------------------------+    |
+|           (repeats)                |   &lt;+
+</code></pre>
+
+<p>标识(Flags)：这帧有关的标识。合法的标识是：</p>
+
+<ul>
+<li>0x01 = FLAG_FIN - 表示这帧是这个流上面将被传输的最后一帧并且迫使发送者进入半关闭（2.3.6节）状态。</li>
+</ul>
+
+
+<p>长度(Length)：一个24位无符号值表示之后域的字节数。长度域最小值是4（当name/value对是0的时候）。</p>
+
+<p>Name/Value头部块(Name/Value Header Block)：和SYN_STREAM那部分相同的一组name/value对。参见Name/Value头部块（2.6.10节）。</p>
+
+<h3>2.6.8 WINDOW_UPDATE</h3>
+
+<p>WINDOW_UPDATE控制帧在SPDY中用于实现每个流的流量控制。SPDY中流量控制只能影响到每一跳之间，换言之，它仅仅控制一个SPDY连接的两端。如果在客户端和原始服务端之间有一个或多个中介，流量控制信号不能在中介间明确的转发。（不管怎样，任何接受者的数据传输限制可以间接的传播流量控制信息向上游返回原始发送者。）流量控制仅仅应用在数据帧的数据部分。接受者必须缓冲所有控制帧。如果接受者缓冲一条控制帧失败，它可以发出一个带着FLOW_CONTROL_ERROR状态码的流错误 （2.4.2节）给那个流。</p>
+
+<p>SPDY的流量控制即数据传输窗口被每个流的发送者保持。数据传输窗口是一个简单的无符号32位整形，它指定了发送者能传输多少字节的数据。在一个流创建之后，但是在任何数据帧被传输之前，发送者开始初始化窗口大小。这个窗口大小是接受者的缓冲区容量。发送者不能发送一个比传输窗口大小还要大的数据。发送一些数据帧之后，发送者的窗口大小要减去已经传输的数据大小之和。当窗口大小小于等于0，发送者必须暂停传输数据。在其他流结束时，接受者发送一个WINDOW_UPDATE控制帧返回给发送者通知它数据已经消耗并且缓冲区已经释放可以接收更多数据。</p>
+
+<pre><code>+----------------------------------+
+|1|   version    |         9       |
++----------------------------------+
+| 0 (flags) |     8 (length)       |
++----------------------------------+
+|X|     Stream-ID (31-bits)        |
++----------------------------------+
+|X|  Delta-Window-Size (31-bits)   |
++----------------------------------+
+</code></pre>
+
+<p>控制位(Control big)：这个消息的控制位总是1。</p>
+
+<p>版本(Version)：SPDY版本号。</p>
+
+<p>类型(Type)：WINDOW_UPDATE消息是9。</p>
+
+<p>长度(Length)：这个帧的长度域总是8（之后域的长度是8字节）。</p>
+
+<p>流ID(Stream-ID)：WINDOW_UPDATE控制帧的流ID。</p>
+
+<p>窗口变化幅度(Delta-Window-Size)：发送者除了剩余窗口大小还能传输的字节数。这个域的的合法长度范围是1到2^31 - 1(0x7fffffff)字节。</p>
+
+<p>发送者保持的窗口大小不能超过2^31（尽管在某种特殊情况下能是负的）。如果发送者收到一个WINDOW_UPDATE引起窗口大小超过这个限制，它必须发送带着FLOW_CONTROL_ERROR状态码的RST_STREAM帧终止这个流。</p>
+
+<p>当SPDY连接首次建立，所有流默认的窗口大小是64KB。一端可以使用SETTINGS帧调节这个连接的初始窗口大小。换言之，当发送数据帧之前收到SETTINGS它的另一端能使用64KB之外的默认初始窗口大小。在接受者要减少初始窗口大小，但对方在在SETTINGS帧抵达之前，一建立连接就立即发送64KB的数据，因为是异步的，可能会出现一个竞态条件（race condition）。这种情况下发送者保持的窗口大小会变成负数。一旦发送者检测到这种情况，它必须停止发送数据帧来等待接受者赶上。接受者有两个选择：</p>
+
+<ul>
+<li>立刻发送带着FLOW_CONTROL_ERROR状态码的RST_STREAM帧。</li>
+<li>允许队头阻塞（传输数据的界限仅仅针对会话中的一个流），并且消耗数据后发送WINDOW_UPDATE帧。</li>
+</ul>
+
+
+<p>在第2种情况中，两边必须基于SETTINGS帧设置的初始窗口大小来计算窗口大小。例如，接受者设置16KB的初始窗口大小，并且发送者在连接建立的时候立即发送了64KB的数据，发送者在收到SETTINGS时发现窗口大小是-48KB。当接受者消费了16KB的数据时，它必须发送一个16KB的WINDOW_UPDATE帧给发送者。这个交互持续到发送者的窗口再次大小变成正数时，它就能继续发送数据帧了。</p>
+
+<p>接受者读到带着FLAG_FIN标记的流的最后一个数据帧时，它不应该发送WINDOW_UPDATE帧告知最后一个数据帧已经消费。发送者在发送流的最后一帧之后，应该忽略和这个流有关的所有WINDOW_UPDATE帧。</p>
+
+<p>发送者发送数据帧和接受者发送WINDOW_UPDATE帧彼此是完全异步的。这个特性使得接受者要积极的去更新发送发送者保持的窗口大小以防止流被卡住。</p>
+
+<h3>2.6.9 CREDENTIAL</h3>
+
+<p>CREDENTIAL控制帧被用于客户端发送附加的客户端证书到服务端。在同一个SPDY会话中客户端可以请求来自不同源（ <a href="http://www.ietf.org/rfc/rfc6454.txt" title="rfc6454">origin RFC6454</a> ）的资源，这种情况下服务端可以处理所有的源。例如：如果IP关联的主机名都匹配且初次握手中服务端提供的SSL证书是有效的。然而，因为SSL连接最多只能包含一个客户端证书，客户端需要一个发送更多证书到服务端的机制。</p>
+
+<p>服务端需要维护一个和SPDY会话相关客户端证书向量。当客户端需要发送一个客户端证书到服务端，它将发送一个CREDENTIAL帧，这个帧指定了存储证书的索引以及凭证，也就是客户端处理相符的私钥。向量初始化长度是8。如果客户端在首次TLS握手期间提供了一个客户端证书，这个证书的内容必须拷贝到CRENDENTIAL向量的第一个位置（index 1），但它可能被随后的CREDENTIAL帧覆盖。当正在鉴定和一个源相关的客户端证书时服务端必须使用独立的CREDENTIAL向量。可以发送一个SETTINGS帧并设置SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE来改变服务端向量的长度。当设置的新的向量长度小于当前的，截断到离已经存储的证书长度尽可能近的索引位置。</p>
+
+<p>TLS重协商客户端认证不兼容SPDY提供的多路复用特性。特别是，在客户端（浏览器不同的tab）向服务端请求两个不同的页面时。 当重协商和客户端证书请求到来时，浏览器不能确定客户端证书请求了那些资源，以提示用户。</p>
+
+<pre><code>+----------------------------------+
+|1|000000000000011|0000000000001010|
++----------------------------------+
+| flags (8)  |  Length (24 bits)   |
++----------------------------------+
+|  Slot (16 bits) |                |
++-----------------+                |
+|      Proof Length (32 bits)      |
++----------------------------------+
+|               Proof              |
++----------------------------------+ &lt;+
+|   Certificate Length (32 bits)   |  |
++----------------------------------+  | Repeated until end of frame
+|            Certificate           |  |
++----------------------------------+ &lt;+
+</code></pre>
+
+<p>插槽(slot)：服务端的客户端证书向量索引表示这个证书应该被存储在哪儿。如果这个索引已经有一个证书存储了，它可以被覆盖。索引是从1开始；0是无效索引。</p>
+
+<p>凭证(Proof)：加密凭证即客户端拥有的和证书相关的私钥。它的格式是一个TLS数字签名元素（http://tools.ietf.org/html/rfc5246#section-4.7）。签名算法必须和用于证书验证消息的相同。然而，自从MD5+SHA1签名类型被用于TLS 1.0连接在一个数字签名元素里不能被正确的编码，SHA1必须被用于当MD5+SHA1被用于SSL连接时。签名是被计算过的超过32字节的TLS提取值（http://tools.ietf.org/html/rfc5705）并带着一个“EXPORTER SPDY certificate proof”标签(label)并使用空字符串作为上下文。RSA证书签名是一个PKCS#1 v1.5签名。ECDSA是一个ECDSA-Sig-Value（http://tools.ietf.org/html/rfc5480#appendix-A）。一个1024bit的RSA key，CREDENTIAL消息约500字节。</p>
+
+<p>证书(Certificate)：证书链，从叶子证书开始。每个证书的编码格式是一个32位的长度字段，跟着一个DER编码的证书。和SSL连接相关的客户端证书必须是相同类型的（RSA，ECDSA，等）。</p>
+
+<p>如果服务端收到一个资源请求的证书不能接受（丢失或无效），它必须回复一个带着INVALD_CREDENTIALS状态码的RST_STREAM帧。在收到带着INVALD_CREDENTIALS状态码的RST_STREAM帧后，客户端应该初始化一个新流直接​直接到被请求的源并且重新发送请求。注意，SPDY不允许服务端用不同的客户端证书请求客户端同源的不同资源。</p>
+
+<p>如果服务端收到一个无效的CREDENTIAL帧，它必须响应GOAWAY帧并停止这个会话。</p>
+
+<h3>2.6.10 Name/Value Header Block</h3>
+
+<p>键/值头部块存在于SYN_STREAM，SYN_REPLY和HEADERS控制帧里，并且他们有一个公共格式：</p>
+
+<pre><code>+------------------------------------+
+| Number of Name/Value pairs (int32) |
++------------------------------------+
+|     Length of name (int32)         |
++------------------------------------+
+|           Name (string)            |
++------------------------------------+
+|     Length of value  (int32)       |
++------------------------------------+
+|          Value   (string)          |
++------------------------------------+
+|           (repeats)                |
+</code></pre>
+
+<p>键值对的数量(Number of Name/Value pairs)：这个域下面重复键值对的数量。
+键值对列表(List of Name/Value pairs)：</p>
+
+<ul>
+<li>键的长度(Length of Name)：用32位的数字表示键的长度。注意，在实际中这个长度不能超过2^24，那是SPDY帧的最大长度。</li>
+<li>键(name)：不含0的字节序列。</li>
+<li>值的长度(Length of Value)：用32位数字表示的值的长度。注意，在实际中这个长度不能超过2^24，那是SPDY帧的最大长度。</li>
+<li>值(Value)：不含0的字节序列。</li>
+</ul>
+
+
+<p>每个键后面必须有一个值。键使用<a href="http://en.wikipedia.org/wiki/ASCII" title="US-ASCII character set">US-ASCII character set</a> [ASCII] 编码并且必须所有都是小写。键的长度必须大于0。收到了长度为0的键必须发出一个带着PROTOCOL_ERROR状态码的流错误（2.4.2节）给这个流。</p>
+
+<p>不允许重复的键。发送两个相同的键，发送带两个值的头部，这两个值被NUL(0)字节分开。一个头部的值为空（例如长度为0）或它包含多个，NUL分隔的值，每个长度大于0。值不是一个NUL字符开始或结束。收到上述这些非法的值域必须发送一个带着PROTOCOL_ERROR状态码的流错误给这个流（2.4.2节）。</p>
+
+<h4>2.6.10.1 Compression</h4>
+
+<p>键/值头部块在SYN_STREAM，SYN_REPLY和HEADERS帧里用于传输头部元数据。这个块总是使用zlib压缩的。这个说明中任何引用“zlib”都是指的<a href="http://www.ietf.org/rfc/rfc1950.txt" title="ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.">ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.</a>。</p>
+
+<p>每个HEADERS压缩实例，初始化使用如下字典：</p>
+
+<pre><code>const unsigned char SPDY_dictionary_txt[] = {
+    0x00, 0x00, 0x00, 0x07, 0x6f, 0x70, 0x74, 0x69,   \\ - - - - o p t i
+    0x6f, 0x6e, 0x73, 0x00, 0x00, 0x00, 0x04, 0x68,   \\ o n s - - - - h
+    0x65, 0x61, 0x64, 0x00, 0x00, 0x00, 0x04, 0x70,   \\ e a d - - - - p
+    0x6f, 0x73, 0x74, 0x00, 0x00, 0x00, 0x03, 0x70,   \\ o s t - - - - p
+    0x75, 0x74, 0x00, 0x00, 0x00, 0x06, 0x64, 0x65,   \\ u t - - - - d e
+    0x6c, 0x65, 0x74, 0x65, 0x00, 0x00, 0x00, 0x05,   \\ l e t e - - - -
+    0x74, 0x72, 0x61, 0x63, 0x65, 0x00, 0x00, 0x00,   \\ t r a c e - - -
+    0x06, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x00,   \\ - a c c e p t -
+    0x00, 0x00, 0x0e, 0x61, 0x63, 0x63, 0x65, 0x70,   \\ - - - a c c e p
+    0x74, 0x2d, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65,   \\ t - c h a r s e
+    0x74, 0x00, 0x00, 0x00, 0x0f, 0x61, 0x63, 0x63,   \\ t - - - - a c c
+    0x65, 0x70, 0x74, 0x2d, 0x65, 0x6e, 0x63, 0x6f,   \\ e p t - e n c o
+    0x64, 0x69, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x0f,   \\ d i n g - - - -
+    0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x2d, 0x6c,   \\ a c c e p t - l
+    0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x00,   \\ a n g u a g e -
+    0x00, 0x00, 0x0d, 0x61, 0x63, 0x63, 0x65, 0x70,   \\ - - - a c c e p
+    0x74, 0x2d, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x73,   \\ t - r a n g e s
+    0x00, 0x00, 0x00, 0x03, 0x61, 0x67, 0x65, 0x00,   \\ - - - - a g e -
+    0x00, 0x00, 0x05, 0x61, 0x6c, 0x6c, 0x6f, 0x77,   \\ - - - a l l o w
+    0x00, 0x00, 0x00, 0x0d, 0x61, 0x75, 0x74, 0x68,   \\ - - - - a u t h
+    0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,   \\ o r i z a t i o
+    0x6e, 0x00, 0x00, 0x00, 0x0d, 0x63, 0x61, 0x63,   \\ n - - - - c a c
+    0x68, 0x65, 0x2d, 0x63, 0x6f, 0x6e, 0x74, 0x72,   \\ h e - c o n t r
+    0x6f, 0x6c, 0x00, 0x00, 0x00, 0x0a, 0x63, 0x6f,   \\ o l - - - - c o
+    0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,   \\ n n e c t i o n
+    0x00, 0x00, 0x00, 0x0c, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
+    0x65, 0x6e, 0x74, 0x2d, 0x62, 0x61, 0x73, 0x65,   \\ e n t - b a s e
+    0x00, 0x00, 0x00, 0x10, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
+    0x65, 0x6e, 0x74, 0x2d, 0x65, 0x6e, 0x63, 0x6f,   \\ e n t - e n c o
+    0x64, 0x69, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x10,   \\ d i n g - - - -
+    0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d,   \\ c o n t e n t -
+    0x6c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65,   \\ l a n g u a g e
+    0x00, 0x00, 0x00, 0x0e, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
+    0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67,   \\ e n t - l e n g
+    0x74, 0x68, 0x00, 0x00, 0x00, 0x10, 0x63, 0x6f,   \\ t h - - - - c o
+    0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x6f,   \\ n t e n t - l o
+    0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00,   \\ c a t i o n - -
+    0x00, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,   \\ - - c o n t e n
+    0x74, 0x2d, 0x6d, 0x64, 0x35, 0x00, 0x00, 0x00,   \\ t - m d 5 - - -
+    0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74,   \\ - c o n t e n t
+    0x2d, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x00, 0x00,   \\ - r a n g e - -
+    0x00, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,   \\ - - c o n t e n
+    0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x00, 0x00,   \\ t - t y p e - -
+    0x00, 0x04, 0x64, 0x61, 0x74, 0x65, 0x00, 0x00,   \\ - - d a t e - -
+    0x00, 0x04, 0x65, 0x74, 0x61, 0x67, 0x00, 0x00,   \\ - - e t a g - -
+    0x00, 0x06, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74,   \\ - - e x p e c t
+    0x00, 0x00, 0x00, 0x07, 0x65, 0x78, 0x70, 0x69,   \\ - - - - e x p i
+    0x72, 0x65, 0x73, 0x00, 0x00, 0x00, 0x04, 0x66,   \\ r e s - - - - f
+    0x72, 0x6f, 0x6d, 0x00, 0x00, 0x00, 0x04, 0x68,   \\ r o m - - - - h
+    0x6f, 0x73, 0x74, 0x00, 0x00, 0x00, 0x08, 0x69,   \\ o s t - - - - i
+    0x66, 0x2d, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x00,   \\ f - m a t c h -
+    0x00, 0x00, 0x11, 0x69, 0x66, 0x2d, 0x6d, 0x6f,   \\ - - - i f - m o
+    0x64, 0x69, 0x66, 0x69, 0x65, 0x64, 0x2d, 0x73,   \\ d i f i e d - s
+    0x69, 0x6e, 0x63, 0x65, 0x00, 0x00, 0x00, 0x0d,   \\ i n c e - - - -
+    0x69, 0x66, 0x2d, 0x6e, 0x6f, 0x6e, 0x65, 0x2d,   \\ i f - n o n e -
+    0x6d, 0x61, 0x74, 0x63, 0x68, 0x00, 0x00, 0x00,   \\ m a t c h - - -
+    0x08, 0x69, 0x66, 0x2d, 0x72, 0x61, 0x6e, 0x67,   \\ - i f - r a n g
+    0x65, 0x00, 0x00, 0x00, 0x13, 0x69, 0x66, 0x2d,   \\ e - - - - i f -
+    0x75, 0x6e, 0x6d, 0x6f, 0x64, 0x69, 0x66, 0x69,   \\ u n m o d i f i
+    0x65, 0x64, 0x2d, 0x73, 0x69, 0x6e, 0x63, 0x65,   \\ e d - s i n c e
+    0x00, 0x00, 0x00, 0x0d, 0x6c, 0x61, 0x73, 0x74,   \\ - - - - l a s t
+    0x2d, 0x6d, 0x6f, 0x64, 0x69, 0x66, 0x69, 0x65,   \\ - m o d i f i e
+    0x64, 0x00, 0x00, 0x00, 0x08, 0x6c, 0x6f, 0x63,   \\ d - - - - l o c
+    0x61, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00,   \\ a t i o n - - -
+    0x0c, 0x6d, 0x61, 0x78, 0x2d, 0x66, 0x6f, 0x72,   \\ - m a x - f o r
+    0x77, 0x61, 0x72, 0x64, 0x73, 0x00, 0x00, 0x00,   \\ w a r d s - - -
+    0x06, 0x70, 0x72, 0x61, 0x67, 0x6d, 0x61, 0x00,   \\ - p r a g m a -
+    0x00, 0x00, 0x12, 0x70, 0x72, 0x6f, 0x78, 0x79,   \\ - - - p r o x y
+    0x2d, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74,   \\ - a u t h e n t
+    0x69, 0x63, 0x61, 0x74, 0x65, 0x00, 0x00, 0x00,   \\ i c a t e - - -
+    0x13, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2d, 0x61,   \\ - p r o x y - a
+    0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61,   \\ u t h o r i z a
+    0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x05,   \\ t i o n - - - -
+    0x72, 0x61, 0x6e, 0x67, 0x65, 0x00, 0x00, 0x00,   \\ r a n g e - - -
+    0x07, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x72,   \\ - r e f e r e r
+    0x00, 0x00, 0x00, 0x0b, 0x72, 0x65, 0x74, 0x72,   \\ - - - - r e t r
+    0x79, 0x2d, 0x61, 0x66, 0x74, 0x65, 0x72, 0x00,   \\ y - a f t e r -
+    0x00, 0x00, 0x06, 0x73, 0x65, 0x72, 0x76, 0x65,   \\ - - - s e r v e
+    0x72, 0x00, 0x00, 0x00, 0x02, 0x74, 0x65, 0x00,   \\ r - - - - t e -
+    0x00, 0x00, 0x07, 0x74, 0x72, 0x61, 0x69, 0x6c,   \\ - - - t r a i l
+    0x65, 0x72, 0x00, 0x00, 0x00, 0x11, 0x74, 0x72,   \\ e r - - - - t r
+    0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x2d, 0x65,   \\ a n s f e r - e
+    0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00,   \\ n c o d i n g -
+    0x00, 0x00, 0x07, 0x75, 0x70, 0x67, 0x72, 0x61,   \\ - - - u p g r a
+    0x64, 0x65, 0x00, 0x00, 0x00, 0x0a, 0x75, 0x73,   \\ d e - - - - u s
+    0x65, 0x72, 0x2d, 0x61, 0x67, 0x65, 0x6e, 0x74,   \\ e r - a g e n t
+    0x00, 0x00, 0x00, 0x04, 0x76, 0x61, 0x72, 0x79,   \\ - - - - v a r y
+    0x00, 0x00, 0x00, 0x03, 0x76, 0x69, 0x61, 0x00,   \\ - - - - v i a -
+    0x00, 0x00, 0x07, 0x77, 0x61, 0x72, 0x6e, 0x69,   \\ - - - w a r n i
+    0x6e, 0x67, 0x00, 0x00, 0x00, 0x10, 0x77, 0x77,   \\ n g - - - - w w
+    0x77, 0x2d, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e,   \\ w - a u t h e n
+    0x74, 0x69, 0x63, 0x61, 0x74, 0x65, 0x00, 0x00,   \\ t i c a t e - -
+    0x00, 0x06, 0x6d, 0x65, 0x74, 0x68, 0x6f, 0x64,   \\ - - m e t h o d
+    0x00, 0x00, 0x00, 0x03, 0x67, 0x65, 0x74, 0x00,   \\ - - - - g e t -
+    0x00, 0x00, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75,   \\ - - - s t a t u
+    0x73, 0x00, 0x00, 0x00, 0x06, 0x32, 0x30, 0x30,   \\ s - - - - 2 0 0
+    0x20, 0x4f, 0x4b, 0x00, 0x00, 0x00, 0x07, 0x76,   \\ - O K - - - - v
+    0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00,   \\ e r s i o n - -
+    0x00, 0x08, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31,   \\ - - H T T P - 1
+    0x2e, 0x31, 0x00, 0x00, 0x00, 0x03, 0x75, 0x72,   \\ - 1 - - - - u r
+    0x6c, 0x00, 0x00, 0x00, 0x06, 0x70, 0x75, 0x62,   \\ l - - - - p u b
+    0x6c, 0x69, 0x63, 0x00, 0x00, 0x00, 0x0a, 0x73,   \\ l i c - - - - s
+    0x65, 0x74, 0x2d, 0x63, 0x6f, 0x6f, 0x6b, 0x69,   \\ e t - c o o k i
+    0x65, 0x00, 0x00, 0x00, 0x0a, 0x6b, 0x65, 0x65,   \\ e - - - - k e e
+    0x70, 0x2d, 0x61, 0x6c, 0x69, 0x76, 0x65, 0x00,   \\ p - a l i v e -
+    0x00, 0x00, 0x06, 0x6f, 0x72, 0x69, 0x67, 0x69,   \\ - - - o r i g i
+    0x6e, 0x31, 0x30, 0x30, 0x31, 0x30, 0x31, 0x32,   \\ n 1 0 0 1 0 1 2
+    0x30, 0x31, 0x32, 0x30, 0x32, 0x32, 0x30, 0x35,   \\ 0 1 2 0 2 2 0 5
+    0x32, 0x30, 0x36, 0x33, 0x30, 0x30, 0x33, 0x30,   \\ 2 0 6 3 0 0 3 0
+    0x32, 0x33, 0x30, 0x33, 0x33, 0x30, 0x34, 0x33,   \\ 2 3 0 3 3 0 4 3
+    0x30, 0x35, 0x33, 0x30, 0x36, 0x33, 0x30, 0x37,   \\ 0 5 3 0 6 3 0 7
+    0x34, 0x30, 0x32, 0x34, 0x30, 0x35, 0x34, 0x30,   \\ 4 0 2 4 0 5 4 0
+    0x36, 0x34, 0x30, 0x37, 0x34, 0x30, 0x38, 0x34,   \\ 6 4 0 7 4 0 8 4
+    0x30, 0x39, 0x34, 0x31, 0x30, 0x34, 0x31, 0x31,   \\ 0 9 4 1 0 4 1 1
+    0x34, 0x31, 0x32, 0x34, 0x31, 0x33, 0x34, 0x31,   \\ 4 1 2 4 1 3 4 1
+    0x34, 0x34, 0x31, 0x35, 0x34, 0x31, 0x36, 0x34,   \\ 4 4 1 5 4 1 6 4
+    0x31, 0x37, 0x35, 0x30, 0x32, 0x35, 0x30, 0x34,   \\ 1 7 5 0 2 5 0 4
+    0x35, 0x30, 0x35, 0x32, 0x30, 0x33, 0x20, 0x4e,   \\ 5 0 5 2 0 3 - N
+    0x6f, 0x6e, 0x2d, 0x41, 0x75, 0x74, 0x68, 0x6f,   \\ o n - A u t h o
+    0x72, 0x69, 0x74, 0x61, 0x74, 0x69, 0x76, 0x65,   \\ r i t a t i v e
+    0x20, 0x49, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61,   \\ - I n f o r m a
+    0x74, 0x69, 0x6f, 0x6e, 0x32, 0x30, 0x34, 0x20,   \\ t i o n 2 0 4 -
+    0x4e, 0x6f, 0x20, 0x43, 0x6f, 0x6e, 0x74, 0x65,   \\ N o - C o n t e
+    0x6e, 0x74, 0x33, 0x30, 0x31, 0x20, 0x4d, 0x6f,   \\ n t 3 0 1 - M o
+    0x76, 0x65, 0x64, 0x20, 0x50, 0x65, 0x72, 0x6d,   \\ v e d - P e r m
+    0x61, 0x6e, 0x65, 0x6e, 0x74, 0x6c, 0x79, 0x34,   \\ a n e n t l y 4
+    0x30, 0x30, 0x20, 0x42, 0x61, 0x64, 0x20, 0x52,   \\ 0 0 - B a d - R
+    0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x34, 0x30,   \\ e q u e s t 4 0
+    0x31, 0x20, 0x55, 0x6e, 0x61, 0x75, 0x74, 0x68,   \\ 1 - U n a u t h
+    0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x34, 0x30,   \\ o r i z e d 4 0
+    0x33, 0x20, 0x46, 0x6f, 0x72, 0x62, 0x69, 0x64,   \\ 3 - F o r b i d
+    0x64, 0x65, 0x6e, 0x34, 0x30, 0x34, 0x20, 0x4e,   \\ d e n 4 0 4 - N
+    0x6f, 0x74, 0x20, 0x46, 0x6f, 0x75, 0x6e, 0x64,   \\ o t - F o u n d
+    0x35, 0x30, 0x30, 0x20, 0x49, 0x6e, 0x74, 0x65,   \\ 5 0 0 - I n t e
+    0x72, 0x6e, 0x61, 0x6c, 0x20, 0x53, 0x65, 0x72,   \\ r n a l - S e r
+    0x76, 0x65, 0x72, 0x20, 0x45, 0x72, 0x72, 0x6f,   \\ v e r - E r r o
+    0x72, 0x35, 0x30, 0x31, 0x20, 0x4e, 0x6f, 0x74,   \\ r 5 0 1 - N o t
+    0x20, 0x49, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65,   \\ - I m p l e m e
+    0x6e, 0x74, 0x65, 0x64, 0x35, 0x30, 0x33, 0x20,   \\ n t e d 5 0 3 -
+    0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x20,   \\ S e r v i c e -
+    0x55, 0x6e, 0x61, 0x76, 0x61, 0x69, 0x6c, 0x61,   \\ U n a v a i l a
+    0x62, 0x6c, 0x65, 0x4a, 0x61, 0x6e, 0x20, 0x46,   \\ b l e J a n - F
+    0x65, 0x62, 0x20, 0x4d, 0x61, 0x72, 0x20, 0x41,   \\ e b - M a r - A
+    0x70, 0x72, 0x20, 0x4d, 0x61, 0x79, 0x20, 0x4a,   \\ p r - M a y - J
+    0x75, 0x6e, 0x20, 0x4a, 0x75, 0x6c, 0x20, 0x41,   \\ u n - J u l - A
+    0x75, 0x67, 0x20, 0x53, 0x65, 0x70, 0x74, 0x20,   \\ u g - S e p t -
+    0x4f, 0x63, 0x74, 0x20, 0x4e, 0x6f, 0x76, 0x20,   \\ O c t - N o v -
+    0x44, 0x65, 0x63, 0x20, 0x30, 0x30, 0x3a, 0x30,   \\ D e c - 0 0 - 0
+    0x30, 0x3a, 0x30, 0x30, 0x20, 0x4d, 0x6f, 0x6e,   \\ 0 - 0 0 - M o n
+    0x2c, 0x20, 0x54, 0x75, 0x65, 0x2c, 0x20, 0x57,   \\ - - T u e - - W
+    0x65, 0x64, 0x2c, 0x20, 0x54, 0x68, 0x75, 0x2c,   \\ e d - - T h u -
+    0x20, 0x46, 0x72, 0x69, 0x2c, 0x20, 0x53, 0x61,   \\ - F r i - - S a
+    0x74, 0x2c, 0x20, 0x53, 0x75, 0x6e, 0x2c, 0x20,   \\ t - - S u n - -
+    0x47, 0x4d, 0x54, 0x63, 0x68, 0x75, 0x6e, 0x6b,   \\ G M T c h u n k
+    0x65, 0x64, 0x2c, 0x74, 0x65, 0x78, 0x74, 0x2f,   \\ e d - t e x t -
+    0x68, 0x74, 0x6d, 0x6c, 0x2c, 0x69, 0x6d, 0x61,   \\ h t m l - i m a
+    0x67, 0x65, 0x2f, 0x70, 0x6e, 0x67, 0x2c, 0x69,   \\ g e - p n g - i
+    0x6d, 0x61, 0x67, 0x65, 0x2f, 0x6a, 0x70, 0x67,   \\ m a g e - j p g
+    0x2c, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2f, 0x67,   \\ - i m a g e - g
+    0x69, 0x66, 0x2c, 0x61, 0x70, 0x70, 0x6c, 0x69,   \\ i f - a p p l i
+    0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x78,   \\ c a t i o n - x
+    0x6d, 0x6c, 0x2c, 0x61, 0x70, 0x70, 0x6c, 0x69,   \\ m l - a p p l i
+    0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x78,   \\ c a t i o n - x
+    0x68, 0x74, 0x6d, 0x6c, 0x2b, 0x78, 0x6d, 0x6c,   \\ h t m l - x m l
+    0x2c, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x70, 0x6c,   \\ - t e x t - p l
+    0x61, 0x69, 0x6e, 0x2c, 0x74, 0x65, 0x78, 0x74,   \\ a i n - t e x t
+    0x2f, 0x6a, 0x61, 0x76, 0x61, 0x73, 0x63, 0x72,   \\ - j a v a s c r
+    0x69, 0x70, 0x74, 0x2c, 0x70, 0x75, 0x62, 0x6c,   \\ i p t - p u b l
+    0x69, 0x63, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74,   \\ i c p r i v a t
+    0x65, 0x6d, 0x61, 0x78, 0x2d, 0x61, 0x67, 0x65,   \\ e m a x - a g e
+    0x3d, 0x67, 0x7a, 0x69, 0x70, 0x2c, 0x64, 0x65,   \\ - g z i p - d e
+    0x66, 0x6c, 0x61, 0x74, 0x65, 0x2c, 0x73, 0x64,   \\ f l a t e - s d
+    0x63, 0x68, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65,   \\ c h c h a r s e
+    0x74, 0x3d, 0x75, 0x74, 0x66, 0x2d, 0x38, 0x63,   \\ t - u t f - 8 c
+    0x68, 0x61, 0x72, 0x73, 0x65, 0x74, 0x3d, 0x69,   \\ h a r s e t - i
+    0x73, 0x6f, 0x2d, 0x38, 0x38, 0x35, 0x39, 0x2d,   \\ s o - 8 8 5 9 -
+    0x31, 0x2c, 0x75, 0x74, 0x66, 0x2d, 0x2c, 0x2a,   \\ 1 - u t f - - -
+    0x2c, 0x65, 0x6e, 0x71, 0x3d, 0x30, 0x2e          \\ - e n q - 0 -
+};
+</code></pre>
+
+<p>键/值头部块的全部内容使用zlib压缩。在一个SPDY连接中一个方向上的所有键值对使用单个zlib流。SPDY在每个被压缩的帧之间使用SYNC_FLUSH。</p>
+
+<p>实现者注意：压缩引擎可以按照喜好调节速度或大小。优化大小会增加内存使用和CPU消耗。因为头部块通常很小，实现者可以减少压缩引擎的窗口大小从15位（32KB窗口）差不多到11位（2KB窗口）。精确的设置被压缩者选择，解压者可以在任何设置下工作。</p>
+
+<h1>3 SPDY上的HTTP层</h1>
+
+<p>SPDY尽可能的兼容现有的WEB应用。也就是说，业务逻辑、应用API、以及HTTP的特性都没有改变。为了做到这一点，所有应用请求和响应头的语义被保留，尽管传输这些语义的语法改变了。因此，下面的章节介绍<a href="http://www.ietf.org/rfc/rfc4559.txt" title="RFC2616">HTTP/1.1 RFC2616</a>规则运用的改变。</p>
+
+<h2>3.1 连接管理</h2>
+
+<p>客户端不应该并发的打开多于一个SPDY会话到一个源。
+注意，当SPDY会话开始时，可能还有正在结束的SPDY会话（例如，GOAWAY消息被发送，但不是所有的流都结束了）。</p>
+
+<h3>3.1.1 使用GOAWAY</h3>
+
+<p>SPDY提供了GOAWAY消息能用来从服务端或者客户端关闭一个连接。没有服务端GOAWAY，HTTP就会存在冲突，比如当客户端发送一个请求（一个新的SYN_STREAM）时恰好服务端关闭连接，并且客户端不知道服务端收到这个流没有。这时服务端在GOAWAY中使用last-stream-id就能指定客户端的请求处理没有。</p>
+
+<p>注意，有些服务器在发送GOAWAY之后立即终止连接且不等待活动的流结束。SPDY流是否关闭由客户端决定。这个生硬的终止迫使客户端判断是否重发这些请求。即使服务端没有发送GOAWAY，客户端也需要兼容这种情况，因为连接有可能意外终止。</p>
+
+<p>更多复杂一些的服务器使用GOAWAY实现优雅的卸载。他们发送GOAWAY并且在连接钟之前提供一些时间让活动的流结束。</p>
+
+<p>如果SPDY客户端关闭连接，它需要发送GOAWAY消息。这可以让服务端知道服务端推送的流客户端收到没有。</p>
+
+<p>如果一端关闭连接时没有收到任何SYN_STREAM，GOAWAY的last-stream-id是0。</p>
+
+<h2>3.2 HTTP请求/响应</h2>
+
+<h3>3.2.1 请求</h3>
+
+<p>客户端发送SYN_STREAM帧初始化请求。如果这个请求不包含HTTP body，SYN_STREAM必须设置FLAG_FIN，用来指定客户端不准备在这个流上发送body。如果请求包含body，SYN_STREAM不能设置FLAG_FIN，并且body在SYN_STREAM之后的一系列数据帧中。最后的数据帧要设置FLAG_FIN来指定body传送结束。</p>
+
+<p>SYN_STREAM键/值头部块包含所有和HTTP请求相关的HTTP头。SPDY的头部块几乎和现在的HTTP头部块相同，但有如下改变：</p>
+
+<ul>
+<li>HTTP request line必须像其他HTTP头部一样展开到键/值对里：
+
+<ul>
+<li>":method" - 这个请求的HTTP method（例如，"GET"， "POST"， "HEAD"，等）</li>
+<li>":path" - "/"开头的url路径。（参见，<a href="http://www.ietf.org/rfc/rfc3986.txt" title="RFC3986">RFC3986</a>）。例如："http://www.google.com/search?q=dogs"的路径是"/search?q=dogs"。</li>
+<li>":version" - HTTP版本号。（例如，"HTTP/1.1"）</li>
+</ul>
+</li>
+<li>另外，下面两个键/值对必须出现在每个请求里：
+
+<ul>
+<li>":host" - 主机和端口（参见，<a href="http://www.ietf.org/rfc/rfc1738.txt" title="RFC1738">RFC1738</a>）（例如： "www.google.com:1234"）。这个头和HTTP "Host"相同。</li>
+<li>":scheme" - URL的模式部分。（例如："https"）</li>
+</ul>
+</li>
+<li>头部名所有的都小写。</li>
+<li>Connection，Host，Keep-Alive，Proxy-Connection，以及Transfer-Encoding是无效的且不能被发送。</li>
+<li>用户代理必须支持gzip压缩。不管用户代理是否发送Accept-Encoding，服务端总是可以发送gzip或者deflate编码的内容。</li>
+<li>如果服务端收到一个请求发送的数据帧长度之和不等于Content-Length头部的值，服务端必须返回400（Bad Request）错误。</li>
+<li>POST细节改变：
+
+<ul>
+<li>尽管POST是分块的，POST也应该包含Content-Length头部。这有两个原因：首先，它能协助提供上传进度来改善用户体验。另外，我们知道早起的SPDY版本未能发送Congtent-Length头部和许多HTTP服务器实现不兼容。现有的一些用户代理不能忽略Content-Length头，所以服务端实现取决于此。</li>
+</ul>
+</li>
+</ul>
+
+
+<p>用户代理可以自由的选择它认为合适的请求优先级。如果用户代理接收一个资源没有进展，它可以尝试去提升那个资源的优先级。图像资源，通常使用最低优先级。</p>
+
+<p>如果客户端发送SYN_STREAM没有如下头：method，host，path，scheme，以及version，服务端必须回复HTTP 400 Bad Request状态码。</p>
+
+<h3>3.2.2 响应</h3>
+
+<p>服务端用SYN_REPLY帧响应客户端请求。相对客户端的上传流，服务端在SYN_REPLY帧之后发送一系列数据帧，并且最后一个数据帧包含FLAG_FIN指定成功的流的末尾。如果响应（比如202或204）不包含body，SYN_REPLY可以包含FLAG_FIN标识表示将来这个流上没有数据要传输。</p>
+
+<ul>
+<li>response status line必须像其他HTTP头部那样展开到键/值对里：
+
+<ul>
+<li>":status" - HTTP响应状态码（例如，"200"或"200 OK"）</li>
+<li>":version" - HTTP响应版本（例如，"HTTP/1.1"）</li>
+</ul>
+</li>
+<li>所有头的名字必须小写。</li>
+<li>Connection，Keep-Alive，Proxy-Connection，和Transfer-Encoding头是无效的且不能被发送。</li>
+<li>响应可以包含Content-Length头给目标提示。（例如，UI进度条）。</li>
+<li>如果客户端收到的响应数据帧长度之和不等于Content-Length头的值，客户端必须忽略Content-Length头。</li>
+<li>如果客户端收到SYN_REPLY没有status或version头，客户端必须回复一个RST_STREAM帧表示PROTOCOL ERROR。</li>
+</ul>
+
+
+<h3>3.2.3 认证</h3>
+
+<p>当客户端给一个需要认证的服务器源发送请求，服务器可以回复一个"401 Unauthorized"响应，并且包含WWW-Authenticate头定义被使用的认证模式。客户端使用Authorization头指定的认证模式重试请求。</p>
+
+<p>有四个选项给代理认证，Basic，Digest，NTLM和Negotiate（SPNEGO）。前两个选项被定义在<a href="http://www.ietf.org/rfc/rfc2617.txt" title="RFC2617">RFC2617</a>里，并且是无状态的。后两个选项由微软开发并且定义在<a href="http://www.ietf.org/rfc/rfc4559.txt" title="RFC4559">RFC4559</a>，并且是有状态的；其他已知的还有 multi-round authentication 或 connection authentication。</p>
+
+<h4>3.2.3.1 无状态认证</h4>
+
+<p>SPDY上的无状态认证和HTTP的执行方式相同。如果多个SPDY流并发的发到单个服务器，每个认证是独立的，和两个HTTP连接独立的认证到一个代理服务器相似。</p>
+
+<h4>3.2.3.2 有状态认证</h4>
+
+<p>不幸的是，有状态认证机制被实现和定义成这样直接违反了<a href="http://www.ietf.org/rfc/rfc2617.txt" title="RFC2617">RFC2617</a> - 他们不包含“realm”作为请求的一部分。在SPDY中这是有问题的，因为客户端不可能消除两个并发的服务器认证模式的歧义。</p>
+
+<p>要处理这种情况，SPDY服务器使用有状态认证必须实现下面两个改变中的一个：</p>
+
+<ul>
+<li>服务器可以增加一个“realm=<desired realm>”头，以便两个认证请求可以消除歧义并且并发的运行。不幸的是，怎样让这个机制工作，有些不现实。</li>
+<li>根据发送的首个有状态认证模式响应，服务端必须缓冲并推迟所有以后不属于完成认证模式部分的帧知道认证模式完成。完成认证模式可能要许多个来回。一旦客户端收到一个有状态认证类型的“401 Authenticate”响应，它必须停止发送新的请求到服务端，直到认证完成并且至少在一个流上收到一个非401响应。</li>
+</ul>
+
+
+<h2>3.3 服务端推送处理</h2>
+
+<p>SPDY支持服务端发送多个回复给客户端单个请求。这个特性的合理性在于有时服务端知道它需要发送多个资源响应单个请求。没有服务端推送特性，客户端必须首次下载主要资源，然后发现更多资源时再次请求他们。推送资源避免了多个往返间的延迟，但是也造成了潜在的冲突，比如在用户代理正在处理请求时服务端能推送内容。以下的机制视图预防冲突当启用时对性能是有好处的。</p>
+
+<p>浏览器收到一个被推送的响应必须验证那个服务器是被授权的，推送的URL使用浏览器同源策略<a href="http://www.ietf.org/rfc/RFC6454.txt" title="RFC6454">RFC6454</a>。例如，一个SPDY连接到www.foo.com一般不允许从www.evil.com推送响应。</p>
+
+<p>如果浏览器接收了一个被推送的响应（例如，它没有发送RST_STREAM），浏览器必须尝试缓存被推送的响应，和它将缓存其他响应的方法相同。这意味着响应头中插入了有效的缓存头。</p>
+
+<p>因为被推送的响应没有请求，他们没有相关的请求头。在帧层，SPDY推送流包含一个“associated-stream-id”指定推送的流和哪个请求相关。被推送的流继承了“associated-stream-id”的所有头部，“:host”，“:scheme”和“:path”例外，他们作为被推送的响应流的头部的一部分。浏览器必须存储这些被继承的隐式请求头以及被缓存的资源。</p>
+
+<p>实现者注意：服务端推送，理论上服务端可能不合理的向用户代理推送资源。浏览器必须实现流量控制保护不合理的推送攻击。</p>
+
+<h3>3.3.1 服务端实现</h3>
+
+<p>当服务端准备推送资源到用户代理，它打开新的流发送一个单项SYN_STREAM。SYN_STREAM必须包含Associated-To-Stream-ID，并且必须设置FLAG_UNIDIRECTIONAL标识。SYN_STREAM必须包含“:scheme”，“:host”，“:path”头，表示推送资源的URL。随后的头允许在跟随的HEADERS帧里。关联流的目的是便于用户代理区分被推送的流是和哪个请求相关的；没有关联的话，如果用户代理同一个页面有两个打开的tab，在一个固定的URL下每个都推送唯一的内容，用户代理将不能区别推送的内容是和哪个请求相关的。</p>
+
+<p>Associated-To-Stream-ID必须是一个在打开的流里已经存在的ID。这个限制的原因是推送内容的端点是明确的。如果用户代理在流11上请求一个资源，服务端也必须在流11上响应。在发送FLAG_FIN之前服务端能推送任意数量的流在流11上。无论如何，一旦原始流被关闭未来不能有任何推送流关联它。在原始流关闭前，被推送的流不需要关闭（设置FIN），在原始流关闭前它们只需要被创建。</p>
+
+<p>服务端推送资源的Associated-To-Stream-ID设置为0是非法的。</p>
+
+<p>要让客户端冲突最小化，用SYN_STREAM推送的资源必须在客户端请求它之前发送。服务端只能在GET请返回后推送资源。</p>
+
+<p>注意：如果服务端在推送资源的时候没有包含全部可用的键/值头，它可以在之后使用另外的HEADERS帧增加和推送的流相关的键/值头。之后的HEADERS帧不能包括“:host”，“:scheme”，或“:path”（例如，服务端不能改变被推送资源的id）。HEADERS帧不能包含和之前头里重复的头部信息。服务端必须在发送任何数据帧之前发送一个包含scheme/host/port的头。</p>
+
+<h3>3.2.2 客户端实现</h3>
+
+<p>客户端获取资源时有三种可能性：</p>
+
+<ul>
+<li>资源还没被推送</li>
+<li>资源已经被推送了，但数据还没收到。</li>
+<li>资源已经被推送了，并且数据已经开始接收。</li>
+</ul>
+
+
+<p>当收到一个包含Associated-To-Stream-ID的SYN_STREAM和HEADERS帧时，客户端不能向被推送的资源发送GET请求，并且要等待被推送的流抵达。</p>
+
+<p>如果客户端收到一个服务端推送的流的id是0，它必须发送一个带着PROTOCOL_ERROR状态码的会话错误（参见2.4.1节）。</p>
+
+<p>当客户端从服务端收到一个SYN_STREAM的头里没有“:host”，“:scheme”，和“:path”，它必须响应一个带着HTTP_PROTOCOL_ERROR状态码的RST_STREAM。</p>
+
+<p>要取消个别的服务端推送流，客户端能发送一个带着CANCEL错误码的流（参见2.4.2节）。收到上述错误码，服务端必须立刻停止发送这个流（这是一个生硬的终止）。</p>
+
+<p>要取消和一个请求相关的所有服务端推送流，客户端可以在associated-stream-id上发送一个带着CANCEL状态码（参见2.4.2节）的流错误去取消那个流，服务端必须立刻停止正在发送和原始流相关的帧。</p>
+
+<p>如果服务端在同一个流里发送的HEADER帧和之前的HEADERS帧有相同的头，客户端必须发送一个带着PROTOCOL ERROR错误码的流错误（参见2.4.2节）。</p>
+
+<p>如果服务端在同一个流里发送数据帧之后发送一个HEADERS帧，客户端可以忽略HEADERS帧。忽略数据帧之后的HEADERS帧会阻止处理HTTP的<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40" title="Trailer">Trailer</a>头。</p>
+
+<h1>4 设计原理和说明</h1>
+
+<p>作者的声明：这节中的这些说明和SPDY协议无关，并且这些说明没有一个是关于协议怎样工作的权威说明。无论如何，这些说明可以提供一些有用的特性来探讨关于如何解决协议中的歧义或者协议以后怎样改进。他们可能在最终草案前被删除。</p>
+
+<h2>4.1 分离帧层和应用层</h2>
+
+<p>读者可能注意到这个说明书有时融合了帧层（第2节）和一个特定的应用层-HTTP（第3节）。这反应在流的请求/响应特性，HEADERS的定义和压缩上下文和HTTP也非常类似，其他的地方也是如此。</p>
+
+<p>这样的融合是有意为之 - 这个协议的主要目标是为HTTP创建一个低延迟协议。分为两个层是为了方便描述SPDY协议和HTTP之间的关系。无论如何，SPDY帧层的重用能力不是我们的目标。</p>
+
+<h2>4.2 帧层错误处理</h2>
+
+<p>SPDY层的错误处理分两种类型：一些只影响独立的SPDY流，另外一些则不是。</p>
+
+<p>当错误边界在单个流的流里，但其他的帧是正常的，SPDY尝试使用RST_STREAM作为一种是这个流无效但整个连接不会终止的机制。</p>
+
+<p>错误发生在单个流的上下文之外，SPDY假设整个会话失效。这种情况下，检测到错误的一端应该关闭连接。</p>
+
+<h2>4.3 每个域一个连接</h2>
+
+<p>SPDY尝试使用比其他传统协议更少的连接。这样做的原因是当客户端通过多个通道连接到服务端时很难提供一致的服务水平（例如：TCP慢启动），优先级或压缩优化特性。</p>
+
+<p>通过实验测试，我们发现客户端使用更少的连接对减少延迟有好处。SPDY发送的所有数据包比HTTP少40%。服务端处理大量的并发连接会带来伸缩性问题，SPDY则降低了负载。</p>
+
+<p>无论如何，使用多个连接是没好处的。因为SPDY支持IO多路复用，多个独立的流都在一个传输层上，传输层的对头阻塞问题会对它数据传输造成影响。到目前为止的测试中发现，对头阻塞（尤其是丢包的情况下）的负面影响超过了压缩和优先级带来的好处。</p>
+
+<h2>4.4 固定 vs 可变 长度域</h2>
+
+<p>SPDY喜欢在一些小数据上使用32位固定长度域，变长编码也能被使用。虽然这看起来浪费了带宽，但SPDY选择让编码实现更简单。</p>
+
+<p>SPDY的目标是降低网络延迟。SPDY帧的开销通常非常低。平均每传输1452字节的数据仅仅8字节的开销（越0.6%）。目前，宽带网络已经很普及了，并且将来带宽会越来越大。世界范围内平均带宽是1Mbps，假定变长编码能降低50%的开销，使用变长编码能让延迟保持在100纳秒以内。更有趣的是，这影响到一些需要分成多次传输的大包。然而，通过SPDY和TCP交互的其他方面，我们相信完全可以减轻这种影响。</p>
+
+<h2>4.5 压缩上下文</h2>
+
+<p>当和多个源通信时，我们有几个选择来隔离压缩上下文。我们能维护一个压缩上下文的map（或list）用于每个源。最基本的情况是很容易的 - 每个HEADERS需要识别用于那个帧的上下文。无论如何，压缩上下文开销不小，所以要限制每个上下文的生命周期。对于代理服务器，会产生很多上下文，这点我们要关注。我们可以考虑一组静态的上下文，比如16个，来限制内存使用。我们也可以考虑动态上下文，它可以动态创建，使用之后再销毁。上述方案都很复杂，有很多问题需要解决。</p>
+
+<p>另外，我们还可以选择一个简单的方法，我们简单的提供一个标识用来重置压缩上下文。通常情况下（非代理），这是不错的，因为请求是同源的，我们不需要重置上下文。当我们在一个SPDY会话中使用两个不同的源时，我们在每次转换间重置压缩状态。</p>
+
+<h2>4.6 单相流</h2>
+
+<p>许多读者告诉我们单相流的概念有点儿混乱并且有些多余。如果流的接受者不希望发送数据，它可以简单的发送一个带着FLAG_FIN标识的SYN_REPLY。FLAG_UNIDIRECTIONAL作用也是相同的，所以它不是必须的。</p>
+
+<p>的确我们不需要UNIDIRECTIONAL标识。增加它是因为它避免了推送流的接受者发送一些空帧（例如，带着FLAG_FIN标识的SYN_STREAM）。</p>
+
+<h2>4.7 数据压缩</h2>
+
+<p>通常流的数据部分的压缩（相对于头部压缩）在不知道内容的情况下是多余的。在已经压缩的流中已经没有值可以被压缩了。因此，SPDY允许数据压缩是可选的。我们包含它是因为经研究现存的网站中许多网站没有使用压缩，由此影响了用户体验。在SPDY层，我们需要一种机制，站长可以简单的选择强制压缩 - 在二次压缩比不压缩好的情况下。</p>
+
+<p>总体而言，这个特性是可选的并且有时是多余的，我们不清楚它是否有用。我们从规范中把它去掉了。</p>
+
+<h2>4.8 服务端推</h2>
+
+<p>一个微妙但重要的点是，服务端推送流必须在被关联的流关闭前声明。这么做的原因是可以让代理丢弃之前的活动的流的信息。如果被推送的流可以关联到一个已经关闭的流，两端就不知道流的明确的生命周期。</p>
+
+<h1>5 安全上的考虑</h1>
+
+<h2>5.1 使用同源约束</h2>
+
+<p>所有的内容都要使用<a href="http://www.ietf.org/rfc/rfc6454.txt" title="RFC6454">同源策略</a>进行验证。</p>
+
+<h2>5.2 HTTP头和SPDY头</h2>
+
+<p>在应用层，HTTP在他的头部里使用键/值对。因为SPDY合并已存在的HTTP头和SPDY头，在某些情况下有些HTTP应用使用特别的头名。为了避免冲突，所有在SPDY层之上的HTTP头需要加上":"。前缀，":"在HTTP头里是无效的，因此能避免冲突。</p>
+
+<h2>5.3 跨协议攻击</h2>
+
+<p>利用TLS，我们相信SPDY没有引入新的跨协议攻击。TLS加密所有传输的内容（除了握手时），攻击者想要使用跨协议攻击控制数据是很困难的。</p>
+
+<h2>5.4 服务端推送隐含的头</h2>
+
+<p>被推送的资源没有一个相关的请求。然而，为了让现有的HTTP缓存验证（例如VERY头）工作，所有被缓存的资源必须有一组请求头。出于这个原因，浏览器必须小心的从推送资源相关的流继承请求头。这包括"Cookie"头。</p>
+
+<h1>6 隐私上的考虑</h1>
+
+<h2>6.1 长连接</h2>
+
+<p>当用户发请求时为了降低延迟SPDY客户端和服务端保持连接长时间打开。长时间的维护这些连接会暴露隐私信息。比如，一个用户使用一小时后停止使用，后面的用户可能知道之前的用户的做了些什么。然而，这个问题在HTTP会好点儿，短生命周期的连接会减小这个风险。</p>
+
+<h2>6.2 SETTINGS帧</h2>
+
+<p>SPDY SETTINGS帧允许存储有关客户端和服务端间通信的带外信息。尽管它是仅仅用于减少延迟，但居心不良的服务器能用这种机制让客户端存储标识信息。</p>
+
+<p>客户端实现隐私模式，比如Google Chrome的"匿名模式"，可以禁用客户端持久存储SETTINGS。
+当客户端清除cookie时SETTINGS也应该被清除。</p>
+
+<p>TODO：可以给每种设置限制一个最大值防止不恰当的使用。</p>
+
+<h1>7 和SPDYv2不兼容的地方</h1>
+
+<p>下面时这个草案和v2主要不同的列表。</p>
+
+<ul>
+<li>增加了流量控制</li>
+<li>SYN_STREAM和SYN_REPLY的长度域从16位增加到32位。</li>
+<li>改变了DATA帧压缩的定义</li>
+<li>更新了压缩字典</li>
+<li>修复了头部字典偏差</li>
+<li>优先级域从2位增加到3位</li>
+<li>移除NOOP帧</li>
+<li>分离"url"到"scheme", "host"和"path"</li>
+<li>POST必须包含Content-Length</li>
+<li>SYN_REPLY和HEADERS帧的尾部移除16位未使用的空间</li>
+<li>修复bug：优先级描述反了（0是最低不是最高）</li>
+<li>修复bug：键/值对在键值头部块和帧里重复。</li>
+</ul>
+
+
+<h1>8 必要标记</h1>
+
+<p>文档中的"MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", 和 "OPTIONAL" 关键词的解释可参见<a href="http://www.ietf.org/rfc/rfc2119.txt%20%22RFC2119%22%E2%80%8B">RFC2119</a></p>
+
+<h1>9 鸣谢</h1>
+
+<p>许多人给SPDY的设计和改进做出了贡献：Adam Langley, Wan-Teh Chang, Jim Morrison, Mark Nottingham, Alyssa Wilk, Costin Manolache, William Chan, Vitaliy Lvin, Joe Chan, Adam Barth, Ryan Hamilton, Gavin Peters, Kent Alstad, Kevin Lindsay, Paul Amer, Fan Yang, Jonathan Leighton</p>
+
+<h1>10 规范引用</h1>
+
+<p><strong><em>TLSNPN</em></strong> Langley, A. , <a href="http://tools.ietf.org/html/draft-agl-tls-nextprotoneg-01" title="TLSNPN">“TLS Next Protocol Negotiation”</a></p>
+
+<p><strong><em>ASCII</em></strong> US-ASCII. Coded Character Set - 7-Bit American Standard Code for Information Interchange. Standard ANSI X3.4-1986, ANSI, 1986..</p>
+
+<p><strong><em>UDELCOMPRESSION</em></strong>   Yang, F., Amer, P., and J. Leighton, <a href="http://www.eecis.udel.edu/~amer/PEL/poc/pdf/SPDY-Fan.pdf" title="Zlib">“A Methodology to Derive SPDY’s Initial Dictionary for Zlib Compression”</a>.</p>
+
+<h1>11 勘误</h1>
+
+<h1>12 作者地址</h1>
+
+<p><strong><em>Mike Belshe Twist</em></strong> EMail: <a href="&#109;&#x61;&#105;&#108;&#x74;&#111;&#x3a;&#109;&#98;&#101;&#x6c;&#x73;&#104;&#101;&#x40;&#x63;&#x68;&#114;&#111;&#109;&#x69;&#x75;&#x6d;&#46;&#111;&#x72;&#103;">&#x6d;&#98;&#101;&#108;&#115;&#x68;&#101;&#64;&#x63;&#104;&#x72;&#x6f;&#109;&#105;&#117;&#x6d;&#46;&#111;&#114;&#103;</a><br/>
+<strong><em>Roberto Peon Google</em></strong>, Inc EMail: <a href="&#109;&#97;&#105;&#108;&#116;&#x6f;&#x3a;&#102;&#x65;&#x6e;&#105;&#x78;&#x40;&#103;&#x6f;&#x6f;&#103;&#x6c;&#x65;&#x2e;&#x63;&#111;&#109;">&#x66;&#101;&#110;&#105;&#x78;&#x40;&#x67;&#x6f;&#x6f;&#x67;&#x6c;&#x65;&#x2e;&#x63;&#x6f;&#x6d;</a></p>
+
+<h1>译者地址</h1>
+
+<p><strong><em>邱鹏滔</em></strong> EMail：<a href="&#109;&#97;&#x69;&#x6c;&#x74;&#111;&#58;&#57;&#53;&#x33;&#x35;&#x30;&#53;&#x33;&#x30;&#x40;&#113;&#x71;&#46;&#x63;&#111;&#x6d;">&#57;&#x35;&#51;&#x35;&#x30;&#53;&#51;&#48;&#x40;&#x71;&#113;&#x2e;&#99;&#x6f;&#x6d;</a></p>
+
+<h1>版权声明</h1>
+
+<ol>
+<li>本翻译工作完全基于个人兴趣爱好以及学术研究目的，不涉及出版或任何其他商业行为。本次翻译与Google无关，译文是非官方的翻译。</li>
+<li>根据我国著作权法第22条规定，以教学、科研为目的，可以不经著作权人许可翻译其已经发表的作品，不向其支付报酬，但应当指明作者姓名、作品名称，且不得出版发行。因此本译文的传播，必须严格控制在学习与科学研究范围内，任何人未经原文作者和译者同意，不得将译文的全部或部分用于出版或其他商业行为。</li>
+<li>在符合第2条的前提下，任何人都可任意方式传播、使用本译文的部分或全部内容，无须预先知会译者，只要保留作、译者联系信息即可。如果需要进行商业使用，则必须得到原作者和译者的授权。</li>
+</ol>
+
+</body>
+</html>
