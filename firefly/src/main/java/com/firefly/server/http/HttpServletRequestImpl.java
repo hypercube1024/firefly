@@ -100,9 +100,9 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 		if (!loadParam) {
 			try {
 				loadParam(queryString);
-				if (method.equals("POST")
-						&& "application/x-www-form-urlencoded"
-								.equals(getContentType())) {
+				
+				String contentType = getContentType();
+				if (method.equals("POST") && contentType != null && contentType.startsWith("application/x-www-form-urlencoded")) {
 					int contentLength = getContentLength();
 					byte[] data = new byte[contentLength];
 					byte[] buf = new byte[1024];
