@@ -1,6 +1,7 @@
 package com.firefly.template.view;
 
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 import com.firefly.template.Config;
 import com.firefly.template.Model;
@@ -18,6 +19,16 @@ public abstract class AbstractView implements View {
 		} catch (Throwable t) {
 			Config.LOG.error("view render error", t);
 		}
+	}
+	
+	public static byte[] str2Byte(String str, String charset) {
+		byte[] ret = null;
+		try {
+			ret = str.getBytes(charset);
+		} catch (UnsupportedEncodingException e) {
+			Config.LOG.error("write text error", e);
+		}
+		return ret;
 	}
 
 	abstract protected void main(Model model, OutputStream out) throws Throwable;
