@@ -1,5 +1,7 @@
 package com.firefly.server.http;
 
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSessionAttributeListener;
@@ -7,6 +9,7 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.Session;
 import com.firefly.server.session.HttpSessionManager;
 import com.firefly.server.session.LocalHttpSessionManager;
@@ -14,6 +17,7 @@ import com.firefly.server.session.LocalHttpSessionManager;
 public class Config {
 	private String configFileName = "firefly.xml";
 	private String encoding = "UTF-8";
+	private Map<Integer, String> errorPage;
 	private int maxRequestLineLength = 8 * 1024,
 				maxRequestHeadLength = 16 * 1024, 
 				maxRangeNum = 8,
@@ -318,6 +322,15 @@ public class Config {
 
 	public void setPipeline(boolean pipeline) {
 		this.pipeline = pipeline;
+	}
+
+	public Map<Integer, String> getErrorPage() {
+		return errorPage;
+	}
+
+	public void setErrorPage(Map<Integer, String> errorPage) {
+		this.errorPage = errorPage;
+		SystemHtmlPage.addErrorPageMap(errorPage);
 	}
 
 }

@@ -2,6 +2,7 @@ package test.http;
 
 import java.io.File;
 
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.server.ServerBootstrap;
 
 public class ServerDemo {
@@ -12,6 +13,8 @@ public class ServerDemo {
 	}
 	
 	public static void start1() throws Throwable {
+		SystemHtmlPage.addErrorPage(404, "/error/err404.html");
+		SystemHtmlPage.addErrorPage(500, "/error/err500.html");
 		String serverHome = new File(ServerBootstrap.class.getResource("/page").toURI()).getAbsolutePath();
 		ServerBootstrap.start("firefly-server.xml", serverHome, "localhost", 6655);
 	}

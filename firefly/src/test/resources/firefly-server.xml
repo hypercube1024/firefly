@@ -12,6 +12,12 @@
 		<property name="port" value="7676"></property>
 		<property name="keepAlive" value="true"></property>
 		<property name="pipeline" value="false"></property>
+		<property name="errorPage">
+			<map>
+				<entry key="404" value="/error/err404.html"></entry>
+				<entry key="500" value="/error/err500.html"></entry>
+			</map>
+		</property>
 	</bean>
 
 </beans>

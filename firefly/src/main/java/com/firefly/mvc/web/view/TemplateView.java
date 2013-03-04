@@ -18,10 +18,11 @@ import com.firefly.utils.log.LogFactory;
 public class TemplateView implements View {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static TemplateFactory t;
-	private static boolean init = false;
+	protected static TemplateFactory templateFactory;
+	protected static boolean init = false;
+	protected static String charset = "UTF-8";
 	
-	private String page;
+	protected String page;
 	
 	public static void init(String viewPath, String encoding) {
 		if (!init) {
@@ -29,9 +30,18 @@ public class TemplateView implements View {
 			com.firefly.template.Config config = new com.firefly.template.Config();
 			config.setViewPath(viewPath);
 			config.setCharset(encoding);
-			t = new TemplateFactory(config).init();
+			charset = encoding;
+			templateFactory = new TemplateFactory(config).init();
 			init = true;
 		}
+	}
+	
+	public static TemplateFactory getTemplateFactory() {
+		return templateFactory;
+	}
+	
+	public static String getCharset() {
+		return charset;
 	}
 	
 	public TemplateView(String page) {
@@ -41,15 +51,15 @@ public class TemplateView implements View {
 	@Override
 	public void render(final HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		com.firefly.template.View v = t.getView(page);
+		com.firefly.template.View v = templateFactory.getView(page);
 		if (v == null) {
-			SystemHtmlPage.responseSystemPage(request, response, t.getConfig().getCharset(),
+			SystemHtmlPage.responseSystemPage(request, response, templateFactory.getConfig().getCharset(),
 					HttpServletResponse.SC_NOT_FOUND, "template: " + page + "not found");
 			return;
 		}
 		
-		response.setCharacterEncoding(t.getConfig().getCharset());
-		response.setHeader("Content-Type", "text/html; charset=" + t.getConfig().getCharset());
+		response.setCharacterEncoding(templateFactory.getConfig().getCharset());
+		response.setHeader("Content-Type", "text/html; charset=" + templateFactory.getConfig().getCharset());
 		ServletOutputStream out = response.getOutputStream();
 		Model model = new Model() {
 
