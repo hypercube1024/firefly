@@ -181,7 +181,7 @@ public class ViewFileReader {
 				int i = line.indexOf("<!--");
 
 				if (i >= 0) { // html注释开始
-					text.append(line.substring(0, i).trim());
+					text.append(line.substring(0, i).trim()); // 此处不可能有换行\n
 					if (text.length() > 0) {
 						parseText(text.toString(), javaFileBuilder);
 						text = new StringBuilder();
@@ -197,10 +197,10 @@ public class ViewFileReader {
 						comment.append(line.substring(i + 4).trim() + "\n");
 					}
 				} else {
-					text.append(line.trim());
+					text.append(line.trim() + '\n'); // 保留模版中的换行
 				}
 				break;
-			case 1:
+			case 1: // 注释未完成状态
 				int j = line.indexOf("-->");
 				if (j >= 0) { // html注释结束
 					status = 0;
