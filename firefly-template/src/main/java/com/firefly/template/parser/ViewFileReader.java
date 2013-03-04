@@ -197,7 +197,7 @@ public class ViewFileReader {
 						comment.append(line.substring(i + 4).trim() + "\n");
 					}
 				} else {
-					text.append(line.trim() + '\n'); // 保留模版中的换行
+					text.append(line.trim() + "\n"); // 保留模版中的换行
 				}
 				break;
 			case 1: // 注释未完成状态
