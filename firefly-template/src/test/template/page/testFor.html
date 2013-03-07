@@ -20,5 +20,19 @@ ${i} &nbsp;&nbsp;
 	</tbody>
 </table>
 </div>
+
+<div>
+<table style="table-layout: fixed;">
+	<thead style="text-align: center;">
+	<tr><th>姓名2</th><th>年龄2</th></tr>
+	</thead>
+	<tbody>
+	<!-- #for u : ${users} -->
+	<tr><td>${u_index}|||${u.name}|||${len(u.name)}</td><td>${u.age}</td></tr>
+	<!-- #end -->
+	</tbody>
+</table>
+
+</div>
 </body>
 </html>
