@@ -248,31 +248,62 @@ public class ObjectNavigator {
 		int listOrMapPrefixIndex = element.indexOf('[');
 		if (listOrMapPrefixIndex > 0) { // map or list or array
 			int listOrMapSuffixIndex = element.indexOf(']', listOrMapPrefixIndex);
-			if (listOrMapSuffixIndex != element.length() - 1)
-				throw new ExpressionError("list or map expression error: " + element);
 
 			String keyEl = element.substring(listOrMapPrefixIndex + 1, listOrMapSuffixIndex);
 			String p = element.substring(0, listOrMapPrefixIndex);
 			Object obj = root ? ((Model) current).get(p) : getObjectProperty(current, p);
 			if(obj == null)
 				return null;
+			
+			Object ret = null;
 
 			if (isMapKey(keyEl)) { // map
 				if ((obj instanceof Map))
-					return ((Map<?, ?>) obj).get(keyEl.substring(1, keyEl.length() - 1));
+					ret = ((Map<?, ?>) obj).get(keyEl.substring(1, keyEl.length() - 1));
 			} else { // list or array
 				int index = Integer.parseInt(keyEl);
 				if ((obj instanceof List))
-					return ((List<?>) obj).get(index);
+					ret = ((List<?>) obj).get(index);
 				else
-					return getArrayObject(obj, index);
+					ret = getArrayObject(obj, index);
 			}
+			
+			if (listOrMapSuffixIndex != element.length() - 1) {
+				if(element.charAt(listOrMapSuffixIndex + 1) != '[')
+					throw new ExpressionError("list or map expression error: " + element);
+				
+				return getObject(ret, element.substring(listOrMapSuffixIndex + 1));
+			}
+			return ret;
 		} else if (listOrMapPrefixIndex < 0) { // object
 			return root ? ((Model) current).get(element) : getObjectProperty(current, element);
+		} else if (listOrMapPrefixIndex == 0) { // map['foo']['bar']['hello']
+			int listOrMapSuffixIndex = element.indexOf(']', listOrMapPrefixIndex);
+			String keyEl = element.substring(listOrMapPrefixIndex + 1, listOrMapSuffixIndex);
+			
+			Object ret = null;
+			
+			if (isMapKey(keyEl)) { // map
+				if ((current instanceof Map))
+					ret = ((Map<?, ?>) current).get(keyEl.substring(1, keyEl.length() - 1));
+			} else { // list or array
+				int index = Integer.parseInt(keyEl);
+				if ((current instanceof List))
+					ret = ((List<?>) current).get(index);
+				else
+					ret = getArrayObject(current, index);
+			}
+			
+			if (listOrMapSuffixIndex != element.length() - 1) {
+				if(element.charAt(listOrMapSuffixIndex + 1) != '[')
+					throw new ExpressionError("list or map expression error: " + element);
+				
+				return getObject(ret, element.substring(listOrMapSuffixIndex + 1));
+			}
+			return ret;
 		} else {
 			throw new ExpressionError("expression error: " + element);
 		}
-		return null;
 	}
 
 	private boolean isMapKey(String el) {

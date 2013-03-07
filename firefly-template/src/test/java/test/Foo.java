@@ -7,6 +7,15 @@ public class Foo {
 	private Integer[] bags = {1, 2, 3, 4, 5};
 	private Bar bar;
 	private Map<String, Bar> map;
+	private Map<String, Object> map2;
+
+	public Map<String, Object> getMap2() {
+		return map2;
+	}
+
+	public void setMap2(Map<String, Object> map2) {
+		this.map2 = map2;
+	}
 
 	public Integer[] getBags() {
 		return bags;

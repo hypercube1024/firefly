@@ -15,11 +15,12 @@ public class StatementFor implements Statement {
 		e[0] = e[0].trim();
 		e[1] = e[1].trim();
 
-		if(vari.contains(e[0])) {
+		String k = javaFileBuilder.getName() + "|" + e[0];
+		if(vari.contains(k)) {
 			javaFileBuilder.write(javaFileBuilder.getPreBlank() + e[0] + "_index = -1;\n");
 		} else {
 			javaFileBuilder.write(javaFileBuilder.getPreBlank() + "int " + e[0] + "_index = -1;\n");
-			vari.add(e[0]);
+			vari.add(k);
 		}
 		javaFileBuilder.write(javaFileBuilder.getPreBlank() + "for(Object "
 				+ e[0] + " : objNav.getCollection(model, \""

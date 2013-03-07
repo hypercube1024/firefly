@@ -3,6 +3,7 @@ package test;
 import static org.hamcrest.Matchers.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,20 @@ public class TestObjNavigator {
 		fooMap.put("bar2", bar);
 		foo.setMap(fooMap);
 		
+		Map<String, Object> map2 = new HashMap<String, Object>();
+		
+		Map<String, Object> map3 = new HashMap<String, Object>();
+		map3.put("hello", "world");
+		map3.put("hello3", "world3");
+		map3.put("arr", Arrays.asList(5,6,7));
+		
+		Map<String, Object> map4 = new HashMap<String, Object>();
+		map4.put("hello4", map3);
+		
+		map2.put("map3", map3);
+		map2.put("map4", map4);
+		foo.setMap2(map2);
+		
 		Model model = new ModelMock();
 		model.put("foo", foo);
 		
@@ -71,6 +86,8 @@ public class TestObjNavigator {
 		Assert.assertThat(String.valueOf(o.find(model, "foo.bar.price")), is("3.3"));
 		Assert.assertThat(String.valueOf(o.find(model, "foo.numbers[2]")), is("5"));
 		Assert.assertThat(String.valueOf(o.find(model, "foo.map['bar2'].price")), is("2.3"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.map2['map4']['hello4']['hello3']")), is("world3"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.map2['map4']['hello4']['arr'][2]")), is("7"));
 		Assert.assertThat(o.find(model, "foo.map['bar5']"), nullValue());
 		Assert.assertThat(o.find(model, "ok"), nullValue());
 	}
@@ -94,6 +111,20 @@ public class TestObjNavigator {
 		fooMap.put("bar2", bar);
 		foo.setMap(fooMap);
 		
+		Map<String, Object> map2 = new HashMap<String, Object>();
+		
+		Map<String, Object> map3 = new HashMap<String, Object>();
+		map3.put("hello", "world");
+		map3.put("hello3", "world3");
+		map3.put("arr", Arrays.asList(5,6,7));
+		
+		Map<String, Object> map4 = new HashMap<String, Object>();
+		map4.put("hello4", map3);
+		
+		map2.put("map3", map3);
+		map2.put("map4", map4);
+		foo.setMap2(map2);
+		
 		Model model = new ModelMock();
 		model.put("foo", foo);
 		
@@ -107,6 +138,8 @@ public class TestObjNavigator {
 		System.out.println(o.find(model, "foo.map['bar2'].price"));
 		System.out.println(o.find(model, "foo.map['bar4']"));
 		System.out.println(o.find(model, "user.name"));
+		System.out.println(o.find(model, "foo.map2['map4']['hello4']['hello3']"));
+		System.out.println(o.find(model, "foo.map2['map4']['hello4']['arr'][2]"));
 		
 //		long start = System.currentTimeMillis();
 //		for (int i = 0; i < 1000000; i++) {
