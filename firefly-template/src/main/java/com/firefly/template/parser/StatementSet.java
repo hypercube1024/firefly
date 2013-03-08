@@ -8,7 +8,7 @@ public class StatementSet implements Statement {
 	public void parse(String content, JavaFileBuilder javaFileBuilder) {
 		String[] params = StringUtils.split(content, '&');
 		for (String param : params) {
-			String[] v = StringUtils.split(param, '=');
+			String[] v = StringUtils.split(param, "=", 2);
 			if (v[1].length() > 3 && v[1].charAt(0) == '$'
 					&& v[1].charAt(1) == '{'
 					&& v[1].charAt(v[1].length() - 1) == '}') {
@@ -17,7 +17,7 @@ public class StatementSet implements Statement {
 						+ v[1].substring(2, v[1].length() - 1) + "\"));\n");
 			} else {
 				javaFileBuilder.write(javaFileBuilder.getPreBlank()
-						+ "model.put(\"" + v[0] + "\", \"" + v[1] + "\");\n");
+						+ "model.put(\"" + v[0] + "\", " + javaFileBuilder.strEscape(v[1]) + ");\n");
 			}
 		}
 
