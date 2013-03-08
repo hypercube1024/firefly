@@ -44,6 +44,10 @@ public class TemplateView implements View {
 		return charset;
 	}
 	
+	public String getPage() {
+		return page;
+	}
+
 	public TemplateView(String page) {
 		this.page = page;
 	}
