@@ -219,7 +219,7 @@ public class HttpDecoder implements Decoder {
 		}
 
 		private void response100Continue(Session session) throws UnsupportedEncodingException {
-			session.write(ByteBuffer.wrap("HTTP/1.1 100 Continue\r\n\r\n".getBytes(config.getEncoding())));
+			session.encode(ByteBuffer.wrap("HTTP/1.1 100 Continue\r\n\r\n".getBytes(config.getEncoding())));
 		}
 	}
 

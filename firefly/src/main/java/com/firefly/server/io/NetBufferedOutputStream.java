@@ -37,7 +37,7 @@ public class NetBufferedOutputStream extends OutputStream {
 	public void write(byte b[], int off, int len) throws IOException {
 		if (len >= buf.length) {
 			flush();
-			session.write(ByteBuffer.wrap(b, off, len));
+			session.encode(ByteBuffer.wrap(b, off, len));
 			return;
 		}
 		if (len > buf.length - count)
@@ -50,7 +50,7 @@ public class NetBufferedOutputStream extends OutputStream {
 	public void write(File file, long off, long len) throws IOException {
 		flush();
 		FileRegion fileRegion = new FileRegion(new RandomAccessFile(file, "r"), off, len);
-		session.write(fileRegion);
+		session.encode(fileRegion);
 	}
 
 	public void write(File file) throws IOException {
@@ -60,7 +60,7 @@ public class NetBufferedOutputStream extends OutputStream {
 	@Override
 	public void flush() throws IOException {
 		if (count > 0) {
-			session.write(ByteBuffer.wrap(buf, 0, count));
+			session.encode(ByteBuffer.wrap(buf, 0, count));
 			resetBuffer();
 		}
 	}
