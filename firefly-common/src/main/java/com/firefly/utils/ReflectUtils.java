@@ -203,19 +203,8 @@ public abstract class ReflectUtils {
 		code.append('}');
 		
 		String ret = code.toString();
-		// TODO delete debug
-//		System.out.println(ret);
 		return ret;
 	}
-	
-//	public static void main(String[] args) {
-//		StringUtils.replace("", ProxyMethod.class.getCanonicalName());
-//		System.out.println(ProxyMethod.class.getCanonicalName());
-//		System.out.println(ProxyMethod.class.getName());
-//		
-//		System.out.println(getterCache.getClass().getCanonicalName());
-//		System.out.println(getterCache.getClass().getName());
-//	}
 	
 	/**
 	 * 获取所有接口名称
