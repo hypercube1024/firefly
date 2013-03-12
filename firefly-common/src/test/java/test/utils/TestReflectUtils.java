@@ -56,7 +56,7 @@ public class TestReflectUtils {
 		Assert.assertThat((String)proxyInfo.get(foo), is("test info 0"));
 	}
 	
-	public static void main(String[] args) throws Throwable {
+	public static void main2(String[] args) throws Throwable {
 		Foo foo = new Foo();
 		ProxyMethod proxy = ReflectUtils.getProxyMethod(ReflectUtils.getGetterMethod(Foo.class, "failure"));
 		System.out.println(proxy.invoke(foo));
@@ -74,8 +74,8 @@ public class TestReflectUtils {
 //		System.out.println(ReflectUtils.createFieldSetterMethodCode(Foo.class.getField("info")));
 	}
 	
-	public static void main2(String[] args) throws Throwable {		
-		int times = 100 * 100 * 10000;
+	public static void main(String[] args) throws Throwable {		
+		int times = 1000 * 1000 * 1000;
 		
 		Foo foo = new Foo();
 		Method method = Foo.class.getMethod("setProperty", String.class, boolean.class);

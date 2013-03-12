@@ -88,7 +88,7 @@ public abstract class ReflectUtils {
 		return ret;
 	}
 	
-	public static String createFieldGetterMethodCode(Field field) {
+	private static String createFieldGetterMethodCode(Field field) {
 		Class<?> fieldClazz = field.getType();
 		StringBuilder code = new StringBuilder();
 		code.append("public Object get(Object obj){\n")
@@ -108,7 +108,7 @@ public abstract class ReflectUtils {
 		return code.toString();
 	}
 	
-	public static String createFieldSetterMethodCode(Field field) {
+	private static String createFieldSetterMethodCode(Field field) {
 		Class<?> fieldClazz = field.getType();
 		StringBuilder code = new StringBuilder();
 		code.append("public void set(Object obj, Object value){\n");
@@ -149,7 +149,7 @@ public abstract class ReflectUtils {
 		return ret;
 	}
 	
-	public static String createInvokeMethodCode(Method method) {
+	private static String createInvokeMethodCode(Method method) {
 		Class<?>[] paramClazz = method.getParameterTypes();
 		StringBuilder code = new StringBuilder();
 
