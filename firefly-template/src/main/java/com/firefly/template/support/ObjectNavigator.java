@@ -1,6 +1,5 @@
 package com.firefly.template.support;
 
-import java.lang.reflect.Method;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -12,6 +11,7 @@ import com.firefly.template.Config;
 import com.firefly.template.Model;
 import com.firefly.template.exception.ExpressionError;
 import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.ReflectUtils.ProxyMethod;
 import com.firefly.utils.StringUtils;
 
 public class ObjectNavigator {
@@ -314,19 +314,16 @@ public class ObjectNavigator {
 
 	private Object getObjectProperty(Object current, String propertyName) {
 		Class<?> clazz = current.getClass();
-		Method method = cache.get(clazz, propertyName);
-		if (method == null) {
-			method = ReflectUtils.getGetterMethod(clazz, propertyName);
-			cache.put(clazz, propertyName, method);
+		ProxyMethod proxy = cache.get(clazz, propertyName);
+		if (proxy == null) {
+			try {
+				proxy = ReflectUtils.getProxyMethod(ReflectUtils.getGetterMethod(clazz, propertyName));
+				cache.put(clazz, propertyName, proxy);
+			} catch (Throwable e) {
+				Config.LOG.error("get proxy method error", e);
+			}
 		}
-
-		Object ret = null;
-		try {
-			ret = method.invoke(current);
-		} catch (Throwable e) {
-			Config.LOG.error("getObjectProperty error", e);
-		}
-		return ret;
+		return proxy.invoke(current);
 	}
 
 }

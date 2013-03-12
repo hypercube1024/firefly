@@ -2,40 +2,29 @@ package com.firefly.utils.json.support;
 
 import java.lang.reflect.Field;
 
+import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.ReflectUtils.ProxyField;
+
 public class FieldInvoke implements PropertyInvoke {
 	
-	private Field field;
+	private ProxyField field;
 
 	public FieldInvoke(Field field) {
-		this.field = field;
+		try {
+			this.field = ReflectUtils.getProxyField(field);
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
-
-
 
 	@Override
 	public Object get(Object obj) {
-		Object ret = null;
-		try {
-			ret = field.get(obj);
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		}
-		return ret;
+		return field.get(obj);
 	}
-
-
 
 	@Override
 	public void set(Object obj, Object arg) {
-		try {
-			field.set(obj, arg);
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		}
+		field.set(obj, arg);
 	}
 
 }

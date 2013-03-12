@@ -7,5 +7,6 @@
 	<classpathentry kind="lib" path="lib/firefly-template.jar"/>
 	<classpathentry kind="lib" path="lib/firefly.jar"/>
 	<classpathentry kind="lib" path="lib/servlet-api-2.5.jar"/>
+	<classpathentry kind="lib" path="lib/javassist.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

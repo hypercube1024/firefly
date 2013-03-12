@@ -1,42 +1,30 @@
 package com.firefly.utils.json.support;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.ReflectUtils.ProxyMethod;
 
 public class MethodInvoke implements PropertyInvoke {
 
-	private Method method;
+	private ProxyMethod method;
 
 	public MethodInvoke(Method method) {
-		this.method = method;
+		try {
+			this.method = ReflectUtils.getProxyMethod(method);
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void set(Object obj, Object arg) {
-		try {
-			method.invoke(obj, arg);
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
-		}
+		method.invoke(obj, arg);
 	}
 
 	@Override
 	public Object get(Object obj) {
-		Object ret = null;
-		try {
-			ret = method.invoke(obj);
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
-		}
-		return ret;
+		return method.invoke(obj);
 	}
 
 }

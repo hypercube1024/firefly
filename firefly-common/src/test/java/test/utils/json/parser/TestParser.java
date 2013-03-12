@@ -316,5 +316,9 @@ public class TestParser {
 		Assert.assertThat(p.getTimeintervalreadtime().length, is(24));
 		Assert.assertThat(p.getReadbooktype().get("测试一下"), is(23));
 	}
+	
+	public static void main(String[] args) {
+		new TestParser().test4();
+	}
 
 }

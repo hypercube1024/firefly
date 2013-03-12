@@ -5,6 +5,8 @@ import java.util.Arrays;
 
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.support.exception.WebException;
+import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.ReflectUtils.ProxyMethod;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -13,12 +15,17 @@ public abstract class HandlerMetaInfo {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
 	protected final Object object; // controller的实例对象
-	protected final Method method; // 请求uri对应的方法
+	protected final ProxyMethod proxy; // 请求uri对应的方法
 	protected final byte[] methodParam; // 请求方法参数类型
 	
 	public HandlerMetaInfo(Object object, Method method) {
 		this.object = object;
-		this.method = method;
+		try {
+			this.proxy = ReflectUtils.getProxyMethod(method);
+		} catch (Throwable e) {
+			log.error("handler init error", e);
+			throw new WebException("handler invoke error");
+		}
 		this.methodParam = new byte[method.getParameterTypes().length];
 	}
 
@@ -27,20 +34,12 @@ public abstract class HandlerMetaInfo {
 	}
 	
 	public final View invoke(Object[] args) {
-		View ret = null;
-		try {
-			ret = (View)method.invoke(object, args);
-		} catch (Throwable e) {
-			log.error("handler invoke error", e);
-			throw new WebException("handler invoke error");
-		} 
-		return ret;
+		return (View)proxy.invoke(object, args);
 	}
 
 	@Override
 	public String toString() {
-		return "HandlerMetaInfo [method=" + method + ", methodParam="
-				+ Arrays.toString(methodParam) + "]";
+		return "HandlerMetaInfo [method=" + proxy.method() + ", methodParam=" + Arrays.toString(methodParam) + "]";
 	}
 
 }
