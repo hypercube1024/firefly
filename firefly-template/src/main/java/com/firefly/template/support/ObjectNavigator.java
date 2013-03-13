@@ -2,7 +2,7 @@ package com.firefly.template.support;
 
 import java.util.AbstractCollection;
 import java.util.Collection;
-import java.util.IdentityHashMap;
+//import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -11,129 +11,28 @@ import com.firefly.template.Config;
 import com.firefly.template.Model;
 import com.firefly.template.exception.ExpressionError;
 import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.ReflectUtils.ArrayProxy;
 import com.firefly.utils.StringUtils;
 
 public class ObjectNavigator {
-	private IdentityHashMap<Class<?>, ArrayObj> map;
 
-	private ObjectNavigator() {
-		this.map = new IdentityHashMap<Class<?>, ArrayObj>();
-
-		map.put(long[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((long[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((long[]) obj).length;
-			}
-		});
-		map.put(double[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((double[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((double[]) obj).length;
-			}
-		});
-		map.put(int[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((int[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((int[]) obj).length;
-			}
-		});
-		map.put(float[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((float[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((float[]) obj).length;
-			}
-		});
-		map.put(char[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((char[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((char[]) obj).length;
-			}
-		});
-		map.put(boolean[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((boolean[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((boolean[]) obj).length;
-			}
-		});
-		map.put(short[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((short[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((short[]) obj).length;
-			}
-		});
-		map.put(byte[].class, new ArrayObj() {
-			@Override
-			public Object get(Object obj, int index) {
-				return ((byte[]) obj)[index];
-			}
-
-			@Override
-			public int size(Object obj) {
-				return ((byte[]) obj).length;
-			}
-		});
-	}
-
-	interface ArrayObj {
-		Object get(Object obj, int index);
-
-		int size(Object obj);
-	}
+	private ObjectNavigator() {}
 
 	private class ArrayCollection<E> extends AbstractCollection<E> {
 
 		private Object obj;
-		private Object[] array;
-		private ArrayObj arrayObj;
-		private boolean isArrayObj;
+		private ArrayProxy arrayProxy;
 		private int size;
 		private Iterator<E> iterator;
 
 		public ArrayCollection(Object array) {
 			obj = array;
-			ArrayObj a = map.get(array.getClass());
-			isArrayObj = a != null;
-			arrayObj = a;
-			if (!isArrayObj) {
-				this.array = (Object[]) array;
-				size = this.array.length;
-			} else
-				size = a.size(array);
+			try {
+				arrayProxy = ReflectUtils.getArrayProxy(array.getClass());
+				size = arrayProxy.size(array);
+			} catch (Throwable e) {
+				Config.LOG.error("get array proxy error", e);
+			}
 			iterator = new ArrayInterator();
 		}
 
@@ -149,7 +48,7 @@ public class ObjectNavigator {
 			@SuppressWarnings("unchecked")
 			@Override
 			public E next() {
-				return (E) (isArrayObj ? arrayObj.get(obj, i++) : array[i++]);
+				return (E) arrayProxy.get(obj, i++);
 			}
 
 			@Override
@@ -182,8 +81,7 @@ public class ObjectNavigator {
 	@SuppressWarnings("rawtypes")
 	public Collection<?> getCollection(Model model, String el) {
 		Object ret = find(model, el);
-		return (Collection<?>) (ret instanceof Collection ? ret
-				: new ArrayCollection(ret));
+		return (Collection<?>) (ret instanceof Collection ? ret : new ArrayCollection(ret));
 	}
 
 	public Integer getInteger(Model model, String el) {
@@ -232,11 +130,13 @@ public class ObjectNavigator {
 	}
 
 	private Object getArrayObject(Object obj, int index) {
-		ArrayObj a = map.get(obj.getClass());
-		if (a != null)
-			return a.get(obj, index);
-		else
-			return ((Object[]) obj)[index];
+		Object ret = null;
+		try {
+			ret = ReflectUtils.arrayGet(obj, index);
+		} catch (Throwable e) {
+			Config.LOG.error("get array value error", e);
+		}
+		return ret;
 	}
 
 	private Object getObject(Object current, String el) {
