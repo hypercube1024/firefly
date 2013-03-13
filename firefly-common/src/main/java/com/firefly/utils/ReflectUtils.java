@@ -21,8 +21,8 @@ public abstract class ReflectUtils {
 	
 	private static final Map<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
 	private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
-	private static final Map<Method, ProxyMethod> methodCache = new ConcurrentHashMap<Method, ProxyMethod>();
-	private static final Map<Field, ProxyField> fieldCache = new ConcurrentHashMap<Field, ProxyField>();
+	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
+	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
 	private static final IdentityHashMap<Class<?>, String> primitiveWrapMap = new IdentityHashMap<Class<?>, String>();
 	
 	static {
@@ -40,7 +40,7 @@ public abstract class ReflectUtils {
 		boolean accept(String propertyName, Method method);
 	}
 	
-	public static interface ProxyMethod {
+	public static interface MethodProxy {
 		
 		Method method();
 		
@@ -53,7 +53,7 @@ public abstract class ReflectUtils {
 		Object invoke(Object obj, Object... args);
 	}
 	
-	public static interface ProxyField {
+	public static interface FieldProxy {
 		
 		Field field();
 		
@@ -63,16 +63,16 @@ public abstract class ReflectUtils {
 	}
 	
 	public static void set(Object obj, String property, Object value) throws Throwable {
-		getProxyMethod(getSetterMethod(obj.getClass(), property)).invoke(obj, value);
+		getMethodProxy(getSetterMethod(obj.getClass(), property)).invoke(obj, value);
 	}
 	
 	public static Object get(Object obj, String property) throws Throwable {
-		return getProxyMethod(getGetterMethod(obj.getClass(), property)).invoke(obj);
+		return getMethodProxy(getGetterMethod(obj.getClass(), property)).invoke(obj);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static ProxyField getProxyField(Field field) throws Throwable {
-		ProxyField ret = fieldCache.get(field);
+	public static FieldProxy getFieldProxy(Field field) throws Throwable {
+		FieldProxy ret = fieldCache.get(field);
 		if(ret != null)
 			return ret;
 		
@@ -80,7 +80,7 @@ public abstract class ReflectUtils {
 		classPool.importPackage(Field.class.getCanonicalName());
 		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField$" + field.hashCode());
-		cc.addInterface(classPool.get(ProxyField.class.getName()));
+		cc.addInterface(classPool.get(FieldProxy.class.getName()));
 		cc.addField(CtField.make("private Field field;", cc));
 		
 		CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Field.class.getName())}, cc);
@@ -91,7 +91,7 @@ public abstract class ReflectUtils {
 		cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
 		cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
 		
-		ret = (ProxyField) cc.toClass().getConstructor(Field.class).newInstance(field);
+		ret = (FieldProxy) cc.toClass().getConstructor(Field.class).newInstance(field);
 		fieldCache.put(field, ret);
 		return ret;
 	}
@@ -133,8 +133,8 @@ public abstract class ReflectUtils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static ProxyMethod getProxyMethod(Method method) throws Throwable {
-		ProxyMethod ret = methodCache.get(method);
+	public static MethodProxy getMethodProxy(Method method) throws Throwable {
+		MethodProxy ret = methodCache.get(method);
 		if(ret != null)
 			return ret;
 		
@@ -142,7 +142,7 @@ public abstract class ReflectUtils {
 		classPool.importPackage(Method.class.getCanonicalName());
 		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod$" + method.hashCode());
-		cc.addInterface(classPool.get(ProxyMethod.class.getName()));
+		cc.addInterface(classPool.get(MethodProxy.class.getName()));
 		cc.addField(CtField.make("private Method method;", cc));
 		
 		CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Method.class.getName())}, cc);
@@ -152,7 +152,7 @@ public abstract class ReflectUtils {
 		cc.addMethod(CtMethod.make("public Method method(){return method;}", cc));
 		cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
 		
-		ret = (ProxyMethod) cc.toClass().getConstructor(Method.class).newInstance(method);
+		ret = (MethodProxy) cc.toClass().getConstructor(Method.class).newInstance(method);
 		methodCache.put(method, ret);
 		return ret;
 	}

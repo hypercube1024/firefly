@@ -3,15 +3,15 @@ package com.firefly.utils.json.support;
 import java.lang.reflect.Method;
 
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.ReflectUtils.ProxyMethod;
+import com.firefly.utils.ReflectUtils.MethodProxy;
 
 public class MethodInvoke implements PropertyInvoke {
 
-	private ProxyMethod method;
+	private MethodProxy method;
 
 	public MethodInvoke(Method method) {
 		try {
-			this.method = ReflectUtils.getProxyMethod(method);
+			this.method = ReflectUtils.getMethodProxy(method);
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}

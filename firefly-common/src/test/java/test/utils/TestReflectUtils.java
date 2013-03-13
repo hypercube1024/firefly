@@ -10,8 +10,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.ReflectUtils.ProxyField;
-import com.firefly.utils.ReflectUtils.ProxyMethod;
+import com.firefly.utils.ReflectUtils.FieldProxy;
+import com.firefly.utils.ReflectUtils.MethodProxy;
 
 public class TestReflectUtils {
 
@@ -27,18 +27,18 @@ public class TestReflectUtils {
 	@Test
 	public void testProxyMethod() throws NoSuchMethodException, SecurityException, Throwable {
 		Foo foo = new Foo();
-		ProxyMethod proxy = ReflectUtils.getProxyMethod(Foo.class.getMethod("setProperty", String.class, boolean.class));
+		MethodProxy proxy = ReflectUtils.getMethodProxy(Foo.class.getMethod("setProperty", String.class, boolean.class));
 		Assert.assertThat(proxy.invoke(foo, "proxy foo", true), nullValue());
 		Assert.assertThat(foo.getName(), is("proxy foo"));
 		Assert.assertThat(foo.isFailure(), is(true));
 		
-		proxy = ReflectUtils.getProxyMethod(ReflectUtils.getGetterMethod(Foo.class, "name"));
+		proxy = ReflectUtils.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "name"));
 		Assert.assertThat((String)proxy.invoke(foo), is("proxy foo"));
 		
-		proxy = ReflectUtils.getProxyMethod(ReflectUtils.getGetterMethod(Foo.class, "failure"));
+		proxy = ReflectUtils.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "failure"));
 		Assert.assertThat((Boolean)proxy.invoke(foo), is(true));
 		
-		proxy = ReflectUtils.getProxyMethod(ReflectUtils.getSetterMethod(Foo.class, "price"));
+		proxy = ReflectUtils.getMethodProxy(ReflectUtils.getSetterMethod(Foo.class, "price"));
 		Assert.assertThat(proxy.invoke(foo, 35.5), nullValue());
 		Assert.assertThat(foo.getPrice(), is(35.5));
 	}
@@ -48,11 +48,11 @@ public class TestReflectUtils {
 		Foo foo = new Foo();
 		Field num2 = Foo.class.getField("num2");
 		Field info = Foo.class.getField("info");
-		ProxyField proxyNum2 = ReflectUtils.getProxyField(num2);
+		FieldProxy proxyNum2 = ReflectUtils.getFieldProxy(num2);
 		proxyNum2.set(foo, 30);
 		Assert.assertThat((Integer)proxyNum2.get(foo), is(30));
 		
-		ProxyField proxyInfo = ReflectUtils.getProxyField(info);
+		FieldProxy proxyInfo = ReflectUtils.getFieldProxy(info);
 		proxyInfo.set(foo, "test info 0");
 		Assert.assertThat((String)proxyInfo.get(foo), is("test info 0"));
 	}
@@ -71,14 +71,14 @@ public class TestReflectUtils {
 	
 	public static void main2(String[] args) throws Throwable {
 		Foo foo = new Foo();
-		ProxyMethod proxy = ReflectUtils.getProxyMethod(ReflectUtils.getGetterMethod(Foo.class, "failure"));
+		MethodProxy proxy = ReflectUtils.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "failure"));
 		System.out.println(proxy.invoke(foo));
 		
 		Field field = Foo.class.getField("num2");
 		System.out.println(field.getType());
 		System.out.println(field.getName());
 		Field info = Foo.class.getField("info");
-		ProxyField proxyInfo = ReflectUtils.getProxyField(info);
+		FieldProxy proxyInfo = ReflectUtils.getFieldProxy(info);
 		proxyInfo.set(foo, "test info 0");
 		System.out.println(proxyInfo.get(foo));
 //		System.out.println(ReflectUtils.createFieldGetterMethodCode(field));
@@ -92,7 +92,7 @@ public class TestReflectUtils {
 		
 		Foo foo = new Foo();
 		Method method = Foo.class.getMethod("setProperty", String.class, boolean.class);
-		ProxyMethod proxy = ReflectUtils.getProxyMethod(method);
+		MethodProxy proxy = ReflectUtils.getMethodProxy(method);
 		
 		long start = System.currentTimeMillis();
 		for (int i = 0; i < times; i++) { // 反射调用
