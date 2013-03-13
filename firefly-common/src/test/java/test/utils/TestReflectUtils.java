@@ -43,6 +43,7 @@ public class TestReflectUtils {
 		Assert.assertThat(foo.getPrice(), is(35.5));
 	}
 	
+	@Test
 	public void testProxyField() throws Throwable {
 		Foo foo = new Foo();
 		Field num2 = Foo.class.getField("num2");
@@ -54,6 +55,18 @@ public class TestReflectUtils {
 		ProxyField proxyInfo = ReflectUtils.getProxyField(info);
 		proxyInfo.set(foo, "test info 0");
 		Assert.assertThat((String)proxyInfo.get(foo), is("test info 0"));
+	}
+	
+	@Test
+	public void testGetAndSet() throws Throwable {
+		Foo foo = new Foo();
+		ReflectUtils.set(foo, "price", 4.44);
+		ReflectUtils.set(foo, "failure", true);
+		ReflectUtils.set(foo, "name", "foo hello");
+		
+		Assert.assertThat((Double)ReflectUtils.get(foo, "price"), is(4.44));
+		Assert.assertThat((Boolean)ReflectUtils.get(foo, "failure"), is(true));
+		Assert.assertThat((String)ReflectUtils.get(foo, "name"), is("foo hello"));
 	}
 	
 	public static void main2(String[] args) throws Throwable {

@@ -62,6 +62,14 @@ public abstract class ReflectUtils {
 		void set(Object obj, Object value);
 	}
 	
+	public static void set(Object obj, String property, Object value) throws Throwable {
+		getProxyMethod(getSetterMethod(obj.getClass(), property)).invoke(obj, value);
+	}
+	
+	public static Object get(Object obj, String property) throws Throwable {
+		return getProxyMethod(getGetterMethod(obj.getClass(), property)).invoke(obj);
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static ProxyField getProxyField(Field field) throws Throwable {
 		ProxyField ret = fieldCache.get(field);
