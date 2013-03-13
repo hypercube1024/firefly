@@ -5,6 +5,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.exception.JsonException;
@@ -48,7 +49,11 @@ public class ArrayParser implements Parser {
 	public Object copyOf(List<Object> list) {
 		Object ret = Array.newInstance(elementMetaInfo.getType(), list.size());
 		for (int i = 0; i < list.size(); i++) {
-			Array.set(ret, i, list.get(i));
+			try {
+				ReflectUtils.arraySet(ret, i, list.get(i));
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
 		}
 		return ret;
 	}

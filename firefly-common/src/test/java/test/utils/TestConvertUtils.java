@@ -18,12 +18,11 @@ public class TestConvertUtils {
 		Collection collection = new ArrayList();
 		collection.add("arr1");
 		collection.add("arr2");
-		Method method = TestConvertUtils.class.getMethod("setArray",
-				String[].class);
-		Object obj = ConvertUtils.convert(collection,
-				method.getParameterTypes()[0]);
+		Method method = TestConvertUtils.class.getMethod("setArray", String[].class);
+		Object obj = ConvertUtils.convert(collection, method.getParameterTypes()[0]);
 		Integer ret = (Integer)method.invoke(this, obj);
 		Assert.assertThat(ret, is(2));
+		Assert.assertThat(((String[])obj)[1], is("arr2"));
 	}
 
 	@Test

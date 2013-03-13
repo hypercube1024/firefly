@@ -184,16 +184,17 @@ abstract public class ConvertUtils {
 				throw new IllegalArgumentException("type is not a array");
 
 			componentType = arrayType.getComponentType();
-			// log.debug("componentType = " + componentType.getName());
 		}
 		Object newArray = Array.newInstance(componentType, size);
 
 		// Convert and set each element in the new Array
 		for (int i = 0; i < size; i++) {
 			Object element = iterator.next();
-			// log.debug("element value [{}], type [{}]", element, element
-			// .getClass().getName());
-			Array.set(newArray, i, element);
+			try {
+				ReflectUtils.arraySet(newArray, i, element);
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
 		}
 
 		return newArray;
