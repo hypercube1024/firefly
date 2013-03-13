@@ -23,6 +23,7 @@ public abstract class ReflectUtils {
 	private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
 	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
 	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
+	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
 	private static final IdentityHashMap<Class<?>, String> primitiveWrapMap = new IdentityHashMap<Class<?>, String>();
 	
 	static {
@@ -62,12 +63,99 @@ public abstract class ReflectUtils {
 		void set(Object obj, Object value);
 	}
 	
+	public static interface ArrayProxy {
+		int size(Object array);
+		
+		Object get(Object array, int index);
+		
+		void set(Object array, int index, Object value);
+	}
+	
 	public static void set(Object obj, String property, Object value) throws Throwable {
 		getMethodProxy(getSetterMethod(obj.getClass(), property)).invoke(obj, value);
 	}
 	
 	public static Object get(Object obj, String property) throws Throwable {
 		return getMethodProxy(getGetterMethod(obj.getClass(), property)).invoke(obj);
+	}
+	
+	public static Object arrayGet(Object array, int index) throws Throwable {
+		return getArrayProxy(array.getClass()).get(array, index);
+	}
+	
+	public static void arraySet(Object array, int index, Object value) throws Throwable {
+		getArrayProxy(array.getClass()).set(array, index, value);
+	}
+	
+	public static int arraySize(Object array) throws Throwable {
+		return getArrayProxy(array.getClass()).size(array);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {
+		if(!clazz.isArray())
+			throw new IllegalArgumentException("type error, it's not array");
+			
+		ArrayProxy ret = arrayCache.get(clazz);
+		if(ret != null)
+			return ret;
+		
+		ClassPool classPool = new ClassPool(true);
+		CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField$" + clazz.hashCode());
+		cc.addInterface(classPool.get(ArrayProxy.class.getName()));
+		
+		cc.addMethod(CtMethod.make(createArraySizeCode(clazz), cc));
+		cc.addMethod(CtMethod.make(createArrayGetCode(clazz), cc));
+		cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
+		
+		ret = (ArrayProxy) cc.toClass().getConstructor().newInstance();
+		arrayCache.put(clazz, ret);
+		return ret;
+	}
+	
+	private static String createArraySetCode(Class<?> clazz) {
+		StringBuilder code = new StringBuilder();
+		code.append("public void set(Object array, int index, Object value){\n")
+			.append(StringUtils.replace("\t(({})array)[index] = ", clazz.getCanonicalName()));
+		
+		Class<?> componentType = clazz.getComponentType();
+		if(componentType.isPrimitive()) {
+			code.append(StringUtils.replace("(({})value).{}Value()", primitiveWrapMap.get(componentType), componentType.getCanonicalName()));
+		} else {
+			code.append(StringUtils.replace("({})value", componentType.getCanonicalName()));
+		}
+		
+		code.append(";\n")
+			.append("}");
+		return code.toString();
+	}
+	
+	private static String createArrayGetCode(Class<?> clazz) {
+		StringBuilder code = new StringBuilder();
+		code.append("public Object get(Object array, int index){\n")
+			.append("\treturn ");
+		Class<?> componentType = clazz.getComponentType();
+		boolean hasValueOf = false;
+		if(componentType.isPrimitive()) {
+			code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(componentType)));
+			hasValueOf = true;
+		}
+		
+		code.append(StringUtils.replace("(({})array)[index]", clazz.getCanonicalName()));
+		if(hasValueOf)
+			code.append(")");
+		
+		code.append(";\n")
+		.append("}");
+		return code.toString();
+	}
+	
+	private static String createArraySizeCode(Class<?> clazz) {
+		StringBuilder code = new StringBuilder();
+		code.append("public int size(Object array){\n")
+			.append("\treturn ").append(StringUtils.replace("(({})array).length;\n", clazz.getCanonicalName()))
+			.append("}");
+		return code.toString();
 	}
 	
 	@SuppressWarnings("unchecked")

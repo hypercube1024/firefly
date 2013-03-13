@@ -69,6 +69,40 @@ public class TestReflectUtils {
 		Assert.assertThat((String)ReflectUtils.get(foo, "name"), is("foo hello"));
 	}
 	
+	@Test
+	public void testArray() throws Throwable {
+		int[] intArr = new int[5];
+		Integer[] intArr2 = new Integer[10];
+		
+		Assert.assertThat(ReflectUtils.arraySize(intArr), is(5));
+		Assert.assertThat(ReflectUtils.arraySize(intArr2), is(10));
+		
+		ReflectUtils.arraySet(intArr, 0, 33);
+		Assert.assertThat((Integer)ReflectUtils.arrayGet(intArr, 0), is(33));
+		
+		ReflectUtils.arraySet(intArr2, intArr2.length - 1, 55);
+		Assert.assertThat((Integer)ReflectUtils.arrayGet(intArr2, 9), is(55));
+	}
+	
+	public static void main(String[] args) throws Throwable {
+		set(new int[]{15, 44, 55, 66}, 0);
+		
+		set(new Integer[]{77, 88, 99, 0, 11}, 0);
+	}
+	
+	public static void set(Object obj, int index) throws Throwable {
+//		System.out.println(((int[])obj)[index]);
+//		int[] arr = (int[])obj;
+//		System.out.println(arr[index]);
+//		System.out.println(obj.getClass().getCanonicalName());
+//		System.out.println(obj.getClass().getComponentType().getCanonicalName());
+//		System.out.println(ReflectUtils.createArraySizeCode(obj.getClass()));
+		
+		ReflectUtils.getArrayProxy(obj.getClass()).set(obj, index, 30);
+		System.out.println(ReflectUtils.getArrayProxy(obj.getClass()).size(obj));
+		System.out.println(ReflectUtils.getArrayProxy(obj.getClass()).get(obj, index));
+	}
+	
 	public static void main2(String[] args) throws Throwable {
 		Foo foo = new Foo();
 		MethodProxy proxy = ReflectUtils.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "failure"));
@@ -87,7 +121,7 @@ public class TestReflectUtils {
 //		System.out.println(ReflectUtils.createFieldSetterMethodCode(Foo.class.getField("info")));
 	}
 	
-	public static void main(String[] args) throws Throwable {		
+	public static void main3(String[] args) throws Throwable {		
 		int times = 1000 * 1000 * 1000;
 		
 		Foo foo = new Foo();
