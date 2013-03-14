@@ -137,6 +137,8 @@ public class JavaFileBuilder {
 						|| VerifyUtils.isFloat(param) 
 						|| VerifyUtils.isInteger(param) 
 						|| "null".equals(param)
+						|| "true".equals(param)
+						|| "false".equals(param)
 						|| (param.charAt(0) == '\"' && param.charAt(param.length() - 1) == '\"' )) {
 					write(param);
 				} else {

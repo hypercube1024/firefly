@@ -84,7 +84,7 @@ public class TestReflectUtils {
 		Assert.assertThat((Integer)ReflectUtils.arrayGet(intArr2, 9), is(55));
 	}
 	
-	public static void main(String[] args) throws Throwable {
+	public static void main1(String[] args) throws Throwable {
 		set(new int[]{15, 44, 55, 66}, 0);
 		
 		set(new Integer[]{77, 88, 99, 0, 11}, 0);
@@ -121,7 +121,7 @@ public class TestReflectUtils {
 //		System.out.println(ReflectUtils.createFieldSetterMethodCode(Foo.class.getField("info")));
 	}
 	
-	public static void main3(String[] args) throws Throwable {		
+	public static void main(String[] args) throws Throwable {		
 		int times = 1000 * 1000 * 1000;
 		
 		Foo foo = new Foo();
