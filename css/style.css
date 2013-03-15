@@ -181,6 +181,12 @@ h3
 	margin:5px 0 10px 0;
 }
 
+.hentry ol
+{
+	margin:0;
+	padding:0 0 0 1.5em;
+}
+
 abbr
 {
 	border:none;
@@ -232,7 +238,7 @@ ul li,ol li
 .widget ul,ol
 {
 	margin:0;
-	padding:0 0 0 1.5em;
+	padding:0;
 }
 
 .widget
