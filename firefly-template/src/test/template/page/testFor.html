@@ -28,7 +28,7 @@ ${i} &nbsp;&nbsp;
 	</thead>
 	<tbody>
 	<!-- #for u : ${users} -->
-	<tr><td>${u_index}|||${u.name}|||${len(u.name)}</td><td>${u.age}</td></tr>
+	<tr><td>${increment("u_index", true)}|||${u_index}|||${u.name}|||${len(u.name)}</td><td>${u.age}</td></tr>
 	<!-- #end -->
 	</tbody>
 </table>
