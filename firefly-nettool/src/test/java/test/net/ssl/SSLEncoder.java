@@ -5,7 +5,7 @@ import java.nio.channels.FileChannel;
 
 import com.firefly.net.Encoder;
 import com.firefly.net.Session;
-import com.firefly.net.support.ssl.SSLSession;
+import com.firefly.net.tcp.ssl.SSLSession;
 
 public class SSLEncoder implements Encoder {
 

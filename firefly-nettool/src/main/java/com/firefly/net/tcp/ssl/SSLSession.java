@@ -1,4 +1,4 @@
-package com.firefly.net.support.ssl;
+package com.firefly.net.tcp.ssl;
 
 import java.io.Closeable;
 import java.io.IOException;

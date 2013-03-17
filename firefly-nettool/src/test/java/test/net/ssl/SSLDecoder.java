@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
-import com.firefly.net.support.ssl.SSLSession;
+import com.firefly.net.tcp.ssl.SSLSession;
 
 public class SSLDecoder implements Decoder {
 	

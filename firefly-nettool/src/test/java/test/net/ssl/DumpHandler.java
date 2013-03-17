@@ -14,8 +14,8 @@ import test.net.tcp.SendFileHandler;
 
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
-import com.firefly.net.support.ssl.SSLContextFactory;
-import com.firefly.net.support.ssl.SSLSession;
+import com.firefly.net.tcp.ssl.SSLContextFactory;
+import com.firefly.net.tcp.ssl.SSLSession;
 
 public class DumpHandler implements Handler {
 	private SSLContext sslContext;
