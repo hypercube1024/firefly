@@ -80,7 +80,7 @@ public class SSLSession implements Closeable {
             return initialHSComplete;
         
         if(initialHSStatus == HandshakeStatus.FINISHED) {
-        	log.info("session {} handshake end", session.getSessionId());
+        	log.info("session {} handshake success!", session.getSessionId());
         	return (initialHSComplete = true);
         }
         
@@ -141,7 +141,7 @@ public class SSLSession implements Closeable {
 	
 	                case FINISHED:
 	                    initialHSComplete = true;
-	                    log.info("session {} handshake end", session.getSessionId());
+	                    log.info("session {} handshake success!", session.getSessionId());
 	                    break needIO;
 					default:
 						break;
