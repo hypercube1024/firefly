@@ -53,4 +53,8 @@ public class FileRegion {
 			log.error("Failed to close a file.", e);
 		}
 	}
+
+	public FileChannel getFile() {
+		return file;
+	}
 }

@@ -8,6 +8,8 @@ import com.firefly.server.http.Config;
 import com.firefly.server.http.HttpDecoder;
 import com.firefly.server.http.HttpEncoder;
 import com.firefly.server.http.HttpHandler;
+import com.firefly.server.http.SSLDecoder;
+import com.firefly.server.http.SSLEncoder;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -28,7 +30,11 @@ public class ServerBootstrap {
 	public static void start(String configFileName) {
 		long start = System.currentTimeMillis();
 		WebContext context = new ServerAnnotationWebContext(configFileName);
-		init(context, null);
+		try {
+			init(context, null);
+		} catch (Throwable e) {
+			log.error("firefly init error", e);
+		}
 		long end = System.currentTimeMillis();
 		log.info("firefly startup in {} ms", (end - start));
 	}
@@ -36,16 +42,35 @@ public class ServerBootstrap {
 	public static void start(Config config) {
 		long start = System.currentTimeMillis();
 		WebContext context = new ServerAnnotationWebContext(config);
-		init(context, config);
+		try {
+			init(context, null);
+		} catch (Throwable e) {
+			log.error("firefly init error", e);
+		}
 		long end = System.currentTimeMillis();
 		log.info("firefly startup in {} ms", (end - start));
 	}
 	
-	private static void init(WebContext context, Config config) {
+	private static void init(WebContext context, Config config) throws Throwable {
 		config = (config == null ? context.getBean(Config.class) : config);
 		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
-		Server server = new TcpServer(new HttpDecoder(config), new HttpEncoder(), new HttpHandler(controller, config), config.getMaxConnectionTimeout());
-		server.start(config.getHost(), config.getPort());
+		
+		if(config.isSecure()) {
+			log.info("enable SSL");
+			Server server = new TcpServer(
+					new SSLDecoder(new HttpDecoder(config)), 
+					new SSLEncoder(), 
+					new HttpHandler(controller, config), 
+					config.getMaxConnectionTimeout());
+			server.start(config.getHost(), config.getPort());
+		} else {
+			Server server = new TcpServer(
+					new HttpDecoder(config), 
+					new HttpEncoder(), 
+					new HttpHandler(controller, config), 
+					config.getMaxConnectionTimeout());
+			server.start(config.getHost(), config.getPort());
+		}
 	}
 }

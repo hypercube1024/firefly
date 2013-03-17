@@ -18,18 +18,24 @@ public class Config {
 	private String configFileName = "firefly.xml";
 	private String encoding = "UTF-8";
 	private Map<Integer, String> errorPage;
+	
 	private int maxRequestLineLength = 8 * 1024,
 				maxRequestHeadLength = 16 * 1024, 
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
-				maxSessionInactiveInterval = 10 * 60,
 				maxConnections = 2000,
 				maxConnectionTimeout = 5 * 1000;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private boolean keepAlive = true;
 	private boolean pipeline = false;
-	private String serverHome, host, servletPath = "", contextPath = "", sessionIdName = "jsessionid";
+	private String serverHome, host, servletPath = "", contextPath = "";
 	private int port;
+	
+	private boolean secure = false;
+	private String credentialPath, keystorePassword, keyPassword;
+	
+	private String sessionIdName = "jsessionid";
+	private int maxSessionInactiveInterval = 10 * 60;
 	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager(this);
 	private HttpSessionAttributeListener httpSessionAttributeListener = new HttpSessionAttributeListener() {
 		@Override
@@ -44,7 +50,6 @@ public class Config {
 		public void attributeReplaced(HttpSessionBindingEvent se) {
 		}
 	};
-
 	private HttpSessionListener httpSessionListener = new HttpSessionListener() {
 
 		@Override
@@ -331,6 +336,38 @@ public class Config {
 	public void setErrorPage(Map<Integer, String> errorPage) {
 		this.errorPage = errorPage;
 		SystemHtmlPage.addErrorPageMap(errorPage);
+	}
+
+	public boolean isSecure() {
+		return secure;
+	}
+
+	public void setSecure(boolean secure) {
+		this.secure = secure;
+	}
+
+	public String getCredentialPath() {
+		return credentialPath;
+	}
+
+	public void setCredentialPath(String credentialPath) {
+		this.credentialPath = credentialPath;
+	}
+
+	public String getKeystorePassword() {
+		return keystorePassword;
+	}
+
+	public void setKeystorePassword(String keystorePassword) {
+		this.keystorePassword = keystorePassword;
+	}
+
+	public String getKeyPassword() {
+		return keyPassword;
+	}
+
+	public void setKeyPassword(String keyPassword) {
+		this.keyPassword = keyPassword;
 	}
 
 }

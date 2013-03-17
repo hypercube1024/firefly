@@ -11,6 +11,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import com.firefly.net.Session;
+import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -21,16 +22,9 @@ public class SSLSession implements Closeable {
 	private Session session;
 	private SSLEngine sslEngine;
 	
-	private int appBufferSize;
-	
 	private ByteBuffer inNetBuffer;
-    
-    /*
-     * All of the inbound request data lives here until we determine
-     * that we've read everything, then we pass that data back to the
-     * caller.
-     */
     protected ByteBuffer requestBuffer;
+    
     private static final int requestBufferSize = 1024 * 8;
     private static final int writeBufferSize = 1024 * 8;
     
@@ -67,13 +61,6 @@ public class SSLSession implements Closeable {
         sslEngine.setUseClientMode(false);
         initialHSStatus = HandshakeStatus.NEED_UNWRAP;
         initialHSComplete = false;
-        
-        /*
-         * Create a buffer using the normal expected application size we'll
-         * be getting.  This may change, depending on the peer's
-         * SSL implementation.
-         */
-        appBufferSize = sslEngine.getSession().getApplicationBufferSize();
     }
     
     /**
@@ -83,9 +70,9 @@ public class SSLSession implements Closeable {
      * @return It return true means handshake success
      * @throws Throwable
      */
-    public boolean doHandshake(ByteBuffer receiveBuffer) throws Throwable {
+    public synchronized boolean doHandshake(ByteBuffer receiveBuffer) throws Throwable {
     	if(!session.isOpen()) {
-    		close();
+    		sslEngine.closeInbound();
         	return (initialHSComplete = false);
         }
 
@@ -133,43 +120,53 @@ public class SSLSession implements Closeable {
     	
     	needIO:
         while (initialHSStatus == HandshakeStatus.NEED_UNWRAP) {
-            resizeRequestBuffer();    // expected room for unwrap
-            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
-            if(!inNetBuffer.hasRemaining())
-            	inNetBuffer = null;
-            
-            initialHSStatus = result.getHandshakeStatus();
-
-            switch (result.getStatus()) {
-            case OK:
-                switch (initialHSStatus) {
-                case NOT_HANDSHAKING:
-                    throw new IOException("Not handshaking during initial handshake");
-
-                case NEED_TASK:
-                    initialHSStatus = doTasks();
-                    break;
-
-                case FINISHED:
-                    initialHSComplete = true;
-                    log.info("session {} handshake end", session.getSessionId());
-                    break needIO;
-				default:
-					break;
-                }
-                break;
-
-            case BUFFER_UNDERFLOW:
-                break needIO;
-
-            case BUFFER_OVERFLOW:
-                // Reset the application buffer size.
-                appBufferSize = sslEngine.getSession().getApplicationBufferSize();
-                break;
-
-            default: //CLOSED:
-                throw new IOException("Received" + result.getStatus() + "during initial handshaking");
+        	
+            unwrap:
+            while(true) {
+	            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
+	            if(!inNetBuffer.hasRemaining())
+	            	inNetBuffer = null;
+	            
+	            initialHSStatus = result.getHandshakeStatus();
+	
+	            switch (result.getStatus()) {
+	            case OK:
+	                switch (initialHSStatus) {
+	                case NOT_HANDSHAKING:
+	                    throw new IOException("Not handshaking during initial handshake");
+	
+	                case NEED_TASK:
+	                    initialHSStatus = doTasks();
+	                    break;
+	
+	                case FINISHED:
+	                    initialHSComplete = true;
+	                    log.info("session {} handshake end", session.getSessionId());
+	                    break needIO;
+					default:
+						break;
+	                }
+	                break unwrap;
+	
+	            case BUFFER_UNDERFLOW:
+	                break needIO;
+	
+	            case BUFFER_OVERFLOW:
+	                // Reset the application buffer size.
+	                int appSize = sslEngine.getSession().getApplicationBufferSize();
+	                ByteBuffer b = ByteBuffer.allocate(appSize + requestBuffer.position());
+	                requestBuffer.flip();
+	                b.put(requestBuffer);
+	                requestBuffer = b;
+	                // retry the operation.
+	                break;
+	
+	            default: //CLOSED:
+	                throw new IOException("Received" + result.getStatus() + "during initial handshaking");
+	            }
             }
+            
+            
         }  // "needIO" block.
     }
     
@@ -215,7 +212,7 @@ public class SSLSession implements Closeable {
      * @return plaintext
      * @throws Throwable sslEngine error during data read
      */
-    public ByteBuffer read(ByteBuffer receiveBuffer) throws Throwable {
+    public synchronized ByteBuffer read(ByteBuffer receiveBuffer) throws Throwable {
     	if(!doHandshake(receiveBuffer))
 			return null;
         
@@ -223,7 +220,6 @@ public class SSLSession implements Closeable {
         SSLEngineResult result;
 
         while(true) {
-        	resizeRequestBuffer();    // expected room for unwrap
             result = sslEngine.unwrap(inNetBuffer, requestBuffer);
             if(!inNetBuffer.hasRemaining())
             	inNetBuffer = null;
@@ -237,7 +233,13 @@ public class SSLSession implements Closeable {
             switch (result.getStatus()) {
 
             case BUFFER_OVERFLOW:
-                appBufferSize = sslEngine.getSession().getApplicationBufferSize();
+            	// Reset the application buffer size.
+                int appSize = sslEngine.getSession().getApplicationBufferSize();
+                ByteBuffer b = ByteBuffer.allocate(appSize + requestBuffer.position());
+                requestBuffer.flip();
+                b.put(requestBuffer);
+                requestBuffer = b;
+                // retry the operation.
                 break;
 
             case BUFFER_UNDERFLOW:
@@ -261,7 +263,7 @@ public class SSLSession implements Closeable {
      * @return writen length
      * @throws Throwable sslEngine error during data write
      */
-    public int write(ByteBuffer outputBuffer) throws Throwable {
+    public synchronized int write(ByteBuffer outputBuffer) throws Throwable {
     	if (!initialHSComplete)
             throw new IllegalStateException();
     	
@@ -347,25 +349,14 @@ public class SSLSession implements Closeable {
     	return ret;
     }
     
-    /**
-     * Calls up to the superclass to adjust the buffer size
-     * by an appropriate increment.
-     */
-    protected void resizeRequestBuffer() {
-        resizeRequestBuffer(appBufferSize);
-    }
-    
-    /**
-     * Return a ByteBuffer with "remaining" space to work.  If you have to
-     * reallocate the ByteBuffer, copy the existing info into the new buffer.
-     */
-    protected void resizeRequestBuffer(int remaining) {
-        if (requestBuffer.remaining() < remaining) {
-            ByteBuffer bb = ByteBuffer.allocate(requestBuffer.capacity() * 2);
-            requestBuffer.flip();
-            bb.put(requestBuffer);
-            requestBuffer = bb;
-        }
+    public long transferFileRegion(FileRegion file) throws Throwable {
+    	long ret = 0;
+    	try {
+    		ret = transferTo(file.getFile(), file.getPosition(), file.getCount());
+    	} finally {
+    		file.releaseExternalResources();
+    	}
+    	return ret;
     }
     
     protected ByteBuffer getRequestBuffer() {
@@ -373,6 +364,7 @@ public class SSLSession implements Closeable {
     	ByteBuffer buf = ByteBuffer.allocate(requestBuffer.remaining());
     	buf.put(requestBuffer).flip();
     	requestBuffer.flip();
+    	log.info("current request buffer size: {}, {}", requestBuffer.remaining(), requestBuffer.capacity());
 	    return buf;
     }
     
@@ -395,9 +387,8 @@ public class SSLSession implements Closeable {
     }
 
 	@Override
-	public void close() throws IOException {
+	public synchronized void close() throws IOException {
 		if (!closed) {
-			sslEngine.closeInbound();
             sslEngine.closeOutbound();
             closed = true;
         }

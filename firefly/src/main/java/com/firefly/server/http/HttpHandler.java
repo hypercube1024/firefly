@@ -1,8 +1,16 @@
 package com.firefly.server.http;
 
+import java.io.File;
+import java.io.FileInputStream;
+
+import javax.net.ssl.SSLContext;
+
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
+import com.firefly.net.tcp.ssl.SSLContextFactory;
+import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -11,15 +19,32 @@ public class HttpHandler implements Handler {
 	
 	private final RequestHandler requestHandler;
 	private final HttpConnectionListener httpConnectionListener;
+	private SSLContext sslContext;
+	
+	public static final String SSL_SESSION_KEY = "_sslSession#";
 
-	public HttpHandler(HttpServletDispatcherController servletController, Config config) {
+	public HttpHandler(HttpServletDispatcherController servletController, Config config) throws Throwable {
 		httpConnectionListener = config.getHttpConnectionListener();
 		requestHandler = new QueueRequestHandler(servletController);
+		if(config.isSecure()) {
+			if(VerifyUtils.isNotEmpty(config.getCredentialPath())
+					&& VerifyUtils.isNotEmpty(config.getKeyPassword())
+					&& VerifyUtils.isNotEmpty(config.getKeystorePassword())) {
+				FileInputStream in = new FileInputStream(new File(config.getCredentialPath()));
+				sslContext = SSLContextFactory.getSSLContext(in, config.getKeystorePassword(), config.getKeyPassword());
+			} else {
+				sslContext = SSLContextFactory.getSSLContext();
+			}
+		}
 	}
 
 	@Override
 	public void sessionOpened(Session session) throws Throwable {
 		Monitor.CONN_COUNT.incrementAndGet();
+		
+		if(sslContext != null)
+			session.setAttribute(SSL_SESSION_KEY, new SSLSession(sslContext, session));
+		
 		httpConnectionListener.connectionCreated(session);
 	}
 
@@ -30,7 +55,16 @@ public class HttpHandler implements Handler {
 				session.getReadBytes(), 
 				session.getWrittenBytes(),
 				Monitor.CONN_COUNT.decrementAndGet());
+		
 		httpConnectionListener.connectionClosed(session);
+		
+//		if(sslContext != null) {
+//			SSLSession sslSession = (SSLSession) session.getAttribute(SSL_SESSION_KEY);
+//			if(sslSession != null) {
+//				sslSession.close();
+//				session.removeAttribute(SSL_SESSION_KEY);
+//			}
+//		}
 	}
 
 	@Override
