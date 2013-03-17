@@ -70,7 +70,7 @@ public class SSLSession implements Closeable {
      * @return It return true means handshake success
      * @throws Throwable
      */
-    public synchronized boolean doHandshake(ByteBuffer receiveBuffer) throws Throwable {
+    public boolean doHandshake(ByteBuffer receiveBuffer) throws Throwable {
     	if(!session.isOpen()) {
     		sslEngine.closeInbound();
         	return (initialHSComplete = false);
@@ -212,7 +212,7 @@ public class SSLSession implements Closeable {
      * @return plaintext
      * @throws Throwable sslEngine error during data read
      */
-    public synchronized ByteBuffer read(ByteBuffer receiveBuffer) throws Throwable {
+    public ByteBuffer read(ByteBuffer receiveBuffer) throws Throwable {
     	if(!doHandshake(receiveBuffer))
 			return null;
         
@@ -263,7 +263,7 @@ public class SSLSession implements Closeable {
      * @return writen length
      * @throws Throwable sslEngine error during data write
      */
-    public synchronized int write(ByteBuffer outputBuffer) throws Throwable {
+    public int write(ByteBuffer outputBuffer) throws Throwable {
     	if (!initialHSComplete)
             throw new IllegalStateException();
     	
@@ -332,17 +332,25 @@ public class SSLSession implements Closeable {
     	if (!initialHSComplete)
             throw new IllegalStateException();
     	
+//    	log.info("start transferTo file: {}, {}", pos, len);
     	long ret = 0;
     	try {
 	    	ByteBuffer buf = ByteBuffer.allocate(1024 * 4);
-	    	for (int i = 0; (i = fc.read(buf, pos)) != -1;) {
-				ret += i;
-				buf.flip();
-				write(buf);
-				
-				if(ret >= len)
-					break;
-			}
+	    	int i = 0;
+	    	while((i = fc.read(buf, pos)) != -1) {
+	    		if(i > 0) {
+//	    			log.info("read len: {}", i);
+	    			ret += i;
+	    			pos += i;
+	    			buf.flip();
+	    			write(buf);
+	    			buf = ByteBuffer.allocate(1024 * 4);
+	    		}
+	    		
+//	    		log.info("write buf: {}, {}, {}", ret, len, pos);
+	    		if(pos >= len)
+	    			break;
+	    	}
     	} finally {
     		fc.close();
     	}
@@ -387,7 +395,7 @@ public class SSLSession implements Closeable {
     }
 
 	@Override
-	public synchronized void close() throws IOException {
+	public void close() throws IOException {
 		if (!closed) {
             sslEngine.closeOutbound();
             closed = true;

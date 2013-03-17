@@ -58,13 +58,13 @@ public class HttpHandler implements Handler {
 		
 		httpConnectionListener.connectionClosed(session);
 		
-//		if(sslContext != null) {
-//			SSLSession sslSession = (SSLSession) session.getAttribute(SSL_SESSION_KEY);
-//			if(sslSession != null) {
-//				sslSession.close();
-//				session.removeAttribute(SSL_SESSION_KEY);
-//			}
-//		}
+		if(sslContext != null) {
+			SSLSession sslSession = (SSLSession) session.getAttribute(SSL_SESSION_KEY);
+			if(sslSession != null) {
+				sslSession.close();
+				session.removeAttribute(SSL_SESSION_KEY);
+			}
+		}
 	}
 
 	@Override

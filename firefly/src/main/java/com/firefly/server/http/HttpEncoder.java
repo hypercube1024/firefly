@@ -10,10 +10,12 @@ public class HttpEncoder implements Encoder {
 
 	@Override
 	public void encode(Object message, Session session) throws Throwable {
-		if (message instanceof ByteBuffer)
-			session.write((ByteBuffer) message);
-		else if (message instanceof FileRegion)
-			session.write((FileRegion) message);
+		if(message != null) {
+			if (message instanceof ByteBuffer)
+				session.write((ByteBuffer) message);
+			else if (message instanceof FileRegion)
+				session.write((FileRegion) message);
+		}
 	}
 
 }

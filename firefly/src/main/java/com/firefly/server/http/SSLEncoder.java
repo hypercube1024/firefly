@@ -11,11 +11,13 @@ public class SSLEncoder implements Encoder {
 
 	@Override
 	public void encode(Object message, Session session) throws Throwable {
-		SSLSession c = (SSLSession)session.getAttribute(HttpHandler.SSL_SESSION_KEY);
-		if (message instanceof ByteBuffer)
-			c.write((ByteBuffer) message);
-		else if (message instanceof FileRegion)
-			c.transferFileRegion((FileRegion) message);
+		if(message != null) {
+			SSLSession c = (SSLSession)session.getAttribute(HttpHandler.SSL_SESSION_KEY);
+			if (message instanceof ByteBuffer)
+				c.write((ByteBuffer) message);
+			else if (message instanceof FileRegion)
+				c.transferFileRegion((FileRegion) message);
+		}
 	}
 
 }
