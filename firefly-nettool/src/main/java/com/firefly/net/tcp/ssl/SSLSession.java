@@ -331,15 +331,13 @@ public class SSLSession implements Closeable {
     public long transferTo(FileChannel fc, long pos, long len) throws Throwable {
     	if (!initialHSComplete)
             throw new IllegalStateException();
-    	
-//    	log.info("start transferTo file: {}, {}", pos, len);
+
     	long ret = 0;
     	try {
 	    	ByteBuffer buf = ByteBuffer.allocate(1024 * 4);
 	    	int i = 0;
 	    	while((i = fc.read(buf, pos)) != -1) {
 	    		if(i > 0) {
-//	    			log.info("read len: {}", i);
 	    			ret += i;
 	    			pos += i;
 	    			buf.flip();
@@ -347,7 +345,6 @@ public class SSLSession implements Closeable {
 	    			buf = ByteBuffer.allocate(1024 * 4);
 	    		}
 	    		
-//	    		log.info("write buf: {}, {}, {}", ret, len, pos);
 	    		if(pos >= len)
 	    			break;
 	    	}
@@ -375,11 +372,6 @@ public class SSLSession implements Closeable {
     	log.info("current request buffer size: {}, {}", requestBuffer.remaining(), requestBuffer.capacity());
 	    return buf;
     }
-    
-//    private ByteBuffer getWriteBuffer(int remain) {
-//    	int netBufferSize = sslEngine.getSession().getPacketBufferSize();
-//    	return remain >= netBufferSize ? ByteBuffer.allocate(netBufferSize) : ByteBuffer.allocate(remain);
-//    }
     
     /**
      * Do all the outstanding handshake tasks in the current Thread.
