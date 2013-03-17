@@ -331,8 +331,19 @@ public class SSLSession implements Closeable {
             throw new IllegalStateException();
     	
     	long ret = 0;
-    	// TODO
-    	
+    	try {
+	    	ByteBuffer buf = ByteBuffer.allocate(1024 * 4);
+	    	for (int i = 0; (i = fc.read(buf, pos)) != -1;) {
+				ret += i;
+				buf.flip();
+				write(buf);
+				
+				if(ret >= len)
+					break;
+			}
+    	} finally {
+    		fc.close();
+    	}
     	return ret;
     }
     
