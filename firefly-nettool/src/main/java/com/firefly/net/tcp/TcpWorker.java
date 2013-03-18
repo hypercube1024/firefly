@@ -177,8 +177,7 @@ public final class TcpWorker implements Worker {
 	}
 
 	private boolean scheduleWriteIfNecessary(final TcpSession session) {
-		log.debug("worker thread {} | current thread {}", thread.toString(),
-				Thread.currentThread().toString());
+//		log.debug("worker thread {} | current thread {}", thread.toString(), Thread.currentThread().toString());
 		if (Thread.currentThread() != thread) {
 			log.debug("schedule write >>>>");
 			if (session.getWriteTaskInTaskQueue().compareAndSet(false, true)) {
@@ -512,8 +511,7 @@ public final class TcpWorker implements Worker {
 			selector.select(500);
 		} catch (CancelledKeyException e) {
 			// Harmless exception - log anyway
-			log.debug(CancelledKeyException.class.getSimpleName()
-					+ " raised by a Selector - JDK bug?", e);
+			log.debug(CancelledKeyException.class.getSimpleName() + " raised by a Selector - JDK bug?", e);
 		}
 	}
 
@@ -638,7 +636,6 @@ public final class TcpWorker implements Worker {
 		eventManager.shutdown();
 		start = false;
 		timeWheel.stop();
-		log.debug("thread {} is shutdown: {}", thread.getName(),
-				thread.isInterrupted());
+		log.debug("thread {} is shutdown: {}", thread.getName(), thread.isInterrupted());
 	}
 }
