@@ -43,7 +43,7 @@ public class ServerBootstrap {
 		long start = System.currentTimeMillis();
 		WebContext context = new ServerAnnotationWebContext(config);
 		try {
-			init(context, null);
+			init(context, config);
 		} catch (Throwable e) {
 			log.error("firefly init error", e);
 		}
