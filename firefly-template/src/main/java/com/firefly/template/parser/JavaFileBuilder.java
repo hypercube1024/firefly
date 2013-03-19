@@ -111,8 +111,6 @@ public class JavaFileBuilder {
 	}
 
 	public JavaFileBuilder writeText(String str) {
-//		str = Arrays.toString(str.getBytes(config.getCharset()));
-//		str = str.substring(1, str.length() - 1);
 		write(preBlank + "out.write(_TEXT_" + textCount + ");\n")
 		.appendTail("\tprivate final byte[] _TEXT_" + textCount + " = str2Byte(" + strEscape(str) + ", \"" + config.getCharset() +"\");\n");
 		textCount++;
@@ -132,17 +130,20 @@ public class JavaFileBuilder {
 			param = param.trim();
 			if(param.length() > 0) {
 				write(", ");
-				if(VerifyUtils.isDouble(param) 
-						|| VerifyUtils.isLong(param) 
-						|| VerifyUtils.isFloat(param) 
-						|| VerifyUtils.isInteger(param) 
+				if(VerifyUtils.isDouble(param)
+						|| VerifyUtils.isLong(param)
+						|| VerifyUtils.isFloat(param)
+						|| VerifyUtils.isInteger(param)
 						|| "null".equals(param)
 						|| "true".equals(param)
-						|| "false".equals(param)
-						|| (param.charAt(0) == '\"' && param.charAt(param.length() - 1) == '\"' )) {
+						|| "false".equals(param)) {
 					write(param);
+				} else if (param.charAt(0) == '\'' && param.charAt(param.length() - 1) == '\'') {
+					write(strEscape(param.substring(1, param.length() - 1)));
+				} else if (param.charAt(0) == '"' && param.charAt(param.length() - 1) == '"' ) {
+					write(strEscape(param.substring(1, param.length() - 1)));
 				} else {
-					write("objNav.find(model, \"" + param + "\")");
+					write("objNav.find(model, " + strEscape(param) + ")");
 				}
 			}
 		}
