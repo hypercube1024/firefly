@@ -73,6 +73,7 @@ public class TestConfig {
 		view.render(model, out);
 		out.close();
 		System.out.println(out.toString());
+		System.out.println("=======================================");
 		
 		out = new ByteArrayOutputStream();
 		model.put("user", user);
@@ -80,6 +81,7 @@ public class TestConfig {
 		view.render(model, out);
 		out.close();
 		System.out.println(out.toString());
+		System.out.println("=======================================");
 		
 		// #for
 		model = new ModelMock();
@@ -107,6 +109,7 @@ public class TestConfig {
 		view.render(model, out);
 		out.close();
 		System.out.println(out.toString());
+		System.out.println("=======================================");
 		
 		// #switch #case #default
 		model = new ModelMock();
@@ -116,6 +119,7 @@ public class TestConfig {
 		view.render(model, out);
 		out.close();
 		System.out.println(out.toString());
+		System.out.println("=======================================");
 		
 		// #set
 		model = new ModelMock();
@@ -125,6 +129,7 @@ public class TestConfig {
 		view.render(model, out);
 		out.close();
 		System.out.println(out.toString());
+		System.out.println("=======================================");
 		
 		// #include
 		model = new ModelMock();
@@ -133,6 +138,7 @@ public class TestConfig {
 		view.render(model, out);
 		out.close();
 		System.out.println(out.toString());
+		System.out.println("=======================================");
 		
 //		FunctionRegistry.MAP.get("").render(model, out, obj)
 	}

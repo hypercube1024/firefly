@@ -10,7 +10,6 @@ import com.firefly.template.Config;
 import com.firefly.template.exception.TemplateFileReadException;
 import com.firefly.template.support.CompileUtils;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.io.LineReaderHandler;
 
@@ -133,8 +132,9 @@ public class ViewFileReader {
 		for (int start, end; (start = text.indexOf("${", cursor)) != -1
 				&& (end = text.indexOf("}", start)) != -1;) {
 			t = text.substring(cursor, start);
-			if (!VerifyUtils.isEmpty(t))
+			if (t.length() > 0) {
 				javaFileBuilder.writeText(t);
+			}
 			String e = text.substring(start + 2, end);
 			int l = e.indexOf('(');
 			if(l > 0) {
@@ -144,21 +144,28 @@ public class ViewFileReader {
 					String[] params = StringUtils.split(e.substring(l + 1, r), ',');
 					javaFileBuilder.writeFunction(functionName, params);
 				}
-			} else
+			} else {
 				javaFileBuilder.writeObject(e);
+			}
 			cursor = end + 1;
 		}
-		t = text.substring(cursor, text.length());
-		if (!VerifyUtils.isEmpty(t))
-			javaFileBuilder.writeText(t);
+		if(cursor < text.length()) {
+			t = text.substring(cursor, text.length());
+			if (t.length() > 0)
+				javaFileBuilder.writeText(t);
+		}
 	}
 
-	private class TemplateFileLineReaderHandler implements LineReaderHandler,
-			Closeable {
-		JavaFileBuilder javaFileBuilder;
-		StringBuilder text = new StringBuilder();
-		StringBuilder comment = new StringBuilder();
-		int status = 0;
+	private enum ParserStatus {
+		INIT, COMMENT_PARSING
+	}
+	
+	private class TemplateFileLineReaderHandler implements LineReaderHandler, Closeable {
+		private JavaFileBuilder javaFileBuilder;
+		private StringBuilder text = new StringBuilder();
+		private StringBuilder comment = new StringBuilder();
+		private ParserStatus status = ParserStatus.INIT;
+		
 
 		public TemplateFileLineReaderHandler(JavaFileBuilder javaFileBuilder) {
 			this.javaFileBuilder = javaFileBuilder;
@@ -177,38 +184,47 @@ public class ViewFileReader {
 		@Override
 		public void readline(String line, int num) {
 			switch (status) {
-			case 0:
+			case INIT:
 				int i = line.indexOf("<!--");
 
-				if (i >= 0) { // html注释开始
-					text.append(line.substring(0, i).trim()); // 此处不可能有换行\n
+				if (i >= 0) { // html comment parse start
+					text.append(line.substring(0, i).trim()); // at here assert is not '\n'
 					if (text.length() > 0) {
 						parseText(text.toString(), javaFileBuilder);
 						text = new StringBuilder();
 					}
 
 					int j = line.indexOf("-->");
-					if (j > i + 4) { // html注释结束
+					if (j > i + 4) { // html comment end
 						assert comment.length() == 0;
-						parseComment(line.substring(i + 4, j).trim(),
-								javaFileBuilder);
+						parseComment(line.substring(i + 4, j).trim(), javaFileBuilder);
+						// continue parse template after the end of comment
+						if(j + 3 < line.length()) {
+							readline(line.substring(j + 3).trim() + "\n", num);
+						}
 					} else {
-						status = 1;
+						status = ParserStatus.COMMENT_PARSING;
 						comment.append(line.substring(i + 4).trim() + "\n");
 					}
 				} else {
-					text.append(line.trim() + "\n"); // 保留模版中的换行
+					text.append(line.trim() + "\n"); // save the character '\n' in template
 				}
 				break;
-			case 1: // 注释未完成状态
+			case COMMENT_PARSING: // comment parsing
 				int j = line.indexOf("-->");
-				if (j >= 0) { // html注释结束
-					status = 0;
+				if (j >= 0) { // html comment end
+					status = ParserStatus.INIT;
 					comment.append(line.substring(0, j).trim());
 					parseComment(comment.toString(), javaFileBuilder);
 					comment = new StringBuilder();
+					// continue parse template after the end of comment
+					if(j + 3 < line.length()) {
+						readline(line.substring(j + 3).trim() + "\n", num);
+					}
 				} else
 					comment.append(line.trim() + "\n");
+				break;
+			default:
 				break;
 			}
 
