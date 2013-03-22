@@ -30,12 +30,16 @@ public class FileHttpBodyPipedStream implements HttpBodyPipedStream {
 		if(temp == null)
 			return;
 		
-		in.close();
-		out.close();
-		
+		try {
+			temp.delete();
+		} finally {
+			if(in != null)
+				in.close();
+			
+			if(out != null)
+				out.close();
+		}
 		log.info("temp file [{}] piped stream close!", temp.getName());
-		temp.delete();
-		
 		in = null;
 		out = null;
 		temp = null;
