@@ -3,9 +3,8 @@ package com.firefly.server.http;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.Principal;
@@ -29,6 +28,7 @@ import javax.servlet.http.HttpSession;
 
 import com.firefly.net.Session;
 import com.firefly.server.exception.HttpServerException;
+import com.firefly.server.io.HttpBodyPipedStream;
 import com.firefly.server.utils.StringParser;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
@@ -36,12 +36,14 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public class HttpServletRequestImpl implements HttpServletRequest {
+	
 	int status, headLength, offset;
 	String method, requestURI, queryString;
 	String protocol = "HTTP/1.1";
 
-	PipedInputStream pipedInputStream = new PipedInputStream();
-	PipedOutputStream pipedOutputStream;
+	HttpBodyPipedStream bodyPipedStream;
+//	PipedInputStream pipedInputStream = new PipedInputStream();
+//	PipedOutputStream pipedOutputStream;
 	Cookie[] cookies;
 	Map<String, String> headMap = new HashMap<String, String>();
 	HttpServletResponseImpl response;
@@ -61,27 +63,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	private Map<String, List<String>> parameterMap = new HashMap<String, List<String>>();
 	private Map<String, Object> attributeMap = new HashMap<String, Object>();
 	private BufferedReader bufferedReader;
-	private ServletInputStream servletInputStream = new ServletInputStream() {
-
-		@Override
-		public int read() throws IOException {
-			return pipedInputStream.read();
-		}
-
-		@Override
-		public int available() throws IOException {
-			return pipedInputStream.available();
-		}
-
-		@Override
-		public void close() throws IOException {
-			pipedInputStream.close();
-		}
-
-		public int read(byte[] b, int off, int len) throws IOException {
-			return pipedInputStream.read(b, off, len);
-		}
-	};
+	private ServletInputStream servletInputStream;
 	private RequestDispatcherImpl requestDispatcher = new RequestDispatcherImpl();
 
 	protected static Locale DEFAULT_LOCALE = Locale.getDefault();
@@ -213,6 +195,30 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
+		if(servletInputStream == null) {
+			final InputStream in = bodyPipedStream.getInputStream();
+			servletInputStream = new ServletInputStream() {
+
+				@Override
+				public int read() throws IOException {
+					return in.read();
+				}
+
+				@Override
+				public int available() throws IOException {
+					return in.available();
+				}
+
+				@Override
+				public void close() throws IOException {
+					in.close();
+				}
+
+				public int read(byte[] b, int off, int len) throws IOException {
+					return in.read(b, off, len);
+				}
+			};
+		}
 		return servletInputStream;
 	}
 
@@ -282,9 +288,9 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public BufferedReader getReader() throws IOException {
-		if (bufferedReader == null)
-			bufferedReader = new BufferedReader(new InputStreamReader(
-					pipedInputStream, characterEncoding));
+		if (bufferedReader == null) {
+			bufferedReader = new BufferedReader(new InputStreamReader(bodyPipedStream.getInputStream(), characterEncoding));
+		}
 		return bufferedReader;
 	}
 
@@ -809,17 +815,10 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	void releaseInputStreamData() throws IOException {
 		try {
 			if(getContentLength() > 0) {
-				ServletInputStream input = getInputStream();
-				if(input.available() > 0) {
-					log.warn("release input stream data");
-					byte[] buf = new byte[1024 * 8];
-					for (; input.read(buf) != -1;) {
-						
-					}
-				}
+				bodyPipedStream.close();
 			}
-		} finally {
-			getInputStream().close();
+		} catch(Throwable t) {
+			log.error("release input stream error", t);
 		}
 	}
 

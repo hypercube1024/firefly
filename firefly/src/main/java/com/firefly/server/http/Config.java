@@ -26,9 +26,10 @@ public class Config {
 				maxConnections = 2000,
 				maxConnectionTimeout = 5 * 1000;
 	private long maxUploadLength = 50 * 1024 * 1024;
+	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
 	private boolean pipeline = false;
-	private String serverHome, host, servletPath = "", contextPath = "";
+	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
 	
 	private boolean secure = false;
@@ -368,6 +369,27 @@ public class Config {
 
 	public void setKeyPassword(String keyPassword) {
 		this.keyPassword = keyPassword;
+	}
+
+	public String getTempdir() {
+		return tempdir;
+	}
+
+	public void setTempdir(String tempdir) {
+		this.tempdir = tempdir;
+	}
+
+	public int getHttpBodyThreshold() {
+		return httpBodyThreshold;
+	}
+
+	/**
+	 * http body length threshold. if the length over threshold, server will use temp file save http body data.
+	 *  
+	 * @param httpBodyThreshold body data length threshold
+	 */
+	public void setHttpBodyThreshold(int httpBodyThreshold) {
+		this.httpBodyThreshold = httpBodyThreshold;
 	}
 
 }

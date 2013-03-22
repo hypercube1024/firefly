@@ -1,12 +1,13 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
-import java.io.PipedOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
+import com.firefly.server.io.ByteArrayHttpBodyPipedStream;
+import com.firefly.server.io.FileHttpBodyPipedStream;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
@@ -240,24 +241,28 @@ public class HttpDecoder implements Decoder {
 					return true;
 				}
 
-				if (req.pipedOutputStream == null)
-					req.pipedOutputStream = new PipedOutputStream(req.pipedInputStream);
-				
-				req.commit();
+				if (req.bodyPipedStream == null) {
+					if(contentLength >= config.getHttpBodyThreshold()) {
+						req.bodyPipedStream = new FileHttpBodyPipedStream(config.getTempdir());
+					} else {
+						req.bodyPipedStream = new ByteArrayHttpBodyPipedStream(contentLength);
+					}
+				}
 				
 				req.offset += buf.remaining();
 				byte[] data = new byte[buf.remaining()];
 				buf.get(data);
 				try {
-					req.pipedOutputStream.write(data);
+					req.bodyPipedStream.getOutputStream().write(data);
 				} catch(IOException e) {
 					log.error("receive body data error", e);
-					req.pipedOutputStream.close();
+					req.bodyPipedStream.getOutputStream().close();
 				}
 
 				if (req.offset >= contentLength) {
-					req.pipedOutputStream.close();
+					req.bodyPipedStream.getOutputStream().close();
 					finish(session, req);
+					req.commit();
 					return true;
 				}
 			} else {

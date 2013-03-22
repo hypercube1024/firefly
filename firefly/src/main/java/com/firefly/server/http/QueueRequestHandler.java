@@ -31,7 +31,7 @@ public class QueueRequestHandler extends RequestHandler {
 	}
 
 	@Override
-	public void doRequest(Session session, final HttpServletRequestImpl request)
+	public void doRequest(final Session session, final HttpServletRequestImpl request)
 			throws IOException {
 		if (request.response.system) { // 系统错误响应
 			request.response.outSystemData();
@@ -46,6 +46,7 @@ public class QueueRequestHandler extends RequestHandler {
 							doRequest(request);
 						} catch (IOException e) {
 							log.error("http handle thread error", e);
+							session.close(true);
 						}
 					}
 				});

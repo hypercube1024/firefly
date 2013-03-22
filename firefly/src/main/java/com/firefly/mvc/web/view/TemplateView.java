@@ -21,12 +21,14 @@ public class TemplateView implements View {
 	protected static TemplateFactory templateFactory;
 	protected static boolean init = false;
 	protected static String charset = "UTF-8";
+	protected static String _viewPath;
 	
 	protected String page;
 	
 	public static void init(String viewPath, String encoding) {
 		if (!init) {
 			log.info("template path {}", viewPath);
+			_viewPath = viewPath;
 			com.firefly.template.Config config = new com.firefly.template.Config();
 			config.setViewPath(viewPath);
 			config.setCharset(encoding);
@@ -42,6 +44,10 @@ public class TemplateView implements View {
 	
 	public static String getCharset() {
 		return charset;
+	}
+	
+	public static String getViewPath() {
+		return _viewPath;
 	}
 	
 	public String getPage() {
