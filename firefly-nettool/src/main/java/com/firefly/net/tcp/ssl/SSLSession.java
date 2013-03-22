@@ -100,23 +100,27 @@ public class SSLSession implements Closeable {
         return initialHSComplete;
     }
     
-    private void copyNetBuffer(ByteBuffer now) {
-    	if(inNetBuffer == null) {
-    		inNetBuffer = now;
+    private void merge(ByteBuffer now) {
+    	if(!now.hasRemaining())
     		return;
-    	}
     	
-    	inNetBuffer.flip();
-    	ByteBuffer bb = ByteBuffer.allocate(inNetBuffer.remaining() + now.remaining());
-    	bb.put(inNetBuffer).put(now).flip();
-    	inNetBuffer = bb;
+    	if(inNetBuffer != null) {
+    		if(inNetBuffer.hasRemaining()) {
+	    		ByteBuffer ret = ByteBuffer.allocate(inNetBuffer.remaining() + now.remaining());
+	    		ret.put(inNetBuffer).put(now).flip();
+	    		inNetBuffer = ret;
+    		} else {
+    			inNetBuffer = now;
+    		}
+    	} else {
+    		inNetBuffer = now;
+    	}
     }
     
     private void doHandshakeReceive(ByteBuffer receiveBuffer) throws Throwable {
     	SSLEngineResult result;
     	
-    	if(receiveBuffer != null)
-    		copyNetBuffer(receiveBuffer);
+    	merge(receiveBuffer);
     	
     	needIO:
         while (initialHSStatus == HandshakeStatus.NEED_UNWRAP) {
@@ -124,9 +128,6 @@ public class SSLSession implements Closeable {
             unwrap:
             while(true) {
 	            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
-	            if(!inNetBuffer.hasRemaining())
-	            	inNetBuffer = null;
-	            
 	            initialHSStatus = result.getHandshakeStatus();
 	
 	            switch (result.getStatus()) {
@@ -140,8 +141,8 @@ public class SSLSession implements Closeable {
 	                    break;
 	
 	                case FINISHED:
+	                	log.info("session {} handshake success!", session.getSessionId());
 	                    initialHSComplete = true;
-	                    log.info("session {} handshake success!", session.getSessionId());
 	                    break needIO;
 					default:
 						break;
@@ -215,14 +216,15 @@ public class SSLSession implements Closeable {
     public ByteBuffer read(ByteBuffer receiveBuffer) throws Throwable {
     	if(!doHandshake(receiveBuffer))
 			return null;
-        
-        copyNetBuffer(receiveBuffer);
+    		
+    	merge(receiveBuffer);
+    	if(!inNetBuffer.hasRemaining())
+    		return null;
+    	
         SSLEngineResult result;
 
         while(true) {
             result = sslEngine.unwrap(inNetBuffer, requestBuffer);
-            if(!inNetBuffer.hasRemaining())
-            	inNetBuffer = null;
 
             /*
              * Could check here for a renegotation, but we're only
@@ -249,7 +251,10 @@ public class SSLSession implements Closeable {
                 if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
                     doTasks();
                 }
-                return getRequestBuffer();
+                if(!inNetBuffer.hasRemaining())
+                	return getRequestBuffer();
+                
+                break;
 
             default:
                 throw new IOException("sslEngine error during data read: " + result.getStatus());
@@ -272,7 +277,6 @@ public class SSLSession implements Closeable {
     		return ret;
     	
     	final int remain = outputBuffer.remaining();
-//    	log.info("src remain {}", remain);
     	
     	while(ret < remain) {
     		ByteBuffer writeBuf = ByteBuffer.allocate(writeBufferSize);
@@ -281,7 +285,6 @@ public class SSLSession implements Closeable {
     		while(true) {
 		    	SSLEngineResult result = sslEngine.wrap(outputBuffer, writeBuf);
 		        ret += result.bytesConsumed();
-//		        log.info("consumed data: {} | {}", ret, outputBuffer.remaining());
 		        
 		        switch (result.getStatus()) {
 		        case OK:
@@ -294,7 +297,6 @@ public class SSLSession implements Closeable {
 		
 		        case BUFFER_OVERFLOW:
 		            int netSize = sslEngine.getSession().getPacketBufferSize();
-//		            log.info("sssss: {}", (writeBuf.position() + netSize));
 		            ByteBuffer b = ByteBuffer.allocate(writeBuf.position() + netSize);
 		            writeBuf.flip();
 		            b.put(writeBuf);
@@ -368,8 +370,7 @@ public class SSLSession implements Closeable {
     	requestBuffer.flip();
     	ByteBuffer buf = ByteBuffer.allocate(requestBuffer.remaining());
     	buf.put(requestBuffer).flip();
-    	requestBuffer.flip();
-    	log.info("current request buffer size: {}, {}", requestBuffer.remaining(), requestBuffer.capacity());
+    	requestBuffer = ByteBuffer.allocate(requestBufferSize);
 	    return buf;
     }
     

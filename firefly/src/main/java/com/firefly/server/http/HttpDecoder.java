@@ -243,6 +243,7 @@ public class HttpDecoder implements Decoder {
 
 				if (req.bodyPipedStream == null) {
 					if(contentLength >= config.getHttpBodyThreshold()) {
+						log.info("content length [{}] more than threshold [{}]", contentLength , config.getHttpBodyThreshold());
 						req.bodyPipedStream = new FileHttpBodyPipedStream(config.getTempdir());
 					} else {
 						req.bodyPipedStream = new ByteArrayHttpBodyPipedStream(contentLength);

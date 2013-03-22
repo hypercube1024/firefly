@@ -24,7 +24,7 @@ public class Config {
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
 				maxConnections = 2000,
-				maxConnectionTimeout = 5 * 1000;
+				maxConnectionTimeout = 10 * 1000;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
