@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Map;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -116,6 +117,12 @@ public class IndexController {
 		System.out.println(Arrays.toString(args));
 		request.setAttribute("info", args);
 		return new TemplateView("/index.html");
+	}
+	
+	@RequestMapping(value = "/param")
+	public View testParam(HttpServletRequest request) {
+		Map<String, String[]> map = request.getParameterMap();
+		return new TextView(Arrays.toString(map.get("b")));
 	}
 	
 	@RequestMapping(value = "/big")

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -432,6 +433,24 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 	@Override
 	public void addDateHeader(String name, long date) {
 		addHeader(name, GMT_FORMAT.format(new Date(date)));
+	}
+	
+	@Override
+	public String getHeader(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<String> getHeaders(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<String> getHeaderNames() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
