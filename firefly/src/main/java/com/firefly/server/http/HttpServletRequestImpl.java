@@ -573,8 +573,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public String getPathTranslated() {
-		return new File(config.getServerHome(), getRequestURI())
-				.getAbsolutePath();
+		return new File(config.getServerHome(), getRequestURI()).getAbsolutePath();
 	}
 
 	@Override

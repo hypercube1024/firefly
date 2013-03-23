@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import com.firefly.server.io.ChunkedOutputStream;
 import com.firefly.server.io.HttpServerOutpuStream;
 import com.firefly.server.io.NetBufferedOutputStream;
 import com.firefly.server.io.StaticFileOutputStream;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -437,20 +439,21 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 	
 	@Override
 	public String getHeader(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return headMap.get(name);
 	}
 
 	@Override
 	public Collection<String> getHeaders(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		String v = headMap.get(name);
+		if(v == null)
+			return null;
+		
+		return Arrays.asList(StringUtils.split(v, ','));
 	}
 
 	@Override
 	public Collection<String> getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return headMap.keySet();
 	}
 
 	@Override
