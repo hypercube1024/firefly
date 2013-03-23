@@ -7,7 +7,6 @@ import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.HandlerChain;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebContext;
-import com.firefly.mvc.web.support.exception.WebException;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -38,7 +37,8 @@ public class HttpServletDispatcherController implements DispatcherController {
 		View v = null;
 		try {
 			v = chain.doNext(request, response, chain);
-		} catch (WebException e) {
+		} catch (Throwable e) {
+			log.error("dispatcher error", e);
 			if(!response.isCommitted()) {
 				String msg = "Server internal error";
 				SystemHtmlPage.responseSystemPage(request, response, webContext.getEncoding(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);

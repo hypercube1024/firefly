@@ -138,6 +138,7 @@ public class IndexController {
 	
 	@RequestMapping(value = "/error")
 	public View testError(HttpServletRequest request) {
+		System.out.println("test error");
 		throw new RuntimeException("test error");
 	}
 

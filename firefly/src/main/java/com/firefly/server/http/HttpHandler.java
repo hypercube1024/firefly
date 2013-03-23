@@ -68,15 +68,14 @@ public class HttpHandler implements Handler {
 	}
 
 	@Override
-	public void messageRecieved(Session session, Object message)
-			throws Throwable {
+	public void messageRecieved(Session session, Object message) throws Throwable {
 		HttpServletRequestImpl request = (HttpServletRequestImpl) message;
 		requestHandler.doRequest(session, request);
 	}
 
 	@Override
 	public void exceptionCaught(Session session, Throwable t) throws Throwable {
-		log.error("server error", t);
+		log.error("server handle error", t);
 		session.close(true);
 	}
 

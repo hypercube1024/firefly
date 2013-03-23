@@ -5,7 +5,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+import javax.servlet.http.HttpServletResponse;
+
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.Session;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -31,8 +34,7 @@ public class CachedThreadPoolRequestHandler extends RequestHandler {
 	}
 
 	@Override
-	public void doRequest(final Session session, final HttpServletRequestImpl request)
-			throws IOException {
+	public void doRequest(final Session session, final HttpServletRequestImpl request) throws IOException {
 		if (request.response.system) { // 系统错误响应
 			request.response.outSystemData();
 		} else {
@@ -44,9 +46,14 @@ public class CachedThreadPoolRequestHandler extends RequestHandler {
 					public void run() {
 						try {
 							doRequest(request);
-						} catch (IOException e) {
+						} catch (Throwable e) {
 							log.error("http handle thread error", e);
-							session.close(true);
+							if(!request.response.isCommitted()) {
+								String msg = "Server internal error";
+								SystemHtmlPage.responseSystemPage(request, request.response, request.config.getEncoding(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+							} else {
+								session.close(true);
+							}
 						}
 					}
 				});
