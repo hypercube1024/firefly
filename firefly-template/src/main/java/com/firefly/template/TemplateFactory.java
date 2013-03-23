@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.firefly.template.function.AutoincrementFunction;
+import com.firefly.template.function.CutStringFunction;
 import com.firefly.template.function.DateFormatFunction;
 import com.firefly.template.function.LengthFunction;
 import com.firefly.template.parser.ViewFileReader;
@@ -52,6 +53,7 @@ public class TemplateFactory {
 		FunctionRegistry.add("dateFormat", new DateFormatFunction(config.getCharset()));
 		FunctionRegistry.add("len", new LengthFunction(config.getCharset()));
 		FunctionRegistry.add("increment", new AutoincrementFunction(config.getCharset()));
+		FunctionRegistry.add("cut", new CutStringFunction(config.getCharset()));
 		
 		ViewFileReader reader = new ViewFileReader(config);
 		List<String> javaFiles = reader.getJavaFiles();

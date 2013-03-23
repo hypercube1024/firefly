@@ -31,23 +31,23 @@ public class ServerBootstrap {
 		start(config);
 	}
 	
-	public static void start(String configFileName) {
+	public static void start(Config config) {
 		long start = System.currentTimeMillis();
-		WebContext context = new ServerAnnotationWebContext(configFileName);
+		WebContext context = new ServerAnnotationWebContext(config);
 		try {
-			init(context, null);
+			init(context, config);
 		} catch (Throwable e) {
 			log.error("firefly init error", e);
 		}
 		long end = System.currentTimeMillis();
 		log.info("firefly startup in {} ms", (end - start));
 	}
-
-	public static void start(Config config) {
+	
+	public static void start(String configFileName) {
 		long start = System.currentTimeMillis();
-		WebContext context = new ServerAnnotationWebContext(config);
+		WebContext context = new ServerAnnotationWebContext(configFileName);
 		try {
-			init(context, config);
+			init(context, null);
 		} catch (Throwable e) {
 			log.error("firefly init error", e);
 		}

@@ -140,6 +140,14 @@ public class TestConfig {
 		System.out.println(out.toString());
 		System.out.println("=======================================");
 		
+		// #function
+		model = new ModelMock();
+		model.put("teststr", "好长好长，好大好大，的一个东东！");
+		out = new ByteArrayOutputStream();
+		view = t.getView("/testFunction.html");
+		view.render(model, out);
+		out.close();
+		System.out.println(out.toString());
 //		FunctionRegistry.MAP.get("").render(model, out, obj)
 	}
 }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>${cut("这是一个很长的字符串", 5)}</p>
+<p>${cut("这是一个很长的字符串", 5, "...")}</p>
+<p>${cut("这是一个很长的字符串", 7, 3)}</p>
+<p>${cut('这是一个很长的字符串', 7, 3, "...")}</p>
+<p>${cut(teststr, 7, "...")}</p>
+
+<div>${testFunction(3, "'hello'", user.age)}</div>
+<div>${testFunction(3, '"hello"', user.age)}</div>
+<div>${testFunction2()}</div>
+<script type="text/javascript">
+
+function msg() {
+	// pop alert
+	alert('ok')
+	alert('ok2'); alert('ok3');
+}
+</script>
+</body>
+</html>
