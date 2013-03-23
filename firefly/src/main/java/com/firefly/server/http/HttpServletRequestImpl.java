@@ -58,7 +58,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
 	private String characterEncoding, requestedSessionId;
 	private boolean requestedSessionIdFromCookie, requestedSessionIdFromURL;
-	private boolean commit = false;
+	private boolean decodeFinish = false;
 	private HttpSession httpSession;
 	private Map<String, List<String>> parameterMap = new HashMap<String, List<String>>();
 	private Map<String, Object> attributeMap = new HashMap<String, Object>();
@@ -799,19 +799,19 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	}
 	
 	/**
-	 * 提交到handler处理
+	 * decode finish, then enter into business process
 	 */
-	void commit() {
-		if(!commit) {
+	void decodeFinish() {
+		if(!decodeFinish) {
 			session.fireReceiveMessage(this);
-			commit = true;
+			decodeFinish = true;
 		}
 	}
-
-	void commitAndAllowDuplicate() {
-		session.fireReceiveMessage(this);
-	}
 	
+	/**
+	 * if http method is POST or PUT, when the business process finish, it neet close piped stream
+	 * @throws IOException
+	 */
 	void releaseInputStreamData() throws IOException {
 		try {
 			if(getContentLength() > 0) {

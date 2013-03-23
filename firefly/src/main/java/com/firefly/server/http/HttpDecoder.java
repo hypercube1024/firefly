@@ -78,7 +78,7 @@ public class HttpDecoder implements Decoder {
 			}
 		}
 
-		protected void finish(Session session, HttpServletRequestImpl req) {
+		private void finish(Session session, HttpServletRequestImpl req) {
 			session.removeAttribute(REMAIN_DATA);
 			session.removeAttribute(HTTP_REQUEST);
 			req.status = httpDecode.length;
@@ -87,12 +87,12 @@ public class HttpDecoder implements Decoder {
 		protected void responseError(Session session, HttpServletRequestImpl req, int httpStatus, String content) {
 			finish(session, req);
 			req.response.scheduleSendError(httpStatus, content);
-			req.commitAndAllowDuplicate();
+			req.decodeFinish();
 		}
 
-		protected void response(Session session, HttpServletRequestImpl req) {
+		protected void decodeFinish(Session session, HttpServletRequestImpl req) {
 			finish(session, req);
-			req.commitAndAllowDuplicate();
+			req.decodeFinish();
 		}
 
 		abstract protected boolean decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable;
@@ -101,8 +101,8 @@ public class HttpDecoder implements Decoder {
 	private class RequestLineDecoder extends AbstractHttpDecoder {
 
 		@Override
-		public boolean decode(ByteBuffer buf, Session session,
-				HttpServletRequestImpl req) throws Throwable {
+		public boolean decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable {
+
 			if (req.offset >= config.getMaxRequestLineLength()) {
 				String msg = "request line length is " + req.offset
 						+ ", it more than " + config.getMaxRequestLineLength()
@@ -117,8 +117,7 @@ public class HttpDecoder implements Decoder {
 				if (buf.get(req.offset) == LINE_LIMITOR) {
 					byte[] data = new byte[req.offset + 1];
 					buf.get(data);
-					String requestLine = new String(data, config.getEncoding())
-							.trim();
+					String requestLine = new String(data, config.getEncoding()).trim();
 					if (VerifyUtils.isEmpty(requestLine)) {
 						String msg = "request line length is 0|"
 								+ session.getRemoteAddress();
@@ -182,7 +181,7 @@ public class HttpDecoder implements Decoder {
 					String headLine = new String(data, config.getEncoding()).trim();
 					p = i + 1;
 
-					if (VerifyUtils.isEmpty(headLine)) { // 头部解码结束
+					if (VerifyUtils.isEmpty(headLine)) { // http head decode finish
 						if(Monitor.CONN_COUNT.get() > config.getMaxConnections()) {
 							String msg = "connections count more than " + config.getMaxConnections();
 							log.error(msg);
@@ -192,7 +191,7 @@ public class HttpDecoder implements Decoder {
 						}
 						
 						if (!req.getMethod().equals("POST") && !req.getMethod().equals("PUT"))
-							response(session, req);
+							decodeFinish(session, req);
 						
 						return true;
 					}
@@ -241,7 +240,7 @@ public class HttpDecoder implements Decoder {
 					return true;
 				}
 
-				if (req.bodyPipedStream == null) {
+				if (req.bodyPipedStream == null) { // the first into body decode status, it neet create piped stream
 					if(contentLength >= config.getHttpBodyThreshold()) {
 						log.info("content length [{}] more than threshold [{}]", contentLength , config.getHttpBodyThreshold());
 						req.bodyPipedStream = new FileHttpBodyPipedStream(config.getTempdir());
@@ -262,12 +261,11 @@ public class HttpDecoder implements Decoder {
 
 				if (req.offset >= contentLength) {
 					req.bodyPipedStream.getOutputStream().close();
-					finish(session, req);
-					req.commit();
+					decodeFinish(session, req);
 					return true;
 				}
 			} else {
-				response(session, req);
+				decodeFinish(session, req);
 				return true;
 			}
 			return false;
