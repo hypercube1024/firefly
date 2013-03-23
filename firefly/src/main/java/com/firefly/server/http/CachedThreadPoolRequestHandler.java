@@ -10,7 +10,7 @@ import com.firefly.net.Session;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class QueueRequestHandler extends RequestHandler {
+public class CachedThreadPoolRequestHandler extends RequestHandler {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private ExecutorService executor = Executors.newCachedThreadPool(new ThreadFactory(){
@@ -21,7 +21,7 @@ public class QueueRequestHandler extends RequestHandler {
 		}
 	});
 
-	public QueueRequestHandler(HttpServletDispatcherController servletController) {
+	public CachedThreadPoolRequestHandler(HttpServletDispatcherController servletController) {
 		super(servletController);
 	}
 

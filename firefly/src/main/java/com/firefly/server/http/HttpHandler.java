@@ -25,7 +25,7 @@ public class HttpHandler implements Handler {
 
 	public HttpHandler(HttpServletDispatcherController servletController, Config config) throws Throwable {
 		httpConnectionListener = config.getHttpConnectionListener();
-		requestHandler = new QueueRequestHandler(servletController);
+		requestHandler = new CachedThreadPoolRequestHandler(servletController);
 		if(config.isSecure()) {
 			if(VerifyUtils.isNotEmpty(config.getCredentialPath())
 					&& VerifyUtils.isNotEmpty(config.getKeyPassword())
