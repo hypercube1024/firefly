@@ -69,91 +69,9 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 		setStatus(200);
 		setHeader("Server", "firefly-server/1.0");
 	}
-
-	private void createOutput() {
-		if (bufferedOutput == null) {
-			boolean keepAlive = !"close".equals(headMap.get("Connection")) && request.isKeepAlive();
-			setHeader("Date", GMT_FORMAT.format(new Date()));
-			setHeader("Connection", keepAlive ? "keep-alive" : "close");
-			
-			bufferedOutput = new NetBufferedOutputStream(request.session, bufferSize, keepAlive);
-			
-			if(request.isChunked() && VerifyUtils.isEmpty(headMap.get("Content-Length")))
-				out = new ChunkedOutputStream(bufferSize, bufferedOutput, request, this);
-			else
-				out = new HttpServerOutpuStream(bufferSize, bufferedOutput, request, this);
-			
-			fileOut = new StaticFileOutputStream(bufferSize, bufferedOutput, request, this);
-			writer = new PrintWriter(out);
-		}
-	}
-
-	public byte[] getHeadData() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(request.getProtocol()).append(' ').append(status).append(' ')
-				.append(shortMessage).append("\r\n");
-
-		for (String name : headMap.keySet())
-			sb.append(name).append(": ").append(headMap.get(name))
-					.append("\r\n");
-
-		if (contentLanguage != null)
-			sb.append("Content-Language: ").append(contentLanguage)
-					.append("\r\n");
-
-		for (Cookie cookie : cookies) {
-			sb.append("Set-Cookie: ").append(cookie.getName()).append('=')
-					.append(cookie.getValue());
-
-			if (VerifyUtils.isNotEmpty(cookie.getComment()))
-				sb.append(";Comment=").append(cookie.getComment());
-
-			if (VerifyUtils.isNotEmpty(cookie.getDomain()))
-				sb.append(";Domain=").append(cookie.getDomain());
-
-			if (cookie.getMaxAge() >= 0)
-				sb.append(";Max-Age=").append(cookie.getMaxAge());
-
-			String path = VerifyUtils.isEmpty(cookie.getPath()) ? "/" : cookie
-					.getPath();
-			sb.append(";Path=").append(path);
-
-			if (cookie.getSecure())
-				sb.append(";Secure");
-
-			sb.append(";Version=").append(cookie.getVersion()).append("\r\n");
-		}
-
-		sb.append("\r\n");
-		String head = sb.toString();
-		// System.out.println(head);
-		return stringToByte(head);
-	}
-
-	public byte[] getChunkedSize(int length) {
-		return stringToByte(Integer.toHexString(length) + "\r\n");
-	}
-
-	public byte[] stringToByte(String str) {
-		byte[] ret = null;
-		try {
-			ret = str.getBytes(characterEncoding);
-		} catch (UnsupportedEncodingException e) {
-			log.error("string to bytes", e);
-		}
-		return ret;
-	}
-
-	@Override
-	public String getCharacterEncoding() {
-		return characterEncoding;
-	}
-
-	@Override
-	public String getContentType() {
-		return headMap.get("Content-Type");
-	}
-
+	
+	//======================= socket output stream =======================
+	
 	public StaticFileOutputStream getStaticFileOutputStream()
 			throws IOException {
 		if (usingWriter)
@@ -197,22 +115,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 		usingWriter = true;
 		return writer;
 	}
-
-	@Override
-	public void setCharacterEncoding(String charset) {
-		characterEncoding = charset;
-	}
-
-	@Override
-	public void setContentLength(int len) {
-		headMap.put("Content-Length", String.valueOf(len));
-	}
-
-	@Override
-	public void setContentType(String type) {
-		headMap.put("Content-Type", type);
-	}
-
+	
 	@Override
 	public void setBufferSize(int size) {
 		bufferSize = size;
@@ -251,7 +154,223 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 		out = null;
 		writer = null;
 	}
+	
+	
 
+	private void createOutput() {
+		if (bufferedOutput == null) {
+			boolean keepAlive = !"close".equals(headMap.get("Connection")) && request.isKeepAlive();
+			setHeader("Date", GMT_FORMAT.format(new Date()));
+			setHeader("Connection", keepAlive ? "keep-alive" : "close");
+			
+			bufferedOutput = new NetBufferedOutputStream(request.session, bufferSize, keepAlive);
+			
+			if(request.isChunked() && VerifyUtils.isEmpty(headMap.get("Content-Length")))
+				out = new ChunkedOutputStream(bufferSize, bufferedOutput, request, this);
+			else
+				out = new HttpServerOutpuStream(bufferSize, bufferedOutput, request, this);
+			
+			fileOut = new StaticFileOutputStream(bufferSize, bufferedOutput, request, this);
+			writer = new PrintWriter(out);
+		}
+	}
+	
+	//======================= HTTP encode =======================
+
+	public byte[] getHeadData() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(request.getProtocol()).append(' ').append(status).append(' ')
+				.append(shortMessage).append("\r\n");
+
+		for (String name : headMap.keySet())
+			sb.append(name).append(": ").append(headMap.get(name))
+					.append("\r\n");
+
+		if (contentLanguage != null)
+			sb.append("Content-Language: ").append(contentLanguage)
+					.append("\r\n");
+
+		for (Cookie cookie : cookies) {
+			sb.append("Set-Cookie: ").append(cookie.getName()).append('=')
+					.append(cookie.getValue());
+
+			if (VerifyUtils.isNotEmpty(cookie.getComment()))
+				sb.append(";Comment=").append(cookie.getComment());
+
+			if (VerifyUtils.isNotEmpty(cookie.getDomain()))
+				sb.append(";Domain=").append(cookie.getDomain());
+
+			if (cookie.getMaxAge() >= 0)
+				sb.append(";Max-Age=").append(cookie.getMaxAge());
+
+			String path = VerifyUtils.isEmpty(cookie.getPath()) ? "/" : cookie
+					.getPath();
+			sb.append(";Path=").append(path);
+
+			if (cookie.getSecure())
+				sb.append(";Secure");
+
+			sb.append(";Version=").append(cookie.getVersion()).append("\r\n");
+		}
+
+		sb.append("\r\n");
+		String head = sb.toString();
+		// System.out.println(head);
+		return stringToByte(head);
+	}
+
+	private String toAbsolute(String location) {
+		if (location.startsWith("http"))
+			return location;
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(request.getScheme()).append("://")
+				.append(request.getServerName()).append(":")
+				.append(request.getServerPort());
+
+		if (location.charAt(0) == '/') {
+			sb.append(location);
+		} else {
+			String URI = request.getRequestURI();
+			int last = 0;
+			for (int i = URI.length() - 1; i >= 0; i--) {
+				if (URI.charAt(i) == '/') {
+					last = i + 1;
+					break;
+				}
+			}
+			sb.append(URI.substring(0, last)).append(location);
+		}
+		return sb.toString();
+	}
+
+	public byte[] getChunkedSize(int length) {
+		return stringToByte(Integer.toHexString(length) + "\r\n");
+	}
+
+	public byte[] stringToByte(String str) {
+		byte[] ret = null;
+		try {
+			ret = str.getBytes(characterEncoding);
+		} catch (UnsupportedEncodingException e) {
+			log.error("string to bytes", e);
+		}
+		return ret;
+	}
+	
+	public static String toEncoded(String url, String sessionId,
+			String sessionIdName) {
+		if (url == null || sessionId == null)
+			return url;
+
+		String path = url;
+		String query = "";
+		String anchor = "";
+		int question = url.indexOf('?');
+		if (question >= 0) {
+			path = url.substring(0, question);
+			query = url.substring(question);
+		}
+		int pound = path.indexOf('#');
+		if (pound >= 0) {
+			anchor = path.substring(pound);
+			path = path.substring(0, pound);
+		}
+		StringBuilder sb = new StringBuilder(path);
+		if (sb.length() > 0) { // jsessionid can't be first.
+			sb.append(";");
+			sb.append(sessionIdName);
+			sb.append("=");
+			sb.append(sessionId);
+		}
+		sb.append(anchor);
+		sb.append(query);
+		return sb.toString();
+
+	}
+	
+	@Override
+	public String encodeURL(String url) {
+		if (VerifyUtils.isEmpty(url))
+			return null;
+
+		if (url.contains(";" + request.config.getSessionIdName() + "="))
+			return url;
+
+		String absoluteURL = toAbsolute(url);
+
+		if (request.isRequestedSessionIdFromCookie()
+				|| request.isRequestedSessionIdFromURL())
+			return toEncoded(absoluteURL, request.getRequestedSessionId(),
+					request.config.getSessionIdName());
+
+		return null;
+	}
+
+	@Override
+	public String encodeRedirectURL(String url) {
+		return encodeURL(url);
+	}
+
+	@Override
+	public String encodeUrl(String url) {
+		return encodeURL(url);
+	}
+
+	@Override
+	public String encodeRedirectUrl(String url) {
+		return encodeRedirectURL(url);
+	}
+	
+	@Override
+	public void sendRedirect(String location) throws IOException {
+		String absolute = toAbsolute(location);
+		setStatus(SC_FOUND);
+		setHeader("Location", absolute);
+		setHeader("Content-Length", "0");
+		outHeadData();
+	}
+	
+	private void outHeadData() throws IOException {
+		if (isCommitted())
+			throw new IllegalStateException("response is committed");
+
+		createOutput();
+		try {
+			bufferedOutput.write(getHeadData());
+		} finally {
+			bufferedOutput.close();
+		}
+		setCommitted(true);
+	}
+	
+	//======================= set or get HTTP response head =======================
+	
+	@Override
+	public String getCharacterEncoding() {
+		return characterEncoding;
+	}
+
+	@Override
+	public String getContentType() {
+		return headMap.get("Content-Type");
+	}
+
+	@Override
+	public void setCharacterEncoding(String charset) {
+		characterEncoding = charset;
+	}
+
+	@Override
+	public void setContentLength(int len) {
+		headMap.put("Content-Length", String.valueOf(len));
+	}
+
+	@Override
+	public void setContentType(String type) {
+		headMap.put("Content-Type", type);
+	}
+	
 	@Override
 	public void setLocale(Locale locale) {
 		if (locale == null) {
@@ -295,136 +414,6 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 	@Override
 	public boolean containsHeader(String name) {
 		return headMap.containsKey(name);
-	}
-
-	@Override
-	public String encodeURL(String url) {
-		if (VerifyUtils.isEmpty(url))
-			return null;
-
-		if (url.contains(";" + request.config.getSessionIdName() + "="))
-			return url;
-
-		String absoluteURL = toAbsolute(url);
-
-		if (request.isRequestedSessionIdFromCookie()
-				|| request.isRequestedSessionIdFromURL())
-			return toEncoded(absoluteURL, request.getRequestedSessionId(),
-					request.config.getSessionIdName());
-
-		return null;
-	}
-
-	@Override
-	public String encodeRedirectURL(String url) {
-		return encodeURL(url);
-	}
-
-	@Override
-	public String encodeUrl(String url) {
-		return encodeURL(url);
-	}
-
-	@Override
-	public String encodeRedirectUrl(String url) {
-		return encodeRedirectURL(url);
-	}
-
-	@Override
-	public void sendError(int sc, String msg) throws IOException {
-		setStatus(sc, msg);
-		systemResponseContent = shortMessage;
-		outSystemData();
-	}
-
-	@Override
-	public void sendError(int sc) throws IOException {
-		setStatus(sc);
-		systemResponseContent = shortMessage;
-		outSystemData();
-	}
-
-	public void outSystemData() throws IOException {
-		if (isCommitted())
-			throw new IllegalStateException("response is committed");
-
-		createOutput();
-		if (status >= 400) {
-			try {
-				boolean hasContent = VerifyUtils
-						.isNotEmpty(systemResponseContent);
-				byte[] b = null;
-
-				if (hasContent) {
-					b = SystemHtmlPage.systemPageTemplate(status,
-							systemResponseContent).getBytes(characterEncoding);
-					setHeader("Content-Length", String.valueOf(b.length));
-				} else {
-					setHeader("Content-Length", "0");
-				}
-
-				bufferedOutput.write(getHeadData());
-				if (hasContent)
-					bufferedOutput.write(b);
-			} finally {
-				bufferedOutput.close();
-			}
-			setCommitted(true);
-		}
-	}
-
-	public void scheduleSendError(int sc, String content) {
-		setStatus(sc);
-		systemResponseContent = content;
-		system = true;
-		request.systemReq = true;
-	}
-
-	@Override
-	public void sendRedirect(String location) throws IOException {
-		String absolute = toAbsolute(location);
-		setStatus(SC_FOUND);
-		setHeader("Location", absolute);
-		setHeader("Content-Length", "0");
-		outHeadData();
-	}
-
-	public void outHeadData() throws IOException {
-		if (isCommitted())
-			throw new IllegalStateException("response is committed");
-
-		createOutput();
-		try {
-			bufferedOutput.write(getHeadData());
-		} finally {
-			bufferedOutput.close();
-		}
-		setCommitted(true);
-	}
-
-	public String toAbsolute(String location) {
-		if (location.startsWith("http"))
-			return location;
-
-		StringBuilder sb = new StringBuilder();
-		sb.append(request.getScheme()).append("://")
-				.append(request.getServerName()).append(":")
-				.append(request.getServerPort());
-
-		if (location.charAt(0) == '/') {
-			sb.append(location);
-		} else {
-			String URI = request.getRequestURI();
-			int last = 0;
-			for (int i = URI.length() - 1; i >= 0; i--) {
-				if (URI.charAt(i) == '/') {
-					last = i + 1;
-					break;
-				}
-			}
-			sb.append(URI.substring(0, last)).append(location);
-		}
-		return sb.toString();
 	}
 
 	@Override
@@ -496,36 +485,57 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 	public int getStatus() {
 		return status;
 	}
+	
+	//======================= send error response =======================
 
-	public static String toEncoded(String url, String sessionId,
-			String sessionIdName) {
-		if (url == null || sessionId == null)
-			return url;
+	@Override
+	public void sendError(int sc, String msg) throws IOException {
+		setStatus(sc, msg);
+		systemResponseContent = shortMessage;
+		outSystemData();
+	}
 
-		String path = url;
-		String query = "";
-		String anchor = "";
-		int question = url.indexOf('?');
-		if (question >= 0) {
-			path = url.substring(0, question);
-			query = url.substring(question);
-		}
-		int pound = path.indexOf('#');
-		if (pound >= 0) {
-			anchor = path.substring(pound);
-			path = path.substring(0, pound);
-		}
-		StringBuilder sb = new StringBuilder(path);
-		if (sb.length() > 0) { // jsessionid can't be first.
-			sb.append(";");
-			sb.append(sessionIdName);
-			sb.append("=");
-			sb.append(sessionId);
-		}
-		sb.append(anchor);
-		sb.append(query);
-		return sb.toString();
+	@Override
+	public void sendError(int sc) throws IOException {
+		setStatus(sc);
+		systemResponseContent = shortMessage;
+		outSystemData();
+	}
 
+	public void outSystemData() throws IOException {
+		if (isCommitted())
+			throw new IllegalStateException("response is committed");
+
+		createOutput();
+		if (status >= 400) {
+			try {
+				boolean hasContent = VerifyUtils
+						.isNotEmpty(systemResponseContent);
+				byte[] b = null;
+
+				if (hasContent) {
+					b = SystemHtmlPage.systemPageTemplate(status,
+							systemResponseContent).getBytes(characterEncoding);
+					setHeader("Content-Length", String.valueOf(b.length));
+				} else {
+					setHeader("Content-Length", "0");
+				}
+
+				bufferedOutput.write(getHeadData());
+				if (hasContent)
+					bufferedOutput.write(b);
+			} finally {
+				bufferedOutput.close();
+			}
+			setCommitted(true);
+		}
+	}
+
+	public void scheduleSendError(int sc, String content) {
+		setStatus(sc);
+		systemResponseContent = content;
+		system = true;
+		request.systemReq = true;
 	}
 
 }

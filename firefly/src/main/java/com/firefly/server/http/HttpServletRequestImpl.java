@@ -87,7 +87,46 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 		response = new HttpServletResponseImpl(session, this,
 				characterEncoding, config.getWriteBufferSize());
 	}
+	
+	//======================= IO stream process =======================
+	
+	@Override
+	public BufferedReader getReader() throws IOException {
+		if (bufferedReader == null) {
+			bufferedReader = new BufferedReader(new InputStreamReader(bodyPipedStream.getInputStream(), characterEncoding));
+		}
+		return bufferedReader;
+	}
 
+	@Override
+	public ServletInputStream getInputStream() throws IOException {
+		if(servletInputStream == null) {
+			final InputStream in = bodyPipedStream.getInputStream();
+			servletInputStream = new ServletInputStream() {
+
+				@Override
+				public int read() throws IOException {
+					return in.read();
+				}
+
+				@Override
+				public int available() throws IOException {
+					return in.available();
+				}
+
+				@Override
+				public void close() throws IOException {
+					in.close();
+				}
+
+				public int read(byte[] b, int off, int len) throws IOException {
+					return in.read(b, off, len);
+				}
+			};
+		}
+		return servletInputStream;
+	}
+	
 	private void loadParam() {
 		if (!loadParam) {
 			try {
@@ -140,23 +179,63 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 			}
 		}
 	}
+	
+	/**
+	 * if http method is POST or PUT, when the business process finish, it neet close piped stream
+	 * @throws IOException
+	 */
+	void releaseInputStreamData() throws IOException {
+		try {
+			if(getContentLength() > 0) {
+				bodyPipedStream.close();
+			}
+		} catch(Throwable t) {
+			log.error("release input stream error", t);
+		}
+	}
+	
+	
+	//======================= HTTP decode need following method =======================
 
-	public boolean isKeepAlive() {
+	boolean isKeepAlive() {
 		return !systemReq 
 				&& config.isKeepAlive()
 				&& ("keep-alive".equalsIgnoreCase(getHeader("Connection")) 
 					|| (!getProtocol().equals("HTTP/1.0") && !"close".equalsIgnoreCase(getHeader("Connection"))));
 	}
 	
-	public boolean isSupportPipeline() {
+	boolean isSupportPipeline() {
 		return config.isPipeline() 
 				&& config.isKeepAlive() 
 				&& IDEMPOTENT_METHODS.contains(getMethod()) 
 				&& ("Keep-Alive".equalsIgnoreCase(getHeader("Connection")) || !getProtocol().equals("HTTP/1.0"));
 	}
 
-	public boolean isChunked() {
+	boolean isChunked() {
 		return !systemReq && !getProtocol().equals("HTTP/1.0");
+	}
+	
+	/**
+	 * decode finish, then enter into business process
+	 */
+	void decodeFinish() {
+		if(!decodeFinish) {
+			session.fireReceiveMessage(this);
+			decodeFinish = true;
+		}
+	}
+	
+	
+	//======================= set and get request attribute =======================
+	
+	@Override
+	public void setAttribute(String name, Object o) {
+		attributeMap.put(name, o);
+	}
+
+	@Override
+	public void removeAttribute(String name) {
+		attributeMap.remove(name);
 	}
 
 	@Override
@@ -181,256 +260,10 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 			}
 		};
 	}
-
-	@Override
-	public String getCharacterEncoding() {
-		return characterEncoding;
-	}
-
-	@Override
-	public void setCharacterEncoding(String characterEncoding)
-			throws UnsupportedEncodingException {
-		this.characterEncoding = characterEncoding;
-	}
-
-	@Override
-	public int getContentLength() {
-		return getIntHeader("Content-Length");
-	}
-
-	@Override
-	public String getContentType() {
-		return getHeader("Content-Type");
-	}
-
-	@Override
-	public ServletInputStream getInputStream() throws IOException {
-		if(servletInputStream == null) {
-			final InputStream in = bodyPipedStream.getInputStream();
-			servletInputStream = new ServletInputStream() {
-
-				@Override
-				public int read() throws IOException {
-					return in.read();
-				}
-
-				@Override
-				public int available() throws IOException {
-					return in.available();
-				}
-
-				@Override
-				public void close() throws IOException {
-					in.close();
-				}
-
-				public int read(byte[] b, int off, int len) throws IOException {
-					return in.read(b, off, len);
-				}
-			};
-		}
-		return servletInputStream;
-	}
-
-	@Override
-	public String getParameter(String name) {
-		loadParam();
-		List<String> list = parameterMap.get(name);
-		return list != null ? list.get(0) : null;
-	}
-
-	@Override
-	public Enumeration<String> getParameterNames() {
-		loadParam();
-		return new Enumeration<String>() {
-			private Iterator<String> iterator = parameterMap.keySet()
-					.iterator();
-
-			@Override
-			public boolean hasMoreElements() {
-				return iterator.hasNext();
-			}
-
-			@Override
-			public String nextElement() {
-				return iterator.next();
-			}
-		};
-	}
-
-	@Override
-	public String[] getParameterValues(String name) {
-		loadParam();
-		return parameterMap.get(name).toArray(EMPTY_STR_ARR);
-	}
-
-	@Override
-	public Map<String, String[]> getParameterMap() {
-		loadParam();
-		if(_parameterMap == null) {
-			_parameterMap = new HashMap<String, String[]>();
-			for(Map.Entry<String, List<String>> entry : parameterMap.entrySet()) {
-				_parameterMap.put(entry.getKey(), entry.getValue().toArray(EMPTY_STR_ARR));
-			}
-		}
-		return _parameterMap;
-	}
-
-	@Override
-	public String getProtocol() {
-		return protocol;
-	}
-
-	@Override
-	public String getScheme() {
-		return "http";
-	}
-
-	/**
-	 * @return 服务器绑定的ip或者域名
-	 */
-	@Override
-	public String getServerName() {
-		return session.getLocalAddress().getHostName();
-	}
-
-	/**
-	 * @return 服务器监听的端口
-	 */
-	@Override
-	public int getServerPort() {
-		return session.getLocalAddress().getPort();
-	}
-
-	@Override
-	public BufferedReader getReader() throws IOException {
-		if (bufferedReader == null) {
-			bufferedReader = new BufferedReader(new InputStreamReader(bodyPipedStream.getInputStream(), characterEncoding));
-		}
-		return bufferedReader;
-	}
-
-	@Override
-	public String getRemoteAddr() {
-		return session.getRemoteAddress().toString();
-	}
-
-	@Override
-	public String getRemoteHost() {
-		return session.getRemoteAddress().getHostName();
-	}
-
-	@Override
-	public void setAttribute(String name, Object o) {
-		attributeMap.put(name, o);
-	}
-
-	@Override
-	public void removeAttribute(String name) {
-		attributeMap.remove(name);
-	}
-
-	@Override
-	public Locale getLocale() {
-		if (!localesParsed)
-			parseLocales();
-
-		if (locales.size() > 0) {
-			return ((Locale) locales.get(0));
-		} else {
-			return (DEFAULT_LOCALE);
-		}
-	}
-
-	@Override
-	public Enumeration<Locale> getLocales() {
-		if (!localesParsed)
-			parseLocales();
-
-		if (locales.size() == 0)
-			locales.add(DEFAULT_LOCALE);
-
-		return new Enumeration<Locale>() {
-			private int i = 0;
-
-			@Override
-			public boolean hasMoreElements() {
-				return i < locales.size();
-			}
-
-			@Override
-			public Locale nextElement() {
-				return locales.get(i++);
-			}
-		};
-	}
-
-	@Override
-	public RequestDispatcher getRequestDispatcher(String path) {
-		requestDispatcher.path = path;
-		return requestDispatcher;
-	}
-
-	@Override
-	public int getRemotePort() {
-		return session.getRemoteAddress().getPort();
-	}
-
-	/**
-	 * @return 接收请求的ip或域名
-	 */
-	@Override
-	public String getLocalName() {
-		return session.getLocalAddress().getHostName();
-	}
-
-	/**
-	 * @return 接收请求的ip
-	 */
-	@Override
-	public String getLocalAddr() {
-		return session.getLocalAddress().toString();
-	}
-
-	/**
-	 * @return 接收请求的端口
-	 */
-	@Override
-	public int getLocalPort() {
-		return session.getLocalAddress().getPort();
-	}
-
-	@Override
-	public Cookie[] getCookies() {
-		if (cookies == null) {
-			List<Cookie> list = new ArrayList<Cookie>();
-			String cookieStr = getHeader("Cookie");
-			if (VerifyUtils.isEmpty(cookieStr)) {
-				cookies = EMPTY_COOKIE_ARR;
-			} else {
-				String[] c = StringUtils.split(cookieStr, ';');
-				for (String t : c) {
-					int j = 0;
-					for (int i = 0; i < t.length(); i++) {
-						if (t.charAt(i) == '=') {
-							j = i;
-							break;
-						}
-					}
-					if (j > 1) {
-						String name = t.substring(0, j).trim();
-						String value = t.substring(j + 1).trim();
-						Cookie cookie = new Cookie(name, value);
-						list.add(cookie);
-					} else
-						continue;
-				}
-				cookies = list.toArray(EMPTY_COOKIE_ARR);
-			}
-		}
-		return cookies;
-	}
-
+	
+	
+	//======================= get HTTP head and parameter =======================
+	
 	@Override
 	public long getDateHeader(String name) {
 		String v = getHeader(name);
@@ -490,11 +323,6 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	}
 
 	@Override
-	public String getContextPath() {
-		return config.getContextPath();
-	}
-
-	@Override
 	public String getQueryString() {
 		return queryString;
 	}
@@ -525,164 +353,146 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	}
 
 	@Override
-	public String getServletPath() {
-		return config.getServletPath();
+	public String getCharacterEncoding() {
+		return characterEncoding;
 	}
 
 	@Override
-	public String getRemoteUser() {
-		// TODO not implement
-		throw new HttpServerException("no implements this method!");
+	public void setCharacterEncoding(String characterEncoding)
+			throws UnsupportedEncodingException {
+		this.characterEncoding = characterEncoding;
 	}
 
 	@Override
-	public boolean isUserInRole(String role) {
-		// TODO not implement
-		throw new HttpServerException("no implements this method!");
+	public int getContentLength() {
+		return getIntHeader("Content-Length");
 	}
 
 	@Override
-	public Principal getUserPrincipal() {
-		// TODO not implement
-		throw new HttpServerException("no implements this method!");
+	public String getContentType() {
+		return getHeader("Content-Type");
 	}
 
 	@Override
-	public String getAuthType() {
-		// TODO implement
-		throw new HttpServerException("no implements this method!");
+	public String getParameter(String name) {
+		loadParam();
+		List<String> list = parameterMap.get(name);
+		return list != null ? list.get(0) : null;
 	}
 
 	@Override
-	public boolean isSecure() {
-		// TODO implement
-		throw new HttpServerException("no implements this method!");
+	public Enumeration<String> getParameterNames() {
+		loadParam();
+		return new Enumeration<String>() {
+			private Iterator<String> iterator = parameterMap.keySet()
+					.iterator();
+
+			@Override
+			public boolean hasMoreElements() {
+				return iterator.hasNext();
+			}
+
+			@Override
+			public String nextElement() {
+				return iterator.next();
+			}
+		};
 	}
 
 	@Override
-	public String getRealPath(String path) {
-		// TODO implement
-		throw new HttpServerException("no implements this method!");
+	public String[] getParameterValues(String name) {
+		loadParam();
+		return parameterMap.get(name).toArray(EMPTY_STR_ARR);
 	}
 
 	@Override
-	public String getPathInfo() {
-		// TODO implement
-		throw new HttpServerException("no implements this method!");
+	public Map<String, String[]> getParameterMap() {
+		loadParam();
+		if(_parameterMap == null) {
+			_parameterMap = new HashMap<String, String[]>();
+			for(Map.Entry<String, List<String>> entry : parameterMap.entrySet()) {
+				_parameterMap.put(entry.getKey(), entry.getValue().toArray(EMPTY_STR_ARR));
+			}
+		}
+		return _parameterMap;
+	}
+	
+	@Override
+	public Cookie[] getCookies() {
+		if (cookies == null) {
+			List<Cookie> list = new ArrayList<Cookie>();
+			String cookieStr = getHeader("Cookie");
+			if (VerifyUtils.isEmpty(cookieStr)) {
+				cookies = EMPTY_COOKIE_ARR;
+			} else {
+				String[] c = StringUtils.split(cookieStr, ';');
+				for (String t : c) {
+					int j = 0;
+					for (int i = 0; i < t.length(); i++) {
+						if (t.charAt(i) == '=') {
+							j = i;
+							break;
+						}
+					}
+					if (j > 1) {
+						String name = t.substring(0, j).trim();
+						String value = t.substring(j + 1).trim();
+						Cookie cookie = new Cookie(name, value);
+						list.add(cookie);
+					} else
+						continue;
+				}
+				cookies = list.toArray(EMPTY_COOKIE_ARR);
+			}
+		}
+		return cookies;
 	}
 
 	@Override
-	public String getPathTranslated() {
-		return new File(config.getServerHome(), getRequestURI()).getAbsolutePath();
+	public String getProtocol() {
+		return protocol;
 	}
 
 	@Override
-	public String getRequestedSessionId() {
-		return requestedSessionId;
+	public String getScheme() {
+		return "http";
 	}
-
+	
 	@Override
-	public HttpSession getSession(boolean create) {
-		if (create) {
-			httpSession = config.getHttpSessionManager().create();
-			requestedSessionId = httpSession.getId();
-			response.addCookie(new Cookie(config.getSessionIdName(),
-					httpSession.getId()));
+	public Locale getLocale() {
+		if (!localesParsed)
+			parseLocales();
+
+		if (locales.size() > 0) {
+			return ((Locale) locales.get(0));
 		} else {
-			if (isRequestedSessionIdFromCookie()
-					|| isRequestedSessionIdFromURL()) {
-				httpSession = config.getHttpSessionManager().get(
-						requestedSessionId);
+			return (DEFAULT_LOCALE);
+		}
+	}
+
+	@Override
+	public Enumeration<Locale> getLocales() {
+		if (!localesParsed)
+			parseLocales();
+
+		if (locales.size() == 0)
+			locales.add(DEFAULT_LOCALE);
+
+		return new Enumeration<Locale>() {
+			private int i = 0;
+
+			@Override
+			public boolean hasMoreElements() {
+				return i < locales.size();
 			}
-		}
 
-		return httpSession;
-	}
-
-	@Override
-	public HttpSession getSession() {
-		if (httpSession == null) {
-			if (isRequestedSessionIdFromCookie()
-					|| isRequestedSessionIdFromURL())
-				httpSession = config.getHttpSessionManager().get(
-						requestedSessionId);
-
-			if (httpSession == null)
-				getSession(true);
-		}
-		return httpSession;
-	}
-
-	@Override
-	public boolean isRequestedSessionIdValid() {
-		return requestedSessionId != null ? config.getHttpSessionManager()
-				.containsKey(requestedSessionId) : false;
-	}
-
-	@Override
-	public boolean isRequestedSessionIdFromCookie() {
-		if (requestedSessionId != null)
-			return requestedSessionIdFromCookie;
-
-		for (Cookie cookie : getCookies()) {
-			if (cookie.getName().equals(config.getSessionIdName())) {
-				requestedSessionId = cookie.getValue();
-				requestedSessionIdFromCookie = true;
-				return true;
+			@Override
+			public Locale nextElement() {
+				return locales.get(i++);
 			}
-		}
-		return false;
+		};
 	}
-
-	@Override
-	public boolean isRequestedSessionIdFromURL() {
-		if (requestedSessionId != null)
-			return requestedSessionIdFromURL;
-
-		String sessionId = getSessionId(requestURI, config.getSessionIdName());
-		if (VerifyUtils.isNotEmpty(sessionId)) {
-			requestedSessionId = sessionId;
-			requestedSessionIdFromURL = true;
-			return true;
-		}
-		return false;
-	}
-
-	public static String getSessionId(String uri, String sessionIdName) {
-		String sessionId = null;
-		int i = uri.indexOf(';');
-		int j = uri.indexOf('#');
-		if (i > 0) {
-			String tmp = j > i ? uri.substring(i + 1, j) : uri.substring(i + 1);
-			int m = 0;
-			for (int k = 0; k < tmp.length(); k++) {
-				if (tmp.charAt(k) == '=') {
-					m = k;
-					break;
-				}
-			}
-			if (m > 0) {
-				String name = tmp.substring(0, m);
-				String value = tmp.substring(m + 1);
-				if (name.equals(sessionIdName)) {
-					sessionId = value;
-				}
-			}
-		}
-		return sessionId;
-	}
-
-	@Override
-	public boolean isRequestedSessionIdFromUrl() {
-		return isRequestedSessionIdFromURL();
-	}
-
-	@Override
-	public String toString() {
-		return method + " " + requestURI + queryString + " " + protocol
-				+ "\r\n" + headMap.toString();
-	}
-
+	
 	protected void parseLocales() {
 		localesParsed = true;
 		Enumeration<String> values = getHeaders("accept-language");
@@ -820,36 +630,265 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 		locales.add(locale);
 	}
 	
-	/**
-	 * decode finish, then enter into business process
-	 */
-	void decodeFinish() {
-		if(!decodeFinish) {
-			session.fireReceiveMessage(this);
-			decodeFinish = true;
-		}
-	}
 	
+	//======================= get socket info =======================
+
 	/**
-	 * if http method is POST or PUT, when the business process finish, it neet close piped stream
-	 * @throws IOException
+	 * @return server binding ip or host name
 	 */
-	void releaseInputStreamData() throws IOException {
-		try {
-			if(getContentLength() > 0) {
-				bodyPipedStream.close();
-			}
-		} catch(Throwable t) {
-			log.error("release input stream error", t);
-		}
+	@Override
+	public String getServerName() {
+		return session.getLocalAddress().getHostName();
 	}
 
+	/**
+	 * @return server port
+	 */
+	@Override
+	public int getServerPort() {
+		return session.getLocalAddress().getPort();
+	}
+
+	@Override
+	public String getRemoteAddr() {
+		return session.getRemoteAddress().toString();
+	}
+
+	@Override
+	public String getRemoteHost() {
+		return session.getRemoteAddress().getHostName();
+	}
+	
+	@Override
+	public int getRemotePort() {
+		return session.getRemoteAddress().getPort();
+	}
+
+
+	@Override
+	public String getLocalName() {
+		return session.getLocalAddress().getHostName();
+	}
+
+	@Override
+	public String getLocalAddr() {
+		return session.getLocalAddress().toString();
+	}
+
+	@Override
+	public int getLocalPort() {
+		return session.getLocalAddress().getPort();
+	}
+
+	
+	//======================= get servlet info =======================
+
+	@Override
+	public String getServletPath() {
+		return config.getServletPath();
+	}
+	
+	@Override
+	public String getContextPath() {
+		return config.getContextPath();
+	}
+	
+	@Override
+	public RequestDispatcher getRequestDispatcher(String path) {
+		requestDispatcher.path = path;
+		return requestDispatcher;
+	}
+	
 	@Override
 	public ServletContext getServletContext() {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public DispatcherType getDispatcherType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public String getRealPath(String path) {
+		// TODO implement
+		throw new HttpServerException("no implements this method!");
+	}
 
+	@Override
+	public String getPathInfo() {
+		// TODO implement
+		throw new HttpServerException("no implements this method!");
+	}
+
+	@Override
+	public String getPathTranslated() {
+		return new File(config.getServerHome(), getRequestURI()).getAbsolutePath();
+	}
+
+	//======================= authentication =======================
+	
+	@Override
+	public String getRemoteUser() {
+		// TODO not implement
+		throw new HttpServerException("no implements this method!");
+	}
+
+	@Override
+	public boolean isUserInRole(String role) {
+		// TODO not implement
+		throw new HttpServerException("no implements this method!");
+	}
+
+	@Override
+	public Principal getUserPrincipal() {
+		// TODO not implement
+		throw new HttpServerException("no implements this method!");
+	}
+
+	@Override
+	public String getAuthType() {
+		// TODO implement
+		throw new HttpServerException("no implements this method!");
+	}
+
+	@Override
+	public boolean isSecure() {
+		// TODO implement
+		throw new HttpServerException("no implements this method!");
+	}
+	
+	@Override
+	public boolean authenticate(HttpServletResponse response)
+			throws IOException, ServletException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void login(String username, String password) throws ServletException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void logout() throws ServletException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getRequestedSessionId() {
+		return requestedSessionId;
+	}
+
+	@Override
+	public HttpSession getSession(boolean create) {
+		if (create) {
+			httpSession = config.getHttpSessionManager().create();
+			requestedSessionId = httpSession.getId();
+			response.addCookie(new Cookie(config.getSessionIdName(),
+					httpSession.getId()));
+		} else {
+			if (isRequestedSessionIdFromCookie()
+					|| isRequestedSessionIdFromURL()) {
+				httpSession = config.getHttpSessionManager().get(
+						requestedSessionId);
+			}
+		}
+
+		return httpSession;
+	}
+
+	@Override
+	public HttpSession getSession() {
+		if (httpSession == null) {
+			if (isRequestedSessionIdFromCookie()
+					|| isRequestedSessionIdFromURL())
+				httpSession = config.getHttpSessionManager().get(
+						requestedSessionId);
+
+			if (httpSession == null)
+				getSession(true);
+		}
+		return httpSession;
+	}
+
+	@Override
+	public boolean isRequestedSessionIdValid() {
+		return requestedSessionId != null ? config.getHttpSessionManager()
+				.containsKey(requestedSessionId) : false;
+	}
+
+	@Override
+	public boolean isRequestedSessionIdFromCookie() {
+		if (requestedSessionId != null)
+			return requestedSessionIdFromCookie;
+
+		for (Cookie cookie : getCookies()) {
+			if (cookie.getName().equals(config.getSessionIdName())) {
+				requestedSessionId = cookie.getValue();
+				requestedSessionIdFromCookie = true;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean isRequestedSessionIdFromURL() {
+		if (requestedSessionId != null)
+			return requestedSessionIdFromURL;
+
+		String sessionId = getSessionId(requestURI, config.getSessionIdName());
+		if (VerifyUtils.isNotEmpty(sessionId)) {
+			requestedSessionId = sessionId;
+			requestedSessionIdFromURL = true;
+			return true;
+		}
+		return false;
+	}
+
+	public static String getSessionId(String uri, String sessionIdName) {
+		String sessionId = null;
+		int i = uri.indexOf(';');
+		int j = uri.indexOf('#');
+		if (i > 0) {
+			String tmp = j > i ? uri.substring(i + 1, j) : uri.substring(i + 1);
+			int m = 0;
+			for (int k = 0; k < tmp.length(); k++) {
+				if (tmp.charAt(k) == '=') {
+					m = k;
+					break;
+				}
+			}
+			if (m > 0) {
+				String name = tmp.substring(0, m);
+				String value = tmp.substring(m + 1);
+				if (name.equals(sessionIdName)) {
+					sessionId = value;
+				}
+			}
+		}
+		return sessionId;
+	}
+
+	@Override
+	public boolean isRequestedSessionIdFromUrl() {
+		return isRequestedSessionIdFromURL();
+	}
+
+	@Override
+	public String toString() {
+		return method + " " + requestURI + queryString + " " + protocol + "\r\n" + headMap.toString();
+	}
+
+	
+
+	//======================= asynchronous control =======================
+	
 	@Override
 	public AsyncContext startAsync() throws IllegalStateException {
 		// TODO Auto-generated method stub
@@ -881,30 +920,9 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 		return null;
 	}
 
-	@Override
-	public DispatcherType getDispatcherType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	
 
-	@Override
-	public boolean authenticate(HttpServletResponse response)
-			throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void login(String username, String password) throws ServletException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void logout() throws ServletException {
-		// TODO Auto-generated method stub
-		
-	}
+	//======================= multipart data =======================
 
 	@Override
 	public Collection<Part> getParts() throws IOException, ServletException {
