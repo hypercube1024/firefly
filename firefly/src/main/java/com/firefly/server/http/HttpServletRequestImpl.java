@@ -51,8 +51,6 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	String protocol = "HTTP/1.1";
 
 	HttpBodyPipedStream bodyPipedStream;
-//	PipedInputStream pipedInputStream = new PipedInputStream();
-//	PipedOutputStream pipedOutputStream;
 	Cookie[] cookies;
 	Map<String, String> headMap = new HashMap<String, String>();
 	HttpServletResponseImpl response;
@@ -65,6 +63,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	private StringParser parser = new StringParser();
 	private static final String[] EMPTY_STR_ARR = new String[0];
 	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
+	
 	private String characterEncoding, requestedSessionId;
 	private boolean requestedSessionIdFromCookie, requestedSessionIdFromURL;
 	private boolean decodeFinish = false;
@@ -75,6 +74,8 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	private BufferedReader bufferedReader;
 	private ServletInputStream servletInputStream;
 	private RequestDispatcherImpl requestDispatcher = new RequestDispatcherImpl();
+	private MultipartFormData multipartFormData;
+	
 
 	protected static Locale DEFAULT_LOCALE = Locale.getDefault();
 	protected ArrayList<Locale> locales = new ArrayList<Locale>();
@@ -84,8 +85,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 		this.characterEncoding = config.getEncoding();
 		this.session = session;
 		this.config = config;
-		response = new HttpServletResponseImpl(session, this,
-				characterEncoding, config.getWriteBufferSize());
+		response = new HttpServletResponseImpl(session, this, characterEncoding, config.getWriteBufferSize());
 	}
 	
 	//======================= IO stream process =======================
@@ -181,7 +181,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	}
 	
 	/**
-	 * if http method is POST or PUT, when the business process finish, it neet close piped stream
+	 * if http method is POST or PUT, when the business process finish, it must close piped stream
 	 * @throws IOException
 	 */
 	void releaseInputStreamData() throws IOException {
@@ -926,14 +926,18 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public Collection<Part> getParts() throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
+		if(multipartFormData == null)
+			multipartFormData = new MultipartFormData(MultipartFormDataParser.parse(getInputStream(), getHeader("Content-Type"), characterEncoding));
+		
+		return multipartFormData.getParts();
 	}
 
 	@Override
 	public Part getPart(String name) throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
+		if(multipartFormData == null)
+			getParts();
+		
+		return multipartFormData.getPart(name);
 	}
 
 }

@@ -1,69 +1,34 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.Part;
 
-public class MultipartFormData implements Part {
+public class MultipartFormData {
+
+	private final Collection<Part> parts;
+	private Map<String, Part> partMap;
 	
-	private Map<String, String> headMap = new HashMap<String, String>();
-
-	@Override
-	public InputStream getInputStream() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public MultipartFormData(Collection<Part> parts) {
+		this.parts = parts;
 	}
 
-	@Override
-	public String getContentType() {
-		// TODO Auto-generated method stub
-		return null;
+	public Collection<Part> getParts() throws IOException, ServletException {
+		return parts;
 	}
 
-	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+	public Part getPart(String name) throws IOException, ServletException {
+		if(partMap != null)
+			return partMap.get(name);
+		
+		partMap = new HashMap<String, Part>();
+		for(Part part : parts)
+			partMap.put(part.getName(), part);
+		
+		return partMap.get(name);
 	}
-
-	@Override
-	public long getSize() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public void write(String fileName) throws IOException {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void delete() throws IOException {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public String getHeader(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Collection<String> getHeaders(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Collection<String> getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }
