@@ -1,5 +1,6 @@
 package com.firefly.server.http;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,7 +9,7 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.Part;
 
-public class MultipartFormData {
+public class MultipartFormData implements Closeable {
 
 	private final Collection<Part> parts;
 	private Map<String, Part> partMap;
@@ -30,5 +31,13 @@ public class MultipartFormData {
 			partMap.put(part.getName(), part);
 		
 		return partMap.get(name);
+	}
+
+	@Override
+	public void close() throws IOException {
+		for(Part part : parts) {
+			part.delete();
+		}
+		
 	}
 }

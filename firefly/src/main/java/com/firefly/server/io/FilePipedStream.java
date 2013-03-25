@@ -13,7 +13,7 @@ import java.util.UUID;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class FileHttpBodyPipedStream implements HttpBodyPipedStream {
+public class FilePipedStream implements PipedStream {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
@@ -21,8 +21,12 @@ public class FileHttpBodyPipedStream implements HttpBodyPipedStream {
 	private InputStream in;
 	private File temp;
 	
-	public FileHttpBodyPipedStream(String tempdir) {
+	public FilePipedStream(String tempdir) {
 		temp = new File(tempdir, UUID.randomUUID().toString());
+	}
+	
+	public FilePipedStream(String tempdir, String file) {
+		temp = new File(tempdir, file);
 	}
 
 	@Override

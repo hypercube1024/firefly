@@ -37,7 +37,7 @@ import javax.servlet.http.Part;
 
 import com.firefly.net.Session;
 import com.firefly.server.exception.HttpServerException;
-import com.firefly.server.io.HttpBodyPipedStream;
+import com.firefly.server.io.PipedStream;
 import com.firefly.server.utils.StringParser;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
@@ -50,7 +50,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	String method, requestURI, queryString;
 	String protocol = "HTTP/1.1";
 
-	HttpBodyPipedStream bodyPipedStream;
+	PipedStream bodyPipedStream;
 	Cookie[] cookies;
 	Map<String, String> headMap = new HashMap<String, String>();
 	HttpServletResponseImpl response;
@@ -187,7 +187,12 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	void releaseInputStreamData() throws IOException {
 		try {
 			if(getContentLength() > 0) {
-				bodyPipedStream.close();
+				if(bodyPipedStream != null) {
+					bodyPipedStream.close();
+				}
+				if(multipartFormData != null) {
+					multipartFormData.close();
+				}
 			}
 		} catch(Throwable t) {
 			log.error("release input stream error", t);
@@ -926,8 +931,15 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public Collection<Part> getParts() throws IOException, ServletException {
-		if(multipartFormData == null)
-			multipartFormData = new MultipartFormData(MultipartFormDataParser.parse(getInputStream(), getHeader("Content-Type"), characterEncoding));
+		if(multipartFormData == null) {
+			InputStream input = null;
+			try {
+				input = getInputStream();
+				multipartFormData = new MultipartFormData(MultipartFormDataParser.parse(input, getHeader("Content-Type"), characterEncoding, config.getTempdir()));
+			} finally {
+				input.close();
+			}
+		}
 		
 		return multipartFormData.getParts();
 	}

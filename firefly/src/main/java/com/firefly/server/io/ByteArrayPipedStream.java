@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class ByteArrayHttpBodyPipedStream implements HttpBodyPipedStream {
+public class ByteArrayPipedStream implements PipedStream {
 	
 	private ByteArrayOutputStream out;
 	private ByteArrayInputStream in;
 	private int length;
 	
-	public ByteArrayHttpBodyPipedStream(int length) {
+	public ByteArrayPipedStream(int length) {
 		if(length >= Integer.MAX_VALUE)
 			throw new IllegalArgumentException("http body length too larger");
 		

@@ -2,38 +2,60 @@ package com.firefly.server.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.Part;
 
+import com.firefly.server.io.PipedStream;
+import com.firefly.utils.StringUtils;
+
 public class PartImpl implements Part {
 	
-	private Map<String, String> headMap = new HashMap<String, String>();
+	private PipedStream pipedStream;
+	private String name;
+	private boolean parseName = false;
+	final Map<String, String> headMap = new HashMap<String, String>();
+	int size = 0;
+
+	public PartImpl(PipedStream pipedStream) {
+		this.pipedStream = pipedStream;
+	}
 
 	@Override
 	public InputStream getInputStream() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		return pipedStream.getInputStream();
 	}
 
 	@Override
 	public String getContentType() {
-		// TODO Auto-generated method stub
-		return null;
+		return headMap.get("content-type");
 	}
 
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		if(!parseName) {
+			String contentDisposition = headMap.get("content-disposition");
+			String[] t = StringUtils.split(contentDisposition, ';');
+			if(t.length < 2)
+				return null;
+			
+			String _name = t[1].trim();
+			if(_name.length() < 6)
+				return null;
+
+			_name = _name.substring(6, _name.length() - 1);
+			name = _name;
+		}
+		return name;
 	}
 
 	@Override
 	public long getSize() {
-		// TODO Auto-generated method stub
-		return 0;
+		return size;
 	}
 
 	@Override
@@ -44,26 +66,28 @@ public class PartImpl implements Part {
 
 	@Override
 	public void delete() throws IOException {
-		// TODO Auto-generated method stub
-
+		pipedStream.close();
 	}
 
 	@Override
 	public String getHeader(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return headMap.get(name);
 	}
 
 	@Override
 	public Collection<String> getHeaders(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		String value = getHeader(name);
+		String[] values = StringUtils.split(value, ',');
+		return Arrays.asList(values);
 	}
 
 	@Override
 	public Collection<String> getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return headMap.keySet();
+	}
+	
+	OutputStream getOutputStream() throws IOException {
+		return pipedStream.getOutputStream();
 	}
 
 }

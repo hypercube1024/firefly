@@ -6,8 +6,8 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
-import com.firefly.server.io.ByteArrayHttpBodyPipedStream;
-import com.firefly.server.io.FileHttpBodyPipedStream;
+import com.firefly.server.io.ByteArrayPipedStream;
+import com.firefly.server.io.FilePipedStream;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
@@ -243,9 +243,9 @@ public class HttpDecoder implements Decoder {
 				if (req.bodyPipedStream == null) { // the first into body decode status, it neet create piped stream
 					if(contentLength >= config.getHttpBodyThreshold()) {
 						log.info("content length [{}] more than threshold [{}]", contentLength , config.getHttpBodyThreshold());
-						req.bodyPipedStream = new FileHttpBodyPipedStream(config.getTempdir());
+						req.bodyPipedStream = new FilePipedStream(config.getTempdir());
 					} else {
-						req.bodyPipedStream = new ByteArrayHttpBodyPipedStream(contentLength);
+						req.bodyPipedStream = new ByteArrayPipedStream(contentLength);
 					}
 				}
 				

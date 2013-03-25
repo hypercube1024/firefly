@@ -6,10 +6,12 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Map;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 
 import com.firefly.annotation.Controller;
 import com.firefly.annotation.PathVariable;
@@ -147,6 +149,16 @@ public class IndexController {
 	public View testError(HttpServletRequest request) {
 		System.out.println("test error");
 		throw new RuntimeException("test error");
+	}
+	
+	@RequestMapping(value = "/upload", method=HttpMethod.POST)
+	public View upload(HttpServletRequest request) throws IOException, ServletException {
+		System.out.println(">>>>>>>>> upload start");
+		for(Part part : request.getParts()) {
+			System.out.println(part.getName() + "|" + part.getSize());
+		}
+		throw new RuntimeException("upload error");
+//		return new TextView("upload ok!");
 	}
 
 }

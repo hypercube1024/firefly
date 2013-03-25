@@ -21,8 +21,11 @@ public abstract class RequestHandler {
 
 	protected void doRequest(HttpServletRequestImpl request) throws IOException {
 		long start = Millisecond100Clock.currentTimeMillis();
-		servletController.dispatcher(request, request.response);
-		request.releaseInputStreamData();
+		try {
+			servletController.dispatcher(request, request.response);
+		} finally {
+			request.releaseInputStreamData();
+		}
 		long end = Millisecond100Clock.currentTimeMillis();
 		access.info("{}|{}|{}|{}|{}|{}|{}|{}", 
 				request.session.getSessionId(), 
