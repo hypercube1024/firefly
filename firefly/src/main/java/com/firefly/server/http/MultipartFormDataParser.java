@@ -19,6 +19,7 @@ import com.firefly.utils.VerifyUtils;
 public class MultipartFormDataParser {
 
 //	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+//	private static final int maxBufSize = 128;
 	
 	public static Collection<Part> parse(InputStream input, String contentType, String charset, String tempdir) throws IOException, ServletException {
 		String[] contentTypeInfo = StringUtils.split(contentType, ';');
@@ -34,6 +35,7 @@ public class MultipartFormDataParser {
 			throw new IllegalArgumentException("boundary [" + contentType + "] format error");
 		
 		final String boundary = boundaryInfo.substring("boundary=".length());
+		
 		if(boundary.length() == 0)
 			throw new IllegalArgumentException("boundary [" + boundary + "] format error");
 
@@ -44,63 +46,84 @@ public class MultipartFormDataParser {
 		Status status = Status.BOUNDARY;
 		ByteArrayOutputStream byteBuf = new ByteArrayOutputStream();
 		PartImpl part = null;
+		byte[] last = null;
 		
 		for (int b = 0; ((b = input.read()) != -1); ) {
 			byteBuf.write(b);
-			if(b == '\n') {
-				switch (status) {
-				case BOUNDARY:
-					String currentBoundary = new String(byteBuf.toByteArray(), charset).trim();
-					byteBuf = new ByteArrayOutputStream();
-					
-					if(!currentBoundary.equals("--" + boundary))
-						throw new HttpServerException("boundary [" + currentBoundary + "] format error");
-					
-					// TODO need use mixedPipedStream
-					part = new PartImpl(new FilePipedStream(tempdir, "part-"+UUID.randomUUID().toString()));
-					status = Status.HEAD;
-					break;
-					
-				case HEAD:
-					String headInfo = new String(byteBuf.toByteArray(), charset).trim();
-					byteBuf = new ByteArrayOutputStream(512);
-					
-					if(VerifyUtils.isEmpty(headInfo)) {
-						status = Status.DATA;
-						break;
-					}
-					
-					String[] t = StringUtils.split(headInfo, ":", 2);
-					if(t.length != 2)
-						throw new HttpServerException("head [" + headInfo + "] format error");
-
-					part.headMap.put(t[0].toLowerCase(), t[1]);
-					break;
-					
-				case DATA:
-					byte[] data = byteBuf.toByteArray();
-					byteBuf = new ByteArrayOutputStream(1024);
-					
-					if(Arrays.equals(data, ("--" + boundary + "\r\n").getBytes(charset))) {
-						part.getOutputStream().close();
-						collection.add(part);
-						status = Status.HEAD;
-						// TODO need use mixedPipedStream
-						part = new PartImpl(new FilePipedStream(tempdir, "part-"+UUID.randomUUID().toString()));
-						break;
-					} else if(Arrays.equals(data, ("--" + boundary + "--\r\n").getBytes(charset))) {
-						part.getOutputStream().close();
-						collection.add(part);
-						status = Status.FINISH;
-						break;
-					} else {
-						part.getOutputStream().write(data);
-						part.size += data.length;
-						break;
-					}
-				default:
+			
+			if(b != '\n') {
+				continue;
+			}
+			
+			switch (status) {
+			case BOUNDARY:
+				String currentBoundary = new String(byteBuf.toByteArray(), charset).trim();
+				byteBuf = new ByteArrayOutputStream();
+				
+				if(!currentBoundary.equals("--" + boundary))
+					throw new HttpServerException("boundary [" + currentBoundary + "] format error");
+				
+				// TODO need use mixedPipedStream
+				part = new PartImpl(new FilePipedStream(tempdir, "part-"+UUID.randomUUID().toString()));
+				status = Status.HEAD;
+				break;
+				
+			case HEAD:
+				String headInfo = new String(byteBuf.toByteArray(), charset).trim();
+				byteBuf = new ByteArrayOutputStream(512);
+				
+				if(VerifyUtils.isEmpty(headInfo)) {
+					status = Status.DATA;
 					break;
 				}
+				
+				String[] t = StringUtils.split(headInfo, ":", 2);
+				if(t.length != 2)
+					throw new HttpServerException("head [" + headInfo + "] format error");
+
+				part.headMap.put(t[0].toLowerCase(), t[1]);
+				break;
+				
+			case DATA:
+				byte[] data = byteBuf.toByteArray();
+				byteBuf = new ByteArrayOutputStream(1024);
+				
+				if(Arrays.equals(data, ("--" + boundary + "\r\n").getBytes(charset))) {
+					if(last != null) {						
+						// remove last \r\n
+						part.getOutputStream().write(last, 0 ,last.length - 2);
+						part.size += last.length - 2;
+						last = null;
+					}
+					
+					part.getOutputStream().close();
+					collection.add(part);
+					status = Status.HEAD;
+					// TODO need use mixedPipedStream
+					part = new PartImpl(new FilePipedStream(tempdir, "part-"+UUID.randomUUID().toString()));
+					break;
+				} else if(Arrays.equals(data, ("--" + boundary + "--\r\n").getBytes(charset))) {
+					if(last != null) {
+						// remove last \r\n
+						part.getOutputStream().write(last, 0 ,last.length - 2);
+						part.size += last.length - 2;
+						last = null;
+					}
+					
+					part.getOutputStream().close();
+					collection.add(part);
+					status = Status.FINISH;
+					break;
+				} else {
+					if(last != null) {
+						part.getOutputStream().write(last);
+						part.size += last.length;
+					}
+					last = data;
+					break;
+				}
+			default:
+				break;
 			}
 		}
 		

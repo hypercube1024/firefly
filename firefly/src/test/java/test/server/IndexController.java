@@ -157,8 +157,8 @@ public class IndexController {
 		for(Part part : request.getParts()) {
 			System.out.println(part.getName() + "|" + part.getSize());
 		}
-		throw new RuntimeException("upload error");
-//		return new TextView("upload ok!");
+//		throw new RuntimeException("upload error");
+		return new TextView("upload ok!");
 	}
 
 }

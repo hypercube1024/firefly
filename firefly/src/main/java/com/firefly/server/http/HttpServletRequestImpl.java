@@ -190,9 +190,10 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 				if(bodyPipedStream != null) {
 					bodyPipedStream.close();
 				}
-				if(multipartFormData != null) {
-					multipartFormData.close();
-				}
+				// TODO release multipart data
+//				if(multipartFormData != null) {
+//					multipartFormData.close();
+//				}
 			}
 		} catch(Throwable t) {
 			log.error("release input stream error", t);
