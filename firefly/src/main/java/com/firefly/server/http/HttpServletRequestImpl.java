@@ -933,7 +933,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	@Override
 	public Collection<Part> getParts() throws IOException, ServletException {
 		if(multipartFormData == null) {
-			InputStream input = null;
+			ServletInputStream input = null;
 			try {
 				input = getInputStream();
 				multipartFormData = new MultipartFormData(MultipartFormDataParser.parse(input, getHeader("Content-Type"), characterEncoding, config.getTempdir()));

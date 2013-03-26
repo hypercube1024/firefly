@@ -1,27 +1,28 @@
 package com.firefly.server.http;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.UUID;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.Part;
 
 import com.firefly.server.exception.HttpServerException;
 import com.firefly.server.io.FilePipedStream;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class MultipartFormDataParser {
 
-//	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-//	private static final int maxBufSize = 128;
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final int maxBufSize = 128;
 	
-	public static Collection<Part> parse(InputStream input, String contentType, String charset, String tempdir) throws IOException, ServletException {
+	public static Collection<Part> parse(ServletInputStream input, String contentType, String charset, String tempdir) throws IOException, ServletException {
 		String[] contentTypeInfo = StringUtils.split(contentType, ';');
 		if(contentTypeInfo == null || contentTypeInfo.length < 2)
 			throw new IllegalArgumentException("contentType [" + contentType + "] format error");
@@ -44,33 +45,28 @@ public class MultipartFormDataParser {
 		
 		Collection<Part> collection = new LinkedList<Part>();
 		Status status = Status.BOUNDARY;
-		ByteArrayOutputStream byteBuf = new ByteArrayOutputStream();
 		PartImpl part = null;
+		
+		byte[] buf = new byte[maxBufSize];
 		byte[] last = null;
 		
-		for (int b = 0; ((b = input.read()) != -1); ) {
-			byteBuf.write(b);
-			
-			if(b != '\n') {
-				continue;
-			}
-			
+		for (int len = 0; ((len = input.readLine(buf, 0, buf.length)) != -1);) {
 			switch (status) {
 			case BOUNDARY:
-				String currentBoundary = new String(byteBuf.toByteArray(), charset).trim();
-				byteBuf = new ByteArrayOutputStream();
+				String currentBoundary = new String(buf, 0, len, charset).trim();
+				buf = new byte[maxBufSize];
 				
 				if(!currentBoundary.equals("--" + boundary))
 					throw new HttpServerException("boundary [" + currentBoundary + "] format error");
-				
+			
 				// TODO need use mixedPipedStream
 				part = new PartImpl(new FilePipedStream(tempdir, "part-"+UUID.randomUUID().toString()));
 				status = Status.HEAD;
 				break;
 				
 			case HEAD:
-				String headInfo = new String(byteBuf.toByteArray(), charset).trim();
-				byteBuf = new ByteArrayOutputStream(512);
+				String headInfo = new String(buf, 0, len, charset).trim();
+				buf = new byte[maxBufSize];
 				
 				if(VerifyUtils.isEmpty(headInfo)) {
 					status = Status.DATA;
@@ -85,12 +81,13 @@ public class MultipartFormDataParser {
 				break;
 				
 			case DATA:
-				byte[] data = byteBuf.toByteArray();
-				byteBuf = new ByteArrayOutputStream(1024);
+				byte[] data = Arrays.copyOf(buf, len);
+				buf = new byte[maxBufSize];
 				
 				if(Arrays.equals(data, ("--" + boundary + "\r\n").getBytes(charset))) {
 					if(last != null) {						
-						// remove last \r\n
+						// remove last '\r\n'
+						log.debug("into finish last len: {}", last.length);
 						part.getOutputStream().write(last, 0 ,last.length - 2);
 						part.size += last.length - 2;
 						last = null;
@@ -104,7 +101,8 @@ public class MultipartFormDataParser {
 					break;
 				} else if(Arrays.equals(data, ("--" + boundary + "--\r\n").getBytes(charset))) {
 					if(last != null) {
-						// remove last \r\n
+						// remove last '\r\n'
+						log.debug("into end last len: {}", last.length);
 						part.getOutputStream().write(last, 0 ,last.length - 2);
 						part.size += last.length - 2;
 						last = null;
@@ -115,16 +113,30 @@ public class MultipartFormDataParser {
 					status = Status.FINISH;
 					break;
 				} else {
-					if(last != null) {
-						part.getOutputStream().write(last);
-						part.size += last.length;
+					if(len > 2) {
+						if(last != null) {
+							part.getOutputStream().write(last);
+							part.size += last.length;
+						}
+						last = data;
+					} else { 
+						// TODO need test
+						if(last != null) {
+							byte[] temp = new byte[last.length + data.length];
+							System.arraycopy(last, 0, temp, 0, last.length);
+							System.arraycopy(data, 0, temp, last.length, data.length);
+							last = temp;
+						} else {
+							last = data;
+						}
+						log.debug("data line length: {}", len);
 					}
-					last = data;
 					break;
 				}
 			default:
 				break;
 			}
+			
 		}
 		
 		return collection;
