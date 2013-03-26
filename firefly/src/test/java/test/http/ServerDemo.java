@@ -10,6 +10,7 @@ public class ServerDemo {
 	public static void main(String[] args) throws Throwable {
 //		start1();
 		start2();
+//		System.out.println(ServerBootstrap.class.getResource("/page/template").toURI());
 		
 //		File file = new File("/Users/qiupengtao", "testUpload1.txt");
 //		FileOutputStream out = new FileOutputStream(file);

@@ -23,7 +23,7 @@ import com.firefly.utils.io.FileUtils;
 
 public class PartImpl implements Part {
 	
-	static String tempdir;
+	public static String tempdir;
 	
 	private PipedStream pipedStream;
 	private String name, fileName;
@@ -76,6 +76,9 @@ public class PartImpl implements Part {
 
 	@Override
 	public void write(String fileName) throws IOException {
+		if(size <= 0)
+			return;
+		
 		if(temp != null) {
 			FileUtils.copy(temp, new File(fileName));
 		} else {
