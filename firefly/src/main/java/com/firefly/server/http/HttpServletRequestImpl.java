@@ -190,10 +190,9 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 				if(bodyPipedStream != null) {
 					bodyPipedStream.close();
 				}
-				// TODO release multipart data
-//				if(multipartFormData != null) {
-//					multipartFormData.close();
-//				}
+				if(multipartFormData != null) {
+					multipartFormData.close();
+				}
 			}
 		} catch(Throwable t) {
 			log.error("release input stream error", t);
@@ -936,7 +935,8 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 			ServletInputStream input = null;
 			try {
 				input = getInputStream();
-				multipartFormData = new MultipartFormData(MultipartFormDataParser.parse(input, getHeader("Content-Type"), characterEncoding, config.getTempdir()));
+				PartImpl.tempdir = config.getTempdir();
+				multipartFormData = new MultipartFormData(MultipartFormDataParser.parse(input, getHeader("Content-Type"), characterEncoding));
 			} finally {
 				input.close();
 			}

@@ -25,8 +25,8 @@ public class FilePipedStream implements PipedStream {
 		temp = new File(tempdir, UUID.randomUUID().toString());
 	}
 	
-	public FilePipedStream(String tempdir, String file) {
-		temp = new File(tempdir, file);
+	public FilePipedStream(File file) {
+		temp = file;
 	}
 
 	@Override

@@ -21,6 +21,7 @@ import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.view.RedirectView;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
+import com.firefly.server.http.PartImpl;
 import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.io.LineReaderHandler;
 
@@ -156,6 +157,11 @@ public class IndexController {
 		System.out.println(">>>>>>>>> upload start");
 		for(Part part : request.getParts()) {
 			System.out.println(part.getName() + "|" + part.getSize());
+			if(part.getName().startsWith("content")) {
+				part.write( "/Users/qiupengtao/fireflyTest/" + ((PartImpl)part).getFileName() );
+			} else {
+				part.write( "/Users/qiupengtao/fireflyTest/" + part.getName() + ".txt" );
+			}
 		}
 //		throw new RuntimeException("upload error");
 		return new TextView("upload ok!");

@@ -1,5 +1,8 @@
 package com.firefly.server.http;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -7,23 +10,27 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.Part;
 
+import com.firefly.server.io.ByteArrayPipedStream;
+import com.firefly.server.io.FilePipedStream;
 import com.firefly.server.io.PipedStream;
 import com.firefly.utils.StringUtils;
+import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.io.FileUtils;
 
 public class PartImpl implements Part {
 	
+	static String tempdir;
+	
 	private PipedStream pipedStream;
-	private String name;
+	private String name, fileName;
 	private boolean parseName = false;
+	private File temp;
 	final Map<String, String> headMap = new HashMap<String, String>();
 	int size = 0;
-
-	public PartImpl(PipedStream pipedStream) {
-		this.pipedStream = pipedStream;
-	}
 
 	@Override
 	public InputStream getInputStream() throws IOException {
@@ -37,20 +44,29 @@ public class PartImpl implements Part {
 
 	@Override
 	public String getName() {
+		parseName();
+		return name;
+	}
+	
+	public String getFileName() {
+		parseName();
+		return fileName;
+	}
+	
+	private void parseName() {
 		if(!parseName) {
 			String contentDisposition = headMap.get("content-disposition");
 			String[] t = StringUtils.split(contentDisposition, ';');
-			if(t.length < 2)
-				return null;
 			
 			String _name = t[1].trim();
-			if(_name.length() < 6)
-				return null;
-
-			_name = _name.substring(6, _name.length() - 1);
-			name = _name;
+			name = _name.substring(6, _name.length() - 1);
+			
+			if(t.length == 3) {
+				String _filename = t[2].trim();
+				fileName = _filename.substring(10, _filename.length() - 1);
+			}
+			parseName = true;
 		}
-		return name;
 	}
 
 	@Override
@@ -60,8 +76,24 @@ public class PartImpl implements Part {
 
 	@Override
 	public void write(String fileName) throws IOException {
-		// TODO Auto-generated method stub
-
+		if(temp != null) {
+			FileUtils.copy(temp, new File(fileName));
+		} else {
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(new File(fileName)));
+			InputStream input = getInputStream();
+			
+			try {
+				byte[] buf = new byte[512];
+				for (int len = 0; ((len = input.read(buf) ) != -1); ) {
+					out.write(buf, 0, len);
+					buf = new byte[512];
+				}
+			} finally {
+				input.close();
+				out.close();
+			}
+			
+		}
 	}
 
 	@Override
@@ -87,6 +119,17 @@ public class PartImpl implements Part {
 	}
 	
 	OutputStream getOutputStream() throws IOException {
+		if(pipedStream != null)
+			return pipedStream.getOutputStream();
+		
+		parseName();
+		if(VerifyUtils.isNotEmpty(fileName)) {
+			temp = new File(tempdir, "part-" + UUID.randomUUID().toString());
+			pipedStream = new FilePipedStream(temp);
+		} else {
+			pipedStream = new ByteArrayPipedStream(512);
+		}
+		
 		return pipedStream.getOutputStream();
 	}
 

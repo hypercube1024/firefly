@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.Part;
 
 import com.firefly.server.exception.HttpServerException;
-import com.firefly.server.io.FilePipedStream;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
@@ -20,9 +18,9 @@ import com.firefly.utils.log.LogFactory;
 public class MultipartFormDataParser {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static final int maxBufSize = 128;
+	private static final int maxBufSize = 1024;
 	
-	public static Collection<Part> parse(ServletInputStream input, String contentType, String charset, String tempdir) throws IOException, ServletException {
+	public static Collection<Part> parse(ServletInputStream input, String contentType, String charset) throws IOException, ServletException {
 		String[] contentTypeInfo = StringUtils.split(contentType, ';');
 		if(contentTypeInfo == null || contentTypeInfo.length < 2)
 			throw new IllegalArgumentException("contentType [" + contentType + "] format error");
@@ -38,9 +36,6 @@ public class MultipartFormDataParser {
 		final String boundary = boundaryInfo.substring("boundary=".length());
 		
 		if(boundary.length() == 0)
-			throw new IllegalArgumentException("boundary [" + boundary + "] format error");
-
-		if(!boundary.startsWith("----"))
 			throw new IllegalArgumentException("boundary [" + boundary + "] format error");
 		
 		Collection<Part> collection = new LinkedList<Part>();
@@ -59,8 +54,7 @@ public class MultipartFormDataParser {
 				if(!currentBoundary.equals("--" + boundary))
 					throw new HttpServerException("boundary [" + currentBoundary + "] format error");
 			
-				// TODO need use mixedPipedStream
-				part = new PartImpl(new FilePipedStream(tempdir, "part-"+UUID.randomUUID().toString()));
+				part = new PartImpl();
 				status = Status.HEAD;
 				break;
 				
@@ -96,8 +90,7 @@ public class MultipartFormDataParser {
 					part.getOutputStream().close();
 					collection.add(part);
 					status = Status.HEAD;
-					// TODO need use mixedPipedStream
-					part = new PartImpl(new FilePipedStream(tempdir, "part-"+UUID.randomUUID().toString()));
+					part = new PartImpl();
 					break;
 				} else if(Arrays.equals(data, ("--" + boundary + "--\r\n").getBytes(charset))) {
 					if(last != null) {
@@ -120,7 +113,7 @@ public class MultipartFormDataParser {
 						}
 						last = data;
 					} else { 
-						// TODO need test
+						// TODO need more test case
 						if(last != null) {
 							byte[] temp = new byte[last.length + data.length];
 							System.arraycopy(last, 0, temp, 0, last.length);
