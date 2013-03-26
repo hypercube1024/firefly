@@ -24,7 +24,7 @@ public class TestMultipartParser {
 	@Test
 	public void testMultipartParser() throws Throwable {
 		PartImpl.tempdir = new File(ServerBootstrap.class.getResource("/page/template/_firefly_tmpdir").toURI()).getAbsolutePath();
-		File testFile = new File(ServerBootstrap.class.getResource("/38d36404-53a5-456b-9f63-1e127bf86975").toURI());
+		File testFile = new File(ServerBootstrap.class.getResource("/testMutilpart.txt").toURI());
 		
 		final BufferedInputStream in = new BufferedInputStream(new FileInputStream(testFile));
 		Collection<Part> col = null;
@@ -49,7 +49,7 @@ public class TestMultipartParser {
 				public int read(byte[] b, int off, int len) throws IOException {
 					return in.read(b, off, len);
 				}
-			}, "multipart/form-data; boundary=----WebKitFormBoundarytqSp9IL39DiccYay", "UTF-8");
+			}, "multipart/form-data; boundary=----WebKitFormBoundaryo6OWJFZoG8w62LBM", "UTF-8");
 		} finally {
 			in.close();
 		}
@@ -57,16 +57,18 @@ public class TestMultipartParser {
 		MultipartFormData m = new MultipartFormData(col);
 		try {
 			Assert.assertThat(col.size(), is(4));
-			Assert.assertThat(m.getPart("price").getName(), is("price"));
-			Assert.assertThat(m.getPart("price").getSize(), is(4L));
-			Assert.assertThat(m.getPart("content1").getSize(), is(3701282L));
-			Assert.assertThat(m.getPart("content2").getSize(), is(5760061L));
+			Assert.assertThat(m.getPart("name").getName(), is("name"));
+			Assert.assertThat(m.getPart("num").getSize(), is(9L));
+			Assert.assertThat(m.getPart("content1").getSize(), is(19L));
+			Assert.assertThat(m.getPart("content2").getSize(), is(20L));
+			System.out.println(m.getPart("content1").getSize());
+			System.out.println(m.getPart("content2").getSize());
 		} finally {
 			m.close();
 		}
 	}
 	
-//	public static void main(String[] args) throws Throwable {
-//		new TestMultipartParser().testMultipartParser();
-//	}
+	public static void main(String[] args) throws Throwable {
+		new TestMultipartParser().testMultipartParser();
+	}
 }
