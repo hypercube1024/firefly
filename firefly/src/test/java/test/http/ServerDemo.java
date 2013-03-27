@@ -10,18 +10,6 @@ public class ServerDemo {
 	public static void main(String[] args) throws Throwable {
 //		start1();
 		start2();
-//		System.out.println(ServerBootstrap.class.getResource("/page/template").toURI());
-		
-//		File file = new File("/Users/qiupengtao", "testUpload1.txt");
-//		FileOutputStream out = new FileOutputStream(file);
-//		
-//		StringBuilder str = new StringBuilder();
-//		for (int i = 0; i < 256; i++) {
-//			str.append('a');
-//		}
-//		str.append("\r\n");
-//		out.write(str.toString().getBytes("UTF-8"));
-//		out.close();
 	}
 	
 	public static void start1() throws Throwable {

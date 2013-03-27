@@ -18,7 +18,10 @@ import com.firefly.utils.log.LogFactory;
 public class MultipartFormDataParser {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static final int maxBufSize = 1024;
+	
+	private static final int boundaryBufSize = 512;
+	private static final int headBufSize = 1024;
+	private static final int dataBufSize = 8 * 1024;
 	
 	public static Collection<Part> parse(ServletInputStream input, String contentType, String charset) throws IOException, ServletException {
 		String[] contentTypeInfo = StringUtils.split(contentType, ';');
@@ -42,14 +45,17 @@ public class MultipartFormDataParser {
 		Status status = Status.BOUNDARY;
 		PartImpl part = null;
 		
-		byte[] buf = new byte[maxBufSize];
+		byte[] buf = new byte[boundaryBufSize];
 		byte[] last = null;
 		
 		for (int len = 0; ((len = input.readLine(buf, 0, buf.length)) != -1);) {
 			switch (status) {
 			case BOUNDARY:
+				if(buf[len - 1] != '\n')
+					throw new HttpServerException("boundary format error");
+				
 				String currentBoundary = new String(buf, 0, len, charset).trim();
-				buf = new byte[maxBufSize];
+				buf = new byte[headBufSize];
 				
 				if(!currentBoundary.equals("--" + boundary))
 					throw new HttpServerException("boundary [" + currentBoundary + "] format error");
@@ -59,13 +65,17 @@ public class MultipartFormDataParser {
 				break;
 				
 			case HEAD:
-				String headInfo = new String(buf, 0, len, charset).trim();
-				buf = new byte[maxBufSize];
+				if(buf[len - 1] != '\n')
+					throw new HttpServerException("head format error");
 				
+				String headInfo = new String(buf, 0, len, charset).trim();
 				if(VerifyUtils.isEmpty(headInfo)) {
+					buf = new byte[dataBufSize];
 					status = Status.DATA;
 					break;
 				}
+				
+				buf = new byte[headBufSize];
 				
 				String[] t = StringUtils.split(headInfo, ":", 2);
 				if(t.length != 2)
@@ -76,7 +86,7 @@ public class MultipartFormDataParser {
 				
 			case DATA:
 				byte[] data = Arrays.copyOf(buf, len);
-				buf = new byte[maxBufSize];
+				buf = new byte[dataBufSize];
 				
 				if(Arrays.equals(data, ("--" + boundary + "\r\n").getBytes(charset))) {
 					if(last != null) {						
