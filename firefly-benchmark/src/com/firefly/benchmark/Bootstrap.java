@@ -15,7 +15,7 @@ public class Bootstrap {
 		String serverHome = new File(projectHome, "/page").getAbsolutePath();
 		Config config = new Config();
 		config.setHost("localhost");
-		config.setPort(6655);
+		config.setPort(8080);
 		config.setServerHome(serverHome);
 		config.setPipeline(true);
 		ServerBootstrap.start(config);
