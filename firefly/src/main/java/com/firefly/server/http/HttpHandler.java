@@ -78,8 +78,17 @@ public class HttpHandler implements Handler {
 		log.error("server handle error", t);
 		session.close(true);
 	}
+	
+	@Override
+	public void timeout(Session session) throws Throwable {
+		log.debug("connection timeout|{}", session.getSessionId());
+		if(session.isOpen())
+			session.close(true);
+	}
 
 	public void shutdown() {
 		requestHandler.shutdown();
 	}
+
+	
 }

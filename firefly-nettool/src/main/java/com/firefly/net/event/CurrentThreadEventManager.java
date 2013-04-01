@@ -57,11 +57,18 @@ public class CurrentThreadEventManager implements EventManager {
 			executeExceptionTask(session, t);
 		}
 	}
+	
+	@Override
+	public void executeTimeoutTask(Session session) {
+		try {
+			config.getHandler().timeout(session);
+		} catch (Throwable t) {
+			executeExceptionTask(session, t);
+		}
+	}
 
 	@Override
 	public void shutdown() {
-		// TODO Auto-generated method stub
 		
 	}
-
 }

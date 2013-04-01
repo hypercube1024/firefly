@@ -3,11 +3,8 @@ package test.net.ssl;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
-import java.net.URISyntaxException;
 import java.util.Arrays;
-
 import javax.net.ssl.SSLContext;
 
 import test.net.tcp.SendFileHandler;
@@ -81,6 +78,13 @@ public class DumpHandler implements Handler {
 			in.close();
 			out.close();
 		}
+	}
+
+	@Override
+	public void timeout(Session session) throws Throwable {
+		if(session.isOpen())
+			session.close(true);
+		
 	}
 
 }

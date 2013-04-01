@@ -480,8 +480,11 @@ public final class TcpWorker implements Worker {
 		public void run() {
 			long t = Millisecond100Clock.currentTimeMillis() - session.getLastActiveTime();
 			if (t >= timeout) {
-				if (session.isOpen())
-					session.close(true);
+				// TODO need test
+				eventManager.executeTimeoutTask(session);
+			
+//				if (session.isOpen())
+//					session.close(true);
 			} else {
 				long nextCheckTime = timeout - t;
 				timeWheel.add(nextCheckTime, TimeoutTask.this);

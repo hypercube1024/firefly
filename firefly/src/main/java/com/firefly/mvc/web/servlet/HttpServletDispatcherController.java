@@ -46,6 +46,9 @@ public class HttpServletDispatcherController implements DispatcherController {
 			return;
 		}
 		
+		if(request.isAsyncStarted())
+			return;
+		
 		if(v == null) {
 			if(!response.isCommitted()) {
 				String msg = request.getRequestURI() + " not found";

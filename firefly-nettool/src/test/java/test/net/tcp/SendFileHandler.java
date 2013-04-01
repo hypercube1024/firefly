@@ -67,4 +67,10 @@ public class SendFileHandler implements Handler {
 		log.error(t.getMessage() + "|" + session.getSessionId(), t);
 	}
 
+	@Override
+	public void timeout(Session session) throws Throwable {
+		if(session.isOpen())
+			session.close(true);
+	}
+
 }

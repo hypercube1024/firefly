@@ -75,6 +75,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	private ServletInputStream servletInputStream;
 	private RequestDispatcherImpl requestDispatcher = new RequestDispatcherImpl();
 	private MultipartFormData multipartFormData;
+	private AsyncContextImpl asyncContext = null;
 	
 
 	protected static Locale DEFAULT_LOCALE = Locale.getDefault();
@@ -896,33 +897,37 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	
 	@Override
 	public AsyncContext startAsync() throws IllegalStateException {
-		// TODO Auto-generated method stub
-		return null;
+		return startAsync(this, response);
 	}
 
 	@Override
-	public AsyncContext startAsync(ServletRequest servletRequest,
-			ServletResponse servletResponse) throws IllegalStateException {
-		// TODO Auto-generated method stub
-		return null;
+	public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
+		if(asyncContext == null) {
+			asyncContext = new AsyncContextImpl();
+		}
+		asyncContext.startAsync(servletRequest, servletResponse, (servletRequest == this && servletResponse == response), config.getMaxConnectionTimeout());
+		return asyncContext;
 	}
 
 	@Override
 	public boolean isAsyncStarted() {
-		// TODO Auto-generated method stub
-		return false;
+		if(asyncContext == null)
+			return false;
+		
+		return asyncContext.isStartAsync();
 	}
 
 	@Override
 	public boolean isAsyncSupported() {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
 	public AsyncContext getAsyncContext() {
-		// TODO Auto-generated method stub
-		return null;
+		if(!isAsyncStarted())
+			throw new IllegalStateException("async context not start!");
+			
+		return asyncContext;
 	}
 
 	
