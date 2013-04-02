@@ -445,7 +445,7 @@ public final class TcpWorker implements Worker {
 				socketChannel.socket().setKeepAlive(true);
 
 				key = socketChannel.register(selector, SelectionKey.OP_READ);
-				Session session = new TcpSession(sessionId, TcpWorker.this,
+				TcpSession session = new TcpSession(sessionId, TcpWorker.this,
 						config, Millisecond100Clock.currentTimeMillis(), key, eventManager);
 				key.attach(session);
 
@@ -454,8 +454,10 @@ public final class TcpWorker implements Worker {
 				if (localAddress == null || remoteAddress == null)
 					TcpWorker.this.close(key);
 
-				if (config.getTimeout() > 0)
-					timeWheel.add(config.getTimeout(), new TimeoutTask(session, config.getTimeout()));
+				if (config.getTimeout() > 0) {
+					HashTimeWheel.Future future = timeWheel.add(config.getTimeout(), new TimeoutTask(session, config.getTimeout()));
+					session.setFuture(future);
+				}
 				
 				eventManager.executeOpenTask(session);
 			} catch (IOException e) {
@@ -468,10 +470,10 @@ public final class TcpWorker implements Worker {
 	}
 
 	private final class TimeoutTask implements Runnable {
-		private Session session;
+		private TcpSession session;
 		private final long timeout;
 
-		public TimeoutTask(Session session, long timeout) {
+		public TimeoutTask(TcpSession session, long timeout) {
 			this.session = session;
 			this.timeout = timeout;
 		}
@@ -480,11 +482,8 @@ public final class TcpWorker implements Worker {
 		public void run() {
 			long t = Millisecond100Clock.currentTimeMillis() - session.getLastActiveTime();
 			if (t >= timeout) {
-				// TODO need test
+				session.setFuture(null);
 				eventManager.executeTimeoutTask(session);
-			
-//				if (session.isOpen())
-//					session.close(true);
 			} else {
 				long nextCheckTime = timeout - t;
 				timeWheel.add(nextCheckTime, TimeoutTask.this);
@@ -502,6 +501,7 @@ public final class TcpWorker implements Worker {
 			TcpSession session = (TcpSession) key.attachment();
 			session.setState(Session.CLOSE);
 			cleanUpWriteBuffer(session);
+			session.cancelTimeoutTask();
 			eventManager.executeCloseTask(session);
 
 		} catch (IOException e) {

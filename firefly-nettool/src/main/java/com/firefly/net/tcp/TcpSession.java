@@ -25,6 +25,7 @@ import com.firefly.utils.ThreadLocalBoolean;
 import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.HashTimeWheel;
 
 public final class TcpSession implements Session {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
@@ -51,6 +52,7 @@ public final class TcpSession implements Session {
 	private volatile int state;
 	private ReceiveBufferSizePredictor receiveBufferSizePredictor;
 	private EventManager eventManager;
+	private HashTimeWheel.Future future;
 
 	public TcpSession(int sessionId, TcpWorker worker, Config config,
 			long openTime, SelectionKey selectionKey, EventManager eventManager) {
@@ -430,7 +432,26 @@ public final class TcpSession implements Session {
 	void setWrittenBytes(long writtenBytes) {
 		this.writtenBytes += writtenBytes;
 	}
+
+	// TODO need test
 	
+	@Override
+	public void cancelTimeoutTask() {
+		if(isCancelTimeoutTask())
+			return;
+		
+		future.cancel();
+		future = null;
+		log.info("session {} cancel timeout task", getSessionId());
+	}
+
+	@Override
+	public boolean isCancelTimeoutTask() {
+		return future == null;
+	}
 	
+	void setFuture(HashTimeWheel.Future future) {
+		this.future = future;
+	}
 
 }
