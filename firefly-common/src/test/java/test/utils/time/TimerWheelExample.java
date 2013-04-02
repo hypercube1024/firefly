@@ -54,7 +54,7 @@ public class TimerWheelExample {
 		});
 	}
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main1(String[] args) throws InterruptedException {
 		new TimerWheelExample().test();
 		TimeProvider t = new TimeProvider(1000L);
 		t.start();
@@ -63,5 +63,29 @@ public class TimerWheelExample {
 		long start = t.currentTimeMillis();
 		Thread.sleep(5000L);
 		System.out.println("TimeProvider: " + (t.currentTimeMillis() - start));
+	}
+	
+	public static void main(String[] args) {
+		final HashTimeWheel t = new HashTimeWheel();
+		t.setMaxTimers(5);
+		t.setInterval(100);
+		t.start();
+		
+		HashTimeWheel.Future future = t.add(3000, new Runnable(){
+
+			@Override
+			public void run() {
+				System.out.println("run !!");
+			}
+		});
+		t.add(3000, new Runnable(){
+
+			@Override
+			public void run() {
+				System.out.println("run2 !!");
+			}
+		});
+		future.cancel();
+		
 	}
 }

@@ -28,21 +28,28 @@ public class HashTimeWheel {
 	}
 
 	/**
-	 * 增加一个触发任务
+	 * add a task
 	 * 
 	 * @param delay
-	 *            触发延时时间
+	 *           after x milliseconds than execute runnable
 	 * @param run
-	 *            任务处理
+	 *           run task in future
 	 */
-	public void add(long delay, Runnable run) {
+	public Future add(long delay, Runnable run) {
 		final int curSlot = currentSlot;
 		
 		final int ticks = delay > interval ? (int) (delay / interval) : 1; // 计算刻度长度
 		final int index = (curSlot + (ticks % maxTimers)) % maxTimers; // 放到wheel的位置
 		final int round = (ticks - 1) / maxTimers; // wheel旋转的圈数
 
-		timerSlots[index].add(new TimerTask(round, run));
+		TimerTask task = new TimerTask(round, run);
+		timerSlots[index].add(task);
+		
+		return new Future(this, index, task);
+	}
+	
+	private final boolean remove(TimerTask task, int index) {
+		return timerSlots[index].remove(task);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -112,6 +119,25 @@ public class HashTimeWheel {
 				round--;
 				return false;
 			}
+		}
+	}
+	
+	public static class Future {
+		private HashTimeWheel timeWheel;
+		private int index;
+		private TimerTask task;
+		
+		public Future(HashTimeWheel timeWheel, int index, TimerTask task) {
+			super();
+			this.timeWheel = timeWheel;
+			this.index = index;
+			this.task = task;
+		}
+
+
+
+		public boolean cancel() {
+			return timeWheel.remove(task, index);
 		}
 	}
 

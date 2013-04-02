@@ -22,7 +22,7 @@ import com.firefly.utils.time.HashTimeWheel;
 public class AsyncContextImpl implements AsyncContext {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static HashTimeWheel timeWheel = new HashTimeWheel();
+	private static final HashTimeWheel timeWheel = new HashTimeWheel();
 	
 	static {
 		timeWheel.start();
@@ -38,6 +38,7 @@ public class AsyncContextImpl implements AsyncContext {
 	private final TransferQueue<Future<?>> threadFutureList = new LinkedTransferQueue<Future<?>>();
 
 	public void startAsync(ServletRequest request, ServletResponse response, boolean originalRequestAndResponse, long t) {
+		
 		this.request = request;
 		this.response = response;
 		this.originalRequestAndResponse = originalRequestAndResponse;
@@ -52,6 +53,7 @@ public class AsyncContextImpl implements AsyncContext {
 			}
 		}
 		startAsync = true;
+		complete = false;
 		
 		if(timeout > 0) {
 			timeWheel.add(timeout, new Runnable(){
@@ -125,12 +127,6 @@ public class AsyncContextImpl implements AsyncContext {
 
 	@Override
 	public void complete() {
-		Future<?> f = null;
-		while( (f = threadFutureList.poll()) != null) {
-			if(!f.isDone() && !f.isCancelled())
-				f.cancel(true);
-		}
-		
 		for (AsyncListenerWrapper listener : listeners) {
 			try {
 				listener.fireOnComplete();
