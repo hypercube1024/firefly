@@ -13,6 +13,7 @@ import com.firefly.server.http.HttpEncoder;
 import com.firefly.server.http.HttpHandler;
 import com.firefly.server.http.SSLDecoder;
 import com.firefly.server.http.SSLEncoder;
+import com.firefly.server.http.ThreadPoolWrapper;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -57,6 +58,7 @@ public class ServerBootstrap {
 	
 	private static void init(WebContext context, Config config) throws Throwable {
 		config = (config == null ? context.getBean(Config.class) : config);
+		ThreadPoolWrapper.init(config.getMaxThreadNum());
 		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
 		

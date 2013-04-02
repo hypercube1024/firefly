@@ -24,7 +24,8 @@ public class Config {
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
 				maxConnections = 2000,
-				maxConnectionTimeout = 10 * 1000;
+				maxConnectionTimeout = 10 * 1000,
+				maxThreadNum = -1;
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
@@ -390,6 +391,14 @@ public class Config {
 	 */
 	public void setHttpBodyThreshold(int httpBodyThreshold) {
 		this.httpBodyThreshold = httpBodyThreshold;
+	}
+
+	public int getMaxThreadNum() {
+		return maxThreadNum;
+	}
+
+	public void setMaxThreadNum(int maxThreadNum) {
+		this.maxThreadNum = maxThreadNum;
 	}
 
 }

@@ -1,10 +1,6 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
 import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
@@ -13,24 +9,17 @@ import com.firefly.net.Session;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class CachedThreadPoolRequestHandler extends RequestHandler {
+public class ThreadPoolRequestHandler extends RequestHandler {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private ExecutorService executor = Executors.newCachedThreadPool(new ThreadFactory(){
 
-		@Override
-		public Thread newThread(Runnable r) {
-			return new Thread(r, "firefly http handler thread");
-		}
-	});
-
-	public CachedThreadPoolRequestHandler(HttpServletDispatcherController servletController) {
+	public ThreadPoolRequestHandler(HttpServletDispatcherController servletController) {
 		super(servletController);
 	}
 
 	@Override
 	public void shutdown() {
-		executor.shutdown();
+		ThreadPoolWrapper.getExecutorService().shutdown();
 	}
 
 	@Override
@@ -41,7 +30,7 @@ public class CachedThreadPoolRequestHandler extends RequestHandler {
 			if(request.isSupportPipeline()) {
 				doRequest(request);
 			} else {
-				executor.submit(new Runnable(){
+				ThreadPoolWrapper.getExecutorService().submit(new Runnable(){
 					@Override
 					public void run() {
 						try {
