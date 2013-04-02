@@ -3,6 +3,7 @@ package com.firefly.server.http;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncListener;
@@ -10,26 +11,38 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 
+import com.firefly.utils.collection.LinkedTransferQueue;
+import com.firefly.utils.collection.TransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.HashTimeWheel;
 
 public class AsyncContextImpl implements AsyncContext {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static HashTimeWheel timeWheel = new HashTimeWheel();
+	
+	static {
+		timeWheel.start();
+	}
 	
 	private long timeout = -1;
 	private boolean originalRequestAndResponse = true;
 	private boolean startAsync = false;
+	private volatile boolean complete = false;
 	private ServletRequest request;
 	private ServletResponse response;
-	private List<AsyncListenerWrapper> listeners = new ArrayList<AsyncListenerWrapper>();
+	private final List<AsyncListenerWrapper> listeners = new ArrayList<AsyncListenerWrapper>();
+	private final TransferQueue<Future<?>> threadFutureList = new LinkedTransferQueue<Future<?>>();
 
-	public void startAsync(ServletRequest request, ServletResponse response, boolean originalRequestAndResponse, long timeout) {
+	public void startAsync(ServletRequest request, ServletResponse response, boolean originalRequestAndResponse, long t) {
 		this.request = request;
 		this.response = response;
 		this.originalRequestAndResponse = originalRequestAndResponse;
-		this.timeout = timeout;
+		if(timeout == -1)
+			timeout = t;
 		
 		for (AsyncListenerWrapper listener : listeners) {
 			try {
@@ -38,8 +51,32 @@ public class AsyncContextImpl implements AsyncContext {
 				log.error("async start event error", e);
 			}
 		}
-		
 		startAsync = true;
+		
+		if(timeout > 0) {
+			timeWheel.add(timeout, new Runnable(){
+
+				@Override
+				public void run() {
+					if(complete)
+						return;
+					
+					Future<?> f = null;
+					while( (f = threadFutureList.poll()) != null) {
+						if(!f.isDone() && !f.isCancelled())
+							f.cancel(true);
+					}
+					
+					for (AsyncListenerWrapper listener : listeners) {
+						try {
+							listener.fireOnTimeout();
+						} catch (IOException e) {
+							log.error("async timeout event error", e);
+						}
+					}
+				}
+			});
+		}
 	}
 
 	@Override
@@ -59,32 +96,55 @@ public class AsyncContextImpl implements AsyncContext {
 
 	@Override
 	public void dispatch() {
-		// TODO Auto-generated method stub
-
+		HttpServletRequest sr = (HttpServletRequest)getRequest();
+        String path = sr.getRequestURI();
+		dispatch(path);
 	}
 
 	@Override
 	public void dispatch(String path) {
-		// TODO Auto-generated method stub
-
+		dispatch(null, path);
 	}
 
 	@Override
 	public void dispatch(ServletContext context, String path) {
-		// TODO Auto-generated method stub
-
+		complete();
+		try {
+			request.getRequestDispatcher(path).forward(request, response);
+		} catch (Throwable e) {
+			log.error("async dispatch exception", e);
+			for (AsyncListenerWrapper listener : listeners) {
+				try {
+					listener.fireOnError();
+				} catch (IOException e1) {
+					log.error("async error event exception", e1);
+				}
+			}
+		}
 	}
 
 	@Override
 	public void complete() {
-		// TODO Auto-generated method stub
-
+		Future<?> f = null;
+		while( (f = threadFutureList.poll()) != null) {
+			if(!f.isDone() && !f.isCancelled())
+				f.cancel(true);
+		}
+		
+		for (AsyncListenerWrapper listener : listeners) {
+			try {
+				listener.fireOnComplete();
+			} catch (IOException e) {
+				log.error("async complete event error", e);
+			}
+		}
+		complete = true;
 	}
 
 	@Override
 	public void start(Runnable run) {
-		// TODO Auto-generated method stub
-
+		Future<?> future = ThreadPoolWrapper.getExecutorService().submit(run);
+		threadFutureList.offer(future);
 	}
 
 	@Override
