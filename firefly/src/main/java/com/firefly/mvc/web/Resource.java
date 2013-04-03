@@ -154,7 +154,6 @@ public class Resource {
 		 * @param response
 		 * @return
 		 */
-		@SuppressWarnings("unchecked")
 		private Object[] getParams(HttpServletRequest request, HttpServletResponse response) {
 			ControllerMetaInfo info = this.getController();
 			byte[] methodParam = info.getMethodParam();

@@ -73,7 +73,6 @@ public class TemplateView implements View {
 		ServletOutputStream out = response.getOutputStream();
 		Model model = new Model() {
 
-			@SuppressWarnings("unchecked")
 			@Override
 			public void clear() {
 				Enumeration<String> e = request.getAttributeNames();

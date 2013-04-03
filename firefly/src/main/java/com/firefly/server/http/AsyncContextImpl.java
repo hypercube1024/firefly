@@ -36,7 +36,7 @@ public class AsyncContextImpl implements AsyncContext {
 	private ServletResponse response;
 	private final List<AsyncListenerWrapper> listeners = new ArrayList<AsyncListenerWrapper>();
 	private final TransferQueue<Future<?>> threadFutureList = new LinkedTransferQueue<Future<?>>();
-	private HashTimeWheel.Future timeoutFuture;
+	private volatile HashTimeWheel.Future timeoutFuture;
 
 	public boolean isStartAsync() {
 		return startAsync;
@@ -46,39 +46,18 @@ public class AsyncContextImpl implements AsyncContext {
 		this.request = request;
 		this.response = response;
 		this.originalRequestAndResponse = originalRequestAndResponse;
-		if(timeout == -1)
-			timeout = t;
+		setTimeout(t);
 		
 		fireOnStartAsync();
 		startAsync = true;
 		complete = false;
-		
-		if(timeout <= 0)
-			return;
-		
-		if(timeoutFuture != null)
-			return;
-		
-		timeoutFuture = timeWheel.add(timeout, new Runnable(){
-
-			@Override
-			public void run() {
-				if(complete)
-					return;
-				
-				Future<?> f = null;
-				while( (f = threadFutureList.poll()) != null) {
-					if(!f.isDone() && !f.isCancelled())
-						f.cancel(true);
-				}
-				
-				fireOnTimeout();
-			}
-		});
 	}
 	
 	@Override
 	public void complete() {
+		if(complete)
+			return;
+		
 		timeoutFuture.cancel();
 		fireOnComplete();
 		startAsync = false;
@@ -206,6 +185,32 @@ public class AsyncContextImpl implements AsyncContext {
 	@Override
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
+		
+		if(timeout <= 0)
+			return;
+		
+		if(timeoutFuture != null) { 
+			timeoutFuture.cancel();
+		}
+		
+		timeoutFuture = timeWheel.add(timeout, new Runnable(){
+
+			@Override
+			public void run() {
+				if(complete)
+					return;
+				
+				Future<?> f = null;
+				while( (f = threadFutureList.poll()) != null) {
+					if(!f.isDone() && !f.isCancelled()) {
+						f.cancel(true);
+					}
+				}
+				fireOnTimeout();
+				startAsync = false;
+				complete = false;
+			}
+		});
 	}
 
 	@Override
