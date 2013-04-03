@@ -30,15 +30,15 @@ public class AsyncContextImpl implements AsyncContext {
 	
 	private long timeout = -1;
 	private boolean originalRequestAndResponse = true;
-	private boolean startAsync = false;
+	private volatile boolean startAsync = false;
 	private volatile boolean complete = false;
 	private ServletRequest request;
 	private ServletResponse response;
 	private final List<AsyncListenerWrapper> listeners = new ArrayList<AsyncListenerWrapper>();
 	private final TransferQueue<Future<?>> threadFutureList = new LinkedTransferQueue<Future<?>>();
+	private HashTimeWheel.Future timeoutFuture;
 
 	public void startAsync(ServletRequest request, ServletResponse response, boolean originalRequestAndResponse, long t) {
-		
 		this.request = request;
 		this.response = response;
 		this.originalRequestAndResponse = originalRequestAndResponse;
@@ -55,30 +55,34 @@ public class AsyncContextImpl implements AsyncContext {
 		startAsync = true;
 		complete = false;
 		
-		if(timeout > 0) {
-			timeWheel.add(timeout, new Runnable(){
+		if(timeout <= 0)
+			return;
+		
+		if(timeoutFuture != null)
+			return;
+		
+		timeoutFuture = timeWheel.add(timeout, new Runnable(){
 
-				@Override
-				public void run() {
-					if(complete)
-						return;
-					
-					Future<?> f = null;
-					while( (f = threadFutureList.poll()) != null) {
-						if(!f.isDone() && !f.isCancelled())
-							f.cancel(true);
-					}
-					
-					for (AsyncListenerWrapper listener : listeners) {
-						try {
-							listener.fireOnTimeout();
-						} catch (IOException e) {
-							log.error("async timeout event error", e);
-						}
+			@Override
+			public void run() {
+				if(complete)
+					return;
+				
+				Future<?> f = null;
+				while( (f = threadFutureList.poll()) != null) {
+					if(!f.isDone() && !f.isCancelled())
+						f.cancel(true);
+				}
+				
+				for (AsyncListenerWrapper listener : listeners) {
+					try {
+						listener.fireOnTimeout();
+					} catch (IOException e) {
+						log.error("async timeout event error", e);
 					}
 				}
-			});
-		}
+			}
+		});
 	}
 
 	@Override
@@ -134,6 +138,8 @@ public class AsyncContextImpl implements AsyncContext {
 				log.error("async complete event error", e);
 			}
 		}
+		timeoutFuture.cancel();
+		startAsync = false;
 		complete = true;
 	}
 
