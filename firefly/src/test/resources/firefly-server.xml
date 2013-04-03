@@ -11,7 +11,7 @@
 		<property name="host" value="localhost"></property>
 		<property name="port" value="7676"></property>
 		<property name="keepAlive" value="true"></property>
-		<property name="pipeline" value="false"></property>
+		<property name="pipeline" value="true"></property>
 		<property name="secure" value="true"></property>
 		<property name="errorPage">
 			<map>
