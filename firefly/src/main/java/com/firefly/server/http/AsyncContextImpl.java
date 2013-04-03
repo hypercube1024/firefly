@@ -38,6 +38,10 @@ public class AsyncContextImpl implements AsyncContext {
 	private final TransferQueue<Future<?>> threadFutureList = new LinkedTransferQueue<Future<?>>();
 	private HashTimeWheel.Future timeoutFuture;
 
+	public boolean isStartAsync() {
+		return startAsync;
+	}
+	
 	public void startAsync(ServletRequest request, ServletResponse response, boolean originalRequestAndResponse, long t) {
 		this.request = request;
 		this.response = response;
@@ -45,13 +49,7 @@ public class AsyncContextImpl implements AsyncContext {
 		if(timeout == -1)
 			timeout = t;
 		
-		for (AsyncListenerWrapper listener : listeners) {
-			try {
-				listener.fireOnStartAsync();
-			} catch (IOException e) {
-				log.error("async start event error", e);
-			}
-		}
+		fireOnStartAsync();
 		startAsync = true;
 		complete = false;
 		
@@ -74,15 +72,17 @@ public class AsyncContextImpl implements AsyncContext {
 						f.cancel(true);
 				}
 				
-				for (AsyncListenerWrapper listener : listeners) {
-					try {
-						listener.fireOnTimeout();
-					} catch (IOException e) {
-						log.error("async timeout event error", e);
-					}
-				}
+				fireOnTimeout();
 			}
 		});
+	}
+	
+	@Override
+	public void complete() {
+		timeoutFuture.cancel();
+		fireOnComplete();
+		startAsync = false;
+		complete = true;
 	}
 
 	@Override
@@ -119,28 +119,8 @@ public class AsyncContextImpl implements AsyncContext {
 			request.getRequestDispatcher(path).forward(request, response);
 		} catch (Throwable e) {
 			log.error("async dispatch exception", e);
-			for (AsyncListenerWrapper listener : listeners) {
-				try {
-					listener.fireOnError();
-				} catch (IOException e1) {
-					log.error("async error event exception", e1);
-				}
-			}
+			fireOnError();
 		}
-	}
-
-	@Override
-	public void complete() {
-		for (AsyncListenerWrapper listener : listeners) {
-			try {
-				listener.fireOnComplete();
-			} catch (IOException e) {
-				log.error("async complete event error", e);
-			}
-		}
-		timeoutFuture.cancel();
-		startAsync = false;
-		complete = true;
 	}
 
 	@Override
@@ -158,6 +138,58 @@ public class AsyncContextImpl implements AsyncContext {
 	public void addListener(AsyncListener listener, ServletRequest servletRequest, ServletResponse servletResponse) {
 		AsyncListenerWrapper wrapper = new AsyncListenerWrapper(this, listener, servletRequest, servletResponse);
         listeners.add(wrapper);
+	}
+	
+	private void fireOnStartAsync() {
+		List<AsyncListenerWrapper> listenersCopy = getListenersCopy();
+		for (AsyncListenerWrapper listener : listenersCopy) {
+			try {
+				listener.fireOnStartAsync();
+			} catch (IOException e) {
+				log.error("async start event error", e);
+				fireOnError();
+			}
+		}
+	}
+	
+	private void fireOnComplete() {
+		List<AsyncListenerWrapper> listenersCopy = getListenersCopy();
+		for (AsyncListenerWrapper listener : listenersCopy) {
+			try {
+				listener.fireOnComplete();
+			} catch (IOException e) {
+				log.error("async complete event error", e);
+				fireOnError();
+			}
+		}
+	}
+	
+	private void fireOnTimeout() {
+		List<AsyncListenerWrapper> listenersCopy = getListenersCopy();
+		for (AsyncListenerWrapper listener : listenersCopy) {
+			try {
+				listener.fireOnTimeout();
+			} catch (IOException e) {
+				log.error("async timeout event error", e);
+				fireOnError();
+			}
+		}
+	}
+	
+	private void fireOnError() {
+		List<AsyncListenerWrapper> listenersCopy = getListenersCopy();
+		for (AsyncListenerWrapper listener : listenersCopy) {
+			try {
+				listener.fireOnError();
+			} catch (IOException e) {
+				log.error("async error event exception", e);
+			}
+		}
+	}
+	
+	private List<AsyncListenerWrapper> getListenersCopy() {
+		List<AsyncListenerWrapper> listenersCopy = new ArrayList<AsyncListenerWrapper>(listeners);
+		return listenersCopy;
 	}
 
 	@Override
@@ -179,10 +211,6 @@ public class AsyncContextImpl implements AsyncContext {
 	@Override
 	public long getTimeout() {
 		return timeout;
-	}
-
-	public boolean isStartAsync() {
-		return startAsync;
 	}
 
 }
