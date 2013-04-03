@@ -483,7 +483,9 @@ public final class TcpWorker implements Worker {
 			long t = Millisecond100Clock.currentTimeMillis() - session.getLastActiveTime();
 			if (t >= timeout) {
 				session.setFuture(null);
-				eventManager.executeTimeoutTask(session);
+				if(session.isOpen()) {
+					eventManager.executeTimeoutTask(session);
+				}
 			} else {
 				long nextCheckTime = timeout - t;
 				timeWheel.add(nextCheckTime, TimeoutTask.this);
@@ -501,7 +503,8 @@ public final class TcpWorker implements Worker {
 			TcpSession session = (TcpSession) key.attachment();
 			session.setState(Session.CLOSE);
 			cleanUpWriteBuffer(session);
-			session.cancelTimeoutTask();
+			// TODO cancel timeout task may lead to performance decline
+			session.cancelTimeoutTask(); 
 			eventManager.executeCloseTask(session);
 
 		} catch (IOException e) {
