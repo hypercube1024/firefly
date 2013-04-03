@@ -62,9 +62,9 @@ public class HttpHandler implements Handler {
 			SSLSession sslSession = (SSLSession) session.getAttribute(SSL_SESSION_KEY);
 			if(sslSession != null) {
 				sslSession.close();
-				session.removeAttribute(SSL_SESSION_KEY);
 			}
 		}
+		session.clearAttributes();
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public class HttpHandler implements Handler {
 	
 	@Override
 	public void timeout(Session session) throws Throwable {
-		log.debug("connection timeout|{}", session.getSessionId());
+		log.info("connection timeout|{}", session.getSessionId());
 		if(session.isOpen())
 			session.close(true);
 	}

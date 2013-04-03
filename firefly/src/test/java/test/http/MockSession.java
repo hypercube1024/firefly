@@ -2,7 +2,9 @@ package test.http;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.firefly.net.Session;
@@ -12,7 +14,7 @@ import com.firefly.server.http.HttpServletRequestImpl;
 public class MockSession implements Session {
 	
 	Map<String, Object> map = new HashMap<String, Object>();
-	HttpServletRequestImpl request = null;
+	List<HttpServletRequestImpl> request = new ArrayList<HttpServletRequestImpl>();
 
 	@Override
 	public void setAttribute(String key, Object value) {
@@ -36,8 +38,7 @@ public class MockSession implements Session {
 
 	@Override
 	public void fireReceiveMessage(Object message) {
-		request = (HttpServletRequestImpl)message;
-
+		request.add((HttpServletRequestImpl)message);
 	}
 
 	@Override

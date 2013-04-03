@@ -55,22 +55,36 @@ public class HttpDecoder implements Decoder {
 	}
 
 	abstract private class AbstractHttpDecoder {
-		private void decode0(ByteBuffer now, Session session,
-				HttpServletRequestImpl req) throws Throwable {
-			boolean next = decode(now, session, req);
-			if (next)
+		private void decode0(ByteBuffer now, Session session, HttpServletRequestImpl req) throws Throwable {
+			DecodeStatus status = decode(now, session, req);
+			switch (status) {
+			case INIT:
+				init(now.slice(), session, req);
+				break;
+			case NEXT:
 				next(now.slice(), session, req);
-			else
+				break;
+			case BUFFER_UNDERFLOW:
 				save(now, session);
+				break;
+			case ERROR:
+				responseError(session, req);
+				break;
+			case COMPLETE:
+				decodeComplete(session, req);
+				break;
+			default:
+				break;
+			}
 		}
-
-		private void save(ByteBuffer buf, Session session) {
-			if (buf.hasRemaining())
-				session.setAttribute(REMAIN_DATA, buf);
+		
+		private void init(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable {
+			decodeComplete(session, req);
+			HttpServletRequestImpl newReq = getHttpServletRequestImpl(session);
+			httpDecode[newReq.status].decode0(buf, session, newReq);
 		}
-
-		private void next(ByteBuffer buf, Session session,
-				HttpServletRequestImpl req) throws Throwable {
+		
+		private void next(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable {
 			req.status++;
 			if (req.status < httpDecode.length) {
 				req.offset = 0;
@@ -78,38 +92,48 @@ public class HttpDecoder implements Decoder {
 			}
 		}
 
+		private void save(ByteBuffer buf, Session session) {
+			if (buf.hasRemaining())
+				session.setAttribute(REMAIN_DATA, buf);
+		}
+
+		private void responseError(Session session, HttpServletRequestImpl req) {
+			finish(session, req);
+			req.response.scheduleSendError();
+			req.decodeFinish();
+		}
+
+		private void decodeComplete(Session session, HttpServletRequestImpl req) {
+			finish(session, req);
+			req.decodeFinish();
+		}
+		
 		private void finish(Session session, HttpServletRequestImpl req) {
 			session.removeAttribute(REMAIN_DATA);
 			session.removeAttribute(HTTP_REQUEST);
 			req.status = httpDecode.length;
 		}
 
-		protected void responseError(Session session, HttpServletRequestImpl req, int httpStatus, String content) {
-			finish(session, req);
-			req.response.scheduleSendError(httpStatus, content);
-			req.decodeFinish();
-		}
-
-		protected void decodeFinish(Session session, HttpServletRequestImpl req) {
-			finish(session, req);
-			req.decodeFinish();
-		}
-
-		abstract protected boolean decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable;
+		abstract protected DecodeStatus decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable;
+	}
+	
+	private enum DecodeStatus {
+		NEXT, BUFFER_UNDERFLOW, INIT, COMPLETE, ERROR
 	}
 
 	private class RequestLineDecoder extends AbstractHttpDecoder {
 
 		@Override
-		public boolean decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable {
+		public DecodeStatus decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable {
 
 			if (req.offset >= config.getMaxRequestLineLength()) {
 				String msg = "request line length is " + req.offset
 						+ ", it more than " + config.getMaxRequestLineLength()
 						+ "|" + session.getRemoteAddress();
 				log.error(msg);
-				responseError(session, req, 414, msg);
-				return true;
+				req.response.setStatus(414);
+				req.response.systemResponseContent = msg;
+				return DecodeStatus.ERROR;
 			}
 
 			int len = buf.remaining();
@@ -122,8 +146,9 @@ public class HttpDecoder implements Decoder {
 						String msg = "request line length is 0|"
 								+ session.getRemoteAddress();
 						log.error(msg);
-						responseError(session, req, 400, msg);
-						return true;
+						req.response.setStatus(400);
+						req.response.systemResponseContent = msg;
+						return DecodeStatus.ERROR;
 					}
 
 					String[] reqLine = StringUtils.split(requestLine, ' ');
@@ -132,8 +157,9 @@ public class HttpDecoder implements Decoder {
 								+ requestLine + "|"
 								+ session.getRemoteAddress();
 						log.error(msg);
-						responseError(session, req, 400, msg);
-						return true;
+						req.response.setStatus(400);
+						req.response.systemResponseContent = msg;
+						return DecodeStatus.ERROR;
 					}
 
 					int s = reqLine[1].indexOf('?');
@@ -145,10 +171,10 @@ public class HttpDecoder implements Decoder {
 						req.requestURI = reqLine[1];
 					}
 					req.protocol = reqLine[2];
-					return true;
+					return DecodeStatus.NEXT;
 				}
 			}
-			return false;
+			return DecodeStatus.BUFFER_UNDERFLOW;
 		}
 
 	}
@@ -156,8 +182,7 @@ public class HttpDecoder implements Decoder {
 	private class HeadDecoder extends AbstractHttpDecoder {
 
 		@Override
-		public boolean decode(ByteBuffer buf, Session session,
-				HttpServletRequestImpl req) throws Throwable {
+		public DecodeStatus decode(ByteBuffer buf, Session session, HttpServletRequestImpl req) throws Throwable {
 			int len = buf.remaining();
 
 			for (int i = req.offset, p = 0; i < len; i++) {
@@ -172,8 +197,9 @@ public class HttpDecoder implements Decoder {
 								+ session.getRemoteAddress() + "|"
 								+ req.getRequestURI();
 						log.error(msg);
-						responseError(session, req, 400, msg);
-						return true;
+						req.response.setStatus(400);
+						req.response.systemResponseContent = msg;
+						return DecodeStatus.ERROR;
 					}
 
 					byte[] data = new byte[parseLen];
@@ -186,14 +212,16 @@ public class HttpDecoder implements Decoder {
 							String msg = "connections count more than " + config.getMaxConnections();
 							log.error(msg);
 							req.response.setHeader("Retry-After", "60");
-							responseError(session, req, 503, msg);
-							return true;
+							req.response.setStatus(503);
+							req.response.systemResponseContent = msg;
+							return DecodeStatus.ERROR;
 						}
 						
-						if (!req.getMethod().equals("POST") && !req.getMethod().equals("PUT"))
-							decodeFinish(session, req);
+						if (req.getMethod().equals("POST") || req.getMethod().equals("PUT")) {
+							return DecodeStatus.NEXT;
+						}
 						
-						return true;
+						return buf.hasRemaining() ? DecodeStatus.INIT : DecodeStatus.COMPLETE;
 					}
 					
 					int h = headLine.indexOf(':');
@@ -202,8 +230,9 @@ public class HttpDecoder implements Decoder {
 								+ "|" + session.getRemoteAddress() + "|"
 								+ req.getRequestURI();
 						log.error(msg);
-						responseError(session, req, 400, msg);
-						return true;
+						req.response.setStatus(400);
+						req.response.systemResponseContent = msg;
+						return DecodeStatus.ERROR;
 					}
 
 					String name = headLine.substring(0, h).toLowerCase().trim();
@@ -215,7 +244,7 @@ public class HttpDecoder implements Decoder {
 						response100Continue(session);
 				}
 			}
-			return false;
+			return DecodeStatus.BUFFER_UNDERFLOW;
 		}
 
 		private void response100Continue(Session session) throws UnsupportedEncodingException {
@@ -226,7 +255,7 @@ public class HttpDecoder implements Decoder {
 	private class BodyDecoder extends AbstractHttpDecoder {
 
 		@Override
-		public boolean decode(ByteBuffer buf, Session session,
+		public DecodeStatus decode(ByteBuffer buf, Session session,
 				HttpServletRequestImpl req) throws Throwable {
 			int contentLength = req.getContentLength();
 			if (contentLength > 0) {
@@ -236,8 +265,9 @@ public class HttpDecoder implements Decoder {
 							+ "|" + session.getRemoteAddress() + "|"
 							+ req.getRequestURI();
 					log.error(msg);
-					responseError(session, req, 400, msg);
-					return true;
+					req.response.setStatus(400);
+					req.response.systemResponseContent = msg;
+					return DecodeStatus.ERROR;
 				}
 
 				if (req.bodyPipedStream == null) { // the first into body decode status, it neet create piped stream
@@ -261,14 +291,12 @@ public class HttpDecoder implements Decoder {
 
 				if (req.offset >= contentLength) {
 					req.bodyPipedStream.getOutputStream().close();
-					decodeFinish(session, req);
-					return true;
+					return buf.hasRemaining() ? DecodeStatus.INIT : DecodeStatus.COMPLETE;
 				}
 			} else {
-				decodeFinish(session, req);
-				return true;
+				return buf.hasRemaining() ? DecodeStatus.INIT : DecodeStatus.COMPLETE;
 			}
-			return false;
+			return DecodeStatus.BUFFER_UNDERFLOW;
 		}
 
 	}

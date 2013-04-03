@@ -5,8 +5,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 import java.io.BufferedReader;
 import java.nio.ByteBuffer;
-import java.util.Date;
-import java.util.Enumeration;
+import java.util.List;
 
 import javax.servlet.ServletInputStream;
 
@@ -36,7 +35,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getMethod(), is("GET"));
 		Assert.assertThat(req.getRequestURI(), is("/firefly-demo/app/hello"));
 		Assert.assertThat(req.getProtocol(), is("HTTP/1.1"));
@@ -53,7 +55,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getMethod(), is("GET"));
 		Assert.assertThat(req.getRequestURI(), is("/firefly-demo/app/hello"));
 		Assert.assertThat(req.getProtocol(), is("HTTP/1.1"));
@@ -70,7 +75,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getMethod(), is("GET"));
 		Assert.assertThat(req.getRequestURI(), is("/firefly-demo/app/hello"));
 		Assert.assertThat(req.getProtocol(), is("HTTP/1.1"));
@@ -91,7 +99,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getHeader("host"), is("127.0.0.1"));
 		Assert.assertThat(req.getHeader("Host"), is("127.0.0.1"));
 	}
@@ -112,11 +123,13 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getHeader("host"), is("127.0.0.1"));
 		Assert.assertThat(req.getHeader("connection"), is("keep-alive"));
-		Assert.assertThat(req.getHeader("Accept-Language"),
-				is("zh-CN,zh;q=0.8"));
+		Assert.assertThat(req.getHeader("Accept-Language"), is("zh-CN,zh;q=0.8"));
 	}
 
 	@Test
@@ -137,7 +150,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getHeader("host"), is("127.0.0.1"));
 		Assert.assertThat(req.getHeader("connection"), is("keep-alive"));
 		Assert.assertThat(req.getHeader("Accept-Language"),
@@ -157,7 +173,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getMethod(), is("GET"));
 		Assert.assertThat(req.getRequestURI(), is("/firefly-demo/app/hello"));
 		Assert.assertThat(req.getProtocol(), is("HTTP/1.1"));
@@ -167,6 +186,25 @@ public class TestHttpDecoder {
 				is("zh-CN,zh;q=0.8"));
 		Assert.assertThat(req.getHeader("Accept-Encoding"),
 				is("gzip,deflate,sdch"));
+	}
+	
+	@Test
+	public void testPipelineDecode() throws Throwable {
+		byte[] buf1 = ("GET /firefly-demo/app/hello HTTP/1.1\r\nHost:127.0.0.1\r\nAccept-Language:zh-CN,zh;q=0.8\r\nConnection:keep-alive\r\nAccept-Encoding: gzip,deflate,sdch\r\n\r\n" +
+				"GET /firefly-demo/app/hello2 HTTP/1.1\r\nHost:127.0.0.1\r\n\r\n").getBytes(config.getEncoding());
+		ByteBuffer[] buf = new ByteBuffer[] { ByteBuffer.wrap(buf1) };
+		MockSession session = new MockSession();
+
+		for (int i = 0; i < buf.length; i++) {
+			httpDecoder.decode(buf[i], session);
+		}
+		
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(2));
+		System.out.println(list.get(0).getRequestURI());
+		System.out.println(list.get(1).getRequestURI());
+		Assert.assertThat(list.get(0).getRequestURI(), is("/firefly-demo/app/hello"));
+		Assert.assertThat(list.get(1).getRequestURI(), is("/firefly-demo/app/hello2"));
 	}
 
 	@Test
@@ -194,7 +232,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getParameter("title"), is("测试"));
 		Assert.assertThat(req.getParameter("price"), is("3.3"));
 	}
@@ -224,7 +265,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		Assert.assertThat(req.getParameter("title"), is("测试"));
 		Assert.assertThat(req.getParameter("price"), is(""));
 	}
@@ -253,7 +297,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 		
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		System.out.println(req.getParameter("title"));
 		System.out.println(req.getLocale().toString());
 		System.out.println(req.getRequestURL().toString());
@@ -262,8 +309,7 @@ public class TestHttpDecoder {
 		Assert.assertThat(req.getParameter("title"), is("测试"));
 		Assert.assertThat(req.getParameter("price"), nullValue());
 		Assert.assertThat(req.getContentLength(), is(24));
-		Assert.assertThat(req.getContentType(),
-				is("application/x-www-form-urlencoded"));
+		Assert.assertThat(req.getContentType(), is("application/x-www-form-urlencoded"));
 	}
 	
 	@Test
@@ -291,7 +337,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		ServletInputStream input = req.getInputStream();
 		byte[] temp = new byte[30];
 		byte[] data = null;
@@ -337,7 +386,10 @@ public class TestHttpDecoder {
 			httpDecoder.decode(buf[i], session);
 		}
 
-		HttpServletRequestImpl req = session.request;
+		List<HttpServletRequestImpl> list = session.request;
+		Assert.assertThat(list.size(), is(1));
+		
+		HttpServletRequestImpl req = list.get(0);
 		BufferedReader reader = req.getReader();
 		StringBuilder sb = new StringBuilder();
 		for (String line = null; (line = reader.readLine()) != null;) {
@@ -363,59 +415,11 @@ public class TestHttpDecoder {
 	}
 
 	public static void main(String[] args) throws Throwable {
-//		TestHttpDecoder t = new TestHttpDecoder();
-//		t.testBody3();
-		String sessionIdName = "jsessionid";
-		String uri = "/app/hello;jsessionid=33342424jkl#apple";
-		System.out.println(uri.contains(";jsessionid="));
-		System.out.println(HttpServletRequestImpl.getSessionId(uri, sessionIdName));
-		uri = "/app/hello;jsessionid=33342424jkl";
-		System.out.println(HttpServletRequestImpl.getSessionId(uri, sessionIdName));
-		
-		uri = "http://www.firefly.com/app/hello?q=333";
-		System.out.println(uri.contains(";jsessionid="));
-		System.out.println(HttpServletResponseImpl.toEncoded(uri, "ccccccccccccc", sessionIdName));
-		uri = "http://www.firefly.com/app/hello#ddddc?q=333";
-		System.out.println(HttpServletResponseImpl.toEncoded(uri, "ccccccccccccc", sessionIdName));
-		
+		TestHttpDecoder decode = new TestHttpDecoder();
+		decode.testBody();
 		
 	}
 
-	public static void test1() throws Throwable {
-		byte[] buf1 = "GET /firefly-demo/app/hel"
-				.getBytes(config.getEncoding());
-		byte[] buf2 = "lo HTTP/1.1\r\nHost:127.0.0.1\r\nAccept-Language:zh-CN,"
-				.getBytes(config.getEncoding());
-		byte[] buf3 = "zh;q=0.8\r\nConnection:keep-alive\r\n".getBytes(config
-				.getEncoding());
-		byte[] buf4 = "Accept-Encoding:gzip,deflate,sdch\r\n\r\n"
-				.getBytes(config.getEncoding());
-		ByteBuffer[] buf = new ByteBuffer[] { ByteBuffer.wrap(buf1),
-				ByteBuffer.wrap(buf2), ByteBuffer.wrap(buf3),
-				ByteBuffer.wrap(buf4) };
-		MockSession session = new MockSession();
 
-		for (int i = 0; i < buf.length; i++) {
-			httpDecoder.decode(buf[i], session);
-		}
-		HttpServletRequestImpl req = session.request;
-		System.out.println(req.getMethod());
-		System.out.println(req.getRequestURI());
-		System.out.println(req.getProtocol());
-		System.out.println(req.getHeader("Host"));
-		System.out.println(req.getHeader("Accept-Language"));
-		System.out.println(req.getHeader("Connection"));
-		System.out.println(req.getHeader("Accept-Encoding"));
-		System.out.println(req.toString());
-		System.out.println((req.getContextPath() + req.getServletPath()).length());
-
-		Enumeration<String> enumeration = req.getHeaders("Accept-Encoding");
-		while (enumeration.hasMoreElements()) {
-			System.out.println(">>" + enumeration.nextElement());
-		}
-
-		System.out.println(HttpServletResponseImpl.GMT_FORMAT
-				.format(new Date()));
-	}
 
 }

@@ -531,9 +531,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 		}
 	}
 
-	public void scheduleSendError(int sc, String content) {
-		setStatus(sc);
-		systemResponseContent = content;
+	public void scheduleSendError() {
 		system = true;
 		request.systemReq = true;
 	}
