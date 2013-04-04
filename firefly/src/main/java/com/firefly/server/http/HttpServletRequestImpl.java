@@ -704,25 +704,24 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	
 	@Override
 	public ServletContext getServletContext() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("no implements this method!");
 	}
 	
 	@Override
 	public DispatcherType getDispatcherType() {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO need implement
+		throw new HttpServerException("no implements this method!");
 	}
 	
 	@Override
 	public String getRealPath(String path) {
-		// TODO implement
+		// TODO need implement
 		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
 	public String getPathInfo() {
-		// TODO implement
+		// TODO need implement
 		throw new HttpServerException("no implements this method!");
 	}
 
@@ -735,51 +734,51 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	
 	@Override
 	public String getRemoteUser() {
-		// TODO not implement
+		// TODO need implement
 		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
 	public boolean isUserInRole(String role) {
-		// TODO not implement
+		// TODO need implement
 		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
 	public Principal getUserPrincipal() {
-		// TODO not implement
+		// TODO need implement
 		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
 	public String getAuthType() {
-		// TODO implement
+		// TODO need implement
 		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
 	public boolean isSecure() {
-		// TODO implement
+		// TODO need implement
 		throw new HttpServerException("no implements this method!");
 	}
 	
 	@Override
 	public boolean authenticate(HttpServletResponse response)
 			throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return false;
+		// TODO need implement
+		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
 	public void login(String username, String password) throws ServletException {
-		// TODO Auto-generated method stub
-		
+		// TODO need implement
+		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
 	public void logout() throws ServletException {
-		// TODO Auto-generated method stub
-		
+		// TODO need implement
+		throw new HttpServerException("no implements this method!");
 	}
 
 	@Override
@@ -891,7 +890,6 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	
 
 	//======================= asynchronous control =======================
-	// TODO need more test case
 	@Override
 	public AsyncContext startAsync() throws IllegalStateException {
 		return startAsync(this, response);
