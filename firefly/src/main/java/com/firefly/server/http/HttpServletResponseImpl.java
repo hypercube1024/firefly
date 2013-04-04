@@ -67,7 +67,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 
 		locale = HttpServletRequestImpl.DEFAULT_LOCALE;
 		setStatus(200);
-		setHeader("Server", "firefly-server/1.0");
+		setHeader("Server", "Firefly/3.0");
 	}
 	
 	//======================= socket output stream =======================
