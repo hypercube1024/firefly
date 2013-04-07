@@ -30,6 +30,7 @@ import com.firefly.utils.json.Json;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class TestParser {
+	
 	@Test
 	public void testStr() {
 		SimpleObj i = new SimpleObj();
@@ -38,6 +39,21 @@ public class TestParser {
 		System.out.println(jsonStr);
 		SimpleObj i2 = Json.toObject(jsonStr, SimpleObj.class);
 		Assert.assertThat(i2.getName(), is("PengtaoQiu\nAlvin\nhttp://fireflysource.com"));
+	}
+	
+	@Test
+	public void testControlChar() {
+		int c = 31;
+		char ch = (char)c;
+		
+		SimpleObj i = new SimpleObj();
+		i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com" + String.valueOf(ch));
+		String jsonStr = Json.toJson(i);
+		System.out.println(jsonStr);
+		SimpleObj i2 = Json.toObject(jsonStr, SimpleObj.class);
+		Assert.assertThat((int)i2.getName().charAt(i2.getName().length() - 1), is(31));
+		
+		System.out.println(Json.toJson(i2));
 	}
 	
 	@Test
@@ -319,7 +335,7 @@ public class TestParser {
 	}
 	
 	public static void main(String[] args) {
-		new TestParser().test4();
+		new TestParser().testControlChar();
 	}
 
 }

@@ -449,56 +449,44 @@ public class JsonStringReader extends JsonReader {
 				pos = cur;
 				break;
 			} else if(ch == '\\') {
-				switch (chars[cur++]) {
+				char c0 = chars[cur++];
+				len = cur - 2 - pos;
+				writer.write(chars, pos, len);
+				switch (c0) {
 				case 'b':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('\b');
-					pos = cur;
 					break;
 				case 'n':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('\n');
-					pos = cur;
 					break;
 				case 'r':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('\r');
-					pos = cur;
 					break;
 				case 'f':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('\f');
-					pos = cur;
 					break;
 				case '\\':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('\\');
-					pos = cur;
 					break;
 				case '/':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('/');
-					pos = cur;
 					break;
 				case '"':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('"');
-					pos = cur;
 					break;
 				case 't':
-					len = cur - 2 - pos;
-					writer.write(chars, pos, len);
 					writer.write('\t');
-					pos = cur;
+					break;
+				case 'u': // unicode char parse
+					char[] controlChars = new char[4];
+					for (int i = 0; i < controlChars.length; i++) {
+						controlChars[i] = chars[cur++];
+					}
+					char tmp = (char)Integer.parseInt(String.valueOf(controlChars), 16);
+					writer.write(tmp);
 					break;
 				}
+				pos = cur;
 			}
 			
 		}

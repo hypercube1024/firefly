@@ -66,7 +66,12 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 				break;
 
 			default:
-				buf[count++] = ch;
+				if( (ch >= 0 && ch <= 31) || (ch >= 127 && ch <= 159)) {
+					String hexStr = "\\u00" + Integer.toHexString(ch);
+					write(hexStr);
+				} else {
+					buf[count++] = ch;
+				}
 				break;
 			}
 		}
