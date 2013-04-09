@@ -20,10 +20,21 @@ public class StateMachine {
 		MAP.put("#include", new StatementInclude());
 	}
 
-	public static void parse(String keyword, String content,
-			JavaFileBuilder javaFileBuilder) {
+	/**
+	 * 
+	 * @param keyword 
+	 * 			keyword of the template language 
+	 * @param content
+	 * 			expression of the template language  
+	 * @param javaFileBuilder
+	 * @return true if current word is keyword of the template language, else false.
+	 */
+	public static boolean parse(String keyword, String content, JavaFileBuilder javaFileBuilder) {
 		Statement statement = MAP.get(keyword);
-		if (statement != null)
-			statement.parse(content, javaFileBuilder);
+		if(statement == null)
+			return false;
+		
+		statement.parse(content, javaFileBuilder);
+		return true;
 	}
 }

@@ -108,7 +108,8 @@ public class ViewFileReader {
 		int end = 0;
 		if (start >= 0) {
 			for (int i = start; i < comment.length(); i++) {
-				if (comment.charAt(i) == ' ' || comment.charAt(i) == '\t'
+				if (comment.charAt(i) == ' ' 
+						|| comment.charAt(i) == '\t'
 						|| comment.charAt(i) == '\r'
 						|| comment.charAt(i) == '\n') {
 					end = i;
@@ -120,9 +121,13 @@ public class ViewFileReader {
 
 			String keyword = comment.substring(start, end);
 			String content = comment.substring(end).trim();
-			// System.out.println(comment.length() + "|1|comment:\t" + keyword
-			// + " " + content);
-			StateMachine.parse(keyword, content, javaFileBuilder);
+			boolean isKey = StateMachine.parse(keyword, content, javaFileBuilder);
+			if(!isKey) {
+				javaFileBuilder.writeText("<!--" + comment + "-->\n");
+			}
+		} else {
+			// the last '\n' may not exist.
+			javaFileBuilder.writeText("<!--" + comment + "-->\n");
 		}
 	}
 

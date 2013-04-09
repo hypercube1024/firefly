@@ -9,9 +9,8 @@ public class StatementInclude implements Statement {
 		String[] p = StringUtils.split(content, '?');
 		if (p.length > 1)
 			StateMachine.parse("#set", p[1], javaFileBuilder);
-//		p[0] = p[0].replace('/', '_').substring(0, p[0].indexOf('.'));
-		javaFileBuilder.write(javaFileBuilder.getPreBlank()
-				+ "templateFactory.getView(\"" + p[0] + "\").render(model, out);\n");
+
+		javaFileBuilder.write(javaFileBuilder.getPreBlank() + "templateFactory.getView(\"" + p[0] + "\").render(model, out);\n");
 	}
 
 }
