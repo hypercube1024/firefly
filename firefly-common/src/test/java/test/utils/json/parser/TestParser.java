@@ -46,12 +46,28 @@ public class TestParser {
 		int c = 31;
 		char ch = (char)c;
 		
+		int c1 = 1;
+		char ch1 = (char)c1;
+		
+		int c2 = 0;
+		char ch2 = (char)c2;
+		
+		int c3 = 15;
+		char ch3 = (char)c3;
+		
+		int c4 = 16;
+		char ch4 = (char)c4;
+		
 		SimpleObj i = new SimpleObj();
-		i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com" + String.valueOf(ch));
+		i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com" + String.valueOf(ch1) + String.valueOf(ch2) + String.valueOf(ch3) + String.valueOf(ch4) + String.valueOf(ch));
 		String jsonStr = Json.toJson(i);
 		System.out.println(jsonStr);
 		SimpleObj i2 = Json.toObject(jsonStr, SimpleObj.class);
 		Assert.assertThat((int)i2.getName().charAt(i2.getName().length() - 1), is(31));
+		Assert.assertThat((int)i2.getName().charAt(i2.getName().length() - 2), is(16));
+		Assert.assertThat((int)i2.getName().charAt(i2.getName().length() - 3), is(15));
+		Assert.assertThat((int)i2.getName().charAt(i2.getName().length() - 4), is(0));
+		Assert.assertThat((int)i2.getName().charAt(i2.getName().length() - 5), is(1));
 		
 		System.out.println(Json.toJson(i2));
 	}
