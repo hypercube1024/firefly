@@ -22,6 +22,7 @@ abstract public class SerialStateMachine {
 	private static final Serializer COLLECTION = new CollectionSerializer();
 	private static final Serializer ARRAY = new ArraySerializer();
 	private static final DynamicObjectSerializer DYNAMIC = new DynamicObjectSerializer();
+	private static final StringValueSerializer STRING_VALUE = new StringValueSerializer();
 
 	static {
 		SERIAL_MAP.put(long.class, new LongSerializer());
@@ -32,7 +33,7 @@ abstract public class SerialStateMachine {
 		SERIAL_MAP.put(boolean.class, new BoolSerializer());
 		SERIAL_MAP.put(String.class, new StringSerializer());
 		SERIAL_MAP.put(Date.class, new DateSerializer());
-		SERIAL_MAP.put(double.class, new StringValueSerializer());
+		SERIAL_MAP.put(double.class, STRING_VALUE);
 		SERIAL_MAP.put(long[].class, new LongArraySerializer(true));
 		SERIAL_MAP.put(int[].class, new IntegerArraySerializer(true));
 		SERIAL_MAP.put(short[].class, new ShortArraySerializer(true));
@@ -59,14 +60,14 @@ abstract public class SerialStateMachine {
 		SERIAL_MAP.put(java.sql.Time.class, SERIAL_MAP.get(Date.class));
 		SERIAL_MAP.put(java.sql.Timestamp.class, SERIAL_MAP.get(Date.class));
 
-		SERIAL_MAP.put(Double.class, SERIAL_MAP.get(double.class));
-		SERIAL_MAP.put(float.class, SERIAL_MAP.get(double.class));
-		SERIAL_MAP.put(Float.class, SERIAL_MAP.get(double.class));
-		SERIAL_MAP.put(AtomicInteger.class, SERIAL_MAP.get(double.class));
-		SERIAL_MAP.put(AtomicLong.class, SERIAL_MAP.get(double.class));
-		SERIAL_MAP.put(BigDecimal.class, SERIAL_MAP.get(double.class));
-		SERIAL_MAP.put(BigInteger.class, SERIAL_MAP.get(double.class));
-		SERIAL_MAP.put(AtomicBoolean.class, SERIAL_MAP.get(double.class));
+		SERIAL_MAP.put(Double.class, STRING_VALUE);
+		SERIAL_MAP.put(float.class, STRING_VALUE);
+		SERIAL_MAP.put(Float.class, STRING_VALUE);
+		SERIAL_MAP.put(AtomicInteger.class, STRING_VALUE);
+		SERIAL_MAP.put(AtomicLong.class, STRING_VALUE);
+		SERIAL_MAP.put(BigDecimal.class, STRING_VALUE);
+		SERIAL_MAP.put(BigInteger.class, STRING_VALUE);
+		SERIAL_MAP.put(AtomicBoolean.class, STRING_VALUE);
 	}
 
 	public static Serializer getSerializer(Class<?> clazz) {

@@ -3,6 +3,7 @@ package test.utils.json.parser;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -351,7 +352,12 @@ public class TestParser {
 	}
 	
 	public static void main(String[] args) {
-		new TestParser().testControlChar();
+//		new TestParser().testControlChar();
+		
+		SimpleObj2 s = new SimpleObj2();
+		s.setBigDecimal(new BigDecimal("3.34"));
+		
+		System.out.println(Json.toJson(s));
 	}
 
 }
