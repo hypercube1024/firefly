@@ -1,6 +1,8 @@
 package com.firefly.utils.json;
 
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 abstract public class JsonReader extends Reader{
 	
@@ -48,6 +50,10 @@ abstract public class JsonReader extends Reader{
 	abstract public int readInt();
 
 	abstract public long readLong();
+	
+	abstract public BigInteger readBigInteger();
+	
+	abstract public BigDecimal readBigDecimal();
 
 	abstract public double readDouble();
 

@@ -1,6 +1,8 @@
 package com.firefly.utils.json.parser;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -31,6 +33,9 @@ public class ParserStateMachine {
 		PARSER_MAP.put(Double.class, PARSER_MAP.get(double.class));
 		PARSER_MAP.put(Boolean.class, PARSER_MAP.get(boolean.class));
 		PARSER_MAP.put(Character.class, PARSER_MAP.get(char.class));
+		
+		PARSER_MAP.put(BigDecimal.class, new BigDecimalParser());
+		PARSER_MAP.put(BigInteger.class, new BigIntegerParser());
 		
 		PARSER_MAP.put(String.class, new StringParser());
 		PARSER_MAP.put(Date.class, new DateParser());

@@ -45,7 +45,7 @@ public class DecodeCompiler {
 			try {
 				field = clazz.getDeclaredField(propertyName);
 			} catch (Throwable t) {
-				t.printStackTrace();
+//				t.printStackTrace();
 			}
 
 			if (field != null

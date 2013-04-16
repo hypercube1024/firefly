@@ -1,6 +1,8 @@
 package com.firefly.utils.json.io;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.json.JsonReader;
@@ -248,6 +250,70 @@ public class JsonStringReader extends JsonReader {
 				break;
 		}
 		return negative ? -value : value;
+	}
+	
+	@Override
+	public BigInteger readBigInteger() {
+		String value = "0";
+		
+		if(isNull())
+			return new BigInteger(value);
+		
+		char ch = readAndSkipBlank();
+		boolean isString = (ch == '"');
+		if(isString)
+			ch = readAndSkipBlank();
+		pos--;
+		
+		int start = pos;
+		for(;;) {
+			ch = (char)read();
+			if(isString) {
+				if(ch == '"')
+					break;
+			} else {
+				if (isEndFlag(ch)) {
+					pos--;
+					break;
+				}
+			}
+		}
+		
+		int len = isString ? pos - start - 1 : pos - start;
+		String temp = new String(chars, start, len);
+		return new BigInteger(temp);
+	}
+	
+	@Override
+	public BigDecimal readBigDecimal() {
+		String value = "0.0";
+		
+		if(isNull())
+			return new BigDecimal(value);
+		
+		char ch = readAndSkipBlank();
+		boolean isString = (ch == '"');
+		if(isString)
+			ch = readAndSkipBlank();
+		pos--;
+		
+		int start = pos;
+		for(;;) {
+			ch = (char)read();
+			if(isString) {
+				if(ch == '"')
+					break;
+			} else {
+				if (isEndFlag(ch)) {
+					pos--;
+					break;
+				}
+			}
+		}
+		
+		int len = isString ? pos - start - 1 : pos - start;
+		String temp = new String(chars, start, len);
+		return new BigDecimal(temp);
 	}
 	
 	@Override

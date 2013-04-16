@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -122,11 +123,12 @@ public class TestParser {
 	
 	@Test
 	public void test3() {
-		String jsonStr = "{\"id\":33442,\"date\":null,\"add1\":{}, \"add2\":{}, \"add3\":{}, \"add4\":{}, \"add5\":null,\"add6\":\"sdfsdf\",\"contact2\":{}, \"number\":30,\"height\":null,\"name\":\"PengtaoQiu\nAlvin\",\"type\":null,\"weight\":40.3}";
+		String jsonStr = "{\"id\":33442,\"date\":null,\"add1\":{}, \"add2\":{}, \"add3\":{}, \"add4\":{}, \"add5\":null,\"add6\":\"sdfsdf\",\"contact2\":{}, \"number\":30,\"height\":\" 33.24 \",\"name\":\"PengtaoQiu\nAlvin\",\"type\":null,\"weight\":40.3}";
 		SimpleObj temp = Json.toObject(jsonStr, SimpleObj.class);
 		Assert.assertThat(temp.getName(), is("PengtaoQiu\nAlvin"));
 		Assert.assertThat(temp.getId(), is(33442));
 		Assert.assertThat(temp.getWeight(), is(40.3F));
+		Assert.assertThat(temp.getHeight(), is(33.24));
 	}
 	
 	@Test
@@ -351,13 +353,23 @@ public class TestParser {
 		Assert.assertThat(p.getReadbooktype().get("测试一下"), is(23));
 	}
 	
-	public static void main(String[] args) {
-//		new TestParser().testControlChar();
-		
+	@Test
+	public void testBigNumber() {
 		SimpleObj2 s = new SimpleObj2();
-		s.setBigDecimal(new BigDecimal("3.34"));
+		s.setBigDecimal(new BigDecimal("-3.34"));
+		s.setBigInteger(new BigInteger("-4"));
+		String json = Json.toJson(s);
+		System.out.println(json);
 		
-		System.out.println(Json.toJson(s));
+		SimpleObj2 s2 = Json.toObject(json, SimpleObj2.class);
+		Assert.assertThat(s2.getBigDecimal(), is(new BigDecimal("-3.34")));
+		Assert.assertThat(s2.getBigInteger(), is(new BigInteger("-4")));
+	}
+	
+	public static void main(String[] args) {
+		new TestParser().testBigNumber();
+
+		
 	}
 
 }
