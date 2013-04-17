@@ -2,8 +2,9 @@ package com.firefly.template.parser;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import com.firefly.template.Config;
 import com.firefly.utils.VerifyUtils;
@@ -25,7 +26,7 @@ public class JavaFileBuilder {
 			if (!file.exists())
 				file.createNewFile();
 
-			writer = new BufferedWriter(new FileWriter(file));
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), config.getCharset()));
 			this.config = config;
 		} catch (Throwable t) {
 			Config.LOG.error("java file builder error", t);
