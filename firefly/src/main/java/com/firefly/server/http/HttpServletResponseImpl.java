@@ -1,6 +1,8 @@
 package com.firefly.server.http;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
@@ -157,7 +159,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 	
 	
 
-	private void createOutput() {
+	private void createOutput() throws UnsupportedEncodingException {
 		if (bufferedOutput == null) {
 			boolean keepAlive = !"close".equals(headMap.get("Connection")) && request.isKeepAlive();
 			setHeader("Date", GMT_FORMAT.format(new Date()));
@@ -171,7 +173,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 				out = new HttpServerOutpuStream(bufferSize, bufferedOutput, request, this);
 			
 			fileOut = new StaticFileOutputStream(bufferSize, bufferedOutput, request, this);
-			writer = new PrintWriter(out);
+			writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(out, characterEncoding)));
 		}
 	}
 	
