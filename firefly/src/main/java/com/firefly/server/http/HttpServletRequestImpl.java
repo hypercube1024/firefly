@@ -380,7 +380,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	public String getParameter(String name) {
 		loadParam();
 		List<String> list = parameterMap.get(name);
-		return list != null ? list.get(0) : null;
+		return list != null && list.size() > 0 ? list.get(0) : null;
 	}
 
 	@Override

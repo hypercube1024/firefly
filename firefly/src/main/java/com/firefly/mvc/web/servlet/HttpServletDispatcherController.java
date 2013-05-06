@@ -61,6 +61,11 @@ public class HttpServletDispatcherController implements DispatcherController {
 			v.render(request, response);
 		} catch (Throwable t) {
 			log.error("dispatcher error", t);
+			log.error("dispatcher error", t);
+			if(!response.isCommitted()) {
+				String msg = "Server internal error";
+				SystemHtmlPage.responseSystemPage(request, response, webContext.getEncoding(), 500, msg);
+			}
 		}
 	}
 
