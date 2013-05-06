@@ -68,7 +68,7 @@ public class EncodeCompiler {
 		}
 		
 		for(Field field : clazz.getFields()) { // public字段序列化构造
-			if(Modifier.isTransient(field.getModifiers()) || field.isAnnotationPresent(Transient.class))
+			if(Modifier.isTransient(field.getModifiers()) || field.isAnnotationPresent(Transient.class) || Modifier.isStatic(field.getModifiers()))
 				continue;
 			
 			field.setAccessible(true);
