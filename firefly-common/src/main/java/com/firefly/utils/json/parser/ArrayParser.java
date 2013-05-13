@@ -30,7 +30,7 @@ public class ArrayParser implements Parser {
 			throw new JsonException("json string is not array format");
 		
 		if(reader.isEmptyArray())
-			return Array.newInstance(clazz, 0);
+			return Array.newInstance(elementMetaInfo.getType(), 0);
 		
 		List<Object> obj = new ArrayList<Object>();
 		

@@ -16,6 +16,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import test.utils.json.ArrayObj;
+import test.utils.json.Bar;
 import test.utils.json.Book;
 import test.utils.json.CollectionObj;
 import test.utils.json.DateObj;
@@ -366,9 +367,15 @@ public class TestParser {
 		Assert.assertThat(s2.getBigInteger(), is(new BigInteger("-4")));
 	}
 	
+	@Test
+	public void testEmptyArray() {
+		Assert.assertTrue(Json.toObject("[]", Bar[].class) instanceof Bar[]);
+	}
+	
 	public static void main(String[] args) {
-		new TestParser().testBigNumber();
-
+//		new TestParser().testBigNumber();
+		Bar[] arr = Json.toObject("[]", Bar[].class);
+		System.out.println(arr);
 		
 	}
 
