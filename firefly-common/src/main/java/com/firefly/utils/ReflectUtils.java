@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtConstructor;
@@ -101,6 +102,8 @@ public abstract class ReflectUtils {
 			return ret;
 		
 		ClassPool classPool = new ClassPool(true);
+		classPool.insertClassPath(new ClassClassPath(ArrayProxy.class));
+		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField$" + clazz.hashCode());
 		cc.addInterface(classPool.get(ArrayProxy.class.getName()));
 		
@@ -165,6 +168,7 @@ public abstract class ReflectUtils {
 			return ret;
 		
 		ClassPool classPool = new ClassPool(true);
+		classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
 		classPool.importPackage(Field.class.getCanonicalName());
 		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField$" + field.hashCode());
@@ -227,9 +231,11 @@ public abstract class ReflectUtils {
 			return ret;
 		
 		ClassPool classPool = new ClassPool(true);
+		classPool.insertClassPath(new ClassClassPath(MethodProxy.class));
 		classPool.importPackage(Method.class.getCanonicalName());
 		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod$" + method.hashCode());
+		
 		cc.addInterface(classPool.get(MethodProxy.class.getName()));
 		cc.addField(CtField.make("private Method method;", cc));
 		
