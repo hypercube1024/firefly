@@ -19,9 +19,9 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	private static final long serialVersionUID = -5031526786765467550L;
 
 	/**
-	 * Segement默认最大数
+	 * segment default value
 	 */
-	static final int DEFAULT_SEGEMENT_MAX_CAPACITY = 10000;
+	static final int DEFAULT_SEGMENT_MAX_CAPACITY = 10000;
 
 	/**
 	 * The default load factor for this table, used when not otherwise specified
@@ -111,32 +111,17 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 
 	/* ---------------- Inner Classes -------------- */
 
-	/**
-	 * 修改原HashEntry，
-	 */
 	static final class HashEntry<K, V> {
 		final K key;
 		final int hash;
 		volatile V value;
 
-		/**
-		 * hash链指针
-		 */
 		final HashEntry<K, V> next;
 
-		/**
-		 * 双向链表的下一个节点
-		 */
 		HashEntry<K, V> linkNext;
-
-		/**
-		 * 双向链表的上一个节点
-		 */
+		
 		HashEntry<K, V> linkPrev;
 
-		/**
-		 * 死亡标记
-		 */
 		AtomicBoolean dead;
 
 		HashEntry(K key, int hash, HashEntry<K, V> next, V value) {
@@ -154,7 +139,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	}
 
 	/**
-	 * 基于原Segment修改，内部实现一个双向列表
+	 * base on JDK's ConcurrentHashMap Segment to modify，which add a double linked list in it. 
 	 */
 	static final class Segment<K, V> extends ReentrantLock implements
 			Serializable {
@@ -229,17 +214,17 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		final float loadFactor;
 
 		/**
-		 * 头节点
+		 * head node
 		 */
 		transient final HashEntry<K, V> header;
 
 		/**
-		 * Segement最大容量
+		 * max capacity in one segment
 		 */
 		final int maxCapacity;
 		
 		/**
-		 * map回调
+		 * map callback
 		 */
 		transient LRUMapEventListener<K, V> listener = new LRUMapEventListener<K, V>() {
 			@Override
@@ -301,16 +286,29 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 			}
 		}
 
-		/* Specialized implementations of map methods */
-
 		@SuppressWarnings("unchecked")
 		V get(Object key, int hash) {
+			V v = get0(key, hash);
+			if(v != null)
+				return v;
+			
+			lock();
+			try {
+				v = get0(key, hash);
+				return v == null ? listener.getNull((K)key) : v;
+			} finally {
+				unlock();
+			}
+		}
+		
+		/* Specialized implementations of map methods */
+		V get0(Object key, int hash) {
 			if (count != 0) { // read-volatile
 				HashEntry<K, V> e = getFirst(hash);
 				while (e != null) {
 					if (e.hash == hash && key.equals(e.key)) {
 						V v = e.value;
-						// 将节点移动到头节点之前
+
 						lock();
 						try { 
 							moveNodeToHeader(e); 
@@ -324,27 +322,21 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 					e = e.next;
 				}
 			}
-			return listener.getNull((K)key);
+			return null;
 		}
 
-		/**
-		 * 将节点移动到头节点之前
-		 * 
-		 * @param entry
-		 */
 		void moveNodeToHeader(HashEntry<K, V> entry) {
-			// 先移除，然后插入到头节点的前面
 			removeNode(entry);
 			addBefore(entry, header);
 		}
 
 		/**
-		 * 将第一个参数代表的节点插入到第二个参数代表的节点之前
+		 * it will insert the new entry before the second parameter that represent entry
 		 * 
 		 * @param newEntry
-		 *            需要插入的节点
+		 *            need insert node
 		 * @param entry
-		 *            被插入的节点
+		 *            be inserted node
 		 */
 		void addBefore(HashEntry<K, V> newEntry, HashEntry<K, V> entry) {
 			newEntry.linkNext = entry;
@@ -353,11 +345,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 			entry.linkPrev = newEntry;
 		}
 
-		/**
-		 * 从双向链中删除该Entry
-		 * 
-		 * @param entry
-		 */
 		void removeNode(HashEntry<K, V> entry) {
 			entry.linkPrev.linkNext = entry.linkNext;
 			entry.linkNext.linkPrev = entry.linkPrev;
@@ -471,9 +458,8 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 							first, value);
 					tab[index] = newEntry;
 					count = c; // write-volatile
-					// 添加到双向链
+
 					addBefore(newEntry, header);
-					// 判断是否达到最大值
 					removeEldestEntry();
 				}
 				return oldValue;
@@ -579,7 +565,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 						}
 						tab[index] = newFirst;
 						count = c; // write-volatile
-						// 移除节点
 						removeNode(e);
 					}
 				}
@@ -589,9 +574,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 			}
 		}
 
-		/**
-		 * 移除最旧元素
-		 */
 		void removeEldestEntry() {
 			if (count > this.maxCapacity) {
 				HashEntry<K, V> eldest = header.linkNext;
@@ -617,20 +599,20 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 	}
 
 	/**
-	 * 使用指定参数，创建一个ConcurrentLRUHashMap
+	 * create a new ConcurrentLRUHashMap with some parameters
 	 * 
-	 * @param segementCapacity
-	 *            Segement最大容量
+	 * @param segment Capacity
+	 *            max capacity in one segment
 	 * @param loadFactor
-	 *            加载因子
+	 *            load factor decide threshold, when element reach the threshold, hash map will expand array and rehash. 
 	 * @param concurrencyLevel
-	 *            并发级别
+	 *            segment number
 	 * @param listener
-	 * 			map事件回调
+	 * 			map event callback
 	 */
-	public ConcurrentLRUHashMap(int segementCapacity, float loadFactor,
+	public ConcurrentLRUHashMap(int segmentCapacity, float loadFactor,
 			int concurrencyLevel, LRUMapEventListener<K, V> listener) {
-		if (!(loadFactor > 0) || segementCapacity < 0 || concurrencyLevel <= 0)
+		if (!(loadFactor > 0) || segmentCapacity < 0 || concurrencyLevel <= 0)
 			throw new IllegalArgumentException();
 
 		if (concurrencyLevel > MAX_SEGMENTS)
@@ -648,48 +630,26 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		this.segments = Segment.newArray(ssize);
 
 		for (int i = 0; i < this.segments.length; ++i)
-			this.segments[i] = new Segment<K, V>(segementCapacity, loadFactor, listener);
+			this.segments[i] = new Segment<K, V>(segmentCapacity, loadFactor, listener);
 	}
 
-	/**
-	 * 使用指定参数，创建一个ConcurrentLRUHashMap
-	 * 
-	 * @param segementCapacity
-	 *            Segement最大容量
-	 * @param loadFactor
-	 *            加载因子
-	 */
-	public ConcurrentLRUHashMap(int segementCapacity, float loadFactor) {
-		this(segementCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL, null);
+	public ConcurrentLRUHashMap(int segmentCapacity, float loadFactor) {
+		this(segmentCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL, null);
 	}
 	
-	/**
-	 * 使用指定参数，创建一个ConcurrentLRUHashMap
-	 * 
-	 * @param segementCapacity
-	 * 				Segement最大容量
-	 * @param listener
-	 * 				map事件回调
-	 */
-	public ConcurrentLRUHashMap(int segementCapacity, LRUMapEventListener<K, V> listener) {
-		this(segementCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, listener);
+	public ConcurrentLRUHashMap(int segmentCapacity, LRUMapEventListener<K, V> listener) {
+		this(segmentCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, listener);
+	}
+
+	public ConcurrentLRUHashMap(int segmentCapacity) {
+		this(segmentCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, null);
 	}
 
 	/**
-	 * 使用指定参数，创建一个ConcurrentLRUHashMap
-	 * 
-	 * @param segementCapacity
-	 *            Segement最大容量
-	 */
-	public ConcurrentLRUHashMap(int segementCapacity) {
-		this(segementCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, null);
-	}
-
-	/**
-	 * 使用默认参数，创建一个ConcurrentLRUHashMap，存放元素最大数默认为16W， 加载因子为0.75，并发级别16
+	 * use default parameter to create a new map，max element number is 160k， load factor is 0.75，segment number is 16
 	 */
 	public ConcurrentLRUHashMap() {
-		this(DEFAULT_SEGEMENT_MAX_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, null);
+		this(DEFAULT_SEGMENT_MAX_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, null);
 	}
 
 	/**
@@ -889,9 +849,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		return containsValue(value);
 	}
 
-	/**
-	 * Put一个键值，加Map锁
-	 */
 	public V put(K key, V value) {
 		if (value == null)
 			throw new NullPointerException();
@@ -899,9 +856,6 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
 		return segmentFor(hash).put(key, hash, value, false);
 	}
 
-	/**
-	 * Put一个键值，如果该Key不存在的话
-	 */
 	public V putIfAbsent(K key, V value) {
 		if (value == null)
 			throw new NullPointerException();
