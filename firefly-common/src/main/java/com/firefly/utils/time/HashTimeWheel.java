@@ -4,8 +4,8 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class HashTimeWheel {
-	private int maxTimers = 60; // wheel的格子数量
-	private long interval = 1000; // wheel旋转时间间隔
+	private int maxTimers = 60; // slot's number in wheel
+	private long interval = 1000; // the clock's accuracy
 	
 	private ConcurrentLinkedQueue<TimerTask>[] timerSlots;
 	private volatile int currentSlot = 0;
@@ -38,9 +38,9 @@ public class HashTimeWheel {
 	public Future add(long delay, Runnable run) {
 		final int curSlot = currentSlot;
 		
-		final int ticks = delay > interval ? (int) (delay / interval) : 1; // 计算刻度长度
-		final int index = (curSlot + (ticks % maxTimers)) % maxTimers; // 放到wheel的位置
-		final int round = (ticks - 1) / maxTimers; // wheel旋转的圈数
+		final int ticks = delay > interval ? (int) (delay / interval) : 1; // figure out how many ticks need
+		final int index = (curSlot + (ticks % maxTimers)) % maxTimers; // figure out the wheel's index
+		final int round = (ticks - 1) / maxTimers; // the round number of spin
 
 		TimerTask task = new TimerTask(round, run);
 		timerSlots[index].add(task);
@@ -134,8 +134,10 @@ public class HashTimeWheel {
 			this.task = task;
 		}
 
-
-
+		/**
+		 * cancel current task
+		 * @return if it return true, which cancel task success, else it fail
+		 */
 		public boolean cancel() {
 			return timeWheel.remove(task, index);
 		}
