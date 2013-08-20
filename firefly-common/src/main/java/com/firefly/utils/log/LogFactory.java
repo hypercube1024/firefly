@@ -103,10 +103,9 @@ public class LogFactory {
 			} else {
 				File file = new File(path);
 				if (!file.exists()) {
-					boolean mkdirRet = file.mkdir();
+					boolean mkdirRet = file.mkdirs();
 					if (!mkdirRet)
-						throw new LogException("create dir " + path
-								+ " failure");
+						throw new LogException("create dir " + path + " failure");
 				}
 
 				if (!file.isDirectory())
