@@ -30,6 +30,7 @@ import test.utils.json.github.Player;
 import test.utils.json.github.Size;
 
 import com.firefly.utils.json.Json;
+import com.firefly.utils.json.io.JsonStringWriter;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class TestParser {
@@ -46,20 +47,18 @@ public class TestParser {
 	
 	@Test
 	public void testControlChar() {
-		int c = 31;
-		char ch = (char)c;
+
+		char ch = (char)31, 
+				ch1 = (char)1, 
+				ch2 = (char)0,
+				ch3 = (char)15,
+				ch4 = (char)16;
 		
-		int c1 = 1;
-		char ch1 = (char)c1;
-		
-		int c2 = 0;
-		char ch2 = (char)c2;
-		
-		int c3 = 15;
-		char ch3 = (char)c3;
-		
-		int c4 = 16;
-		char ch4 = (char)c4;
+		Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch), is("\\u001f"));
+		Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch1), is("\\u0001"));
+		Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch2), is("\\u0000"));
+		Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch3), is("\\u000f"));
+		Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch4), is("\\u0010"));
 		
 		SimpleObj i = new SimpleObj();
 		i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com" + String.valueOf(ch1) + String.valueOf(ch2) + String.valueOf(ch3) + String.valueOf(ch4) + String.valueOf(ch));
@@ -374,8 +373,16 @@ public class TestParser {
 	
 	public static void main(String[] args) {
 //		new TestParser().testBigNumber();
-		Bar[] arr = Json.toObject("[]", Bar[].class);
-		System.out.println(arr);
+//		Bar[] arr = Json.toObject("[]", Bar[].class);
+//		System.out.println(arr);
+		
+		char ch = (char)31, 
+				ch1 = (char)1, 
+				ch2 = (char)0,
+				ch3 = (char)15,
+				ch4 = (char)16;
+		
+		System.out.println(JsonStringWriter.escapeSpecialCharacter(ch3));
 		
 	}
 

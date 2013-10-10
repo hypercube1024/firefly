@@ -1,15 +1,67 @@
 package com.firefly.utils.json.io;
 
-import java.util.Deque;
-import java.util.LinkedList;
-
-import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
 import static com.firefly.utils.json.JsonStringSymbol.ARRAY_PRE;
 import static com.firefly.utils.json.JsonStringSymbol.ARRAY_SUF;
+import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
 import static com.firefly.utils.json.JsonStringSymbol.SEPARATOR;
+
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
 public class JsonStringWriter extends AbstractJsonStringWriter {
 
+	public static Set<Character> SPECIAL_CHARACTER = new HashSet<Character>();
+	static {
+		for (int i = 0; i <= 0x1f; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+		for (int i = 0x7f; i <= 0x9f; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+		SPECIAL_CHARACTER.add((char)0x00ad);
+		for (int i = 0x0600; i <= 0x0604; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+		SPECIAL_CHARACTER.add((char)0x070f);
+		SPECIAL_CHARACTER.add((char)0x17b4);
+		SPECIAL_CHARACTER.add((char)0x17b5);
+		for (int i = 0x200c; i <= 0x200f; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+		for (int i = 0x2028; i <= 0x202f; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+		for (int i = 0x2060; i <= 0x206f; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+		SPECIAL_CHARACTER.add((char)0xfeff);
+		for (int i = 0xff01; i <= 0xff0f; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+		for (int i = 0xfff0; i <= 0xffff; i++) {
+			SPECIAL_CHARACTER.add((char)i);
+		}
+	}
+	
+	/**
+	 * This method is used to filter some special characters.
+	 * @param ch be tested character 
+	 * @return A escaped string, if the value equals null, it represents the character dosen't need escape.
+	 */
+	public static String escapeSpecialCharacter(char ch) {
+		if(SPECIAL_CHARACTER.contains(ch)) {
+			String hexStr = Integer.toHexString(ch);
+			String padding = "";
+			for (int j = hexStr.length(); j < 4; j++) {
+				padding += "0";
+			}
+			return "\\u" + padding + hexStr;
+		}
+		return null;
+	}
+	
 	private Deque<Object> deque = new LinkedList<Object>();
 
 	@Override
@@ -66,11 +118,11 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 				break;
 
 			default:
-				if( (ch >= 0 && ch <= 31) || (ch >= 127 && ch <= 159)) {
-					String hexStr = ((ch >= 0 && ch <= 15) ? "\\u000" : "\\u00") + Integer.toHexString(ch);
-					write(hexStr);
-				} else {
+				String hexStr = escapeSpecialCharacter(ch);
+				if(hexStr == null) {
 					buf[count++] = ch;
+				} else {
+					write(hexStr);
 				}
 				break;
 			}
