@@ -7,7 +7,30 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * The ConcurrentLinkedHashMap is the reentrant version of LinkedHashMap, which is the thread safe collection.
+ * It uses many partitions to mitigate parallel conflict.
+ * As same as the LinkedHashMap, you can choose LRU or FIFO arithmetic to eliminate entry of the map.
+ * @author qiupengtao
+ *
+ * @param <K> the type of keys maintained by this map
+ * @param <V> the type of mapped values
+ */
 public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
+	
+	/**
+	 * The callback interface, when the some events(get, put, remove, eliminate) occur, the map will call it. 
+	 * @author qiupengtao
+	 *
+	 * @param <K> the type of keys maintained by this map
+	 * @param <V> the type of mapped values
+	 */
+	public interface MapEventListener<K, V> {
+		boolean onEliminateEntry(K key, V value);
+		V onGetEntry(K key, V value);
+		V onPutEntry(K key, V value, V previousValue);
+		V onRemoveEntry(K key, V value);
+	}
 	
 	/**
      * The default initial capacity - MUST be a power of two.
@@ -39,12 +62,29 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	private final LinkedHashMapSegment<K, V>[] segments;
 	private final MapEventListener<K, V> mapEventListener;
 	
+	/**
+	 * 
+	 * @param accessOrder the ordering mode - <tt>true</tt> for
+     *         access-order, <tt>false</tt> for insertion-order
+	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
+	 * 					the actual limit of capacity depend on the entry weather if average in segments
+	 * @param mapEventListener the callback method of map's operations
+	 */
 	public ConcurrentLinkedHashMap(boolean accessOrder, 
  			int maxEntries,
  			MapEventListener<K, V> mapEventListener) {
 		this(accessOrder, maxEntries, mapEventListener, DEFAULT_CONCURRENCY_LEVEL);
 	}
 	
+	/**
+	 * 
+	 * @param accessOrder accessOrder the ordering mode - <tt>true</tt> for
+     *         access-order, <tt>false</tt> for insertion-order
+	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
+	 * 					the actual limit of capacity depend on the entry weather if average in segments
+	 * @param mapEventListener the callback method of map's operations
+	 * @param concurrencyLevel the number of segment, default is 16
+	 */
 	public ConcurrentLinkedHashMap(boolean accessOrder, 
  			int maxEntries,
  			MapEventListener<K, V> mapEventListener,
@@ -95,13 +135,6 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 			segments[i] = segment;
 		}
 		
-	}
-
-	public interface MapEventListener<K, V> {
-		boolean onEliminateEntry(K key, V value);
-		V onGetEntry(K key, V value);
-		V onPutEntry(K key, V value, V previousValue);
-		V onRemoveEntry(K key, V value);
 	}
 	
 	static final class LinkedHashMapSegment<K, V> extends LinkedHashMap<K, V>{
@@ -163,7 +196,8 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	}
 
 	/**
-	 * the entry's total number, it's not accurate.
+	 * to get the entry's total number, it's not accurate.
+	 * @return entry's number
 	 */
 	@Override
 	public int size() {
@@ -176,6 +210,10 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		return size;
 	}
 
+	/**
+	 * Returns <tt>true</tt>, if the map doesn't contain any entry, but this method is not accurate.
+	 * @return <tt>true</tt> if this map contains no key-value mappings.
+	 */
 	@Override
 	public boolean isEmpty() {
 		for(LinkedHashMapSegment<K, V> seg : segments) {
@@ -187,11 +225,19 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		return true;
 	}
 
+	/**
+	 * Returns <tt>true</tt>, if this map contains a mapping for the specified key.
+	 * @return <tt>true</tt>, if this map contains a mapping for the specified key.s
+	 */
 	@Override
 	public boolean containsKey(Object key) {
 		return get(key) != null;
 	}
 
+	/**
+	 * Returns <tt>true</tt> if this map maps one or more keys to the specified value, but it's not accurate.
+     * @return <tt>true</tt> if this map maps one or more keys to the specified value.
+	 */
 	@Override
 	public boolean containsValue(Object value) {
 		for(LinkedHashMapSegment<K, V> seg : segments) {

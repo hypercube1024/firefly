@@ -32,6 +32,11 @@ public class TestReceiveBufferSizePredictor {
 		receiveBufferSizePredictor.previousReceiveBufferSize(4000);
 		log.debug("current buf size: " + receiveBufferSizePredictor.nextReceiveBufferSize());
 		Assert.assertThat(receiveBufferSizePredictor.nextReceiveBufferSize(), greaterThan(2000));
+		
+		receiveBufferSizePredictor.previousReceiveBufferSize(500);
+		Assert.assertThat(receiveBufferSizePredictor.nextReceiveBufferSize(), greaterThan(2000));
+		receiveBufferSizePredictor.previousReceiveBufferSize(1000);
+		Assert.assertThat(receiveBufferSizePredictor.nextReceiveBufferSize(), lessThan(2000));
 	}
 
 	@Test
@@ -41,6 +46,22 @@ public class TestReceiveBufferSizePredictor {
 		Assert.assertThat(receiveBufferSizePredictor.nextReceiveBufferSize(), is(1024 * 8));
 		receiveBufferSizePredictor.previousReceiveBufferSize(40000);
 		Assert.assertThat(receiveBufferSizePredictor.nextReceiveBufferSize(), is(1024 * 8));
+	}
+	
+	public static void main(String[] args) {
+		ReceiveBufferSizePredictor receiveBufferSizePredictor = new AdaptiveReceiveBufferSizePredictor();
+		receiveBufferSizePredictor.previousReceiveBufferSize(960);
+		System.out.println(receiveBufferSizePredictor.nextReceiveBufferSize());
+		receiveBufferSizePredictor.previousReceiveBufferSize(1300);
+		System.out.println(receiveBufferSizePredictor.nextReceiveBufferSize());
+		receiveBufferSizePredictor.previousReceiveBufferSize(4000);
+		System.out.println(receiveBufferSizePredictor.nextReceiveBufferSize());
+		receiveBufferSizePredictor.previousReceiveBufferSize(960);
+		System.out.println(receiveBufferSizePredictor.nextReceiveBufferSize());
+		receiveBufferSizePredictor.previousReceiveBufferSize(50);
+		receiveBufferSizePredictor.previousReceiveBufferSize(50);
+		receiveBufferSizePredictor.previousReceiveBufferSize(50);
+		System.out.println(receiveBufferSizePredictor.nextReceiveBufferSize());
 	}
 
 }
