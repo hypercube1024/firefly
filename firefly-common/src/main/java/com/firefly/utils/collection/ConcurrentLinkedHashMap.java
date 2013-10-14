@@ -249,6 +249,15 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		return false;
 	}
 
+
+	/**
+	 * Returns a value which the specified key is mapped.
+	 * At the same time, this method will call the callback interface, the getting entry event will be triggered.
+	 * 
+	 * @param key the key whose associated value is to be returned
+	 * @return the value which the specified key is mapped, or
+     *         {@code null} if this map contains no mapping for the key
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public V get(Object key) {
@@ -259,6 +268,19 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		
 	}
 
+	/**
+	 * Associates the specified value with the specified key in this map.
+	 * If the key existed in the map, the entry will be replaced by specified entry.
+	 * This method will call the putting entry event when the method is called.
+	 * 
+	 * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     * @return the previous value associated with <tt>key</tt>, or
+     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     *         (A <tt>null</tt> return can also indicate that the map
+     *         previously associated <tt>null</tt> with <tt>key</tt>,
+     *         if the implementation supports <tt>null</tt> values.)
+	 */
 	@Override
 	public V put(K key, V value) {
 		LinkedHashMapSegment<K, V> seg = segmentFor(key.hashCode());
@@ -267,6 +289,13 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		}
 	}
 
+	/**
+	 * Remove a entry from this map. The removing event will be called.
+	 * 
+	 * @param key key whose mapping is to be removed from the map
+     * @return the previous value associated with <tt>key</tt>, or
+     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public V remove(Object key) {
@@ -276,6 +305,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		}
 	}
 
+	/**
+	 * Puts another map into this map.
+	 * 
+	 * @param m mappings to be stored in this map
+	 */
 	@Override
 	public void putAll(Map<? extends K, ? extends V> m) {
 		for(java.util.Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
@@ -295,6 +329,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		}
 	}
 
+	/**
+	 * Gets the all key in this map.
+	 * 
+	 * @return a set view of the keys contained in this map
+	 */
 	@Override
 	public Set<K> keySet() {
 		Set<K> set = new HashSet<K>();
@@ -306,6 +345,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		return set;
 	}
 
+	/**
+	 * Returns a {@link Collection} view of the values contained in this map.
+	 * 
+	 * @return a collection view of the values contained in this map
+	 */
 	@Override
 	public Collection<V> values() {
 		Collection<V> collection = new ArrayList<V>();
@@ -317,6 +361,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		return collection;
 	}
 
+	/**
+	 * Returns a {@link Set} view of the mappings contained in this map.
+	 * 
+	 * @return a set view of the mappings contained in this map
+	 */
 	@Override
 	public Set<java.util.Map.Entry<K, V>> entrySet() {
 		Set<java.util.Map.Entry<K, V>> set = new HashSet<java.util.Map.Entry<K, V>>();
@@ -328,14 +377,28 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		return set;
 	}
 
+	/**
+	 * Returns a value which represents the number of map's partition
+	 * @return a value which represents the partition's number.
+	 */
 	public int getConcurrencyLevel() {
 		return concurrencyLevel;
 	}
 	
+	/**
+	 * Shift value for indexing within segments.
+	 * @return shift value for indexing within segments.
+	 */
 	public int getSegmentShift() {
 		return segmentShift;
 	}
 
+	/**
+	 * Mask value for indexing into segments. The upper bits of a key's hash
+	 * code are used to choose the segment.
+	 *
+	 * @return mask value for indexing into segments.
+	 */
 	public int getSegmentMask() {
 		return segmentMask;
 	}
