@@ -5,6 +5,12 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+/**
+ * 
+ * @author Pengtao Qiu
+ *
+ * @param <T> the type of mapped node
+ */
 public class ConsistentHash<T> {
 
 	public interface HashFunction {

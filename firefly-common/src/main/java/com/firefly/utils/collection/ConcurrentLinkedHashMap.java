@@ -11,7 +11,7 @@ import java.util.Set;
  * The ConcurrentLinkedHashMap is the reentrant version of LinkedHashMap, which is the thread safe collection.
  * It uses many partitions to mitigate parallel conflict.
  * As same as the LinkedHashMap, you can choose LRU or FIFO arithmetic to eliminate entry of the map.
- * @author qiupengtao
+ * @author Pengtao Qiu
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values

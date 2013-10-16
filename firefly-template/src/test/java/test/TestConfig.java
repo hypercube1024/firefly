@@ -143,6 +143,7 @@ public class TestConfig {
 		// #function
 		model = new ModelMock();
 		model.put("teststr", "好长好长，好大好大，的一个东东！");
+		model.put("testXmlEscape", "<input type=\"text\">测试</input>");
 		out = new ByteArrayOutputStream();
 		view = t.getView("/testFunction.html");
 		view.render(model, out);
