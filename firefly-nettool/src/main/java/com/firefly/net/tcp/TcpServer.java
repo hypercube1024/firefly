@@ -73,15 +73,10 @@ public class TcpServer implements Server {
 			serverSocketChannel = ServerSocketChannel.open();
 			serverSocketChannel.configureBlocking(false);
 			serverSocketChannel.socket().setReuseAddress(true);
-			serverSocketChannel.socket().setPerformancePreferences(
-					CONNECTION_TIME, LATENCY, BANDWIDTH);
+			serverSocketChannel.socket().setPerformancePreferences(CONNECTION_TIME, LATENCY, BANDWIDTH);
 
-			log.debug("ServerSocket receiveBufferSize: [{}]",
-					serverSocketChannel.socket().getReceiveBufferSize());
-
-			serverSocketChannel.socket().bind(
-					new InetSocketAddress(host, port), BACKLOG);
-
+			log.debug("ServerSocket receiveBufferSize: [{}]", serverSocketChannel.socket().getReceiveBufferSize());
+			serverSocketChannel.socket().bind(new InetSocketAddress(host, port), BACKLOG);
 		} catch (Exception e) {
 			log.error("ServerSocket bind error", e);
 		}
@@ -157,10 +152,8 @@ public class TcpServer implements Server {
 		public void accept(SocketChannel socketChannel, int sessionId) {
 			try {
 				int workerIndex = Math.abs(sessionId) % workers.length;
-				log.debug("accept sessionId [{}] and worker index [{}]",
-						sessionId, workerIndex);
-				workers[workerIndex].registerSelectableChannel(socketChannel,
-						sessionId);
+				log.debug("accept sessionId [{}] and worker index [{}]", sessionId, workerIndex);
+				workers[workerIndex].registerSelectableChannel(socketChannel, sessionId);
 			} catch (Exception e) {
 				log.error("Failed to initialize an accepted socket.", e);
 				try {

@@ -82,17 +82,14 @@ public class TcpClient implements Client {
     private void accept(SocketChannel socketChannel, int sessionId) {
         try {
             int workerIndex = Math.abs(sessionId) % workers.length;
-            log.debug("accept sessionId [{}] and worker index [{}]",
-                    sessionId, workerIndex);
-            workers[workerIndex].registerSelectableChannel(socketChannel,
-                    sessionId);
+            log.debug("accept sessionId [{}] and worker index [{}]", sessionId, workerIndex);
+            workers[workerIndex].registerSelectableChannel(socketChannel, sessionId);
         } catch (Exception e) {
             log.error("Failed to initialize an accepted socket.", e);
             try {
                 socketChannel.close();
             } catch (IOException e1) {
-                log.error("Failed to close a partially accepted socket.",
-                        e1);
+                log.error("Failed to close a partially accepted socket.", e1);
             }
         }
     }

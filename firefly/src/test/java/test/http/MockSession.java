@@ -48,12 +48,6 @@ public class MockSession implements Session {
 	}
 
 	@Override
-	public int getInterestOps() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
 	public int getSessionId() {
 		// TODO Auto-generated method stub
 		return 0;

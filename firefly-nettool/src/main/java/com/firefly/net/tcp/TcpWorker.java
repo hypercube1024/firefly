@@ -169,7 +169,7 @@ public final class TcpWorker implements Worker {
 		}
 
 		// From here, we are sure Thread.currentThread() == workerThread.
-		if (session.isWriteSuspended() || session.isInWriteNowLoop())
+		if (session.writeSuspended || session.inWriteNowLoop)
 			return;
 
 		log.debug("worker thread write");
@@ -180,8 +180,8 @@ public final class TcpWorker implements Worker {
 //		log.debug("worker thread {} | current thread {}", thread.toString(), Thread.currentThread().toString());
 		if (Thread.currentThread() != thread) {
 			log.debug("schedule write >>>>");
-			if (session.getWriteTaskInTaskQueue().compareAndSet(false, true)) {
-				boolean offered = writeTaskQueue.offer(session.getWriteTask());
+			if (session.writeTaskInTaskQueue.compareAndSet(false, true)) {
+				boolean offered = writeTaskQueue.offer(session.writeTask);
 				assert offered;
 			}
 			if (wakenUp.compareAndSet(false, true))
@@ -192,13 +192,13 @@ public final class TcpWorker implements Worker {
 	}
 
 	void writeFromTaskLoop(final TcpSession session) {
-		if (!session.isWriteSuspended())
+		if (!session.writeSuspended)
 			write0(session);
 	}
 
 	private void writeFromSelectorLoop(SelectionKey k) {
 		final TcpSession session = (TcpSession) k.attachment();
-		session.setWriteSuspended(false);
+		session.writeSuspended = false;
 		write0(session);
 	}
 
@@ -211,34 +211,33 @@ public final class TcpWorker implements Worker {
 		boolean removeOpWrite = false;
 		long writtenBytes = 0;
 
-		final SocketChannel ch = (SocketChannel) session.getSelectionKey()
-				.channel();
-		final Queue<Object> writeBuffer = session.getWriteBuffer();
+		final SocketChannel ch = (SocketChannel) session.selectionKey.channel();
+		final Queue<Object> writeBuffer = session.writeBuffer;
 		final int writeSpinCount = WRITE_SPIN_COUNT;
-		synchronized (session.getWriteLock()) {
-			session.setInWriteNowLoop(true);
+		synchronized (session.writeLock) {
+			session.inWriteNowLoop = true;
 			while (true) {
-				Object obj = session.getCurrentWrite();
+				Object obj = session.currentWrite;
 				SendBuffer buf = null;
 				if (obj == null) {
 					obj = writeBuffer.poll();
-					session.setCurrentWrite(obj);
-					if (session.getCurrentWrite() == null) {
+					session.currentWrite = obj;
+					if (session.currentWrite == null) {
 						removeOpWrite = true;
-						session.setWriteSuspended(false);
+						session.writeSuspended = false;
 						break;
 					}
 					if (obj == Session.CLOSE_FLAG) {
 						open = false;
 					} else {
 						buf = sendBufferPool.acquire(obj);
-						session.setCurrentWriteBuffer(buf);
+						session.currentWriteBuffer = buf;
 					}
 				} else {
 					if (obj == Session.CLOSE_FLAG)
 						open = false;
 					else
-						buf = session.getCurrentWriteBuffer();
+						buf = session.currentWriteBuffer;
 				}
 
 				try {
@@ -251,7 +250,7 @@ public final class TcpWorker implements Worker {
 						// buf = null;
 						// obj = null;
 						clearOpWrite(session);
-						close(session.getSelectionKey());
+						close(session.selectionKey);
 						break;
 					}
 
@@ -277,7 +276,7 @@ public final class TcpWorker implements Worker {
 						// Not written fully - perhaps the kernel buffer is
 						// full.
 						addOpWrite = true;
-						session.setWriteSuspended(true);
+						session.writeSuspended = true;
 						break;
 					}
 				} catch (AsynchronousCloseException e) {
@@ -293,11 +292,11 @@ public final class TcpWorker implements Worker {
 					if (t instanceof IOException) {
 						log.debug("write0 IOException session close");
 						open = false;
-						close(session.getSelectionKey());
+						close(session.selectionKey);
 					}
 				}
 			}
-			session.setInWriteNowLoop(false);
+			session.inWriteNowLoop = false;
 
 			// Initially, the following block was executed after releasing
 			// the writeLock, but there was a race condition, and it has to be
@@ -312,11 +311,11 @@ public final class TcpWorker implements Worker {
 		}
 
 		if (writtenBytes > 0) {
-			session.setLastWrittenTime(Millisecond100Clock.currentTimeMillis());
-			session.setWrittenBytes(writtenBytes);
+			session.lastWrittenTime = Millisecond100Clock.currentTimeMillis();
+			session.writtenBytes += writtenBytes;
 			log.debug("write complete size: {}", writtenBytes);
 			log.debug("1> session is open: {}", open);
-			log.debug("is in write loop: {}", session.isInWriteNowLoop());
+			log.debug("is in write loop: {}", session.inWriteNowLoop);
 		}
 	}
 
@@ -325,16 +324,16 @@ public final class TcpWorker implements Worker {
 		boolean fireExceptionCaught = false;
 
 		// Clean up the stale messages in the write buffer.
-		synchronized (session.getWriteLock()) {
-			Object obj = session.getCurrentWrite();
+		synchronized (session.writeLock) {
+			Object obj = session.currentWrite;
 			if (obj != null) {
 				cause = new NetException("cleanUpWriteBuffer error");
-				session.getCurrentWriteBuffer().release();
+				session.currentWriteBuffer.release();
 				session.resetCurrentWriteAndWriteBuffer();
 				fireExceptionCaught = true;
 			}
 
-			Queue<Object> writeBuffer = session.getWriteBuffer();
+			Queue<Object> writeBuffer = session.writeBuffer;
 			if (!writeBuffer.isEmpty()) {
 				// Create the exception only once to avoid the excessive
 				// overhead
@@ -362,8 +361,7 @@ public final class TcpWorker implements Worker {
 	private boolean read(SelectionKey k) {
 		final SocketChannel ch = (SocketChannel) k.channel();
 		final TcpSession session = (TcpSession) k.attachment();
-		final ReceiveBufferSizePredictor predictor = session
-				.getReceiveBufferSizePredictor();
+		final ReceiveBufferSizePredictor predictor = session.receiveBufferSizePredictor;
 		final int predictedRecvBufSize = predictor.nextReceiveBufferSize();
 
 		int ret = 0;
@@ -390,8 +388,8 @@ public final class TcpWorker implements Worker {
 
 			// Update the predictor.
 			predictor.previousReceiveBufferSize(readBytes);
-			session.setReadBytes(readBytes);
-			session.setLastReadTime(Millisecond100Clock.currentTimeMillis());
+			session.readBytes += readBytes;
+			session.lastReadTime = Millisecond100Clock.currentTimeMillis();
 			// Decode
 			
 			try {
@@ -445,8 +443,7 @@ public final class TcpWorker implements Worker {
 				socketChannel.socket().setKeepAlive(true);
 
 				key = socketChannel.register(selector, SelectionKey.OP_READ);
-				TcpSession session = new TcpSession(sessionId, TcpWorker.this,
-						config, Millisecond100Clock.currentTimeMillis(), key, eventManager);
+				TcpSession session = new TcpSession(sessionId, TcpWorker.this, config, Millisecond100Clock.currentTimeMillis(), key);
 				key.attach(session);
 
 				SocketAddress localAddress = session.getLocalAddress();
@@ -501,7 +498,7 @@ public final class TcpWorker implements Worker {
 			key.channel().close();
 			increaseCancelledKey();
 			TcpSession session = (TcpSession) key.attachment();
-			session.setState(Session.CLOSE);
+			session.state = Session.CLOSE;
 			cleanUpWriteBuffer(session);
 			// TODO cancel timeout task may lead to performance decline
 			session.cancelTimeoutTask(); 
@@ -537,7 +534,7 @@ public final class TcpWorker implements Worker {
 	}
 
 	private void setOpWrite(TcpSession session) {
-		SelectionKey key = session.getSelectionKey();
+		SelectionKey key = session.selectionKey;
 		if (key == null) {
 			return;
 		}
@@ -549,18 +546,18 @@ public final class TcpWorker implements Worker {
 
 		// interestOps can change at any time and at any thread.
 		// Acquire a lock to avoid possible race condition.
-		synchronized (session.getInterestOpsLock()) {
-			int interestOps = session.getRawInterestOps();
+		synchronized (session.interestOpsLock) {
+			int interestOps = session.interestOps;
 			if ((interestOps & SelectionKey.OP_WRITE) == 0) {
 				interestOps |= SelectionKey.OP_WRITE;
 				key.interestOps(interestOps);
-				session.setInterestOpsNow(interestOps);
+				session.interestOps = interestOps;
 			}
 		}
 	}
 
 	private void clearOpWrite(TcpSession session) {
-		SelectionKey key = session.getSelectionKey();
+		SelectionKey key = session.selectionKey;
 		if (key == null) {
 			return;
 		}
@@ -572,68 +569,14 @@ public final class TcpWorker implements Worker {
 
 		// interestOps can change at any time and at any thread.
 		// Acquire a lock to avoid possible race condition.
-		synchronized (session.getInterestOpsLock()) {
-			int interestOps = session.getRawInterestOps();
+		synchronized (session.interestOpsLock) {
+			int interestOps = session.interestOps;
 			if ((interestOps & SelectionKey.OP_WRITE) != 0) {
 				interestOps &= ~SelectionKey.OP_WRITE;
 				log.debug("clear write op >>> {}", interestOps);
 				key.interestOps(interestOps);
-				session.setInterestOpsNow(interestOps);
+				session.interestOps = interestOps;
 			}
-		}
-	}
-
-	void setInterestOps(TcpSession session, int interestOps) {
-		boolean changed = false;
-		try {
-			// interestOps can change at any time and at any thread.
-			// Acquire a lock to avoid possible race condition.
-			synchronized (session.getInterestOpsLock()) {
-				SelectionKey key = session.getSelectionKey();
-
-				if (key == null || selector == null) {
-					// Not registered to the worker yet.
-					// Set the rawInterestOps immediately; RegisterTask will
-					// pick it up.
-					session.setInterestOpsNow(interestOps);
-					return;
-				}
-
-				// Override OP_WRITE flag - a user cannot change this flag.
-				interestOps &= ~SelectionKey.OP_WRITE;
-				interestOps |= session.getRawInterestOps()
-						& SelectionKey.OP_WRITE;
-
-				/**
-				 * 0 - no need to wake up to get / set interestOps (most cases)
-				 * 1 - no need to wake up to get interestOps, but need to wake
-				 * up to set. 2 - need to wake up to get / set interestOps (old
-				 * providers)
-				 */
-				if (session.getRawInterestOps() != interestOps) {
-					key.interestOps(interestOps);
-					if (Thread.currentThread() != thread
-							&& wakenUp.compareAndSet(false, true)) {
-						selector.wakeup();
-					}
-					changed = true;
-				}
-
-				if (changed) {
-					session.setInterestOpsNow(interestOps);
-				}
-			}
-
-			if (changed) {
-				log.debug("interestOps change [{}]", interestOps);
-				setInterestOps(session, SelectionKey.OP_READ);
-			}
-		} catch (CancelledKeyException e) {
-			// setInterestOps() was called on a closed channel.
-			ClosedChannelException cce = new ClosedChannelException();
-			eventManager.executeExceptionTask(session, cce);
-		} catch (Throwable t) {
-			eventManager.executeExceptionTask(session, t);
 		}
 	}
 

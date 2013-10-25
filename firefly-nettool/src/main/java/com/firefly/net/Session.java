@@ -26,8 +26,6 @@ public interface Session {
 	
 	void write(FileRegion fileRegion);
 
-	int getInterestOps();
-
 	int getSessionId();
 
 	long getOpenTime();
