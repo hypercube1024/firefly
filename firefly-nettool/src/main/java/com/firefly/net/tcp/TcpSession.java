@@ -38,7 +38,6 @@ public final class TcpSession implements Session {
 	volatile int interestOps = SelectionKey.OP_READ;
 	boolean inWriteNowLoop;
 	boolean writeSuspended;
-	final Object interestOpsLock = new Object();
 	final Object writeLock = new Object();
 	final Queue<Object> writeBuffer = new LinkedTransferQueue<Object>();
 	Object currentWrite;

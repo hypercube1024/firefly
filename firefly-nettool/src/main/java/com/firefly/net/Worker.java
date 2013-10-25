@@ -7,8 +7,6 @@ public interface Worker extends Runnable {
 
 	void registerSelectableChannel(SelectableChannel selectableChannel, int sessionId);
 
-	void close(SelectionKey key);
-
 	int getWorkerId();
 
 	void shutdown();

@@ -164,9 +164,8 @@ public final class TcpWorker implements Worker {
 			return;
 		}
 
-		if (scheduleWriteIfNecessary(session)) {
+		if (scheduleWriteIfNecessary(session))
 			return;
-		}
 
 		// From here, we are sure Thread.currentThread() == workerThread.
 		if (session.writeSuspended || session.inWriteNowLoop)
@@ -177,18 +176,18 @@ public final class TcpWorker implements Worker {
 	}
 
 	private boolean scheduleWriteIfNecessary(final TcpSession session) {
-//		log.debug("worker thread {} | current thread {}", thread.toString(), Thread.currentThread().toString());
-		if (Thread.currentThread() != thread) {
-			log.debug("schedule write >>>>");
-			if (session.writeTaskInTaskQueue.compareAndSet(false, true)) {
-				boolean offered = writeTaskQueue.offer(session.writeTask);
-				assert offered;
-			}
-			if (wakenUp.compareAndSet(false, true))
-				selector.wakeup();
-			return true;
+		if(Thread.currentThread() == thread)
+			return false;
+		
+		log.debug("schedule write >>>>");
+		if (session.writeTaskInTaskQueue.compareAndSet(false, true)) {
+			boolean offered = writeTaskQueue.offer(session.writeTask);
+			assert offered;
 		}
-		return false;
+		if (wakenUp.compareAndSet(false, true)) {
+			selector.wakeup();
+		}
+		return true;
 	}
 
 	void writeFromTaskLoop(final TcpSession session) {
@@ -316,6 +315,45 @@ public final class TcpWorker implements Worker {
 			log.debug("write complete size: {}", writtenBytes);
 			log.debug("1> session is open: {}", open);
 			log.debug("is in write loop: {}", session.inWriteNowLoop);
+		}
+	}
+	
+	private void setOpWrite(TcpSession session) {
+		SelectionKey key = session.selectionKey;
+		if (key == null) {
+			return;
+		}
+		if (!key.isValid()) {
+			log.debug("setOpWrite failure session close");
+			close(key);
+			return;
+		}
+
+		int interestOps = session.interestOps;
+		if ((interestOps & SelectionKey.OP_WRITE) == 0) {
+			interestOps |= SelectionKey.OP_WRITE;
+			key.interestOps(interestOps);
+			session.interestOps = interestOps;
+		}
+	}
+
+	private void clearOpWrite(TcpSession session) {
+		SelectionKey key = session.selectionKey;
+		if (key == null) {
+			return;
+		}
+		if (!key.isValid()) {
+			log.debug("clearOpWrite key valid false");
+			close(key);
+			return;
+		}
+		
+		int interestOps = session.interestOps;
+		if ((interestOps & SelectionKey.OP_WRITE) != 0) {
+			interestOps &= ~SelectionKey.OP_WRITE;
+			log.debug("clear write op >>> {}", interestOps);
+			key.interestOps(interestOps);
+			session.interestOps = interestOps;
 		}
 	}
 
@@ -492,8 +530,7 @@ public final class TcpWorker implements Worker {
 
 	}
 
-	@Override
-	public void close(SelectionKey key) {
+	void close(SelectionKey key) {
 		try {
 			key.channel().close();
 			increaseCancelledKey();
@@ -531,53 +568,6 @@ public final class TcpWorker implements Worker {
 		int temp = cancelledKeys;
 		temp++;
 		cancelledKeys = temp;
-	}
-
-	private void setOpWrite(TcpSession session) {
-		SelectionKey key = session.selectionKey;
-		if (key == null) {
-			return;
-		}
-		if (!key.isValid()) {
-			log.debug("setOpWrite failure session close");
-			close(key);
-			return;
-		}
-
-		// interestOps can change at any time and at any thread.
-		// Acquire a lock to avoid possible race condition.
-		synchronized (session.interestOpsLock) {
-			int interestOps = session.interestOps;
-			if ((interestOps & SelectionKey.OP_WRITE) == 0) {
-				interestOps |= SelectionKey.OP_WRITE;
-				key.interestOps(interestOps);
-				session.interestOps = interestOps;
-			}
-		}
-	}
-
-	private void clearOpWrite(TcpSession session) {
-		SelectionKey key = session.selectionKey;
-		if (key == null) {
-			return;
-		}
-		if (!key.isValid()) {
-			log.debug("clearOpWrite key valid false");
-			close(key);
-			return;
-		}
-
-		// interestOps can change at any time and at any thread.
-		// Acquire a lock to avoid possible race condition.
-		synchronized (session.interestOpsLock) {
-			int interestOps = session.interestOps;
-			if ((interestOps & SelectionKey.OP_WRITE) != 0) {
-				interestOps &= ~SelectionKey.OP_WRITE;
-				log.debug("clear write op >>> {}", interestOps);
-				key.interestOps(interestOps);
-				session.interestOps = interestOps;
-			}
-		}
 	}
 
 	@Override
