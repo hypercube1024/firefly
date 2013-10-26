@@ -45,10 +45,6 @@ public interface Session {
 	int getState();
 
 	boolean isOpen();
-	
-	void cancelTimeoutTask();
-	
-	boolean isCancelTimeoutTask();
 
 	InetSocketAddress getLocalAddress();
 

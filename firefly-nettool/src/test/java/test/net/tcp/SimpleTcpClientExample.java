@@ -51,6 +51,16 @@ public class SimpleTcpClientExample {
 		System.out.println("con2|" + c2.send("getfile"));
 		c2.close(false);
 		
+		TcpConnection c3 = client.connect();
+		c3.send("test c3", new MessageReceiveCallBack() {
+
+			@Override
+			public void messageRecieved(Session session, Object obj) {
+				System.out.println("con3|" + obj.toString());
+			}
+		});
+		c3.close(true);;
+		
 		Thread.sleep(4000);
 		client.shutdown();
 		LogFactory.getInstance().shutdown();

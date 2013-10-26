@@ -51,12 +51,6 @@ public class ThreadPoolEventManager implements EventManager {
 	public void executeExceptionTask(Session session, Throwable t) {
 		executorService.submit(new ExceptionTask(session, t));
 	}
-	
-	@Override
-	public void executeTimeoutTask(Session session) {
-		executorService.submit(new TimeoutTask(session));
-		
-	}
 
 	private class OpenTask implements Runnable {
 		private Session session;
@@ -126,23 +120,6 @@ public class ThreadPoolEventManager implements EventManager {
 		public void run() {
 			try {
 				config.getHandler().exceptionCaught(session, t);
-			} catch (Throwable t) {
-				log.error("handler exception", t);
-			}
-		}
-	}
-
-	private class TimeoutTask implements Runnable {
-		private Session session;
-
-		private TimeoutTask(Session session) {
-			this.session = session;
-		}
-
-		@Override
-		public void run() {
-			try {
-				config.getHandler().timeout(session);
 			} catch (Throwable t) {
 				log.error("handler exception", t);
 			}

@@ -24,7 +24,7 @@ public class SendFileHandler implements Handler {
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
-		log.debug("session close|" + session.getSessionId());
+		log.info("session close|" + session.getSessionId());
 	}
 
 	@Override
@@ -65,12 +65,6 @@ public class SendFileHandler implements Handler {
 	@Override
 	public void exceptionCaught(Session session, Throwable t) throws Throwable{
 		log.error(t.getMessage() + "|" + session.getSessionId(), t);
-	}
-
-	@Override
-	public void timeout(Session session) throws Throwable {
-		if(session.isOpen())
-			session.close(true);
 	}
 
 }

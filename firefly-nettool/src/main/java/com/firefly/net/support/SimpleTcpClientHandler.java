@@ -41,10 +41,4 @@ public class SimpleTcpClientHandler implements Handler {
         session.close(true);
     }
 
-	@Override
-	public void timeout(Session session) throws Throwable {
-		System.out.println("session timeout");
-		session.close(true);
-	}
-
 }

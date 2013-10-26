@@ -80,11 +80,4 @@ public class DumpHandler implements Handler {
 		}
 	}
 
-	@Override
-	public void timeout(Session session) throws Throwable {
-		if(session.isOpen())
-			session.close(true);
-		
-	}
-
 }

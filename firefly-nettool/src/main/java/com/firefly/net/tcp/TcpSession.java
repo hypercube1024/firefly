@@ -19,33 +19,32 @@ import com.firefly.net.buffer.SocketSendBufferPool.SendBuffer;
 import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.HashTimeWheel;
 
 public final class TcpSession implements Session {
+	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	
 	private final int sessionId;
-	final SelectionKey selectionKey;
 	private final long openTime;
 	long lastReadTime, lastWrittenTime, readBytes, writtenBytes;
 	private final TcpWorker worker;
 	private final Config config;
 	private final Map<String, Object> map = new HashMap<String, Object>();
 	final Runnable writeTask = new WriteTask();
-
 	final AtomicBoolean writeTaskInTaskQueue = new AtomicBoolean();
+	final AtomicBoolean closeTaskInTaskQueue = new AtomicBoolean(false);
 	private InetSocketAddress localAddress;
 	private volatile InetSocketAddress remoteAddress;
 	volatile int interestOps = SelectionKey.OP_READ;
 	boolean inWriteNowLoop;
 	boolean writeSuspended;
-	final Object writeLock = new Object();
+	final SelectionKey selectionKey;
 	final Queue<Object> writeBuffer = new LinkedTransferQueue<Object>();
+	final ReceiveBufferSizePredictor receiveBufferSizePredictor;
 	Object currentWrite;
 	SendBuffer currentWriteBuffer;
 	volatile int state;
 	
-	final ReceiveBufferSizePredictor receiveBufferSizePredictor;
-	HashTimeWheel.Future future;
 
 	public TcpSession(int sessionId, TcpWorker worker, Config config, long openTime, SelectionKey selectionKey) {
 		this.sessionId = sessionId;
@@ -56,8 +55,7 @@ public final class TcpSession implements Session {
 
 		if (config.getReceiveByteBufferSize() > 0) {
 			log.debug("fix buffer size: {}", config.getReceiveByteBufferSize());
-			receiveBufferSizePredictor = new FixedReceiveBufferSizePredictor(
-					config.getReceiveByteBufferSize());
+			receiveBufferSizePredictor = new FixedReceiveBufferSizePredictor(config.getReceiveByteBufferSize());
 		} else {
 			log.debug("adaptive buffer size");
 			receiveBufferSizePredictor = new AdaptiveReceiveBufferSizePredictor();
@@ -136,7 +134,7 @@ public final class TcpSession implements Session {
 
 	@Override
 	public void fireReceiveMessage(Object message) {
-		worker.getEventManager().executeReceiveTask(this, message);
+		worker.eventManager.executeReceiveTask(this, message);
 	}
 
 	@Override
@@ -144,7 +142,7 @@ public final class TcpSession implements Session {
 		try {
 			config.getEncoder().encode(message, this);
 		} catch (Throwable t) {
-			worker.getEventManager().executeExceptionTask(this, t);
+			worker.eventManager.executeExceptionTask(this, t);
 		}
 	}
 	
@@ -167,7 +165,7 @@ public final class TcpSession implements Session {
 	@Override
 	public void close(boolean immediately) {
 		if (immediately)
-			worker.close(selectionKey);
+			worker.closeFromUserCode(this);
 		else
 			write0(CLOSE_FLAG);
 	}
@@ -237,25 +235,6 @@ public final class TcpSession implements Session {
 	@Override
 	public long getWrittenBytes() {
 		return writtenBytes;
-	}
-
-	@Override
-	public void cancelTimeoutTask() {
-		if(isCancelTimeoutTask())
-			return;
-		
-		future.cancel();
-		future = null;
-		log.info("session {} cancel timeout task", getSessionId());
-	}
-
-	@Override
-	public boolean isCancelTimeoutTask() {
-		return future == null;
-	}
-	
-	void setFuture(HashTimeWheel.Future future) {
-		this.future = future;
 	}
 
 }

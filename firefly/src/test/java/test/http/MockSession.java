@@ -129,16 +129,4 @@ public class MockSession implements Session {
 		
 	}
 
-	@Override
-	public void cancelTimeoutTask() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public boolean isCancelTimeoutTask() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 }

@@ -22,52 +22,48 @@ public class Config {
 	private Handler handler;
 
 	/**
-	 * @return 连接超时时间，单位ms
+	 * The max I/O idle time, the default value is 10 seconds.
+	 * 
+	 * @return The max I/O idle time，the unit is MS.
 	 */
 	public int getTimeout() {
 		return timeout;
 	}
 
 	/**
-	 * 设置连接超时时间
+	 * The I/O timeout, if the last I/O timestamp before  present over timeout value, the session will close. 
 	 * 
-	 * @param timeout
-	 *            超时时间，单位ms
+	 * @param timeout the max I/O idle time，the unit is MS.
 	 */
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
 	}
-
-	/**
-	 * @return handler执行线程数
-	 */
+	
 	public int getHandleThreads() {
 		return handleThreads;
 	}
 
 	/**
-	 * 设置handler执行线程数 <br/>
-	 * 线程数>0: 使用固定线程数线程池。<br/>
-	 * 线程数=0: 使用cached线程池 。<br/>
-	 * 线程数<0: handler在worker线程执行。<br/>
+	 * Set thread number of handler thread pool <br/>
+	 * if the number greater than 0, the handler will use the fixed number thread pool.<br/>
+	 * if the number equals 0, the handler will use the cache thread pool.<br/>
+	 * if the number less than 0, the handler will execute in worker thread<br/>
 	 * 
-	 * @param handleThreads
-	 *            handler执行线程数
+	 * @param handleThreads thread number of handler thread pool
 	 */
 	public void setHandleThreads(int handleThreads) {
 		this.handleThreads = handleThreads;
 	}
 
-	/**
-	 * @return 接受数据ByteBuffer大小
-	 */
 	public int getReceiveByteBufferSize() {
 		return receiveByteBufferSize;
 	}
 
 	/**
-	 * 设置接受数据ByteBuffer大小，当设置为小于或等于0时，使用自适应buffer大小
-	 * @param receiveByteBufferSize 设置接受数据ByteBuffer大小
+	 * Set the the buffer that is used to receive net data size, if the value less than 0 or equals 0
+	 * it will use the adaptive buffer size
+	 *  
+	 * @param receiveByteBufferSize the buffer size
 	 */
 	public void setReceiveByteBufferSize(int receiveByteBufferSize) {
 		this.receiveByteBufferSize = receiveByteBufferSize;

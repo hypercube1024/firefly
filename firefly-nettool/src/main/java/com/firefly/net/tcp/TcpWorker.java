@@ -32,30 +32,27 @@ import com.firefly.net.exception.NetException;
 import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.HashTimeWheel;
 import com.firefly.utils.time.Millisecond100Clock;
 
 public final class TcpWorker implements Worker {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static final HashTimeWheel timeWheel = new HashTimeWheel();
 	
 	private final Config config;
 	private final Queue<Runnable> registerTaskQueue = new LinkedTransferQueue<Runnable>();
 	private final Queue<Runnable> writeTaskQueue = new LinkedTransferQueue<Runnable>();
+	private final Queue<SelectionKey> closeTaskQueue = new LinkedTransferQueue<SelectionKey>();
 	private final AtomicBoolean wakenUp = new AtomicBoolean();
 	private final ReceiveBufferPool receiveBufferPool = new SocketReceiveBufferPool();
 	private final SendBufferPool sendBufferPool = new SocketSendBufferPool();
 	private final Selector selector;
 	private final int workerId;
+	final EventManager eventManager;
+	
 	private volatile int cancelledKeys;
 	private Thread thread;
-	private EventManager eventManager;
 	private boolean start;
-	
-	static {
-		timeWheel.start();
-	}
+	private long lastIoTimeoutCheckTime;
 
 	public TcpWorker(Config config, int workerId, EventManager eventManager) {
 		try {
@@ -89,6 +86,7 @@ public final class TcpWorker implements Worker {
 	@Override
 	public void run() {
 		thread = Thread.currentThread();
+		lastIoTimeoutCheckTime = Millisecond100Clock.currentTimeMillis();
 
 		while (start) {
 			wakenUp.set(false);
@@ -100,7 +98,9 @@ public final class TcpWorker implements Worker {
 				cancelledKeys = 0;
 				processRegisterTaskQueue();
 				processWriteTaskQueue();
-				processSelectedKeys(selector.selectedKeys());
+				processSelectedKeys();
+				processCloseTaskQueue();
+				processTimeout();
 			} catch (Throwable t) {
 				log.error("Unexpected exception in the selector loop.", t);
 
@@ -116,8 +116,64 @@ public final class TcpWorker implements Worker {
 
 	}
 	
-	EventManager getEventManager() {
-		return eventManager;
+	private void processTimeout() {
+		long now = Millisecond100Clock.currentTimeMillis();
+		if(now - lastIoTimeoutCheckTime < TcpPerformanceParameter.IO_TIMEOUT_CHECK_INTERVAL)
+			return;
+		
+		for(SelectionKey key : selector.keys()) {
+			checkTimeout(key);
+		}
+		lastIoTimeoutCheckTime = now;
+	}
+	
+	private void checkTimeout(SelectionKey key) {
+		TcpSession session = (TcpSession) key.attachment();
+		if(!session.isOpen())
+			return;
+		
+		long lastIoTime = Math.max(session.getOpenTime(), session.getLastActiveTime());
+		long t = Millisecond100Clock.currentTimeMillis() - lastIoTime;
+		if(config.getTimeout() > 0 && t > config.getTimeout()) {
+			log.info("close timeout in select loop|{}|{}", session.getSessionId(), t);
+			close0(key);
+		}
+	}
+	
+	private void processCloseTaskQueue() throws IOException {
+		while (true) {
+			SelectionKey selectionKey = closeTaskQueue.poll();
+			if (selectionKey == null)
+				break;
+			
+			TcpSession session = (TcpSession) selectionKey.attachment();
+			log.info("process close in queue|{}|{}", session.getSessionId(), session.isOpen());
+			close0(selectionKey);
+			cleanUpCancelledKeys();
+		}
+
+	}
+	
+	void closeFromUserCode(TcpSession session) {
+		if(session.closeTaskInTaskQueue.compareAndSet(false, true)) {
+			closeTaskQueue.offer(session.selectionKey);
+		}
+	}
+	
+	private void close0(SelectionKey key) {
+		TcpSession session = (TcpSession) key.attachment();
+		if(!session.isOpen())
+			return;
+		
+		try {
+			key.channel().close();
+			increaseCancelledKey();
+			cleanUpWriteBuffer(session);
+			eventManager.executeCloseTask(session);
+			session.state = Session.CLOSE;
+		} catch (IOException e) {
+			log.error("channel close error", e);
+		}
 	}
 
 	private void processWriteTaskQueue() throws IOException {
@@ -131,8 +187,8 @@ public final class TcpWorker implements Worker {
 
 	}
 
-	private void processSelectedKeys(Set<SelectionKey> selectedKeys)
-			throws IOException {
+	private void processSelectedKeys() throws IOException {
+		Set<SelectionKey> selectedKeys = selector.selectedKeys();
 		for (Iterator<SelectionKey> i = selectedKeys.iterator(); i.hasNext();) {
 			SelectionKey k = i.next();
 			i.remove();
@@ -149,7 +205,7 @@ public final class TcpWorker implements Worker {
 				}
 			} catch (CancelledKeyException e) {
 				log.debug("processSelectedKeys error close session", e);
-				close(k);
+				close0(k);
 			}
 
 			if (cleanUpCancelledKeys())
@@ -213,99 +269,98 @@ public final class TcpWorker implements Worker {
 		final SocketChannel ch = (SocketChannel) session.selectionKey.channel();
 		final Queue<Object> writeBuffer = session.writeBuffer;
 		final int writeSpinCount = WRITE_SPIN_COUNT;
-		synchronized (session.writeLock) {
-			session.inWriteNowLoop = true;
-			while (true) {
-				Object obj = session.currentWrite;
-				SendBuffer buf = null;
-				if (obj == null) {
-					obj = writeBuffer.poll();
-					session.currentWrite = obj;
-					if (session.currentWrite == null) {
-						removeOpWrite = true;
-						session.writeSuspended = false;
-						break;
-					}
-					if (obj == Session.CLOSE_FLAG) {
-						open = false;
-					} else {
-						buf = sendBufferPool.acquire(obj);
-						session.currentWriteBuffer = buf;
-					}
-				} else {
-					if (obj == Session.CLOSE_FLAG)
-						open = false;
-					else
-						buf = session.currentWriteBuffer;
+
+		session.inWriteNowLoop = true;
+		while (true) {
+			Object obj = session.currentWrite;
+			SendBuffer buf = null;
+			if (obj == null) {
+				obj = writeBuffer.poll();
+				session.currentWrite = obj;
+				if (session.currentWrite == null) {
+					removeOpWrite = true;
+					session.writeSuspended = false;
+					break;
 				}
+				if (obj == Session.CLOSE_FLAG) {
+					open = false;
+				} else {
+					buf = sendBufferPool.acquire(obj);
+					session.currentWriteBuffer = buf;
+				}
+			} else {
+				if (obj == Session.CLOSE_FLAG)
+					open = false;
+				else
+					buf = session.currentWriteBuffer;
+			}
 
-				try {
-					log.debug("0> session is open: {}", open);
-					if (!open) {
-						log.debug("receive close flag");
-						assert buf == null;
+			try {
+				log.debug("0> session is open: {}", open);
+				if (!open) {
+					log.debug("receive close flag");
+					assert buf == null;
 
-						session.resetCurrentWriteAndWriteBuffer();
-						// buf = null;
-						// obj = null;
-						clearOpWrite(session);
-						close(session.selectionKey);
-						break;
-					}
-
-					long localWrittenBytes;
-					for (int i = writeSpinCount; i > 0; i--) {
-						localWrittenBytes = buf.transferTo(ch);
-						if (localWrittenBytes != 0) {
-							writtenBytes += localWrittenBytes;
-							break;
-						}
-						if (buf.finished()) {
-							break;
-						}
-					}
-
-					if (buf.finished()) {
-						// Successful write - proceed to the next message.
-						buf.release();
-						session.resetCurrentWriteAndWriteBuffer();
-						obj = null;
-						buf = null;
-					} else {
-						// Not written fully - perhaps the kernel buffer is
-						// full.
-						addOpWrite = true;
-						session.writeSuspended = true;
-						break;
-					}
-				} catch (AsynchronousCloseException e) {
-					// Doesn't need a user attention - ignore.
-				} catch (Throwable t) {
-					if(buf != null)
-						buf.release();
-					
 					session.resetCurrentWriteAndWriteBuffer();
 					buf = null;
 					obj = null;
-					eventManager.executeExceptionTask(session, t);
-					if (t instanceof IOException) {
-						log.debug("write0 IOException session close");
-						open = false;
-						close(session.selectionKey);
+					clearOpWrite(session);
+					close0(session.selectionKey);
+					break;
+				}
+
+				long localWrittenBytes;
+				for (int i = writeSpinCount; i > 0; i--) {
+					localWrittenBytes = buf.transferTo(ch);
+					if (localWrittenBytes != 0) {
+						writtenBytes += localWrittenBytes;
+						break;
+					}
+					if (buf.finished()) {
+						break;
 					}
 				}
-			}
-			session.inWriteNowLoop = false;
 
-			// Initially, the following block was executed after releasing
-			// the writeLock, but there was a race condition, and it has to be
-			// executed before releasing the writeLock:
-			if (open) {
-				if (addOpWrite) {
-					setOpWrite(session);
-				} else if (removeOpWrite) {
-					clearOpWrite(session);
+				if (buf.finished()) {
+					// Successful write - proceed to the next message.
+					buf.release();
+					session.resetCurrentWriteAndWriteBuffer();
+					obj = null;
+					buf = null;
+				} else {
+					// Not written fully - perhaps the kernel buffer is
+					// full.
+					addOpWrite = true;
+					session.writeSuspended = true;
+					break;
 				}
+			} catch (AsynchronousCloseException e) {
+				// Doesn't need a user attention - ignore.
+			} catch (Throwable t) {
+				if(buf != null)
+					buf.release();
+				
+				session.resetCurrentWriteAndWriteBuffer();
+				buf = null;
+				obj = null;
+				eventManager.executeExceptionTask(session, t);
+				if (t instanceof IOException) {
+					log.debug("write0 IOException session close");
+					open = false;
+					close0(session.selectionKey);
+				}
+			}
+		}
+		session.inWriteNowLoop = false;
+
+		// Initially, the following block was executed after releasing
+		// the writeLock, but there was a race condition, and it has to be
+		// executed before releasing the writeLock:
+		if (open) {
+			if (addOpWrite) {
+				setOpWrite(session);
+			} else if (removeOpWrite) {
+				clearOpWrite(session);
 			}
 		}
 
@@ -325,7 +380,7 @@ public final class TcpWorker implements Worker {
 		}
 		if (!key.isValid()) {
 			log.debug("setOpWrite failure session close");
-			close(key);
+			close0(key);
 			return;
 		}
 
@@ -344,7 +399,7 @@ public final class TcpWorker implements Worker {
 		}
 		if (!key.isValid()) {
 			log.debug("clearOpWrite key valid false");
-			close(key);
+			close0(key);
 			return;
 		}
 		
@@ -362,32 +417,30 @@ public final class TcpWorker implements Worker {
 		boolean fireExceptionCaught = false;
 
 		// Clean up the stale messages in the write buffer.
-		synchronized (session.writeLock) {
-			Object obj = session.currentWrite;
-			if (obj != null) {
+		Object obj = session.currentWrite;
+		if (obj != null) {
+			cause = new NetException("cleanUpWriteBuffer error");
+			session.currentWriteBuffer.release();
+			session.resetCurrentWriteAndWriteBuffer();
+			fireExceptionCaught = true;
+		}
+
+		Queue<Object> writeBuffer = session.writeBuffer;
+		if (!writeBuffer.isEmpty()) {
+			// Create the exception only once to avoid the excessive
+			// overhead
+			// caused by fillStackTrace.
+			if (cause == null) {
 				cause = new NetException("cleanUpWriteBuffer error");
-				session.currentWriteBuffer.release();
-				session.resetCurrentWriteAndWriteBuffer();
-				fireExceptionCaught = true;
 			}
 
-			Queue<Object> writeBuffer = session.writeBuffer;
-			if (!writeBuffer.isEmpty()) {
-				// Create the exception only once to avoid the excessive
-				// overhead
-				// caused by fillStackTrace.
-				if (cause == null) {
-					cause = new NetException("cleanUpWriteBuffer error");
+			while (true) {
+				obj = writeBuffer.poll();
+				if (obj == null) {
+					break;
 				}
-
-				while (true) {
-					obj = writeBuffer.poll();
-					if (obj == null) {
-						break;
-					}
-					log.warn("error clear obj: {}", obj.getClass().toString());
-					fireExceptionCaught = true;
-				}
+				log.warn("error clear obj: {}", obj.getClass().toString());
+				fireExceptionCaught = true;
 			}
 		}
 
@@ -443,7 +496,7 @@ public final class TcpWorker implements Worker {
 		if (ret < 0 || failure) {
 			log.debug("read failure session close");
 			k.cancel();
-			close(k);
+			close0(k);
 			return false;
 		}
 
@@ -487,63 +540,16 @@ public final class TcpWorker implements Worker {
 				SocketAddress localAddress = session.getLocalAddress();
 				SocketAddress remoteAddress = session.getRemoteAddress();
 				if (localAddress == null || remoteAddress == null)
-					TcpWorker.this.close(key);
-
-				if (config.getTimeout() > 0) {
-					HashTimeWheel.Future future = timeWheel.add(config.getTimeout(), new TimeoutTask(session, config.getTimeout()));
-					session.setFuture(future);
-				}
+					TcpWorker.this.close0(key);
 				
 				eventManager.executeOpenTask(session);
 			} catch (IOException e) {
 				log.error("socketChannel register error", e);
-				close(key);
+				close0(key);
 			}
 
 		}
 
-	}
-
-	private final class TimeoutTask implements Runnable {
-		private TcpSession session;
-		private final long timeout;
-
-		public TimeoutTask(TcpSession session, long timeout) {
-			this.session = session;
-			this.timeout = timeout;
-		}
-
-		@Override
-		public void run() {
-			long t = Millisecond100Clock.currentTimeMillis() - session.getLastActiveTime();
-			if (t >= timeout) {
-				session.setFuture(null);
-				if(session.isOpen()) {
-					eventManager.executeTimeoutTask(session);
-				}
-			} else {
-				long nextCheckTime = timeout - t;
-				timeWheel.add(nextCheckTime, TimeoutTask.this);
-			}
-
-		}
-
-	}
-
-	void close(SelectionKey key) {
-		try {
-			key.channel().close();
-			increaseCancelledKey();
-			TcpSession session = (TcpSession) key.attachment();
-			session.state = Session.CLOSE;
-			cleanUpWriteBuffer(session);
-			// TODO cancel timeout task may lead to performance decline
-			session.cancelTimeoutTask(); 
-			eventManager.executeCloseTask(session);
-
-		} catch (IOException e) {
-			log.error("channel close error", e);
-		}
 	}
 
 	static void select(Selector selector) throws IOException {
@@ -574,7 +580,6 @@ public final class TcpWorker implements Worker {
 	public void shutdown() {
 		eventManager.shutdown();
 		start = false;
-		timeWheel.stop();
 		log.debug("thread {} is shutdown: {}", thread.getName(), thread.isInterrupted());
 	}
 }
