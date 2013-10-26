@@ -135,7 +135,7 @@ public final class TcpWorker implements Worker {
 		long lastIoTime = Math.max(session.getOpenTime(), session.getLastActiveTime());
 		long t = Millisecond100Clock.currentTimeMillis() - lastIoTime;
 		if(config.getTimeout() > 0 && t > config.getTimeout()) {
-			log.info("close timeout in select loop|{}|{}", session.getSessionId(), t);
+			log.info("process timeout in select loop|{}|{}", session.getSessionId(), t);
 			close0(key);
 		}
 	}
@@ -147,7 +147,7 @@ public final class TcpWorker implements Worker {
 				break;
 			
 			TcpSession session = (TcpSession) selectionKey.attachment();
-			log.info("process close in queue|{}|{}", session.getSessionId(), session.isOpen());
+			log.debug("process close in queue|{}|{}", session.getSessionId(), session.isOpen());
 			close0(selectionKey);
 			cleanUpCancelledKeys();
 		}
@@ -215,10 +215,8 @@ public final class TcpWorker implements Worker {
 	}
 
 	void writeFromUserCode(final TcpSession session) {
-		if (!session.isOpen()) {
-			cleanUpWriteBuffer(session);
+		if (!session.isOpen())
 			return;
-		}
 
 		if (scheduleWriteIfNecessary(session))
 			return;
