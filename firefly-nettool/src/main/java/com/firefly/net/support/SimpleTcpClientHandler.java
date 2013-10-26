@@ -24,7 +24,7 @@ public class SimpleTcpClientHandler implements Handler {
 
     @Override
     public void sessionClosed(Session session) throws Throwable {
-        log.debug("session: {} close", session.getSessionId());
+        log.info("session: {} close", session.getSessionId());
     }
 
     @SuppressWarnings("unchecked")

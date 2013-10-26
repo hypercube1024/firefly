@@ -2,6 +2,7 @@ package com.firefly.net.event;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import com.firefly.net.Config;
 import com.firefly.net.EventManager;
@@ -21,13 +22,17 @@ public class ThreadPoolEventManager implements EventManager {
 
 	public ThreadPoolEventManager(Config config) {
 		this.config = config;
+		ThreadFactory threadFactory = new ThreadFactory(){
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(r, "firefly-net-event-thread");
+			}};
 		if (config.getHandleThreads() > 0) {
 			log.info("FixedThreadPool: {}", config.getHandleThreads());
-			executorService = Executors.newFixedThreadPool(config
-					.getHandleThreads());
+			executorService = Executors.newFixedThreadPool(config.getHandleThreads(), threadFactory);
 		} else if (config.getHandleThreads() == 0) {
 			log.info("CachedThreadPool");
-			executorService = Executors.newCachedThreadPool();
+			executorService = Executors.newCachedThreadPool(threadFactory);
 		}
 	}
 	

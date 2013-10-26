@@ -2,6 +2,7 @@ package com.firefly.net.tcp;
 
 import static com.firefly.net.tcp.TcpPerformanceParameter.CLEANUP_INTERVAL;
 import static com.firefly.net.tcp.TcpPerformanceParameter.WRITE_SPIN_COUNT;
+import static com.firefly.net.tcp.TcpPerformanceParameter.IO_TIMEOUT_CHECK_INTERVAL;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -62,7 +63,7 @@ public final class TcpWorker implements Worker {
 
 			selector = Selector.open();
 			start = true;
-			new Thread(this, "Tcp-worker: " + workerId).start();
+			new Thread(this, "firefly-tcp-worker: " + workerId).start();
 		} catch (IOException e) {
 			log.error("worker init error", e);
 			throw new NetException("worker init error");
@@ -118,7 +119,7 @@ public final class TcpWorker implements Worker {
 	
 	private void processTimeout() {
 		long now = Millisecond100Clock.currentTimeMillis();
-		if(now - lastIoTimeoutCheckTime < TcpPerformanceParameter.IO_TIMEOUT_CHECK_INTERVAL)
+		if(now - lastIoTimeoutCheckTime < IO_TIMEOUT_CHECK_INTERVAL)
 			return;
 		
 		for(SelectionKey key : selector.keys()) {

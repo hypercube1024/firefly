@@ -1,24 +1,35 @@
 package com.firefly.net.tcp;
 
-import com.firefly.net.*;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.firefly.net.Client;
+import com.firefly.net.Config;
+import com.firefly.net.Decoder;
+import com.firefly.net.Encoder;
+import com.firefly.net.EventManager;
+import com.firefly.net.Handler;
+import com.firefly.net.Worker;
 import com.firefly.net.event.CurrentThreadEventManager;
 import com.firefly.net.event.ThreadPoolEventManager;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class TcpClient implements Client {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
     private Config config;
     private Worker[] workers;
+    private Thread consumerThread;
+    private Selector selector;
     private AtomicInteger sessionId = new AtomicInteger(0);
-    private volatile boolean started = false;
+    private volatile boolean start = false;
 
     public TcpClient() {
     }
@@ -31,8 +42,8 @@ public class TcpClient implements Client {
         config.setHandler(handler);
     }
 
-    private synchronized Client init() {
-        if (started)
+    private synchronized Client init() throws IOException {
+        if (start)
             return this;
 
         if (config == null)
@@ -50,7 +61,10 @@ public class TcpClient implements Client {
         for (int i = 0; i < config.getWorkerThreads(); i++)
             workers[i] = new TcpWorker(config, i, eventManager);
         
-        started = true;
+        selector = Selector.open();
+        consumerThread = new Thread(new Consumer(), config.getClientName());
+        start = true;
+        consumerThread.start();
         return this;
     }
 
@@ -68,17 +82,63 @@ public class TcpClient implements Client {
     
     @Override
     public void connect(String host, int port, int id) {
-    	if (!started)
-            init();
     	try {
+	    	if (!start)
+	            init();
+    	
             SocketChannel socketChannel = SocketChannel.open();
-            socketChannel.socket().connect(new InetSocketAddress(host, port), config.getTimeout());
-            accept(socketChannel, id);
+            socketChannel.configureBlocking(false);      
+            boolean finished = socketChannel.connect(new InetSocketAddress(host, port));
+            if(finished) {
+            	log.debug("connection {} is immediately complete", id);
+            	if(socketChannel.isConnectionPending()) {
+            		if(socketChannel.finishConnect()) {
+            			log.info("connection {} has finished immediately", id);
+            			accept(socketChannel, id);
+            			return;
+            		}
+            	}
+            	socketChannel.register(selector, SelectionKey.OP_CONNECT, id);
+            } else {
+            	socketChannel.register(selector, SelectionKey.OP_CONNECT, id);
+            }
+            
         } catch (IOException e) {
             log.error("connect error", e);
         }
     }
+    
+    private final class Consumer implements Runnable {
 
+		@Override
+		public void run() {
+			while(start) {
+				try {
+					selector.select(1000);
+					Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
+					while (iterator.hasNext()) {   
+						SelectionKey key = iterator.next();   
+						iterator.remove();
+						if (key.isConnectable()) {
+							SocketChannel socketChannel = (SocketChannel)key.channel();   
+                            if (socketChannel.isConnectionPending()) {
+                            	if(socketChannel.finishConnect()) {
+                            		int id = (Integer) key.attachment();
+                            		log.info("connection {} has finished in select loop", id);
+                            		accept(socketChannel, id);
+                            	}
+                            }
+						}
+					}
+					
+				} catch (IOException e) {
+					log.error("Failed to create a connection.", e);
+				}   
+                
+			}
+		}
+    }
+    
     private void accept(SocketChannel socketChannel, int sessionId) {
         try {
             int workerIndex = Math.abs(sessionId) % workers.length;
@@ -93,12 +153,13 @@ public class TcpClient implements Client {
             }
         }
     }
-
+    
 	@Override
 	public void shutdown() {
 		for(Worker worker : workers)
 			worker.shutdown();
 
+		start = false;
 		Millisecond100Clock.stop();
 	}
 
