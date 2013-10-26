@@ -76,8 +76,7 @@ public final class TcpWorker implements Worker {
 	}
 
 	@Override
-	public void registerSelectableChannel(SelectableChannel selectableChannel,
-			int sessionId) {
+	public void registerSelectableChannel(SelectableChannel selectableChannel, int sessionId) {
 		SocketChannel socketChannel = (SocketChannel) selectableChannel;
 		registerTaskQueue.offer(new RegisterTask(socketChannel, sessionId));
 		if (wakenUp.compareAndSet(false, true))
@@ -136,7 +135,7 @@ public final class TcpWorker implements Worker {
 		long lastIoTime = Math.max(session.getOpenTime(), session.getLastActiveTime());
 		long t = Millisecond100Clock.currentTimeMillis() - lastIoTime;
 		if(config.getTimeout() > 0 && t > config.getTimeout()) {
-			log.info("process timeout in select loop|{}|{}", session.getSessionId(), t);
+			log.debug("process timeout in select loop|{}|{}", session.getSessionId(), t);
 			close0(key);
 		}
 	}

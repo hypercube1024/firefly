@@ -12,7 +12,11 @@ public class SimpleTcpClientExample {
 	public static void main(String[] args) throws Throwable {
 		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900,
 				new StringLineDecoder(), new StringLineEncoder());
+		long start = System.currentTimeMillis();
 		TcpConnection c = client.connect();
+		long end = System.currentTimeMillis();
+		System.out.println("connection 0 creating time is " + (end - start));
+		
 		c.send("hello client 1", new MessageReceiveCallBack() {
 
 			@Override

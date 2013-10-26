@@ -2,10 +2,13 @@ package com.firefly.net.tcp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.firefly.net.Client;
@@ -17,6 +20,7 @@ import com.firefly.net.Handler;
 import com.firefly.net.Worker;
 import com.firefly.net.event.CurrentThreadEventManager;
 import com.firefly.net.event.ThreadPoolEventManager;
+import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -27,7 +31,9 @@ public class TcpClient implements Client {
     private Config config;
     private Worker[] workers;
     private Thread consumerThread;
+    private Consumer consumer;
     private Selector selector;
+    private final AtomicBoolean wakenUp = new AtomicBoolean();
     private AtomicInteger sessionId = new AtomicInteger(0);
     private volatile boolean start = false;
 
@@ -62,7 +68,8 @@ public class TcpClient implements Client {
             workers[i] = new TcpWorker(config, i, eventManager);
         
         selector = Selector.open();
-        consumerThread = new Thread(new Consumer(), config.getClientName());
+        consumer = new Consumer();
+        consumerThread = new Thread(consumer, config.getClientName());
         start = true;
         consumerThread.start();
         return this;
@@ -89,44 +96,68 @@ public class TcpClient implements Client {
             SocketChannel socketChannel = SocketChannel.open();
             socketChannel.configureBlocking(false);      
             boolean finished = socketChannel.connect(new InetSocketAddress(host, port));
-            if(finished) {
-            	log.debug("connection {} is immediately complete", id);
-            	if(socketChannel.isConnectionPending()) {
-            		if(socketChannel.finishConnect()) {
-            			log.info("connection {} has finished immediately", id);
-            			accept(socketChannel, id);
-            			return;
-            		}
-            	}
-            	socketChannel.register(selector, SelectionKey.OP_CONNECT, id);
-            } else {
-            	socketChannel.register(selector, SelectionKey.OP_CONNECT, id);
+            if(finished && socketChannel.isConnectionPending() && socketChannel.finishConnect()) {
+            	log.debug("connection {} has finished immediately", id);
+    			accept(socketChannel, id);
+    			return;
             }
             
+            consumer.registerConnectedEvent(socketChannel, id);
         } catch (IOException e) {
             log.error("connect error", e);
         }
     }
     
+    private final class ChannelInfo {
+    	public SocketChannel channel;
+    	public int id;
+    }
+    
     private final class Consumer implements Runnable {
+    	
+    	private Queue<ChannelInfo> queue = new LinkedTransferQueue<ChannelInfo>();
+    	
+    	public void registerConnectedEvent(SocketChannel socketChannel, int id) {
+        	ChannelInfo info = new ChannelInfo();
+            info.channel = socketChannel;
+            info.id = id;
+            queue.offer(info);
+            if (wakenUp.compareAndSet(false, true)) 
+    			selector.wakeup();
+        }
+    	
+    	private void processRegisterTaskQueue() throws ClosedChannelException {
+    		while (true) {
+				ChannelInfo info = queue.poll();
+				if (info == null)
+					break;
+				
+				info.channel.register(selector, SelectionKey.OP_CONNECT, info.id);
+				log.debug("register channel {}", info.id);
+			}
+    	}
 
 		@Override
 		public void run() {
 			while(start) {
+				wakenUp.set(false);
 				try {
 					selector.select(1000);
+					if (wakenUp.get())
+						selector.wakeup();
+					
+					processRegisterTaskQueue();
+					
 					Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
 					while (iterator.hasNext()) {   
 						SelectionKey key = iterator.next();   
 						iterator.remove();
 						if (key.isConnectable()) {
 							SocketChannel socketChannel = (SocketChannel)key.channel();   
-                            if (socketChannel.isConnectionPending()) {
-                            	if(socketChannel.finishConnect()) {
-                            		int id = (Integer) key.attachment();
-                            		log.info("connection {} has finished in select loop", id);
-                            		accept(socketChannel, id);
-                            	}
+                            if (socketChannel.isConnectionPending() && socketChannel.finishConnect()) {
+                        		int id = (Integer) key.attachment();
+                        		log.debug("connection {} has finished in select loop", id);
+                        		accept(socketChannel, id);       
                             }
 						}
 					}
