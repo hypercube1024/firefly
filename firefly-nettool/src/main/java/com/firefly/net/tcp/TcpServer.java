@@ -12,6 +12,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 
 import com.firefly.net.Config;
 import com.firefly.net.Decoder;
@@ -109,12 +110,10 @@ public class TcpServer implements Server {
 
 	private final class Boss implements Runnable {
 		private final Selector selector;
-		private final ServerSocketChannel serverSocketChannel;
 
 		public Boss(ServerSocketChannel serverSocketChannel) throws IOException {
 			selector = Selector.open();
-			this.serverSocketChannel = serverSocketChannel;
-			this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+			serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 		}
 
 		@Override
@@ -124,13 +123,20 @@ public class TcpServer implements Server {
 			try {
 				while (start) {
 					try {
-						if (selector.select(1000) > 0)
-							selector.selectedKeys().clear();
-
-						SocketChannel socketChannel = serverSocketChannel.accept();
-						if (socketChannel != null) {
-							accept(socketChannel, sessionId);
-							sessionId++;
+						selector.select(1000);
+						
+						Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
+						while (iterator.hasNext()) {
+							SelectionKey key = iterator.next();
+							iterator.remove();
+							if (key.isAcceptable()) {
+								ServerSocketChannel server = (ServerSocketChannel) key.channel();
+								SocketChannel socketChannel = server.accept();
+								if (socketChannel != null) {
+									accept(socketChannel, sessionId);
+									sessionId++;
+								}
+							}
 						}
 					} catch (ClosedChannelException e) {
 						// Closed as requested.
@@ -174,8 +180,7 @@ public class TcpServer implements Server {
 		}
 		start = false;
 		Millisecond100Clock.stop();
-		log.debug("thread {} is shutdown: {}", bossThread.getName(),
-				bossThread.isInterrupted());
+		log.debug("thread {} is shutdown: {}", bossThread.getName(), bossThread.isInterrupted());
 	}
 
 }
