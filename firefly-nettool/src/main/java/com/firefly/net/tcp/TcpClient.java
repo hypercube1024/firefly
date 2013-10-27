@@ -149,8 +149,8 @@ public class TcpClient implements Client {
 					processRegisterTaskQueue();
 					
 					Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-					while (iterator.hasNext()) {   
-						SelectionKey key = iterator.next();   
+					while (iterator.hasNext()) {
+						SelectionKey key = iterator.next();
 						iterator.remove();
 						if (key.isConnectable()) {
 							SocketChannel socketChannel = (SocketChannel)key.channel();   
