@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 
 public class SSLDecoder implements Decoder {
 	
@@ -16,9 +15,8 @@ public class SSLDecoder implements Decoder {
 
 	@Override
 	public void decode(ByteBuffer buf, Session session) throws Throwable {
-		SSLSession c = (SSLSession)session.getAttribute(HttpHandler.SSL_SESSION_KEY);
-
-		ByteBuffer plaintext = c.read(buf);
+		SessionAttachment sessionAttachment = (SessionAttachment)session.getAttachment();
+		ByteBuffer plaintext = sessionAttachment.sslSession.read(buf);
 		if(plaintext != null)
 			next.decode(plaintext, session);
 	}

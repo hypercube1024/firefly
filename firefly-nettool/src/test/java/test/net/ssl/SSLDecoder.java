@@ -11,8 +11,9 @@ public class SSLDecoder implements Decoder {
 	private DumpDecoder next = new DumpDecoder();
 
 	@Override
-	public void decode(ByteBuffer buf, Session session) throws Throwable {	
-		SSLSession c = (SSLSession)session.getAttribute("_secure");
+	public void decode(ByteBuffer buf, Session session) throws Throwable {
+		SessionInfo info = (SessionInfo)session.getAttachment();
+		SSLSession c = info.sslSession;
 
 		ByteBuffer plaintext = c.read(buf);
 		if(plaintext != null)

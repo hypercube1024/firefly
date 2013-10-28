@@ -4,8 +4,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -29,7 +27,7 @@ public final class TcpSession implements Session {
 	long lastReadTime, lastWrittenTime, readBytes, writtenBytes;
 	private final TcpWorker worker;
 	private final Config config;
-	private final Map<String, Object> map = new HashMap<String, Object>();
+	private Object attachment;
 	final Runnable writeTask = new WriteTask();
 	final AtomicBoolean writeTaskInTaskQueue = new AtomicBoolean();
 	final AtomicBoolean closeTaskInTaskQueue = new AtomicBoolean(false);
@@ -110,26 +108,6 @@ public final class TcpSession implements Session {
 	@Override
 	public int getSessionId() {
 		return sessionId;
-	}
-
-	@Override
-	public void setAttribute(String key, Object value) {
-		map.put(key, value);
-	}
-
-	@Override
-	public Object getAttribute(String key) {
-		return map.get(key);
-	}
-
-	@Override
-	public void removeAttribute(String key) {
-		map.remove(key);
-	}
-
-	@Override
-	public void clearAttributes() {
-		map.clear();
 	}
 
 	@Override
@@ -235,6 +213,16 @@ public final class TcpSession implements Session {
 	@Override
 	public long getWrittenBytes() {
 		return writtenBytes;
+	}
+
+	@Override
+	public void attachObject(Object attachment) {
+		this.attachment = attachment;
+	}
+
+	@Override
+	public Object getAttachment() {
+		return attachment;
 	}
 
 }

@@ -11,7 +11,8 @@ public class SSLEncoder implements Encoder {
 
 	@Override
 	public void encode(Object message, Session session) throws Throwable {
-		SSLSession c = (SSLSession)session.getAttribute("_secure");
+		SessionInfo info = (SessionInfo)session.getAttachment();
+		SSLSession c = info.sslSession;
 		
 		if(message instanceof String) {
 			byte[] body = ((String)message).getBytes("UTF-8");
@@ -24,7 +25,7 @@ public class SSLEncoder implements Encoder {
 			c.write(ByteBuffer.wrap(head));
 			c.write(ByteBuffer.wrap(body));
 		} else if (message instanceof FileChannel) {
-			Long length = (Long)session.getAttribute("Content-Length");
+			Long length = info.length;
 			byte[] head = ("HTTP/1.1 200 OK\r\n"
 					+ "Server: firefly-server/1.0\r\n"
 					+ "Content-Length: " + length + "\r\n"

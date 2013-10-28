@@ -10,11 +10,12 @@ public class StringLineDecoder implements Decoder {
 
 	@Override
 	public void decode(ByteBuffer buffer, Session session) throws Throwable {
+		SessionInfo sessionInfo = (SessionInfo)session.getAttachment();
 		ByteBuffer now = buffer;
-		ByteBuffer prev = (ByteBuffer) session.getAttribute("buff");
+		ByteBuffer prev = sessionInfo.byteBuffer;
 
 		if (prev != null) {
-			session.removeAttribute("buff");
+			sessionInfo.byteBuffer = null;
 			now = (ByteBuffer) ByteBuffer
 					.allocate(prev.remaining() + buffer.remaining()).put(prev)
 					.put(buffer).flip();
@@ -33,7 +34,7 @@ public class StringLineDecoder implements Decoder {
 		}
 
 		if (now.hasRemaining())
-			session.setAttribute("buff", now);
+			sessionInfo.byteBuffer = now;
 	}
 	
 	public static void main(String[] args) {

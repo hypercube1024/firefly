@@ -3,38 +3,17 @@ package test.http;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.server.http.HttpServletRequestImpl;
+import com.firefly.server.http.SessionAttachment;
 
 public class MockSession implements Session {
 	
-	Map<String, Object> map = new HashMap<String, Object>();
+	Object attachment = new SessionAttachment();
 	List<HttpServletRequestImpl> request = new ArrayList<HttpServletRequestImpl>();
-
-	@Override
-	public void setAttribute(String key, Object value) {
-		map.put(key, value);
-	}
-
-	@Override
-	public Object getAttribute(String key) {
-		return map.get(key);
-	}
-
-	@Override
-	public void removeAttribute(String key) {
-		map.remove(key);
-	}
-
-	@Override
-	public void clearAttributes() {
-		map.clear();
-	}
 
 	@Override
 	public void fireReceiveMessage(Object message) {
@@ -127,6 +106,16 @@ public class MockSession implements Session {
 	public void write(FileRegion fileRegion) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public void attachObject(Object attachment) {
+		this.attachment = attachment;
+	}
+
+	@Override
+	public Object getAttachment() {
+		return attachment;
 	}
 
 }

@@ -10,7 +10,6 @@ import com.firefly.utils.log.LogFactory;
 public class SimpleTcpClientHandler implements Handler {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static final String CONNECTION_KEY = "#CONNECTION_KEY";
 	private Map<Integer, ConnectionInfo> connectionInfo;
 	
 	public SimpleTcpClientHandler(Map<Integer, ConnectionInfo> connectionInfo) {
@@ -23,8 +22,10 @@ public class SimpleTcpClientHandler implements Handler {
         if(info == null) 
         	return;
         
+        SessionInfo sessionInfo = new SessionInfo();
         TcpConnection connection = new TcpConnection(session, info.timeout);
-        session.setAttribute(CONNECTION_KEY, connection);
+        sessionInfo.connection = connection;
+        session.attachObject(sessionInfo);
         info.callback.sessionOpened(connection);
         connectionInfo.remove(session.getSessionId());
     }
@@ -36,9 +37,8 @@ public class SimpleTcpClientHandler implements Handler {
 
 	@Override
     public void messageRecieved(Session session, Object message) throws Throwable {
-        TcpConnection conn = (TcpConnection)session.getAttribute(CONNECTION_KEY);
-        log.debug("message received : {}", conn.getId());
-        conn.poll().messageRecieved(conn, message);
+		SessionInfo sessionInfo = (SessionInfo)session.getAttachment();
+		sessionInfo.connection.poll().messageRecieved(sessionInfo.connection, message);
     }
 
     @Override

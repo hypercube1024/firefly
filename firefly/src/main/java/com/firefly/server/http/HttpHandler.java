@@ -20,8 +20,6 @@ public class HttpHandler implements Handler {
 	private final RequestHandler requestHandler;
 	private final HttpConnectionListener httpConnectionListener;
 	private SSLContext sslContext;
-	
-	public static final String SSL_SESSION_KEY = "_sslSession#";
 
 	public HttpHandler(HttpServletDispatcherController servletController, Config config) throws Throwable {
 		httpConnectionListener = config.getHttpConnectionListener();
@@ -40,11 +38,12 @@ public class HttpHandler implements Handler {
 
 	@Override
 	public void sessionOpened(Session session) throws Throwable {
+		SessionAttachment sessionAttachment = new SessionAttachment();
+		session.attachObject(sessionAttachment);
 		Monitor.CONN_COUNT.incrementAndGet();
-		
-		if(sslContext != null)
-			session.setAttribute(SSL_SESSION_KEY, new SSLSession(sslContext, session));
-		
+		if(sslContext != null) {
+			sessionAttachment.sslSession = new SSLSession(sslContext, session);
+		}
 		httpConnectionListener.connectionCreated(session);
 	}
 
@@ -57,14 +56,10 @@ public class HttpHandler implements Handler {
 				Monitor.CONN_COUNT.decrementAndGet());
 		
 		httpConnectionListener.connectionClosed(session);
-		
-		if(sslContext != null) {
-			SSLSession sslSession = (SSLSession) session.getAttribute(SSL_SESSION_KEY);
-			if(sslSession != null) {
-				sslSession.close();
-			}
+		SessionAttachment sessionAttachment = (SessionAttachment)session.getAttachment();
+		if(sslContext != null && sessionAttachment.sslSession != null) {
+			sessionAttachment.sslSession.close();
 		}
-		session.clearAttributes();
 	}
 
 	@Override

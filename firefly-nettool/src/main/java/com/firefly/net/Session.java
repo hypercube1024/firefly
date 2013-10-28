@@ -10,13 +10,9 @@ public interface Session {
 	int OPEN = 1;
 	String CLOSE_FLAG = "#firefly-session-close";
 
-	void setAttribute(String key, Object value);
-
-	Object getAttribute(String key);
-
-	void removeAttribute(String key);
-
-	void clearAttributes();
+	void attachObject(Object attachment);
+	
+	Object getAttachment();
 
 	void fireReceiveMessage(Object message);
 

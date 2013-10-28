@@ -17,8 +17,6 @@ public class HttpDecoder implements Decoder {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private Config config;
 	private AbstractHttpDecoder[] httpDecode = {new RequestLineDecoder(), new HeadDecoder(), new BodyDecoder()};
-	public static final String HTTP_REQUEST = "http_req";
-	public static final String REMAIN_DATA = "remain_data";
 	private static final byte LINE_LIMITOR = '\n';
 
 	public HttpDecoder(Config config) {
@@ -33,11 +31,12 @@ public class HttpDecoder implements Decoder {
 	}
 
 	private ByteBuffer getBuffer(ByteBuffer buf, Session session) {
+		SessionAttachment attachment = (SessionAttachment)session.getAttachment();
 		ByteBuffer now = buf;
-		ByteBuffer prev = (ByteBuffer) session.getAttribute(REMAIN_DATA);
+		ByteBuffer prev = attachment.byteBuffer;
 
 		if (prev != null) {
-			session.removeAttribute(REMAIN_DATA);
+			attachment.byteBuffer = null;
 			now = (ByteBuffer) ByteBuffer
 					.allocate(prev.remaining() + buf.remaining()).put(prev)
 					.put(buf).flip();
@@ -46,12 +45,11 @@ public class HttpDecoder implements Decoder {
 	}
 
 	private HttpServletRequestImpl getHttpServletRequestImpl(Session session) {
-		HttpServletRequestImpl req = (HttpServletRequestImpl) session.getAttribute(HTTP_REQUEST);
-		if (req == null) {
-			req = new HttpServletRequestImpl(session, config);
-			session.setAttribute(HTTP_REQUEST, req);
+		SessionAttachment attachment = (SessionAttachment)session.getAttachment();
+		if (attachment.req == null) {
+			attachment.req = new HttpServletRequestImpl(session, config);
 		}
-		return req;
+		return attachment.req;
 	}
 
 	abstract private class AbstractHttpDecoder {
@@ -93,8 +91,9 @@ public class HttpDecoder implements Decoder {
 		}
 
 		private void save(ByteBuffer buf, Session session) {
+			SessionAttachment attachment = (SessionAttachment)session.getAttachment();
 			if (buf.hasRemaining())
-				session.setAttribute(REMAIN_DATA, buf);
+				attachment.byteBuffer = buf;
 		}
 
 		private void responseError(Session session, HttpServletRequestImpl req) {
@@ -109,8 +108,9 @@ public class HttpDecoder implements Decoder {
 		}
 		
 		private void finish(Session session, HttpServletRequestImpl req) {
-			session.removeAttribute(REMAIN_DATA);
-			session.removeAttribute(HTTP_REQUEST);
+			SessionAttachment attachment = (SessionAttachment)session.getAttachment();
+			attachment.req = null;
+			attachment.byteBuffer = null;
 			req.status = httpDecode.length;
 		}
 

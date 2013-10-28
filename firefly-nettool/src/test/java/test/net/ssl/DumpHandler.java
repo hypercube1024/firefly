@@ -23,7 +23,9 @@ public class DumpHandler implements Handler {
 
 	@Override
 	public void sessionOpened(Session session) throws Throwable {
-		session.setAttribute("_secure", new SSLSession(sslContext, session));
+		SessionInfo info = new SessionInfo();
+		info.sslSession = new SSLSession(sslContext, session);
+		session.attachObject(info);
 
 	}
 
@@ -45,7 +47,8 @@ public class DumpHandler implements Handler {
 		
 		
 		File file = new File(SendFileHandler.class.getResource("/index.html").toURI());
-		session.setAttribute("Content-Length", file.length());
+		SessionInfo info = (SessionInfo)session.getAttachment();
+		info.length = file.length();
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
 		session.encode(raf.getChannel());
 	}

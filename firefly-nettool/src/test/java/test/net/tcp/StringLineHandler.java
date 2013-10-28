@@ -1,5 +1,7 @@
 package test.net.tcp;
 
+import test.net.tcp.example.SessionInfo;
+
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.utils.log.Log;
@@ -13,6 +15,7 @@ public class StringLineHandler implements Handler {
 		log.info("session open |" + session.getSessionId());
 		log.info("local: " + session.getLocalAddress());
 		log.info("remote: " + session.getRemoteAddress());
+		session.attachObject(new SessionInfo());
 	}
 
 	@Override
