@@ -101,18 +101,24 @@ public abstract class ReflectUtils {
 		if(ret != null)
 			return ret;
 		
-		ClassPool classPool = new ClassPool(true);
-		classPool.insertClassPath(new ClassClassPath(ArrayProxy.class));
-		
-		CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField$" + clazz.hashCode());
-		cc.addInterface(classPool.get(ArrayProxy.class.getName()));
-		
-		cc.addMethod(CtMethod.make(createArraySizeCode(clazz), cc));
-		cc.addMethod(CtMethod.make(createArrayGetCode(clazz), cc));
-		cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
-		
-		ret = (ArrayProxy) cc.toClass().getConstructor().newInstance();
-		arrayCache.put(clazz, ret);
+		synchronized(arrayCache) {
+			ret = arrayCache.get(clazz);
+			if(ret != null)
+				return ret;
+			
+			ClassPool classPool = ClassPool.getDefault();
+			classPool.insertClassPath(new ClassClassPath(ArrayProxy.class));
+			
+			CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField$" + clazz.hashCode());
+			cc.addInterface(classPool.get(ArrayProxy.class.getName()));
+			
+			cc.addMethod(CtMethod.make(createArraySizeCode(clazz), cc));
+			cc.addMethod(CtMethod.make(createArrayGetCode(clazz), cc));
+			cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
+			
+			ret = (ArrayProxy) cc.toClass().getConstructor().newInstance();
+			arrayCache.put(clazz, ret);
+		}
 		return ret;
 	}
 	
@@ -167,24 +173,30 @@ public abstract class ReflectUtils {
 		if(ret != null)
 			return ret;
 		
-		ClassPool classPool = new ClassPool(true);
-		classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
-		classPool.importPackage(Field.class.getCanonicalName());
-		
-		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField$" + field.hashCode());
-		cc.addInterface(classPool.get(FieldProxy.class.getName()));
-		cc.addField(CtField.make("private Field field;", cc));
-		
-		CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Field.class.getName())}, cc);
-		constructor.setBody("{this.field = (Field)$1;}");
-		cc.addConstructor(constructor);
-		
-		cc.addMethod(CtMethod.make("public Field field(){return field;}", cc));
-		cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
-		cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
-		
-		ret = (FieldProxy) cc.toClass().getConstructor(Field.class).newInstance(field);
-		fieldCache.put(field, ret);
+		synchronized(fieldCache) {
+			ret = fieldCache.get(field);
+			if(ret != null)
+				return ret;
+			
+			ClassPool classPool = ClassPool.getDefault();
+			classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
+			classPool.importPackage(Field.class.getCanonicalName());
+			
+			CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField$" + field.hashCode());
+			cc.addInterface(classPool.get(FieldProxy.class.getName()));
+			cc.addField(CtField.make("private Field field;", cc));
+			
+			CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Field.class.getName())}, cc);
+			constructor.setBody("{this.field = (Field)$1;}");
+			cc.addConstructor(constructor);
+			
+			cc.addMethod(CtMethod.make("public Field field(){return field;}", cc));
+			cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
+			cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
+			
+			ret = (FieldProxy) cc.toClass().getConstructor(Field.class).newInstance(field);
+			fieldCache.put(field, ret);
+		}
 		return ret;
 	}
 	
@@ -230,24 +242,30 @@ public abstract class ReflectUtils {
 		if(ret != null)
 			return ret;
 		
-		ClassPool classPool = new ClassPool(true);
-		classPool.insertClassPath(new ClassClassPath(MethodProxy.class));
-		classPool.importPackage(Method.class.getCanonicalName());
+		synchronized(methodCache) {
+			ret = methodCache.get(method);
+			if(ret != null)
+				return ret;
 		
-		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod$" + method.hashCode());
-		
-		cc.addInterface(classPool.get(MethodProxy.class.getName()));
-		cc.addField(CtField.make("private Method method;", cc));
-		
-		CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Method.class.getName())}, cc);
-		constructor.setBody("{this.method = (Method)$1;}");
-		cc.addConstructor(constructor);
-		
-		cc.addMethod(CtMethod.make("public Method method(){return method;}", cc));
-		cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
-		
-		ret = (MethodProxy) cc.toClass().getConstructor(Method.class).newInstance(method);
-		methodCache.put(method, ret);
+			ClassPool classPool = ClassPool.getDefault();
+			classPool.insertClassPath(new ClassClassPath(MethodProxy.class));
+			classPool.importPackage(Method.class.getCanonicalName());
+			
+			CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod$" + method.hashCode());
+			
+			cc.addInterface(classPool.get(MethodProxy.class.getName()));
+			cc.addField(CtField.make("private Method method;", cc));
+			
+			CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Method.class.getName())}, cc);
+			constructor.setBody("{this.method = (Method)$1;}");
+			cc.addConstructor(constructor);
+			
+			cc.addMethod(CtMethod.make("public Method method(){return method;}", cc));
+			cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
+			
+			ret = (MethodProxy) cc.toClass().getConstructor(Method.class).newInstance(method);
+			methodCache.put(method, ret);
+		}
 		return ret;
 	}
 	
