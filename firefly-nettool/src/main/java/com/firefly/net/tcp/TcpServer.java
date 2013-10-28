@@ -21,8 +21,7 @@ import com.firefly.net.EventManager;
 import com.firefly.net.Handler;
 import com.firefly.net.Server;
 import com.firefly.net.Worker;
-import com.firefly.net.event.CurrentThreadEventManager;
-import com.firefly.net.event.ThreadPoolEventManager;
+import com.firefly.net.event.DefaultEventManager;
 import com.firefly.net.exception.NetException;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -85,13 +84,7 @@ public class TcpServer implements Server {
 	}
 
 	private void listen(ServerSocketChannel serverSocketChannel) {
-		EventManager eventManager = null;
-		if (config.getHandleThreads() >= 0) {
-			eventManager = new ThreadPoolEventManager(config);
-		} else {
-			eventManager = new CurrentThreadEventManager(config);
-		}
-
+		EventManager eventManager = new DefaultEventManager(config);
 		log.info("server worker num: {}", config.getWorkerThreads());
 		workers = new Worker[config.getWorkerThreads()];
 		for (int i = 0; i < config.getWorkerThreads(); i++)

@@ -1,36 +1,40 @@
-package com.firefly.net.support;
+package test.net.tcp.example;
 
 import java.util.concurrent.BlockingQueue;
 
 import com.firefly.net.Session;
+import com.firefly.net.support.SynchronousObject;
 import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public class TcpConnection {
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	
 	private Session session;
 	private long timeout;
-	private BlockingQueue<MessageReceiveCallBack> queue;
-	public static final String QUEUE_KEY = "#message_queue";
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-
+	private BlockingQueue<MessageReceivedCallback> queue;
+	
 	public TcpConnection(Session session) {
 		this(session, 0);
 	}
 	
 	public TcpConnection(Session session, long timeout) {
-		this.queue = new LinkedTransferQueue<MessageReceiveCallBack>();
+		this.queue = new LinkedTransferQueue<MessageReceivedCallback>();
 		this.session = session;
-		this.session.setAttribute(QUEUE_KEY, queue);
 		this.timeout = timeout > 0 ? timeout : 5000L;
+	}
+	
+	MessageReceivedCallback poll() {
+		return queue.poll();
 	}
 
 	public Object send(Object obj) {
 		final SynchronousObject<Object> ret = new SynchronousObject<Object>();
-		send(obj, new MessageReceiveCallBack() {
+		send(obj, new MessageReceivedCallback() {
 
 			@Override
-			public void messageRecieved(Session session, Object obj) {
+			public void messageRecieved(TcpConnection connection, Object obj) {
 				ret.put(obj, timeout);
 			}
 		});
@@ -38,7 +42,7 @@ public class TcpConnection {
 		return ret.get(timeout);
 	}
 
-	public void send(Object obj, MessageReceiveCallBack callback) {
+	public void send(Object obj, MessageReceivedCallback callback) {
 		if (queue.offer(callback))
 			session.encode(obj);
 		else

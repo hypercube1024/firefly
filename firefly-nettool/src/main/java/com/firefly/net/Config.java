@@ -3,7 +3,6 @@ package com.firefly.net;
 public class Config {
 	
 	private int timeout = 10 * 1000;
-	private int handleThreads = -1;
 	private int receiveByteBufferSize = 0;
 	private int workerThreads;
 	{
@@ -37,22 +36,6 @@ public class Config {
 	 */
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
-	}
-	
-	public int getHandleThreads() {
-		return handleThreads;
-	}
-
-	/**
-	 * Set thread number of handler thread pool <br/>
-	 * if the number greater than 0, the handler will use the fixed number thread pool.<br/>
-	 * if the number equals 0, the handler will use the cache thread pool.<br/>
-	 * if the number less than 0, the handler will execute in worker thread<br/>
-	 * 
-	 * @param handleThreads thread number of handler thread pool
-	 */
-	public void setHandleThreads(int handleThreads) {
-		this.handleThreads = handleThreads;
 	}
 
 	public int getReceiveByteBufferSize() {

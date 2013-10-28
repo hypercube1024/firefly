@@ -1,4 +1,4 @@
-package com.firefly.net.support;
+package test.net.tcp.example;
 
 import java.nio.ByteBuffer;
 

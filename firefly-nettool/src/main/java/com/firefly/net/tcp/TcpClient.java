@@ -18,8 +18,7 @@ import com.firefly.net.Encoder;
 import com.firefly.net.EventManager;
 import com.firefly.net.Handler;
 import com.firefly.net.Worker;
-import com.firefly.net.event.CurrentThreadEventManager;
-import com.firefly.net.event.ThreadPoolEventManager;
+import com.firefly.net.event.DefaultEventManager;
 import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -55,13 +54,7 @@ public class TcpClient implements Client {
         if (config == null)
             throw new IllegalArgumentException("init error config is null");
         
-        EventManager eventManager = null;
-        if (config.getHandleThreads() >= 0) {
-			eventManager = new ThreadPoolEventManager(config);
-		} else {
-			eventManager = new CurrentThreadEventManager(config);
-		}
-        
+        EventManager eventManager = new DefaultEventManager(config);
         log.info("client worker num: {}", config.getWorkerThreads());
         workers = new Worker[config.getWorkerThreads()];
         for (int i = 0; i < config.getWorkerThreads(); i++)

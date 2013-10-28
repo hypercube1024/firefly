@@ -1,14 +1,15 @@
 package test.net.tcp;
 
-import com.firefly.net.Session;
-import com.firefly.net.support.StringLineDecoder;
-import com.firefly.net.support.StringLineEncoder;
-import com.firefly.net.support.TcpConnection;
-import com.firefly.net.support.MessageReceiveCallBack;
-import com.firefly.net.support.SimpleTcpClient;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+
 import java.util.concurrent.*;
+
+import test.net.tcp.example.MessageReceivedCallback;
+import test.net.tcp.example.SimpleTcpClient;
+import test.net.tcp.example.StringLineDecoder;
+import test.net.tcp.example.StringLineEncoder;
+import test.net.tcp.example.TcpConnection;
 
 public class StringLinePerformance {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
@@ -62,21 +63,21 @@ public class StringLinePerformance {
 			TcpConnection c = client.connect();
 			for (int i = 0; i < LOOP; i++) {
 				String message = "hello world! " + c.getId();
-				c.send(message, new MessageReceiveCallBack() {
+				c.send(message, new MessageReceivedCallback() {
 
 					@Override
-					public void messageRecieved(Session session, Object obj) {
+					public void messageRecieved(TcpConnection connection, Object obj) {
 						log.debug("rev: {}", obj);
 					}
 				});
 
 			}
-			c.send("quit", new MessageReceiveCallBack() {
+			c.send("quit", new MessageReceivedCallback() {
 
 				@Override
-				public void messageRecieved(Session session, Object obj) {
+				public void messageRecieved(TcpConnection connection, Object obj) {
 					log.debug("rev: {}", obj);
-					log.debug("session {} complete", session.getSessionId());
+					log.debug("session {} complete", connection.getId());
 				}
 			});
 			try {

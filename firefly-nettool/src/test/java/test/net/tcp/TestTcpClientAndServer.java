@@ -2,15 +2,18 @@ package test.net.tcp;
 
 import com.firefly.net.Config;
 import com.firefly.net.Server;
-import com.firefly.net.support.StringLineDecoder;
-import com.firefly.net.support.StringLineEncoder;
-import com.firefly.net.support.TcpConnection;
-import com.firefly.net.support.SimpleTcpClient;
 import com.firefly.net.tcp.TcpServer;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import test.net.tcp.example.SimpleTcpClient;
+import test.net.tcp.example.StringLineDecoder;
+import test.net.tcp.example.StringLineEncoder;
+import test.net.tcp.example.TcpConnection;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,7 +26,6 @@ public class TestTcpClientAndServer {
 	public void testHello() {
 		Server server = new TcpServer();
 		Config config = new Config();
-		config.setHandleThreads(100);
 		config.setDecoder(new StringLineDecoder());
 		config.setEncoder(new StringLineEncoder());
 		config.setHandler(new SendFileHandler());

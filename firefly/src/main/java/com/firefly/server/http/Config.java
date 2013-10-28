@@ -126,78 +126,34 @@ public class Config {
 		this.httpSessionListener = httpSessionListener;
 	}
 
-	/**
-	 * 获取HttpSession默认超时时间，单位秒
-	 * 
-	 * @return HttpSession默认超时时间
-	 */
 	public int getMaxSessionInactiveInterval() {
 		return maxSessionInactiveInterval;
 	}
 
-	/**
-	 * 设置HttpSession默认超时时间，单位秒
-	 * 
-	 * @param maxSessionInactiveInterval
-	 *            HttpSession默认超时时间
-	 */
 	public void setMaxSessionInactiveInterval(int maxSessionInactiveInterval) {
 		this.maxSessionInactiveInterval = maxSessionInactiveInterval;
 	}
 
-	/**
-	 * 获取HttpSession在cookie或者url中的名称
-	 * 
-	 * @return HttpSession的名称
-	 */
 	public String getSessionIdName() {
 		return sessionIdName;
 	}
 
-	/**
-	 * 设置HttpSession在cookie或者url中的名称
-	 * 
-	 * @param sessionIdName
-	 *            HttpSession的名称
-	 */
 	public void setSessionIdName(String sessionIdName) {
 		this.sessionIdName = sessionIdName;
 	}
 
-	/**
-	 * 获取HttpSession管理器，默认为本地Session存储
-	 * 
-	 * @return HttpSession管理器
-	 */
 	public HttpSessionManager getHttpSessionManager() {
 		return httpSessionManager;
 	}
 
-	/**
-	 * 设置HttpSession管理器
-	 * 
-	 * @param httpSessionManager
-	 *            HttpSession管理器
-	 */
 	public void setHttpSessionManager(HttpSessionManager httpSessionManager) {
 		this.httpSessionManager = httpSessionManager;
 	}
 
-	/**
-	 * 获取静态文件访问过滤器，此过滤器可以拦截本地静态文件的访问，并做出控制
-	 * 
-	 * @return 静态文件访问过滤器
-	 */
 	public FileAccessFilter getFileAccessFilter() {
 		return fileAccessFilter;
 	}
 
-	/**
-	 * 设置静态文件访问过滤器
-	 * 
-	 * @param fileAccessFilter
-	 *            静态文件访问过滤器
-	 */
 	public void setFileAccessFilter(FileAccessFilter fileAccessFilter) {
 		this.fileAccessFilter = fileAccessFilter;
 	}

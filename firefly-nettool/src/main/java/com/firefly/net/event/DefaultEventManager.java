@@ -7,15 +7,15 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 /**
- * 使用worker线程执行事件，用于客户端操作
+ * It is the callback of net event in Worker's thread.
  * @author qiupengtao
  *
  */
-public class CurrentThreadEventManager implements EventManager {
+public class DefaultEventManager implements EventManager {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private Config config;
 
-	public CurrentThreadEventManager(Config config) {
+	public DefaultEventManager(Config config) {
 		log.info("CurrentThreadEventManager");
 		this.config = config;
 	}
