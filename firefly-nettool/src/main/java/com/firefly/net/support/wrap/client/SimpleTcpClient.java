@@ -1,4 +1,4 @@
-package test.net.tcp.example;
+package com.firefly.net.support.wrap.client;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,15 +13,17 @@ import com.firefly.net.tcp.TcpClient;
 public class SimpleTcpClient {
 	private String host;
 	private int port;
+	private SimpleTcpClientHandler handler;
 
 	private Map<Integer, ConnectionInfo> connectionInfo = new ConcurrentHashMap<Integer,ConnectionInfo>();
 	private Client client;
 	private AtomicInteger sessionId = new AtomicInteger(0);
 
-	public SimpleTcpClient(String host, int port, Decoder decoder, Encoder encoder) {
+	public SimpleTcpClient(String host, int port, Decoder decoder, Encoder encoder, SimpleTcpClientHandler handler) {
 		this.host = host;
 		this.port = port;
-		client = new TcpClient(decoder, encoder, new SimpleTcpClientHandler(connectionInfo));
+		this.handler = handler;
+		client = new TcpClient(decoder, encoder, handler);
 	}
 
 	public TcpConnection connect() {
@@ -42,6 +44,8 @@ public class SimpleTcpClient {
 	}
 	
 	public void connect(long timeout, SessionOpenedCallback callback) {
+		handler.setConnectionInfo(connectionInfo);
+		
 		int id = sessionId.getAndIncrement();
 		ConnectionInfo info = new ConnectionInfo();
 		info.callback = callback;

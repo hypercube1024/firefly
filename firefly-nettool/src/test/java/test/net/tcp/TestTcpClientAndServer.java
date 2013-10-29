@@ -1,23 +1,24 @@
 package test.net.tcp;
 
-import com.firefly.net.Config;
-import com.firefly.net.Server;
-import com.firefly.net.tcp.TcpServer;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import test.net.tcp.example.SimpleTcpClient;
-import test.net.tcp.example.StringLineDecoder;
-import test.net.tcp.example.StringLineEncoder;
-import test.net.tcp.example.TcpConnection;
+import static org.hamcrest.Matchers.is;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.hamcrest.Matchers.is;
+import org.junit.Assert;
+import org.junit.Test;
+
+import test.net.tcp.example.PipelineClientHandler;
+import test.net.tcp.example.StringLineDecoder;
+import test.net.tcp.example.StringLineEncoder;
+
+import com.firefly.net.Config;
+import com.firefly.net.Server;
+import com.firefly.net.support.wrap.client.SimpleTcpClient;
+import com.firefly.net.support.wrap.client.TcpConnection;
+import com.firefly.net.tcp.TcpServer;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class TestTcpClientAndServer {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
@@ -34,8 +35,7 @@ public class TestTcpClientAndServer {
 
 		final int LOOP = 50;
 		ExecutorService executorService = Executors.newFixedThreadPool(LOOP);
-		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900,
-				new StringLineDecoder(), new StringLineEncoder());
+		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler());
 
 		for (int i = 0; i < LOOP; i++) {
 			executorService.submit(new Runnable() {

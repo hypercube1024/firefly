@@ -1,4 +1,4 @@
-package test.net.tcp.example;
+package com.firefly.net.support.wrap.client;
 
 interface SessionOpenedCallback {
 	

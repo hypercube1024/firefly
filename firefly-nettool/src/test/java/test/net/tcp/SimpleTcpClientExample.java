@@ -1,16 +1,17 @@
 package test.net.tcp;
 
-import test.net.tcp.example.MessageReceivedCallback;
-import test.net.tcp.example.SimpleTcpClient;
+import test.net.tcp.example.PipelineClientHandler;
 import test.net.tcp.example.StringLineDecoder;
 import test.net.tcp.example.StringLineEncoder;
-import test.net.tcp.example.TcpConnection;
 
+import com.firefly.net.support.wrap.client.MessageReceivedCallback;
+import com.firefly.net.support.wrap.client.SimpleTcpClient;
+import com.firefly.net.support.wrap.client.TcpConnection;
 import com.firefly.utils.log.LogFactory;
 
 public class SimpleTcpClientExample {
 	public static void main(String[] args) throws Throwable {
-		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder());
+		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler());
 		long start = System.currentTimeMillis();
 		TcpConnection c = client.connect();
 		long end = System.currentTimeMillis();

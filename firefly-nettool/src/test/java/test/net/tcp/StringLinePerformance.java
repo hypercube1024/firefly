@@ -1,15 +1,19 @@
 package test.net.tcp;
 
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import java.util.concurrent.*;
-
-import test.net.tcp.example.MessageReceivedCallback;
-import test.net.tcp.example.SimpleTcpClient;
+import test.net.tcp.example.PipelineClientHandler;
 import test.net.tcp.example.StringLineDecoder;
 import test.net.tcp.example.StringLineEncoder;
-import test.net.tcp.example.TcpConnection;
+
+import com.firefly.net.support.wrap.client.MessageReceivedCallback;
+import com.firefly.net.support.wrap.client.SimpleTcpClient;
+import com.firefly.net.support.wrap.client.TcpConnection;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class StringLinePerformance {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
@@ -121,7 +125,7 @@ public class StringLinePerformance {
 	public static void main(String[] args) {
 		ExecutorService executorService = Executors.newFixedThreadPool(THREAD);
 		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900,
-				new StringLineDecoder(), new StringLineEncoder());
+				new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler());
 		final CyclicBarrier barrier = new CyclicBarrier(THREAD, new StatTask());
 
 		for (int i = 0; i < THREAD; i++)

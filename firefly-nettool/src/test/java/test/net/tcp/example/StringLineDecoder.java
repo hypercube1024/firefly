@@ -4,13 +4,14 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
+import com.firefly.net.support.wrap.client.SessionAttachment;
 
 public class StringLineDecoder implements Decoder {
 	private static final byte LINE_LIMITOR = '\n';
 
 	@Override
 	public void decode(ByteBuffer buffer, Session session) throws Throwable {
-		SessionInfo sessionInfo = (SessionInfo)session.getAttachment();
+		SessionAttachment sessionInfo = (SessionAttachment)session.getAttachment();
 		ByteBuffer now = buffer;
 		ByteBuffer prev = sessionInfo.byteBuffer;
 

@@ -6,11 +6,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 
-import test.net.tcp.example.SessionInfo;
-
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.net.support.wrap.client.SessionAttachment;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -22,12 +21,12 @@ public class SendFileHandler implements Handler {
 		log.debug("session open |" + session.getSessionId());
 		log.debug("local: " + session.getLocalAddress());
 		log.debug("remote: " + session.getRemoteAddress());
-		session.attachObject(new SessionInfo());
+		session.attachObject(new SessionAttachment());
 	}
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
-		log.info("session close|" + session.getSessionId());
+		log.debug("session close|" + session.getSessionId());
 	}
 
 	@Override
