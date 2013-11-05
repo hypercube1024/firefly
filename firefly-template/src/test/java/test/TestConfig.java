@@ -76,6 +76,7 @@ public class TestConfig {
 		System.out.println("=======================================");
 		
 		out = new ByteArrayOutputStream();
+		model.put("otherAge", 33);
 		model.put("user", user);
 		model.put("login", true);
 		view.render(model, out);

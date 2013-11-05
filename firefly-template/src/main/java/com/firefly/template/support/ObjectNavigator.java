@@ -113,6 +113,12 @@ public class ObjectNavigator {
 		Object ret = find(model, el);
 		return ret != null ? String.valueOf(ret) : "";
 	}
+	
+	@SuppressWarnings("unchecked")
+	public Comparable<Object> getComparable(Model model, String el) {
+		Object ret = find(model, el);
+		return (Comparable<Object>)ret;
+	}
 
 	public Object find(Model model, String el) {
 		Object current = null;

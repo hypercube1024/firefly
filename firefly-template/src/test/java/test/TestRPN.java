@@ -92,25 +92,33 @@ public class TestRPN {
 		Assert.assertThat(se.parse("${i} != null && ${i.size} > 0"), is("objNav.find(model ,\"i\") != null && (objNav.getInteger(model ,\"i.size\") > 0)"));
 	}
 	
-	@Test(expected = ExpressionError.class)
+	@Test
 	public void testELParseError() {
 		StatementExpression se = new StatementExpression();
-		se.parse("${i} + ${j} + ${k}");
+		Assert.assertThat(se.parse("${i} + ${j} + ${k}"), is("objNav.getValue(model ,\"i\") + objNav.getValue(model ,\"j\") + objNav.getValue(model ,\"k\")"));
 	}
 	
-	@Test(expected = ExpressionError.class)
+	@Test
 	public void testELParseError2() {
 		StatementExpression se = new StatementExpression();
-		se.parse("${i} + ${j} + 2");
+		Assert.assertThat(se.parse("${i} + ${j} + 2"),is(se.parse("${i}-- + ${j} + 2")));
 	}
 	
 	@Test(expected = ExpressionError.class)
 	public void testELParseError3() {
 		StatementExpression se = new StatementExpression();
-		se.parse("${i}-- + ${j} + 2");
+		se.parse("${i} >= ${j} < ${k}");
 	}
 	
 	public static void main(String[] args) {
+		StatementExpression se = new StatementExpression();
+		System.out.println(se.parse("${i} + ${j} + ${k}"));
+		System.out.println(se.parse("${i} + ${j} + 2"));
+		System.out.println(se.parse("${i}-- + ${j} + 2"));
+		System.out.println(se.parse("${i} >= ${j} < ${k}"));
+	}
+	
+	public static void main6(String[] args) {
 		int i = 3 + 4 + -(-(2 - 1) + 1);
 		System.out.println(i);
 //		System.out.println(preprocessing("3 + 4 + (0 -(-(2 - 1) + 1))"));

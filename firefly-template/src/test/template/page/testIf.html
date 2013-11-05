@@ -26,6 +26,24 @@
 	<!-- #end -->
 	
 	<!-- #eval ${user.age} + ${user.age} -->
+	|
+	<!-- #eval ${user.age} / ${user.age} -->
+	|
+	
+	<!-- #if ${user} != null -->
+		<!-- #if ${user.age} <= ${otherAge} -->
+		<div>otherAge  &gt;= age ... </div>
+		<!-- #end -->
+		
+		<!-- #if ${user.age} >= ${user.age} && ${user.age} < 30 -->
+		<div>age &gt;= age .. </div>
+		<!-- #end -->
+	<!-- #end -->
+	
+	<!-- #if ${user.age} / ${user.age} + 1 > 1 -->
+	<div>age / age </div>
+	<!-- #end -->
+	
 	<!-- #if ${user.age} + ${user.age} == "2525"  -->
 	<div>age 25 + 25</div>
 	<!-- #end -->
