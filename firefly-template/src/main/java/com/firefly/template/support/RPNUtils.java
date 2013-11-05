@@ -18,8 +18,8 @@ public class RPNUtils {
 	private static final Set<String> ASSIGNMENT_OPERATOR = new HashSet<String>(Arrays.asList("=", "+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "<<=", ">>=", ">>>="));
 	
 	/**
-	 * 生成逆波兰表达式
-	 * 符号优先级：
+	 * This method parses the expression and creates Reverse Polish notation 
+	 * symbol priority：
 	 * 10: "*", "/", "%"
 	 *	9: "+", "-" 
 	 *	8: ">>", ">>>", "<<"
@@ -31,8 +31,8 @@ public class RPNUtils {
 	 *	2: "&&"
 	 *	1: "||"
 	 *	0: "=", "+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "<<=", ">>=", ">>>=" //0
-	 * @param content 需要转化的表达式
-	 * @return 逆波兰表示法
+	 * @param text the infix notation 
+	 * @return A list has many tokens and the sequence of postfix notation
 	 */
 	public static List<Fragment> getReversePolishNotation(String text) {
 		String content = preprocessing(text);
@@ -270,11 +270,6 @@ public class RPNUtils {
 		return list;
 	}
 	
-	/**
-	 * 预处理单目运算符，把单目运算变成双目运算，例如：-(3-4)*4 转化为 (0-(3-4))*4
-	 * @param content 需要转化的表达式
-	 * @return 转化后的表达式
-	 */
 	private static String preprocessing(String content) {
 		StringBuilder ret = new StringBuilder();
 		if(preprocessing0(content, ret))
@@ -355,7 +350,7 @@ public class RPNUtils {
 	}
 	
 	/**
-	 * 去掉多余+,-号
+	 * remove redundant symbols, such as +, -
 	 * @param v
 	 * @return
 	 */

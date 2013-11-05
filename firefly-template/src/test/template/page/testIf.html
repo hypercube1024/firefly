@@ -21,6 +21,19 @@
 	<div>年龄大于18</div>
 	<!-- #end -->
 	
+	<!-- #if ${user.age} * ${user.age} > 20 -->
+	<div>age 25 * 25</div>
+	<!-- #end -->
+	
+	<!-- #eval ${user.age} + ${user.age} -->
+	<!-- #if ${user.age} + ${user.age} == "2525"  -->
+	<div>age 25 + 25</div>
+	<!-- #end -->
+	
+	<!-- #if ${user.age} + 30 > 50  -->
+	<div>age + 30 &gt; 50</div>
+	<!-- #end -->
+	
 	<!-- #if 15*2<=${user.age}  -->
 	<div>年龄不小于30</div>
 	<!-- #end -->
