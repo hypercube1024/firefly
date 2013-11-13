@@ -160,13 +160,15 @@ public class ObjectNavigator {
 			
 			Object ret = null;
 
-			if (isMapKey(keyEl)) { // map
-				if ((obj instanceof Map))
+			if (isStringKey(keyEl)) {
+				if (obj instanceof Map)
 					ret = ((Map<?, ?>) obj).get(keyEl.substring(1, keyEl.length() - 1));
 			} else { // list or array
 				int index = Integer.parseInt(keyEl);
-				if ((obj instanceof List))
+				if (obj instanceof List)
 					ret = ((List<?>) obj).get(index);
+				else if (obj instanceof Map)
+					ret = ((Map<?, ?>) obj).get(index);
 				else
 					ret = getArrayObject(obj, index);
 			}
@@ -186,13 +188,15 @@ public class ObjectNavigator {
 			
 			Object ret = null;
 			
-			if (isMapKey(keyEl)) { // map
-				if ((current instanceof Map))
+			if (isStringKey(keyEl)) {
+				if (current instanceof Map)
 					ret = ((Map<?, ?>) current).get(keyEl.substring(1, keyEl.length() - 1));
 			} else { // list or array
 				int index = Integer.parseInt(keyEl);
-				if ((current instanceof List))
+				if (current instanceof List)
 					ret = ((List<?>) current).get(index);
+				else if (current instanceof Map)
+					ret = ((Map<?, ?>) current).get(index);
 				else
 					ret = getArrayObject(current, index);
 			}
@@ -209,7 +213,7 @@ public class ObjectNavigator {
 		}
 	}
 
-	private boolean isMapKey(String el) {
+	private boolean isStringKey(String el) {
 		char head = el.charAt(0);
 		char tail = el.charAt(el.length() - 1);
 		return ((head == '\'') && (tail == '\'')) || ((head == '"') && (tail == '"'));

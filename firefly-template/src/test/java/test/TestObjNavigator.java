@@ -17,6 +17,17 @@ import com.firefly.template.support.ObjectNavigator;
 
 public class TestObjNavigator {
 	
+	public void testMap() {
+		Map<Integer, Map<String, String>> map = new HashMap<Integer, Map<String, String>>();
+		Map<String, String> m1 = new HashMap<String, String>();
+		m1.put("key1", "key1");
+		map.put(4, m1);
+		Model model = new ModelMock();
+		model.put("testMap", map);
+		ObjectNavigator o = ObjectNavigator.getInstance();
+		Assert.assertThat(o.find(model, "testMap[4]['key1']").toString(), equalTo("key1"));
+	}
+	
 	@Test
 	public void testRoot() {
 		Map<String, Object> map2 = new HashMap<String, Object>();
@@ -37,12 +48,12 @@ public class TestObjNavigator {
 		model.put("list", list);
 		
 		ObjectNavigator o = ObjectNavigator.getInstance();
-		Assert.assertThat(o.find(model, "a").toString(), is("fffff"));
-		Assert.assertThat(o.find(model, "b['ccc']").toString(), is("ddd"));
-		Assert.assertThat(o.find(model, "b['eee']").toString(), is("fff"));
-		Assert.assertThat(o.find(model, "b[\"ccc\"]").toString(), is("ddd"));
-		Assert.assertThat((Integer)o.find(model, "arr[2]"), is(333));
-		Assert.assertThat(o.find(model, "list[2]").toString(), is("list333"));
+		Assert.assertThat(o.find(model, "a").toString(), equalTo("fffff"));
+		Assert.assertThat(o.find(model, "b['ccc']").toString(), equalTo("ddd"));
+		Assert.assertThat(o.find(model, "b['eee']").toString(), equalTo("fff"));
+		Assert.assertThat(o.find(model, "b[\"ccc\"]").toString(), equalTo("ddd"));
+		Assert.assertThat((Integer)o.find(model, "arr[2]"), equalTo(333));
+		Assert.assertThat(o.find(model, "list[2]").toString(), equalTo("list333"));
 	}
 	
 	@Test
@@ -81,13 +92,13 @@ public class TestObjNavigator {
 		model.put("foo", foo);
 		
 		ObjectNavigator o = ObjectNavigator.getInstance();
-		Assert.assertThat(String.valueOf(o.find(model, "foo.bar.info")), is("bar1"));
-		Assert.assertThat(String.valueOf(o.find(model, "foo.bar.serialNumber")), is("33"));
-		Assert.assertThat(String.valueOf(o.find(model, "foo.bar.price")), is("3.3"));
-		Assert.assertThat(String.valueOf(o.find(model, "foo.numbers[2]")), is("5"));
-		Assert.assertThat(String.valueOf(o.find(model, "foo.map['bar2'].price")), is("2.3"));
-		Assert.assertThat(String.valueOf(o.find(model, "foo.map2['map4']['hello4']['hello3']")), is("world3"));
-		Assert.assertThat(String.valueOf(o.find(model, "foo.map2['map4']['hello4']['arr'][2]")), is("7"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.bar.info")), equalTo("bar1"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.bar.serialNumber")), equalTo("33"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.bar.price")), equalTo("3.3"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.numbers[2]")), equalTo("5"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.map['bar2'].price")), equalTo("2.3"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.map2['map4']['hello4']['hello3']")), equalTo("world3"));
+		Assert.assertThat(String.valueOf(o.find(model, "foo.map2['map4']['hello4']['arr'][2]")), equalTo("7"));
 		Assert.assertThat(o.find(model, "foo.map['bar5']"), nullValue());
 		Assert.assertThat(o.find(model, "ok"), nullValue());
 	}
@@ -141,18 +152,18 @@ public class TestObjNavigator {
 		System.out.println(o.find(model, "foo.map2['map4']['hello4']['hello3']"));
 		System.out.println(o.find(model, "foo.map2['map4']['hello4']['arr'][2]"));
 		
-//		long start = System.currentTimeMillis();
+//		long start = System.currentTimeMillequalTo();
 //		for (int i = 0; i < 1000000; i++) {
 //			o.find(model, "foo.numbers[2]");
 //		}
-//		long end = System.currentTimeMillis() - start;
+//		long end = System.currentTimeMillequalTo() - start;
 //		System.out.println(o.find(model, "foo.numbers[2]") + "|" + end);
 //		
-//		start = System.currentTimeMillis();
+//		start = System.currentTimeMillequalTo();
 //		for (int i = 0; i < 1000000; i++) {
 //			o.find(model, "foo.bags[3]");
 //		}
-//		end = System.currentTimeMillis() - start;
+//		end = System.currentTimeMillequalTo() - start;
 //		System.out.println(o.find(model, "foo.bags[3]") + "|" + end);
 //		List<Object> list = null;
 //		for(Object obj : (Collection<?>)list) {
