@@ -78,6 +78,13 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 	public void popRef() {
 		deque.removeFirst();
 	}
+	
+	private void write(char ch, boolean needExpand) {
+		if(needExpand)
+			write(ch);
+		else
+			buf[count++] = ch;
+	}
 
 	private void writeJsonString0(String value) {
 		boolean needExpand = false;
@@ -86,42 +93,42 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 			char ch = value.charAt(i);
 			switch (ch) {
 			case '\b':
-				buf[count++] = '\\';
-				buf[count++] = 'b';
+				write('\\', needExpand);
+				write('b', needExpand);
 				break;
 			case '\n':
-				buf[count++] = '\\';
-				buf[count++] = 'n';
+				write('\\', needExpand);
+				write('n', needExpand);
 				break;
 			case '\r':
-				buf[count++] = '\\';
-				buf[count++] = 'r';
+				write('\\', needExpand);
+				write('r', needExpand);
 				break;
 			case '\f':
-				buf[count++] = '\\';
-				buf[count++] = 'f';
+				write('\\', needExpand);
+				write('f', needExpand);
 				break;
 			case '\\':
-				buf[count++] = '\\';
-				buf[count++] = '\\';
+				write('\\', needExpand);
+				write('\\', needExpand);
 				break;
 			case '/':
-				buf[count++] = '\\';
-				buf[count++] = '/';
+				write('\\', needExpand);
+				write('/', needExpand);
 				break;
 			case '"':
-				buf[count++] = '\\';
-				buf[count++] = '"';
+				write('\\', needExpand);
+				write('"', needExpand);
 				break;
 			case '\t':
-				buf[count++] = '\\';
-				buf[count++] = 't';
+				write('\\', needExpand);
+				write('t', needExpand);
 				break;
 
 			default:
 				String hexStr = escapeSpecialCharacter(ch);
 				if(hexStr == null) {
-					buf[count++] = ch;
+					write(ch, needExpand);
 				} else {
 					needExpand = true;
 					write(hexStr);
@@ -129,10 +136,7 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 				break;
 			}
 		}
-		if(needExpand)
-			write(QUOTE);
-		else
-			buf[count++] = QUOTE;
+		write(QUOTE, needExpand);
 	}
 	
 	@Override
