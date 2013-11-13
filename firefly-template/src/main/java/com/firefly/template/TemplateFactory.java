@@ -12,6 +12,8 @@ import com.firefly.template.function.AutoincrementFunction;
 import com.firefly.template.function.CutStringFunction;
 import com.firefly.template.function.DateFormatFunction;
 import com.firefly.template.function.LengthFunction;
+import com.firefly.template.function.ModuloOutputFunction;
+import com.firefly.template.function.RemoveAttributeFunction;
 import com.firefly.template.function.XmlEscapeFunction;
 import com.firefly.template.parser.ViewFileReader;
 
@@ -56,6 +58,8 @@ public class TemplateFactory {
 		FunctionRegistry.add("increment", new AutoincrementFunction(config.getCharset()));
 		FunctionRegistry.add("cut", new CutStringFunction(config.getCharset()));
 		FunctionRegistry.add("escape", new XmlEscapeFunction(config.getCharset()));
+		FunctionRegistry.add("remove", new RemoveAttributeFunction());
+		FunctionRegistry.add("modOut", new ModuloOutputFunction(config.getCharset()));
 		
 		ViewFileReader reader = new ViewFileReader(config);
 		List<String> javaFiles = reader.getJavaFiles();

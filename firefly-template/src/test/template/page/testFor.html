@@ -28,10 +28,25 @@ ${i} &nbsp;&nbsp;
 	</thead>
 	<tbody>
 	<!-- #for u : ${users} -->
-	<tr><td>${increment("u_index", true)}|||${u_index}|||${u.name}|||${len(u.name)}</td><td>${u.age}</td></tr>
+	<tr>
+	<td>${modOut("mod_index", "cls1", 2)}</td>
+	<td>${modOut("mod_index2", "cls2", 2, true)}</td>
+	<td>${increment("u_index", true)}|||${u_index}|||${u.name}|||${len(u.name)}</td>
+	<td>${u.age}</td>
+	</tr>
 	<!-- #end -->
 	</tbody>
 </table>
+
+${mod_index}|${mod_index2}|${u_index}
+${remove("mod_index", "mod_index2", "u_index")}
+after removing : ${mod_index}|${mod_index2}|${u_index}
+
+<!-- #for u : ${users} -->
+<span>${modOut("mod_index", "cls1", 3)}</span>
+<span>${modOut("mod_index2", "cls1", 3, true)}</span>
+<hr></hr>
+<!-- #end -->
 
 </div>
 </body>

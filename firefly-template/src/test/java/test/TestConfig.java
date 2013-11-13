@@ -82,7 +82,7 @@ public class TestConfig {
 		view.render(model, out);
 		out.close();
 		System.out.println(out.toString());
-		System.out.println("=======================================");
+		System.out.println("=======================================for");
 		
 		// #for
 		model = new ModelMock();
