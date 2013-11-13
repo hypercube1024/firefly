@@ -80,6 +80,7 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 	}
 
 	private void writeJsonString0(String value) {
+		boolean needExpand = false;
 		buf[count++] = QUOTE;
 		for (int i = 0; i < value.length(); i++) {
 			char ch = value.charAt(i);
@@ -122,12 +123,16 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 				if(hexStr == null) {
 					buf[count++] = ch;
 				} else {
+					needExpand = true;
 					write(hexStr);
 				}
 				break;
 			}
 		}
-		buf[count++] = QUOTE;
+		if(needExpand)
+			write(QUOTE);
+		else
+			buf[count++] = QUOTE;
 	}
 	
 	@Override
