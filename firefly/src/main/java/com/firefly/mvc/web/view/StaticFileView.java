@@ -49,20 +49,35 @@ public class StaticFileView implements View {
 	}
 	
 	/**
-	 * 去除../或者./等非法路径，防止任意文件访问漏洞
-	 * @param path 请求文件路径
+	 * It checks input path, if this method returns true, the path is legal. 
+	 * The client can only visit all the subdirectories of server root directory. 
+	 * @param path the file path
 	 * @return
 	 */
 	public static boolean checkPath(String path) {
 		if(path.length() < 3)
 			return true;
 
-		if(path.charAt(0) == '/' && path.charAt(1) == '.') {
-			if(path.charAt(2) == '/') 
-				return false;
-			if(path.length() > 3) {
-				if(path.charAt(2) == '.' || path.charAt(3) == '/')
-					return false;
+		if(path.charAt(0) == '/') {
+			for (int i = 1; i < path.length(); i++) {
+				char ch = path.charAt(i);
+			    if(ch == '/')
+			    	continue;
+			    
+			    if(ch != '.')
+			    	return true;
+			   
+			    if(i + 1 < path.length()) {
+			    	char next = path.charAt(i + 1);
+				    if(ch == '.' && next == '/') {
+				    	 return false;
+				    }
+			     
+			    	if(i + 2 < path.length()) {
+			    		if(ch == '.' && next == '.' && path.charAt(i + 2) == '/')
+			    			return false;
+			    	}
+			    }
 			}
 		}
 		return true;
