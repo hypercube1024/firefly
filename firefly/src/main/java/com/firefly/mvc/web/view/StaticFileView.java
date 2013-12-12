@@ -65,7 +65,7 @@ public class StaticFileView implements View {
 			    	continue;
 			    
 			    if(ch != '.')
-			    	return true;
+			    	continue;
 			   
 			    if(i + 1 < path.length()) {
 			    	char next = path.charAt(i + 1);
