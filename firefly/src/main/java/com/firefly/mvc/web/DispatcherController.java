@@ -6,9 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 public interface DispatcherController {
 	
 	/**
-	 * 前端控制器，派发http请求
-	 * @param request HttpServletRequest对象
-	 * @param response HttpServletResponse对象
+	 * It dispatches HTTP request
 	 */
-	void dispatcher(HttpServletRequest request, HttpServletResponse response);
+	void dispatch(HttpServletRequest request, HttpServletResponse response);
 }

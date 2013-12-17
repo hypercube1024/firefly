@@ -22,7 +22,7 @@ public abstract class RequestHandler {
 	protected void doRequest(HttpServletRequestImpl request) throws IOException {
 		long start = Millisecond100Clock.currentTimeMillis();
 		try {
-			servletController.dispatcher(request, request.response);
+			servletController.dispatch(request, request.response);
 		} finally {
 			request.releaseInputStreamData();
 		}

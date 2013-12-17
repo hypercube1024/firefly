@@ -13,6 +13,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
+import com.firefly.server.http.ThreadPoolWrapper.BusinessLogicTask;
 import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.collection.TransferQueue;
 import com.firefly.utils.log.Log;
@@ -103,8 +104,14 @@ public class AsyncContextImpl implements AsyncContext {
 	}
 
 	@Override
-	public void start(Runnable run) {
-		Future<?> future = ThreadPoolWrapper.getExecutorService().submit(run);
+	public void start(final Runnable runnable) {
+		Future<?> future = ThreadPoolWrapper.submit(new BusinessLogicTask(request){
+
+			@Override
+			public void run() {
+				runnable.run();
+			}
+		});
 		threadFutureList.offer(future);
 	}
 

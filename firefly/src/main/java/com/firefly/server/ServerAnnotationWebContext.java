@@ -17,7 +17,7 @@ import com.firefly.utils.log.LogFactory;
 public class ServerAnnotationWebContext extends AnnotationWebContext {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private final Config serverConfig;
+	private Config serverConfig;
 	
 	public ServerAnnotationWebContext(String file) {
 		super(file);
@@ -28,7 +28,10 @@ public class ServerAnnotationWebContext extends AnnotationWebContext {
 	
 	public ServerAnnotationWebContext(Config serverConfig) {
 		super(serverConfig.getConfigFileName());
-		this.serverConfig = serverConfig;
+		this.serverConfig = getBean(Config.class);
+		if(this.serverConfig == null) {
+			this.serverConfig = serverConfig;
+		}
 		viewInit();
 	}
 	

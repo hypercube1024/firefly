@@ -9,10 +9,16 @@
 	<bean class="com.firefly.server.http.Config">
 		<property name="serverHome" value="/Users/qiupengtao/develop/eclipse_workspace/local_git/firefly/firefly/target/test-classes/page"></property>
 		<property name="host" value="localhost"></property>
-		<property name="port" value="7676"></property>
+		<property name="port" value="6655"></property>
 		<property name="keepAlive" value="true"></property>
-		<property name="pipeline" value="true"></property>
-		<property name="secure" value="true"></property>
+		<property name="pipeline" value="false"></property>
+		<property name="secure" value="false"></property>
+		
+		<property name="corePoolSize" value="1"></property>
+		<property name="maximumPoolSize" value="2"></property>
+		<property name="poolWaitTimeout" value="100"></property>
+		<property name="poolQueueSize" value="1"></property>
+		
 		<property name="errorPage">
 			<map>
 				<entry key="404" value="/error/err404.html"></entry>

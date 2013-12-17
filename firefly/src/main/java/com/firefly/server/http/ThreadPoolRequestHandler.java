@@ -1,11 +1,13 @@
 package com.firefly.server.http;
 
 import java.io.IOException;
+
 import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.Session;
+import com.firefly.server.http.ThreadPoolWrapper.BusinessLogicTask;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -19,18 +21,18 @@ public class ThreadPoolRequestHandler extends RequestHandler {
 
 	@Override
 	public void shutdown() {
-		ThreadPoolWrapper.getExecutorService().shutdown();
+		ThreadPoolWrapper.shutdown();
 	}
 
 	@Override
 	public void doRequest(final Session session, final HttpServletRequestImpl request) throws IOException {
-		if (request.response.system) { // 系统错误响应
+		if (request.response.system) { // response HTTP decode error
 			request.response.outSystemData();
 		} else {
 			if(request.isSupportPipeline()) {
 				doRequest(request);
 			} else {
-				ThreadPoolWrapper.getExecutorService().submit(new Runnable(){
+				ThreadPoolWrapper.submit(new BusinessLogicTask(request){
 					@Override
 					public void run() {
 						try {

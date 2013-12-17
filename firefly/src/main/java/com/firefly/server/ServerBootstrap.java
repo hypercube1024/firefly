@@ -36,7 +36,8 @@ public class ServerBootstrap {
 		long start = System.currentTimeMillis();
 		WebContext context = new ServerAnnotationWebContext(config);
 		try {
-			init(context, config);
+			Config c = context.getBean(Config.class);
+			init(context, c == null ? config : c);
 		} catch (Throwable e) {
 			log.error("firefly init error", e);
 		}
@@ -48,7 +49,7 @@ public class ServerBootstrap {
 		long start = System.currentTimeMillis();
 		WebContext context = new ServerAnnotationWebContext(configFileName);
 		try {
-			init(context, null);
+			init(context, context.getBean(Config.class));
 		} catch (Throwable e) {
 			log.error("firefly init error", e);
 		}
@@ -57,8 +58,7 @@ public class ServerBootstrap {
 	}
 	
 	private static void init(WebContext context, Config config) throws Throwable {
-		config = (config == null ? context.getBean(Config.class) : config);
-		ThreadPoolWrapper.init(config.getMaxThreadNum());
+		ThreadPoolWrapper.init(config);
 		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
 		

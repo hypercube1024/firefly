@@ -25,7 +25,14 @@ public class Config {
 				writeBufferSize = 8 * 1024,
 				maxConnections = 2000,
 				maxConnectionTimeout = 10 * 1000,
-				maxThreadNum = -1;
+				
+				corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
+                maximumPoolSize = 128, 
+                poolQueueSize = 50000;
+	
+	private long poolKeepAliveTime = 30 * 1000,
+				 poolWaitTimeout = 5 * 1000;
+	
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
@@ -341,7 +348,7 @@ public class Config {
 	}
 
 	/**
-	 * http body length threshold. if the length over threshold, server will use temp file save http body data.
+	 * If the length over threshold, server will use temporary file to save HTTP body.
 	 *  
 	 * @param httpBodyThreshold body data length threshold
 	 */
@@ -349,12 +356,44 @@ public class Config {
 		this.httpBodyThreshold = httpBodyThreshold;
 	}
 
-	public int getMaxThreadNum() {
-		return maxThreadNum;
+	public int getCorePoolSize() {
+		return corePoolSize;
 	}
 
-	public void setMaxThreadNum(int maxThreadNum) {
-		this.maxThreadNum = maxThreadNum;
+	public void setCorePoolSize(int corePoolSize) {
+		this.corePoolSize = corePoolSize;
+	}
+
+	public int getMaximumPoolSize() {
+		return maximumPoolSize;
+	}
+
+	public void setMaximumPoolSize(int maximumPoolSize) {
+		this.maximumPoolSize = maximumPoolSize;
+	}
+
+	public long getPoolKeepAliveTime() {
+		return poolKeepAliveTime;
+	}
+
+	public void setPoolKeepAliveTime(long poolKeepAliveTime) {
+		this.poolKeepAliveTime = poolKeepAliveTime;
+	}
+
+	public long getPoolWaitTimeout() {
+		return poolWaitTimeout;
+	}
+
+	public void setPoolWaitTimeout(long poolWaitTimeout) {
+		this.poolWaitTimeout = poolWaitTimeout;
+	}
+
+	public int getPoolQueueSize() {
+		return poolQueueSize;
+	}
+
+	public void setPoolQueueSize(int poolQueueSize) {
+		this.poolQueueSize = poolQueueSize;
 	}
 
 }

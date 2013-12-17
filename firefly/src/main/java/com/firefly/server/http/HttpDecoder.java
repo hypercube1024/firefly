@@ -209,7 +209,7 @@ public class HttpDecoder implements Decoder {
 
 					if (VerifyUtils.isEmpty(headLine)) { // http head decode finish
 						if(Monitor.CONN_COUNT.get() > config.getMaxConnections()) {
-							String msg = "connections count more than " + config.getMaxConnections();
+							String msg = "connections number has been more than " + config.getMaxConnections();
 							log.error(msg);
 							req.response.setHeader("Retry-After", "60");
 							req.response.setStatus(503);

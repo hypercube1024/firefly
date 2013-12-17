@@ -36,7 +36,7 @@ public class TestMvc {
 		request.setParameter("price", "79.9");
 		request.setParameter("sell", "true");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		
 		System.out.println(response.getAsString());
 		System.out.println(response.getHeader("Allow"));
@@ -55,7 +55,7 @@ public class TestMvc {
 		request.setParameter("price", "79.9");
 		request.setParameter("sell", "true");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Assert.assertThat(response.getHeader("Allow"), is("POST,GET"));
 //		System.out.println(response.getAsString());
 //		System.out.println(response.getHeader("Allow"));
@@ -69,7 +69,7 @@ public class TestMvc {
 		request.setContextPath("/firefly");
 		request.setMethod("GET");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		
 		Food food = (Food)request.getAttribute("fruit0");
 		Assert.assertThat(food.getName(), is("apple"));
@@ -92,7 +92,7 @@ public class TestMvc {
 		request.setContextPath("/firefly");
 		request.setMethod("GET");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		
 		Food food = (Food)request.getAttribute("fruit");
 		Assert.assertThat(food.getName(), is("orange"));
@@ -120,7 +120,7 @@ public class TestMvc {
 		request.setParameter("price", "79.9");
 		request.setParameter("sell", "true");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		
 		Assert.assertThat(response.getStatus(), is(404));
 	}
@@ -138,7 +138,7 @@ public class TestMvc {
 		request.setParameter("price", "79.9");
 		request.setParameter("sell", "true");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		
 		Assert.assertThat(response.getHeader("Allow"), is("POST"));
 		Assert.assertThat(request.getAttribute("book"), nullValue());
@@ -152,7 +152,7 @@ public class TestMvc {
 		request.setContextPath("/firefly");
 		request.setMethod("GET");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Assert.assertThat(request.getAttribute("hello").toString(),
 				is("你好 firefly!"));
 	}
@@ -168,7 +168,7 @@ public class TestMvc {
 		request.setParameter("id", "345");
 		request.setParameter("price", "23.3");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Book book = (Book) request.getAttribute("book");
 		Assert.assertThat(book.getText(), is("ddd"));
 		Assert.assertThat(book.getPrice(), is(23.3));
@@ -188,7 +188,7 @@ public class TestMvc {
 		request.setParameter("price", "79.9");
 		request.setParameter("sell", "true");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Book book = (Book) request.getAttribute("book");
 		Assert.assertThat(book.getText(), is("一本好书"));
 		Assert.assertThat(book.getPrice(), is(79.9));
@@ -204,7 +204,7 @@ public class TestMvc {
 		request.setContextPath("/firefly");
 		request.setMethod("GET");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Assert.assertThat(response.getAsString(), is("文本输出"));
 		
 		request = new MockHttpServletRequest();
@@ -213,7 +213,7 @@ public class TestMvc {
 		request.setContextPath("/firefly");
 		request.setMethod("GET");
 		response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Assert.assertThat(response.getAsString(), is("text-xo-333-444"));
 		
 		request = new MockHttpServletRequest();
@@ -222,7 +222,7 @@ public class TestMvc {
 		request.setContextPath("/firefly");
 		request.setMethod("GET");
 		response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Assert.assertThat(response.getAsString(), is("text-55555"));
 	}
 
@@ -239,7 +239,7 @@ public class TestMvc {
 		request.setParameter("price", "10.0");
 		request.setParameter("sell", "false");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		log.info(response.getAsString());
 		Assert.assertThat(response.getAsString().length(), greaterThan(10));
 		Book book = Json.toObject(response.getAsString(), Book.class);
@@ -256,7 +256,7 @@ public class TestMvc {
 		request.setContextPath("/firefly");
 		request.setMethod("GET");
 		MockHttpServletResponse response = new MockHttpServletResponse();
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 		Assert.assertThat(response.getHeader("Location"), is("/firefly/app/hello"));
 	}
 }

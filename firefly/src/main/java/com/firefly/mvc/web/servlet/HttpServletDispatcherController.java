@@ -21,7 +21,7 @@ public class HttpServletDispatcherController implements DispatcherController {
 	}
 
 	@Override
-	public void dispatcher(HttpServletRequest request, HttpServletResponse response) {
+	public void dispatch(HttpServletRequest request, HttpServletResponse response) {
 		String encoding = webContext.getEncoding();
 		try {
 			request.setCharacterEncoding(encoding);

@@ -52,7 +52,7 @@ public class DispatcherServlet extends HttpServlet {
 
 	protected void processDispatcher(HttpServletRequest request,
 			HttpServletResponse response) {
-		dispatcherController.dispatcher(request, response);
+		dispatcherController.dispatch(request, response);
 	}
 
 	@Override

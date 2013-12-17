@@ -129,7 +129,7 @@ public class IndexController {
 	}
 	
 	@RequestMapping(value = "/big")
-	public View testBigData(HttpServletRequest request) {
+	public View testBigData(HttpServletRequest request) throws InterruptedException {
 		final StringBuilder json = new StringBuilder();
 		try {
 			FileUtils.read(new File("/Users/qiupengtao/develop/jsontest.txt"), new LineReaderHandler(){
@@ -143,12 +143,14 @@ public class IndexController {
 			e.printStackTrace();
 		}
 		String ret = json.toString();
+		Thread.sleep(5000);
 		return new TextView(ret);
 	}
 	
 	@RequestMapping(value = "/error")
-	public View testError(HttpServletRequest request) {
+	public View testError(HttpServletRequest request) throws InterruptedException {
 		System.out.println("test error");
+		
 		throw new RuntimeException("test error");
 	}
 	
