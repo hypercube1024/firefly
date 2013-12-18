@@ -8,20 +8,30 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.server.http.HttpServletRequestImpl;
+import com.firefly.server.http.HttpServletResponseImpl;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class NetBufferedOutputStream extends OutputStream {
 
+	private static Log access = LogFactory.getInstance().getLog("firefly-access");
+	
 	protected byte[] buf;
 	protected int count;
 	protected Session session;
 	protected int bufferSize;
 	protected boolean keepAlive;
+	protected HttpServletRequestImpl request;
+	protected HttpServletResponseImpl response;
 
-	public NetBufferedOutputStream(Session session, int bufferSize,
+	public NetBufferedOutputStream(Session session, HttpServletRequestImpl request, HttpServletResponseImpl response, int bufferSize,
 			boolean keepAlive) {
 		this.session = session;
 		this.bufferSize = bufferSize;
 		this.keepAlive = keepAlive;
+		this.request = request;
+		this.response = response;
 		buf = new byte[bufferSize];
 	}
 
@@ -67,9 +77,22 @@ public class NetBufferedOutputStream extends OutputStream {
 
 	@Override
 	public void close() throws IOException {
-		flush();
-		if (!keepAlive)
-			session.close(false);
+		try {
+			flush();
+			if (!keepAlive)
+				session.close(false);
+		} finally {
+			access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}", 
+					session.getSessionId(), 
+					request.getHeader("X-Forwarded-For"),
+					request.getRemoteAddr(),
+					response.getStatus(),
+					request.getProtocol(),
+					request.getMethod(),
+					request.getRequestURI(),
+					request.getQueryString(),
+					request.getTimeDifference());
+		}
 	}
 
 	public void resetBuffer() {

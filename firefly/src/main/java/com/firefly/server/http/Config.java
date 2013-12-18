@@ -31,7 +31,7 @@ public class Config {
                 poolQueueSize = 50000;
 	
 	private long poolKeepAliveTime = 30 * 1000,
-				 poolWaitTimeout = 5 * 1000;
+				 poolWaitTimeout = 2 * 1000;
 	
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private int httpBodyThreshold = 4 * 1024 * 1024;

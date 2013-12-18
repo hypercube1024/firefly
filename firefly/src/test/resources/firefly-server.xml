@@ -14,10 +14,10 @@
 		<property name="pipeline" value="false"></property>
 		<property name="secure" value="false"></property>
 		
-		<property name="corePoolSize" value="1"></property>
-		<property name="maximumPoolSize" value="2"></property>
-		<property name="poolWaitTimeout" value="100"></property>
-		<property name="poolQueueSize" value="1"></property>
+		<property name="corePoolSize" value="4"></property>
+		<property name="maximumPoolSize" value="8"></property>
+		<property name="poolWaitTimeout" value="500"></property>
+		<property name="poolQueueSize" value="100"></property>
 		
 		<property name="errorPage">
 			<map>

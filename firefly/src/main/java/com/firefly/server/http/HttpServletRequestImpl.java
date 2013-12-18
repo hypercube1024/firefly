@@ -40,6 +40,7 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class HttpServletRequestImpl implements HttpServletRequest {
 	
@@ -78,12 +79,21 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	protected static Locale DEFAULT_LOCALE = Locale.getDefault();
 	protected ArrayList<Locale> locales = new ArrayList<Locale>();
 	private boolean loadParam, localesParsed;
+	private final long createdTime = Millisecond100Clock.currentTimeMillis();
 
 	public HttpServletRequestImpl(Session session, Config config) {
 		this.characterEncoding = config.getEncoding();
 		this.session = session;
 		this.config = config;
 		response = new HttpServletResponseImpl(session, this, characterEncoding, config.getWriteBufferSize());
+	}
+	
+	public long getCreatedTime() {
+		return createdTime;
+	}
+	
+	public long getTimeDifference() {
+		return Millisecond100Clock.currentTimeMillis() - createdTime;
 	}
 	
 	//======================= IO stream process =======================
@@ -180,9 +190,8 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 	
 	/**
 	 * if http method is POST or PUT, when the business process finish, it must close piped stream
-	 * @throws IOException
 	 */
-	void releaseInputStreamData() throws IOException {
+	void releaseInputStreamData() {
 		try {
 			if(getContentLength() > 0) {
 				if(bodyPipedStream != null) {

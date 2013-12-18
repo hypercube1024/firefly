@@ -165,7 +165,7 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 			setHeader("Date", GMT_FORMAT.format(new Date()));
 			setHeader("Connection", keepAlive ? "keep-alive" : "close");
 			
-			bufferedOutput = new NetBufferedOutputStream(request.session, bufferSize, keepAlive);
+			bufferedOutput = new NetBufferedOutputStream(request.session, request, this, bufferSize, keepAlive);
 			
 			if(request.isChunked() && VerifyUtils.isEmpty(headMap.get("Content-Length")))
 				out = new ChunkedOutputStream(bufferSize, bufferedOutput, request, this);
@@ -511,13 +511,11 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 		createOutput();
 		if (status >= 400) {
 			try {
-				boolean hasContent = VerifyUtils
-						.isNotEmpty(systemResponseContent);
+				boolean hasContent = VerifyUtils.isNotEmpty(systemResponseContent);
 				byte[] b = null;
 
 				if (hasContent) {
-					b = SystemHtmlPage.systemPageTemplate(status,
-							systemResponseContent).getBytes(characterEncoding);
+					b = SystemHtmlPage.systemPageTemplate(status, systemResponseContent).getBytes(characterEncoding);
 					setHeader("Content-Length", String.valueOf(b.length));
 				} else {
 					setHeader("Content-Length", "0");

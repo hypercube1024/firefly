@@ -74,16 +74,19 @@ public class ThreadPoolWrapper {
 				HttpServletResponseImpl response = request.response;
 				
 				if(businessLogicTask.getTimeDifference() > config.getPoolWaitTimeout()) {
-					log.error("Waiting for business process has been timeout |{}", request.getRequestURI());
-					if(!response.isCommitted()) {
-						response.setHeader("Retry-After", "60");
-						response.setHeader("Connection", "close");
-						String msg = "Server is temporarily overloaded, waiting for business process is timeout";
-						SystemHtmlPage.responseSystemPage(request, response, config.getEncoding(), HttpServletResponse.SC_SERVICE_UNAVAILABLE, msg);
-					} else {
-						request.session.close(true);
+					try {
+						log.error("Waiting for business process has been timeout |{}", request.getRequestURI());
+						if(!response.isCommitted()) {
+							response.setHeader("Retry-After", "60");
+							response.setHeader("Connection", "close");
+							String msg = "Server is temporarily overloaded, waiting for business process is timeout";
+							SystemHtmlPage.responseSystemPage(request, response, config.getEncoding(), HttpServletResponse.SC_SERVICE_UNAVAILABLE, msg);
+						} else {
+							request.session.close(true);
+						}
+					} finally {
+						((BusinessLogicFutureTask<Void>)r).cancel(false);
 					}
-					((BusinessLogicFutureTask<Void>)r).cancel(false);
 				}
 			}
 			
@@ -108,7 +111,7 @@ public class ThreadPoolWrapper {
 	}
 	
 	abstract public static class BusinessLogicTask implements Runnable {
-		public final long createTime = Millisecond100Clock.currentTimeMillis();
+		public final long createdTime = Millisecond100Clock.currentTimeMillis();
 		private Object attachment;
 		
 		public BusinessLogicTask(Object attachment) {
@@ -123,12 +126,12 @@ public class ThreadPoolWrapper {
 			this.attachment = attachment;
 		}
 
-		public long getCreateTime() {
-			return createTime;
+		public long getCreatedTime() {
+			return createdTime;
 		}
 		
 		public long getTimeDifference() {
-			return Millisecond100Clock.currentTimeMillis() - createTime;
+			return Millisecond100Clock.currentTimeMillis() - createdTime;
 		}
 	}
 	

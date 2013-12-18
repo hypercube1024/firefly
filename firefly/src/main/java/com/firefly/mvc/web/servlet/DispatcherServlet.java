@@ -12,12 +12,6 @@ import com.firefly.mvc.web.DispatcherController;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-/**
- * mvc前端控制器Servlet
- *
- * @author alvinqiu
- *
- */
 public class DispatcherServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -3638120056786910984L;
@@ -50,8 +44,7 @@ public class DispatcherServlet extends HttpServlet {
 		processDispatcher(request, response);
 	}
 
-	protected void processDispatcher(HttpServletRequest request,
-			HttpServletResponse response) {
+	protected void processDispatcher(HttpServletRequest request, HttpServletResponse response) {
 		dispatcherController.dispatch(request, response);
 	}
 

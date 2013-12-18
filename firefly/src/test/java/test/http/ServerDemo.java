@@ -9,7 +9,7 @@ import com.firefly.server.http.Config;
 public class ServerDemo {
 
 	public static void main(String[] args) throws Throwable {
-		start3();
+		start1();
 //		start2();
 	}
 	
