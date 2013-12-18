@@ -49,11 +49,7 @@ public class HttpHandler implements Handler {
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
-		log.info("connection close|{}|{}|{}|{}", 
-				session.getSessionId(), 
-				session.getReadBytes(), 
-				session.getWrittenBytes(),
-				Monitor.CONN_COUNT.decrementAndGet());
+		Monitor.CONN_COUNT.decrementAndGet();
 		
 		httpConnectionListener.connectionClosed(session);
 		SessionAttachment sessionAttachment = (SessionAttachment)session.getAttachment();

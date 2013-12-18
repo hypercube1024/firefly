@@ -10,6 +10,7 @@ import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.server.http.HttpServletRequestImpl;
 import com.firefly.server.http.HttpServletResponseImpl;
+import com.firefly.server.http.Monitor;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -24,6 +25,7 @@ public class NetBufferedOutputStream extends OutputStream {
 	protected boolean keepAlive;
 	protected HttpServletRequestImpl request;
 	protected HttpServletResponseImpl response;
+	protected boolean hasSavedAccessLog = false;
 
 	public NetBufferedOutputStream(Session session, HttpServletRequestImpl request, HttpServletResponseImpl response, int bufferSize,
 			boolean keepAlive) {
@@ -82,16 +84,20 @@ public class NetBufferedOutputStream extends OutputStream {
 			if (!keepAlive)
 				session.close(false);
 		} finally {
-			access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}", 
-					session.getSessionId(), 
-					request.getHeader("X-Forwarded-For"),
-					request.getRemoteAddr(),
-					response.getStatus(),
-					request.getProtocol(),
-					request.getMethod(),
-					request.getRequestURI(),
-					request.getQueryString(),
-					request.getTimeDifference());
+			if(!hasSavedAccessLog) {
+				access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 
+						session.getSessionId(), 
+						Monitor.CONN_COUNT.get(),
+						request.getHeader("X-Forwarded-For"),
+						request.getRemoteAddr(),
+						response.getStatus(),
+						request.getProtocol(),
+						request.getMethod(),
+						request.getRequestURI(),
+						request.getQueryString(),
+						request.getTimeDifference());
+				hasSavedAccessLog = true;
+			}
 		}
 	}
 
