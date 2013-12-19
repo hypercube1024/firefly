@@ -10,7 +10,6 @@ public class ServerDemo {
 
 	public static void main(String[] args) throws Throwable {
 		start1();
-//		start2();
 	}
 	
 	public static void start1() throws Throwable {
