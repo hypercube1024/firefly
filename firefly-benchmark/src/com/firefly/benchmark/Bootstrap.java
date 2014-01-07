@@ -17,7 +17,7 @@ public class Bootstrap {
 		config.setHost("localhost");
 		config.setPort(8080);
 		config.setServerHome(serverHome);
-//		config.setPipeline(true);
+//		config.setEnableThreadPool(false);
 		ServerBootstrap.start(config);
 	}
 

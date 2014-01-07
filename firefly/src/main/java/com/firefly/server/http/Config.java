@@ -36,7 +36,7 @@ public class Config {
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
-	private boolean pipeline = false;
+	private boolean enableThreadPool = true;
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
 	
@@ -286,12 +286,12 @@ public class Config {
 		this.keepAlive = keepAlive;
 	}
 
-	public boolean isPipeline() {
-		return pipeline;
+	public boolean isEnableThreadPool() {
+		return enableThreadPool;
 	}
 
-	public void setPipeline(boolean pipeline) {
-		this.pipeline = pipeline;
+	public void setEnableThreadPool(boolean enableThreadPool) {
+		this.enableThreadPool = enableThreadPool;
 	}
 
 	public Map<Integer, String> getErrorPage() {

@@ -75,7 +75,7 @@ public class ServerBootstrap {
 		}
 		
 		log.info("firefly server tempdir [{}]", config.getTempdir());
-		log.info("pipeline [{}]", config.isPipeline());
+		log.info("enable thread pool [{}]", config.isEnableThreadPool());
 		log.info("keep alive [{}]", config.isKeepAlive());
 		
 		if(config.isSecure()) {
