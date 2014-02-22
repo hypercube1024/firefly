@@ -25,12 +25,15 @@ abstract public class SimpleTcpClientHandler implements Handler {
         if(info == null) 
         	return;
         
-        SessionAttachment sessionInfo = new SessionAttachment();
-        TcpConnection connection = createTcpConnection(session, info.timeout);
-        sessionInfo.connection = connection;
-        session.attachObject(sessionInfo);
-        info.callback.sessionOpened(connection);
-        connectionInfo.remove(session.getSessionId());
+        try {
+	        SessionAttachment sessionInfo = new SessionAttachment();
+	        TcpConnection connection = createTcpConnection(session, info.timeout);
+	        sessionInfo.connection = connection;
+	        session.attachObject(sessionInfo);
+	        info.callback.sessionOpened(connection);
+        } finally {
+        	connectionInfo.remove(session.getSessionId());
+        }
     }
     
     abstract public TcpConnection createTcpConnection(Session session, long timeout);
