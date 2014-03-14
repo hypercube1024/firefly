@@ -55,6 +55,9 @@ public class TestReflectUtils {
 		FieldProxy proxyInfo = ReflectUtils.getFieldProxy(info);
 		proxyInfo.set(foo, "test info 0");
 		Assert.assertThat((String)proxyInfo.get(foo), is("test info 0"));
+		
+		ReflectUtils.setProperty(foo, "name", "hello");
+		Assert.assertThat((String)ReflectUtils.getProperty(foo, "name"), is("hello"));
 	}
 	
 	@Test
@@ -121,6 +124,29 @@ public class TestReflectUtils {
 //		System.out.println(ReflectUtils.createFieldSetterMethodCode(Foo.class.getField("info")));
 	}
 	
+	public static void main3(String[] args) throws Throwable {
+		Bar bar = new Bar();
+		ReflectUtils.setProperty(bar, "name", "hello");
+		System.out.println(ReflectUtils.getProperty(bar, "name"));
+		System.out.println(bar.name);
+		
+		int times = 1000 * 1000 * 100;
+		String a = null;
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			a = (String)ReflectUtils.getFields(bar.getClass()).get("name").get(bar); //bar.getClass().getField("name").get(bar);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("protogenic invocation: "  + (end - start) + "|" + a);
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			a = (String)ReflectUtils.getProperty(bar, "name");
+		}
+		end = System.currentTimeMillis();
+		System.out.println("proxy invocation: " + (end - start) + "|" + a);
+	}
+	
 	public static void main(String[] args) throws Throwable {		
 		int times = 1000 * 1000 * 1000;
 		
@@ -149,10 +175,14 @@ public class TestReflectUtils {
 		end = System.currentTimeMillis();
 		System.out.println(foo.getName() + " invoke: " + (end - start) + "ms");
 	}
+	
+	public static class Bar {
+		public String name;
+	}
 
 	public static class Foo {
 		private boolean failure;
-		private String name;
+		public String name;
 		private int number;
 		private double price;
 		

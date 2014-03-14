@@ -22,6 +22,7 @@ public abstract class ReflectUtils {
 	
 	private static final Map<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
 	private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
+	private static final Map<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<Class<?>, Map<String, Field>>();
 	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
 	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
 	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
@@ -39,7 +40,11 @@ public abstract class ReflectUtils {
 	}
 
 	public static interface BeanMethodFilter {
-		boolean accept(String propertyName, Method method);
+		public boolean accept(String propertyName, Method method);
+	}
+	
+	public static interface BeanFieldFilter {
+		public boolean accept(String propertyName, Field field);
 	}
 	
 	public static interface MethodProxy {
@@ -47,10 +52,10 @@ public abstract class ReflectUtils {
 		Method method();
 		
 		/**
-		 * 调用反射方法
-		 * @param obj 实例对象
-		 * @param args 该方法的参数
-		 * @return
+		 * Executes this method
+		 * @param obj The instance of object that contains this method
+		 * @param args The parameters of this method
+		 * @return Return value of this method
 		 */
 		Object invoke(Object obj, Object... args);
 	}
@@ -72,10 +77,32 @@ public abstract class ReflectUtils {
 		void set(Object array, int index, Object value);
 	}
 	
+	public static void setProperty(Object obj, String property, Object value) throws Throwable {
+		getFieldProxy(getFields(obj.getClass()).get(property)).set(obj, value);
+	}
+	
+	public static Object getProperty(Object obj, String property) throws Throwable {
+		return getFieldProxy(getFields(obj.getClass()).get(property)).get(obj);
+	}
+	
+	/**
+	 * Invokes a object's "setter" method by property name
+	 * @param obj The instance of a object
+	 * @param property The property name of this object
+	 * @param value The parameter of "setter" method that you want to set
+	 * @throws Throwable
+	 */
 	public static void set(Object obj, String property, Object value) throws Throwable {
 		getMethodProxy(getSetterMethod(obj.getClass(), property)).invoke(obj, value);
 	}
 	
+	/**
+	 * Invokes a object's "getter" method by property name
+	 * @param obj The instance of a object
+	 * @param property The property name of this object
+	 * @return The value of this property
+	 * @throws Throwable
+	 */
 	public static Object get(Object obj, String property) throws Throwable {
 		return getMethodProxy(getGetterMethod(obj.getClass(), property)).invoke(obj);
 	}
@@ -327,10 +354,10 @@ public abstract class ReflectUtils {
 	}
 	
 	/**
-	 * 获取所有接口名称
+	 * Gets the all interface names of this class
 	 * 
-	 * @param c 反射类对象
-	 * @return 所有接口名
+	 * @param c The class of one object 
+	 * @return Returns the all interface names
 	 */
 	public static String[] getInterfaceNames(Class<?> c) {
 		Class<?>[] interfaces = c.getInterfaces();
@@ -420,5 +447,29 @@ public abstract class ReflectUtils {
 		}
 
 		return getMethodMap;
+	}
+	
+	public static Map<String, Field> getFields(Class<?> clazz) {
+		Map<String, Field> ret = propertyCache.get(clazz);
+		if(ret != null)
+			return ret;
+		
+		ret = getFields(clazz, null);
+		propertyCache.put(clazz, ret);
+		return ret;
+	}
+	
+	public static Map<String, Field> getFields(Class<?> clazz, BeanFieldFilter filter) {
+		Map<String, Field> fieldMap = new HashMap<String, Field>();
+		Field[] fields = clazz.getFields();
+		for(Field field : fields) {
+			field.setAccessible(true);
+			if(Modifier.isStatic(field.getModifiers())) continue;
+			
+			String propertyName = field.getName();
+			if (filter == null || filter.accept(propertyName, field))
+				fieldMap.put(propertyName, field);
+		}
+		return fieldMap;
 	}
 }
