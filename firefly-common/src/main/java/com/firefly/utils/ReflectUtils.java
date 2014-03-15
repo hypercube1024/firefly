@@ -78,11 +78,11 @@ public abstract class ReflectUtils {
 	}
 	
 	public static void setProperty(Object obj, String property, Object value) throws Throwable {
-		getFieldProxy(getFields(obj.getClass()).get(property)).set(obj, value);
+		getFields(obj.getClass()).get(property).set(obj, value);
 	}
 	
 	public static Object getProperty(Object obj, String property) throws Throwable {
-		return getFieldProxy(getFields(obj.getClass()).get(property)).get(obj);
+		return getFields(obj.getClass()).get(property).get(obj);
 	}
 	
 	/**
