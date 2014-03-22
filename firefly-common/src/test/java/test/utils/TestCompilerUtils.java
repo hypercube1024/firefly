@@ -47,5 +47,11 @@ public class TestCompilerUtils {
 		Method method = clazz.getMethod("hello");
 		String str = (String)method.invoke(obj);
 		Assert.assertThat(str, is("world"));
+		
+		clazz = CompilerUtils.getClassByName("com.test.Say");
+		obj = clazz.newInstance();
+		method = clazz.getMethod("hello");
+		str = (String)method.invoke(obj);
+		Assert.assertThat(str, is("world"));
 	}
 }

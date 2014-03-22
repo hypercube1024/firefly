@@ -25,9 +25,22 @@ import javax.tools.StandardJavaFileManager;
 public class CompilerUtils {
 	private static final Map<String, JavaFileObject> output = new ConcurrentHashMap<String, JavaFileObject>();
 	private static final ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
+	private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<String, Class<?>>();
 	
 	public static Class<?> getClassByName(String name) throws ClassNotFoundException {
-		return Class.forName(name, false, classLoader);
+		Class<?> ret = classCache.get(name);
+		if(ret != null)
+			return ret;
+		
+		synchronized(classCache) {
+			ret = classCache.get(name);
+			if(ret != null)
+				return ret;
+			
+			ret = Class.forName(name, false, classLoader);
+			classCache.put(name, ret);
+			return ret;
+		}
 	}
 	
 	public static JavaFileManager getStringSourceJavaFileManager(JavaCompiler compiler, DiagnosticListener<? super JavaFileObject> diagnosticListener, Locale locale, Charset charset) {
@@ -111,6 +124,7 @@ public class CompilerUtils {
 			JavaFileObject jfo = output.get(name);
 			if (jfo != null) {
 				byte[] bytes = ((ByteJavaObject) jfo).baos.toByteArray();
+				output.remove(name);
 				return defineClass(name, bytes, 0, bytes.length);
 			}
 			return super.findClass(name);
