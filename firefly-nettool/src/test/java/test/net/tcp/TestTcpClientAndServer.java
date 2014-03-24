@@ -2,6 +2,7 @@ package test.net.tcp;
 
 import static org.hamcrest.Matchers.is;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,7 +25,7 @@ public class TestTcpClientAndServer {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	@Test
-	public void testHello() {
+	public void testHello() throws Throwable {
 		Server server = new TcpServer();
 		Config config = new Config();
 		config.setDecoder(new StringLineDecoder());
@@ -41,22 +42,41 @@ public class TestTcpClientAndServer {
 			executorService.submit(new Runnable() {
 				@Override
 				public void run() {
-					final TcpConnection c = client.connect();
+					TcpConnection c = null;
+					try {
+						c = client.connect().get();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					} catch (ExecutionException e) {
+						e.printStackTrace();
+					}
 					Assert.assertThat(c.isOpen(), is(true));
 					log.debug("main thread {}", Thread.currentThread()
 							.toString());
-					Assert.assertThat((String) c.send("hello client"), is("hello client"));
-					Assert.assertThat((String) c.send("hello multithread test"), is("hello multithread test"));
-					Assert.assertThat((String) c.send("getfile"), is("zero copy file transfers"));
-					Assert.assertThat((String) c.send("quit"), is("bye!"));
+					try {
+						Assert.assertThat((String) c.send("hello client").get(), is("hello client"));
+						Assert.assertThat((String) c.send("hello multithread test").get(), is("hello multithread test"));
+						Assert.assertThat((String) c.send("getfile").get(), is("zero copy file transfers"));
+						Assert.assertThat((String) c.send("quit").get(), is("bye!"));
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					} catch (ExecutionException e) {
+						e.printStackTrace();
+					}
+					
 					log.debug("complete session {}", c.getId());
 				}
 			});
 
 		}
 
-		final TcpConnection c = client.connect();
-		Assert.assertThat((String) c.send("hello client 2"), is("hello client 2"));
-		Assert.assertThat((String) c.send("quit"), is("bye!"));
+		TcpConnection c = client.connect().get();
+		try {
+			Assert.assertThat((String) c.send("hello client 2").get(), is("hello client 2"));
+			Assert.assertThat((String) c.send("quit").get(), is("bye!"));
+		} finally {
+			c.close(false);
+		}
+		
 	}
 }

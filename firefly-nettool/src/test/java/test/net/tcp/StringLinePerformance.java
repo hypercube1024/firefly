@@ -2,6 +2,7 @@ package test.net.tcp;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,13 +28,24 @@ public class StringLinePerformance {
 
 		@Override
 		public void run() {
-			TcpConnection c = client.connect();
+			TcpConnection c = null;
+			try {
+				c = client.connect().get();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			} catch (ExecutionException e1) {
+				e1.printStackTrace();
+			}
 			try {
 				for (int i = 0; i < LOOP; i++) {
 					String message = "hello world! " + c.getId();
-					String ret = (String) c.send(message);
+					String ret = (String) c.send(message).get();
 					log.debug("rev: {}", ret);
 				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
 			} finally {
 				if (c != null)
 					c.close(false);
@@ -64,7 +76,14 @@ public class StringLinePerformance {
 
 		@Override
 		public void run() {
-			TcpConnection c = client.connect();
+			TcpConnection c = null;
+			try {
+				c = client.connect().get();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			} catch (ExecutionException e1) {
+				e1.printStackTrace();
+			}
 			for (int i = 0; i < LOOP; i++) {
 				String message = "hello world! " + c.getId();
 				c.send(message, new MessageReceivedCallback() {

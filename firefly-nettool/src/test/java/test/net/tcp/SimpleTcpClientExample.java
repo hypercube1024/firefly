@@ -1,5 +1,7 @@
 package test.net.tcp;
 
+import java.util.concurrent.Future;
+
 import test.net.tcp.example.PipelineClientHandler;
 import test.net.tcp.example.StringLineDecoder;
 import test.net.tcp.example.StringLineEncoder;
@@ -13,7 +15,7 @@ public class SimpleTcpClientExample {
 	public static void main(String[] args) throws Throwable {
 		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler());
 		long start = System.currentTimeMillis();
-		TcpConnection c = client.connect();
+		TcpConnection c = client.connect().get();
 		long end = System.currentTimeMillis();
 		System.out.println("connection 0 creating time is " + (end - start));
 		System.out.println("current conn id: " + c.getId());
@@ -51,11 +53,15 @@ public class SimpleTcpClientExample {
 			}
 		});
 
-		TcpConnection c2 = client.connect();
-		System.out.println("con2|" + c2.send("getfile"));
+		Future<TcpConnection> fc2 = client.connect();
+		Future<TcpConnection> fc3 = client.connect();
+		
+		
+		TcpConnection c2 = fc2.get();
+		TcpConnection c3 = fc3.get();
+		System.out.println("con2|" + c2.send("getfile").get());
 		c2.close(false);
 		
-		TcpConnection c3 = client.connect();
 		c3.send("test c3", new MessageReceivedCallback() {
 
 			@Override

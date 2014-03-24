@@ -1,7 +1,9 @@
 package com.firefly.net.support.wrap.client;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+
 import com.firefly.net.Session;
-import com.firefly.net.support.SynchronousObject;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -20,17 +22,20 @@ abstract public class TcpConnection {
 		this.timeout = timeout > 0 ? timeout : 5000L;
 	}
 
-	public Object send(Object obj) {
-		final SynchronousObject<Object> ret = new SynchronousObject<Object>();
+	public Future<Object> send(Object obj) {
+		final ResultCallable<Object> callable = new ResultCallable<Object>();
+		final FutureTask<Object> future = new FutureTask<Object>(callable);
+		
 		send(obj, new MessageReceivedCallback() {
 
 			@Override
-			public void messageRecieved(TcpConnection connection, Object obj) {
-				ret.put(obj, timeout);
+			public void messageRecieved(TcpConnection connection, Object resultObject) {
+				callable.setValue(resultObject);
+				future.run();
 			}
 		});
 
-		return ret.get(timeout);
+		return future;
 	}
 
 	abstract public void send(Object obj, MessageReceivedCallback callback);

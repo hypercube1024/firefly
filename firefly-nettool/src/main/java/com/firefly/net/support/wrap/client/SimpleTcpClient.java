@@ -2,12 +2,13 @@ package com.firefly.net.support.wrap.client;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.firefly.net.Client;
 import com.firefly.net.Decoder;
 import com.firefly.net.Encoder;
-import com.firefly.net.support.SynchronousObject;
 import com.firefly.net.tcp.TcpClient;
 
 public class SimpleTcpClient {
@@ -26,21 +27,24 @@ public class SimpleTcpClient {
 		client = new TcpClient(decoder, encoder, handler);
 	}
 
-	public TcpConnection connect() {
+	public Future<TcpConnection> connect() {
 		return connect(0);
 	}
 	
-	public TcpConnection connect(long timeout) {
+	public Future<TcpConnection> connect(final long timeout) {
 		final long t = timeout <= 0 ? 5000L : timeout;
-		final SynchronousObject<TcpConnection> ret = new SynchronousObject<TcpConnection>();
-		connect(timeout, new SessionOpenedCallback(){
+		final ResultCallable<TcpConnection> callable = new ResultCallable<TcpConnection>();
+		final FutureTask<TcpConnection> future = new FutureTask<TcpConnection>(callable);
+		
+		connect(t, new SessionOpenedCallback(){
 
 			@Override
 			public void sessionOpened(TcpConnection connection) {
-				ret.put(connection, t);
+				callable.setValue(connection);
+				future.run();
 			}
 		});
-		return ret.get(t);
+		return future;
 	}
 	
 	public void connect(long timeout, SessionOpenedCallback callback) {
