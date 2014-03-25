@@ -24,6 +24,7 @@ public class SimpleTcpClient {
 		this.host = host;
 		this.port = port;
 		this.handler = handler;
+		this.handler.setConnectionInfo(connectionInfo);
 		client = new TcpClient(decoder, encoder, handler);
 	}
 
@@ -48,8 +49,6 @@ public class SimpleTcpClient {
 	}
 	
 	public void connect(long timeout, SessionOpenedCallback callback) {
-		handler.setConnectionInfo(connectionInfo);
-		
 		int id = sessionId.getAndIncrement();
 		ConnectionInfo info = new ConnectionInfo();
 		info.callback = callback;
