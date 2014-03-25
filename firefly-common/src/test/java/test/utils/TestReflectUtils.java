@@ -152,6 +152,7 @@ public class TestReflectUtils {
 		
 		Foo foo = new Foo();
 		Method method = Foo.class.getMethod("setProperty", String.class, boolean.class);
+		method.setAccessible(true);
 		MethodProxy proxy = ReflectUtils.getMethodProxy(method);
 		
 		long start = System.currentTimeMillis();
