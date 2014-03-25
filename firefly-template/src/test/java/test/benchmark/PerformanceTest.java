@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import org.junit.Test;
+
 import test.ModelMock;
 import test.TestConfig;
 
@@ -83,6 +85,11 @@ public class PerformanceTest {
         System.out.println("firefly-template: " + (end - start) + "ms\t" + (int)(times / (double)(end - start) * 1000) + "tps");
 //        System.out.println(new String(out.toByteArray(), "UTF-8"));
 
+	}
+	
+	@Test
+	public void test() {
+		
 	}
 
 }

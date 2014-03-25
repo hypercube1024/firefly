@@ -9,5 +9,10 @@ public class Test {
 		Server server = new TcpServer(new SSLDecoder(), new SSLEncoder(), new DumpHandler(), 1000 * 60);	
 		server.start("localhost", 7676);
 	}
+	
+	@org.junit.Test
+	public void test() {
+
+	}
 
 }
