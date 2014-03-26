@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>{{ page.title }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Bootstrap -->
+<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+
+<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+	<script src="../../assets/js/html5shiv.js"></script>
+	<script src="../../assets/js/respond.min.js"></script>
+<![endif]-->
+
+<style type="text/css">
+.navbar-brand-logo {
+background-image: url(images/firefly-logo.png);
+background-repeat: no-repeat;
+background-size: 36px 36px;
+padding: 5px 18px;
+}
+</style>
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+<div class="container">
+	<div class="navbar-header">
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+		  <span class="icon-bar"></span>
+		  <span class="icon-bar"></span>
+		  <span class="icon-bar"></span>
+		</button>
+		<a href="./" class="navbar-brand"><span class="navbar-brand-logo"></span>&nbsp;Firefly Project</a>
+	</div>
+	<div class="navbar-collapse collapse" id="navbar-main">
+	<ul class="nav navbar-nav">
+		<li>
+	    	<a href="">Blog</a>
+	    </li>
+	    <li>
+	    	<a href="{{ site.data.global.downloadURL }}">Downloads</a>
+	    </li>
+	    <li>
+	    	<a href="">Documentation</a>
+	    </li>
+	    <li>
+	    	<a href="">Get involved</a>
+	    </li>
+	</ul>
+	</div>
+</div>
+</div>
+
+<div id="content" style="padding-top: 60px;">
+{{ content }}
+</div>
+
+<div class="container">
+	<hr />
+	<footer id="footer">
+	<p>Code licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License v2.0</a>.</p>
+	<p>Copyright © 2013 <a href="./index.html">The Firefly project</a></p>
+	</footer>
+</div>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="js/jquery-1.11.0.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="js/bootstrap.min.js"></script>
+</body>
+</html>

@@ -1,215 +1,69 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-	<meta name="baidu-site-verification" content="AKJ3BHCnjv" />
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta name="keywords" content="Java, Template engine, IOC、MVC framework, HTTP Server, Common tools" />
-	<meta name="description" content="High performance full-stack java web framework. " />
-	<title>Firefly framework</title>
-	<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" ></link>
-	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" ></link>
-	<script type="text/javascript">
-	  var _gaq = _gaq || [];
-	  _gaq.push(['_setAccount', 'UA-18094279-3']);
-	  _gaq.push(['_trackPageview']);
-	
-	  (function() {
-	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-	  })();
-	</script>
-</head>
+---
+layout: default
+title: Firefly Framework
+---
 
-<body>
-
-	<div id="wrapper">
-	
-		<div id="header" style="position: relative;">
-			<div style="position: absolute; left: 0px; top: 38px;" ><img src="images/firefly.png" width="32px" height="32px" alt="firefly" /></div>
-			<h1 style="position: absolute; left: 40px; top: 18px;"><a target="_blank" href="https://github.com/hypercube1024/firefly">Firefly framework</a></h1>
-			<p style="position: absolute; left: 40px; top: 71px;">High performance full-stack java web framework. </p>
-		</div>
-		
-		<div id="content">
-			<h2>Recent news &amp; updates</h2>
-			<div class="hentry">
-				<h3 class="entry-title"><a target="_blank" href="https://github.com/hypercube1024/firefly">firefly-3.0_01发布</a> &#183; <abbr>2013-5-22</abbr></h3>
-				<p>
-				修复了firefly3.0在JavaEE环境运行的问题，以及json工具类的一些bug。
-				</p>
-				<p>
-				更新日志：
-				</p>
-				<ol>
-					<li>修复json tools静态公共域序列化问题</li>
-					<li>修复request getParameter方法角标越界错误</li>
-					<li>修复模版渲染发生异常时没有响应500错误码</li>
-					<li>修复json parser读取空数组时类型转换错误</li>
-					<li>修复firefly运行在JavaEE环境classloader问题</li>
-				</ol>
-				
-				<div class="separator"></div>
-				<p class="metadata">By <a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a></p>
-			</div>
-			
-			<div class="hentry">
-				<h3 class="entry-title"><a target="_blank" href="https://github.com/hypercube1024/firefly">firefly-3.0发布</a> &#183; <abbr>2013-4-17</abbr></h3>
-				<p>
-				firefly-3.0增加了完整的TLS/SSL以及HTTPS支持，实现了Servlet3.0 API，TimeWheel增加Future返回，Json Parser增加BigDecimal, BigInteger类型支持。并修复了若干Bug
-				</p>
-				<p>
-				更新日志：
-				</p>
-				<ol>
-					<li>增加HTTPS，TLS/SSL支持</li>
-					<li>Servlet3.0 API 支持</li>
-					<li>HTTP Server管道流优化</li>
-					<li>TimeWheel增加Future返回，用于取消任务</li>
-					<li>Json Parser增加BigDecimal, BigInteger类型支持</li>
-					<li>修复服务端错误没有响应500的bug</li>
-					<li>修复模版语言函数调用字符串参数bug</li>
-					<li>修复模版语言注释之后的字符截断bug</li>
-					<li>修复HTTP pipeline解码器bug</li>
-					<li>修复模版注释被消除的问题</li>
-					<li>修复HTTP Server输出流未设置字符集问题</li>
-					<li>修复Json工具特殊字符逃逸问题</li>
-				</ol>
-				
-				<div class="separator"></div>
-				<p class="metadata">By <a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a></p>
-			</div>
-			
-			<div class="hentry">
-				<h3 class="entry-title"><a target="_blank" href="https://github.com/hypercube1024/firefly">firefly-2.0_08发布</a> &#183; <abbr>2013-3-15</abbr></h3>
-				<p>
-				firefly-2.0_08修复了模版语言的一些bug，重写了反射api，使得json解析和模版语言整体性能提升20%
-				</p>
-				<p>
-				更新日志：
-				</p>
-				<ol>
-					<li>修复模版语言for变量冲突的bug</li>
-					<li>修复模版语言map嵌套导航的bug</li>
-					<li>修复模版语言set引号为过滤的bug</li>
-					<li>修复模版语言自定义函数调用bool变量参数bug</li>
-					<li>重写反射api，提高反射性能，json解析和模版语言整体性能提升20%</li>
-					<li>模版新增自增变量Function，用于循环中获取自增变量</li>
-				</ol>
-				
-				<div class="separator"></div>
-				<p class="metadata">By <a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a></p>
-			</div>
-			
-			<div class="hentry">
-				<h3 class="entry-title"><a target="_blank" href="https://github.com/hypercube1024/firefly">firefly-2.0_07发布</a> &#183; <abbr>2013-3-5</abbr></h3>
-				<p>
-				firefly-2.0_07修复了模版压缩对javascript单行注释的影响，并新增了自定义错误页面功能。
-				</p>
-				<p>
-				更新日志：
-				</p>
-				<ol>
-					<li>增加自定义系统错误页面功能，详情可参看<a target="_blank" href="https://github.com/hypercube1024/firefly/wiki/firefly-framework-guide">firefly文档</a>中的自定错误页面章节</li>
-					<li>模版压缩影响模版中js单行注释问题修复</li>
-				</ol>
-				
-				<div class="separator"></div>
-				<p class="metadata">By <a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a></p>
-			</div>
-			
-			<div class="hentry">
-				<h3 class="entry-title"><a target="_blank" href="https://github.com/hypercube1024/firefly">firefly-2.0_06发布</a> &#183; <abbr>2013-2-2</abbr></h3>
-				<p>
-				firefly-2.0_06优化了模版语言编译生成文件的大小，修复了一些bug。
-				</p>
-				<p>
-				更新日志：
-				</p>
-				<ol>
-					<li>修复demo启动时因不同系统造成的问题</li>
-					<li>修正Json序列化，造型阶段时读取父类public get方法的私有字段打印异常信息</li>
-					<li>POST请求时ContentType判断bug修正</li>
-					<li>模版语言编译生成文件大小优化</li>
-				</ol>
-				
-				<div class="separator"></div>
-				<p class="metadata">By <a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a></p>
-			</div>
-			
-			<div class="hentry">
-				<h3 class="entry-title"><a target="_blank" href="spdy/spdy-v3-cn.html">SPDY Draft 3 中文版</a> &#183; <abbr>2013-1-26</abbr></h3>
-				<p>
-				SPDY协议目前已经被Google、Twitter使用，用于加速网站响应。并且Chrome、Firefox等现代浏览器已经默认支持SPDY v3协议。SPDY协议可以充分利用IO多路复用，在单个TCP连接上并发的读写，并保持了已有的HTTP语义，还增加服务端推送、流量控制等特性。Google已经把SPDY提交到w3c作为HTTP 2.0协议的基础。最近翻译了SPDY v3协议，由于本人水平以及写作时间有限，翻译难免有纰漏与不妥之处，有任何问题可直接email(95350530@qq.com)我。
-				</p>
-				<p><a target="_blank" href="spdy/spdy-v3-cn.html">SPDY Draft 3 中文版.html</a></p>
-				
-				<div class="separator"></div>
-				<p class="metadata">By <a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a></p>
-			</div>
-			
-			<div id="pagination">
-<!-- 				<p class="previous left"><a href="#">&laquo; Previous</a></p> -->
-				<p class="next right"><a href="index-2.html">Next &raquo;</a></p>
-			</div>
-			
-			<div class="clear"></div>
-			
-		</div>
-		
-		<div id="sidebar">
-			<div class="widget">
-				<h2>Downloads</h2>
-				<p><a href="https://github.com/hypercube1024/firefly">source</a></p>
-				<p><a href="https://firefly.googlecode.com/files/firefly.tar.gz">firefly-3.0_01.tar.gz</a></p>
-			</div>
-			
-			<div class="widget">
-				<h2>Documents</h2>
-				<p><a target="_blank" href="spdy/spdy-v3-cn.html">SPDY Draft 3 中文版.html</a></p>
-				<p><a target="_blank" href="https://github.com/hypercube1024/firefly/wiki/firefly-template-guide">模板引擎</a></p>
-				<p><a target="_blank" href="https://github.com/hypercube1024/firefly/wiki/firefly-framework-guide">IOC、MVC框架</a></p>
-				<p><a target="_blank" href="https://github.com/hypercube1024/firefly/wiki/firefly-server-guide">应用服务器</a></p>
-			</div>
-
-			<div class="widget">
-				<h2>What?</h2>
-				<p>
-					<a target="_blank" href="https://github.com/hypercube1024/firefly">Firefly</a>是一个高性能一站式Web框架。
-					涵盖了web开发的主要技术栈。
-					包含Template engine, IOC、MVC framework, HTTP Server, Common tools, Log, Json parser等模块。
-				</p>				
-			</div>
-			
-			<div class="widget">
-				<h2>Feature</h2>
-				<ul>
-					<li>使用简单，基于约定优于配置的思想</li>
-					<li>精简、轻量、无侵入</li>
-					<li>高性能，详情见<a target="_blank" href="https://github.com/hypercube1024/firefly/wiki/firefly-performance">性能测试</a></li>
-				</ul>
-			</div>
-			
-			
-			<div class="widget">
-				<h2>About this work</h2>
-				<p>开发者<a target="_blank" href="https://github.com/hypercube1024">Pengpeng</a>、<a target="_blank" href="https://github.com/onlyxjj">onlyxjj</a></p>
-			</div>
-			
-			<div>
-				<h2>Code license</h2>
-				<p><a target="_blank" href="http://www.apache.org/licenses/LICENSE-2.0" >Apache License 2.0</a></p>
-			</div>
-			
-		</div>
-		
-		<div class="clear"></div>
-			
-		<div id="footer">
-			<p>Copyright © 2010-2013 Firefly. All Rights Reserved</p>
-		</div>
-		
+<div class="jumbotron">
+	<div class="container">
+	<p>
+	  Firefly is <em>a full-stack application framework</em><br/>
+	  for rapid development of maintainable high performance web application.
+	</p>
 	</div>
-	
-</body>
-</html>
+</div>
+
+<div class="container">
+	<div class="row">
+		<div class="col-lg-6">
+			<p>
+			Firely is a full-stack application framework which 
+			bases intuitive design that enables <strong>QUICK and EASY</strong> development of network applications,
+			such as web site, protocol servers, etc.
+			</p>
+			<p>
+			If you already worked with some web applications, such as spring framework, you will feel right at home.
+			Firefly uses the same concepts and naming schemes. 
+			Even if you’re from a different background, you’ll get the hang of it quickly, 
+			because everything is designed to be a intuitive and easy to use as possible.
+			</p>
+			<p>
+			Quick and easy doesn't mean it has the performance issue or it's not maintainable.
+			Actually, Firefly’s performance is better than the other. 
+			It exposes the hardware’s full potential and uses some technologies of the state of the art to achieve high throughput. 
+			In short: <strong>It’s FAST.</strong>
+			
+			Firefly has a lightweight, stateless, web-friendly architecture, that is a flexible and extensible model. 
+			Each component can be used independently, which has been designed carefully 
+			with the experiences earned from the implementation of a lot of web frameworks.
+			</p>
+			<p>
+			As a result, Firefly has succeeded to find a way to achieve ease of development, performance, stability, and flexibility without a compromise.
+			</p>
+		</div>
+		<div class="col-lg-6">
+		<img class="img-responsive" src="images/architecture.png"></img>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-lg-12">
+		<h1>News</h1>
+		<hr />
+		<div>
+			<h2>Firefly 3.0_02 release</h2>
+			<p>
+			Long time no see. Firefly
+			
+			</p>
+			<ol>
+			<li>Nettool's thread model and code structure optimized.</li>
+			<li>The common tools added a new collection, ConsistentHash.</li>
+			<li>It was fixed that json tool outputs some special characters which can't be read by browser.</li>
+			<li>Template language added some default functions.</li>
+			<li>Some bugs have been fixed.</li>
+			</ol>
+		</div>
+		</div>
+	</div>
+
+</div>

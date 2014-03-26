@@ -3,3 +3,4 @@
 .settings
 *.class
 .DS_Store
+_site/
