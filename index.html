@@ -49,20 +49,14 @@ title: Firefly Framework
 		<div class="col-lg-12">
 		<h1>News</h1>
 		<hr />
-		<div>
-			<h2>Firefly 3.0_02 release</h2>
-			<p>
-			Long time no see. Firefly
-			
-			</p>
-			<ol>
-			<li>Nettool's thread model and code structure optimized.</li>
-			<li>The common tools added a new collection, ConsistentHash.</li>
-			<li>It was fixed that json tool outputs some special characters which can't be read by browser.</li>
-			<li>Template language added some default functions.</li>
-			<li>Some bugs have been fixed.</li>
-			</ol>
-		</div>
+		
+		{% for post in site.posts %}
+		    <div>
+		      <h2>{{ post.title }}</h2>
+		      <p>{{ post.excerpt }}</p>
+		      <div><a href="{{ post.url }}">View all</a></div>
+		    </div>
+		{% endfor %}
 		</div>
 	</div>
 
