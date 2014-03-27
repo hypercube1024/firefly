@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The ConcurrentLinkedHashMap is the reentrant version of LinkedHashMap, which is the thread safe collection.
@@ -140,8 +142,9 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	static final class LinkedHashMapSegment<K, V> extends LinkedHashMap<K, V>{
 
 		private static final long serialVersionUID = 3135160986591665845L;
-		private int maxEntries;
-		private MapEventListener<K, V> mapEventListener;
+		private final int maxEntries;
+		private final MapEventListener<K, V> mapEventListener;
+		Lock lock = new ReentrantLock();
 		
 		public int getMaxEntries() {
 			return maxEntries;
@@ -157,11 +160,16 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 			this.mapEventListener = mapEventListener;
 		}
 		
-		protected synchronized boolean removeEldestEntry(Map.Entry<K,V> eldest) {
-			if(size() > maxEntries) {
-				return mapEventListener.onEliminateEntry(eldest.getKey(), eldest.getValue());
+		protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
+			lock.lock();
+			try {
+				if(size() > maxEntries) {
+					return mapEventListener.onEliminateEntry(eldest.getKey(), eldest.getValue());
+				}
+		        return false;
+			} finally {
+				lock.unlock();
 			}
-	        return false;
 	    }
 		
 	}
@@ -194,35 +202,51 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		int h = hash(hash);
 		return segments[(h >>> segmentShift) & segmentMask];
 	}
+	
+	private void lockAllSegments() {
+		for(LinkedHashMapSegment<K, V> seg : segments)
+			seg.lock.lock();
+	}
+	
+	private void unlockAllSegments() {
+		for(LinkedHashMapSegment<K, V> seg : segments)
+			seg.lock.unlock();
+	}
 
 	/**
-	 * to get the entry's total number, it's not accurate.
+	 * Gets the entry's total number.
 	 * @return entry's number
 	 */
 	@Override
 	public int size() {
-		int size = 0;
-		for(LinkedHashMapSegment<K, V> seg : segments) {
-			synchronized (seg) {
+		try {
+			lockAllSegments();
+			int size = 0;
+			for(LinkedHashMapSegment<K, V> seg : segments) {
 				size += seg.size();
 			}
+			return size;
+		} finally {
+			unlockAllSegments();
 		}
-		return size;
 	}
 
 	/**
-	 * Returns <tt>true</tt>, if the map doesn't contain any entry, but this method is not accurate.
+	 * Returns <tt>true</tt>, if the map doesn't contain any entry.
 	 * @return <tt>true</tt> if this map contains no key-value mappings.
 	 */
 	@Override
 	public boolean isEmpty() {
-		for(LinkedHashMapSegment<K, V> seg : segments) {
-			synchronized (seg) {
+		try {
+			lockAllSegments();
+			for(LinkedHashMapSegment<K, V> seg : segments) {
 				if(!seg.isEmpty())
 					return false;
 			}
+			return true;
+		} finally {
+			unlockAllSegments();
 		}
-		return true;
 	}
 
 	/**
@@ -235,18 +259,21 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	}
 
 	/**
-	 * Returns <tt>true</tt> if this map maps one or more keys to the specified value, but it's not accurate.
+	 * Returns <tt>true</tt> if this map maps one or more keys to the specified value.
      * @return <tt>true</tt> if this map maps one or more keys to the specified value.
 	 */
 	@Override
 	public boolean containsValue(Object value) {
-		for(LinkedHashMapSegment<K, V> seg : segments) {
-			synchronized (seg) {
+		try {
+			lockAllSegments();
+			for(LinkedHashMapSegment<K, V> seg : segments) {
 				if(seg.containsValue(value))
 					return true;
 			}
+			return false;
+		} finally {
+			unlockAllSegments();
 		}
-		return false;
 	}
 
 
@@ -262,8 +289,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	@Override
 	public V get(Object key) {
 		LinkedHashMapSegment<K, V> seg = segmentFor(key.hashCode());
-		synchronized (seg) {
+		try {
+			seg.lock.lock();
 			return mapEventListener.onGetEntry((K)key, seg.get(key));
+		} finally {
+			seg.lock.unlock();
 		}
 		
 	}
@@ -284,8 +314,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	@Override
 	public V put(K key, V value) {
 		LinkedHashMapSegment<K, V> seg = segmentFor(key.hashCode());
-		synchronized (seg) {
+		try {
+			seg.lock.lock();
 			return mapEventListener.onPutEntry(key, value, seg.put(key, value));
+		} finally {
+			seg.lock.unlock();
 		}
 	}
 
@@ -300,8 +333,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	@Override
 	public V remove(Object key) {
 		LinkedHashMapSegment<K, V> seg = segmentFor(key.hashCode());
-		synchronized (seg) {
+		try {
+			seg.lock.lock();
 			return mapEventListener.onRemoveEntry((K)key, seg.remove(key));
+		} finally {
+			seg.lock.unlock();
 		}
 	}
 
@@ -322,10 +358,13 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 */
 	@Override
 	public void clear() {
-		for(LinkedHashMapSegment<K, V> seg : segments) {
-			synchronized (seg) {
+		try {
+			lockAllSegments();
+			for(LinkedHashMapSegment<K, V> seg : segments) {
 				seg.clear();
 			}
+		} finally {
+			unlockAllSegments();
 		}
 	}
 
@@ -336,13 +375,16 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 */
 	@Override
 	public Set<K> keySet() {
-		Set<K> set = new HashSet<K>();
-		for(LinkedHashMapSegment<K, V> seg : segments) {
-			synchronized (seg) {
+		try {
+			lockAllSegments();
+			Set<K> set = new HashSet<K>();
+			for(LinkedHashMapSegment<K, V> seg : segments) {
 				set.addAll(seg.keySet());
 			}
+			return set;
+		} finally {
+			unlockAllSegments();
 		}
-		return set;
 	}
 
 	/**
@@ -352,13 +394,16 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 */
 	@Override
 	public Collection<V> values() {
-		Collection<V> collection = new ArrayList<V>();
-		for(LinkedHashMapSegment<K, V> seg : segments) {
-			synchronized (seg) {
+		try {
+			lockAllSegments();
+			Collection<V> collection = new ArrayList<V>();
+			for(LinkedHashMapSegment<K, V> seg : segments) {
 				collection.addAll(seg.values());
 			}
+			return collection;
+		} finally {
+			unlockAllSegments();
 		}
-		return collection;
 	}
 
 	/**
@@ -368,13 +413,16 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 */
 	@Override
 	public Set<java.util.Map.Entry<K, V>> entrySet() {
-		Set<java.util.Map.Entry<K, V>> set = new HashSet<java.util.Map.Entry<K, V>>();
-		for(LinkedHashMapSegment<K, V> seg : segments) {
-			synchronized (seg) {
+		try {
+			lockAllSegments();
+			Set<java.util.Map.Entry<K, V>> set = new HashSet<java.util.Map.Entry<K, V>>();
+			for(LinkedHashMapSegment<K, V> seg : segments) {
 				set.addAll(seg.entrySet());
 			}
+			return set;
+		} finally {
+			unlockAllSegments();
 		}
-		return set;
 	}
 
 	/**
