@@ -144,7 +144,7 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		private static final long serialVersionUID = 3135160986591665845L;
 		private final int maxEntries;
 		private final MapEventListener<K, V> mapEventListener;
-		Lock lock = new ReentrantLock();
+		final Lock lock = new ReentrantLock();
 		
 		public int getMaxEntries() {
 			return maxEntries;
