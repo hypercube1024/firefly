@@ -3,3 +3,6 @@
 .settings
 *.class
 .DS_Store
+*.iml
+*.iws
+*.ipr
