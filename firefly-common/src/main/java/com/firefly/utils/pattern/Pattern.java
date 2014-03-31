@@ -7,9 +7,10 @@ public abstract class Pattern {
 	private static final AllMatch ALL_MATCH = new AllMatch();
 	
 	/**
-	 * 根据模式匹配字符串
-	 * @param str 进行匹配的字符串
-	 * @return 返回null表示匹配失败，否则返回匹配的字符串数组
+	 * Matches a string according to the specified pattern
+	 * @param str Target string
+	 * @return If it returns null, that represents matching failure, 
+	 * else it returns an array contains all strings are matched.
 	 */
 	abstract public String[] match(String str);
 	
@@ -20,7 +21,7 @@ public abstract class Pattern {
 		
 		switch (array.length) {
 		case 0:
-			return ALL_MATCH; // pattern全是通配符
+			return ALL_MATCH;
 		case 1:
 			if (startWith && endWith)
 				return new HeadAndTailMatch(array[0]);
@@ -31,7 +32,7 @@ public abstract class Pattern {
 			if (endWith)
 				return new TailMatch(array[0]);
 			
-			return new EqualsMatch(pattern); // pattern不包含通配符
+			return new EqualsMatch(pattern);
 		default:
 			return new MultipartMatch(startWith, endWith, array);
 		}
