@@ -4,13 +4,13 @@ abstract public class RandomUtils {
 	public static final String ALL_CHAR = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 	/**
-	 * 生成min(包括)到max(包括)范围的随机数
+	 * Generates a random number from a specified range
 	 * 
 	 * @param min
-	 *            随机数最小值
+	 *            The minimal number of the range
 	 * @param max
-	 *            随机数最大值
-	 * @return min(包括)到max(包括)范围的随机数
+	 *            The maximal number of the range
+	 * @return A random number from minimal number to maximal number, which contains minimal and maximal number.
 	 */
 	public static long random(long min, long max) {
 		return Math.round(ThreadLocalRandom.current().nextDouble()
@@ -18,11 +18,12 @@ abstract public class RandomUtils {
 	}
 
 	/**
-	 * 返回一个随机区段，例如：100:1:32:200:16:30，返回0的概率为100/(100+1+32+200+16+30)
+	 * Returns a index of a specified probability, e.g. the string is "100:1:32:200:16:30". 
+	 * If it returns 0 that probability is 100/(100+1+32+200+16+30)
 	 * 
 	 * @param conf
-	 *            区段配置字符串
-	 * @return 随机区段下标
+	 *            Configures specified probability
+	 * @return The index of a specified probability
 	 */
 	public static int randomSegment(String conf) {
 		String[] tmp = StringUtils.split(conf, ":");
@@ -34,11 +35,11 @@ abstract public class RandomUtils {
 	}
 
 	/**
-	 * 返回一个随机区段
+	 * Returns the index of array that specifies probability. 
 	 * 
 	 * @param probability
-	 *            区段概率值
-	 * @return 区段下标
+	 *            The element of array represents the probability. 
+	 * @return The index of array.
 	 */
 	public static int randomSegment(int[] probability) {
 		int total = 0;
@@ -56,11 +57,11 @@ abstract public class RandomUtils {
 	}
 
 	/**
-	 * 生成随机字符串
+	 * Returns a random string.
 	 * 
 	 * @param length
-	 *            生成字符串的长度
-	 * @return 指定长度的随机字符串
+	 *            The random string's length
+	 * @return A random string.
 	 */
 	public static String randomString(int length) {
 		StringBuilder sb = new StringBuilder();
