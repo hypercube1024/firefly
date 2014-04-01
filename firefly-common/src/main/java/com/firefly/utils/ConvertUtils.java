@@ -121,6 +121,17 @@ abstract public class ConvertUtils {
 	interface ParseValue {
 		Object parse(String value);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T convert(String value, T defaultValue) {
+		T ret = null;
+		try {
+			ret = convert(value, (Class<T>)defaultValue.getClass());
+		} catch(Throwable t) {
+			ret = defaultValue;
+		}
+		return ret;
+	}
 
 	@SuppressWarnings("unchecked")
 	public static <T> T convert(String value, Class<T> c) {
@@ -137,8 +148,9 @@ abstract public class ConvertUtils {
 				ret = Double.parseDouble(value);
 			} else if (VerifyUtils.isFloat(value)) {
 				ret = Float.parseFloat(value);
-			} else
+			} else {
 				ret = value;
+			}
 		}
 		return (T) ret;
 	}
@@ -158,8 +170,9 @@ abstract public class ConvertUtils {
 				ret = Double.parseDouble(value);
 			} else if (VerifyUtils.isFloat(value)) {
 				ret = Float.parseFloat(value);
-			} else
+			} else {
 				ret = value;
+			}
 		}
 		return (T) ret;
 	}
@@ -170,7 +183,8 @@ abstract public class ConvertUtils {
 	 * 
 	 * @param collection
 	 * 			The collection that needs be converted
-	 * @param type
+	 * @param arrayType
+     *          The element type of an array
 	 * @return
 	 */
 	public static Object convert(Collection<?> collection, Class<?> arrayType) {
@@ -277,4 +291,5 @@ abstract public class ConvertUtils {
 			}
 		};
 	}
+	
 }

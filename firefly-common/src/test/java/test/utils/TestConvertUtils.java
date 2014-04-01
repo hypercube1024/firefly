@@ -41,6 +41,24 @@ public class TestConvertUtils {
 		x = ConvertUtils.convert("10000000000", "long");
 		Assert.assertThat(x, is(10000000000L));
 	}
+	
+	@Test
+	public void testAutoConvert() {
+		Integer a = ConvertUtils.convert("20", 3);
+		Assert.assertThat(a, is(20));
+		
+		a = ConvertUtils.convert("xxxxx", 10);
+		Assert.assertThat(a, is(10));
+		
+		Boolean b = ConvertUtils.convert("true", false);
+		Assert.assertThat(b, is(true));
+		
+		b = ConvertUtils.convert("false", true);
+		Assert.assertThat(b, is(false));
+		
+		b = ConvertUtils.convert("xxxxx", true);
+		Assert.assertThat(b, is(false));
+	}
 
 	public int setArray(String[] arr) {
 //		log.debug(Arrays.toString(arr));
@@ -48,8 +66,11 @@ public class TestConvertUtils {
 	}
 
 	public static void main(String[] args) throws URISyntaxException {
-		Map<Object,Object> map = new HashMap<Object, Object>();
-		map.put("key", "value");
-		System.out.println(LogFactory.class.getClassLoader().getResource("firefly-log.properties").toURI());
+		Boolean b = ConvertUtils.convert("xxxxx", true);
+		System.out.println(b);
+		
+//		Map<Object,Object> map = new HashMap<Object, Object>();
+//		map.put("key", "value");
+//		System.out.println(LogFactory.class.getClassLoader().getResource("firefly-log.properties").toURI());
 	}
 }
