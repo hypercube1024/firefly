@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import com.firefly.annotation.Inject;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanDefinition;
@@ -27,7 +28,7 @@ import com.firefly.utils.VerifyUtils;
 
 /**
  * 
- * @author 须俊杰, alvinqiu
+ * @author Xujj, Alvin Qiu
  * 
  */
 public class XmlApplicationContext extends AbstractApplicationContext {
@@ -72,23 +73,12 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 			return null;
 	}
 
-	/**
-	 * xml注入方式
-	 * 
-	 * @param beanDef
-	 * @return
-	 */
 	private Object xmlInject(BeanDefinition beanDef) {
 		XmlBeanDefinition beanDefinition = (XmlBeanDefinition) beanDef;
-		// 取得需要注入的对象
 		final Object object = beanDefinition.getObject();
-
-		// 取得对象所有的属性
 		final Map<String, Object> properties = beanDefinition.getProperties();
 
 		Class<?> clazz = object.getClass();
-
-		// 遍历所有注册的set方法注入
 		ReflectUtils.getSetterMethods(clazz, new BeanMethodFilter(){
 
 			@Override
@@ -96,8 +86,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 				Object value = properties.get(propertyName);
 				if (value != null) {
 					try {
-						method.invoke(object,
-								getInjectArg(value, method));
+						method.invoke(object, getInjectArg(value, method));
 					} catch (Throwable t) {
 						log.error("xml inject error", t);
 					}
@@ -109,14 +98,6 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 		return object;
 	}
 
-	/**
-	 * 
-	 * @param value
-	 *            属性值的元信息
-	 * @param method
-	 *            该属性的set方法
-	 * @return
-	 */
 	private Object getInjectArg(Object value, Method method) {
 		if (value instanceof ManagedValue) { // value
 			return getValueArg(value, method);
@@ -159,25 +140,25 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 		return instance;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	private Object getListArg(Object value, Method method) {
 		Class<?> setterParamType = null;
 		if (method != null) {
 			setterParamType = method.getParameterTypes()[0];
 		}
 		ManagedList<Object> values = (ManagedList<Object>) value;
-		Collection collection = null;
+		Collection<Object> collection = null;
 
 		if (VerifyUtils.isNotEmpty(values.getTypeName())) { // 指定了list的类型
 			try {
-				collection = (Collection) XmlApplicationContext.class
+				collection = (Collection<Object>) XmlApplicationContext.class
 						.getClassLoader().loadClass(values.getTypeName())
 						.newInstance();
 			} catch (Throwable t) {
 				log.error("list inject error", t);
 			}
-		} else { // 根据set方法参数类型获取list类型
-			collection = (setterParamType == null ? new ArrayList()
+		} else {
+			collection = (setterParamType == null ? new ArrayList<Object>()
 					: ConvertUtils.getCollectionObj(setterParamType));
 		}
 
@@ -189,14 +170,14 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 		return collection;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	private Object getArrayArg(Object value, Method method) {
 		Class<?> setterParamType = null;
 		if (method != null) {
 			setterParamType = method.getParameterTypes()[0];
 		}
 		ManagedArray<Object> values = (ManagedArray<Object>) value;
-		Collection collection = new ArrayList();
+		Collection<Object> collection = new ArrayList<Object>();
 		for (Object item : values) {
 			Object listValue = getInjectArg(item, null);
 			collection.add(listValue);
@@ -204,24 +185,25 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 		return ConvertUtils.convert(collection, setterParamType);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+
+	@SuppressWarnings("unchecked")
 	private Object getMapArg(Object value, Method method) {
 		Class<?> setterParamType = null;
 		if (method != null) {
 			setterParamType = method.getParameterTypes()[0];
 		}
 		ManagedMap<Object, Object> values = (ManagedMap<Object, Object>) value;
-		Map m = null;
+		Map<Object, Object> m = null;
 		if (VerifyUtils.isNotEmpty(values.getTypeName())) {
 			try {
-				m = (Map) XmlApplicationContext.class.getClassLoader()
-						.loadClass(values.getTypeName()).newInstance();
+				m = (Map<Object, Object>) XmlApplicationContext.class.getClassLoader()
+						.loadClass(values.getTypeName())
+						.newInstance();
 			} catch (Throwable t) {
 				log.error("map inject error", t);
 			}
-		} else { // 根据set方法参数类型获取map类型
-			m = (setterParamType == null ? new HashMap() : ConvertUtils
-					.getMapObj(setterParamType));
+		} else { 
+			m = (setterParamType == null ? new HashMap<Object, Object>() : ConvertUtils.getMapObj(setterParamType));
 			log.debug("map ret [{}]", m.getClass().getName());
 		}
 		for (Object o : values.keySet()) {
@@ -233,7 +215,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	}
 
 	/**
-	 * annotation 注入方式
+	 * annotation injecting
 	 * 
 	 * @param beanDef
 	 * @return
@@ -249,7 +231,6 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	private void fieldInject(AnnotationBeanDefinition beanDefinition) {
 		Object object = beanDefinition.getObject();
 
-		// 属性注入
 		for (Field field : beanDefinition.getInjectFields()) {
 			field.setAccessible(true);
 			Class<?> clazz = field.getType();
@@ -274,7 +255,6 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	private void methodInject(AnnotationBeanDefinition beanDefinition) {
 		Object object = beanDefinition.getObject();
 
-		// 从方法注入
 		for (Method method : beanDefinition.getInjectMethods()) {
 			method.setAccessible(true);
 			Class<?>[] params = method.getParameterTypes();

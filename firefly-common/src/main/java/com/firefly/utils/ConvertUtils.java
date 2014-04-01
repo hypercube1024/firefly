@@ -165,9 +165,11 @@ abstract public class ConvertUtils {
 	}
 
 	/**
-	 * 把集合转换为指定类型的数组
+	 * Returns an array object, this method converts a collection object to an array object 
+	 * through the specified element type of the array. 
 	 * 
 	 * @param collection
+	 * 			The collection that needs be converted
 	 * @param type
 	 * @return
 	 */
@@ -201,30 +203,31 @@ abstract public class ConvertUtils {
 	}
 
 	/**
-	 * 根据类型自动返回一个集合
+	 * Returns a collection object instance by class
 	 * 
 	 * @param clazz
-	 * @return
+	 * 			The class object of a collection
+	 * @return A collection object instance
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Collection getCollectionObj(Class<?> clazz) {
+	@SuppressWarnings("unchecked")
+	public static Collection<Object> getCollectionObj(Class<?> clazz) {
 		if (clazz.isInterface()) {
 			if (clazz.isAssignableFrom(List.class))
-				return new ArrayList();
+				return new ArrayList<Object>();
 			else if (clazz.isAssignableFrom(Set.class))
-				return new HashSet();
+				return new HashSet<Object>();
 			else if (clazz.isAssignableFrom(Queue.class))
-				return new ArrayDeque();
+				return new ArrayDeque<Object>();
 			else if (clazz.isAssignableFrom(SortedSet.class))
-				return new TreeSet();
+				return new TreeSet<Object>();
 			else if (clazz.isAssignableFrom(BlockingQueue.class))
-				return new LinkedBlockingDeque();
+				return new LinkedBlockingDeque<Object>();
 			else
 				return null;
 		} else {
-			Collection collection = null;
+			Collection<Object> collection = null;
 			try {
-				collection = (Collection) clazz.newInstance();
+				collection = (Collection<Object>) clazz.newInstance();
 			} catch (InstantiationException e) {
 				e.printStackTrace();
 			} catch (IllegalAccessException e) {
@@ -234,25 +237,25 @@ abstract public class ConvertUtils {
 		}
 	}
 
-	@SuppressWarnings("rawtypes")
-	public static Map getMapObj(Class<?> clazz) {
+	@SuppressWarnings("unchecked")
+	public static Map<Object, Object> getMapObj(Class<?> clazz) {
 		if (clazz.isInterface()) {
 			if (clazz.isAssignableFrom(Map.class))
-				return new HashMap();
+				return new HashMap<Object, Object>();
 			else if (clazz.isAssignableFrom(ConcurrentMap.class))
-				return new ConcurrentHashMap();
+				return new ConcurrentHashMap<Object, Object>();
 			else if (clazz.isAssignableFrom(SortedMap.class))
-				return new TreeMap();
+				return new TreeMap<Object, Object>();
 			else if (clazz.isAssignableFrom(NavigableMap.class))
-				return new TreeMap();
+				return new TreeMap<Object, Object>();
 			else if (clazz.isAssignableFrom(ConcurrentNavigableMap.class))
-				return new ConcurrentSkipListMap();
+				return new ConcurrentSkipListMap<Object, Object>();
 			else
 				return null;
 		} else {
-			Map map = null;
+			Map<Object, Object> map = null;
 			try {
-				map = (Map) clazz.newInstance();
+				map = (Map<Object, Object>) clazz.newInstance();
 			} catch (InstantiationException e) {
 				e.printStackTrace();
 			} catch (IllegalAccessException e) {

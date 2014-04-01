@@ -1,12 +1,17 @@
 package test.utils;
 
+import static org.hamcrest.Matchers.is;
+
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
-import static org.hamcrest.Matchers.*;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
+
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.log.LogFactory;
 
@@ -43,6 +48,8 @@ public class TestConvertUtils {
 	}
 
 	public static void main(String[] args) throws URISyntaxException {
+		Map<Object,Object> map = new HashMap<Object, Object>();
+		map.put("key", "value");
 		System.out.println(LogFactory.class.getClassLoader().getResource("firefly-log.properties").toURI());
 	}
 }
