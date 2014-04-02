@@ -66,8 +66,8 @@ public class SSLSession implements Closeable {
     /**
      * The initial handshake is a procedure by which the two peers exchange communication parameters until an SSLSession is established. 
      * Application data can not be sent during this phase.
-     * @param receiveBuffer encrypted message
-     * @return It return true means handshake success
+     * @param receiveBuffer Encrypted message
+     * @return True means handshake success
      * @throws Throwable
      */
     public boolean doHandshake(ByteBuffer receiveBuffer) throws Throwable {
@@ -209,7 +209,8 @@ public class SSLSession implements Closeable {
     
     /**
      * This method is used to decrypt, it implied do handshake
-     * @param receiveBuffer encrypted message
+     * @param receiveBuffer
+     * 				Encrypted message
      * @return plaintext
      * @throws Throwable sslEngine error during data read
      */
@@ -264,7 +265,8 @@ public class SSLSession implements Closeable {
     
     /**
      * This method is used to encrypt and flush to socket channel
-     * @param outputBuffer plaintext message
+     * @param outputBuffer 
+     * 				Plaintext message
      * @return writen length
      * @throws Throwable sslEngine error during data write
      */
