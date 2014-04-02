@@ -326,10 +326,13 @@ public class SSLSession implements Closeable {
      * is responsible for making sure to call dataFlush()
      * before shutting down.
      * 
-     * @param fc to transfer FileChannel
-     * @param pos start position
-     * @param len length
-     * @return writen length
+     * @param fc 
+     * 			to transfer FileChannel
+     * @param pos 
+     * 			start position
+     * @param len 
+     * 			length
+     * @return written length
      * @throws Throwable
      */
     public long transferTo(FileChannel fc, long pos, long len) throws Throwable {
