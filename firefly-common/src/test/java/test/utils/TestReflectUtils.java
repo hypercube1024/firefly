@@ -87,6 +87,21 @@ public class TestReflectUtils {
 		Assert.assertThat((Integer)ReflectUtils.arrayGet(intArr2, 9), is(55));
 	}
 	
+	@Test
+	public void testCopy() throws Throwable {
+		Foo foo = new Foo();
+		foo.setName("hello foo");
+		foo.setPrice(3.3);
+		foo.setNumber(40);
+		
+		Foo2 foo2 = new Foo2();
+		foo2.setName("hello foo2");
+		
+		ReflectUtils.copy(foo2, foo);
+		Assert.assertThat(foo.getName(), is("hello foo2"));
+		Assert.assertThat(foo.getNumber(), is(40));
+	}
+	
 	public static void main1(String[] args) throws Throwable {
 		set(new int[]{15, 44, 55, 66}, 0);
 		
@@ -124,7 +139,7 @@ public class TestReflectUtils {
 //		System.out.println(ReflectUtils.createFieldSetterMethodCode(Foo.class.getField("info")));
 	}
 	
-	public static void main3(String[] args) throws Throwable {
+	public static void main4(String[] args) throws Throwable {
 		Bar bar = new Bar();
 		ReflectUtils.setProperty(bar, "name", "hello");
 		System.out.println(ReflectUtils.getProperty(bar, "name"));
@@ -147,7 +162,7 @@ public class TestReflectUtils {
 		System.out.println("proxy invocation: " + (end - start) + "|" + a);
 	}
 	
-	public static void main(String[] args) throws Throwable {		
+	public static void main3(String[] args) throws Throwable {		
 		int times = 1000 * 1000 * 1000;
 		
 		Foo foo = new Foo();
@@ -179,6 +194,25 @@ public class TestReflectUtils {
 	
 	public static class Bar {
 		public String name;
+	}
+	
+	public static class Foo2 {
+		private String name;
+		private Integer number;
+		
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public Integer getNumber() {
+			return number;
+		}
+		public void setNumber(Integer number) {
+			this.number = number;
+		}
+		
 	}
 
 	public static class Foo {

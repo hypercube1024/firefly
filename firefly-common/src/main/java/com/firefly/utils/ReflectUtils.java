@@ -1,5 +1,6 @@
 package com.firefly.utils;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -93,7 +94,7 @@ public abstract class ReflectUtils {
 	 * @throws Throwable
 	 */
 	public static void set(Object obj, String property, Object value) throws Throwable {
-		getMethodProxy(getSetterMethod(obj.getClass(), property)).invoke(obj, value);
+		getSetterMethod(obj.getClass(), property).invoke(obj, value);
 	}
 	
 	/**
@@ -104,7 +105,7 @@ public abstract class ReflectUtils {
 	 * @throws Throwable
 	 */
 	public static Object get(Object obj, String property) throws Throwable {
-		return getMethodProxy(getGetterMethod(obj.getClass(), property)).invoke(obj);
+		return getGetterMethod(obj.getClass(), property).invoke(obj);
 	}
 	
 	public static Object arrayGet(Object array, int index) throws Throwable {
@@ -471,5 +472,25 @@ public abstract class ReflectUtils {
 				fieldMap.put(propertyName, field);
 		}
 		return fieldMap;
+	}
+	
+	public static void copy(Object src, Object dest) {
+		Map<String, Method> getterMethodMap = ReflectUtils.getGetterMethods(src.getClass());
+		Map<String, Method> setterMethodMap = ReflectUtils.getSetterMethods(dest.getClass());
+ 
+		for(Map.Entry<String, Method> entry : setterMethodMap.entrySet()) {
+			Method getter = getterMethodMap.get(entry.getKey());
+			if(getter == null)
+				continue;
+   
+			try {
+				Object obj = getter.invoke(src);
+				if(obj != null) {
+					entry.getValue().invoke(dest, obj);
+				}
+			} catch(Throwable t) {
+				t.printStackTrace();
+			}
+		}
 	}
 }
