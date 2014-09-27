@@ -1,6 +1,5 @@
 package com.firefly.utils;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -10,14 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javassist.ClassClassPath;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtConstructor;
-import javassist.CtField;
-import javassist.CtMethod;
-
-import com.firefly.utils.collection.IdentityHashMap;
+import com.firefly.utils.classproxy.ArrayProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.FieldProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.MethodProxyFactoryUsingJavassist;
 
 public abstract class ReflectUtils {
 	
@@ -27,18 +21,6 @@ public abstract class ReflectUtils {
 	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
 	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
 	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
-	private static final IdentityHashMap<Class<?>, String> primitiveWrapMap = new IdentityHashMap<Class<?>, String>();
-	
-	static {
-		primitiveWrapMap.put(short.class, Short.class.getCanonicalName());
-		primitiveWrapMap.put(byte.class, Byte.class.getCanonicalName());
-		primitiveWrapMap.put(int.class, Integer.class.getCanonicalName());
-		primitiveWrapMap.put(char.class, Character.class.getCanonicalName());
-		primitiveWrapMap.put(float.class, Float.class.getCanonicalName());
-		primitiveWrapMap.put(double.class, Double.class.getCanonicalName());
-		primitiveWrapMap.put(long.class, Long.class.getCanonicalName());
-		primitiveWrapMap.put(boolean.class, Boolean.class.getCanonicalName());
-	}
 
 	public static interface BeanMethodFilter {
 		public boolean accept(String propertyName, Method method);
@@ -76,6 +58,14 @@ public abstract class ReflectUtils {
 		Object get(Object array, int index);
 		
 		void set(Object array, int index, Object value);
+	}
+	
+	public static interface ProxyFactory {
+		ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable;
+		
+		FieldProxy getFieldProxy(Field field) throws Throwable;
+		
+		MethodProxy getMethodProxy(Method method) throws Throwable;
 	}
 	
 	public static void setProperty(Object obj, String property, Object value) throws Throwable {
@@ -120,7 +110,6 @@ public abstract class ReflectUtils {
 		return getArrayProxy(array.getClass()).size(array);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {
 		if(!clazz.isArray())
 			throw new IllegalArgumentException("type error, it's not array");
@@ -134,68 +123,12 @@ public abstract class ReflectUtils {
 			if(ret != null)
 				return ret;
 			
-			ClassPool classPool = ClassPool.getDefault();
-			classPool.insertClassPath(new ClassClassPath(ArrayProxy.class));
-			
-			CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField$" + clazz.hashCode());
-			cc.addInterface(classPool.get(ArrayProxy.class.getName()));
-			
-			cc.addMethod(CtMethod.make(createArraySizeCode(clazz), cc));
-			cc.addMethod(CtMethod.make(createArrayGetCode(clazz), cc));
-			cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
-			
-			ret = (ArrayProxy) cc.toClass().getConstructor().newInstance();
+			ret = new ArrayProxyFactoryUsingJavassist().getArrayProxy(clazz);
 			arrayCache.put(clazz, ret);
+			return ret;
 		}
-		return ret;
 	}
 	
-	private static String createArraySetCode(Class<?> clazz) {
-		StringBuilder code = new StringBuilder();
-		code.append("public void set(Object array, int index, Object value){\n")
-			.append(StringUtils.replace("\t(({})array)[index] = ", clazz.getCanonicalName()));
-		
-		Class<?> componentType = clazz.getComponentType();
-		if(componentType.isPrimitive()) {
-			code.append(StringUtils.replace("(({})value).{}Value()", primitiveWrapMap.get(componentType), componentType.getCanonicalName()));
-		} else {
-			code.append(StringUtils.replace("({})value", componentType.getCanonicalName()));
-		}
-		
-		code.append(";\n")
-			.append("}");
-		return code.toString();
-	}
-	
-	private static String createArrayGetCode(Class<?> clazz) {
-		StringBuilder code = new StringBuilder();
-		code.append("public Object get(Object array, int index){\n")
-			.append("\treturn ");
-		Class<?> componentType = clazz.getComponentType();
-		boolean hasValueOf = false;
-		if(componentType.isPrimitive()) {
-			code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(componentType)));
-			hasValueOf = true;
-		}
-		
-		code.append(StringUtils.replace("(({})array)[index]", clazz.getCanonicalName()));
-		if(hasValueOf)
-			code.append(")");
-		
-		code.append(";\n")
-		.append("}");
-		return code.toString();
-	}
-	
-	private static String createArraySizeCode(Class<?> clazz) {
-		StringBuilder code = new StringBuilder();
-		code.append("public int size(Object array){\n")
-			.append("\treturn ").append(StringUtils.replace("(({})array).length;\n", clazz.getCanonicalName()))
-			.append("}");
-		return code.toString();
-	}
-	
-	@SuppressWarnings("unchecked")
 	public static FieldProxy getFieldProxy(Field field) throws Throwable {
 		FieldProxy ret = fieldCache.get(field);
 		if(ret != null)
@@ -206,65 +139,12 @@ public abstract class ReflectUtils {
 			if(ret != null)
 				return ret;
 			
-			ClassPool classPool = ClassPool.getDefault();
-			classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
-			classPool.importPackage(Field.class.getCanonicalName());
-			
-			CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField$" + field.hashCode());
-			cc.addInterface(classPool.get(FieldProxy.class.getName()));
-			cc.addField(CtField.make("private Field field;", cc));
-			
-			CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Field.class.getName())}, cc);
-			constructor.setBody("{this.field = (Field)$1;}");
-			cc.addConstructor(constructor);
-			
-			cc.addMethod(CtMethod.make("public Field field(){return field;}", cc));
-			cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
-			cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
-			
-			ret = (FieldProxy) cc.toClass().getConstructor(Field.class).newInstance(field);
+			ret = new FieldProxyFactoryUsingJavassist().getFieldProxy(field);
 			fieldCache.put(field, ret);
 		}
 		return ret;
 	}
 	
-	private static String createFieldGetterMethodCode(Field field) {
-		Class<?> fieldClazz = field.getType();
-		StringBuilder code = new StringBuilder();
-		code.append("public Object get(Object obj){\n")
-			.append("\treturn ");
-		
-		boolean hasValueOf = false;
-		if(fieldClazz.isPrimitive()) {
-			code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(fieldClazz)));
-			hasValueOf = true;
-		}
-		code.append(StringUtils.replace("(({})obj).{}", field.getDeclaringClass().getCanonicalName(), field.getName()));
-		if(hasValueOf)
-			code.append(")");
-		
-		code.append(";\n")
-			.append("}");
-		return code.toString();
-	}
-	
-	private static String createFieldSetterMethodCode(Field field) {
-		Class<?> fieldClazz = field.getType();
-		StringBuilder code = new StringBuilder();
-		code.append("public void set(Object obj, Object value){\n");
-		code.append(StringUtils.replace("\t(({})obj).{} = ", field.getDeclaringClass().getCanonicalName(), field.getName()));
-		
-		if(fieldClazz.isPrimitive()) {
-			code.append(StringUtils.replace("(({})value).{}Value()", primitiveWrapMap.get(fieldClazz), fieldClazz.getCanonicalName()));
-		} else {
-			code.append(StringUtils.replace("({})value", fieldClazz.getCanonicalName()));
-		}
-		code.append(";\n")
-			.append("}");
-		return code.toString();
-	}
-	
-	@SuppressWarnings("unchecked")
 	public static MethodProxy getMethodProxy(Method method) throws Throwable {
 		MethodProxy ret = methodCache.get(method);
 		if(ret != null)
@@ -275,82 +155,9 @@ public abstract class ReflectUtils {
 			if(ret != null)
 				return ret;
 		
-			ClassPool classPool = ClassPool.getDefault();
-			classPool.insertClassPath(new ClassClassPath(MethodProxy.class));
-			classPool.importPackage(Method.class.getCanonicalName());
-			
-			CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod$" + method.hashCode());
-			
-			cc.addInterface(classPool.get(MethodProxy.class.getName()));
-			cc.addField(CtField.make("private Method method;", cc));
-			
-			CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Method.class.getName())}, cc);
-			constructor.setBody("{this.method = (Method)$1;}");
-			cc.addConstructor(constructor);
-			
-			cc.addMethod(CtMethod.make("public Method method(){return method;}", cc));
-			cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
-			
-			ret = (MethodProxy) cc.toClass().getConstructor(Method.class).newInstance(method);
+			ret = new MethodProxyFactoryUsingJavassist().getMethodProxy(method);
 			methodCache.put(method, ret);
 		}
-		return ret;
-	}
-	
-	private static String createInvokeMethodCode(Method method) {
-		Class<?>[] paramClazz = method.getParameterTypes();
-		StringBuilder code = new StringBuilder();
-
-		code.append("public Object invoke(Object obj, Object[] args){\n ");
-		if(paramClazz.length > 0)
-			code.append('\t')
-			.append(StringUtils.replace("if(args == null || args.length != {})", paramClazz.length))
-			.append("\n\t\t")
-			.append("throw new IllegalArgumentException(\"arguments error\");\n")
-			.append('\n');
-		
-		boolean hasValueOf = false;
-		code.append('\t');
-		if(!method.getReturnType().equals(Void.TYPE)) {
-			code.append("return ");
-			if(method.getReturnType().isPrimitive()) {
-				code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(method.getReturnType())));
-				hasValueOf = true;
-			}
-		}
-			
-		if(Modifier.isStatic(method.getModifiers()))
-			code.append(method.getDeclaringClass().getCanonicalName());
-		else
-			code.append(StringUtils.replace("(({})obj)", method.getDeclaringClass().getCanonicalName()));
-		
-		code.append('.').append(method.getName()).append('(');
-		if(paramClazz.length > 0) {
-			int max = paramClazz.length - 1;
-			for (int i = 0; ;i++) {
-				Class<?> param = paramClazz[i];
-				if(param.isPrimitive()) {
-					code.append(StringUtils.replace("(({})args[{}]).{}Value()", primitiveWrapMap.get(param), i, param.getCanonicalName()));
-				} else {
-					code.append(StringUtils.replace("({})args[{}]", param.getCanonicalName(), i));
-				}
-				
-				if(i == max)
-					break;
-				code.append(", ");
-			}
-		}
-		if(hasValueOf)
-			code.append(")");
-
-		code.append(");\n");
-		
-		if(method.getReturnType().equals(Void.TYPE))
-			code.append("\treturn null;\n");
-		
-		code.append('}');
-		
-		String ret = code.toString();
 		return ret;
 	}
 	

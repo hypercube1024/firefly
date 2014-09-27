@@ -10,8 +10,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.ReflectUtils.ArrayProxy;
 import com.firefly.utils.ReflectUtils.FieldProxy;
 import com.firefly.utils.ReflectUtils.MethodProxy;
+import com.firefly.utils.classproxy.ArrayProxyFactoryUsingJavaCompiler;
 
 public class TestReflectUtils {
 
@@ -100,6 +102,36 @@ public class TestReflectUtils {
 		ReflectUtils.copy(foo2, foo);
 		Assert.assertThat(foo.getName(), is("hello foo2"));
 		Assert.assertThat(foo.getNumber(), is(40));
+	}
+	
+	public static void main(String[] args) throws Throwable {
+		Integer[] array = new Integer[]{77, 88, 99, 0, 11};
+		int[] array2 = new int[]{15, 44, 55, 66};
+		ArrayProxy arrayProxy = new ArrayProxyFactoryUsingJavaCompiler().getArrayProxy(array.getClass());
+		ArrayProxy arrayProxy2 = new ArrayProxyFactoryUsingJavaCompiler().getArrayProxy(array2.getClass());
+		System.out.println(arrayProxy.get(array, 2));
+		System.out.println(arrayProxy2.get(array2, 3));
+		
+		ArrayProxy arrayProxy3 = ReflectUtils.getArrayProxy(array.getClass());
+		ArrayProxy arrayProxy4 = ReflectUtils.getArrayProxy(array2.getClass());
+		System.out.println(arrayProxy3.get(array, 2));
+		System.out.println(arrayProxy4.get(array2, 3));
+		
+		int times = 1000 * 1000 * 1000;
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			arrayProxy2.get(array2, 3);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("java compiler -> " + (end - start));
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			arrayProxy4.get(array2, 3);
+		}
+		end = System.currentTimeMillis();
+		System.out.println("javassist -> " + (end - start));
+		
 	}
 	
 	public static void main1(String[] args) throws Throwable {

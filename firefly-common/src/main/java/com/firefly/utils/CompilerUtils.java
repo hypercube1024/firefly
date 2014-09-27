@@ -21,11 +21,14 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 public class CompilerUtils {
 	private static final Map<String, JavaFileObject> output = new ConcurrentHashMap<String, JavaFileObject>();
 	private static final ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
 	private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<String, Class<?>>();
+	
+	public static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 	
 	public static Class<?> getClassByName(String name) throws ClassNotFoundException {
 		Class<?> ret = classCache.get(name);
