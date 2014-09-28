@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,6 +17,7 @@ import javax.tools.DiagnosticListener;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
@@ -29,6 +31,22 @@ public class CompilerUtils {
 	private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<String, Class<?>>();
 	
 	public static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+	
+	public static Class<?> compileSource(String completeClassName, String source) throws Throwable {
+		boolean result = false;
+		JavaFileManager fileManager = CompilerUtils.getStringSourceJavaFileManager(compiler, null, null, Charset.forName("UTF-8"));
+		try {
+			CompilationTask task = compiler.getTask(null, fileManager, null, null, null,Arrays.asList(new JavaSourceFromString(completeClassName, source)));
+			result = task.call();
+		} finally {
+			fileManager.close();
+		}
+		
+		if(!result)
+			return null;
+		
+		return getClassByName(completeClassName);
+	}
 	
 	public static Class<?> getClassByName(String name) throws ClassNotFoundException {
 		Class<?> ret = classCache.get(name);

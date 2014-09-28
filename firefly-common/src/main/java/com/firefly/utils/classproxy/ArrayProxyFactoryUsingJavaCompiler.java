@@ -1,23 +1,47 @@
 package com.firefly.utils.classproxy;
 
-import java.nio.charset.Charset;
-import java.util.Arrays;
-
-import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileManager;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.firefly.utils.CompilerUtils;
-import com.firefly.utils.CompilerUtils.JavaSourceFromString;
 import com.firefly.utils.ReflectUtils.ArrayProxy;
 import com.firefly.utils.StringUtils;
 
 public class ArrayProxyFactoryUsingJavaCompiler extends AbstractArrayProxyFactory {
+	
+	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
+	public static final ArrayProxyFactoryUsingJavaCompiler INSTANCE = new ArrayProxyFactoryUsingJavaCompiler();
+	
+	private ArrayProxyFactoryUsingJavaCompiler(){
+		
+	}
+	
 	@Override
 	public ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {
-		long start = System.currentTimeMillis();
+		if(!clazz.isArray())
+			throw new IllegalArgumentException("type error, it's not array");
+			
+		ArrayProxy ret = arrayCache.get(clazz);
+		if(ret != null)
+			return ret;
+		
+		synchronized(arrayCache) {
+			ret = arrayCache.get(clazz);
+			if(ret != null)
+				return ret;
+			
+			ret = _getArrayProxy(clazz);
+			arrayCache.put(clazz, ret);
+			return ret;
+		}
+	}
+	
+	private ArrayProxy _getArrayProxy(Class<?> clazz) throws Throwable {
+//		long start = System.currentTimeMillis();
 		
 		String packageName = "com.firefly.utils";
-		String className = "ArrayReflectionProxy" + clazz.hashCode();
+		String className = "ArrayReflectionProxy" + UUID.randomUUID().toString().replace("-", "");
 		String completeClassName = packageName + "." + className;
 //		System.out.println(completeClassName);
 		
@@ -48,23 +72,15 @@ public class ArrayProxyFactoryUsingJavaCompiler extends AbstractArrayProxyFactor
 				+"}";
 //		System.out.println(source);
 		
-		boolean result = false;
-		JavaFileManager fileManager = CompilerUtils.getStringSourceJavaFileManager(CompilerUtils.compiler, null, null, Charset.forName("UTF-8"));
-		try {
-			CompilationTask task = CompilerUtils.compiler.getTask(null, fileManager, null, null, null,Arrays.asList(new JavaSourceFromString(completeClassName, source)));
-			result = task.call();
-		} finally {
-			fileManager.close();
-		}
 		
-		if(!result)
+		
+		Class<?> arrayProxyClazz = CompilerUtils.compileSource(completeClassName, source);
+		if(arrayProxyClazz == null)
 			return null;
 		
-		Class<?> arrayProxyClazz = CompilerUtils.getClassByName(completeClassName);
 		ArrayProxy obj = (ArrayProxy)arrayProxyClazz.newInstance();
-		
-		long end = System.currentTimeMillis();
-		System.out.println("Java compiler generates class proxy time -> " + (end - start));
+//		long end = System.currentTimeMillis();
+//		System.out.println("Java compiler generates class proxy time -> " + (end - start));
 		return obj;
 	}
 }

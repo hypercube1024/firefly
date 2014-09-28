@@ -18,9 +18,7 @@ public abstract class ReflectUtils {
 	private static final Map<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
 	private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
 	private static final Map<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<Class<?>, Map<String, Field>>();
-	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
-	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
-	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
+
 
 	public static interface BeanMethodFilter {
 		public boolean accept(String propertyName, Method method);
@@ -111,54 +109,15 @@ public abstract class ReflectUtils {
 	}
 	
 	public static ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {
-		if(!clazz.isArray())
-			throw new IllegalArgumentException("type error, it's not array");
-			
-		ArrayProxy ret = arrayCache.get(clazz);
-		if(ret != null)
-			return ret;
-		
-		synchronized(arrayCache) {
-			ret = arrayCache.get(clazz);
-			if(ret != null)
-				return ret;
-			
-			ret = new ArrayProxyFactoryUsingJavassist().getArrayProxy(clazz);
-			arrayCache.put(clazz, ret);
-			return ret;
-		}
+		return ArrayProxyFactoryUsingJavassist.INSTANCE.getArrayProxy(clazz);
 	}
 	
 	public static FieldProxy getFieldProxy(Field field) throws Throwable {
-		FieldProxy ret = fieldCache.get(field);
-		if(ret != null)
-			return ret;
-		
-		synchronized(fieldCache) {
-			ret = fieldCache.get(field);
-			if(ret != null)
-				return ret;
-			
-			ret = new FieldProxyFactoryUsingJavassist().getFieldProxy(field);
-			fieldCache.put(field, ret);
-		}
-		return ret;
+		return FieldProxyFactoryUsingJavassist.INSTANCE.getFieldProxy(field);
 	}
 	
 	public static MethodProxy getMethodProxy(Method method) throws Throwable {
-		MethodProxy ret = methodCache.get(method);
-		if(ret != null)
-			return ret;
-		
-		synchronized(methodCache) {
-			ret = methodCache.get(method);
-			if(ret != null)
-				return ret;
-		
-			ret = new MethodProxyFactoryUsingJavassist().getMethodProxy(method);
-			methodCache.put(method, ret);
-		}
-		return ret;
+		return MethodProxyFactoryUsingJavassist.INSTANCE.getMethodProxy(method);
 	}
 	
 	/**

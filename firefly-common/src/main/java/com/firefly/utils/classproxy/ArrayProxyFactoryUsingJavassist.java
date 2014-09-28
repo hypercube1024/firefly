@@ -1,5 +1,9 @@
 package com.firefly.utils.classproxy;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -10,14 +14,40 @@ import com.firefly.utils.StringUtils;
 
 public class ArrayProxyFactoryUsingJavassist extends AbstractArrayProxyFactory {
 
-	@SuppressWarnings("unchecked")
+	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
+	public static final ArrayProxyFactoryUsingJavassist INSTANCE = new ArrayProxyFactoryUsingJavassist();
+	
+	private ArrayProxyFactoryUsingJavassist() {
+		
+	}
+	
 	@Override
 	public ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {
-		long start = System.currentTimeMillis();
+		if(!clazz.isArray())
+			throw new IllegalArgumentException("type error, it's not array");
+			
+		ArrayProxy ret = arrayCache.get(clazz);
+		if(ret != null)
+			return ret;
+		
+		synchronized(arrayCache) {
+			ret = arrayCache.get(clazz);
+			if(ret != null)
+				return ret;
+			
+			ret = _getArrayProxy(clazz);
+			arrayCache.put(clazz, ret);
+			return ret;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private ArrayProxy _getArrayProxy(Class<?> clazz) throws Throwable {
+//		long start = System.currentTimeMillis();
 		ClassPool classPool = ClassPool.getDefault();
 		classPool.insertClassPath(new ClassClassPath(ArrayProxy.class));
 		
-		CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField$" + clazz.hashCode());
+		CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField" + UUID.randomUUID().toString().replace("-", ""));
 		cc.addInterface(classPool.get(ArrayProxy.class.getName()));
 		
 		cc.addMethod(CtMethod.make(createArraySizeCode(clazz), cc));
@@ -25,8 +55,8 @@ public class ArrayProxyFactoryUsingJavassist extends AbstractArrayProxyFactory {
 		cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
 		
 		ArrayProxy ret = (ArrayProxy) cc.toClass().getConstructor().newInstance();
-		long end = System.currentTimeMillis();
-		System.out.println("Javassist generates class proxy time -> " + (end - start));
+//		long end = System.currentTimeMillis();
+//		System.out.println("Javassist generates class proxy time -> " + (end - start));
 		return ret;
 	}
 	

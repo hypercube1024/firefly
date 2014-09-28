@@ -14,6 +14,8 @@ import com.firefly.utils.ReflectUtils.ArrayProxy;
 import com.firefly.utils.ReflectUtils.FieldProxy;
 import com.firefly.utils.ReflectUtils.MethodProxy;
 import com.firefly.utils.classproxy.ArrayProxyFactoryUsingJavaCompiler;
+import com.firefly.utils.classproxy.FieldProxyFactoryUsingJavaCompiler;
+import com.firefly.utils.classproxy.MethodProxyFactoryUsingJavaCompiler;
 
 public class TestReflectUtils {
 
@@ -43,6 +45,24 @@ public class TestReflectUtils {
 		proxy = ReflectUtils.getMethodProxy(ReflectUtils.getSetterMethod(Foo.class, "price"));
 		Assert.assertThat(proxy.invoke(foo, 35.5), nullValue());
 		Assert.assertThat(foo.getPrice(), is(35.5));
+		
+		MethodProxyFactoryUsingJavaCompiler proxyUsingJavaCompiler = MethodProxyFactoryUsingJavaCompiler.INSTANCE;
+		Foo foo2 = new Foo();
+		MethodProxy proxy2 = proxyUsingJavaCompiler.getMethodProxy(Foo.class.getMethod("setProperty", String.class, boolean.class));
+		Assert.assertThat(proxy2.invoke(foo2, "proxy foo", true), nullValue());
+		Assert.assertThat(foo2.getName(), is("proxy foo"));
+		Assert.assertThat(foo2.isFailure(), is(true));
+		
+		proxy2 = proxyUsingJavaCompiler.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "name"));
+		Assert.assertThat((String)proxy2.invoke(foo2), is("proxy foo"));
+		
+		
+		proxy2 = proxyUsingJavaCompiler.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "failure"));
+		Assert.assertThat((Boolean)proxy2.invoke(foo2), is(true));
+		
+		proxy2 = proxyUsingJavaCompiler.getMethodProxy(ReflectUtils.getSetterMethod(Foo.class, "price"));
+		Assert.assertThat(proxy2.invoke(foo2, 35.5), nullValue());
+		Assert.assertThat(foo2.getPrice(), is(35.5));
 	}
 	
 	@Test
@@ -50,6 +70,7 @@ public class TestReflectUtils {
 		Foo foo = new Foo();
 		Field num2 = Foo.class.getField("num2");
 		Field info = Foo.class.getField("info");
+		
 		FieldProxy proxyNum2 = ReflectUtils.getFieldProxy(num2);
 		proxyNum2.set(foo, 30);
 		Assert.assertThat((Integer)proxyNum2.get(foo), is(30));
@@ -60,6 +81,17 @@ public class TestReflectUtils {
 		
 		ReflectUtils.setProperty(foo, "name", "hello");
 		Assert.assertThat((String)ReflectUtils.getProperty(foo, "name"), is("hello"));
+		
+		
+		Foo foo2 = new Foo();
+		
+		proxyNum2 = FieldProxyFactoryUsingJavaCompiler.INSTANCE.getFieldProxy(num2);
+		proxyNum2.set(foo2, 303);
+		Assert.assertThat((Integer)proxyNum2.get(foo2), is(303));
+		
+		proxyInfo = FieldProxyFactoryUsingJavaCompiler.INSTANCE.getFieldProxy(info);
+		proxyInfo.set(foo2, "test info 03");
+		Assert.assertThat((String)proxyInfo.get(foo2), is("test info 03"));
 	}
 	
 	@Test
@@ -76,17 +108,31 @@ public class TestReflectUtils {
 	
 	@Test
 	public void testArray() throws Throwable {
+		ArrayProxyFactoryUsingJavaCompiler arrayProxyFactory = ArrayProxyFactoryUsingJavaCompiler.INSTANCE;
+		
 		int[] intArr = new int[5];
 		Integer[] intArr2 = new Integer[10];
 		
+		ArrayProxy intArrProxy = arrayProxyFactory.getArrayProxy(intArr.getClass());
+		ArrayProxy intArr2Proxy = arrayProxyFactory.getArrayProxy(intArr2.getClass());
+		
 		Assert.assertThat(ReflectUtils.arraySize(intArr), is(5));
 		Assert.assertThat(ReflectUtils.arraySize(intArr2), is(10));
+		
+		Assert.assertThat(intArrProxy.size(intArr), is(5));
+		Assert.assertThat(intArr2Proxy.size(intArr2), is(10));
 		
 		ReflectUtils.arraySet(intArr, 0, 33);
 		Assert.assertThat((Integer)ReflectUtils.arrayGet(intArr, 0), is(33));
 		
 		ReflectUtils.arraySet(intArr2, intArr2.length - 1, 55);
 		Assert.assertThat((Integer)ReflectUtils.arrayGet(intArr2, 9), is(55));
+		
+		intArrProxy.set(intArr, 1, 23);
+		Assert.assertThat((Integer)intArrProxy.get(intArr, 1), is(23));
+		
+		intArr2Proxy.set(intArr2, intArr2.length - 1, 65);
+		Assert.assertThat((Integer)intArr2Proxy.get(intArr2, 9), is(65));
 	}
 	
 	@Test
@@ -105,10 +151,66 @@ public class TestReflectUtils {
 	}
 	
 	public static void main(String[] args) throws Throwable {
+		Foo foo = new Foo();
+		Field num2 = Foo.class.getField("num2");
+		Field info = Foo.class.getField("info");
+		
+		FieldProxy proxyNum2 = FieldProxyFactoryUsingJavaCompiler.INSTANCE.getFieldProxy(num2);
+		proxyNum2.set(foo, 30);
+		System.out.println(proxyNum2.get(foo));
+		
+		FieldProxy proxyInfo = FieldProxyFactoryUsingJavaCompiler.INSTANCE.getFieldProxy(info);
+		proxyInfo.set(foo, "test info 0");
+		System.out.println(proxyInfo.get(foo));
+	}
+	
+	public static void main7(String[] args) throws Throwable {
+		Foo foo = new Foo();
+		MethodProxyFactoryUsingJavaCompiler proxy = MethodProxyFactoryUsingJavaCompiler.INSTANCE;
+		MethodProxy setPriceProxy = proxy.getMethodProxy(ReflectUtils.getSetterMethod(Foo.class, "price"));
+		setPriceProxy.invoke(foo, 3.3);
+		
+		MethodProxy getPriceProxy = proxy.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "price"));
+		System.out.println(getPriceProxy.invoke(foo));
+		
+		MethodProxy getPriceProxy2 = ReflectUtils.getMethodProxy(ReflectUtils.getGetterMethod(Foo.class, "price"));
+		System.out.println(getPriceProxy2.invoke(foo));
+		
+		int times = 1000 * 1000 * 1000;
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			getPriceProxy.invoke(foo);
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("java compiler -> " + (end - start));
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			getPriceProxy.invoke(foo);
+		}
+		end = System.currentTimeMillis();
+		System.out.println("java compiler -> " + (end - start));
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			getPriceProxy2.invoke(foo);
+		}
+		end = System.currentTimeMillis();
+		System.out.println("javassist -> " + (end - start));
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) {
+			getPriceProxy2.invoke(foo);
+		}
+		end = System.currentTimeMillis();
+		System.out.println("javassist -> " + (end - start));
+	}
+	
+	public static void main5(String[] args) throws Throwable {
 		Integer[] array = new Integer[]{77, 88, 99, 0, 11};
 		int[] array2 = new int[]{15, 44, 55, 66};
-		ArrayProxy arrayProxy = new ArrayProxyFactoryUsingJavaCompiler().getArrayProxy(array.getClass());
-		ArrayProxy arrayProxy2 = new ArrayProxyFactoryUsingJavaCompiler().getArrayProxy(array2.getClass());
+		ArrayProxy arrayProxy = ArrayProxyFactoryUsingJavaCompiler.INSTANCE.getArrayProxy(array.getClass());
+		ArrayProxy arrayProxy2 = ArrayProxyFactoryUsingJavaCompiler.INSTANCE.getArrayProxy(array2.getClass());
 		System.out.println(arrayProxy.get(array, 2));
 		System.out.println(arrayProxy2.get(array2, 3));
 		
@@ -194,7 +296,7 @@ public class TestReflectUtils {
 		System.out.println("proxy invocation: " + (end - start) + "|" + a);
 	}
 	
-	public static void main3(String[] args) throws Throwable {		
+	public static void main6(String[] args) throws Throwable {		
 		int times = 1000 * 1000 * 1000;
 		
 		Foo foo = new Foo();
@@ -203,15 +305,36 @@ public class TestReflectUtils {
 		MethodProxy proxy = ReflectUtils.getMethodProxy(method);
 		
 		long start = System.currentTimeMillis();
-		for (int i = 0; i < times; i++) { // 反射调用
-			method.invoke(foo, "method a", true);
+		for (int i = 0; i < times; i++) {
+			proxy.invoke(foo, "method b", true);
 		}
 		long end = System.currentTimeMillis();
 		System.out.println(foo.getName() + " invoke: " + (end - start) + "ms");
 		
 		start = System.currentTimeMillis();
-		for (int i = 0; i < times; i++) { // 字节码注入
+		for (int i = 0; i < times; i++) { 
 			proxy.invoke(foo, "method b", true);
+		}
+		end = System.currentTimeMillis();
+		System.out.println(foo.getName() + " invoke: " + (end - start) + "ms");
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) { 
+			method.invoke(foo, "method a", true);
+		}
+		end = System.currentTimeMillis();
+		System.out.println(foo.getName() + " invoke: " + (end - start) + "ms");
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) { 
+			method.invoke(foo, "method a", true);
+		}
+		end = System.currentTimeMillis();
+		System.out.println(foo.getName() + " invoke: " + (end - start) + "ms");
+		
+		start = System.currentTimeMillis();
+		for (int i = 0; i < times; i++) { // 直接方法调用
+			foo.setProperty("method c", true);
 		}
 		end = System.currentTimeMillis();
 		System.out.println(foo.getName() + " invoke: " + (end - start) + "ms");

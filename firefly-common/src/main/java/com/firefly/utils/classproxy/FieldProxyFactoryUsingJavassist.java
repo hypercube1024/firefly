@@ -1,6 +1,9 @@
 package com.firefly.utils.classproxy;
 
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -13,16 +16,39 @@ import com.firefly.utils.ReflectUtils.FieldProxy;
 import com.firefly.utils.StringUtils;
 
 public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
+	
+	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
+	public static final FieldProxyFactoryUsingJavassist INSTANCE = new FieldProxyFactoryUsingJavassist();
 
-	@SuppressWarnings("unchecked")
+	private FieldProxyFactoryUsingJavassist() {
+		
+	}
+	
 	@Override
 	public FieldProxy getFieldProxy(Field field) throws Throwable {
-		long start = System.currentTimeMillis();
+		FieldProxy ret = fieldCache.get(field);
+		if(ret != null)
+			return ret;
+		
+		synchronized(fieldCache) {
+			ret = fieldCache.get(field);
+			if(ret != null)
+				return ret;
+			
+			ret = _getFieldProxy(field);
+			fieldCache.put(field, ret);
+			return ret;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private FieldProxy _getFieldProxy(Field field) throws Throwable {
+//		long start = System.currentTimeMillis();
 		ClassPool classPool = ClassPool.getDefault();
 		classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
 		classPool.importPackage(Field.class.getCanonicalName());
 		
-		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField$" + field.hashCode());
+		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField" + UUID.randomUUID().toString().replace("-", ""));
 		cc.addInterface(classPool.get(FieldProxy.class.getName()));
 		cc.addField(CtField.make("private Field field;", cc));
 		
@@ -35,8 +61,8 @@ public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
 		cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
 		
 		FieldProxy ret = (FieldProxy) cc.toClass().getConstructor(Field.class).newInstance(field);
-		long end = System.currentTimeMillis();
-		System.out.println("Javassist generates class proxy time -> " + (end - start));
+//		long end = System.currentTimeMillis();
+//		System.out.println("Javassist generates class proxy time -> " + (end - start));
 		return ret;
 	}
 

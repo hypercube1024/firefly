@@ -2,6 +2,9 @@ package com.firefly.utils.classproxy;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -14,16 +17,39 @@ import com.firefly.utils.ReflectUtils.MethodProxy;
 import com.firefly.utils.StringUtils;
 
 public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory {
+	
+	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
+	public static final MethodProxyFactoryUsingJavassist INSTANCE = new MethodProxyFactoryUsingJavassist();
 
-	@SuppressWarnings("unchecked")
+	private MethodProxyFactoryUsingJavassist() {
+		
+	}
+	
 	@Override
 	public MethodProxy getMethodProxy(Method method) throws Throwable {
-		long start = System.currentTimeMillis();
+		MethodProxy ret = methodCache.get(method);
+		if(ret != null)
+			return ret;
+		
+		synchronized(methodCache) {
+			ret = methodCache.get(method);
+			if(ret != null)
+				return ret;
+		
+			ret = _getMethodProxy(method);
+			methodCache.put(method, ret);
+		}
+		return ret;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private MethodProxy _getMethodProxy(Method method) throws Throwable {
+//		long start = System.currentTimeMillis();
 		ClassPool classPool = ClassPool.getDefault();
 		classPool.insertClassPath(new ClassClassPath(MethodProxy.class));
 		classPool.importPackage(Method.class.getCanonicalName());
 		
-		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod$" + method.hashCode());
+		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod" + UUID.randomUUID().toString().replace("-", ""));
 		
 		cc.addInterface(classPool.get(MethodProxy.class.getName()));
 		cc.addField(CtField.make("private Method method;", cc));
@@ -36,8 +62,8 @@ public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory
 		cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
 		
 		MethodProxy ret = (MethodProxy) cc.toClass().getConstructor(Method.class).newInstance(method);
-		long end = System.currentTimeMillis();
-		System.out.println("Javassist generates class proxy time -> " + (end - start));
+//		long end = System.currentTimeMillis();
+//		System.out.println("Javassist generates class proxy time -> " + (end - start));
 		return ret;
 	}
 
