@@ -30,7 +30,7 @@ import com.firefly.utils.log.LogFactory;
 /**
  * The core application context mixed XML and annotation bean management
  * 
- * @author Xujj, Alvin Qiu
+ * @author JJ Xu & Alvin Qiu
  */
 public class XmlApplicationContext extends AbstractApplicationContext {
 
@@ -85,7 +85,6 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 				object = clazz.newInstance();
 			} else {
 				List<Object> constructorParameters = new ArrayList<Object>();
-				// TODO chooses constructor by index
 				for (int i = 0; i < beanDefinition.getContructorParameters().size(); i++) {
 					Object p = getInjectArg(beanDefinition.getContructorParameters().get(i), beanDefinition.getConstructor().getParameterTypes()[i]);
 					constructorParameters.add(p);
@@ -221,7 +220,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	 */
 	private Object annotationInject(BeanDefinition beanDef) {
 		AnnotationBeanDefinition beanDefinition = (AnnotationBeanDefinition) beanDef;
-		// TODO constructor injecting
+		// constructor injecting
 		Object object = constructorInject(beanDefinition);
 		beanDefinition.setInjectedInstance(object);
 		fieldInject(beanDefinition, object);
