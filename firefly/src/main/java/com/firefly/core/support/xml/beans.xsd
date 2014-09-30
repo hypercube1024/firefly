@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:bean="http://code.google.com/p/firefly/beans"
-	targetNamespace="http://code.google.com/p/firefly/beans"
+<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:bean="http://www.fireflysource.com/beans"
+	targetNamespace="http://www.fireflysource.com/beans"
 	elementFormDefault="qualified">
 
 	<element name="mvc">

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://code.google.com/p/firefly/beans"
+<beans xmlns="http://www.fireflysource.com/beans"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="/Users/qiupengtao/develop/eclipse_workspace/local_git/firefly/firefly/src/main/java/com/firefly/core/support/xml/beans.xsd">
+		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
 	<import resource="mixed-config2.xml"/>
 	<import resource="mixed-config3.xml"/>
