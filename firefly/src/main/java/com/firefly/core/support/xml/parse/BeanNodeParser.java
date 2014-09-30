@@ -48,7 +48,7 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 			error("loads class \"" + className + "\" error");
 		}
 		
-		// TODO gets bean's constructor
+		// gets bean's constructor
 		List<Element> constructors = dom.elements(ele, CONTRUCTOR_ELEMENT);
 		if(constructors != null && constructors.size() > 0) {
 			Element constructorElement = constructors.get(0);
