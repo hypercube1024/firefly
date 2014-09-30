@@ -38,8 +38,8 @@ public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory
 		
 			ret = _getMethodProxy(method);
 			methodCache.put(method, ret);
+			return ret;
 		}
-		return ret;
 	}
 	
 	@SuppressWarnings("unchecked")

@@ -1,20 +1,13 @@
 package com.firefly.core.support.xml;
 
 /**
- * <value>节点的属性与值
- * @author 须俊杰
+ * Literal value node
+ * @author JJ Xu
  * @date 2011-3-9
  */
-public class ManagedValue {
+public class ManagedValue implements XmlManagedNode {
 
-	/**
-	 * value值
-	 */
 	private String value;
-	
-	/**
-	 * 类型名称
-	 */
 	private String typeName;
 	
 	public ManagedValue() {

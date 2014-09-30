@@ -1,5 +1,6 @@
 package com.firefly.core.support.annotation;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -10,17 +11,8 @@ public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
 	private String[] names;
 	private List<Field> fields;
 	private List<Method> methods;
-	private Object object;
-
-	@Override
-	public Object getObject() {
-		return object;
-	}
-
-	@Override
-	public void setObject(Object object) {
-		this.object = object;
-	}
+	private Constructor<?> constructor;
+	private Object injectedInstance;
 
 	@Override
 	public List<Field> getInjectFields() {
@@ -50,7 +42,6 @@ public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
 	@Override
 	public void setInterfaceNames(String[] names) {
 		this.names = names;
-
 	}
 
 	@Override
@@ -71,6 +62,26 @@ public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
 	@Override
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	@Override
+	public Constructor<?> getConstructor() {
+		return constructor;
+	}
+
+	@Override
+	public void setConstructor(Constructor<?> constructor) {
+		this.constructor = constructor;
+	}
+
+	@Override
+	public Object getInjectedInstance() {
+		return injectedInstance;
+	}
+
+	@Override
+	public void setInjectedInstance(Object injectedInstance) {
+		this.injectedInstance = injectedInstance;
 	}
 
 }

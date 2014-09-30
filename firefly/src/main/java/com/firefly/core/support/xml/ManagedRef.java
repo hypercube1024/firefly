@@ -1,11 +1,11 @@
 package com.firefly.core.support.xml;
 
 /**
- * ref元素
- * @author 须俊杰
+ * Reference elements
+ * @author JJ Xu
  * @date 2011-3-9
  */
-public class ManagedRef {
+public class ManagedRef implements XmlManagedNode {
 
 	private String beanName;
 

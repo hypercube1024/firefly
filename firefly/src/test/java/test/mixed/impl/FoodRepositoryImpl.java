@@ -8,6 +8,12 @@ import test.mixed.FoodRepository;
 public class FoodRepositoryImpl implements FoodRepository {
 
 	private List<Food> food;
+	
+	public FoodRepositoryImpl() {}
+	
+	public FoodRepositoryImpl(List<Food> food) {
+		this.food = food;
+	}
 
 	@Override
 	public List<Food> getFood() {

@@ -19,17 +19,18 @@ import com.firefly.core.support.xml.ManagedRef;
 import com.firefly.core.support.xml.ManagedValue;
 import com.firefly.core.support.xml.XmlBeanDefinition;
 import com.firefly.core.support.xml.XmlBeanReader;
+import com.firefly.core.support.xml.XmlManagedNode;
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.BeanMethodFilter;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.VerifyUtils;
 
 /**
+ * The core application context mixed XML and annotation bean management
  * 
  * @author Xujj, Alvin Qiu
- * 
  */
 public class XmlApplicationContext extends AbstractApplicationContext {
 
@@ -74,19 +75,36 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	}
 
 	private Object xmlInject(BeanDefinition beanDef) {
-		XmlBeanDefinition beanDefinition = (XmlBeanDefinition) beanDef;
-		final Object object = beanDefinition.getObject();
-		final Map<String, Object> properties = beanDefinition.getProperties();
-
-		Class<?> clazz = object.getClass();
+		final XmlBeanDefinition beanDefinition = (XmlBeanDefinition) beanDef;
+		Class<?> clazz = null;
+		Object object = null;
+		
+		try {
+			clazz = XmlApplicationContext.class.getClassLoader().loadClass(beanDefinition.getClassName());
+			if(beanDefinition.getContructorParameters().size() <= 0) {
+				object = beanDefinition.getConstructor().newInstance();
+			} else {
+				List<Object> constructorParameters = new ArrayList<Object>();
+				// TODO chooses constructor by index
+				for (int i = 0; i < beanDefinition.getContructorParameters().size(); i++) {
+					Object p = getInjectArg(beanDefinition.getContructorParameters().get(i), beanDefinition.getConstructor().getParameterTypes()[i]);
+					constructorParameters.add(p);
+				}
+				object = beanDefinition.getConstructor().newInstance(constructorParameters.toArray());
+			}
+		} catch (Throwable t) {
+			log.error("object initiate error", t);
+		}
+		
+		final Object instance = object;
 		ReflectUtils.getSetterMethods(clazz, new BeanMethodFilter(){
 
 			@Override
 			public boolean accept(String propertyName, Method method) {
-				Object value = properties.get(propertyName);
+				XmlManagedNode value = beanDefinition.getProperties().get(propertyName);
 				if (value != null) {
 					try {
-						method.invoke(object, getInjectArg(value, method));
+						method.invoke(instance, getInjectArg(value, method.getParameterTypes()[0]));
 					} catch (Throwable t) {
 						log.error("xml inject error", t);
 					}
@@ -94,43 +112,40 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 				return false;
 			}});
 
-		addObjectToContext(beanDefinition);
-		return object;
+		addObjectToContext(beanDefinition, object);
+		return instance;
 	}
 
-	private Object getInjectArg(Object value, Method method) {
-		if (value instanceof ManagedValue) { // value
-			return getValueArg(value, method);
-		} else if (value instanceof ManagedRef) { // ref
-			return getRefArg(value, method);
-		} else if (value instanceof ManagedList) { // list
-			return getListArg(value, method);
-		} else if (value instanceof ManagedArray) { // array
-			return getArrayArg(value, method);
-		} else if (value instanceof ManagedMap) { // map
-			return getMapArg(value, method);
+	@SuppressWarnings("unchecked")
+	private Object getInjectArg(XmlManagedNode value, Class<?> parameterType) {
+		if (value instanceof ManagedValue) {
+			ManagedValue managedValue = (ManagedValue)value;
+			String typeName = null;
+			if (parameterType == null) {
+				typeName = VerifyUtils.isEmpty(managedValue.getTypeName()) ? null
+						: managedValue.getTypeName();
+			} else {
+				typeName = VerifyUtils.isEmpty(managedValue.getTypeName()) ? parameterType.getName() : managedValue.getTypeName();
+			}
+			log.debug("value type [{}]", typeName);
+			return getValueArg(managedValue, typeName);
+		} else if (value instanceof ManagedRef) {
+			return getRefArg((ManagedRef)value);
+		} else if (value instanceof ManagedList) {
+			return getListArg((ManagedList<XmlManagedNode>)value, parameterType);
+		} else if (value instanceof ManagedArray) {
+			return getArrayArg((ManagedArray<XmlManagedNode>)value, parameterType);
+		} else if (value instanceof ManagedMap) {
+			return getMapArg((ManagedMap<XmlManagedNode, XmlManagedNode>)value, parameterType);
 		} else
 			return null;
 	}
 
-	private Object getValueArg(Object value, Method method) {
-		ManagedValue managedValue = (ManagedValue) value;
-		String typeName = null;
-		if (method == null) {
-			typeName = VerifyUtils.isEmpty(managedValue.getTypeName()) ? null
-					: managedValue.getTypeName();
-		} else {
-			typeName = VerifyUtils.isEmpty(managedValue.getTypeName()) ? method
-					.getParameterTypes()[0].getName() : managedValue
-					.getTypeName();
-		}
-
-		log.debug("value type [{}]", typeName);
+	private Object getValueArg(ManagedValue managedValue, String typeName) {
 		return ConvertUtils.convert(managedValue.getValue(), typeName);
 	}
 
-	private Object getRefArg(Object value, Method method) {
-		ManagedRef ref = (ManagedRef) value;
+	private Object getRefArg(ManagedRef ref) {
 		Object instance = map.get(ref.getBeanName());
 		if (instance == null) {
 			BeanDefinition b = findBeanDefinition(ref.getBeanName());
@@ -141,15 +156,10 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Object getListArg(Object value, Method method) {
-		Class<?> setterParamType = null;
-		if (method != null) {
-			setterParamType = method.getParameterTypes()[0];
-		}
-		ManagedList<Object> values = (ManagedList<Object>) value;
+	private Object getListArg(ManagedList<XmlManagedNode> values, Class<?> setterParamType) {
 		Collection<Object> collection = null;
-
-		if (VerifyUtils.isNotEmpty(values.getTypeName())) { // 指定了list的类型
+		
+		if (VerifyUtils.isNotEmpty(values.getTypeName())) {
 			try {
 				collection = (Collection<Object>) XmlApplicationContext.class
 						.getClassLoader().loadClass(values.getTypeName())
@@ -162,23 +172,16 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 					: ConvertUtils.getCollectionObj(setterParamType));
 		}
 
-		for (Object item : values) {
+		for (XmlManagedNode item : values) {
 			Object listValue = getInjectArg(item, null);
 			collection.add(listValue);
 		}
-
 		return collection;
 	}
 
-	@SuppressWarnings("unchecked")
-	private Object getArrayArg(Object value, Method method) {
-		Class<?> setterParamType = null;
-		if (method != null) {
-			setterParamType = method.getParameterTypes()[0];
-		}
-		ManagedArray<Object> values = (ManagedArray<Object>) value;
+	private Object getArrayArg(ManagedArray<XmlManagedNode> values, Class<?> setterParamType) {
 		Collection<Object> collection = new ArrayList<Object>();
-		for (Object item : values) {
+		for (XmlManagedNode item : values) {
 			Object listValue = getInjectArg(item, null);
 			collection.add(listValue);
 		}
@@ -187,12 +190,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 
 
 	@SuppressWarnings("unchecked")
-	private Object getMapArg(Object value, Method method) {
-		Class<?> setterParamType = null;
-		if (method != null) {
-			setterParamType = method.getParameterTypes()[0];
-		}
-		ManagedMap<Object, Object> values = (ManagedMap<Object, Object>) value;
+	private Object getMapArg(ManagedMap<XmlManagedNode, XmlManagedNode> values, Class<?> setterParamType) {
 		Map<Object, Object> m = null;
 		if (VerifyUtils.isNotEmpty(values.getTypeName())) {
 			try {
@@ -206,7 +204,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 			m = (setterParamType == null ? new HashMap<Object, Object>() : ConvertUtils.getMapObj(setterParamType));
 			log.debug("map ret [{}]", m.getClass().getName());
 		}
-		for (Object o : values.keySet()) {
+		for (XmlManagedNode o : values.keySet()) {
 			Object k = getInjectArg(o, null);
 			Object v = getInjectArg(values.get(o), null);
 			m.put(k, v);
@@ -222,15 +220,21 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	 */
 	private Object annotationInject(BeanDefinition beanDef) {
 		AnnotationBeanDefinition beanDefinition = (AnnotationBeanDefinition) beanDef;
-		fieldInject(beanDefinition);
-		methodInject(beanDefinition);
-		addObjectToContext(beanDefinition);
-		return beanDefinition.getObject();
+		// TODO constructor injecting
+		Object object = null;
+		try {
+			object = XmlApplicationContext.class.getClassLoader().loadClass(beanDefinition.getClassName()).newInstance();
+		} catch (Throwable t) {
+			error("loads class \"" + beanDefinition.getClassName() + "\" error");
+		}
+		beanDefinition.setInjectedInstance(object);
+		fieldInject(beanDefinition, object);
+		methodInject(beanDefinition, object);
+		addObjectToContext(beanDefinition, object);
+		return object;
 	}
 
-	private void fieldInject(AnnotationBeanDefinition beanDefinition) {
-		Object object = beanDefinition.getObject();
-
+	private void fieldInject(AnnotationBeanDefinition beanDefinition, final Object object) {
 		for (Field field : beanDefinition.getInjectFields()) {
 			field.setAccessible(true);
 			Class<?> clazz = field.getType();
@@ -252,9 +256,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 		}
 	}
 
-	private void methodInject(AnnotationBeanDefinition beanDefinition) {
-		Object object = beanDefinition.getObject();
-
+	private void methodInject(AnnotationBeanDefinition beanDefinition, final Object object) {
 		for (Method method : beanDefinition.getInjectMethods()) {
 			method.setAccessible(true);
 			Class<?>[] params = method.getParameterTypes();

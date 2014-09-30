@@ -1,68 +1,83 @@
 package com.firefly.core.support.xml;
 
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Xml方式Bean实现
+ * XML bean configuration 
  *
- * @author 杰然不同
+ * @author JJ Xu & Alvin Qiu
  * @date 2011-3-5
  */
 public class XmlGenericBeanDefinition implements XmlBeanDefinition {
 
-	// id
 	private String id;
-
-	// className
 	private String className;
+	private Map<String, XmlManagedNode> properties = new HashMap<String, XmlManagedNode>();
+	private String[] interfaceNames;
+	private List<XmlManagedNode> contructorParameters = new ArrayList<XmlManagedNode>();
+	private Constructor<?> constructor;
 
-	// 属性集合
-	private Map<String, Object> properties = new HashMap<String, Object>();
-	private String[] names;
-	private Object object;
-
+	@Override
 	public String getId() {
 		return id;
 	}
 
+	@Override
 	public void setId(String id) {
 		this.id = id;
 	}
 
+	@Override
 	public String getClassName() {
 		return className;
 	}
 
+	@Override
 	public void setClassName(String className) {
 		this.className = className;
 	}
 
-	public Map<String, Object> getProperties() {
+	@Override
+	public String[] getInterfaceNames() {
+		return interfaceNames;
+	}
+
+	@Override
+	public void setInterfaceNames(String[] interfaceNames) {
+		this.interfaceNames = interfaceNames;
+	}
+
+	@Override
+	public Map<String, XmlManagedNode> getProperties() {
 		return properties;
 	}
 
-	public void setProperties(Map<String, Object> properties) {
+	@Override
+	public void setProperties(Map<String, XmlManagedNode> properties) {
 		this.properties = properties;
 	}
 
 	@Override
-	public String[] getInterfaceNames() {
-		return names;
+	public List<XmlManagedNode> getContructorParameters() {
+		return contructorParameters;
 	}
 
 	@Override
-	public Object getObject() {
-		return object;
+	public void setContructorParameters(List<XmlManagedNode> contructorParameters) {
+		this.contructorParameters = contructorParameters;
 	}
 
 	@Override
-	public void setInterfaceNames(String[] names) {
-		this.names = names;
+	public Constructor<?> getConstructor() {
+		return constructor;
 	}
 
 	@Override
-	public void setObject(Object object) {
-		this.object = object;
+	public void setConstructor(Constructor<?> constructor) {
+		this.constructor = constructor;
 	}
 }

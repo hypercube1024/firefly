@@ -3,7 +3,7 @@ package com.firefly.core.support.xml;
 import java.util.HashMap;
 
 @SuppressWarnings("serial")
-public class ManagedMap<K, V> extends HashMap<K, V> {
+public class ManagedMap<K, V> extends HashMap<K, V> implements XmlManagedNode {
 	
 	private String typeName;
 

@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Controller;
 import com.firefly.annotation.Interceptor;
@@ -80,12 +81,7 @@ public class WebBeanReader extends AnnotationBeanReader {
 		List<Method> methods = getInjectMethod(c);
 		beanDefinition.setInjectMethods(methods);
 
-		try {
-			Object object = c.newInstance();
-			beanDefinition.setObject(object);
-		} catch (Throwable t) {
-			log.error("set web bean error", t);
-		}
+		beanDefinition.setConstructor(getInjectConstructor(c));
 	}
 
 	private String getId(Class<?> c) {

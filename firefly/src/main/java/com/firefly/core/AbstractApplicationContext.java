@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.exception.BeanDefinitionParsingException;
 import com.firefly.utils.VerifyUtils;
@@ -99,18 +100,16 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 		}
 	}
 
-	protected void addObjectToContext(BeanDefinition beanDefinition) {
-		// 增加声明的组件到 ApplicationContext
-		Object object = beanDefinition.getObject();
-		// 把id作为key
+	protected void addObjectToContext(final BeanDefinition beanDefinition, final Object object) {
+		// context key using id
 		String id = beanDefinition.getId();
 		if (VerifyUtils.isNotEmpty(id))
 			map.put(id, object);
 
-		// 把类名作为key
+		// context key using class name
 		map.put(beanDefinition.getClassName(), object);
 
-		// 把接口名作为key
+		// context key using interface name
 		String[] keys = beanDefinition.getInterfaceNames();
 		for (String k : keys) {
 			map.put(k, object);
@@ -139,12 +138,6 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 		return ret;
 	}
 
-	/**
-	 * 处理异常
-	 *
-	 * @param msg
-	 *            异常信息
-	 */
 	protected void error(String msg) {
 		log.error(msg);
 		throw new BeanDefinitionParsingException(msg);

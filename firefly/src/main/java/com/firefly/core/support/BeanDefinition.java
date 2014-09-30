@@ -1,27 +1,33 @@
 package com.firefly.core.support;
 
+import java.lang.reflect.Constructor;
+
+
 /**
- * Bean信息
- * @author 杰然不同
+ * Bean information, the id, className or interface name is used for map's key.
+ * @author JJ Xu
  * @date 2010-11-29
  * @Version 1.0
  */
 public interface BeanDefinition {
-	// id className 以及该组件所有接口名作为 map 的key
+
 	String getId();
+	
+	void setId(String id);
 
 	String getClassName();
-
-	void setId(String id);
 
 	void setClassName(String className);
 
 	String[] getInterfaceNames();
 
 	void setInterfaceNames(String[] names);
+	
+	Constructor<?> getConstructor();
+	
+	void setConstructor(Constructor<?> constructor);
 
-	// 该组件的对象实例
-	Object getObject();
-
-	void setObject(Object object);
+//	Object getObject();
+//
+//	void setObject(Object object);
 }

@@ -16,8 +16,8 @@ import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.annotation.ConfigReader;
 import com.firefly.core.support.xml.XmlBeanReader;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
-import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.ControllerBeanDefinition;
+import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.InterceptorBeanDefinition;
 import com.firefly.mvc.web.support.InterceptorMetaInfo;
 import com.firefly.mvc.web.support.MethodParam;
@@ -28,7 +28,7 @@ import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
 
 /**
- * Web应用上下文默认实现
+ * Web context
  * 
  * @author AlvinQiu
  * 
@@ -60,7 +60,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 					for (Method m : list) {
 						m.setAccessible(true);
 						final String uri = m.getAnnotation(RequestMapping.class).value();
-						ControllerMetaInfo c = new ControllerMetaInfo(beanDefinition.getObject(), m);
+						ControllerMetaInfo c = new ControllerMetaInfo(beanDefinition.getInjectedInstance(), m);
 						resource.add(uri, c);
 					}
 				}
@@ -68,7 +68,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 				InterceptorBeanDefinition beanDefinition = (InterceptorBeanDefinition) beanDef;
 				if(beanDefinition.getDisposeMethod() != null) {
 					beanDefinition.getDisposeMethod().setAccessible(true);
-					InterceptorMetaInfo interceptor = new InterceptorMetaInfo(beanDefinition.getObject(), 
+					InterceptorMetaInfo interceptor = new InterceptorMetaInfo(beanDefinition.getInjectedInstance(), 
 							beanDefinition.getDisposeMethod(),
 							beanDefinition.getUriPattern(), 
 							beanDefinition.getOrder());
@@ -174,7 +174,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 		}
 		
 		private void init() {
-			if(list.size() == 0) { // 没有找到处理器输出404响应
+			if(list.size() == 0) { // If web handler is not found, response 404
 				list.add(new WebHandler(){
 
 					@Override

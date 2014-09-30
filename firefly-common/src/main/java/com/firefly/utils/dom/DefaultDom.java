@@ -24,10 +24,8 @@ public class DefaultDom implements Dom {
 	private DocumentBuilder db;
 
 	public DefaultDom() {
-		// 得到dom解析器工厂实例
 		dbf = DocumentBuilderFactory.newInstance();
 		try {
-			// 得到dom解析器
 			db = dbf.newDocumentBuilder();
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();

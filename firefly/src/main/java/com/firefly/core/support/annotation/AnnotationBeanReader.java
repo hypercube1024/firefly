@@ -2,6 +2,7 @@ package com.firefly.core.support.annotation;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.JarURLConnection;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
+
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
 import com.firefly.core.support.AbstractBeanReader;
@@ -19,7 +21,7 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 /**
- * 读取Bean信息
+ * Annotation Bean processor 
  * 
  * @author AlvinQiu
  * 
@@ -63,6 +65,7 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 			log.error("parse file error", t);
 		}
 		path.listFiles(new FileFilter() {
+			@Override
 			public boolean accept(File file) {
 				String name = file.getName();
 				if (name.endsWith(".class") && !name.contains("$"))
@@ -137,13 +140,22 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 		List<Method> methods = getInjectMethod(c);
 		annotationBeanDefinition.setInjectMethods(methods);
 
-		try {
-			Object object = c.newInstance();
-			annotationBeanDefinition.setObject(object);
-		} catch (Throwable t) {
-			log.error("component parser error", t);
-		}
+		annotationBeanDefinition.setConstructor(getInjectConstructor(c));
 		return annotationBeanDefinition;
+	}
+	
+	protected Constructor<?> getInjectConstructor(Class<?> c) {
+		for(Constructor<?> constructor : c.getConstructors()) {
+			if(constructor.getAnnotation(Inject.class) != null) {
+				return constructor;
+			}
+		}
+		try {
+			return c.getConstructor(new Class<?>[0]);
+		} catch (Throwable t) {
+			log.error("gets non-parameter constructor error", t);
+			return null;
+		}
 	}
 
 	protected List<Field> getInjectField(Class<?> c) {

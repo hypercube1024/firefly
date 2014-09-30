@@ -69,6 +69,20 @@
 	<element name="bean">
 		<complexType>
 			<sequence>
+				<element name="constructor" minOccurs="0" maxOccurs="1">
+					<complexType>
+						<sequence>
+							<element name="argument" minOccurs="0" maxOccurs="unbounded">
+								<complexType>
+									<group ref="bean:propertyElements"></group>
+									<attribute name="value" />
+									<attribute name="ref" />
+								</complexType>
+							</element>
+						</sequence>
+						<attribute name="index" use="required" />
+					</complexType>
+				</element>
 				<element name="property" minOccurs="0" maxOccurs="unbounded">
 					<complexType>
 						<group ref="bean:propertyElements"></group>
@@ -82,6 +96,8 @@
 			<attribute name="class" />
 		</complexType>
 	</element>
+	
+	
 
 	<!-- 顶层元素 -->
 	<element name="beans">

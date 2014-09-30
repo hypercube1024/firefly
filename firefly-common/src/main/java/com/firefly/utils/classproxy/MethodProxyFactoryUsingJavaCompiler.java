@@ -31,8 +31,8 @@ public class MethodProxyFactoryUsingJavaCompiler extends AbstractMethodProxyFact
 		
 			ret = _getMethodProxy(method);
 			methodCache.put(method, ret);
+			return ret;
 		}
-		return ret;
 	}
 	
 	private MethodProxy _getMethodProxy(Method method) throws Throwable {
