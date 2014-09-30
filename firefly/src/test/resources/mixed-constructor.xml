@@ -8,7 +8,7 @@
 	<import resource="mixed-config4.xml"/>
 	<component-scan base-package="test.mixed"/>
 
-	<bean id="foodRepository2" class="test.mixed.impl.FoodRepositoryImpl">
+	<bean id="foodRepository" class="test.mixed.impl.FoodRepositoryImpl">
 		<constructor>
 			<argument type="java.util.List">
 				<list>
@@ -25,16 +25,6 @@
 			<argument type="java.lang.String" value="fffff"></argument>
 			<argument type="java.lang.Integer" value="4"></argument>
 		</constructor>
-	</bean>
-
-	<bean id="foodRepository" class="test.mixed.impl.FoodRepositoryImpl">
-		<property name="food">
-			<list>
-				<ref bean="apple"/>
-				<ref bean="orange"/>
-				<ref bean="strawberry"/>
-			</list>
-		</property>
 	</bean>
 	
 	<bean id="foodService2" class="test.mixed.impl.FoodService2Impl">

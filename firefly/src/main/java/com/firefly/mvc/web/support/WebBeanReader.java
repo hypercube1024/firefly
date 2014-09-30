@@ -65,8 +65,7 @@ public class WebBeanReader extends AnnotationBeanReader {
 		return beanDefinition;
 	}
 
-	private void setWebBeanDefinition(AnnotationBeanDefinition beanDefinition,
-			Class<?> c) {
+	private void setWebBeanDefinition(AnnotationBeanDefinition beanDefinition, Class<?> c) {
 		beanDefinition.setClassName(c.getName());
 
 		String id = getId(c);
@@ -107,7 +106,7 @@ public class WebBeanReader extends AnnotationBeanReader {
 	}
 
 	private Method getInterceptors(Class<?> c) {
-		for (Method m : c.getMethods()) {// 验证方法名
+		for (Method m : c.getMethods()) {// appoints method name is "dispose"
 			if (m.getName().equals("dispose"))
 				return m;
 		}

@@ -222,17 +222,35 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 	private Object annotationInject(BeanDefinition beanDef) {
 		AnnotationBeanDefinition beanDefinition = (AnnotationBeanDefinition) beanDef;
 		// TODO constructor injecting
-		Object object = null;
-		try {
-			object = XmlApplicationContext.class.getClassLoader().loadClass(beanDefinition.getClassName()).newInstance();
-		} catch (Throwable t) {
-			error("loads class \"" + beanDefinition.getClassName() + "\" error");
-		}
+		Object object = constructorInject(beanDefinition);
 		beanDefinition.setInjectedInstance(object);
 		fieldInject(beanDefinition, object);
 		methodInject(beanDefinition, object);
 		addObjectToContext(beanDefinition, object);
 		return object;
+	}
+	
+	private Object constructorInject(AnnotationBeanDefinition beanDefinition) {
+		Class<?>[] params = beanDefinition.getConstructor().getParameterTypes();
+		Object[] p = new Object[params.length];
+		for (int i = 0; i < p.length; i++) {
+			String key = params[i].getName();
+			Object instance = map.get(key);
+			if (instance != null) {
+				p[i] = instance;
+			} else {
+				BeanDefinition b = findBeanDefinition(key);
+				if (b != null)
+					p[i] = inject(b);
+			}
+		}
+		Object instance = null;
+		try {
+			instance = beanDefinition.getConstructor().newInstance(p);
+		} catch (Throwable t) {
+			log.error("constructor injecting error", t);
+		}
+		return instance;
 	}
 
 	private void fieldInject(AnnotationBeanDefinition beanDefinition, final Object object) {
@@ -251,7 +269,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 				try {
 					field.set(object, instance);
 				} catch (Throwable t) {
-					log.error("field inject error", t);
+					log.error("field injecting error", t);
 				}
 			}
 		}
@@ -276,7 +294,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 			try {
 				method.invoke(object, p);
 			} catch (Throwable t) {
-				log.error("method inject error", t);
+				log.error("method injecting error", t);
 			}
 		}
 	}

@@ -25,7 +25,7 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 
 	public AbstractApplicationContext(String file) {
 		beanDefinitions = getBeanDefinitions(file);
-		check(); //冲突检测
+		check(); //Conflicts check
 		addObjectToContext();
 	}
 
@@ -47,12 +47,15 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 		return (T) map.get(id);
 	}
 
+	/**
+	 * Conflicts check
+	 * 1.More than two components have the same id
+	 * 2.The one of two components that have the same class name or interface name dosen't set id.
+	 * 3.Two components have the same class name or interface name and different id, save memo. 
+	 *   When the component is injecting by type, throw a exception. 
+	 * 
+	 */
 	protected void check() {
-		// TODO 需要增加测试用例
-		// 1.id相同的抛异常
-		// 2.className或者interfaceName相同，但其中一个没有定义id，抛异常
-		// 3.className或者interfaceName相同，且都定义的id，需要保存备忘，按类型或者接口自动注入的时候抛异常
-
 		for (int i = 0; i < beanDefinitions.size(); i++) {
 			for (int j = i + 1; j < beanDefinitions.size(); j++) {
 				log.debug("check bean " + i + "|" + j);
