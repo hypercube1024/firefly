@@ -9,14 +9,21 @@
 	<component-scan base-package="test.mixed"/>
 
 	<bean id="foodRepository2" class="test.mixed.impl.FoodRepositoryImpl">
-		<constructor index="1" >
-			<argument>
+		<constructor>
+			<argument type="java.util.List">
 				<list>
-					<ref bean="apple2"/>
-					<ref bean="orange2"/>
-					<ref bean="strawberry2"/>
+					<ref bean="apple"/>
+					<ref bean="orange"/>
+					<ref bean="strawberry"/>
 				</list>
 			</argument>
+		</constructor>
+	</bean>
+	
+	<bean id="constructorTestBean" class="test.ioc.TestConstructorsIoc$BeanTest">
+		<constructor>
+			<argument type="java.lang.String" value="fffff"></argument>
+			<argument type="java.lang.Integer" value="4"></argument>
 		</constructor>
 	</bean>
 

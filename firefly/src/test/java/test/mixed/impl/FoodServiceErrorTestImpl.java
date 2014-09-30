@@ -7,19 +7,15 @@ import test.mixed.FoodService;
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
 
-@Component("foodService")
-public class FoodServiceImpl implements FoodService {
-
-	@Inject("foodRepository")
+@Component("foodServiceErrorTest")
+public class FoodServiceErrorTestImpl implements FoodService {
+	
+	@Inject
 	private FoodRepository foodRepository;
 
 	@Override
 	public Food getFood(String name) {
-		for (Food f : foodRepository.getFood()) {
-			if (f.getName().equals(name))
-				return f;
-		}
-		return null;
+		return foodRepository.getFood().get(0);
 	}
 
 }

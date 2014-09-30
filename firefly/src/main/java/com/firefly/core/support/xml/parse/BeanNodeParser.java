@@ -4,15 +4,13 @@ import static com.firefly.core.support.xml.parse.XmlNodeConstants.ARGUMENT_ELEME
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.CLASS_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.CONTRUCTOR_ELEMENT;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.ID_ATTRIBUTE;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.INDEX_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.NAME_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.PROPERTY_ELEMENT;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.REF_ATTRIBUTE;
+import static com.firefly.core.support.xml.parse.XmlNodeConstants.TYPE_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.VALUE_ATTRIBUTE;
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.Element;
@@ -54,22 +52,29 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 		List<Element> constructors = dom.elements(ele, CONTRUCTOR_ELEMENT);
 		if(constructors != null && constructors.size() > 0) {
 			Element constructorElement = constructors.get(0);
-			String index = constructorElement.getAttribute(INDEX_ATTRIBUTE);
-			if(VerifyUtils.isNotEmpty(index)) {
-				List<Constructor<?>> list = Arrays.asList(clazz.getConstructors());
-				Collections.reverse(list);
-				xmlBeanDefinition.setConstructor(list.get(Integer.parseInt(index)));
-			} else {
-				error("The constructor element must specify the index of constructors!");
-			}
-			
 			List<Element> arguments = dom.elements(constructorElement, ARGUMENT_ELEMENT);
 			if(arguments != null && arguments.size() >= 1) {
+				List<Class<?>> argsClass = new ArrayList<Class<?>>();
 				for(Element argument : arguments) {
 					XmlManagedNode xmlManagedNode = parseXmlManagedNode(argument, dom);
 					if(xmlManagedNode != null) {
 						xmlBeanDefinition.getContructorParameters().add(xmlManagedNode);
 					}
+					String initArgsType = argument.getAttribute(TYPE_ATTRIBUTE);
+					if(VerifyUtils.isNotEmpty(initArgsType)) {
+						try {
+							argsClass.add(XmlBeanReader.class.getClassLoader().loadClass(initArgsType));
+						} catch (ClassNotFoundException e) {
+							error("The '" + initArgsType + "' not found");
+						}
+					} else {
+						error("The '" + className + "' constructor argument node MUST has type attribute");
+					}
+				}
+				try {
+					xmlBeanDefinition.setConstructor(clazz.getConstructor(argsClass.toArray(new Class<?>[0])));
+				} catch (Throwable e) {
+					error("The '" + className + "' gets constructor error");
 				}
 			} else {
 				error("The '" + className + "' constructor node MUST be more than one argument node!");
@@ -77,8 +82,8 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 		} else {
 			try {
 				xmlBeanDefinition.setConstructor(clazz.getConstructor(new Class<?>[0]));
-			} catch (Throwable t) {
-				error("gets non-parameter constructor error");
+			} catch (Throwable e) {
+				error("The '" + className + "' gets constructor error");
 			}
 		}
 

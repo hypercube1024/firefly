@@ -3,6 +3,7 @@ package com.firefly.core.support;
 import java.lang.reflect.Constructor;
 
 
+
 /**
  * Bean information, the id, className or interface name is used for map's key.
  * @author JJ Xu

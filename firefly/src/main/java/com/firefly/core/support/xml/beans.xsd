@@ -77,10 +77,10 @@
 									<group ref="bean:propertyElements"></group>
 									<attribute name="value" />
 									<attribute name="ref" />
+									<attribute name="type" use="required" />
 								</complexType>
 							</element>
 						</sequence>
-						<attribute name="index" use="required" />
 					</complexType>
 				</element>
 				<element name="property" minOccurs="0" maxOccurs="unbounded">

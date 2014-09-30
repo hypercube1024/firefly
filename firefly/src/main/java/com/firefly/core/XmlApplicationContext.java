@@ -82,7 +82,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 		try {
 			clazz = XmlApplicationContext.class.getClassLoader().loadClass(beanDefinition.getClassName());
 			if(beanDefinition.getContructorParameters().size() <= 0) {
-				object = beanDefinition.getConstructor().newInstance();
+				object = clazz.newInstance();
 			} else {
 				List<Object> constructorParameters = new ArrayList<Object>();
 				// TODO chooses constructor by index
@@ -90,6 +90,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 					Object p = getInjectArg(beanDefinition.getContructorParameters().get(i), beanDefinition.getConstructor().getParameterTypes()[i]);
 					constructorParameters.add(p);
 				}
+//				System.out.println(constructorParameters.toString());
 				object = beanDefinition.getConstructor().newInstance(constructorParameters.toArray());
 			}
 		} catch (Throwable t) {

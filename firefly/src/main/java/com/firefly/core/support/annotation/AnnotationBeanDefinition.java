@@ -19,4 +19,5 @@ public interface AnnotationBeanDefinition extends BeanDefinition {
 	Object getInjectedInstance();
 	
 	void setInjectedInstance(Object object);
+	
 }

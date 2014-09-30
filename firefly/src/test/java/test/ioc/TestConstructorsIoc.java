@@ -5,6 +5,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import test.mixed.FoodRepository;
+import test.mixed.FoodService;
+import test.mixed.impl.FoodRepositoryImpl;
+
 import com.firefly.core.ApplicationContext;
 import com.firefly.core.XmlApplicationContext;
 import com.firefly.utils.log.Log;
@@ -13,7 +17,7 @@ import com.firefly.utils.log.LogFactory;
 public class TestConstructorsIoc {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	public static ApplicationContext applicationContext = new XmlApplicationContext("mixed-config.xml");
+//	public static ApplicationContext applicationContext = new XmlApplicationContext("mixed-constructor.xml");
 	
 	public static class BeanTest {
 
@@ -24,18 +28,15 @@ public class TestConstructorsIoc {
 		}
 		
 		public BeanTest(String test1) {
-			super();
 			this.test1 = test1;
 		}
 		
 		public BeanTest(String test1, Integer test2) {
-			super();
 			this.test1 = test1;
 			this.test2 = test2;
 		}
 	
 		public BeanTest(Integer test2) {
-			super();
 			this.test2 = test2;
 		}
 	
@@ -55,10 +56,35 @@ public class TestConstructorsIoc {
 		public void setTest2(Integer test2) {
 			this.test2 = test2;
 		}
+
+		@Override
+		public String toString() {
+			return "BeanTest [test1=" + test1 + ", test2=" + test2 + "]";
+		}
 	
 	}
+	
+	public static void main(String[] args) {
+		ApplicationContext applicationContext = new XmlApplicationContext("error-config4.xml");
+		FoodService foodService = applicationContext.getBean("foodServiceErrorTest");
+		System.out.println(foodService.getFood(null));
+	}
+	
+	public static void main2(String[] args) {
+		System.out.println(BeanTest.class.getName());
+		
+		List<Constructor<?>> list = Arrays.asList(FoodRepositoryImpl.class.getConstructors());
+		System.out.println(list.toString());
+		
+		ApplicationContext applicationContext = new XmlApplicationContext("mixed-constructor.xml");
+		FoodRepository foodRepository = applicationContext.getBean("foodRepository2");
+		System.out.println(foodRepository.getFood());
+		
+		BeanTest b = applicationContext.getBean("constructorTestBean");
+		System.out.println(b.toString());
+	}
 
-	public static void main(String[] args) throws Throwable {
+	public static void main1(String[] args) throws Throwable {
 		Object obj = new BeanTest();
 		Constructor<?>[] constructors = obj.getClass().getConstructors();
 		List<Constructor<?>> list = Arrays.asList(constructors);
