@@ -121,7 +121,7 @@ public class TestConstructorsIoc {
 			System.out.println(Arrays.toString(constructor.getParameterTypes()));
 		}
 		
-		System.out.println(obj.getClass().getConstructor(new Class<?>[0]).getParameters().length);
+//		System.out.println(obj.getClass().getConstructor(new Class<?>[0]).getParameters().length);
 		System.out.println(list.getClass().getName());
 		
 		BeanTest t = (BeanTest)obj.getClass().getConstructor(String.class, Integer.class).newInstance("ssss");
