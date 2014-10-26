@@ -62,8 +62,7 @@ public class FileLogTask implements LogTask {
 		for (LogItem logItem = null; (logItem = queue.poll()) != null;) {
 			Log log = LogFactory.getInstance().getLog(logItem.getName());
 			if (log instanceof FileLog) {
-				FileLog fileLog = (FileLog) log;
-				fileLog.write(logItem);
+				((FileLog)log).write(logItem);
 			}
 		}
 //		System.out.println(">>> flush");

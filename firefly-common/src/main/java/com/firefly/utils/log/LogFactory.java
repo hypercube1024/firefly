@@ -74,6 +74,7 @@ public class LogFactory {
 		return properties;
 	}
 
+	@SuppressWarnings("resource")
 	private void loadProperties() {
 		Properties properties = null;
 		try {
@@ -104,12 +105,14 @@ public class LogFactory {
 				File file = new File(path);
 				if (!file.exists()) {
 					boolean mkdirRet = file.mkdirs();
-					if (!mkdirRet)
+					if (!mkdirRet) {
 						throw new LogException("create dir " + path + " failure");
+					}
 				}
 
-				if (!file.isDirectory())
+				if (!file.isDirectory()) {
 					throw new LogException(path + " is not directory");
+				}
 
 				fileLog.setPath(path);
 				fileLog.setFileOutput(true);
@@ -125,9 +128,7 @@ public class LogFactory {
 		for (Entry<String, Log> entry : logMap.entrySet()) {
 			Log log = entry.getValue();
 			if (log instanceof FileLog) {
-				
-				FileLog fileLog = (FileLog) log;
-				fileLog.flush();
+				((FileLog) log).flush();
 //				System.out.println(">>> flush all " + fileLog.getName());
 			}
 		}
@@ -143,6 +144,16 @@ public class LogFactory {
 
 	public void shutdown() {
 		logTask.shutdown();
+		for (Entry<String, Log> entry : logMap.entrySet()) {
+			Log log = entry.getValue();
+			if (log instanceof FileLog) {
+				try {
+					((FileLog) log).close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	public void start() {

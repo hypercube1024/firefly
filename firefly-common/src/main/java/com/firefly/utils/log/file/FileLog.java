@@ -1,6 +1,7 @@
 package com.firefly.utils.log.file;
 
 import java.io.BufferedWriter;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,7 +14,7 @@ import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.log.LogItem;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
-public class FileLog implements Log {
+public class FileLog implements Log, Closeable {
 	private int level;
 	private String path;
 	private String name;
@@ -21,64 +22,58 @@ public class FileLog implements Log {
 	private boolean fileOutput;
 	private Queue<LogItem> buffer = new LinkedList<LogItem>();
 	private static final int BATCH_SIZE = 1024;
+	private BufferedWriter bufferedWriter;
+	private String currentDate = LogFactory.dayDateFormat.format(new Date());
+	
 
 	public void write(LogItem logItem) {
 		if (fileOutput)
 			buffer.offer(logItem);
-		if (fileOutput && buffer.size() >= BATCH_SIZE)
+		if (fileOutput && buffer.size() >= BATCH_SIZE) {
+//			System.out.println("the buffer is full");
 			flush();
+		}
 	}
 
 	public void flush() {
 		if (fileOutput && buffer.size() > 0) {
-			BufferedWriter bufferedWriter = null;
 			try {
-				String date = LogFactory.dayDateFormat.format(new Date());
-				bufferedWriter = getBufferedWriter(date);
-				
 				for (LogItem logItem = null; (logItem = buffer.poll()) != null;) {
 					Date d = new Date();
-					String newDate = LogFactory.dayDateFormat.format(d);
-					if(!newDate.equals(date)) {
-						if (bufferedWriter != null)
-							try {
-								bufferedWriter.close();
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-						date = newDate;
-						bufferedWriter = getBufferedWriter(date);
-					}
-					
+					bufferedWriter = getBufferedWriter(LogFactory.dayDateFormat.format(d));
 					logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
 					bufferedWriter.append(logItem.toString() + CL);
 				}
+				bufferedWriter.flush();
 			} catch (IOException e) {
 				e.printStackTrace();
-			} finally {
-				if (bufferedWriter != null)
-					try {
-						bufferedWriter.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
 			}
 		}
 	}
+	
+	@Override
+	public void close() throws IOException {
+		if(bufferedWriter != null)
+			bufferedWriter.close();
+	}
 
-	private BufferedWriter getBufferedWriter(String date) throws IOException {
+	private BufferedWriter getBufferedWriter(String newDate) throws IOException {
 		
-		File file = new File(path, name + "." + date + ".txt");
-		boolean ret = false;
-		if (!file.exists()) {
-			ret = file.createNewFile();
-		} else {
-			ret = true;
+		if(bufferedWriter == null || !currentDate.equals(newDate)) {
+			File file = new File(path, name + "." + newDate + ".txt");
+			boolean ret = true;
+			if (!file.exists()) {
+				ret = file.createNewFile();
+			}
+			if (ret) {
+				close();
+				bufferedWriter = new BufferedWriter(new FileWriter(file, true));
+				currentDate = newDate;
+				System.out.println("get new buffered " + file.getName());
+			}
 		}
-		if (ret)
-			return new BufferedWriter(new FileWriter(file, true));
-		else
-			return null;
+		
+		return bufferedWriter;
 	}
 
 	public void setConsoleOutput(boolean consoleOutput) {
