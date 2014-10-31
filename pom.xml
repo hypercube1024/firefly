@@ -6,8 +6,34 @@
 
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-framework</artifactId>
-  <version>3.0-SNAPSHOT</version>
+  <version>3.0.2</version>
   <packaging>pom</packaging>
+
+
+  <name>Firefly Framework</name>
+  <description>
+  Firefly framework helps you create a java web application easy and quickly. It provides MVC framework with HTTP Server and many other useful components for developing web applications. It means you can easy deploy your web without any other java web containers, in short , it's containerless. It taps into the fullest potential of hardware using SEDA architecture, a highly customizable thread model.
+  </description>
+  <url>http://www.fireflysource.com</url>
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <name>Alvin Qiu</name>
+      <email>qptkk@163.com</email>
+      <organization>Sonatype</organization>
+      <organizationUrl>http://www.sonatype.com</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git@github.com:hypercube1024/firefly.git</connection>
+    <developerConnection>scm:git@github.com:hypercube1024/firefly.git</developerConnection>
+    <url>git@github.com:hypercube1024/firefly.git</url>
+  </scm>
 
   <modules>
     <module>firefly-common</module>
@@ -39,6 +65,7 @@
         <log.path>/Users/qiupengtao/develop/logs/</log.path>
       </properties>
     </profile>
+
     <profile>
       <id>macdebug</id>
       <properties>
@@ -46,6 +73,7 @@
         <log.path>/Users/qiupengtao/develop/logs/</log.path>
       </properties>
     </profile>
+
     <profile>
       <id>windebug</id>
       <properties>
@@ -53,10 +81,96 @@
         <log.path>D:/log/</log.path>
       </properties>
     </profile>
+
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <!-- source -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- javadoc 
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.9.1</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>-->
+
+          <!-- gpg -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- staging -->
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.3</version>
+            <extensions>true</extensions>
+            <configuration>
+               <serverId>ossrh</serverId>
+               <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+               <autoReleaseAfterClose>true</autoReleaseAfterClose>
+               <stagingProgressTimeoutMinutes>30</stagingProgressTimeoutMinutes>
+            </configuration>
+          </plugin>
+        </plugins>
+
+      </build>
+
+      <properties>
+        <log.level>INFO</log.level>
+        <log.path>/Users/qiupengtao/develop/logs/</log.path>
+      </properties>
+      <distributionManagement>
+        <snapshotRepository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+      </distributionManagement>
+    </profile>
   </profiles>
 
   <distributionManagement>
-    <repository>
+    <!--<repository>
       <id>3rdRepo</id>
       <name>3rd party</name>
       <url>http://localhost:7777/nexus-webapp/content/repositories/thirdparty</url>
@@ -65,6 +179,7 @@
       <id>dev</id>
       <name>Snapshots</name>
       <url>http://localhost:7777/nexus-webapp/content/repositories/snapshots</url>
-    </snapshotRepository>
+    </snapshotRepository>-->
+
   </distributionManagement>
 </project>

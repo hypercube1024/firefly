@@ -89,15 +89,6 @@ abstract public class HexUtils {
 		}
 	}
 
-	/**
-	 * Pack the bits in ba into a byte[].
-	 * 
-	 * @param ba
-	 *            : the BitSet
-	 * @param size
-	 *            : How many bits shall be taken into account starting from the
-	 *            LSB?
-	 */
 	public final static byte[] bitsToBytes(BitSet ba, int size) {
 		int bytesAlloc = countBytesForBits(size);
 		byte[] b = new byte[bytesAlloc];
@@ -116,30 +107,15 @@ abstract public class HexUtils {
 		return b;
 	}
 
-	/**
-	 * Pack the bits in ba into a byte[] then convert that to a hex string and
-	 * return it.
-	 */
 	public final static String bitsToHexString(BitSet ba, int size) {
 		return bytesToHex(bitsToBytes(ba, size));
 	}
 
-	/**
-	 * @return the number of bytes required to represent the bitset
-	 */
 	public static int countBytesForBits(int size) {
 		// Brackets matter here! == takes precedence over the rest
 		return (size / 8) + ((size % 8) == 0 ? 0 : 1);
 	}
 
-	/**
-	 * Read bits from a byte array into a bitset
-	 * 
-	 * @param b
-	 *            the byte[] to read from
-	 * @param ba
-	 *            the bitset to write to
-	 */
 	public static void bytesToBits(byte[] b, BitSet ba, int maxSize) {
 		int x = 0;
 		for (int i = 0; i < b.length; i++) {

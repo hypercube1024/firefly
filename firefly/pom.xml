@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>3.0.2</version>
     <packaging>jar</packaging>
     
     <name>firefly</name>
@@ -12,11 +12,11 @@
     <parent>
 	    <groupId>com.fireflysource</groupId>
 	    <artifactId>firefly-framework</artifactId>
-	    <version>3.0-SNAPSHOT</version>
+	    <version>3.0.2</version>
 	</parent>
 	
     <build>
-        <finalName>${project.artifactId}</finalName>
+        <finalName>firefly</finalName>
         <defaultGoal>install</defaultGoal>
         <resources>
             <resource>
@@ -59,17 +59,17 @@
         <dependency>
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-common</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<version>3.0.2</version>
         </dependency>
         <dependency>
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-template</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<version>3.0.2</version>
         </dependency>
         <dependency>
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-nettool</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<version>3.0.2</version>
         </dependency>
 
         <!-- servlet -->
@@ -80,29 +80,5 @@
        </dependency>
     </dependencies>
 
-    <properties>
-    	<!-- project -->
-    	<project.groupId>com.fireflysource</project.groupId>
-    	<project.artifactId>firefly</project.artifactId>
 
-		<!-- common -->
-		<jstl.version>1.1.2</jstl.version>
-
-        <log.level>INFO</log.level>
-        <log.path>D:/log/</log.path>
-    </properties>
-    <repositories>
-		<!-- <repository>
-        	<id>3rdRepo</id>
-        	<snapshots><enabled>true</enabled></snapshots>
-        	<url>http://snapshots.repository.codehaus.org/</url>
-        </repository>
-        <repository>
-        	<id>aliRepo</id>
-        	<url>http://119.38.217.15/svn/fastjson/repository/</url>
-        </repository> -->
-    </repositories>
-    <pluginRepositories>
-
-    </pluginRepositories>
 </project>
