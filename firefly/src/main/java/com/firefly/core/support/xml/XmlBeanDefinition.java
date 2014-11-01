@@ -8,7 +8,6 @@ import com.firefly.core.support.BeanDefinition;
 /**
  * XML bean configuration
  * @author JJ Xu
- * @date 2011-3-5
  */
 public interface XmlBeanDefinition extends BeanDefinition {
 

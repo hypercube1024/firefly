@@ -2,6 +2,7 @@ package com.firefly.mvc.web.support;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -24,10 +25,10 @@ public class ParamMetaInfo {
 	}
 
 	/**
-	 * 给参数对象的实例赋值
-	 * @param o 要赋值的对象
-	 * @param key 要赋值的属性
-	 * @param value 要赋的值
+	 * Set value of the parameter object
+	 * @param o The parameter object
+	 * @param key The field name of the parameter object
+	 * @param value The value
 	 */
 	public void setParam(Object o, String key, String value) {
 		try {
@@ -42,8 +43,8 @@ public class ParamMetaInfo {
 	}
 
 	/**
-	 * 新建一个参数对象实例
-	 * @return
+	 * Get an new instance of a parameter;
+	 * @return The instance
 	 */
 	public Object newParamInstance() {
 		Object o = null;

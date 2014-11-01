@@ -9,12 +9,6 @@ import com.firefly.core.support.xml.ManagedValue;
 import com.firefly.core.support.xml.XmlManagedNode;
 import com.firefly.utils.dom.Dom;
 
-/**
- * parses map node
- * 
- * @author JJ Xu
- * @date 2011-3-17
- */
 public class MapNodeParser extends AbstractXmlNodeParser implements
 		XmlNodeParser {
 

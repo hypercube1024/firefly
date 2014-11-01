@@ -69,6 +69,14 @@ public class IOUtils {
      * Places characters representing the integer i into the character array buf. The characters are placed into the
      * buffer backwards starting with the least significant digit at the specified index (exclusive), and working
      * backwards from there. Will fail if i == Integer.MIN_VALUE
+     * 
+     * @param i 
+     * 		A integer
+     * @param index
+     * 		The index of the buffer
+     * @param buf
+     * 		The characters buffer
+     * 		
      */
     public static void getChars(int i, int index, char[] buf) {
         int q, r;

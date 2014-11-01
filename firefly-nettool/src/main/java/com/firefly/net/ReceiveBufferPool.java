@@ -5,15 +5,17 @@ import java.nio.ByteBuffer;
 public interface ReceiveBufferPool {
 
 	/**
-	 * 从池中获取指定容量的ByteBuffer
-	 * @param size buffer的容量
-	 * @return ByteBuffer
+	 * Get byte buffer
+	 * @param size 
+	 * 		buffer size
+	 * @return Byte buffer
 	 */
 	ByteBuffer acquire(int size);
 
 	/**
-	 * 将一个ByteBuffer返回到池中
+	 * Return buffer to the pool
 	 * @param buffer
+	 * 		Byte buffer
 	 */
 	void release(ByteBuffer buffer);
 

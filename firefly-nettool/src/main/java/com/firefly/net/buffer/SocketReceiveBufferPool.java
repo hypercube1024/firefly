@@ -15,6 +15,7 @@ public class SocketReceiveBufferPool implements ReceiveBufferPool {
 	@SuppressWarnings("unchecked")
 	private final SoftReference<ByteBuffer>[] pool = new SoftReference[POOL_SIZE];
 
+	@Override
 	public final ByteBuffer acquire(int size) {
 		final SoftReference<ByteBuffer>[] pool = this.pool;
 		for (int i = 0; i < POOL_SIZE; i++) {
@@ -47,6 +48,7 @@ public class SocketReceiveBufferPool implements ReceiveBufferPool {
 		return buf;
 	}
 
+	@Override
 	public final void release(ByteBuffer buffer) {
 		final SoftReference<ByteBuffer>[] pool = this.pool;
 		for (int i = 0; i < POOL_SIZE; i++) {
@@ -75,9 +77,10 @@ public class SocketReceiveBufferPool implements ReceiveBufferPool {
 	}
 
 	/**
-	 * 把容量变成1024的倍数
+	 * The capacity modulo 1024 is 0
 	 * @param capacity
-	 * @return
+	 * 			the buffer size
+	 * @return the buffer size that modulo 1024 is 0
 	 */
 	public static final int normalizeCapacity(int capacity) {
 		int q = capacity >>> 10;

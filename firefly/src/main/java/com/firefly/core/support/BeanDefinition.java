@@ -6,9 +6,6 @@ import java.lang.reflect.Constructor;
 
 /**
  * Bean information, the id, className or interface name is used for map's key.
- * @author JJ Xu
- * @date 2010-11-29
- * @Version 1.0
  */
 public interface BeanDefinition {
 

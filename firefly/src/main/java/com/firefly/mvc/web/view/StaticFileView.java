@@ -51,8 +51,8 @@ public class StaticFileView implements View {
 	/**
 	 * It checks input path, if this method returns true, the path is legal. 
 	 * The client can only visit all the subdirectories of server root directory. 
-	 * @param path the file path
-	 * @return
+	 * @param path The file path
+	 * @return Return true, if the path is legal, else return false. 
 	 */
 	public static boolean checkPath(String path) {
 		if(path.length() < 3)

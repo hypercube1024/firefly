@@ -126,6 +126,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 					in.close();
 				}
 
+				@Override
 				public int read(byte[] b, int off, int len) throws IOException {
 					return in.read(b, off, len);
 				}
@@ -468,7 +469,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 			parseLocales();
 
 		if (locales.size() > 0) {
-			return ((Locale) locales.get(0));
+			return (locales.get(0));
 		} else {
 			return (DEFAULT_LOCALE);
 		}
@@ -508,6 +509,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 
 	/**
 	 * Parse accept-language header value.
+	 * @param value The head string
 	 */
 	protected void parseLocalesHeader(String value) {
 
@@ -613,7 +615,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 			ArrayList<Locale> list = locales.get(key);
 			Iterator<Locale> values = list.iterator();
 			while (values.hasNext()) {
-				Locale locale = (Locale) values.next();
+				Locale locale = values.next();
 				addLocale(locale);
 			}
 		}

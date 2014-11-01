@@ -3,7 +3,6 @@ package com.firefly.core.support.xml;
 /**
  * Literal value node
  * @author JJ Xu
- * @date 2011-3-9
  */
 public class ManagedValue implements XmlManagedNode {
 

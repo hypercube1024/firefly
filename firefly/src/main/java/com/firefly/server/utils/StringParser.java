@@ -102,6 +102,8 @@ public final class StringParser {
     /**
      * Return the zero-relative index of our current parsing position
      * within the string being parsed.
+     * 
+     * @return The current index
      */
     public int getIndex() {
 
@@ -112,6 +114,7 @@ public final class StringParser {
 
     /**
      * Return the length of the string we are parsing.
+     * @return The length of this string
      */
     public int getLength() {
 
@@ -122,6 +125,7 @@ public final class StringParser {
 
     /**
      * Return the String we are currently parsing.
+     * @return The current string
      */
     public String getString() {
 
@@ -172,6 +176,7 @@ public final class StringParser {
      * possible, a zero-length string is returned.
      *
      * @param start Starting index, zero relative, inclusive
+     * @return The result string from start
      */
     public String extract(int start) {
 
@@ -190,6 +195,7 @@ public final class StringParser {
      *
      * @param start Starting index, zero relative, inclusive
      * @param end Ending index, zero relative, exclusive
+     * @return The result string from start to end
      */
     public String extract(int start, int end) {
 
@@ -208,6 +214,7 @@ public final class StringParser {
      * parsing position is updated to the returned value.
      *
      * @param ch Character to be found
+     * @return The character index
      */
     public int findChar(char ch) {
 
@@ -223,6 +230,7 @@ public final class StringParser {
      * or the index of the character after the last position of the string
      * if no more non-whitespace characters are found.  The current
      * parsing position is updated to the returned value.
+     * @return Return current index after skipping blank characters 
      */
     public int findText() {
 
@@ -238,6 +246,8 @@ public final class StringParser {
      * or the index of the character after the last position of the string
      * if no more whitespace characters are found.  The current parsing
      * position is updated to the returned value.
+     * 
+     * @return The next index after skipping the text
      */
     public int findWhite() {
 
@@ -265,6 +275,7 @@ public final class StringParser {
      * Return the final value.
      *
      * @param ch Character to be skipped
+     * @return The index after skipping the current character
      */
     public int skipChar(char ch) {
 
@@ -279,6 +290,7 @@ public final class StringParser {
      * Advance the current parsing position while it is pointing at a
      * non-whitespace character, or until it moves past the end of the string.
      * Return the final value.
+     * @return The next index after skipping the text
      */
     public int skipText() {
 
@@ -293,6 +305,7 @@ public final class StringParser {
      * Advance the current parsing position while it is pointing at a
      * whitespace character, or until it moves past the end of the string.
      * Return the final value.
+     * @return Return current index after skipping blank characters 
      */
     public int skipWhite() {
 
@@ -310,6 +323,7 @@ public final class StringParser {
      * Is the specified character considered to be whitespace?
      *
      * @param ch Character to be checked
+     * @return Return true, if the character is not blank
      */
     protected boolean isWhite(char ch) {
 

@@ -5,8 +5,6 @@ import javax.servlet.http.HttpServletResponse;
 
 public interface DispatcherController {
 	
-	/**
-	 * It dispatches HTTP request
-	 */
 	void dispatch(HttpServletRequest request, HttpServletResponse response);
+	
 }

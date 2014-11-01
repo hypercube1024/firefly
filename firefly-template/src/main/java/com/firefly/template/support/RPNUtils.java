@@ -22,15 +22,15 @@ public class RPNUtils {
 	 * symbol priority：
 	 * 10: "*", "/", "%"
 	 *	9: "+", "-" 
-	 *	8: ">>", ">>>", "<<"
-	 *	7: ">", "<", ">=", "<="
+	 *	8: "&gt;&gt;", "&gt;&gt;&gt;", "&lt;&lt;"
+	 *	7: "&gt;", "&lt;", "&gt;=", "&lt;="
 	 *	6: "==", "!="
-	 *	5: "&"
+	 *	5: "&amp;"
 	 *	4: "|"
 	 *	3: "^"
-	 *	2: "&&"
+	 *	2: "&amp;&amp;"
 	 *	1: "||"
-	 *	0: "=", "+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "<<=", ">>=", ">>>=" //0
+	 *	0: "=", "+=", "-=", "*=", "/=", "%=", "^=", "&amp;=", "|=", "&lt;&lt;=", "&gt;&gt;=", "&gt;&gt;&gt;=" //0
 	 * @param text the infix notation 
 	 * @return A list has many tokens and the sequence of postfix notation
 	 */
@@ -459,6 +459,7 @@ public class RPNUtils {
 		public String value;
 		public Type type;
 		
+		@Override
 		public String toString() {
 			return value;
 		}

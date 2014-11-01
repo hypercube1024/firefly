@@ -185,7 +185,7 @@ abstract public class ConvertUtils {
 	 * 			The collection that needs be converted
 	 * @param arrayType
      *          The element type of an array
-	 * @return
+	 * @return a array object and the element is the parameter specified type.  
 	 */
 	public static Object convert(Collection<?> collection, Class<?> arrayType) {
 		int size = collection.size();
@@ -282,10 +282,12 @@ abstract public class ConvertUtils {
 	public static <T> Enumeration<T> enumeration(Collection<T> col) {
 		final Iterator<T> it = col.iterator();
 		return new Enumeration<T>() {
+			@Override
 			public boolean hasMoreElements() {
 				return it.hasNext();
 			}
 
+			@Override
 			public T nextElement() {
 				return it.next();
 			}

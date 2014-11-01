@@ -76,10 +76,15 @@ public abstract class ReflectUtils {
 	
 	/**
 	 * Invokes a object's "setter" method by property name
-	 * @param obj The instance of a object
-	 * @param property The property name of this object
-	 * @param value The parameter of "setter" method that you want to set
+	 * @param obj 
+	 * 			The instance of a object
+	 * @param property 
+	 * 			The property name of this object
+	 * @param value 
+	 * 			The parameter of "setter" method that you want to set
 	 * @throws Throwable
+	 * 			A runtime exception
+	 * 				
 	 */
 	public static void set(Object obj, String property, Object value) throws Throwable {
 		getSetterMethod(obj.getClass(), property).invoke(obj, value);
@@ -87,10 +92,16 @@ public abstract class ReflectUtils {
 	
 	/**
 	 * Invokes a object's "getter" method by property name
-	 * @param obj The instance of a object
-	 * @param property The property name of this object
+	 * 
+	 * @param obj 
+	 * 			The instance of a object
+	 * @param property 
+	 * 			The property name of this object
+	 * 
 	 * @return The value of this property
+	 * 
 	 * @throws Throwable
+	 * 			A runtime exception
 	 */
 	public static Object get(Object obj, String property) throws Throwable {
 		return getGetterMethod(obj.getClass(), property).invoke(obj);

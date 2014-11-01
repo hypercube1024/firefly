@@ -6,6 +6,7 @@
 
 package com.firefly.utils.collection;
 
+import java.io.IOException;
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
@@ -860,11 +861,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             advance(null);
         }
 
-        public final boolean hasNext() {
+        @Override
+		public final boolean hasNext() {
             return nextNode != null;
         }
 
-        public final E next() {
+        @Override
+		public final E next() {
             Node p = nextNode;
             if (p == null) throw new NoSuchElementException();
             E e = nextItem;
@@ -872,7 +875,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             return e;
         }
 
-        public final void remove() {
+        @Override
+		public final void remove() {
             final Node lastRet = this.lastRet;
             if (lastRet == null)
                 throw new IllegalStateException();
@@ -1006,7 +1010,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * @throws NullPointerException if the specified element is null
      */
-    public void put(E e) {
+    @Override
+	public void put(E e) {
         xfer(e, true, ASYNC, 0);
     }
 
@@ -1020,7 +1025,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *  BlockingQueue.offer})
      * @throws NullPointerException if the specified element is null
      */
-    public boolean offer(E e, long timeout, TimeUnit unit) {
+    @Override
+	public boolean offer(E e, long timeout, TimeUnit unit) {
         xfer(e, true, ASYNC, 0);
         return true;
     }
@@ -1032,7 +1038,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @return {@code true} (as specified by {@link Queue#offer})
      * @throws NullPointerException if the specified element is null
      */
-    public boolean offer(E e) {
+    @Override
+	public boolean offer(E e) {
         xfer(e, true, ASYNC, 0);
         return true;
     }
@@ -1045,7 +1052,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @return {@code true} (as specified by {@link Collection#add})
      * @throws NullPointerException if the specified element is null
      */
-    public boolean add(E e) {
+    @Override
+	public boolean add(E e) {
         xfer(e, true, ASYNC, 0);
         return true;
     }
@@ -1060,7 +1068,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * @throws NullPointerException if the specified element is null
      */
-    public boolean tryTransfer(E e) {
+    @Override
+	public boolean tryTransfer(E e) {
         return xfer(e, true, NOW, 0) == null;
     }
 
@@ -1075,7 +1084,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * @throws NullPointerException if the specified element is null
      */
-    public void transfer(E e) throws InterruptedException {
+    @Override
+	public void transfer(E e) throws InterruptedException {
         if (xfer(e, true, SYNC, 0) != null) {
             Thread.interrupted(); // failure possible only due to interrupt
             throw new InterruptedException();
@@ -1096,7 +1106,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * @throws NullPointerException if the specified element is null
      */
-    public boolean tryTransfer(E e, long timeout, TimeUnit unit)
+    @Override
+	public boolean tryTransfer(E e, long timeout, TimeUnit unit)
         throws InterruptedException {
         if (xfer(e, true, TIMED, unit.toNanos(timeout)) == null)
             return true;
@@ -1105,7 +1116,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         throw new InterruptedException();
     }
 
-    public E take() throws InterruptedException {
+    @Override
+	public E take() throws InterruptedException {
         E e = xfer(null, false, SYNC, 0);
         if (e != null)
             return e;
@@ -1113,14 +1125,16 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         throw new InterruptedException();
     }
 
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+    @Override
+	public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         E e = xfer(null, false, TIMED, unit.toNanos(timeout));
         if (e != null || !Thread.interrupted())
             return e;
         throw new InterruptedException();
     }
 
-    public E poll() {
+    @Override
+	public E poll() {
         return xfer(null, false, NOW, 0);
     }
 
@@ -1128,7 +1142,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException     {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      */
-    public int drainTo(Collection<? super E> c) {
+    @Override
+	public int drainTo(Collection<? super E> c) {
         if (c == null)
             throw new NullPointerException();
         if (c == this)
@@ -1145,7 +1160,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException     {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      */
-    public int drainTo(Collection<? super E> c, int maxElements) {
+    @Override
+	public int drainTo(Collection<? super E> c, int maxElements) {
         if (c == null)
             throw new NullPointerException();
         if (c == this)
@@ -1171,11 +1187,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * @return an iterator over the elements in this queue in proper sequence
      */
-    public Iterator<E> iterator() {
+    @Override
+	public Iterator<E> iterator() {
         return new Itr();
     }
 
-    public E peek() {
+    @Override
+	public E peek() {
         return firstDataItem();
     }
 
@@ -1184,7 +1202,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * @return {@code true} if this queue contains no elements
      */
-    public boolean isEmpty() {
+    @Override
+	public boolean isEmpty() {
         for (Node p = head; p != null; p = succ(p)) {
             if (!p.isMatched())
                 return !p.isData;
@@ -1192,7 +1211,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         return true;
     }
 
-    public boolean hasWaitingConsumer() {
+    @Override
+	public boolean hasWaitingConsumer() {
         return firstOfMode(false) != null;
     }
 
@@ -1208,11 +1228,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * @return the number of elements in this queue
      */
-    public int size() {
+    @Override
+	public int size() {
         return countOfMode(true);
     }
 
-    public int getWaitingConsumerCount() {
+    @Override
+	public int getWaitingConsumerCount() {
         return countOfMode(false);
     }
 
@@ -1227,7 +1249,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @param o element to be removed from this queue, if present
      * @return {@code true} if this queue changed as a result of the call
      */
-    public boolean remove(Object o) {
+    @Override
+	public boolean remove(Object o) {
         return findAndRemove(o);
     }
 
@@ -1239,7 +1262,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @param o object to be checked for containment in this queue
      * @return {@code true} if this queue contains the specified element
      */
-    public boolean contains(Object o) {
+    @Override
+	public boolean contains(Object o) {
         if (o == null) return false;
         for (Node p = head; p != null; p = succ(p)) {
             Object item = p.item;
@@ -1261,7 +1285,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *         {@link java.util.concurrent.BlockingQueue#remainingCapacity()
      *         BlockingQueue.remainingCapacity})
      */
-    public int remainingCapacity() {
+    @Override
+	public int remainingCapacity() {
         return Integer.MAX_VALUE;
     }
 
@@ -1271,6 +1296,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @serialData All of the elements (each an {@code E}) in
      * the proper order, followed by a null
      * @param s the stream
+     * 
+     * @throws IOException
+     * 			I/O exception
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
@@ -1286,6 +1314,11 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * deserializes it).
      *
      * @param s the stream
+     * 
+     * @throws IOException 
+     * 		I/O exception
+     * @throws ClassNotFoundException
+     * 		class not found exception
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
@@ -1336,7 +1369,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 return java.security.AccessController.doPrivileged
                     (new java.security
                      .PrivilegedExceptionAction<sun.misc.Unsafe>() {
-                        public sun.misc.Unsafe run() throws Exception {
+                        @Override
+						public sun.misc.Unsafe run() throws Exception {
                             java.lang.reflect.Field f = sun.misc
                                 .Unsafe.class.getDeclaredField("theUnsafe");
                             f.setAccessible(true);

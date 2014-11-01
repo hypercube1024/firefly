@@ -27,6 +27,7 @@ public class StateMachine {
 	 * @param content
 	 * 			expression of the template language  
 	 * @param javaFileBuilder
+	 * 			java file builder
 	 * @return true if current word is keyword of the template language, else false.
 	 */
 	public static boolean parse(String keyword, String content, JavaFileBuilder javaFileBuilder) {

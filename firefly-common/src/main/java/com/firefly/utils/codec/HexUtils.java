@@ -152,6 +152,8 @@ abstract public class HexUtils {
 	 *            the BigInteger to write
 	 * @param out
 	 *            the stream to write it to
+	 * @throws IOException
+	 * 			I/O exception
 	 */
 	public static void writeBigInteger(BigInteger integer, DataOutputStream out)
 			throws IOException {
@@ -171,6 +173,9 @@ abstract public class HexUtils {
 	 * @param dis
 	 *            the stream to read from
 	 * @return a BigInteger
+	 * 
+	 * @throws IOException
+	 * 			I/O exception
 	 */
 	public static BigInteger readBigInteger(DataInputStream dis)
 			throws IOException {
@@ -184,8 +189,13 @@ abstract public class HexUtils {
 
 	/**
 	 * Turn a BigInteger into a hex string. BigInteger.toString(16) NPEs on Sun
-	 * JDK 1.4.2_05. :< The bugs in their Big* are getting seriously
+	 * JDK 1.4.2_05.  The bugs in their Big* are getting seriously
 	 * irritating...
+	 * 
+	 * @param bi
+	 * 			a big integer.
+	 * @return a hex string.
+	 * 
 	 */
 	public static String biToHex(BigInteger bi) {
 		return bytesToHex(bi.toByteArray());

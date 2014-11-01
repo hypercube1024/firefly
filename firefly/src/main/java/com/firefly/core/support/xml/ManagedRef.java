@@ -3,7 +3,6 @@ package com.firefly.core.support.xml;
 /**
  * Reference elements
  * @author JJ Xu
- * @date 2011-3-9
  */
 public class ManagedRef implements XmlManagedNode {
 

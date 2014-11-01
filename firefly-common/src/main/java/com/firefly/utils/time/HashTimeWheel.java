@@ -34,6 +34,7 @@ public class HashTimeWheel {
 	 *           after x milliseconds than execute runnable
 	 * @param run
 	 *           run task in future
+	 * @return The task future
 	 */
 	public Future add(long delay, Runnable run) {
 		final int curSlot = currentSlot;

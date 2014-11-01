@@ -68,7 +68,7 @@ public class SSLSession implements Closeable {
      * Application data can not be sent during this phase.
      * @param receiveBuffer Encrypted message
      * @return True means handshake success
-     * @throws Throwable
+     * @throws Throwable A runtime exception
      */
     public boolean doHandshake(ByteBuffer receiveBuffer) throws Throwable {
     	if(!session.isOpen()) {
@@ -334,6 +334,7 @@ public class SSLSession implements Closeable {
      * 			length
      * @return written length
      * @throws Throwable
+     * 			A runtime exception
      */
     public long transferTo(FileChannel fc, long pos, long len) throws Throwable {
     	if (!initialHSComplete)
@@ -381,6 +382,7 @@ public class SSLSession implements Closeable {
     
     /**
      * Do all the outstanding handshake tasks in the current Thread.
+     * @return The result of handshake
      */
     protected SSLEngineResult.HandshakeStatus doTasks() {
         Runnable runnable;

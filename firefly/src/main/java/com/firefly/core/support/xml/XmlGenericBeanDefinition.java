@@ -9,8 +9,7 @@ import java.util.Map;
 /**
  * XML bean configuration 
  *
- * @author JJ Xu & Alvin Qiu
- * @date 2011-3-5
+ * @author JJ Xu &amp; Alvin Qiu
  */
 public class XmlGenericBeanDefinition implements XmlBeanDefinition {
 

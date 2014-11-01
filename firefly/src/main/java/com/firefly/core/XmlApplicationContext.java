@@ -30,7 +30,7 @@ import com.firefly.utils.log.LogFactory;
 /**
  * The core application context mixed XML and annotation bean management
  * 
- * @author JJ Xu & Alvin Qiu
+ * @author JJ Xu &amp; Alvin Qiu
  */
 public class XmlApplicationContext extends AbstractApplicationContext {
 

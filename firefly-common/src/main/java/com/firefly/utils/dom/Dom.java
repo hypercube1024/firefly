@@ -8,47 +8,64 @@ import org.w3c.dom.Element;
 public interface Dom {
 
 	/**
-	 * 根据文件读取文档对象
-	 * @Date 2011-3-3
-	 * @param file
-	 * @return 文档对象
+	 * Get the XML document
+	 * 
+	 * @param file 
+	 * 			The file relative path
+	 * 
+	 * @return XML document
 	 */
 	public abstract Document getDocument(String file);
 	
 	/**
-	 * 取得根节点
-	 * @param doc
-	 * @return
+	 * Get the root node
+	 * 
+	 * @param doc 
+	 * 		XML document object;
+	 * @return The root element.
 	 */
 	public abstract Element getRoot(Document doc);
 	
 	/**
-	 * 取得所有子元素
-	 * @param e
-	 * @return
+	 * Get the children elements
+	 * 
+	 * @param e 
+	 * 			A current XML element
+	 * 
+	 * @return All children elements
 	 */
 	public abstract List<Element> elements(Element e);
 	
 	/**
-	 * 根据元素名取得子元素列表
-	 * @param e
-	 * @param name
-	 * @return
+	 * Get the children elements by element name
+	 * 
+	 * @param e 
+	 * 		A current XML element
+	 * @param name 
+	 * 		Element name
+	 * 
+	 * @return Children elements
 	 */
 	public abstract List<Element> elements(Element e, String name);
 	
 	/**
-	 * 获取元素
-	 * @param e
-	 * @param name
-	 * @return
+	 * Get a element by name
+	 * 
+	 * @param e 
+	 * 		A current XML element
+	 * @param name 
+	 * 		Element name
+	 * 
+	 * @return A XML element
 	 */
 	public abstract Element element(Element e, String name);
 	
 	/**
-	 * 获取元素值
-	 * @param valueEle
-	 * @return
+	 * Get the value of a XML element
+	 * 
+	 * @param valueElement 
+	 * 		The value node 
+	 * @return The text value
 	 */
-	public abstract String getTextValue(Element valueEle);
+	public abstract String getTextValue(Element valueElement);
 }

@@ -5,11 +5,12 @@ import javax.servlet.http.HttpServletResponse;
 
 public interface FileAccessFilter {
 	/**
-	 * 静态文件访问过滤器
-	 * @param request 
-	 * @param response
-	 * @param path 程序输入路径
-	 * @return 需要输出的静态文件名，返回null则跳过后续处理，此时需要在函数内做出http响应。
+	 * The static file access filter
+	 * @param request HTTP request
+	 * @param response HTTP response
+	 * @param path The current file path
+	 * @return Return a file name，when you return null that represents to skip the process，
+	 * meanwhile you must do a HTTP response in this method。
 	 */
 	String doFilter(HttpServletRequest request, HttpServletResponse response, String path);
 }

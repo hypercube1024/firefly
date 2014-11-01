@@ -1,5 +1,7 @@
 package test.utils;
 
+import static org.hamcrest.Matchers.is;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +10,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.utils.StringUtils;
-import static org.hamcrest.Matchers.*;
 
 public class TestStringUtils {
 	
@@ -131,8 +132,14 @@ public class TestStringUtils {
 		ret2 = StringUtils.replace(str2, 12, 23L, 33);
 		Assert.assertThat(ret2, is("hello {{{12 and 23 mm"));
 	}
-
+	
 	public static void main(String[] args) {
+		String str = "Replace the pattern using a map, such as a pattern, such as A pattern is 'hello ${foo}' and the map is {'foo' : 'world'}, when you execute this function, the result is 'hello world'";
+		System.out.println(StringUtils.escapeXML(str));
+	
+	}
+
+	public static void main2(String[] args) {
 		String str = "hello ${t1} and ${t2}";
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("t1", "foo");

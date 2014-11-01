@@ -267,7 +267,7 @@ public class StringUtils {
 		if (match || (preserveAllTokens && lastMatch)) {
 			list.add(str.substring(start, i));
 		}
-		return (String[]) list.toArray(EMPTY_STRING_ARRAY);
+		return list.toArray(EMPTY_STRING_ARRAY);
 	}
 
 	/**
@@ -490,13 +490,15 @@ public class StringUtils {
 	}
 
 	/**
-	 * 将字符串中特定模式的字符转换成map中对应的值
+	 * Replace the pattern using a map, such as a pattern, 
+	 * such as A pattern is "hello ${foo}" and the map is {"foo" : "world"}, 
+	 * when you execute this function, the result is "hello world"
 	 *
 	 * @param s
-	 *            需要转换的字符串
+	 *            The pattern string.
 	 * @param map
-	 *            转换所需的键值对集合
-	 * @return 转换后的字符串
+	 *            The key-value
+	 * @return The string replaced.
 	 */
 	public static String replace(String s, Map<String, Object> map) {
 		StringBuilder ret = new StringBuilder((int)(s.length() * 1.5));
