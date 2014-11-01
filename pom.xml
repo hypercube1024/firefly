@@ -56,6 +56,11 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+  <properties>
+	<log.level>INFO</log.level>
+	<log.path>D:/log/</log.path>
+  </properties>
 
   <profiles>
     <profile>
