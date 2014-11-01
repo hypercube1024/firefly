@@ -101,7 +101,7 @@
             </executions>
           </plugin>
 
-          <!-- javadoc 
+          <!-- javadoc -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
@@ -115,9 +115,9 @@
               </execution>
             </executions>
             <configuration>
-              <failOnError>false</failOnError>
+              <failOnError>true</failOnError>
             </configuration>
-          </plugin>-->
+          </plugin>
 
           <!-- gpg -->
           <plugin>
