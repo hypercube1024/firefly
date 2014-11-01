@@ -151,13 +151,8 @@
             </configuration>
           </plugin>
         </plugins>
-
       </build>
 
-      <properties>
-        <log.level>INFO</log.level>
-        <log.path>/Users/qiupengtao/develop/logs/</log.path>
-      </properties>
       <distributionManagement>
         <snapshotRepository>
           <id>ossrh</id>
