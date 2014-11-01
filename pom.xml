@@ -116,6 +116,8 @@
             </executions>
             <configuration>
               <failOnError>true</failOnError>
+			  <charset>UTF-8</charset>
+			  <encoding>UTF-8</encoding>
             </configuration>
           </plugin>
 
