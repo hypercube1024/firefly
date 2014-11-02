@@ -2,3 +2,7 @@ source:      .
 destination: ./_site
 plugins:     ./_plugins
 layouts:     ./_layouts
+
+collections:
+  docs:
+    output: true
