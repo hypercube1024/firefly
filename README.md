@@ -4,7 +4,7 @@ Firefly framework is a high performance full-stack java web framework. It helps 
 
 ## Getting Start
 
-1. Clone firefly source from Github.
+1. Clone firefly source code from Github.
 2. Open Eclipse IDE and import the demo project - 'firefly-benchmark'
 3. Modify the log path in firefly-log.properties, you can find it in 'firefly-benchmark/src', in this case, you __*Must*__ modify these two rows to your own location
 
