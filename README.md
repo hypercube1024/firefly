@@ -29,7 +29,7 @@ Running firefly is very easy, now you can download the dependency from Apache Ce
     </dependency>
 ```
 
-There are two ways to start firefly application, building by maven, or just run it on eclipse simply.
+There are two ways to start a firefly application, building by maven, or just run it on eclipse simply.
 
 ### Building by maven
 1. Clone firefly source code from Github.
