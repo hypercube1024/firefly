@@ -10,9 +10,9 @@ import com.firefly.utils.log.LogFactory;
 public class ParamMetaInfo {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
-	private final Class<?> paramClass; // 要注入的类型
-	private final Map<String, Method> beanSetMethod; // 要注入的bean的set方法
-	private final String attribute; // 要setAttribute的属性
+	private final Class<?> paramClass; // injecting type
+	private final Map<String, Method> beanSetMethod; // setter method of parameter
+	private final String attribute; // out attribute
 
 	public ParamMetaInfo(Class<?> paramClass, Map<String, Method> beanSetMethod, String attribute) {
 		this.paramClass = paramClass;

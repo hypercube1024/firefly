@@ -148,11 +148,11 @@ public class Resource {
 		}
 
 		/**
-		 * controller方法参数注入
+		 * controller method injecting
 		 * 
-		 * @param request
-		 * @param response
-		 * @return
+		 * @param request HTTP request
+		 * @param response HTTP response
+		 * @return Instances of method parameters
 		 */
 		private Object[] getParams(HttpServletRequest request, HttpServletResponse response) {
 			ControllerMetaInfo info = this.getController();
@@ -169,12 +169,11 @@ public class Resource {
 					p[i] = response;
 					break;
 				case MethodParam.HTTP_PARAM:
-					// 请求参数封装到javabean
 					Enumeration<String> enumeration = request.getParameterNames();
 					ParamMetaInfo paramMetaInfo = paramMetaInfos[i];
 					p[i] = paramMetaInfo.newParamInstance();
 
-					// 把http参数赋值给参数对象
+					// convert HTTP parameters to objects
 					while (enumeration.hasMoreElements()) {
 						String httpParamName = enumeration.nextElement();
 						String paramValue = request.getParameter(httpParamName);
