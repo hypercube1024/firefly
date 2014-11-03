@@ -44,11 +44,12 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 
 	private void scan(String packageName) {
 		String packageDirName = packageName.replace('.', '/');
-		log.debug("packageDirName: " + packageDirName);
-		URL url = AnnotationBeanReader.class.getClassLoader().getResource(
-				packageDirName);
-		if (url == null)
+		log.debug("package directory name -> {} " + packageDirName);
+		URL url = AnnotationBeanReader.class.getClassLoader().getResource(packageDirName);
+		if (url == null) {
 			error(packageName + " can not be found");
+		}
+		log.debug("URL -> {}", url.toString());
 		String protocol = url.getProtocol();
 		if ("file".equals(protocol)) {
 			parseFile(url, packageDirName);
