@@ -33,14 +33,13 @@ You can use maven to build your project, or just run it on eclipse simply.
 
 ### Building by Maven
 1. Clone firefly source code from Github.
-2. Find the demo project 'firefly-demo', run maven command 'mvn test' and 'mvn compile'
-3. Modify the log path in firefly-log.properties, you can find it in 'firefly-demo/src/main/resources', in this case, you __*Must*__ modify these two rows to your own location
+2. Find the demo project 'firefly-demo', modify the log path in firefly-log.properties, you can find it in 'firefly-demo/src/main/resources', in this case, you __*Must*__ modify these two rows to your own location
 
 ```
 firefly-system=INFO,/Users/qiupengtao/develop/logs
 firefly-access=INFO,/Users/qiupengtao/develop/logs
 ```
-When you have finished these operations above-mentioned, run the class 'App' and visit the URL http://localhost:8080/index in your browser, you will see the 'Hello World'.  
+When you have finished these operations above-mentioned, run maven command 'mvn test' and 'mvn compile', then run the class 'App' and visit the URL http://localhost:8080/index in your browser, you will see the 'Hello World'.  
 
 
 ### Running on Eclipse
