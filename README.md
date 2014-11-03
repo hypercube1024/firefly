@@ -57,6 +57,6 @@ When you have finished these operations above-mentioned, run the class 'Bootstra
 
 Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly need invoke Java Compiler API that isn't in JRE.  
 
-##Contact Information
+##Contact information
 E-mail: qptkk@163.com  
 QQ Group: 126079579
