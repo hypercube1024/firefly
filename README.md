@@ -2,7 +2,48 @@
 
 Firefly framework is a high performance full-stack java web framework. It helps you create a java web application __*Easy*__ and __*Quickly*__. It provides MVC framework with HTTP Server and many other useful components for developing web applications. That means you can easy deploy your web without any other java web containers, in short , it's containerless. It taps into the fullest potential of hardware using __*SEDA*__ architecture, a highly customizable thread model.  
 
-## Getting Start
+## Getting start
+
+Running firefly is very easy, now you can download the dependency from Apache Central Repository, the pom is:
+
+```
+	<dependency>
+      <groupId>com.fireflysource</groupId>
+      <artifactId>firefly-common</artifactId>
+      <version>3.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fireflysource</groupId>
+      <artifactId>firefly-template</artifactId>
+      <version>3.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fireflysource</groupId>
+      <artifactId>firefly-nettool</artifactId>
+      <version>3.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fireflysource</groupId>
+      <artifactId>firefly</artifactId>
+      <version>3.0.2</version>
+    </dependency>
+```
+
+You can use maven to build your project, or just run it on eclipse simply.
+
+### Building by Maven
+1. Clone firefly source code from Github.
+2. Find the demo project 'firefly-demo', run maven command 'mvn test' and 'mvn compile'
+3. Modify the log path in firefly-log.properties, you can find it in 'firefly-demo/src/main/resources', in this case, you __*Must*__ modify these two rows to your own location
+
+```
+firefly-system=INFO,/Users/qiupengtao/develop/logs
+firefly-access=INFO,/Users/qiupengtao/develop/logs
+```
+When you have finished these operations above-mentioned, run the class 'App' and visit the URL http://localhost:8080/index in your browser, you will see the 'Hello World'.  
+
+
+### Running on Eclipse
 
 1. Clone firefly source code from Github.
 2. Open Eclipse IDE and import the demo project - 'firefly-benchmark'
@@ -13,6 +54,7 @@ firefly-system=INFO,/Users/qiupengtao/develop/logs
 firefly-access=INFO,/Users/qiupengtao/develop/logs
 ```
 When you have finished these operations above-mentioned, run the class 'Bootstrap' and visit the URL http://localhost:8080/ in your browser, you will see the 'Hello World'.  
+
 
 Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly need invoke Java Compiler API that isn't in JRE.  
 
