@@ -69,7 +69,7 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 * @param accessOrder the ordering mode - <tt>true</tt> for
      *         access-order, <tt>false</tt> for insertion-order
 	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
-	 * 					the actual limit of capacity depend on the entry weather if average in segments
+	 * 					the actual limit of capacity depend on the entry's average in segments
 	 * @param mapEventListener the callback method of map's operations
 	 */
 	public ConcurrentLinkedHashMap(boolean accessOrder, 
@@ -83,7 +83,7 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 * @param accessOrder accessOrder the ordering mode - <tt>true</tt> for
      *         access-order, <tt>false</tt> for insertion-order
 	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
-	 * 					the actual limit of capacity depend on the entry weather if average in segments
+	 * 					the actual limit of capacity depend on the entry's average in segments
 	 * @param mapEventListener the callback method of map's operations
 	 * @param concurrencyLevel the number of segment, default is 16
 	 */
@@ -101,7 +101,7 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 * @param accessOrder the ordering mode - <tt>true</tt> for
      *         access-order, <tt>false</tt> for insertion-order
 	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
-	 * 					the actual limit of capacity depend on the entry weather if average in segments
+	 * 					the actual limit of capacity depend on the entry's average in segments
 	 * @param mapEventListener the callback method of map's operations
 	 * @param concurrencyLevel the number of segment, default is 16
 	 */
@@ -160,6 +160,7 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 			this.mapEventListener = mapEventListener;
 		}
 		
+		@Override
 		protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
 			lock.lock();
 			try {
