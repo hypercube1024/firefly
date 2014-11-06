@@ -68,8 +68,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 * 
 	 * @param accessOrder the ordering mode - <tt>true</tt> for
      *         access-order, <tt>false</tt> for insertion-order
-	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
-	 * 					the actual limit of capacity depends on the entry's number of every segment
+	 * @param maxEntries 
+	 * 			map's the biggest capacity, it isn't accurate, 
+	 * 			the actual limit of capacity depends on the entry's number of every segment.
+	 * 			For example, if you set the max entries is 64, and the concurrency level is 16,
+	 * 			and then every segment's max entries is 64/16 = 4. 
 	 * @param mapEventListener the callback method of map's operations
 	 */
 	public ConcurrentLinkedHashMap(boolean accessOrder, 
@@ -82,8 +85,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 * 
 	 * @param accessOrder accessOrder the ordering mode - <tt>true</tt> for
      *         access-order, <tt>false</tt> for insertion-order
-	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
-	 * 					the actual limit of capacity depends on the entry's number of every segment
+	 * @param maxEntries 
+	 * 			map's the biggest capacity, it isn't accurate, 
+	 * 			the actual limit of capacity depends on the entry's number of every segment.
+	 * 			For example, if you set the max entries is 64, and the concurrency level is 16,
+	 * 			and then every segment's max entries is 64/16 = 4.
 	 * @param mapEventListener the callback method of map's operations
 	 * @param concurrencyLevel the number of segment, default is 16
 	 */
@@ -100,8 +106,11 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 	 * @param loadFactor the load factor decide the map increase to what degree have to expand, default value is 0.75f
 	 * @param accessOrder the ordering mode - <tt>true</tt> for
      *         access-order, <tt>false</tt> for insertion-order
-	 * @param maxEntries map's the biggest capacity, it isn't accurate, 
-	 * 					the actual limit of capacity depends on the entry's number of every segment
+	 * @param maxEntries 
+	 * 			map's the biggest capacity, it isn't accurate, 
+	 * 			the actual limit of capacity depends on the entry's number of every segment.
+	 * 			For example, if you set the max entries is 64, and the concurrency level is 16,
+	 * 			and then every segment's max entries is 64/16 = 4.
 	 * @param mapEventListener the callback method of map's operations
 	 * @param concurrencyLevel the number of segment, default is 16
 	 */
@@ -252,7 +261,7 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 
 	/**
 	 * Returns <tt>true</tt>, if this map contains a mapping for the specified key.
-	 * @return <tt>true</tt>, if this map contains a mapping for the specified key.s
+	 * @return <tt>true</tt>, if this map contains a mapping for the specified key.
 	 */
 	@Override
 	public boolean containsKey(Object key) {
