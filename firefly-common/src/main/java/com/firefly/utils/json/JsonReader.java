@@ -18,22 +18,22 @@ abstract public class JsonReader extends Reader{
 	abstract public boolean isArray();
 	
 	/**
-	 * 判断空数组，必须先调用isArray()，并且会重置游标
-	 * @return 是否size为0的数组
+	 * Invokes it after isArray() and resets index
+	 * @return If it returns true, the size of array is 0.
 	 */
 	abstract public boolean isEmptyArray();
 
 	abstract public boolean isObject();
 	
 	/**
-	 * 判断空对象，必须先调用isObject()，并且会重置游标
-	 * @return 是否空({})json对象
+	 * Invokes it after isObject() and resets index
+	 * @return If it returns true, the object is not any properties
 	 */
 	abstract public boolean isEmptyObject();
 	
 	/**
-	 * 判断是否为null值，并且会重置游标
-	 * @return 是否null
+	 * Judges null and resets index
+	 * @return If it returns true, it's null.
 	 */
 	abstract public boolean isNull();
 
