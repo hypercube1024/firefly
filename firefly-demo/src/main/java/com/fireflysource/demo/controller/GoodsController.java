@@ -1,12 +1,17 @@
 package com.fireflysource.demo.controller;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
 import javax.servlet.ServletException;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -81,6 +86,11 @@ public class GoodsController {
 			}};
 	}
 	
+	@RequestMapping(value = "/goods/uploading")
+	public View intoUploadingPage() {
+		return new TemplateView("/goods/uploading.html");
+	}
+	
 	@RequestMapping(value = "/goods/upload", method=HttpMethod.POST)
 	public View uploadGoodsInformation(HttpServletRequest request) {
 		try {
@@ -90,5 +100,115 @@ public class GoodsController {
 			log.error("uploading failure!", e);
 		}
 		return new TextView("uploading success!");	
+	}
+	
+	@RequestMapping(value = "/goods/asyncNotice")
+	public View getInformationAsynchronously(HttpServletRequest request, HttpServletResponse response) {
+		PrintWriter writer = null;
+		try {
+			writer = response.getWriter();
+		} catch (IOException e) {
+			log.error("get writer failure", e);
+		}
+		writer.println("start asynchronous notice");
+		writer.flush();
+		request.startAsync();
+		request.getAsyncContext().addListener(new TestAsyncListener());
+		request.getAsyncContext().start(new TestRunnable(request.getAsyncContext(), "asynchronous notice of goods information"));
+		return null;
+	}
+	
+	private class TestRunnable implements Runnable {
+		private AsyncContext context;
+		private String name;
+
+		public TestRunnable(AsyncContext context, String name) {
+			this.context = context;
+			this.name = name;
+		}
+		
+		@Override
+		public void run() {
+			
+			ServletResponse res = context.getResponse();
+			PrintWriter writer = null;
+			try {
+				writer = res.getWriter();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			writer.println(name + " ......");
+			writer.flush();
+			try {
+				Thread.sleep(5000);
+				
+				writer.println(name + ": received a async message");
+				writer.flush();
+				context.complete();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+	}
+	
+	private class TestAsyncListener implements AsyncListener {
+
+		@Override
+		public void onTimeout(AsyncEvent event) throws IOException {
+			ServletResponse res = event.getSuppliedResponse();
+			PrintWriter writer = null;
+			try {
+				writer = res.getWriter();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			writer.println("async context timeout");
+			writer.flush();
+			writer.close();
+		}
+		
+		@Override
+		public void onStartAsync(AsyncEvent event) throws IOException {
+			ServletResponse res = event.getSuppliedResponse();
+			PrintWriter writer = null;
+			try {
+				writer = res.getWriter();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			writer.println("start async context");
+			writer.flush();
+		}
+		
+		@Override
+		public void onError(AsyncEvent event) throws IOException {
+			ServletResponse res = event.getSuppliedResponse();
+			PrintWriter writer = null;
+			try {
+				writer = res.getWriter();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			writer.println("async context error");
+			writer.flush();
+			
+		}
+		
+		@Override
+		public void onComplete(AsyncEvent event) throws IOException {
+			ServletResponse res = event.getSuppliedResponse();
+			PrintWriter writer = null;
+			try {
+				writer = res.getWriter();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			writer.println("async context complete");
+			writer.close();
+			
+		}
 	}
 }
