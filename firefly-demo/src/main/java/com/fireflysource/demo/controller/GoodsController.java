@@ -67,6 +67,7 @@ public class GoodsController {
 	
 	@RequestMapping(value = "/goods/information")
 	public View getGoodsInformation() {
+		log.info("goods information controller");
 		return new View(){
 
 			@Override
