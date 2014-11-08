@@ -31,13 +31,14 @@ public class Config {
                 poolQueueSize = 50000;
 	
 	private long poolKeepAliveTime = 30 * 1000,
-				 poolWaitTimeout = 2 * 1000;
+				 poolWaitTimeout = 3 * 1000;
 	
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
 	private boolean enableThreadPool = true;
-	private int businessLogicThreadTimeout = 7 * 1000;
+	private int asynchronousContextTimeout = 6 * 1000;
+
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
 	
@@ -295,14 +296,6 @@ public class Config {
 		this.enableThreadPool = enableThreadPool;
 	}
 
-	public int getBusinessLogicThreadTimeout() {
-		return businessLogicThreadTimeout;
-	}
-
-	public void setBusinessLogicThreadTimeout(int businessLogicThreadTimeout) {
-		this.businessLogicThreadTimeout = businessLogicThreadTimeout;
-	}
-
 	public Map<Integer, String> getErrorPage() {
 		return errorPage;
 	}
@@ -403,6 +396,14 @@ public class Config {
 
 	public void setPoolQueueSize(int poolQueueSize) {
 		this.poolQueueSize = poolQueueSize;
+	}
+
+	public int getAsynchronousContextTimeout() {
+		return asynchronousContextTimeout;
+	}
+
+	public void setAsynchronousContextTimeout(int asynchronousContextTimeout) {
+		this.asynchronousContextTimeout = asynchronousContextTimeout;
 	}
 
 }

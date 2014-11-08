@@ -15,19 +15,12 @@ import javax.servlet.http.HttpServletResponse;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.HashTimeWheel;
 import com.firefly.utils.time.Millisecond100Clock;
 
 public class ThreadPoolWrapper {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
-	public static final HashTimeWheel TIME_WHEEL = new HashTimeWheel();
 	private static ExecutorService executor;
-	
-	static {
-		TIME_WHEEL.start();
-	}
 	
 	public static void init(final Config config) {
 		ThreadFactory threadFactory = new ThreadFactory(){
@@ -82,7 +75,7 @@ public class ThreadPoolWrapper {
 				
 				if(businessLogicTask.getTimeDifference() > config.getPoolWaitTimeout()) {
 					try {
-						log.error("Waiting for business process has been timeout |{}", request.getRequestURI());
+						log.error("Waiting for business process has been timeout |{}|{}", request.getRequestURI(), businessLogicTask.getTimeDifference());
 						if(!response.isCommitted()) {
 							response.setHeader("Retry-After", "60");
 							response.setHeader("Connection", "close");
@@ -159,23 +152,6 @@ public class ThreadPoolWrapper {
 	
 	public static Future<?> submit(BusinessLogicTask task) {
 		return executor.submit(task);
-	}
-	
-	public static Future<?> submitWithTimeout(BusinessLogicTask task, long timeout) {
-		final Future<?> f = submit(task);
-		TIME_WHEEL.add(timeout, new Runnable(){
-
-			@Override
-			public void run() {
-				if(!f.isDone() && !f.isCancelled()) {
-					f.cancel(true);
-					log.warn("The business logic thread timeout");
-				} else {
-					log.info("The business logic thread has been released");
-				}
-			}});
-		
-		return f;
 	}
 	
 	public static void shutdown() {
