@@ -170,6 +170,8 @@ public class ThreadPoolWrapper {
 				if(!f.isDone() && !f.isCancelled()) {
 					f.cancel(true);
 					log.warn("The business logic thread timeout");
+				} else {
+					log.info("The business logic thread has been released");
 				}
 			}});
 		
