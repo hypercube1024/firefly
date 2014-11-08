@@ -47,6 +47,7 @@ public class ChunkedOutputStream extends HttpServerOutpuStream {
 				d.write();
 			
 			bufferedOutput.write(crlf);
+			bufferedOutput.flush();
 			size = 0;
 		}
 	}
