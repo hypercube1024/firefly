@@ -17,6 +17,13 @@ title: Firefly Guide
 			* [URL binding](#url-binding)
 			* [URL parameters binding](#url-parameter-binding)
 			* [View render](#view-render)
+			* [Custom view](#custom-view)
+			* [File uploading](#file-uploading)
+			* [Asynchronous context](#asynchronous-context)
+		* [Interceptor](#interceptor)
+		* [Component](#component)
+			* [Declaring a component based XML](#declaring-a-component-based-xml)
+	* [Performance](#performance)
 	* [Contact information](#contact-information)
 
 # Firefly Framework
@@ -31,22 +38,22 @@ Running firefly is very easy, now you can download the dependency from Apache Ce
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-common</artifactId>
-  <version>3.0.2</version>
+  <version>3.0.3</version>
 </dependency>
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-template</artifactId>
-  <version>3.0.2</version>
+  <version>3.0.3</version>
 </dependency>
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-nettool</artifactId>
-  <version>3.0.2</version>
+  <version>3.0.3</version>
 </dependency>
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly</artifactId>
-  <version>3.0.2</version>
+  <version>3.0.3</version>
 </dependency>
 {% endhighlight %}
 
@@ -54,11 +61,12 @@ There are two ways to start a firefly application, building by maven, or just ru
 
 ### Building by maven
 1. Clone firefly source code from Github.
-2. Find the demo project 'firefly-demo', modify the log path in firefly-log.properties, you can find it in 'firefly-demo/src/main/resources', in this case, you __*Must*__ modify these two rows to your own location
+2. Find the demo project 'firefly-demo', modify the log path in firefly-log.properties, you can find it in 'firefly-demo/src/main/resources', in this case, you __*Must*__ modify these three rows to your own location
 
 {% highlight properties %}
 firefly-system=INFO,/Users/qiupengtao/develop/logs
 firefly-access=INFO,/Users/qiupengtao/develop/logs
+demo-log=INFO,/Users/qiupengtao/develop/logs
 {% endhighlight %}
 
 When you have finished these operations above-mentioned, run maven command 'mvn test' and 'mvn compile', then run the class 'App' and visit the URL http://localhost:8080/index in your browser, you will see the 'Hello World'.  
@@ -146,6 +154,259 @@ As you see, the method parameter of controller supports four types: HttpServletR
 In above case, when you submit a HTTP post request, firefly will bind all the same names between HTTP parameters and GoodsInformation fields.
 
 #### View render
+The controller method returns a View interface (com.firefly.mvc.web.View) that is used to do HTTP response. If you return null or the controller method's return value is void, you need do response using HttpServletResponse. Firefly has five kinds of implementation classes of View interface, TemplateView, TextView, JsonView, RedirectView, StaticFileView. You can also develop yourself View interface implementation.
+
+Example JsonView:
+{% highlight java %}
+@RequestMapping(value = "/goods/get")
+public View getJson(HttpServletRequest request) {
+	String title = request.getParameter("title");
+	log.info("get json title -> {}", title);
+	if(title == null) {
+		Map<String, String> ret = new HashMap<String, String>();
+		ret.put("result", "error");
+		return new JsonView(ret);
+	}
+	return new JsonView(map.get(title));
+}
+{% endhighlight %}
+
+JsonView's constructor receives a Object and serializes it to json format automatically.  
+
+
+Example StaticFileView:
+{% highlight java %}
+@RequestMapping(value = "/goods/introductions")
+public View getFile() {
+	return new StaticFileView("/file-test.html");
+}
+{% endhighlight %}
+StaticFileView outputs a static file in server home.  
+
+The RedirectView do a 302 response. The TextView is used to output plain texts and the TemplateView is used to render Firefly template, you can find examples in previous sections.
+
+#### Custom view
+The View.render method is a callback method when the Firefly HTTP Server do a response. So you just implement that method, if you want to develop a custom view. You can develop some custom views for different kinds of pages. It helps you greatly reduce duplicated codes.
+
+{% highlight java %}
+@RequestMapping(value = "/goods/information")
+public View getGoodsInformation() {
+	return new View(){
+
+	@Override
+	public void render(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		GoodsInformation information = new GoodsInformation();
+		information.setTitle("Firefly documents");
+		information.setPrice(999.9);
+		information.setStockNumber(1);
+		
+		Writer writer = response.getWriter();
+		try {
+			writer.write(information.toString());
+		} finally {
+			writer.close();
+		}
+		
+	}};
+}
+{% endhighlight %}
+
+As you see, Firefly receives whatever implementations of View interface.
+
+#### File uploading
+Firefly uploads file as same as the other Java EE Server which supports Servlet 3.0. It uses HttpServletRequest API simply.
+
+{% highlight java %}
+@RequestMapping(value = "/goods/upload", method=HttpMethod.POST)
+public View uploadGoodsInformation(HttpServletRequest request) {
+	try {
+		Part part = request.getPart("grid");
+		part.write("/Users/qiupengtao/goods/" + part.getName());
+	} catch (Throwable e) {
+		log.error("uploading failure!", e);
+	}
+	return new TextView("uploading success!");	
+}
+{% endhighlight %}
+
+Firefly HTTP Server implements Part interface completely, the details you can see <a href="http://docs.oracle.com/javaee/7/api/javax/servlet/http/Part.html" target="_blank">Part API document</a>.
+
+#### Asynchronous context
+Firefly supports the server end asynchronous handling. If you don't want to do response in current thread, you need start an asynchronous context, and then, do response in another thread. It's appropriate for invoking some remote interfaces asynchronously, such as you start a asynchronous HTTP request in a controller, you can do response in the callback method, not blocking current thread.
+
+{% highlight java %}
+@RequestMapping(value = "/goods/asyncNotice")
+public View getInformationAsynchronously(HttpServletRequest request, HttpServletResponse response) {
+	PrintWriter writer = null;
+	try {
+		writer = response.getWriter();
+	} catch (IOException e) {
+		log.error("get writer failure", e);
+	}
+	writer.println("start asynchronous notice");
+	writer.flush();
+	request.startAsync();
+	request.getAsyncContext().addListener(new TestAsyncListener());
+	request.getAsyncContext().start(new TestRunnable(request.getAsyncContext(), "asynchronous notice of goods information"));
+	return null;
+}
+
+private class TestRunnable implements Runnable {
+	private AsyncContext context;
+	private String name;
+
+	public TestRunnable(AsyncContext context, String name) {
+		this.context = context;
+		this.name = name;
+	}
+	
+	@Override
+	public void run() {
+		
+		ServletResponse res = context.getResponse();
+		PrintWriter writer = null;
+		try {
+			writer = res.getWriter();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		writer.println(name + " ......");
+		writer.flush();
+		try {
+			Thread.sleep(5000);
+			
+			writer.println(name + ": received a async message");
+			writer.flush();
+			context.complete();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+}
+
+...
+{% endhighlight %}
+
+More details of above sample you can find in GoodsController.java of 'firefly-demo'. When you run 'telnet localhost 8080' and send a HTTP request to '/goods/asyncNotice', the screen will print 'start asynchronous notice', and after 5 seconds, the screen will print the rest of texts.
+
+{% highlight bash %}
+~$ telnet localhost 8080
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+GET /goods/asyncNotice HTTP/1.1
+Host: 127.0.0.1
+
+HTTP/1.1 200 OK
+Transfer-Encoding: chunked
+Server: Firefly/3.0
+Connection: keep-alive
+Date: Sat, 8 Nov 2014 12:04:27 GMT
+
+1a
+start asynchronous notice
+
+30
+asynchronous notice of goods information ......
+
+43
+asynchronous notice of goods information: received a async message
+
+17
+async context complete
+
+0
+
+Connection closed by foreign host.
+{% endhighlight %}
+
+If you invoke 'writer.flush()' method, Firefly HTTP server will do a response using HTTP chunked encoding forcedly. 
+
+### Interceptor
+The interceptor is used to intercept HTTP requests. You can do some operations before or after the controller is invoked.
+
+{% highlight java %}
+@Interceptor(uri = "/goods/*", order=0)
+public class GoodsInformationInterceptorStep1 {
+
+	private static Log log = LogFactory.getInstance().getLog("demo-log");
+	
+	public View dispose(HttpServletRequest request, HttpServletResponse response, HandlerChain chain) {
+		log.info("befor goods information step 1");
+		View view = chain.doNext(request, response, chain);
+		log.info("after goods information step 1");
+		return view;
+	}
+}
+
+@Interceptor(uri = "/goods/*", order=1)
+public class GoodsInformationInterceptorStep2 {
+
+	private static Log log = LogFactory.getInstance().getLog("demo-log");
+	
+	public View dispose(HttpServletRequest request, HttpServletResponse response, HandlerChain chain) {
+		log.info("befor goods information step 2");
+		View view = chain.doNext(request, response, chain);
+		log.info("after goods information step 2");
+		return view;
+	}
+}
+{% endhighlight %}
+
+The interceptor uses a URL pattern to match the HTTP request. And the order specifies the invoking order. In the above sample, it prints:
+
+{% highlight text %}
+INFO 2014-11-08 20:52:15	befor goods information step 1
+INFO 2014-11-08 20:52:15	befor goods information step 2
+INFO 2014-11-08 20:52:15	goods information controller
+INFO 2014-11-08 20:52:15	after goods information step 2
+INFO 2014-11-08 20:52:15	after goods information step 1
+{% endhighlight %}
+
+### Component
+Usually, the component is used to process business logic. You can inject a component to another component, controller or interceptor.
+
+#### Declaring a component based XML
+
+##Performance
+{% highlight text %}
+Document Path:          /index
+Document Length:        2736 bytes
+
+Concurrency Level:      100
+Time taken for tests:   3.096 seconds
+Complete requests:      100000
+Failed requests:        0
+Keep-Alive requests:    100000
+Total transferred:      289800000 bytes
+HTML transferred:       273600000 bytes
+Requests per second:    32294.88 [#/sec] (mean)
+Time per request:       3.096 [ms] (mean)
+Time per request:       0.031 [ms] (mean, across all concurrent requests)
+Transfer rate:          91397.04 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.1      0       5
+Processing:     0    3   4.5      2      92
+Waiting:        0    3   4.5      2      92
+Total:          0    3   4.5      2      92
+
+Percentage of the requests served within a certain time (ms)
+  50%      2
+  66%      3
+  75%      3
+  80%      4
+  90%      5
+  95%      6
+  98%     12
+  99%     19
+ 100%     92 (longest request)
+{% endhighlight %} 
+
 
 ##Contact information
 E-mail: qptkk@163.com  
