@@ -903,7 +903,7 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 		if(asyncContext == null) {
 			asyncContext = new AsyncContextImpl();
 		}
-		asyncContext.startAsync(servletRequest, servletResponse, (servletRequest == this && servletResponse == response), config.getMaxConnectionTimeout());
+		asyncContext.startAsync(servletRequest, servletResponse, (servletRequest == this && servletResponse == response), config.getBusinessLogicThreadTimeout());
 		return asyncContext;
 	}
 

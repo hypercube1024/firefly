@@ -168,5 +168,11 @@ public class IndexController {
 //		throw new RuntimeException("upload error");
 		return new TextView("upload ok!");
 	}
+	
+	@RequestMapping(value = "/testTimeout")
+	public View testTimeout() throws InterruptedException {
+		Thread.sleep(8000L);
+		return new TextView("timeout");
+	}
 
 }

@@ -23,11 +23,6 @@ import com.firefly.utils.time.HashTimeWheel;
 public class AsyncContextImpl implements AsyncContext {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static final HashTimeWheel timeWheel = new HashTimeWheel();
-	
-	static {
-		timeWheel.start();
-	}
 	
 	private long timeout = -1;
 	private boolean originalRequestAndResponse = true;
@@ -200,7 +195,7 @@ public class AsyncContextImpl implements AsyncContext {
 			timeoutFuture.cancel();
 		}
 		
-		timeoutFuture = timeWheel.add(timeout, new Runnable(){
+		timeoutFuture = ThreadPoolWrapper.TIME_WHEEL.add(timeout, new Runnable(){
 
 			@Override
 			public void run() {

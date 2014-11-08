@@ -25,12 +25,12 @@ public class ThreadPoolRequestHandler extends RequestHandler {
 			if(!request.config.isEnableThreadPool()) {
 				doRequest(request);
 			} else {
-				ThreadPoolWrapper.submit(new BusinessLogicTask(request){
+				ThreadPoolWrapper.submitWithTimeout(new BusinessLogicTask(request){
 					@Override
 					public void run() {
 						doRequest(request);
 					}
-				});
+				}, request.config.getBusinessLogicThreadTimeout());
 			}
 		}
 	}

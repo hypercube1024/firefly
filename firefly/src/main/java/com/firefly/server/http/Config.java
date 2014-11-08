@@ -37,6 +37,7 @@ public class Config {
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
 	private boolean enableThreadPool = true;
+	private int businessLogicThreadTimeout = 7 * 1000;
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
 	
@@ -292,6 +293,14 @@ public class Config {
 
 	public void setEnableThreadPool(boolean enableThreadPool) {
 		this.enableThreadPool = enableThreadPool;
+	}
+
+	public int getBusinessLogicThreadTimeout() {
+		return businessLogicThreadTimeout;
+	}
+
+	public void setBusinessLogicThreadTimeout(int businessLogicThreadTimeout) {
+		this.businessLogicThreadTimeout = businessLogicThreadTimeout;
 	}
 
 	public Map<Integer, String> getErrorPage() {
