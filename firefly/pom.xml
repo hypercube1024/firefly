@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>3.0.2</version>
+    <version>3.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <name>firefly</name>
@@ -12,7 +12,7 @@
     <parent>
 	    <groupId>com.fireflysource</groupId>
 	    <artifactId>firefly-framework</artifactId>
-	    <version>3.0.2</version>
+	    <version>3.0.3-SNAPSHOT</version>
 	</parent>
 	
     <build>
@@ -59,17 +59,17 @@
         <dependency>
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-common</artifactId>
-			<version>3.0.2</version>
+			<version>3.0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-template</artifactId>
-			<version>3.0.2</version>
+			<version>3.0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-nettool</artifactId>
-			<version>3.0.2</version>
+			<version>3.0.3-SNAPSHOT</version>
         </dependency>
 
         <!-- servlet -->
