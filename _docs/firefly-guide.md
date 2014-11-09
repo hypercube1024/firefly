@@ -22,7 +22,9 @@ title: Firefly Guide
 			* [Asynchronous context](#asynchronous-context)
 		* [Interceptor](#interceptor)
 		* [Component](#component)
-			* [Declaring a component based XML](#declaring-a-component-based-xml)
+			* [Injecting a component based on XML](#injecting-a-component-based-on-xml)
+			* [Injecting a component based on annotation](#injecting-a-component-based-on-annotation)
+	* [HTTP server](#http-server)
 	* [Performance](#performance)
 	* [Contact information](#contact-information)
 
@@ -368,10 +370,303 @@ INFO 2014-11-08 20:52:15	after goods information step 1
 
 ### Component
 Usually, the component is used to process business logic. You can inject a component to another component, controller or interceptor.
+The Firefly framework need a root configuration file - firefly.xml, also you can specify another file name using Config.setConfigFileName.
+In the root configuration file, you can import other configuration files. Usually, we configure basic settings in the root file and do some additional settings in other files.
 
-#### Declaring a component based XML
+{% highlight xml %}
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.fireflysource.com/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+	
+	<import resource="fruits.xml"/>
+	
+	<component-scan base-package="com.fireflysource"/>
+	<mvc view-path="/template" view-encoding="UTF-8"/>
+	
+</beans>
+{% endhighlight %}
 
-##Performance
+1. `<import/>` node sets the path of a configuration file.
+2. `<component-scan/>` node sets the scan path of components.
+3. `<mvc/>` node sets the path of template files and the character encoding.
+
+The configuration details can be found in the <a href="http://www.fireflysource.com/beans.xsd" target="_blank">schema file</a>.
+
+
+
+
+#### Injecting a component based on XML
+{% highlight java %}
+public class Fruit {
+
+	private String title;
+	private String season;
+	private String category;
+	private double price;
+	
+	// ... setter and getter method
+}
+{% endhighlight %}
+
+
+{% highlight java %}
+public class FruitServiceImpl implements FruitService {
+	
+	private Map<String, Fruit> map;
+	
+	public FruitServiceImpl(){}
+	
+	public FruitServiceImpl(Map<String, Fruit> map) {
+		this.map = map;
+	}
+
+	@Override
+	public Fruit getFruitByTitle(String title) {
+		return map.get(title);
+	}
+
+}
+{% endhighlight %}
+
+{% highlight xml %}
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.fireflysource.com/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+
+	<bean id="foodRepository" 
+	class="com.fireflysource.demo.service.impl.FruitServiceImpl">
+		<constructor>
+			<argument type="java.util.Map">
+				<map>
+					<entry>
+						<key>apple</key>
+						<value><ref bean="apple"/></value>
+					</entry>
+					<entry>
+						<key>orange</key>
+						<value><ref bean="orange"/></value>
+					</entry>
+					<entry>
+						<key>kiwi</key>
+						<value><ref bean="kiwi"/></value>
+					</entry>
+				</map>
+			</argument>
+		</constructor>
+	</bean>
+	
+	<bean id="apple" class="com.fireflysource.demo.model.Fruit">
+		<property name="title" value="apple" />
+		<property name="season" value="full year" />
+		<property name="category" value="mobile phone" />
+		<property name="price" value="4999.0" />
+	</bean>
+	
+	<bean id="orange" class="com.fireflysource.demo.model.Fruit">
+		<property name="title" value="orange" />
+		<property name="season" value="the third season" />
+		<property name="category" value="citrus" />
+		<property name="price" value="1.1" />
+	</bean>
+	
+	<bean id="kiwi" class="com.fireflysource.demo.model.Fruit">
+		<property name="title" value="kiwi" />
+		<property name="season" value="the third season" />
+		<property name="category" value="Actinidia chinensis" />
+		<property name="price" value="20.33" />
+	</bean>
+	
+</beans>
+{% endhighlight %}
+
+Firefly supports the constructor and setter method injecting in XML files. You can inject an object which is List, Map, Array, Primitive types, String or any types to another object. The configuration details can be found in the <a href="http://www.fireflysource.com/beans.xsd" target="_blank">schema file</a>.
+
+#### Injecting a component based on annotation
+{% highlight java %}
+@Controller
+public class FruitController {
+	
+	@Inject
+	private FruitService fruitService;
+	
+	@RequestMapping(value = "/fruit/?")
+	public View getFruit(@PathVariable String[] args) {
+		String title = args[0];
+		return new JsonView(fruitService.getFruitByTitle(title));
+	}
+}
+{% endhighlight %}
+
+You can use the `@Inject` to inject a component simply. The `@Inject` targets contain method, constructor and field. For example:
+
+{% highlight java %}
+@Component
+public class FruitServiceWrap {
+	private FruitService fruitService;
+	
+	@Inject
+	public void setFruitService(FruitService fruitService) {
+		this.fruitService = fruitService;
+	}
+	
+}
+{% endhighlight %}
+
+In this case, when you visit http://localhost:8080/fruit/apple, the browser will show:
+{% highlight json %}
+{
+	category: "mobile phone",
+	price: 4999,
+	season: "full year",
+	title: "apple"
+}
+{% endhighlight %}
+
+This is a classic web application architecture. The controller handles HTTP request, and the business logic is in the service.
+
+## HTTP server
+You don't need any other web server for startup. It just runs `ServerBootstrap.start(config)` in main method.
+
+{% highlight java %}
+public class App {
+	
+	public static void main(String[] args) throws Throwable {
+		String projectHome = new File(App.class.getResource("/").toURI()).getParentFile().getParent();
+		String serverHome = new File(projectHome, "/page").getAbsolutePath();
+		
+		System.out.println(projectHome);
+		System.out.println(serverHome);
+		Config config = new Config();
+		config.setHost("localhost");
+		config.setPort(8080);
+		config.setServerHome(serverHome);
+		ServerBootstrap.start(config);
+	}
+}
+{% endhighlight %}
+
+The HTTP configuration details:
+
+<table class="table table-hover">
+<tr>
+	<th>Arguments</th>
+	<th>Descriptions</th>
+</tr>
+<tr>
+	<td>configFileName</td>
+	<td>The root configuration file name, the default is firefly.xml.</td>
+</tr>
+<tr>
+	<td>encoding</td>
+	<td>The application character encoding, the default is UTF-8.</td>
+</tr>
+<tr>
+	<td>errorPage</td>
+	<td>The custom error page, you can bind the HTTP error codes to your pages, for example: {404, "/error/e404.html"}.</td>
+</tr>
+<tr>
+	<td>maxRequestLineLength</td>
+	<td>The max length of the HTTP request line, the default is 8kb.</td>
+</tr>
+<tr>
+	<td>maxRequestHeadLength</td>
+	<td>The max length of the HTTP head, the default is 16kb.</td>
+</tr>
+<tr>
+	<td>maxRangeNum</td>
+	<td>The max number of HTTP range sections, the default is 8.</td>
+</tr>
+<tr>
+	<td>writeBufferSize</td>
+	<td>The response buffer size, the default is 8kb.</td>
+</tr>
+<tr>
+	<td>maxConnections</td>
+	<td>The max TCP connection number, the default is 2000.</td>
+</tr>
+<tr>
+	<td>maxConnectionTimeout</td>
+	<td>The max TCP connection idle time, the default is 10s.</td>
+</tr>
+<tr>
+	<td>corePoolSize</td>
+	<td>The number of threads to keep in the pool, even if they are idle, the default is CPU number * 2.</td>
+</tr>
+<tr>
+	<td>maximumPoolSize</td>
+	<td>The maximum number of threads to allow in the pool, the default is 128.</td>
+</tr>
+<tr>
+	<td>poolQueueSize</td>
+	<td>The queue to use for holding tasks before they are executed.  This queue will hold only the Runnable tasks submitted by the  execute method. The default queue size is 50000.</td>
+</tr>
+<tr>
+	<td>poolKeepAliveTime</td>
+	<td>When the number of threads is greater than the core, this is the maximum time that excess idle threads will wait for new tasks before terminating. The default is 30s.</td>
+</tr>
+<tr>
+	<td>poolWaitTimeout</td>
+	<td>The maximum time of waiting Runnable tasks in the queue, the default is 3s.</td>
+</tr>
+<tr>
+	<td>maxUploadLength</td>
+	<td>The maximum size of posting a file, the default is 50mb.</td>
+</tr>
+<tr>
+	<td>httpBodyThreshold</td>
+	<td>The maximum size of HTTP body in the memory, if the HTTP body size exceeds this value, it will be saved in a temporary file on the hard disk, the default is 4mb.</td>
+</tr>
+<tr>
+	<td>keepAlive</td>
+	<td>Enable HTTP connections keep alive, the default is true.</td>
+</tr>
+<tr>
+	<td>enableThreadPool</td>
+	<td>Enable business logic thread pool, if you set this parameter is false, it will improve the throughput of the server, but the request will be executed serially. The default is false.</td>
+</tr>
+<tr>
+	<td>asynchronousContextTimeout</td>
+	<td>The maximum time of running a asynchronous task. The default is 6s.</td>
+</tr>
+<tr>
+	<td>serverHome</td>
+	<td>The root directory of HTTP server. The URI '/' will visit this directory.</td>
+</tr>
+<tr>
+	<td>host</td>
+	<td>The IP or domain name of this server.</td>
+</tr>
+<tr>
+	<td>port</td>
+	<td>The tcp port of this server.</td>
+</tr>
+<tr>
+	<td>sessionIdName</td>
+	<td>The HTTP session id name, the default is jsessionid.</td>
+</tr>
+<tr>
+	<td>maxSessionInactiveInterval</td>
+	<td>The maximum idle time of the HTTP session, the default is 10 minutes.</td>
+</tr>
+</table>
+
+
+## Performance
+
+Environment:
+
+ * MAC OS X 10.10
+ * JVM arguments: -XX:+AggressiveOpts -XX:+UseParallelGC -XX:+UseParallelOldGC -Xmx1024m -Xms1024m
+ * CPU: Intel Core i5 2.3GHz
+ * RAM: 8G
+
+Test case:
+{% highlight text %}
+./ab -k -n100000 -c100 $URL
+{% endhighlight %}
+
 {% highlight text %}
 Document Path:          /index
 Document Length:        2736 bytes
