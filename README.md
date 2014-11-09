@@ -10,22 +10,22 @@ Running firefly is very easy, now you can download the dependency from Apache Ce
 	<dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly-common</artifactId>
-      <version>3.0.2</version>
+      <version>3.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly-template</artifactId>
-      <version>3.0.2</version>
+      <version>3.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly-nettool</artifactId>
-      <version>3.0.2</version>
+      <version>3.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly</artifactId>
-      <version>3.0.2</version>
+      <version>3.0.3</version>
     </dependency>
 ```
 
@@ -55,7 +55,9 @@ firefly-access=INFO,/Users/qiupengtao/develop/logs
 When you have finished these operations above-mentioned, run the class 'Bootstrap' and visit the URL http://localhost:8080/ in your browser, you will see the 'Hello World'.  
 
 
-Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly depends on Java Compiler API that isn't in JRE.  
+Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly depends on Java Compiler API that isn't in JRE.    
+
+More details you can find in [guide document](http://www.fireflysource.com/docs/firefly-guide.html)
 
 ##Contact information
 E-mail: qptkk@163.com  
