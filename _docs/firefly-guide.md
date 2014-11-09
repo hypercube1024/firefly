@@ -25,6 +25,15 @@ title: Firefly Guide
 			* [Injecting a component based on XML](#injecting-a-component-based-on-xml)
 			* [Injecting a component based on annotation](#injecting-a-component-based-on-annotation)
 	* [HTTP server](#http-server)
+	* [Template](#template)
+		* [Object navigation](#object-navigation)
+		* [If else and elseif](#If-else-and-elseif)
+		* [Eval](#eval)
+		* [For](#for)
+		* [Switch case](#switch-case)
+		* [Include](#include)
+		* [Set](#Set)
+		* [Custom function](#custom-function)
 	* [Performance](#performance)
 	* [Contact information](#contact-information)
 
@@ -651,6 +660,188 @@ The HTTP configuration details:
 	<td>The maximum idle time of the HTTP session, the default is 10 minutes.</td>
 </tr>
 </table>
+
+## Template
+Firefly template is used to rendering HTML pages. You can write it in the HTML comments. It is compatible for any HTML editor.
+When the Firefly server starts up, the template will be compiled to java byte code, so it has higner performance than the other template languages which interpreted execution.
+
+### Object navigation
+
+{% highlight html %}
+<!DOCTYPE html>
+<html>
+<body>
+<div>
+<div>${len(users)}</div>
+<div>${u.name}</div>
+<div>${array[3]}</div>
+<div>${testMap['ret']['title']}</div>
+</div>
+</body>
+</html>
+{% endhighlight %}
+
+ * `${u.name}` It invokes user.getName() and prints that value.
+ * `${len(users)}` It invokes a custom function len() to get List.size and prints it. 
+ * `${array[3]}` It prints an array or list element that index is 3.
+ * `${testMap['ret']['title']}` It prints a map, testMap.get("ret").get("title").
+ 
+### If else and elseif
+
+{% highlight html %}
+<!DOCTYPE html>
+<html>
+<body>
+        <div>
+        <!-- #if ${login} -->
+        Welcome ${user.name}
+        <!-- #else -->
+        can not access
+        <!-- #end -->
+        </div>
+
+        <!-- #if ${user.age} > 15 + 3 -->
+        <div>age more than 18</div>
+        <!-- #end -->
+
+        <!-- #if 15*2<=${user.age}  -->
+        <div>age less then 30</div>
+        <!-- #end -->
+
+        <div>${testFunction(3, "hello", user.age)}</div>
+        <div>${testFunction2()}</div>
+
+        <div>
+        <!-- #if "Pengtao Qiu" == ${user.name} -->
+                master come
+        <!-- #elseif ${user.name} == "Bob" -->
+                joke come
+        <!-- #elseif ${user.name} == "Jim" -->
+                Jim come
+        <!-- #else -->
+                small potato come
+        <!-- #end -->
+        </div>
+</body>
+</html>
+{% endhighlight %}
+
+### Eval
+
+{% highlight html %}
+<div><!-- #eval 3.0 + 3 * 5.0 / 2.0 --></div>
+{% endhighlight %}
+
+### For
+
+{% highlight html %}
+<!DOCTYPE html>
+<html>
+<body>
+<div>
+<!-- #for i : ${intArr} -->
+${i} &nbsp;&nbsp;
+<!-- #end -->
+</div>
+
+<div>
+<div>${len(users)}</div>
+<table style="table-layout: fixed;">
+        <thead style="text-align: center;">
+        <tr><th>name</th><th>age</th></tr>
+        </thead>
+        <tbody>
+        <!-- #for u : ${users} -->
+        <tr><td>${u.name}|||${len(u.name)}</td><td>${u.age}</td></tr>
+        <!-- #end -->
+        </tbody>
+</table>
+</div>
+</body>
+</html>
+{% endhighlight %}
+
+### Switch case
+
+{% highlight html %}
+<!DOCTYPE html>
+<html>
+<body>
+<div>
+<!-- #switch ${stage} -->
+<!-- #case 1 -->
+        stage1
+<!-- #case 2 -->
+        stage2
+<!-- #default -->
+        stage-default
+<!-- #end -->
+</div>
+
+</body>
+</html>
+{% endhighlight %}
+
+
+### Include
+
+{% highlight html %}
+<!DOCTYPE html>
+<html>
+<head>
+<!-- #include /common/head.html?title=TestInclude -->
+</head>
+<body>
+<!-- #include /common/top.html -->
+<!-- #include /common/top.html?title=thisIsOnePage -->
+</body>
+</html>
+{% endhighlight %}
+
+### Set
+
+{% highlight html %}
+<!DOCTYPE html>
+<html>
+<body>
+<!-- #set msg=welcom&price=4.5&testName=${name} -->
+<div>
+${msg}&nbsp;&nbsp;${testName}
+</div>
+<div>
+apple's price: ${price}
+</div>
+
+</body>
+</html>
+{% endhighlight %}
+
+### Custom function
+
+You can write a function in java and invoke it in template. For example:
+
+{% highlight java %}
+Function function = new Function(){
+        @Override
+        public void render(Model model, OutputStream out, Object... obj) {
+                Integer i = (Integer)obj[0];
+                String str = (String)obj[1];
+                String o = String.valueOf(obj[2]);
+
+                try {
+                        out.write((i + "|" + str + "|" + o).getBytes("UTF-8"));
+                } catch (IOException e) {
+                        e.printStackTrace();
+                }
+        }
+};
+
+FunctionRegistry.add("testFunction", function);
+{% endhighlight %}
+And then, you invoke it in template like this : `${testFunction(3, "hello", user.age)}`.  
+
+Firefly has some default functions, you can find them in package com.firefly.template.function.
+
 
 
 ## Performance
