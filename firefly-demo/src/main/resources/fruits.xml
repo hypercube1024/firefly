@@ -9,15 +9,15 @@
 				<map>
 					<entry>
 						<key>apple</key>
-						<value><ref bean="apple" /></value>
+						<value><ref bean="apple"/></value>
 					</entry>
 					<entry>
 						<key>orange</key>
-						<value><ref bean="orange" /></value>
+						<value><ref bean="orange"/></value>
 					</entry>
 					<entry>
 						<key>kiwi</key>
-						<value><ref bean="kiwi" /></value>
+						<value><ref bean="kiwi"/></value>
 					</entry>
 				</map>
 			</argument>
@@ -45,5 +45,4 @@
 		<property name="price" value="20.33" />
 	</bean>
 	
-
 </beans>
