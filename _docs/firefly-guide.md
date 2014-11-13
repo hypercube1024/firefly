@@ -652,6 +652,22 @@ The HTTP configuration details:
 	<td>The tcp port of this server.</td>
 </tr>
 <tr>
+	<td>secure</td>
+	<td>Enable the HTTPS connections, the default is false.</td>
+</tr>
+<tr>
+	<td>credentialPath</td>
+	<td>The credential path, if you don't set this value, it will use the firefly default SSL credential.</td>
+</tr>
+<tr>
+	<td>keystorePassword</td>
+	<td>The password used to check the integrity of the keystore, the password used to unlock the keystore.</td>
+</tr>
+<tr>
+	<td>keyPassword</td>
+	<td>The password for recovering keys in the keystore.</td>
+</tr>
+<tr>
 	<td>sessionIdName</td>
 	<td>The HTTP session id name, the default is jsessionid.</td>
 </tr>
