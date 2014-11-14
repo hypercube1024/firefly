@@ -21,6 +21,7 @@ public class App {
 		config.setHost("localhost");
 		config.setPort(8080);
 		config.setServerHome(serverHome);
+//		config.setSecure(true);
 		ServerBootstrap.start(config);
 	}
 }

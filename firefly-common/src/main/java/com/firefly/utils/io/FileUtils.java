@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.io.Reader;
 import java.nio.channels.FileChannel;
 
 abstract public class FileUtils {
@@ -25,8 +26,7 @@ abstract public class FileUtils {
 		dir.delete();
 	}
 
-	public static void read(File file, LineReaderHandler handler, String charset)
-			throws IOException {
+	public static void read(File file, LineReaderHandler handler, String charset) throws IOException {
 		LineNumberReader reader = new LineNumberReader(new InputStreamReader(
 				new FileInputStream(file), charset));
 		try {
@@ -38,13 +38,27 @@ abstract public class FileUtils {
 				reader.close();
 		}
 	}
+	
+	public static String readFileToString(File file, String charset) throws IOException {
+		Reader reader = new InputStreamReader(new FileInputStream(file), charset);
+		StringBuilder s = new StringBuilder();
+		try {
+			char[] buf = new char[1024];
+			for(int length = 0; (length=reader.read(buf)) != -1 ;) {
+				s.append(buf, 0, length);
+			}
+		} finally {
+			if(reader != null)
+				reader.close();
+		}
+		return s.length() <= 0 ? null : s.toString();
+	}
 
 	public static long copy(File src, File dest) throws IOException {
 		return copy(src, dest, 0, src.length());
 	}
 
-	public static long copy(File src, File dest, long position, long count)
-			throws IOException {
+	public static long copy(File src, File dest, long position, long count) throws IOException {
 		FileInputStream in = new FileInputStream(src);
 		FileOutputStream out = new FileOutputStream(dest);
 		FileChannel inChannel = in.getChannel();

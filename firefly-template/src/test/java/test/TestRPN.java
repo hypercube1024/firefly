@@ -1,6 +1,6 @@
 package test;
 
-import static com.firefly.template.support.RPNUtils.*;
+import static com.firefly.template.support.RPNUtils.getReversePolishNotation;
 import static org.hamcrest.Matchers.is;
 
 import java.util.List;
@@ -111,7 +111,11 @@ public class TestRPN {
 	}
 	
 	public static void main(String[] args) {
+		System.out.println(getReversePolishNotation("9 - 5 + 2"));
+		System.out.println(getReversePolishNotation("9 - (5 + 2)"));
 		StatementExpression se = new StatementExpression();
+		System.out.println(se.parse("9 - 5 + 2"));
+		System.out.println(se.parse("9 - (5 + 2)"));
 		System.out.println(se.parse("${i} + ${j} + ${k}"));
 		System.out.println(se.parse("${i} + ${j} + 2"));
 		System.out.println(se.parse("${i}-- + ${j} + 2"));
