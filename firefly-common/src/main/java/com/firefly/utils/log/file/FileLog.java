@@ -6,8 +6,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -20,35 +18,28 @@ public class FileLog implements Log, Closeable {
 	private String name;
 	private boolean consoleOutput;
 	private boolean fileOutput;
-	private Queue<LogItem> buffer = new LinkedList<LogItem>();
-	private static final int BATCH_SIZE = 1024;
 	private BufferedWriter bufferedWriter;
 	private String currentDate = LogFactory.dayDateFormat.format(new Date());
+	private static final int bufferSize = 512 * 1024;
 	
 
 	public void write(LogItem logItem) {
-		if (fileOutput)
-			buffer.offer(logItem);
-		if (fileOutput && buffer.size() >= BATCH_SIZE) {
-//			System.out.println("the buffer is full");
-			flush();
+		if (!fileOutput)
+			return;
+		
+		Date d = new Date();
+		try {
+			bufferedWriter = getBufferedWriter(LogFactory.dayDateFormat.format(d));
+			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
+			bufferedWriter.append(logItem.toString() + CL);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
-	public void flush() {
-		if (fileOutput && buffer.size() > 0) {
-			try {
-				for (LogItem logItem = null; (logItem = buffer.poll()) != null;) {
-					Date d = new Date();
-					bufferedWriter = getBufferedWriter(LogFactory.dayDateFormat.format(d));
-					logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
-					bufferedWriter.append(logItem.toString() + CL);
-				}
-				bufferedWriter.flush();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+	public void flush() throws IOException {
+		if(bufferedWriter != null)
+			bufferedWriter.flush();
 	}
 	
 	@Override
@@ -58,7 +49,6 @@ public class FileLog implements Log, Closeable {
 	}
 
 	private BufferedWriter getBufferedWriter(String newDate) throws IOException {
-		
 		if(bufferedWriter == null || !currentDate.equals(newDate)) {
 			File file = new File(path, name + "." + newDate + ".txt");
 			boolean ret = true;
@@ -67,12 +57,11 @@ public class FileLog implements Log, Closeable {
 			}
 			if (ret) {
 				close();
-				bufferedWriter = new BufferedWriter(new FileWriter(file, true));
+				bufferedWriter = new BufferedWriter(new FileWriter(file, true), bufferSize);
 				currentDate = newDate;
 				System.out.println("get new buffered " + file.getName());
 			}
 		}
-		
 		return bufferedWriter;
 	}
 

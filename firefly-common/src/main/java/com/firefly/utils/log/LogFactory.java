@@ -128,8 +128,11 @@ public class LogFactory {
 		for (Entry<String, Log> entry : logMap.entrySet()) {
 			Log log = entry.getValue();
 			if (log instanceof FileLog) {
-				((FileLog) log).flush();
-//				System.out.println(">>> flush all " + fileLog.getName());
+				try {
+					((FileLog)log).flush();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
