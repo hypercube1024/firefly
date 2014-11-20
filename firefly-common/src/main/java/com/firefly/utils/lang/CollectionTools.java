@@ -3,6 +3,7 @@ package com.firefly.utils.lang;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class CollectionTools {
@@ -19,11 +20,11 @@ public abstract class CollectionTools {
 		return map;
 	}
 	
-	public static <F, T> Collection<F> transform(Collection<T> from, SingleReturnFunction<F, T> function) {
+	public static <F, T> List<F> transform(Collection<T> from, SingleReturnFunction<F, T> function) {
 		if(from == null || from.size() == 0)
 			return null;
 		
-		Collection<F> collection = new ArrayList<F>();
+		List<F> collection = new ArrayList<F>();
 		for(T t : from) {
 			collection.add(function.apply(t));
 		}
