@@ -3,6 +3,7 @@ package com.firefly.utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 public class StringUtils {
 
@@ -574,4 +575,24 @@ public class StringUtils {
 		}
 		return sb.toString();
 	}
+	
+	/**
+	 * Convert a string that is unicode form to a normal string.
+	 * @param s The unicode form of a string, e.g. "\\u8001\\u9A6C"
+	 * @return Normal string 
+	 */
+	public static String unicodeToString(String s) {      
+        StringBuilder sb = new StringBuilder();      
+        StringTokenizer st = new StringTokenizer(s, "\\u");      
+        while(st.hasMoreTokens()){
+        	String token = st.nextToken();
+        	if(token.length() > 4) {
+        		sb.append((char)Integer.parseInt(token.substring(0, 4), 16));
+        		sb.append(token.substring(4));
+        	} else {
+        		sb.append((char)Integer.parseInt(token, 16));
+        	}
+        }      
+        return sb.toString();      
+    }
 }
