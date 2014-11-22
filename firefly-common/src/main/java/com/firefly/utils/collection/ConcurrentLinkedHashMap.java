@@ -461,4 +461,14 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K,V> {
 		return segmentMask;
 	}
 	
+	@Override
+	public String toString() {
+		StringBuilder s = new StringBuilder();
+		for (int i = 0; i < segments.length; i++) {
+			s.append("segment " + i + " -> " + segments[i].toString());
+			s.append("\r\n");
+		}
+		return s.toString();
+	}
+	
 }

@@ -1,9 +1,10 @@
 package test.utils.collection;
 
+import static org.hamcrest.Matchers.is;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.*;
 import com.firefly.utils.collection.ConcurrentLinkedHashMap;
 import com.firefly.utils.collection.ConcurrentLinkedHashMap.MapEventListener;
 
@@ -61,5 +62,22 @@ public class TestConcurrentLinkedHashMap {
 	public void testConcurrentLevel() {
 		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<String, String>(true, 200, listener, 200);
 		Assert.assertThat(map.getConcurrencyLevel(), is(256));
+	}
+	
+	public static void main(String[] args) {
+		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<String, String>(true, 33, listener);
+		System.out.println(map.getConcurrencyLevel() + "|" + map.getSegmentMask() + "|" + map.getSegmentShift());
+		for (int i = 0; i < 100; i++) {
+			map.put("key" + i, "v" + i);
+		}
+		System.out.println(map.toString());
+		for (int i = 0; i < 100; i++) {
+			System.out.println(map.get("key" + i));
+		}
+		System.out.println(map.get("key97"));
+		System.out.println(map.get("key97"));
+		System.out.println(map.get("key97"));
+		System.out.println(map.get("key97"));
+		System.out.println(map.get("key97"));
 	}
 }
