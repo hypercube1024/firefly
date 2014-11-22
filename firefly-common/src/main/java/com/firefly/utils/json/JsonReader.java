@@ -10,6 +10,10 @@ abstract public class JsonReader extends Reader{
 	public boolean markSupported() {
         return true;
     }
+	
+	abstract public int position();
+	
+	abstract public boolean isEnd();
 
 	abstract public boolean isEndFlag(char ch);
 
@@ -50,6 +54,8 @@ abstract public class JsonReader extends Reader{
 	abstract public int readInt();
 
 	abstract public long readLong();
+	
+	abstract public String readValueAsString();
 	
 	abstract public BigInteger readBigInteger();
 	

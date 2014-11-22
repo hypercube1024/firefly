@@ -30,6 +30,8 @@ import test.utils.json.github.Player;
 import test.utils.json.github.Size;
 
 import com.firefly.utils.json.Json;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.json.io.JsonStringWriter;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
@@ -371,18 +373,58 @@ public class TestParser {
 		Assert.assertTrue(Json.toObject("[]", Bar[].class) instanceof Bar[]);
 	}
 	
+	@Test
+	public void testGeneralJsonObject() {
+		String json = "{\"key1\":333, \"key2\" : {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
+		JsonObject jsonObject = Json.toJsonObject(json);
+		
+		Assert.assertThat(jsonObject.getInteger("key1"), is(333));
+		Assert.assertThat(jsonObject.getJsonObject("key2").getString("key3"), is("hello"));
+		Assert.assertThat(jsonObject.getJsonObject("key2").getString("key4"), is("world"));
+		Assert.assertThat(jsonObject.getBoolean("booleanKey"), is(true));
+	}
+	
+	@Test
+	public void testGeneralJsonArray() {
+		String json = "[333,444,{\"key\" : \"hello\"},666]";
+		JsonArray array = Json.toJsonArray(json);
+		
+		Assert.assertThat(array.getInteger(0), is(333));
+		Assert.assertThat(array.getInteger(1), is(444));
+		Assert.assertThat(array.getJsonObject(2).getString("key"), is("hello"));
+		Assert.assertThat(array.getInteger(3), is(666));
+	}
+	
+	@Test
+	public void testMixedGeneralJsonArrayAndJsonObject() {
+		String json = "[333,444,{\"key\" : \"hello\", \"keyObject\" : [\"object0\",\"object1\"  ]},666]";
+		JsonArray array = Json.toJsonArray(json);
+		
+		Assert.assertThat(array.getJsonObject(2).getJsonArray("keyObject").getString(0), is("object0"));
+		Assert.assertThat(array.getJsonObject(2).getJsonArray("keyObject").getString(1), is("object1"));
+		
+		json = "{\"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" : {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
+		JsonObject jsonObject = Json.toJsonObject(json);
+		Assert.assertThat(jsonObject.getJsonArray("arrayKey").getString(1), is("array"));
+	}
+	
 	public static void main(String[] args) {
+		String json = "{\"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" : {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
+		JsonObject jsonObject = Json.toJsonObject(json);
+		System.out.println(jsonObject.getJsonArray("arrayKey"));
+	}
+	
+	public static void main2(String[] args) {
 //		new TestParser().testBigNumber();
 //		Bar[] arr = Json.toObject("[]", Bar[].class);
 //		System.out.println(arr);
 		
-		char ch = (char)31, 
-				ch1 = (char)1, 
-				ch2 = (char)0,
-				ch3 = (char)15,
-				ch4 = (char)16;
-		
-		System.out.println(JsonStringWriter.escapeSpecialCharacter(ch3));
+//		char ch = (char)31, 
+//			ch1 = (char)1, 
+//			ch2 = (char)0,
+//			ch3 = (char)15,
+//			ch4 = (char)16;
+//		System.out.println(JsonStringWriter.escapeSpecialCharacter(ch3));
 		
 	}
 

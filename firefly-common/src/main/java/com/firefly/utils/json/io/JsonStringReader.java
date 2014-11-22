@@ -20,6 +20,17 @@ public class JsonStringReader extends JsonReader {
 	}
 	
 	@Override
+	public int position() {
+		return pos;
+	}
+	
+	@Override
+	public boolean isEnd() {
+		System.out.println("end pos and limit --> " + pos + "|" + limit);
+		return pos >= limit;
+	}
+	
+	@Override
 	public void mark(int readAheadLimit) {
 		mark = pos;
 	}
@@ -250,6 +261,39 @@ public class JsonStringReader extends JsonReader {
 				break;
 		}
 		return negative ? -value : value;
+	}
+	
+	@Override
+	public String readValueAsString() {
+		int start = pos;
+		int startBlankLength = 0;
+		int endBlankLength = 0;
+		boolean hasChar = false;
+		for(;;) {
+			char ch = (char)read();
+			if(ch <= ' ') {
+				if(!hasChar) {
+					startBlankLength++;
+				} else {
+					endBlankLength++;
+				}
+				continue;
+			}
+			
+			if(!hasChar) {
+				hasChar = true;
+			}
+			
+			if (isEndFlag(ch)) {
+				pos--;
+				break;
+			}
+		}
+		start = start + startBlankLength;
+		int end = pos - endBlankLength;
+		int len = end - start;
+//		System.out.println("str len --> " + len + "|" + start + "|" + new String(chars, start, len));
+		return new String(chars, start, len);
 	}
 	
 	@Override
