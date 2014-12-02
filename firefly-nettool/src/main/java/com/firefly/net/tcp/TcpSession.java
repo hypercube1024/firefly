@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.firefly.net.Config;
@@ -14,7 +15,6 @@ import com.firefly.net.buffer.AdaptiveReceiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.net.buffer.FixedReceiveBufferSizePredictor;
 import com.firefly.net.buffer.SocketSendBufferPool.SendBuffer;
-import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -61,6 +61,7 @@ public final class TcpSession implements Session {
 		state = OPEN;
 	}
 
+	@Override
 	public InetSocketAddress getLocalAddress() {
 		if (localAddress == null) {
 			SocketChannel socket = (SocketChannel) selectionKey.channel();
@@ -73,6 +74,7 @@ public final class TcpSession implements Session {
 		return localAddress;
 	}
 
+	@Override
 	public InetSocketAddress getRemoteAddress() {
 		if (remoteAddress == null) {
 			SocketChannel socket = (SocketChannel) selectionKey.channel();

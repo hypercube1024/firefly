@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.TransferQueue;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncListener;
@@ -14,8 +16,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import com.firefly.server.http.ThreadPoolWrapper.BusinessLogicTask;
-import com.firefly.utils.collection.LinkedTransferQueue;
-import com.firefly.utils.collection.TransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.HashTimeWheel;

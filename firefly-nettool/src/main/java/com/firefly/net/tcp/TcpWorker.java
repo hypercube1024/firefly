@@ -1,8 +1,8 @@
 package com.firefly.net.tcp;
 
 import static com.firefly.net.tcp.TcpPerformanceParameter.CLEANUP_INTERVAL;
-import static com.firefly.net.tcp.TcpPerformanceParameter.WRITE_SPIN_COUNT;
 import static com.firefly.net.tcp.TcpPerformanceParameter.IO_TIMEOUT_CHECK_INTERVAL;
+import static com.firefly.net.tcp.TcpPerformanceParameter.WRITE_SPIN_COUNT;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -17,6 +17,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.firefly.net.Config;
@@ -30,7 +31,6 @@ import com.firefly.net.buffer.SocketReceiveBufferPool;
 import com.firefly.net.buffer.SocketSendBufferPool;
 import com.firefly.net.buffer.SocketSendBufferPool.SendBuffer;
 import com.firefly.net.exception.NetException;
-import com.firefly.utils.collection.LinkedTransferQueue;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;

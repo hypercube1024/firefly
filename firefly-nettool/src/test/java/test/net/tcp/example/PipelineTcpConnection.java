@@ -1,11 +1,11 @@
 package test.net.tcp.example;
 
 import java.util.Queue;
+import java.util.concurrent.LinkedTransferQueue;
 
 import com.firefly.net.Session;
 import com.firefly.net.support.wrap.client.MessageReceivedCallback;
 import com.firefly.net.support.wrap.client.TcpConnection;
-import com.firefly.utils.collection.LinkedTransferQueue;
 
 public class PipelineTcpConnection extends TcpConnection {
 	
