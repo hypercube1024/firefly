@@ -23,20 +23,8 @@ public class HttpHandler implements Handler {
 
 	public HttpHandler(HttpServletDispatcherController servletController, Config config) throws Throwable {
 		httpConnectionListener = config.getHttpConnectionListener();
-		switch (config.getRequestHandlerType()) {
-		case "threadPool":
-			ThreadPoolWrapper.init(config);
-			requestHandler = new ThreadPoolRequestHandler(servletController);
-			break;
-		case "actor":
-			ActorFactory.init(config);
-			requestHandler = new ActorsRequestHandler(servletController);
-			break;
-		default:
-			ThreadPoolWrapper.init(config);
-			requestHandler = new ThreadPoolRequestHandler(servletController);
-			break;
-		}
+		ThreadPoolWrapper.init(config);
+		requestHandler = new ThreadPoolRequestHandler(servletController);
 		
 		if(config.isSecure()) {
 			if(VerifyUtils.isNotEmpty(config.getCredentialPath())

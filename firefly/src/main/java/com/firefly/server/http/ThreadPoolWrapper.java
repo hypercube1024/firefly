@@ -51,6 +51,7 @@ public class ThreadPoolWrapper {
 			}
 		};
 		
+		log.info("enable thread pool [{}]", config.isEnableThreadPool());
 		log.info("corePoolSize [{}], maximumPoolSize [{}], poolQueueSize [{}]", config.getCorePoolSize(), config.getMaximumPoolSize(), config.getPoolQueueSize());
 		log.info("poolKeepAliveTime [{}], poolWaitTimeout [{}]", config.getPoolKeepAliveTime(), config.getPoolWaitTimeout());
 		

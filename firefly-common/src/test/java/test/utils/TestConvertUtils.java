@@ -6,14 +6,11 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.utils.ConvertUtils;
-import com.firefly.utils.log.LogFactory;
 
 public class TestConvertUtils {
 
