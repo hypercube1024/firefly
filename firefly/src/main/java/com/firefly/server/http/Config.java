@@ -24,9 +24,9 @@ public class Config {
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
 				maxConnections = 2000,
-				maxConnectionTimeout = 10 * 1000,
+				maxConnectionTimeout = 10 * 1000;
 				
-				corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
+	private int	corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
                 maximumPoolSize = 128, 
                 poolQueueSize = 50000;
 	

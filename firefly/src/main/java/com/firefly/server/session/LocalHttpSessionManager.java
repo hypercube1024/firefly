@@ -14,11 +14,14 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 
 	private ConcurrentHashMap<String, HttpSessionImpl> map = new ConcurrentHashMap<String, HttpSessionImpl>();
 	private Config config;
-	private HashTimeWheel timeWheel = new HashTimeWheel();
+	
+	private static final HashTimeWheel timeWheel = new HashTimeWheel();
+	static {
+		timeWheel.start();
+	}
 
 	public LocalHttpSessionManager(Config config) {
 		this.config = config;
-		timeWheel.start();
 	}
 
 	@Override
@@ -30,8 +33,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 	public HttpSession remove(String id) {
 		HttpSession session = map.remove(id);
 		if (session != null)
-			config.getHttpSessionListener().sessionDestroyed(
-					new HttpSessionEvent(session));
+			config.getHttpSessionListener().sessionDestroyed(new HttpSessionEvent(session));
 
 		return session;
 	}
@@ -50,8 +52,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 				config.getMaxSessionInactiveInterval());
 		timeWheel.add(timeout, new TimeoutTask(session));
 		map.put(id, session);
-		config.getHttpSessionListener().sessionCreated(
-				new HttpSessionEvent(session));
+		config.getHttpSessionListener().sessionCreated(new HttpSessionEvent(session));
 		return session;
 	}
 
@@ -69,8 +70,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 
 		@Override
 		public void run() {
-			long t = Millisecond100Clock.currentTimeMillis()
-					- session.getLastAccessedTime();
+			long t = Millisecond100Clock.currentTimeMillis() - session.getLastAccessedTime();
 			long timeout = session.getMaxInactiveInterval() * 1000;
 			// System.out.println(timeout + "|" + t);
 			if (t > timeout) {
