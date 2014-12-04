@@ -3,9 +3,6 @@ package com.firefly.server.http;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TransferQueue;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncListener;
@@ -15,15 +12,15 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
-import com.firefly.server.http.ThreadPoolWrapper.BusinessLogicTask;
+import akka.actor.ActorRef;
+import akka.actor.UntypedActor;
+
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.HashTimeWheel;
 
 public class AsyncContextImpl implements AsyncContext {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	public static final HashTimeWheel TIME_WHEEL = new HashTimeWheel();
 	
 	private long timeout = -1;
 	private boolean originalRequestAndResponse = true;
@@ -32,12 +29,8 @@ public class AsyncContextImpl implements AsyncContext {
 	private ServletRequest request;
 	private ServletResponse response;
 	private final List<AsyncListenerWrapper> listeners = new ArrayList<AsyncListenerWrapper>();
-	private final TransferQueue<Future<?>> threadFutureList = new LinkedTransferQueue<Future<?>>();
-	private volatile HashTimeWheel.Future timeoutFuture;
 	
-	static {
-		TIME_WHEEL.start();
-	}
+	private static ActorRef actor = ActorFactory.getActorRef(AsyncContextActor.class, "asyncContextActor");
 
 	public boolean isStartAsync() {
 		return startAsync;
@@ -58,8 +51,7 @@ public class AsyncContextImpl implements AsyncContext {
 	public void complete() {
 		if(complete)
 			return;
-		
-		timeoutFuture.cancel();
+
 		fireOnComplete();
 		startAsync = false;
 		complete = true;
@@ -105,14 +97,8 @@ public class AsyncContextImpl implements AsyncContext {
 
 	@Override
 	public void start(final Runnable runnable) {
-		Future<?> future = ThreadPoolWrapper.submit(new BusinessLogicTask(request){
-
-			@Override
-			public void run() {
-				runnable.run();
-			}
-		});
-		threadFutureList.offer(future);
+		// TODO need to test
+		actor.tell(runnable, ActorRef.noSender());
 	}
 
 	@Override
@@ -150,17 +136,17 @@ public class AsyncContextImpl implements AsyncContext {
 		}
 	}
 	
-	private void fireOnTimeout() {
-		List<AsyncListenerWrapper> listenersCopy = getListenersCopy();
-		for (AsyncListenerWrapper listener : listenersCopy) {
-			try {
-				listener.fireOnTimeout();
-			} catch (IOException e) {
-				log.error("async timeout event error", e);
-				fireOnError();
-			}
-		}
-	}
+//	private void fireOnTimeout() {
+//		List<AsyncListenerWrapper> listenersCopy = getListenersCopy();
+//		for (AsyncListenerWrapper listener : listenersCopy) {
+//			try {
+//				listener.fireOnTimeout();
+//			} catch (IOException e) {
+//				log.error("async timeout event error", e);
+//				fireOnError();
+//			}
+//		}
+//	}
 	
 	private void fireOnError() {
 		List<AsyncListenerWrapper> listenersCopy = getListenersCopy();
@@ -192,37 +178,24 @@ public class AsyncContextImpl implements AsyncContext {
 	@Override
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
-		
-		if(timeout <= 0)
-			return;
-		
-		if(timeoutFuture != null) { 
-			timeoutFuture.cancel();
-		}
-		
-		timeoutFuture = TIME_WHEEL.add(timeout, new Runnable(){
-
-			@Override
-			public void run() {
-				if(complete)
-					return;
-				
-				Future<?> f = null;
-				while( (f = threadFutureList.poll()) != null) {
-					if(!f.isDone() && !f.isCancelled()) {
-						f.cancel(true);
-					}
-				}
-				fireOnTimeout();
-				startAsync = false;
-				complete = false;
-			}
-		});
 	}
 
 	@Override
 	public long getTimeout() {
 		return timeout;
+	}
+	
+	public static class AsyncContextActor extends UntypedActor {
+
+		@Override
+		public void onReceive(Object message) throws Exception {
+			if(message instanceof Runnable) {
+				((Runnable) message).run();
+			} else {
+				unhandled(message);
+			}
+		}
+		
 	}
 
 }

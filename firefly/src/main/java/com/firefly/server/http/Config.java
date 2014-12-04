@@ -19,32 +19,39 @@ public class Config {
 	private String encoding = "UTF-8";
 	private Map<Integer, String> errorPage;
 	
+	// HTTP settings
 	private int maxRequestLineLength = 8 * 1024,
 				maxRequestHeadLength = 16 * 1024, 
 				maxRangeNum = 8,
 				writeBufferSize = 8 * 1024,
 				maxConnections = 2000,
 				maxConnectionTimeout = 10 * 1000;
-				
-	private int	corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
-                maximumPoolSize = 128, 
-                poolQueueSize = 50000;
-	
-	private long poolKeepAliveTime = 30 * 1000,
-				 poolWaitTimeout = 3 * 1000;
-	
 	private long maxUploadLength = 50 * 1024 * 1024;
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
-	private boolean enableThreadPool = true;
+	
+	// thread pool settings
+	private int	corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
+                maximumPoolSize = 128, 
+                poolQueueSize = 50000;
+	private long poolKeepAliveTime = 30 * 1000,
+				 poolWaitTimeout = 3 * 1000;
 	private int asynchronousContextTimeout = 6 * 1000;
+	
+	// actor settings
+	private String actorRootName = "fireflysource";
+	private int actorNumber = 128;
 
+	// server settings
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
+	private String requestHandlerType = "threadPool"; // actor or threadPool
 	
+	// SSL/TLS settings
 	private boolean secure = false;
 	private String credentialPath, keystorePassword, keyPassword;
 	
+	// session settings
 	private String sessionIdName = "jsessionid";
 	private int maxSessionInactiveInterval = 10 * 60;
 	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager(this);
@@ -288,14 +295,6 @@ public class Config {
 		this.keepAlive = keepAlive;
 	}
 
-	public boolean isEnableThreadPool() {
-		return enableThreadPool;
-	}
-
-	public void setEnableThreadPool(boolean enableThreadPool) {
-		this.enableThreadPool = enableThreadPool;
-	}
-
 	public Map<Integer, String> getErrorPage() {
 		return errorPage;
 	}
@@ -404,6 +403,30 @@ public class Config {
 
 	public void setAsynchronousContextTimeout(int asynchronousContextTimeout) {
 		this.asynchronousContextTimeout = asynchronousContextTimeout;
+	}
+
+	public String getActorRootName() {
+		return actorRootName;
+	}
+
+	public void setActorRootName(String actorRootName) {
+		this.actorRootName = actorRootName;
+	}
+
+	public int getActorNumber() {
+		return actorNumber;
+	}
+
+	public void setActorNumber(int actorNumber) {
+		this.actorNumber = actorNumber;
+	}
+
+	public String getRequestHandlerType() {
+		return requestHandlerType;
+	}
+
+	public void setRequestHandlerType(String requestHandlerType) {
+		this.requestHandlerType = requestHandlerType;
 	}
 
 }

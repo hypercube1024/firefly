@@ -13,7 +13,6 @@ import com.firefly.server.http.HttpEncoder;
 import com.firefly.server.http.HttpHandler;
 import com.firefly.server.http.SSLDecoder;
 import com.firefly.server.http.SSLEncoder;
-import com.firefly.server.http.ThreadPoolWrapper;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -57,8 +56,7 @@ public class ServerBootstrap {
 		log.info("firefly startup in {} ms", (end - start));
 	}
 	
-	private static void init(WebContext context, Config config) throws Throwable {
-		ThreadPoolWrapper.init(config);
+	private static void init(WebContext context, Config config) throws Throwable {		
 		HttpServletDispatcherController controller = new HttpServletDispatcherController(context);
 		config.setEncoding(context.getEncoding());
 		
@@ -75,7 +73,6 @@ public class ServerBootstrap {
 		}
 		
 		log.info("firefly server tempdir [{}]", config.getTempdir());
-		log.info("enable thread pool [{}]", config.isEnableThreadPool());
 		log.info("keep alive [{}]", config.isKeepAlive());
 		
 		if(config.isSecure()) {
