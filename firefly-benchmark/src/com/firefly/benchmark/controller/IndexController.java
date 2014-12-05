@@ -11,6 +11,7 @@ import com.firefly.mvc.web.view.TemplateView;
 
 @Controller
 public class IndexController {
+	
 	@RequestMapping(value = "/index")
 	public View index(HttpServletRequest request, HttpServletResponse response) {
 		request.setAttribute("info", new String[]{"hello firefly", "test"});

@@ -22,16 +22,12 @@ public class ThreadPoolRequestHandler extends RequestHandler {
 		if (request.response.system) { // response HTTP decode error
 			request.response.outSystemData();
 		} else {
-			if(!request.config.isEnableThreadPool()) {
-				doRequest(request);
-			} else {
-				ThreadPoolWrapper.submit(new BusinessLogicTask(request){
-					@Override
-					public void run() {
-						doRequest(request);
-					}
-				});
-			}
+			ThreadPoolWrapper.submit(new BusinessLogicTask(request){
+				@Override
+				public void run() {
+					doRequest(request);
+				}
+			});
 		}
 	}
 

@@ -37,11 +37,14 @@ public class Config {
 	private long poolKeepAliveTime = 30 * 1000,
 				 poolWaitTimeout = 3 * 1000;
 	private int asynchronousContextTimeout = 6 * 1000;
+	
+	// actor settings
+	private String actorRootName = "fireflySystem";
 
 	// server settings
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
-	private boolean enableThreadPool = true;
+	private String requestHandler = "threadPool"; // threadPool, currentThread
 	
 	// SSL/TLS settings
 	private boolean secure = false;
@@ -401,12 +404,20 @@ public class Config {
 		this.asynchronousContextTimeout = asynchronousContextTimeout;
 	}
 
-	public boolean isEnableThreadPool() {
-		return enableThreadPool;
+	public String getActorRootName() {
+		return actorRootName;
 	}
 
-	public void setEnableThreadPool(boolean enableThreadPool) {
-		this.enableThreadPool = enableThreadPool;
+	public void setActorRootName(String actorRootName) {
+		this.actorRootName = actorRootName;
+	}
+
+	public String getRequestHandler() {
+		return requestHandler;
+	}
+
+	public void setRequestHandler(String requestHandler) {
+		this.requestHandler = requestHandler;
 	}
 
 }
