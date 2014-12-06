@@ -4,6 +4,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadFactory;
@@ -53,12 +54,17 @@ public class ThreadPoolWrapper {
 		
 		log.info("corePoolSize [{}], maximumPoolSize [{}], poolQueueSize [{}]", config.getCorePoolSize(), config.getMaximumPoolSize(), config.getPoolQueueSize());
 		log.info("poolKeepAliveTime [{}], poolWaitTimeout [{}]", config.getPoolKeepAliveTime(), config.getPoolWaitTimeout());
+		if(config.getPoolQueueSize() <= 0) {
+			log.info("using LinkedTransferQueue");
+		}
 		
 		executor = new ThreadPoolExecutor(config.getCorePoolSize(), 
 				config.getMaximumPoolSize(), 
 				config.getPoolKeepAliveTime(), 
 				TimeUnit.MILLISECONDS, 
-				new ArrayBlockingQueue<Runnable>(config.getPoolQueueSize()), 
+				config.getPoolQueueSize() > 0 ? 
+							new ArrayBlockingQueue<Runnable>(config.getPoolQueueSize())
+						: 	new LinkedTransferQueue<Runnable>(), 
 				threadFactory, handler){
 			
 			@Override

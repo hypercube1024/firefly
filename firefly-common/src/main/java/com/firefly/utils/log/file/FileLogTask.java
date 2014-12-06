@@ -12,7 +12,7 @@ import com.firefly.utils.log.LogTask;
 public class FileLogTask implements LogTask {
 	private volatile boolean start;
 	private Queue<LogItem> queue = new ConcurrentLinkedQueue<LogItem>();
-	private Thread thread = new Thread(this);
+	private Thread thread = new Thread(this, "firefly log thread");
 
 	@Override
 	public void run() {
@@ -22,7 +22,7 @@ public class FileLogTask implements LogTask {
 				break;
 
 			try {
-				Thread.sleep(1000L);
+				Thread.sleep(128L);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -65,7 +65,6 @@ public class FileLogTask implements LogTask {
 				((FileLog)log).write(logItem);
 			}
 		}
-//		System.out.println(">>> flush");
 		LogFactory.getInstance().flush();
 	}
 }

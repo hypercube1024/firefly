@@ -20,14 +20,14 @@ public class LogDemo {
 	private static final Log defaultLog = LogFactory.getInstance().getLog(
 			"firefly-system");
 
-	public static void main2(String[] args) throws Throwable {
+	public static void main(String[] args) throws Throwable {
 		while(true) {
 			log.info("test {} aa {}", "log1", 2);
 			Thread.sleep(1000);
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main2(String[] args) {
 		try {
 			log.info("test {} aa {}", "log1", 2);
 			log.info("test {} bb {}", "log1", 2);

@@ -32,8 +32,8 @@ public class Config {
 	
 	// thread pool settings
 	private int	corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
-                maximumPoolSize = 128, 
-                poolQueueSize = 50000;
+                maximumPoolSize = 64, 
+                poolQueueSize = 0;
 	private long poolKeepAliveTime = 30 * 1000,
 				 poolWaitTimeout = 3 * 1000;
 	private int asynchronousContextTimeout = 6 * 1000;

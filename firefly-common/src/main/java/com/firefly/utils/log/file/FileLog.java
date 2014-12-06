@@ -24,6 +24,12 @@ public class FileLog implements Log, Closeable {
 	
 
 	public void write(LogItem logItem) {
+		if (consoleOutput) {
+//			System.out.println("test...");
+			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
+			System.out.println(logItem.toString());
+		}
+		
 		if (!fileOutput)
 			return;
 		
@@ -105,12 +111,7 @@ public class FileLog implements Log, Closeable {
 		item.setContent(str);
 		item.setObjs(objs);
 		item.setThrowable(throwable);
-		if (consoleOutput) {
-			item.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
-			System.out.println(item.toString());
-		}
-		if (fileOutput)
-			LogFactory.getInstance().getLogTask().add(item);
+		LogFactory.getInstance().getLogTask().add(item);
 	}
 
 	@Override
