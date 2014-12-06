@@ -1,4 +1,4 @@
-package com.firefly.net.tcp;
+package com.firefly.net.tcp.nio;
 
 import static com.firefly.net.tcp.TcpPerformanceParameter.BACKLOG;
 import static com.firefly.net.tcp.TcpPerformanceParameter.BANDWIDTH;

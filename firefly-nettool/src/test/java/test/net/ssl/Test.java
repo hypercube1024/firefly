@@ -1,7 +1,7 @@
 package test.net.ssl;
 
 import com.firefly.net.Server;
-import com.firefly.net.tcp.TcpServer;
+import com.firefly.net.tcp.nio.TcpServer;
 
 public class Test {
 

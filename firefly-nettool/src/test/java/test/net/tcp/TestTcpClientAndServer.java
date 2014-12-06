@@ -17,7 +17,7 @@ import com.firefly.net.Config;
 import com.firefly.net.Server;
 import com.firefly.net.support.wrap.client.SimpleTcpClient;
 import com.firefly.net.support.wrap.client.TcpConnection;
-import com.firefly.net.tcp.TcpServer;
+import com.firefly.net.tcp.nio.TcpServer;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 

@@ -1,4 +1,4 @@
-package com.firefly.net.tcp;
+package com.firefly.net.tcp.nio;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -31,7 +31,7 @@ public final class TcpSession implements Session {
 	final Runnable writeTask = new WriteTask();
 	final AtomicBoolean writeTaskInTaskQueue = new AtomicBoolean();
 	final AtomicBoolean closeTaskInTaskQueue = new AtomicBoolean(false);
-	private InetSocketAddress localAddress;
+	private volatile InetSocketAddress localAddress;
 	private volatile InetSocketAddress remoteAddress;
 	volatile int interestOps = SelectionKey.OP_READ;
 	boolean inWriteNowLoop;
@@ -68,7 +68,7 @@ public final class TcpSession implements Session {
 			try {
 				localAddress = (InetSocketAddress) socket.socket().getLocalSocketAddress();
 			} catch (Throwable t) {
-				log.error("get localAddress error", t);
+				log.error("get local address error", t);
 			}
 		}
 		return localAddress;
@@ -81,7 +81,7 @@ public final class TcpSession implements Session {
 			try {
 				remoteAddress = (InetSocketAddress) socket.socket().getRemoteSocketAddress();
 			} catch (Throwable t) {
-				log.error("get remoteAddress error", t);
+				log.error("get remote address error", t);
 			}
 		}
 		return remoteAddress;

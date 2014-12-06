@@ -352,8 +352,8 @@ public class SSLSession implements Closeable {
 	    			write(buf);
 	    			buf = ByteBuffer.allocate(1024 * 4);
 	    		}
-	    		
-	    		if(pos >= len)
+	    		// TODO test
+	    		if(ret >= len)
 	    			break;
 	    	}
     	} finally {

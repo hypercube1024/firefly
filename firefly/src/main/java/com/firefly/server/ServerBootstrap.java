@@ -6,7 +6,7 @@ import com.firefly.mvc.web.WebContext;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.net.Server;
-import com.firefly.net.tcp.TcpServer;
+import com.firefly.net.tcp.nio.TcpServer;
 import com.firefly.server.http.Config;
 import com.firefly.server.http.HttpDecoder;
 import com.firefly.server.http.HttpEncoder;

@@ -1,4 +1,4 @@
-package com.firefly.net.tcp;
+package com.firefly.net.tcp.nio;
 
 import static com.firefly.net.tcp.TcpPerformanceParameter.CLEANUP_INTERVAL;
 import static com.firefly.net.tcp.TcpPerformanceParameter.IO_TIMEOUT_CHECK_INTERVAL;
@@ -6,6 +6,7 @@ import static com.firefly.net.tcp.TcpPerformanceParameter.WRITE_SPIN_COUNT;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.CancelledKeyException;
@@ -527,9 +528,9 @@ public final class TcpWorker implements Worker {
 			SelectionKey key = null;
 			try {
 				socketChannel.configureBlocking(false);
-				socketChannel.socket().setReuseAddress(true);
-				socketChannel.socket().setTcpNoDelay(false);
-				socketChannel.socket().setKeepAlive(true);
+				socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+				socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+				socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, false);
 
 				key = socketChannel.register(selector, SelectionKey.OP_READ);
 				TcpSession session = new TcpSession(sessionId, TcpWorker.this, config, Millisecond100Clock.currentTimeMillis(), key);

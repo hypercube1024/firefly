@@ -1,4 +1,4 @@
-package com.firefly.net.tcp;
+package com.firefly.net.tcp.nio;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

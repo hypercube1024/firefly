@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.firefly.net.Client;
 import com.firefly.net.Decoder;
 import com.firefly.net.Encoder;
-import com.firefly.net.tcp.TcpClient;
+import com.firefly.net.tcp.nio.TcpClient;
 
 public class SimpleTcpClient {
 	private String host;

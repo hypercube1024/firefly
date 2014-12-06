@@ -13,6 +13,10 @@ public class FileLogTask implements LogTask {
 	private volatile boolean start;
 	private Queue<LogItem> queue = new ConcurrentLinkedQueue<LogItem>();
 	private Thread thread = new Thread(this, "firefly log thread");
+	
+	public FileLogTask() {
+		thread.setPriority(Thread.MIN_PRIORITY);
+	}
 
 	@Override
 	public void run() {
@@ -22,7 +26,7 @@ public class FileLogTask implements LogTask {
 				break;
 
 			try {
-				Thread.sleep(128L);
+				Thread.sleep(200L);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
