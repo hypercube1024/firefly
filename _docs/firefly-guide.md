@@ -609,7 +609,7 @@ The HTTP configuration details:
 </tr>
 <tr>
 	<td>poolQueueSize</td>
-	<td>The queue to use for holding tasks before they are executed.  This queue will hold only the Runnable tasks submitted by the  execute method. The default queue size is 50000.</td>
+	<td>The queue to use for holding tasks before they are executed.  This queue will hold only the Runnable tasks submitted by the  execute method. The default queue size is 0, that means the thread pool uses the LinkedTransferQueue. If the queue size greater than 0, it uses ArrayBlockingQueue</td>
 </tr>
 <tr>
 	<td>poolKeepAliveTime</td>
@@ -632,8 +632,8 @@ The HTTP configuration details:
 	<td>Enable HTTP connections keep alive, the default is true.</td>
 </tr>
 <tr>
-	<td>enableThreadPool</td>
-	<td>Enable business logic thread pool, if you set this parameter is false, it will improve the throughput of the server, but the request will be executed serially. The default is false.</td>
+	<td>requestHandler</td>
+	<td>Set a implementation of request handler, the default value is threadPool, if you set this parameter is currentThread, it will improve the throughput of the server, but the request will be executed serially.</td>
 </tr>
 <tr>
 	<td>asynchronousContextTimeout</td>
