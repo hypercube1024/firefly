@@ -1,12 +1,10 @@
 package com.firefly.net;
 
-import java.nio.channels.SelectableChannel;
+import java.nio.channels.Channel;
 
-public interface Worker extends Runnable {
+public interface Worker {
 
-	void registerSelectableChannel(SelectableChannel selectableChannel, int sessionId);
-
-	int getWorkerId();
+	void registerChannel(Channel channel, int sessionId);
 
 	void shutdown();
 }

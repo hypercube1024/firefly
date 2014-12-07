@@ -101,7 +101,7 @@ public class AsynchronousTcpServer implements Server {
 			@Override
 			public void completed(AsynchronousSocketChannel socketChannel, Integer sessionId) {
 				try {
-					worker.registerAsynchronousChannel(socketChannel, sessionId);
+					worker.registerChannel(socketChannel, sessionId);
 				} finally {
 					listen();
 				}

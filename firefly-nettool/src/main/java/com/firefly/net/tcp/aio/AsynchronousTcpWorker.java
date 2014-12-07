@@ -5,6 +5,7 @@ import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.Channel;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.InterruptedByTimeoutException;
 import java.util.concurrent.TimeUnit;
@@ -13,12 +14,13 @@ import com.firefly.net.Config;
 import com.firefly.net.EventManager;
 import com.firefly.net.ReceiveBufferSizePredictor;
 import com.firefly.net.Session;
+import com.firefly.net.Worker;
 import com.firefly.net.buffer.ThreadSafeIOBufferPool;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
 
-public class AsynchronousTcpWorker {
+public class AsynchronousTcpWorker implements Worker{
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private ThreadSafeIOBufferPool pool = new ThreadSafeIOBufferPool();
@@ -30,8 +32,10 @@ public class AsynchronousTcpWorker {
 		this.eventManager = eventManager;
 	}
 	
-	public void registerAsynchronousChannel(AsynchronousSocketChannel socketChannel, int sessionId) {
+	@Override
+	public void registerChannel(Channel channel, int sessionId) {
 		try {
+			AsynchronousSocketChannel socketChannel = (AsynchronousSocketChannel)channel;
 			socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 			socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
 			socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, false);
@@ -141,5 +145,8 @@ public class AsynchronousTcpWorker {
 		}
 		
 	}
+
+	@Override
+	public void shutdown() {}
 	
 }

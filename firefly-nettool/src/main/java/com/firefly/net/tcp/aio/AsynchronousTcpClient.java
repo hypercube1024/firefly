@@ -97,7 +97,7 @@ public class AsynchronousTcpClient implements Client {
 
 				@Override
 				public void completed(Void result, Integer sessionId) {
-					worker.registerAsynchronousChannel(socketChannel, sessionId);
+					worker.registerChannel(socketChannel, sessionId);
 				}
 
 				@Override

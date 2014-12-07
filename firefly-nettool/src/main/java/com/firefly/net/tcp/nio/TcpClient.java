@@ -174,7 +174,7 @@ public class TcpClient implements Client {
         try {
             int workerIndex = Math.abs(sessionId) % workers.length;
             log.debug("accept sessionId [{}] and worker index [{}]", sessionId, workerIndex);
-            workers[workerIndex].registerSelectableChannel(socketChannel, sessionId);
+            workers[workerIndex].registerChannel(socketChannel, sessionId);
         } catch (Exception e) {
             log.error("Failed to initialize an accepted socket.", e);
             try {

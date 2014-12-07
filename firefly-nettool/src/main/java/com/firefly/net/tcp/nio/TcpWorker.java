@@ -10,8 +10,8 @@ import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.CancelledKeyException;
+import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -36,7 +36,7 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
 
-public final class TcpWorker implements Worker {
+public final class TcpWorker implements Worker, Runnable {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
@@ -71,14 +71,13 @@ public final class TcpWorker implements Worker {
 		}
 	}
 
-	@Override
 	public int getWorkerId() {
 		return workerId;
 	}
 
 	@Override
-	public void registerSelectableChannel(SelectableChannel selectableChannel, int sessionId) {
-		SocketChannel socketChannel = (SocketChannel) selectableChannel;
+	public void registerChannel(Channel channel, int sessionId) {
+		SocketChannel socketChannel = (SocketChannel) channel;
 		registerTaskQueue.offer(new RegisterTask(socketChannel, sessionId));
 		if (wakenUp.compareAndSet(false, true))
 			selector.wakeup();
