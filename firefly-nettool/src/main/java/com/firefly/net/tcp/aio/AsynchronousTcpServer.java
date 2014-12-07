@@ -69,11 +69,16 @@ public class AsynchronousTcpServer implements Server {
 	
 	private void bind(String host, int port) {
 		try {
+			log.info("asychronous I/O thread pool [{}], [{}], [{}]", 
+					config.getAsynchronousCorePoolSize(),
+					config.getAsynchronousMaximumPoolSize(),
+					config.getAsynchronousPoolKeepAliveTime());
+			
 			serverSocketChannel = AsynchronousServerSocketChannel.open(
 					AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
-							config.getWorkerThreads(),
-							config.getWorkerThreads(), 
-							0, 
+							config.getAsynchronousCorePoolSize(),
+							config.getAsynchronousMaximumPoolSize(), 
+							config.getAsynchronousPoolKeepAliveTime(), 
 							TimeUnit.MILLISECONDS, 
 							new LinkedTransferQueue<Runnable>(),
 							new ThreadFactory(){

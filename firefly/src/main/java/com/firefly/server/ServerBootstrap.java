@@ -6,6 +6,7 @@ import com.firefly.mvc.web.WebContext;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.net.Server;
+import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.net.tcp.nio.TcpServer;
 import com.firefly.server.http.Config;
 import com.firefly.server.http.HttpDecoder;
@@ -74,22 +75,52 @@ public class ServerBootstrap {
 		
 		log.info("firefly server tempdir [{}]", config.getTempdir());
 		log.info("keep alive [{}]", config.isKeepAlive());
-		
+		log.info("net processor type [{}]", config.getNetProcessorType());
 		if(config.isSecure()) {
 			log.info("enable SSL");
-			Server server = new TcpServer(
-					new SSLDecoder(new HttpDecoder(config)), 
-					new SSLEncoder(), 
-					new HttpHandler(controller, config), 
-					config.getMaxConnectionTimeout());
-			server.start(config.getHost(), config.getPort());
+			Server server = null;
+			switch (config.getNetProcessorType()) {
+			case "nio":
+				server = new TcpServer(
+						new SSLDecoder(new HttpDecoder(config)), 
+						new SSLEncoder(), 
+						new HttpHandler(controller, config), 
+						config.getMaxConnectionTimeout());
+				server.start(config.getHost(), config.getPort());
+				break;
+			case "aio":
+				server = new AsynchronousTcpServer(
+						new SSLDecoder(new HttpDecoder(config)), 
+						new SSLEncoder(), 
+						new HttpHandler(controller, config), 
+						config.getMaxConnectionTimeout());
+				server.start(config.getHost(), config.getPort());
+				break;
+			default:
+				break;
+			}
 		} else {
-			Server server = new TcpServer(
-					new HttpDecoder(config), 
-					new HttpEncoder(), 
-					new HttpHandler(controller, config), 
-					config.getMaxConnectionTimeout());
-			server.start(config.getHost(), config.getPort());
+			Server server = null;
+			switch (config.getNetProcessorType()) {
+			case "nio":
+				server = new TcpServer(
+						new HttpDecoder(config), 
+						new HttpEncoder(), 
+						new HttpHandler(controller, config), 
+						config.getMaxConnectionTimeout());
+				server.start(config.getHost(), config.getPort());
+				break;
+			case "aio":
+				server = new AsynchronousTcpServer(
+						new HttpDecoder(config), 
+						new HttpEncoder(), 
+						new HttpHandler(controller, config), 
+						config.getMaxConnectionTimeout());
+				server.start(config.getHost(), config.getPort());
+				break;
+			default:
+				break;
+			}
 		}
 	}
 }

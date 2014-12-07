@@ -107,8 +107,9 @@ public class AsynchronousTcpSession implements Session {
 	
 	public long transferTo(FileChannel fc, long pos, long len) throws Throwable {
 		long ret = 0;
+		int bufferSize = 1024 * 8;
     	try {
-	    	ByteBuffer buf = ByteBuffer.allocate(1024 * 4);
+	    	ByteBuffer buf = ByteBuffer.allocate(bufferSize);
 	    	int i = 0;
 	    	while((i = fc.read(buf, pos)) != -1) {
 	    		if(i > 0) {
@@ -116,9 +117,9 @@ public class AsynchronousTcpSession implements Session {
 	    			pos += i;
 	    			buf.flip();
 	    			write0(buf);
-	    			buf = ByteBuffer.allocate(1024 * 4);
+	    			buf = ByteBuffer.allocate(bufferSize);
 	    		}
-	    		// TODO test
+//	    		log.info("write file ret {} | len {}", ret, len);
 	    		if(ret >= len)
 	    			break;
 	    	}

@@ -341,8 +341,9 @@ public class SSLSession implements Closeable {
             throw new IllegalStateException();
 
     	long ret = 0;
+    	int bufferSize = 1024 * 8;
     	try {
-	    	ByteBuffer buf = ByteBuffer.allocate(1024 * 4);
+	    	ByteBuffer buf = ByteBuffer.allocate(bufferSize);
 	    	int i = 0;
 	    	while((i = fc.read(buf, pos)) != -1) {
 	    		if(i > 0) {
@@ -350,9 +351,8 @@ public class SSLSession implements Closeable {
 	    			pos += i;
 	    			buf.flip();
 	    			write(buf);
-	    			buf = ByteBuffer.allocate(1024 * 4);
+	    			buf = ByteBuffer.allocate(bufferSize);
 	    		}
-	    		// TODO test
 	    		if(ret >= len)
 	    			break;
 	    	}

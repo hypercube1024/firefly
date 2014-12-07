@@ -34,17 +34,15 @@ public class Config {
 	private int	corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
                 maximumPoolSize = 64, 
                 poolQueueSize = 0;
-	private long poolKeepAliveTime = 30 * 1000,
+	private long poolKeepAliveTime = 15 * 1000,
 				 poolWaitTimeout = 3 * 1000;
 	private int asynchronousContextTimeout = 6 * 1000;
-	
-	// actor settings
-	private String actorRootName = "fireflySystem";
 
 	// server settings
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
 	private String requestHandler = "threadPool"; // threadPool, currentThread
+	private String netProcessorType = "nio"; // nio, aio
 	
 	// SSL/TLS settings
 	private boolean secure = false;
@@ -404,14 +402,6 @@ public class Config {
 		this.asynchronousContextTimeout = asynchronousContextTimeout;
 	}
 
-	public String getActorRootName() {
-		return actorRootName;
-	}
-
-	public void setActorRootName(String actorRootName) {
-		this.actorRootName = actorRootName;
-	}
-
 	public String getRequestHandler() {
 		return requestHandler;
 	}
@@ -420,4 +410,13 @@ public class Config {
 		this.requestHandler = requestHandler;
 	}
 
+	public String getNetProcessorType() {
+		return netProcessorType;
+	}
+
+	public void setNetProcessorType(String netProcessorType) {
+		this.netProcessorType = netProcessorType;
+	}
+
+	
 }

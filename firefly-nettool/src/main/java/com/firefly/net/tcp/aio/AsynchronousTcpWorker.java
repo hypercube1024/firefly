@@ -10,10 +10,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.firefly.net.Config;
 import com.firefly.net.EventManager;
-import com.firefly.net.ReceiveBufferPool;
 import com.firefly.net.ReceiveBufferSizePredictor;
 import com.firefly.net.Session;
-import com.firefly.net.buffer.SocketReceiveBufferPool;
+import com.firefly.net.buffer.ThreadSafeIOBufferPool;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -21,12 +20,7 @@ import com.firefly.utils.time.Millisecond100Clock;
 public class AsynchronousTcpWorker {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private final ThreadLocal<ReceiveBufferPool> receiveBufferPool = new ThreadLocal<ReceiveBufferPool>(){
-		@Override
-		protected ReceiveBufferPool initialValue() {
-			return new SocketReceiveBufferPool();
-		}
-	};
+	private ThreadSafeIOBufferPool pool = new ThreadSafeIOBufferPool();
 	private final Config config;
 	final EventManager eventManager;
 	
@@ -42,7 +36,6 @@ public class AsynchronousTcpWorker {
 			socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, false);
 			
 			AsynchronousTcpSession session = new AsynchronousTcpSession(sessionId, Millisecond100Clock.currentTimeMillis(), config, this, socketChannel);
-//			sessionQueue.offer(session);
 			eventManager.executeOpenTask(session);
 			read(socketChannel, session);
 		} catch(IOException e) {
@@ -56,7 +49,7 @@ public class AsynchronousTcpWorker {
 		
 		final ReceiveBufferSizePredictor predictor = currentSession.receiveBufferSizePredictor;
 		final int predictedRecvBufSize = predictor.nextReceiveBufferSize();
-		final ByteBuffer buf = receiveBufferPool.get().acquire(predictedRecvBufSize);
+		final ByteBuffer buf = pool.acquire(predictedRecvBufSize);
 
 		socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, currentSession, new CompletionHandler<Integer, AsynchronousTcpSession>(){
 
@@ -65,6 +58,7 @@ public class AsynchronousTcpWorker {
 				session.lastReadTime = Millisecond100Clock.currentTimeMillis();
 				if(readBytes <= 0) {
 					session.close(true);
+					pool.release(buf);
 					return;
 				}
 				buf.flip();
@@ -77,7 +71,7 @@ public class AsynchronousTcpWorker {
 				} catch (Throwable t) {
 					eventManager.executeExceptionTask(session, t);
 				} finally {
-					receiveBufferPool.get().release(buf);
+					pool.release(buf);
 					read(socketChannel, session);
 				}
 			}
@@ -86,11 +80,12 @@ public class AsynchronousTcpWorker {
 			public void failed(Throwable t, AsynchronousTcpSession session) {
 				try {
 					if(t instanceof InterruptedByTimeoutException) {
-						log.info("session {} reads timout", session.getSessionId());
+						log.debug("session {} reads data timout", session.getSessionId());
 					} else {
 						log.error("socket channel reads error", t);
 					}
 				} finally {
+					pool.release(buf);
 					session.close(true);
 				}
 			}});
@@ -104,8 +99,8 @@ public class AsynchronousTcpWorker {
 			currentSession.close(true);
 			return;
 		}
-		if(obj instanceof ByteBuffer) {
-			socketChannel.write((ByteBuffer)obj, config.getTimeout(), TimeUnit.MILLISECONDS, currentSession, new CompletionHandler<Integer, AsynchronousTcpSession>(){
+		if(obj instanceof ByteBuffer) {		
+			socketChannel.write(((ByteBuffer)obj), config.getTimeout(), TimeUnit.MILLISECONDS, currentSession, new CompletionHandler<Integer, AsynchronousTcpSession>(){
 				
 				@Override
 				public void completed(Integer writeBytes, AsynchronousTcpSession session) {
@@ -130,7 +125,7 @@ public class AsynchronousTcpWorker {
 				public void failed(Throwable t, AsynchronousTcpSession session) {
 					try {
 						if(t instanceof InterruptedByTimeoutException) {
-							log.info("session {} writes timout", session.getSessionId());
+							log.debug("session {} writes data timout", session.getSessionId());
 						} else {
 							log.error("socket channel writes error", t);
 						}

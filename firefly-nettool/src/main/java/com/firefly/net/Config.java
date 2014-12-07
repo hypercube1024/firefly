@@ -12,6 +12,11 @@ public class Config {
 		else
 			workerThreads = workers + 1;
 	}
+	
+	// asynchronous I/O thread pool settings
+	private int asynchronousCorePoolSize = workerThreads;
+	private int asynchronousMaximumPoolSize = 64;
+	private int asynchronousPoolKeepAliveTime = 15 * 1000;
 
 	private String serverName = "firefly-server";
 	private String clientName = "firefly-client";
@@ -98,6 +103,30 @@ public class Config {
 
 	public void setHandler(Handler handler) {
 		this.handler = handler;
+	}
+
+	public int getAsynchronousMaximumPoolSize() {
+		return asynchronousMaximumPoolSize;
+	}
+
+	public void setAsynchronousMaximumPoolSize(int asynchronousMaximumPoolSize) {
+		this.asynchronousMaximumPoolSize = asynchronousMaximumPoolSize;
+	}
+
+	public int getAsynchronousCorePoolSize() {
+		return asynchronousCorePoolSize;
+	}
+
+	public void setAsynchronousCorePoolSize(int asynchronousCorePoolSize) {
+		this.asynchronousCorePoolSize = asynchronousCorePoolSize;
+	}
+
+	public int getAsynchronousPoolKeepAliveTime() {
+		return asynchronousPoolKeepAliveTime;
+	}
+
+	public void setAsynchronousPoolKeepAliveTime(int asynchronousPoolKeepAliveTime) {
+		this.asynchronousPoolKeepAliveTime = asynchronousPoolKeepAliveTime;
 	}
 
 }
