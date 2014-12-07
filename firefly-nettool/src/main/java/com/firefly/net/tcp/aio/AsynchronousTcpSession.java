@@ -50,6 +50,16 @@ public class AsynchronousTcpSession implements Session {
 			log.debug("adaptive buffer size");
 			receiveBufferSizePredictor = new AdaptiveReceiveBufferSizePredictor();
 		}
+		try {
+			localAddress = (InetSocketAddress) socketChannel.getLocalAddress();
+		} catch (Throwable t) {
+			log.error("get local address error", t);
+		}
+		try {
+			remoteAddress = (InetSocketAddress) socketChannel.getRemoteAddress();
+		} catch (Throwable t) {
+			log.error("get remote address error", t);
+		}
 		state = OPEN;
 	}
 
@@ -194,7 +204,7 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public InetSocketAddress getLocalAddress() {
-		if (localAddress == null) {
+		if (localAddress == null && socketChannel.isOpen()) {
 			try {
 				localAddress = (InetSocketAddress) socketChannel.getLocalAddress();
 			} catch (Throwable t) {
@@ -206,7 +216,7 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public InetSocketAddress getRemoteAddress() {
-		if (remoteAddress == null) {
+		if (remoteAddress == null && socketChannel.isOpen()) {
 			try {
 				remoteAddress = (InetSocketAddress) socketChannel.getRemoteAddress();
 			} catch (Throwable t) {
