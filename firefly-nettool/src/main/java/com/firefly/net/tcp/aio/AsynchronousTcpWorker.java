@@ -3,6 +3,7 @@ package com.firefly.net.tcp.aio;
 import java.io.IOException;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.InterruptedByTimeoutException;
@@ -80,7 +81,9 @@ public class AsynchronousTcpWorker {
 			public void failed(Throwable t, AsynchronousTcpSession session) {
 				try {
 					if(t instanceof InterruptedByTimeoutException) {
-						log.debug("session {} reads data timout", session.getSessionId());
+						log.debug("reads error, session {} reads data timout", session.getSessionId());
+					} else if (t instanceof AsynchronousCloseException) {
+						log.debug("reads error, session {} asynchronous close", session.getSessionId());
 					} else {
 						log.error("socket channel reads error", t);
 					}
@@ -125,7 +128,9 @@ public class AsynchronousTcpWorker {
 				public void failed(Throwable t, AsynchronousTcpSession session) {
 					try {
 						if(t instanceof InterruptedByTimeoutException) {
-							log.debug("session {} writes data timout", session.getSessionId());
+							log.debug("writes error, session {} writes data timout", session.getSessionId());
+						} else if (t instanceof AsynchronousCloseException) {
+							log.debug("writes error, session {} asynchronous close", session.getSessionId());
 						} else {
 							log.error("socket channel writes error", t);
 						}

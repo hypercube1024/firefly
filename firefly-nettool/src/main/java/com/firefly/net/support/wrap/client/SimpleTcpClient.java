@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.firefly.net.Client;
 import com.firefly.net.Decoder;
 import com.firefly.net.Encoder;
+import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.net.tcp.nio.TcpClient;
 
 public class SimpleTcpClient {
@@ -20,12 +21,15 @@ public class SimpleTcpClient {
 	private Client client;
 	private AtomicInteger sessionId = new AtomicInteger(0);
 
-	public SimpleTcpClient(String host, int port, Decoder decoder, Encoder encoder, SimpleTcpClientHandler handler) {
+	public SimpleTcpClient(String host, int port, Decoder decoder, Encoder encoder, SimpleTcpClientHandler handler, String netType) {
 		this.host = host;
 		this.port = port;
 		this.handler = handler;
 		this.handler.setConnectionInfo(connectionInfo);
-		client = new TcpClient(decoder, encoder, handler);
+		if(netType.equals("nio"))
+			client = new TcpClient(decoder, encoder, handler);
+		else if(netType.equals("aio"))
+			client = new AsynchronousTcpClient(decoder, encoder, handler);
 	}
 
 	public Future<TcpConnection> connect() {

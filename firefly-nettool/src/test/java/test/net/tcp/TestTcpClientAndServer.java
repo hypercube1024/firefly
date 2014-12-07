@@ -36,7 +36,7 @@ public class TestTcpClientAndServer {
 
 		final int LOOP = 50;
 		ExecutorService executorService = Executors.newFixedThreadPool(LOOP);
-		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler());
+		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler(), "nio");
 
 		for (int i = 0; i < LOOP; i++) {
 			executorService.submit(new Runnable() {

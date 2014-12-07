@@ -34,11 +34,9 @@ public class HttpHandler implements Handler {
 			requestHandler = new CurrentThreadRequestHandler(servletController);
 			break;
 		default:
-			requestHandler = new ThreadPoolRequestHandler(servletController);
+			requestHandler = new CurrentThreadRequestHandler(servletController);
 			break;
 		}
-		
-		
 		
 		if(config.isSecure()) {
 			if(VerifyUtils.isNotEmpty(config.getCredentialPath())

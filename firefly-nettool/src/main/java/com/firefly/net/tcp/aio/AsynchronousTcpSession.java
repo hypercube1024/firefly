@@ -3,6 +3,7 @@ package com.firefly.net.tcp.aio;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.FileChannel;
 import java.util.LinkedList;
@@ -134,6 +135,8 @@ public class AsynchronousTcpSession implements Session {
 		if(immediately) {
 			try {
 				socketChannel.close();
+			} catch (AsynchronousCloseException e) {
+				log.debug("session {} asynchronous close", sessionId);
 			} catch (IOException e) {
 				log.error("channel close error", e);
 			}

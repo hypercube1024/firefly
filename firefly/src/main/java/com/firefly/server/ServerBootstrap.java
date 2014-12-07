@@ -89,11 +89,16 @@ public class ServerBootstrap {
 				server.start(config.getHost(), config.getPort());
 				break;
 			case "aio":
-				server = new AsynchronousTcpServer(
-						new SSLDecoder(new HttpDecoder(config)), 
-						new SSLEncoder(), 
-						new HttpHandler(controller, config), 
-						config.getMaxConnectionTimeout());
+				config.setRequestHandler("currentThread");
+				com.firefly.net.Config netConfig = new com.firefly.net.Config();
+				netConfig.setDecoder(new SSLDecoder(new HttpDecoder(config)));
+				netConfig.setEncoder(new SSLEncoder());
+				netConfig.setHandler(new HttpHandler(controller, config));
+				netConfig.setTimeout(config.getMaxConnectionTimeout());
+				netConfig.setAsynchronousMaximumPoolSize(config.getAsynchronousMaximumPoolSize());
+				netConfig.setAsynchronousPoolKeepAliveTime(config.getAsynchronousPoolKeepAliveTime());
+				server = new AsynchronousTcpServer();
+				server.setConfig(netConfig);
 				server.start(config.getHost(), config.getPort());
 				break;
 			default:
@@ -110,12 +115,17 @@ public class ServerBootstrap {
 						config.getMaxConnectionTimeout());
 				server.start(config.getHost(), config.getPort());
 				break;
-			case "aio":
-				server = new AsynchronousTcpServer(
-						new HttpDecoder(config), 
-						new HttpEncoder(), 
-						new HttpHandler(controller, config), 
-						config.getMaxConnectionTimeout());
+			case "aio":				
+				config.setRequestHandler("currentThread");
+				com.firefly.net.Config netConfig = new com.firefly.net.Config();
+				netConfig.setDecoder(new HttpDecoder(config));
+				netConfig.setEncoder(new HttpEncoder());
+				netConfig.setHandler(new HttpHandler(controller, config));
+				netConfig.setTimeout(config.getMaxConnectionTimeout());
+				netConfig.setAsynchronousMaximumPoolSize(config.getAsynchronousMaximumPoolSize());
+				netConfig.setAsynchronousPoolKeepAliveTime(config.getAsynchronousPoolKeepAliveTime());
+				server = new AsynchronousTcpServer();
+				server.setConfig(netConfig);
 				server.start(config.getHost(), config.getPort());
 				break;
 			default:

@@ -1,4 +1,4 @@
-package test.net.tcp;
+package test.net.tcp.aio;
 
 import java.util.concurrent.Future;
 
@@ -9,11 +9,11 @@ import test.net.tcp.example.StringLineEncoder;
 import com.firefly.net.support.wrap.client.MessageReceivedCallback;
 import com.firefly.net.support.wrap.client.SimpleTcpClient;
 import com.firefly.net.support.wrap.client.TcpConnection;
-import com.firefly.utils.log.LogFactory;
 
-public class SimpleTcpClientExample {
+public class AsynchronousClientDemo {
+
 	public static void main(String[] args) throws Throwable {
-		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler(), "nio");
+		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler(), "aio");
 		long start = System.currentTimeMillis();
 		TcpConnection c = client.connect().get();
 		long end = System.currentTimeMillis();
@@ -50,32 +50,19 @@ public class SimpleTcpClientExample {
 			@Override
 			public void messageRecieved(TcpConnection connection, Object obj) {
 				System.out.println("con1|" + obj.toString());
+				System.out.println("con1 is open " + connection.isOpen());
 			}
 		});
 
 		Future<TcpConnection> fc2 = client.connect();
 		Future<TcpConnection> fc3 = client.connect();
 		
-		
 		TcpConnection c2 = fc2.get();
 		TcpConnection c3 = fc3.get();
 		System.out.println("con2|" + c2.send("getfile").get());
+		System.out.println("con3|" + c3.send("test c3").get());
 		c2.close(false);
-		
-		c3.send("test c3", new MessageReceivedCallback() {
-
-			@Override
-			public void messageRecieved(TcpConnection connection, Object obj) {
-				System.out.println("con3|" + obj.toString());
-			}
-		});
-		c3.close(true);;
-		
-		Thread.sleep(4000);
-		client.shutdown();
-		LogFactory.getInstance().shutdown();
-//		System.out.println("shutdown");
-
-		
+		c3.close(false);
 	}
+
 }

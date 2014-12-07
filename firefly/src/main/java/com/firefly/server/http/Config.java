@@ -30,19 +30,23 @@ public class Config {
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private boolean keepAlive = true;
 	
-	// thread pool settings
-	private int	corePoolSize = Runtime.getRuntime().availableProcessors() * 2,
+	// request handler thread pool settings
+	private int	corePoolSize = Runtime.getRuntime().availableProcessors(),
                 maximumPoolSize = 64, 
                 poolQueueSize = 0;
 	private long poolKeepAliveTime = 15 * 1000,
 				 poolWaitTimeout = 3 * 1000;
 	private int asynchronousContextTimeout = 6 * 1000;
+	
+	// asynchronous I/O thread pool settings
+	private int asynchronousMaximumPoolSize = 64;
+	private int asynchronousPoolKeepAliveTime = 20 * 1000;
 
 	// server settings
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
-	private String requestHandler = "threadPool"; // threadPool, currentThread
-	private String netProcessorType = "nio"; // nio, aio
+	private String requestHandler = "currentThread"; // threadPool, currentThread
+	private String netProcessorType = "aio"; // nio, aio
 	
 	// SSL/TLS settings
 	private boolean secure = false;
@@ -416,6 +420,22 @@ public class Config {
 
 	public void setNetProcessorType(String netProcessorType) {
 		this.netProcessorType = netProcessorType;
+	}
+
+	public int getAsynchronousMaximumPoolSize() {
+		return asynchronousMaximumPoolSize;
+	}
+
+	public void setAsynchronousMaximumPoolSize(int asynchronousMaximumPoolSize) {
+		this.asynchronousMaximumPoolSize = asynchronousMaximumPoolSize;
+	}
+
+	public int getAsynchronousPoolKeepAliveTime() {
+		return asynchronousPoolKeepAliveTime;
+	}
+
+	public void setAsynchronousPoolKeepAliveTime(int asynchronousPoolKeepAliveTime) {
+		this.asynchronousPoolKeepAliveTime = asynchronousPoolKeepAliveTime;
 	}
 
 	

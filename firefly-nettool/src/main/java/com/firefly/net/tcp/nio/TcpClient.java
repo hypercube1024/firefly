@@ -40,11 +40,18 @@ public class TcpClient implements Client {
     }
 
     public TcpClient(Decoder decoder, Encoder encoder, Handler handler) {
-        this();
         config = new Config();
         config.setDecoder(decoder);
         config.setEncoder(encoder);
         config.setHandler(handler);
+    }
+    
+    public TcpClient(Decoder decoder, Encoder encoder, Handler handler, int timeout) {
+        config = new Config();
+        config.setDecoder(decoder);
+        config.setEncoder(encoder);
+        config.setHandler(handler);
+        config.setTimeout(timeout);
     }
 
     private synchronized Client init() throws IOException {
