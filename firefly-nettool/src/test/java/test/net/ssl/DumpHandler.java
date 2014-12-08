@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
+
 import javax.net.ssl.SSLContext;
 
 import test.net.tcp.SendFileHandler;
@@ -12,6 +13,7 @@ import test.net.tcp.SendFileHandler;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLContextFactory;
+import com.firefly.net.tcp.ssl.SSLEventHandler;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class DumpHandler implements Handler {
@@ -24,9 +26,14 @@ public class DumpHandler implements Handler {
 	@Override
 	public void sessionOpened(Session session) throws Throwable {
 		SessionInfo info = new SessionInfo();
-		info.sslSession = new SSLSession(sslContext, session);
-		session.attachObject(info);
+		info.sslSession = new SSLSession(sslContext, session, false, new SSLEventHandler(){
 
+			@Override
+			public void handshakeFinished(SSLSession session) {
+				
+				
+			}});
+		session.attachObject(info);
 	}
 
 	@Override
