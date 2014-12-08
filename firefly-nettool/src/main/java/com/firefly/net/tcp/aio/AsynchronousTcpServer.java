@@ -2,6 +2,7 @@ package com.firefly.net.tcp.aio;
 
 import static com.firefly.net.tcp.TcpPerformanceParameter.BACKLOG;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
@@ -30,12 +31,16 @@ public class AsynchronousTcpServer implements Server {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private Config config;
 	private AtomicInteger id = new AtomicInteger();
-	private AsynchronousServerSocketChannel serverSocketChannel;
 	private AsynchronousTcpWorker worker;
+	private AsynchronousChannelGroup group;
+	private volatile boolean isInitialized = false;
 
-	public AsynchronousTcpServer() {
-
+	public AsynchronousTcpServer() {}
+	
+	public AsynchronousTcpServer(Config config) {
+		this.config = config;
 	}
+	
 	public AsynchronousTcpServer(Decoder decoder, Encoder encoder, Handler handler) {
 		config = new Config();
 		config.setDecoder(decoder);
@@ -50,6 +55,37 @@ public class AsynchronousTcpServer implements Server {
 		config.setHandler(handler);
 		config.setTimeout(timeout);
 	}
+	
+	private void init() {
+		if(isInitialized)
+			return;
+		
+		synchronized(this) {
+			if(isInitialized)
+				return;
+			
+			try {
+				group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
+						config.getAsynchronousCorePoolSize(),
+						config.getAsynchronousMaximumPoolSize(), 
+						config.getAsynchronousPoolKeepAliveTime(), 
+						TimeUnit.MILLISECONDS, 
+						new LinkedTransferQueue<Runnable>(),
+						new ThreadFactory(){
+	
+							@Override
+							public Thread newThread(Runnable r) {
+								return new Thread(r, "firefly asynchronous server thread");
+							}
+						}));
+				EventManager eventManager = new DefaultEventManager(config);
+				worker = new AsynchronousTcpWorker(config, eventManager);
+			} catch (IOException e) {
+				log.error("initialization server channel group error", e);
+			}
+			isInitialized = true;
+		}
+	}
 
 	@Override
 	public void setConfig(Config config) {
@@ -60,42 +96,27 @@ public class AsynchronousTcpServer implements Server {
 	public void start(String host, int port) {
 		if (config == null)
 			throw new NetException("server config is null");
-		log.debug(config.toString());
-		EventManager eventManager = new DefaultEventManager(config);
-		worker = new AsynchronousTcpWorker(config, eventManager);
-		bind(host, port);
-		listen();
+		init();
+		listen(bind(host, port));
 	}
 	
-	private void bind(String host, int port) {
+	private AsynchronousServerSocketChannel bind(String host, int port) {
+		AsynchronousServerSocketChannel serverSocketChannel = null;
 		try {
 			log.info("asychronous I/O thread pool [{}], [{}], [{}]", 
 					config.getAsynchronousCorePoolSize(),
 					config.getAsynchronousMaximumPoolSize(),
 					config.getAsynchronousPoolKeepAliveTime());
-			
-			serverSocketChannel = AsynchronousServerSocketChannel.open(
-					AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
-							config.getAsynchronousCorePoolSize(),
-							config.getAsynchronousMaximumPoolSize(), 
-							config.getAsynchronousPoolKeepAliveTime(), 
-							TimeUnit.MILLISECONDS, 
-							new LinkedTransferQueue<Runnable>(),
-							new ThreadFactory(){
-
-								@Override
-								public Thread newThread(Runnable r) {
-									return new Thread(r, "firefly asynchronous server thread");
-								}
-							})));
+			serverSocketChannel = AsynchronousServerSocketChannel.open(group);
 			serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 			serverSocketChannel.bind(new InetSocketAddress(host, port), BACKLOG);
 		} catch (Exception e) {
 			log.error("ServerSocket bind error", e);
 		}
+		return serverSocketChannel;
 	}
 	
-	private void listen() {
+	private void listen(final AsynchronousServerSocketChannel serverSocketChannel) {
 		serverSocketChannel.accept(id.getAndIncrement(), new CompletionHandler<AsynchronousSocketChannel, Integer>(){
 
 			@Override
@@ -103,7 +124,7 @@ public class AsynchronousTcpServer implements Server {
 				try {
 					worker.registerChannel(socketChannel, sessionId);
 				} finally {
-					listen();
+					listen(serverSocketChannel);
 				}
 			}
 
@@ -112,14 +133,15 @@ public class AsynchronousTcpServer implements Server {
 				try {
 					log.error("server accepts channel " + id + " error occurs", exc);
 				} finally {
-					listen();
+					listen(serverSocketChannel);
 				}
 			}} );
 	}
 
 	@Override
 	public void shutdown() {
-		
+		if(group != null)
+			group.shutdown();
 	}
 
 }

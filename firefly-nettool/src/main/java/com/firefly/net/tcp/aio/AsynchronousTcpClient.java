@@ -29,10 +29,12 @@ public class AsynchronousTcpClient implements Client {
     private AtomicInteger sessionId = new AtomicInteger(0);
     private AsynchronousChannelGroup group;
     private AsynchronousTcpWorker worker;
+    private volatile boolean isInitialized = false;
+    
+    public AsynchronousTcpClient() {}
     
     public AsynchronousTcpClient(Config config) {
-    	setConfig(config);
-    	init();
+    	this.config = config;
     }
     
     public AsynchronousTcpClient(Decoder decoder, Encoder encoder, Handler handler) {
@@ -40,7 +42,6 @@ public class AsynchronousTcpClient implements Client {
         config.setDecoder(decoder);
         config.setEncoder(encoder);
         config.setHandler(handler);
-        init();
     }
     
     public AsynchronousTcpClient(Decoder decoder, Encoder encoder, Handler handler, int timeout) {
@@ -49,30 +50,38 @@ public class AsynchronousTcpClient implements Client {
         config.setEncoder(encoder);
         config.setHandler(handler);
         config.setTimeout(timeout);
-        init();
     }
     
     private void init() {
-    	try {
-			group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
-					config.getAsynchronousCorePoolSize(),
-					config.getAsynchronousMaximumPoolSize(), 
-					config.getAsynchronousPoolKeepAliveTime(), 
-					TimeUnit.MILLISECONDS, 
-					new LinkedTransferQueue<Runnable>(),
-					new ThreadFactory(){
-
-						@Override
-						public Thread newThread(Runnable r) {
-							return new Thread(r, "firefly asynchronous client thread");
-						}
-					}));
-			EventManager eventManager = new DefaultEventManager(config);
-			worker = new AsynchronousTcpWorker(config, eventManager);
-		} catch (IOException e) {
-			log.error("initialization channel group error", e);
+		if(isInitialized)
+			return;
+		
+		synchronized(this) {
+			if(isInitialized)
+				return;
+			
+			try {
+				group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
+						config.getAsynchronousCorePoolSize(),
+						config.getAsynchronousMaximumPoolSize(), 
+						config.getAsynchronousPoolKeepAliveTime(), 
+						TimeUnit.MILLISECONDS, 
+						new LinkedTransferQueue<Runnable>(),
+						new ThreadFactory(){
+	
+							@Override
+							public Thread newThread(Runnable r) {
+								return new Thread(r, "firefly asynchronous server thread");
+							}
+						}));
+				EventManager eventManager = new DefaultEventManager(config);
+				worker = new AsynchronousTcpWorker(config, eventManager);
+			} catch (IOException e) {
+				log.error("initialization server channel group error", e);
+			}
+			isInitialized = true;
 		}
-    }
+	}
 
 	@Override
 	public void setConfig(Config config) {
@@ -88,6 +97,7 @@ public class AsynchronousTcpClient implements Client {
 
 	@Override
 	public void connect(String host, int port, int id) {
+		init();
 		try {
 			final AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(group);
 			socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
@@ -107,12 +117,12 @@ public class AsynchronousTcpClient implements Client {
 		} catch (IOException e) {
 			log.error("client connect error", e);
 		}
-		
 	}
 
 	@Override
 	public void shutdown() {
-		
+		if(group != null)
+			group.shutdown();
 	}
 
 }
