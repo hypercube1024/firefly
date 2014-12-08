@@ -92,10 +92,11 @@ public class AsynchronousTcpSession implements Session {
 			return;
 		
 		synchronized(lock) {
-			writeBuffer.offer(obj);
 			if(!isWriting) {
 				isWriting = true;
-				worker.write(socketChannel, this, writeBuffer.poll());
+				worker.write(socketChannel, this, obj);
+			} else {
+				writeBuffer.offer(obj);
 			}
 		}
 	}
