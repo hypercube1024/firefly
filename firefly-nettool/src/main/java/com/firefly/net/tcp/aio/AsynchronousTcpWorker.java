@@ -3,7 +3,6 @@ package com.firefly.net.tcp.aio;
 import java.io.IOException;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.Channel;
 import java.nio.channels.CompletionHandler;
@@ -62,6 +61,7 @@ public class AsynchronousTcpWorker implements Worker{
 			public void completed(Integer readBytes, AsynchronousTcpSession session) {
 				session.lastReadTime = Millisecond100Clock.currentTimeMillis();
 				if(readBytes <= 0) {
+					log.debug("The channel {} input is shutdown, {}", session.getSessionId(),  readBytes);
 					session.close(true);
 					pool.release(buf);
 					return;
@@ -83,17 +83,18 @@ public class AsynchronousTcpWorker implements Worker{
 
 			@Override
 			public void failed(Throwable t, AsynchronousTcpSession session) {
+				if(t instanceof InterruptedByTimeoutException) {
+					log.debug("session {} reads data timout", session.getSessionId());
+				} else {
+					log.error("socket channel reads error", t);
+				}
 				try {
-					if(t instanceof InterruptedByTimeoutException) {
-						log.debug("reads error, session {} reads data timout", session.getSessionId());
-					} else if (t instanceof AsynchronousCloseException) {
-						log.debug("reads error, session {} asynchronous close", session.getSessionId());
-					} else {
-						log.error("socket channel reads error", t);
-					}
+					session.socketChannel.shutdownInput();
+				} catch (IOException e) {
+					log.error("socket channel shutdown input error", t);
+					session.close(true);
 				} finally {
 					pool.release(buf);
-					session.close(true);
 				}
 			}});
 	}
@@ -103,7 +104,13 @@ public class AsynchronousTcpWorker implements Worker{
 			return;
 		
 		if(obj == Session.CLOSE_FLAG) {
-			currentSession.close(true);
+			try {
+				socketChannel.shutdownInput();
+				socketChannel.shutdownOutput();
+			} catch (IOException e) {
+				log.error("shutdown input and output error", e);
+				currentSession.close(true);
+			}
 			return;
 		}
 		if(obj instanceof ByteBuffer) {		
@@ -113,6 +120,7 @@ public class AsynchronousTcpWorker implements Worker{
 				public void completed(Integer writeBytes, AsynchronousTcpSession session) {
 					session.lastWrittenTime = Millisecond100Clock.currentTimeMillis();
 					if(writeBytes <= 0) {
+						log.debug("The channel {} output is shutdown, {}", session.getSessionId(), writeBytes);
 						session.close(true);
 						return;
 					}
@@ -130,15 +138,15 @@ public class AsynchronousTcpWorker implements Worker{
 
 				@Override
 				public void failed(Throwable t, AsynchronousTcpSession session) {
+					if(t instanceof InterruptedByTimeoutException) {
+						log.debug("session {} writes data timout", session.getSessionId());
+					} else {
+						log.error("socket channel writes error", t);
+					}
 					try {
-						if(t instanceof InterruptedByTimeoutException) {
-							log.debug("writes error, session {} writes data timout", session.getSessionId());
-						} else if (t instanceof AsynchronousCloseException) {
-							log.debug("writes error, session {} asynchronous close", session.getSessionId());
-						} else {
-							log.error("socket channel writes error", t);
-						}
-					} finally {
+						session.socketChannel.shutdownOutput();
+					} catch (IOException e) {
+						log.error("socket channel shutdown output error", t);
 						session.close(true);
 					}
 				}});
