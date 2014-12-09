@@ -7,6 +7,8 @@
 	<classpathentry kind="lib" path="lib/firefly.jar"/>
 	<classpathentry kind="lib" path="lib/javassist.jar"/>
 	<classpathentry kind="lib" path="lib/javax.servlet-3.0.0.v201112011016.jar"/>
+	<classpathentry kind="lib" path="lib/alpn-api-1.1.0.v20141014.jar"/>
+	<classpathentry kind="lib" path="lib/alpn-boot-8.1.2.v20141202.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>
