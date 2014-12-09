@@ -254,7 +254,7 @@ public class SSLSession implements Closeable {
 	}
 	
 	/**
-     * This method is used to decrypt, it implied do handshake
+     * This method is used to decrypt data, it implied do handshake
      * @param receiveBuffer
      * 				Encrypted message
      * @return plaintext
