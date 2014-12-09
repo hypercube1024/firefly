@@ -10,6 +10,8 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
+import org.eclipse.jetty.alpn.ALPN;
+
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.log.Log;
@@ -57,14 +59,19 @@ public class SSLSession implements Closeable {
     protected final SSLEventHandler sslEventHandler;
     
     public SSLSession(SSLContext sslContext, Session session, boolean useClientMode, SSLEventHandler sslEventHandler) throws Throwable {
-    	this(sslContext, sslContext.createSSLEngine(), session, useClientMode, sslEventHandler);
+    	this(sslContext, sslContext.createSSLEngine(), session, useClientMode, sslEventHandler, null);
     }
     
-    public SSLSession(SSLContext sslContext, SSLEngine sslEngine, Session session, boolean useClientMode, SSLEventHandler sslEventHandler) throws Throwable {
+    public SSLSession(SSLContext sslContext, SSLEngine sslEngine, Session session, boolean useClientMode, SSLEventHandler sslEventHandler, ALPN.Provider provider) throws Throwable {
     	this.session = session;
     	requestBuffer = ByteBuffer.allocate(requestBufferSize);
     	initialHSComplete = false;
     	this.sslEventHandler = sslEventHandler;
+    	
+    	if(provider != null) {
+//        	ALPN.debug = true;
+        	ALPN.put(sslEngine, provider);
+        }
     	
     	this.sslEngine = sslEngine;
         this.sslEngine.setUseClientMode(useClientMode);

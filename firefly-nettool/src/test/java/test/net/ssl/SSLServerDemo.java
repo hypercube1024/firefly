@@ -1,6 +1,11 @@
 package test.net.ssl;
 
+import java.util.List;
+
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
+import org.eclipse.jetty.alpn.ALPN;
 
 import com.firefly.net.Handler;
 import com.firefly.net.Server;
@@ -22,13 +27,29 @@ public class SSLServerDemo {
 			
 			@Override
 			public void sessionOpened(Session session) throws Throwable {
+				final SSLEngine sslEngine = sslContext.createSSLEngine();
 				SessionInfo info = new SessionInfo();
-				info.sslSession = new SSLSession(sslContext, session, false, new SSLEventHandler(){
+				info.sslSession = new SSLSession(sslContext, sslEngine, session, false, 
+				new SSLEventHandler(){
 
 					@Override
 					public void handshakeFinished(SSLSession session) {
 						
 						
+					}}, 
+				new ALPN.ServerProvider(){
+
+					@Override
+					public void unsupported() {
+						System.out.println("server unsupported!");
+						ALPN.remove(sslEngine);
+					}
+
+					@Override
+					public String select(List<String> protocols) {
+						System.out.println("client current protocols: " + protocols + "and select " + protocols.get(0));
+						ALPN.remove(sslEngine);
+						return protocols.get(0);
 					}});
 				session.attachObject(info);
 			}
