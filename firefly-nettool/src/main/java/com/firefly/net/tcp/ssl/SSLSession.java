@@ -19,8 +19,8 @@ public class SSLSession implements Closeable {
 	
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 	
-	protected Session session;
-	protected SSLEngine sslEngine;
+	protected final Session session;
+	protected final SSLEngine sslEngine;
 	
 	protected ByteBuffer inNetBuffer;
     protected ByteBuffer requestBuffer;
@@ -54,7 +54,7 @@ public class SSLSession implements Closeable {
     
     protected boolean initialHSComplete;
     
-    protected SSLEventHandler sslEventHandler;
+    protected final SSLEventHandler sslEventHandler;
     
     public SSLSession(SSLContext sslContext, Session session, boolean useClientMode, SSLEventHandler sslEventHandler) throws Throwable {
     	this(sslContext, sslContext.createSSLEngine(), session, useClientMode, sslEventHandler);
