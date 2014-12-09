@@ -36,7 +36,10 @@ public class SSLServerDemo {
 			@Override
 			public void sessionClosed(Session session) throws Throwable {
 				System.out.println("server session close: " + session.getSessionId());
-				
+				SessionInfo sessionAttachment = (SessionInfo)session.getAttachment();
+				if(sslContext != null && sessionAttachment.sslSession != null) {
+					sessionAttachment.sslSession.close();
+				}
 			}
 
 			@Override
@@ -48,7 +51,8 @@ public class SSLServerDemo {
 			@Override
 			public void exceptionCaught(Session session, Throwable t) throws Throwable {
 				t.printStackTrace();
-			}}, 1000 * 1000 * 60);	
+				session.close(true);
+			}}, 1000 * 5);	
 		server.start("localhost", 7676);
 	}
 

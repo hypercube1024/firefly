@@ -35,6 +35,10 @@ public class SSLClientDemo {
 			@Override
 			public void sessionClosed(Session session) throws Throwable {
 				System.out.println("client session close " + session.getSessionId());
+				SessionInfo sessionAttachment = (SessionInfo)session.getAttachment();
+				if(sslContext != null && sessionAttachment.sslSession != null) {
+					sessionAttachment.sslSession.close();
+				}
 			}
 
 			@Override
@@ -47,7 +51,8 @@ public class SSLClientDemo {
 			public void exceptionCaught(Session session, Throwable t)
 					throws Throwable {
 				t.printStackTrace();
-			}}, 1000 * 1000 * 60);
+				session.close(true);
+			}}, 1000 * 5);
 		
 		int sessionId = client.connect("127.0.0.1", 7676);
 		System.out.println("client session id: " + sessionId);
