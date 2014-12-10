@@ -25,6 +25,12 @@ title: Firefly Guide
 			* [Injecting a component based on XML](#injecting-a-component-based-on-xml)
 			* [Injecting a component based on annotation](#injecting-a-component-based-on-annotation)
 	* [HTTP server](#http-server)
+		* [Basic settings](#basic-settings)
+		* [HTTP settings](#http-settings)
+		* [Asynchronous I/O thread pool settings](#asynchronous-io-thread-pool-settings)
+		* [Request handler thread pool settings](#request-handler-thread-pool-settings)
+		* [SSL/TLS settings](#ssltls-settings)
+		* [HTTP session settings](#http-session-settings)
 	* [Template](#template)
 		* [Object navigation](#object-navigation)
 		* [If else and elseif](#If-else-and-elseif)
@@ -49,22 +55,22 @@ Running firefly is very easy, now you can download the dependency from Apache Ce
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-common</artifactId>
-  <version>3.0.3</version>
+  <version>3.0.4</version>
 </dependency>
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-template</artifactId>
-  <version>3.0.3</version>
+  <version>3.0.4</version>
 </dependency>
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-nettool</artifactId>
-  <version>3.0.3</version>
+  <version>3.0.4</version>
 </dependency>
 <dependency>
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly</artifactId>
-  <version>3.0.3</version>
+  <version>3.0.4</version>
 </dependency>
 {% endhighlight %}
 
@@ -556,7 +562,9 @@ public class App {
 }
 {% endhighlight %}
 
-The HTTP configuration details:
+These tables below introduce the configuration details.
+
+### Basic settings  
 
 <table class="table table-hover">
 <tr>
@@ -576,6 +584,27 @@ The HTTP configuration details:
 	<td>The custom error page, you can bind the HTTP error codes to your pages, for example: {404, "/error/e404.html"}.</td>
 </tr>
 <tr>
+	<td>serverHome</td>
+	<td>The root directory of HTTP server. The URI '/' will visit this directory.</td>
+</tr>
+<tr>
+	<td>host</td>
+	<td>The IP or domain name of this server.</td>
+</tr>
+<tr>
+	<td>port</td>
+	<td>The tcp port of this server.</td>
+</tr>
+</table>
+
+### HTTP settings  
+
+<table class="table table-hover">
+<tr>
+	<th>Arguments</th>
+	<th>Descriptions</th>
+</tr>
+<tr>
 	<td>maxRequestLineLength</td>
 	<td>The max length of the HTTP request line, the default is 8kb.</td>
 </tr>
@@ -592,34 +621,6 @@ The HTTP configuration details:
 	<td>The response buffer size, the default is 8kb.</td>
 </tr>
 <tr>
-	<td>maxConnections</td>
-	<td>The max TCP connection number, the default is 2000.</td>
-</tr>
-<tr>
-	<td>maxConnectionTimeout</td>
-	<td>The max TCP connection idle time, the default is 10s.</td>
-</tr>
-<tr>
-	<td>corePoolSize</td>
-	<td>The number of threads to keep in the pool, even if they are idle, the default is CPU number * 2.</td>
-</tr>
-<tr>
-	<td>maximumPoolSize</td>
-	<td>The maximum number of threads to allow in the pool, the default is 128.</td>
-</tr>
-<tr>
-	<td>poolQueueSize</td>
-	<td>The queue to use for holding tasks before they are executed.  This queue will hold only the Runnable tasks submitted by the  execute method. The default queue size is 0, that means the thread pool uses the LinkedTransferQueue. If the queue size greater than 0, it uses ArrayBlockingQueue</td>
-</tr>
-<tr>
-	<td>poolKeepAliveTime</td>
-	<td>When the number of threads is greater than the core, this is the maximum time that excess idle threads will wait for new tasks before terminating. The default is 30s.</td>
-</tr>
-<tr>
-	<td>poolWaitTimeout</td>
-	<td>The maximum time of waiting Runnable tasks in the queue, the default is 3s.</td>
-</tr>
-<tr>
 	<td>maxUploadLength</td>
 	<td>The maximum size of posting a file, the default is 50mb.</td>
 </tr>
@@ -632,6 +633,65 @@ The HTTP configuration details:
 	<td>Enable HTTP connections keep alive, the default is true.</td>
 </tr>
 <tr>
+	<td>maxConnections</td>
+	<td>The max TCP connection number, the default is 2000.</td>
+</tr>
+<tr>
+	<td>maxConnectionTimeout</td>
+	<td>The max TCP connection idle time, the default is 10s.</td>
+</tr>
+</table>
+
+### Asynchronous I/O thread pool settings
+
+<table class="table table-hover">
+<tr>
+	<th>Arguments</th>
+	<th>Descriptions</th>
+</tr>
+<tr>
+	<td>netProcessorType</td>
+	<td>The network processor type setting, you can choose "nio" or "aio" to handle user requests, the default value is "aio". If this parameter's value is "aio", the server will force to set parameter requestHandler is "currentThread".</td>
+</tr>
+<tr>
+	<td>asynchronousMaximumPoolSize</td>
+	<td>The maximum number of threads to allow in the pool, the default is 64.</td>
+</tr>
+<tr>
+	<td>asynchronousPoolKeepAliveTime</td>
+	<td>When the number of threads is greater than the core, this is the maximum time that excess idle threads will wait for new tasks before terminating. The default is 15s.</td>
+</tr>
+</table>
+
+### Request handler thread pool settings
+
+<table class="table table-hover">
+<tr>
+	<th>Arguments</th>
+	<th>Descriptions</th>
+</tr>
+<tr>
+	<td>corePoolSize</td>
+	<td>The number of threads to keep in the pool, even if they are idle, the default is CPU number * 2.</td>
+</tr>
+<tr>
+	<td>maximumPoolSize</td>
+	<td>The maximum number of threads to allow in the pool, the default is 64.</td>
+</tr>
+<tr>
+	<td>poolQueueSize</td>
+	<td>The queue to use for holding tasks before they are executed.  This queue will hold only the Runnable tasks submitted by the  execute method. The default queue size is 0, that means the thread pool uses the LinkedTransferQueue. If the queue size greater than 0, it uses ArrayBlockingQueue</td>
+</tr>
+<tr>
+	<td>poolKeepAliveTime</td>
+	<td>When the number of threads is greater than the core, this is the maximum time that excess idle threads will wait for new tasks before terminating. The default is 15s.</td>
+</tr>
+<tr>
+	<td>poolWaitTimeout</td>
+	<td>The maximum time of waiting Runnable tasks in the queue, the default is 3s.</td>
+</tr>
+
+<tr>
 	<td>requestHandler</td>
 	<td>Set a implementation of request handler, the default value is threadPool, if you set this parameter is currentThread, it will improve the throughput of the server, but the request will be executed serially.</td>
 </tr>
@@ -639,17 +699,14 @@ The HTTP configuration details:
 	<td>asynchronousContextTimeout</td>
 	<td>The maximum time of running a asynchronous task. The default is 6s.</td>
 </tr>
+</table>
+
+### SSL/TLS settings
+
+<table class="table table-hover">
 <tr>
-	<td>serverHome</td>
-	<td>The root directory of HTTP server. The URI '/' will visit this directory.</td>
-</tr>
-<tr>
-	<td>host</td>
-	<td>The IP or domain name of this server.</td>
-</tr>
-<tr>
-	<td>port</td>
-	<td>The tcp port of this server.</td>
+	<th>Arguments</th>
+	<th>Descriptions</th>
 </tr>
 <tr>
 	<td>secure</td>
@@ -666,6 +723,14 @@ The HTTP configuration details:
 <tr>
 	<td>keyPassword</td>
 	<td>The password for recovering keys in the keystore.</td>
+</tr>
+</table>
+
+### HTTP session settings
+<table class="table table-hover">
+<tr>
+	<th>Arguments</th>
+	<th>Descriptions</th>
 </tr>
 <tr>
 	<td>sessionIdName</td>
