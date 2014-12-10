@@ -15,9 +15,13 @@ import com.firefly.server.session.HttpSessionManager;
 import com.firefly.server.session.LocalHttpSessionManager;
 
 public class Config {
+	
+	// server basic settings
 	private String configFileName = "firefly.xml";
 	private String encoding = "UTF-8";
 	private Map<Integer, String> errorPage;
+	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
+	private int port;
 	
 	// HTTP settings
 	private int maxRequestLineLength = 8 * 1024,
@@ -37,16 +41,12 @@ public class Config {
 	private long poolKeepAliveTime = 15 * 1000,
 				 poolWaitTimeout = 3 * 1000;
 	private int asynchronousContextTimeout = 6 * 1000;
+	private String requestHandler = "currentThread"; // threadPool, currentThread
 	
 	// asynchronous I/O thread pool settings
-	private int asynchronousMaximumPoolSize = 64;
-	private int asynchronousPoolKeepAliveTime = 20 * 1000;
-
-	// server settings
-	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
-	private int port;
-	private String requestHandler = "currentThread"; // threadPool, currentThread
 	private String netProcessorType = "aio"; // nio, aio
+	private int asynchronousMaximumPoolSize = 64;
+	private int asynchronousPoolKeepAliveTime = 15 * 1000;
 	
 	// SSL/TLS settings
 	private boolean secure = false;

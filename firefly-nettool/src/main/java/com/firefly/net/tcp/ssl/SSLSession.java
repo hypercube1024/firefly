@@ -255,7 +255,6 @@ public class SSLSession implements Closeable {
 	public void close() throws IOException {
 		if (!closed) {
             sslEngine.closeOutbound();
-            sslEngine.closeInbound();
             closed = true;
         }
 	}
