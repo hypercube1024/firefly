@@ -69,6 +69,18 @@ public class AsynchronousClientDemo {
 		System.out.println("con3|" + c3.send("test c3").get());
 		c2.close(false);
 		c3.close(false);
+		
+		TcpConnection c4 = client.connect().get();
+		for(;;) {
+			c4.send("loop", new MessageReceivedCallback() {
+
+				@Override
+				public void messageRecieved(TcpConnection connection, Object obj) {
+					System.out.println("con4|" + obj.toString());
+				}
+			});
+			Thread.sleep(1000);
+		}
 	}
 
 }

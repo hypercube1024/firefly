@@ -141,6 +141,7 @@ public class AsynchronousTcpWorker implements Worker{
 						log.error("socket channel writes error", t);
 					}
 					try {
+						socketChannel.shutdownInput();
 						socketChannel.shutdownOutput();
 					} catch (IOException e) {
 						log.error("socket channel shutdown output error", t);

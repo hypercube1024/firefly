@@ -35,7 +35,7 @@ public class SSLClientDemo {
 					@Override
 					public void handshakeFinished(SSLSession sslSession) {
 						System.out.println("handshake finished!");
-//						session.encode("hello world SSL client!");
+						session.encode("hello world SSL client!");
 					}},
 				new ALPN.ClientProvider(){
 
@@ -72,7 +72,6 @@ public class SSLClientDemo {
 			@Override
 			public void messageRecieved(Session session, Object message) throws Throwable {
 				System.out.println("client receive message: " + message);
-				
 			}
 
 			@Override
