@@ -89,9 +89,6 @@ public class AsynchronousTcpWorker implements Worker{
 					log.error("socket channel reads error", t);
 				}
 				try {
-					session.socketChannel.shutdownInput();
-				} catch (IOException e) {
-					log.error("socket channel shutdown input error", t);
 					session.close(true);
 				} finally {
 					pool.release(buf);
@@ -144,7 +141,7 @@ public class AsynchronousTcpWorker implements Worker{
 						log.error("socket channel writes error", t);
 					}
 					try {
-						session.socketChannel.shutdownOutput();
+						socketChannel.shutdownOutput();
 					} catch (IOException e) {
 						log.error("socket channel shutdown output error", t);
 						session.close(true);

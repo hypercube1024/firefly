@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
@@ -65,7 +67,27 @@ public class DumpHandler implements Handler {
 		t.printStackTrace();
 	}
 	
-	public static void main(String[] args) throws Throwable {
+	public static void main(String[] args) throws Throwable{
+		Certificate[] certificates = getCertificates("fireflySSLkeys.jks", "fireflySSLkeys");
+		for(Certificate certificate : certificates) {
+			System.out.println(certificate);
+		}
+		certificates = getCertificates("fireflykeys", "fireflysource");
+		for(Certificate certificate : certificates) {
+			System.out.println(certificate);
+		}
+	}
+	
+	public static Certificate[] getCertificates(String jks, String alias) throws Throwable{
+		try(FileInputStream in = new FileInputStream(new File("/Users/qiupengtao", jks))) {
+			KeyStore keyStore = KeyStore.getInstance("JKS");
+			keyStore.load(in, "ptmima1234".toCharArray());
+			Certificate[] certificates = keyStore.getCertificateChain(alias);
+			return certificates;
+		}
+	}
+	
+	public static void main2(String[] args) throws Throwable {
 		FileInputStream in = null;
 		ByteArrayOutputStream out = null;
 		try {

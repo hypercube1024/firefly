@@ -76,6 +76,7 @@ public class ServerBootstrap {
 		log.info("firefly server tempdir [{}]", config.getTempdir());
 		log.info("keep alive [{}]", config.isKeepAlive());
 		log.info("net processor type [{}]", config.getNetProcessorType());
+		log.info("max connection timeout [{}]", config.getMaxConnectionTimeout());
 		if(config.isSecure()) {
 			log.info("enable SSL");
 			Server server = null;

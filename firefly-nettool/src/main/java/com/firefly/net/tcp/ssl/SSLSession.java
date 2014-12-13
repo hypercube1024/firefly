@@ -134,7 +134,7 @@ public class SSLSession implements Closeable {
             while(true) {
 	            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
 	            initialHSStatus = result.getHandshakeStatus();
-	            
+	            log.debug("do hs receive initial status -> {} | {} | {}", initialHSStatus, result.getStatus(), initialHSComplete);
 	            switch (result.getStatus()) {
 	            case OK:
 	                switch (initialHSStatus) {
@@ -254,7 +254,8 @@ public class SSLSession implements Closeable {
 	@Override
 	public void close() throws IOException {
 		if (!closed) {
-            sslEngine.closeOutbound();
+//			log.debug("close SSL engine, {}|{}", sslEngine.isInboundDone(), sslEngine.isOutboundDone());
+			sslEngine.closeOutbound();
             closed = true;
         }
 	}
@@ -272,6 +273,8 @@ public class SSLSession implements Closeable {
     	
     	if (!initialHSComplete)
             throw new IllegalStateException("The initial handshake is not complete.");
+    	
+    	log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
     		
     	merge(receiveBuffer);
     	if(!inNetBuffer.hasRemaining())
