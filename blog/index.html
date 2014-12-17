@@ -1,0 +1,30 @@
+---
+layout: post
+title: Blog
+---
+
+{% for post in paginator.posts %}
+    <div>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.excerpt }}</p>
+      <div><a href="{{ post.url }}">View all</a></div>
+    </div>
+{% endfor %}
+
+
+<!-- Pagination links -->
+{% if paginator.total_pages > 1 %}
+<ul class="pager">
+  {% if paginator.previous_page %}
+    <li class="previous"><a href="{{ paginator.previous_page_path }}">Previous</a></li>
+  {% else %}
+    <li class="previous disabled" ><a href="#">Previous</a></li>
+  {% endif %}
+
+  {% if paginator.next_page %}
+    <li class="next"><a href="{{ paginator.next_page_path }}">Next</a></li>
+  {% else %}
+    <li class="next disabled" ><a href="#">Next</a></li>
+  {% endif %}
+</ul>
+{% endif %}

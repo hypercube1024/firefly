@@ -2,6 +2,8 @@ source:      .
 destination: ./_site
 plugins:     ./_plugins
 layouts:     ./_layouts
+paginate:	15
+paginate_path: "blog/page:num/"
 
 collections:
   docs:
