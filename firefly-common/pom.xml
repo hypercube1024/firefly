@@ -17,7 +17,7 @@
 	</parent>
 	
 	<build>
-		<finalName>$firefly-common</finalName>
+		<finalName>firefly-common</finalName>
 		<defaultGoal>install</defaultGoal>
 		<resources>
 			<resource>
