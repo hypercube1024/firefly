@@ -63,11 +63,11 @@
 		    <artifactId>alpn-api</artifactId>
 		    <version>1.1.0.v20141014</version>
 		</dependency>
-		<dependency>
-		    <groupId>org.mortbay.jetty.alpn</groupId>
-		    <artifactId>alpn-boot</artifactId>
-		    <version>8.1.2.v20141202</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 		    <groupId>org.mortbay.jetty.alpn</groupId> -->
+<!-- 		    <artifactId>alpn-boot</artifactId> -->
+<!-- 		    <version>8.1.2.v20141202</version> -->
+<!-- 		</dependency> -->
 	</dependencies>
 
 </project>
