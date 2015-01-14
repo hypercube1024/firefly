@@ -60,7 +60,7 @@ public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
 		cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
 		cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
 		
-		FieldProxy ret = (FieldProxy) cc.toClass().getConstructor(Field.class).newInstance(field);
+		FieldProxy ret = (FieldProxy) cc.toClass(FieldProxy.class.getClassLoader(), null).getConstructor(Field.class).newInstance(field);
 //		long end = System.currentTimeMillis();
 //		System.out.println("Javassist generates class proxy time -> " + (end - start));
 		return ret;
