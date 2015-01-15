@@ -18,6 +18,10 @@ public abstract class ReflectUtils {
 	private static final Map<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
 	private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
 	private static final Map<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<Class<?>, Map<String, Field>>();
+	
+	public static ProxyFactory defaultArrayProxy = ArrayProxyFactoryUsingJavassist.INSTANCE;
+	public static ProxyFactory defaultFieldProxy = FieldProxyFactoryUsingJavassist.INSTANCE;
+	public static ProxyFactory defaultMethodProxy = MethodProxyFactoryUsingJavassist.INSTANCE;
 
 
 	public static interface BeanMethodFilter {
@@ -120,15 +124,15 @@ public abstract class ReflectUtils {
 	}
 	
 	public static ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {
-		return ArrayProxyFactoryUsingJavassist.INSTANCE.getArrayProxy(clazz);
+		return defaultArrayProxy.getArrayProxy(clazz);
 	}
 	
 	public static FieldProxy getFieldProxy(Field field) throws Throwable {
-		return FieldProxyFactoryUsingJavassist.INSTANCE.getFieldProxy(field);
+		return defaultFieldProxy.getFieldProxy(field);
 	}
 	
 	public static MethodProxy getMethodProxy(Method method) throws Throwable {
-		return MethodProxyFactoryUsingJavassist.INSTANCE.getMethodProxy(method);
+		return defaultMethodProxy.getMethodProxy(method);
 	}
 	
 	/**
