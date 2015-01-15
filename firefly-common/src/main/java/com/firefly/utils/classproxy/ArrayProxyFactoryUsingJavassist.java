@@ -54,7 +54,7 @@ public class ArrayProxyFactoryUsingJavassist extends AbstractArrayProxyFactory {
 		cc.addMethod(CtMethod.make(createArrayGetCode(clazz), cc));
 		cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
 		
-		ArrayProxy ret = (ArrayProxy) cc.toClass(ArrayProxy.class.getClassLoader(), null).getConstructor().newInstance();
+		ArrayProxy ret = (ArrayProxy) cc.toClass(classLoader, null).getConstructor().newInstance();
 //		long end = System.currentTimeMillis();
 //		System.out.println("Javassist generates class proxy time -> " + (end - start));
 		return ret;

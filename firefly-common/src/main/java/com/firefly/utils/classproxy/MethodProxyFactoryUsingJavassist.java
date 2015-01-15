@@ -61,7 +61,7 @@ public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory
 		cc.addMethod(CtMethod.make("public Method method(){return method;}", cc));
 		cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
 		
-		MethodProxy ret = (MethodProxy) cc.toClass(MethodProxy.class.getClassLoader(), null).getConstructor(Method.class).newInstance(method);
+		MethodProxy ret = (MethodProxy) cc.toClass(classLoader, null).getConstructor(Method.class).newInstance(method);
 //		long end = System.currentTimeMillis();
 //		System.out.println("Javassist generates class proxy time -> " + (end - start));
 		return ret;

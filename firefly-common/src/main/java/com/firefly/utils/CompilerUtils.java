@@ -27,7 +27,7 @@ import javax.tools.ToolProvider;
 
 public class CompilerUtils {
 	private static final Map<String, JavaFileObject> output = new ConcurrentHashMap<String, JavaFileObject>();
-	private static final ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
+	public static ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
 	private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<String, Class<?>>();
 	
 	public static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -134,7 +134,7 @@ public class CompilerUtils {
 		}
 	}
 
-	private static class CompilerClassLoader extends ClassLoader {
+	public static class CompilerClassLoader extends ClassLoader {
 
 		public CompilerClassLoader(ClassLoader classLoader) {
 			super(classLoader);

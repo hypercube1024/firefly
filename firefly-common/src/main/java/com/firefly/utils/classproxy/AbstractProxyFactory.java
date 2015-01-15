@@ -6,6 +6,7 @@ import com.firefly.utils.collection.IdentityHashMap;
 public abstract class AbstractProxyFactory implements ProxyFactory {
 	
 	protected static final IdentityHashMap<Class<?>, String> primitiveWrapMap = new IdentityHashMap<Class<?>, String>();
+	public static ClassLoader classLoader;
 	
 	static {
 		primitiveWrapMap.put(short.class, Short.class.getCanonicalName());
@@ -16,5 +17,7 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
 		primitiveWrapMap.put(double.class, Double.class.getCanonicalName());
 		primitiveWrapMap.put(long.class, Long.class.getCanonicalName());
 		primitiveWrapMap.put(boolean.class, Boolean.class.getCanonicalName());
+		
+		classLoader = AbstractProxyFactory.class.getClassLoader();
 	}
 }
