@@ -50,13 +50,13 @@ public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
 		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField" + UUID.randomUUID().toString().replace("-", ""));
 		cc.addInterface(classPool.get(FieldProxy.class.getName()));
-		cc.addField(CtField.make("private Field field;", cc));
+		cc.addField(CtField.make("private java.lang.reflect.Field field;", cc));
 		
 		CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Field.class.getName())}, cc);
-		constructor.setBody("{this.field = (Field)$1;}");
+		constructor.setBody("{this.field = (java.lang.reflect.Field)$1;}");
 		cc.addConstructor(constructor);
 		
-		cc.addMethod(CtMethod.make("public Field field(){return field;}", cc));
+		cc.addMethod(CtMethod.make("public java.lang.reflect.Field field(){return field;}", cc));
 		cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
 		cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
 		

@@ -52,13 +52,13 @@ public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod" + UUID.randomUUID().toString().replace("-", ""));
 		
 		cc.addInterface(classPool.get(MethodProxy.class.getName()));
-		cc.addField(CtField.make("private Method method;", cc));
+		cc.addField(CtField.make("private java.lang.reflect.Method method;", cc));
 		
 		CtConstructor constructor = new CtConstructor(new CtClass[]{classPool.get(Method.class.getName())}, cc);
-		constructor.setBody("{this.method = (Method)$1;}");
+		constructor.setBody("{this.method = (java.lang.reflect.Method)$1;}");
 		cc.addConstructor(constructor);
 		
-		cc.addMethod(CtMethod.make("public Method method(){return method;}", cc));
+		cc.addMethod(CtMethod.make("public java.lang.reflect.Method method(){return method;}", cc));
 		cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
 		
 		MethodProxy ret = (MethodProxy) cc.toClass(classLoader, null).getConstructor(Method.class).newInstance(method);
