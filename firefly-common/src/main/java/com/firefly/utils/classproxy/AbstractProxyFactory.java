@@ -18,6 +18,6 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
 		primitiveWrapMap.put(long.class, Long.class.getCanonicalName());
 		primitiveWrapMap.put(boolean.class, Boolean.class.getCanonicalName());
 		
-		classLoader = AbstractProxyFactory.class.getClassLoader();
+		classLoader = new BytecodeClassLoader();
 	}
 }
