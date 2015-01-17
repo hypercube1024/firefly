@@ -2,12 +2,15 @@ package test.utils.classproxy;
 
 import static org.hamcrest.Matchers.is;
 
+import java.lang.reflect.Method;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.utils.ReflectUtils.MethodProxy;
 import com.firefly.utils.classproxy.ClassProxy;
 import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.MethodFilter;
 
 public class TestClassProxyFactoryUsingJavassist {
 
@@ -75,6 +78,35 @@ public class TestClassProxyFactoryUsingJavassist {
 		System.out.println(fee2.getClass().getCanonicalName());
 		Assert.assertThat(fee2.hello(), is("hello fee intercept 1 intercept 2"));
 		Assert.assertThat(fee.testInt(25), is(1));
+	}
+	
+	@Test
+	public void testFilter() throws Throwable {
+		Fee origin = new Fee();
+		
+		Fee fee = (Fee)ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(origin, new ClassProxy(){
+
+			@Override
+			public Object intercept(MethodProxy handler, Object originalInstance, Object[] args) {
+				System.out.println("filter method 1: " + handler.method().getName() + "|" + originalInstance.getClass().getCanonicalName());
+				if(handler.method().getName().equals("testInt")) {
+					args[0] = 1;
+				}
+				Object ret = handler.invoke(originalInstance, args);
+				System.out.println("filter method 1 end...");
+				if(handler.method().getName().equals("hello"))  {
+					ret = ret + " filter 1";
+				}
+				return ret;
+			}}, new MethodFilter(){
+
+				@Override
+				public boolean accept(Method method) {
+					return !method.getName().equals("testInt");
+				}});
+		System.out.println(fee.getClass().getCanonicalName());
+		Assert.assertThat(fee.hello(), is("hello fee filter 1"));
+		Assert.assertThat(fee.testInt(25), is(25));
 	}
 	
 	public static void main(String[] args) throws Throwable {
