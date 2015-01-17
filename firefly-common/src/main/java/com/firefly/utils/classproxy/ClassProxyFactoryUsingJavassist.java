@@ -76,7 +76,7 @@ public class ClassProxyFactoryUsingJavassist implements ClassProxyFactory {
 		for (int i = 0; i < methods.length; i++) {
 			Method m = methods[i];
 			methodProxies[i] = MethodProxyFactoryUsingJavassist.INSTANCE.getMethodProxy(m);
-			String parameterArray = "java.lang.Object[] args = new java.lang.Object[]{";
+			String parameterArray = "Object[] args = new Object[]{";
 			String str = "public " + m.getReturnType().getCanonicalName() + " " + m.getName() + "(";
 			Class[] parameters = m.getParameterTypes();
 			for (int j = 0; j < parameters.length; j++) {
@@ -86,16 +86,16 @@ public class ClassProxyFactoryUsingJavassist implements ClassProxyFactory {
 				}
 				str += parameters[j].getCanonicalName() + " arg" + j;
 				if(parameters[j].isPrimitive()) {
-					parameterArray += StringUtils.replace("(java.lang.Object){}.valueOf(", AbstractProxyFactory.primitiveWrapMap.get(parameters[j]))
+					parameterArray += StringUtils.replace("(Object){}.valueOf(", AbstractProxyFactory.primitiveWrapMap.get(parameters[j]))
 									+ "arg" + j + ")";
 				} else {
-					parameterArray += "(java.lang.Object)arg" + j;
+					parameterArray += "(Object)arg" + j;
 				}
 			}
 			str += "){\n";
 			parameterArray += "};\n";
 			if(parameters.length == 0) {
-				parameterArray = Object[].class.getCanonicalName() + " args = new java.lang.Object[0];\n";
+				parameterArray = Object[].class.getCanonicalName() + " args = new Object[0];\n";
 			}
 			
 			str += "\t" + parameterArray;
