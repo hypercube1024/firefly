@@ -20,9 +20,7 @@ public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
 	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
 	public static final FieldProxyFactoryUsingJavassist INSTANCE = new FieldProxyFactoryUsingJavassist();
 
-	private FieldProxyFactoryUsingJavassist() {
-		
-	}
+	private FieldProxyFactoryUsingJavassist() {}
 	
 	@Override
 	public FieldProxy getFieldProxy(Field field) throws Throwable {
@@ -46,7 +44,7 @@ public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
 //		long start = System.currentTimeMillis();
 		ClassPool classPool = ClassPool.getDefault();
 		classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
-		classPool.importPackage(Field.class.getCanonicalName());
+//		classPool.importPackage(Field.class.getCanonicalName());
 		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField" + UUID.randomUUID().toString().replace("-", ""));
 		cc.addInterface(classPool.get(FieldProxy.class.getName()));

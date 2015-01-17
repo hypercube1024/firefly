@@ -17,9 +17,7 @@ public class ArrayProxyFactoryUsingJavassist extends AbstractArrayProxyFactory {
 	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
 	public static final ArrayProxyFactoryUsingJavassist INSTANCE = new ArrayProxyFactoryUsingJavassist();
 	
-	private ArrayProxyFactoryUsingJavassist() {
-		
-	}
+	private ArrayProxyFactoryUsingJavassist() {}
 	
 	@Override
 	public ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {

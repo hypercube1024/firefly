@@ -7,7 +7,7 @@ public class BytecodeClassLoader extends ClassLoader {
     }
     
     public BytecodeClassLoader(ClassLoader parent){
-        super (parent);
+        super(parent);
     }
 
     static ClassLoader getParentClassLoader() {

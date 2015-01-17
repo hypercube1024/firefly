@@ -21,9 +21,7 @@ public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory
 	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
 	public static final MethodProxyFactoryUsingJavassist INSTANCE = new MethodProxyFactoryUsingJavassist();
 
-	private MethodProxyFactoryUsingJavassist() {
-		
-	}
+	private MethodProxyFactoryUsingJavassist() {}
 	
 	@Override
 	public MethodProxy getMethodProxy(Method method) throws Throwable {
@@ -47,7 +45,7 @@ public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory
 //		long start = System.currentTimeMillis();
 		ClassPool classPool = ClassPool.getDefault();
 		classPool.insertClassPath(new ClassClassPath(MethodProxy.class));
-		classPool.importPackage(Method.class.getCanonicalName());
+//		classPool.importPackage(Method.class.getCanonicalName());
 		
 		CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod" + UUID.randomUUID().toString().replace("-", ""));
 		
