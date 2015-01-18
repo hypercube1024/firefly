@@ -51,4 +51,10 @@ public class Image {
     public void setSize(Size Size) {
         this.size = Size;
     }
+
+	@Override
+	public String toString() {
+		return "Image [uri=" + uri + ", title=" + title + ", width=" + width
+				+ ", height=" + height + ", size=" + size + "]";
+	}
 }
