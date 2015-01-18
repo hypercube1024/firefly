@@ -9,8 +9,8 @@ import com.firefly.utils.json.JsonObject;
 
 public class JsonBenchmark {
 	public static MediaContent createRecord() {
-//    	String url = "http://javaone.com/keynote.mpg";
-    	String url = "testURL";
+    	String url = "http://javaone.com/keynote.mpg";
+//    	String url = "testURL";
     	
         MediaContent record = new MediaContent();
         Media media = new Media();
