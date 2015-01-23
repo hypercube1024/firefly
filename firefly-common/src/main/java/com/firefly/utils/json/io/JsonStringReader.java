@@ -181,7 +181,7 @@ public class JsonStringReader extends JsonReader {
 		if(isString) {
 			ch = readAndSkipBlank();
 			if(ch != '"')
-				throw new JsonException("read boolean error");
+				throw new JsonException("read boolean error, the position is " + pos);
 		}
 		
 		return ret;
@@ -204,7 +204,7 @@ public class JsonStringReader extends JsonReader {
 			if(VerifyUtils.isDigit(ch))
 				value = (value << 3) + (value << 1) + (ch - '0');
 			else
-				throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+				throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
 		}
 		
 		for(;;) {
@@ -220,7 +220,7 @@ public class JsonStringReader extends JsonReader {
 						pos--;
 						break;
 					} else
-						throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+						throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
 				}
 			}
 			
@@ -247,7 +247,7 @@ public class JsonStringReader extends JsonReader {
 			if(VerifyUtils.isDigit(ch))
 				value = (value << 3) + (value << 1) + (ch - '0');
 			else
-				throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+				throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
 		}
 		
 		for(;;) {
@@ -263,7 +263,7 @@ public class JsonStringReader extends JsonReader {
 						pos--;
 						break;
 					} else
-						throw new JsonException("read int error, charactor \"" + ch + "\" is not integer");
+						throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
 				}
 			}
 			
@@ -437,7 +437,7 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public char[] readField(char[] chs) {
 		if(!isString())
-			throw new JsonException("read field error");
+			throw new JsonException("read field error, the position is " + pos);
 			
 		int cur = pos;
 		int len = chs.length;
@@ -476,7 +476,7 @@ public class JsonStringReader extends JsonReader {
 	@Override
 	public char[] readChars() {
 		if(!isString())
-			throw new JsonException("read field error");
+			throw new JsonException("read field error, the position is " + pos);
 		
 		int start = pos;
 		for(;;) {
@@ -514,7 +514,7 @@ public class JsonStringReader extends JsonReader {
 					break;
 				
 				if(ch != ',')
-					throw new JsonException("json string array format error");
+					throw new JsonException("json string array format error, the position is " + pos);
 			}
 			break;
 		case '{': // 跳过对象
@@ -524,7 +524,7 @@ public class JsonStringReader extends JsonReader {
 				
 				readChars();
 				if(!isColon())
-					throw new JsonException("json string object format error");
+					throw new JsonException("json string object format error, the position is " + pos);
 				
 				skipValue();
 				ch = readAndSkipBlank();
@@ -532,7 +532,7 @@ public class JsonStringReader extends JsonReader {
 					break;
 				
 				if(ch != ',')
-					throw new JsonException("json string object format error");
+					throw new JsonException("json string object format error, the position is " + pos);
 			}
 			break;
 
@@ -554,7 +554,7 @@ public class JsonStringReader extends JsonReader {
 			return null;
 		
 		if(!isString())
-			throw new JsonException("read string error");
+			throw new JsonException("read string error, the position is " + pos);
 		
 		JsonStringWriter writer = new JsonStringWriter();
 		String ret = null;

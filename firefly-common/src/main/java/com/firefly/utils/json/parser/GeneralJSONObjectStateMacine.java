@@ -23,7 +23,7 @@ abstract public class GeneralJSONObjectStateMacine {
 		while(true) {
 			char[] field = reader.readChars();
 			if(!reader.isColon()) {
-				throw new JsonException("The error occur, near by the key \"" + String.valueOf(field) + "\"");
+				throw new JsonException("The error occur, near by the key \"" + String.valueOf(field) + "\", the position is " + reader.position());
 			}
 			
 			char ch = reader.readAndSkipBlank();
