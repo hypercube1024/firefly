@@ -11,6 +11,10 @@ abstract public class JsonReader extends Reader{
         return true;
     }
 	
+	abstract public void increasePosition();
+	
+	abstract public void decreasePosition();
+	
 	abstract public int position();
 	
 	abstract public boolean isEnd();

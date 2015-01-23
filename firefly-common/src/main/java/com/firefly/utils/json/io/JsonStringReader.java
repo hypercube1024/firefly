@@ -20,6 +20,16 @@ public class JsonStringReader extends JsonReader {
 	}
 	
 	@Override
+	public void increasePosition() {
+		pos++;
+	}
+	
+	@Override
+	public void decreasePosition() {
+		pos--;
+	}
+	
+	@Override
 	public int position() {
 		return pos;
 	}

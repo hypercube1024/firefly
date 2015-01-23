@@ -403,15 +403,17 @@ public class TestParser {
 		Assert.assertThat(array.getJsonObject(2).getJsonArray("keyObject").getString(0), is("object0"));
 		Assert.assertThat(array.getJsonObject(2).getJsonArray("keyObject").getString(1), is("object1"));
 		
-		json = "{\"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" : {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
+		json = "{\"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" :  {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
 		JsonObject jsonObject = Json.toJsonObject(json);
 		Assert.assertThat(jsonObject.getJsonArray("arrayKey").getString(1), is("array"));
+		Assert.assertThat(jsonObject.getJsonObject("key2").getString("key4"), is("world"));
 	}
 	
 	public static void main(String[] args) {
-		String json = "{\"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" : {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
+		String json = "{  \"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" :  {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
 		JsonObject jsonObject = Json.toJsonObject(json);
 		System.out.println(jsonObject.getJsonArray("arrayKey"));
+		System.out.println(jsonObject.getJsonObject("key2").getString("key4"));
 	}
 	
 	public static void main2(String[] args) {

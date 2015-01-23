@@ -26,9 +26,9 @@ abstract public class GeneralJSONObjectStateMacine {
 				throw new JsonException("The error occur, near by the key \"" + String.valueOf(field) + "\"");
 			}
 			
-			reader.mark(1024);
 			char ch = reader.readAndSkipBlank();
-			reader.reset();
+			reader.decreasePosition();
+			
 			switch (ch) {
 			case '{':
 				map.put(String.valueOf(field), toJsonObject(reader));
@@ -68,9 +68,9 @@ abstract public class GeneralJSONObjectStateMacine {
 		
 		arrayElementLoop:
 		while(true) {
-			reader.mark(1024);
 			char ch = reader.readAndSkipBlank();
-			reader.reset();
+			reader.decreasePosition();
+			
 			switch (ch) {
 			case '{':
 				array.add(toJsonObject(reader));
