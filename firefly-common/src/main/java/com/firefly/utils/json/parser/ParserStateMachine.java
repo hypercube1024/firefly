@@ -15,7 +15,7 @@ import com.firefly.utils.json.exception.JsonException;
 public class ParserStateMachine {
 	
 	private static final IdentityHashMap<Class<?>, Parser> PARSER_MAP = new IdentityHashMap<Class<?>, Parser>();
-	private static final Object LOCK = new Object();
+//	private static final Object LOCK = new Object();
 	
 	static {
 		PARSER_MAP.put(int.class, new IntParser());
@@ -59,28 +59,23 @@ public class ParserStateMachine {
 		PARSER_MAP.put(String[].class, new ArrayParser(String.class));
 	}
 	
-	public static Parser getParser(Class<?> clazz) {
+	public static synchronized Parser getParser(Class<?> clazz) {
 		Parser ret = PARSER_MAP.get(clazz);
 		if(ret == null) {
-			synchronized(LOCK) {
-				ret = PARSER_MAP.get(clazz);
-				if(ret == null) {
-					if (clazz.isEnum()) {
-						ret = new EnumParser(clazz);
-						PARSER_MAP.put(clazz, ret);
-					} else if (Collection.class.isAssignableFrom(clazz) 
-							|| Map.class.isAssignableFrom(clazz)) {
-						throw new JsonException("not support type " + clazz);
-					} else if (clazz.isArray()) {
-						Class<?> elementClass = clazz.getComponentType();
-						ret = new ArrayParser(elementClass);
-						PARSER_MAP.put(clazz, ret);
-					} else {
-						ret = new ObjectParser();
-						PARSER_MAP.put(clazz, ret);
-						((ObjectParser)ret).init(clazz);
-					}
-				}
+			if (clazz.isEnum()) {
+				ret = new EnumParser(clazz);
+				PARSER_MAP.put(clazz, ret);
+			} else if (Collection.class.isAssignableFrom(clazz) 
+					|| Map.class.isAssignableFrom(clazz)) {
+				throw new JsonException("not support type " + clazz);
+			} else if (clazz.isArray()) {
+				Class<?> elementClass = clazz.getComponentType();
+				ret = new ArrayParser(elementClass);
+				PARSER_MAP.put(clazz, ret);
+			} else {
+				ret = new ObjectParser();
+				PARSER_MAP.put(clazz, ret);
+				((ObjectParser)ret).init(clazz);
 			}
 		}
 		return ret;

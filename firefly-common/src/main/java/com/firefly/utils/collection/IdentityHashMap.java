@@ -23,7 +23,7 @@ public class IdentityHashMap<K, V> {
 
 		for (Entry<K, V> entry = buckets[bucket]; entry != null; entry = entry.next) {
 			if (key == entry.key) {
-				return (V) entry.value;
+				return entry.value;
 			}
 		}
 
@@ -41,8 +41,7 @@ public class IdentityHashMap<K, V> {
 		}
 
 		Entry<K, V> entry = new Entry<K, V>(key, value, hash, buckets[bucket]);
-		buckets[bucket] = entry; // 并发是处理时会可能导致缓存丢失，但不影响正确性
-
+		buckets[bucket] = entry; // If multi-thread visits this method, perhaps the entry will be replaced by other entries.
 		return false;
 	}
 
@@ -57,7 +56,6 @@ public class IdentityHashMap<K, V> {
 	}
 
 	protected static final class Entry<K, V> {
-
 		public final int hashCode;
 		public final K key;
 		public final V value;
