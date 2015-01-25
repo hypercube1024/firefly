@@ -744,7 +744,7 @@ These tables below introduce the configuration details.
 
 ## Template
 Firefly template is used to rendering HTML pages. You can write it in the HTML comments. It is compatible for any HTML editor.
-When the Firefly server starts up, the template will be compiled to java byte code, so it has higner performance than the other template languages which interpreted execution.
+When the Firefly server starts up, the template will be compiled to java byte code, so it has higher performance than the other template languages which interpreted execution.
 
 ### Object navigation
 
