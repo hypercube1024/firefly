@@ -25,26 +25,34 @@ public class EncodeCompiler {
 			method.setAccessible(true);
 			String methodName = method.getName();
 			
+			if (method.getDeclaringClass().equals(Object.class)) continue;
 			if (method.getName().length() < 3) continue;
             if (Modifier.isStatic(method.getModifiers())) continue;
             if (Modifier.isAbstract(method.getModifiers())) continue;
-            if (method.getName().equals("getClass")) continue;
-            if (!method.getName().startsWith("is") && !method.getName().startsWith("get")) continue;
+            if (!method.getName().startsWith("get") && !method.getName().startsWith("is")) continue;
             if (method.getParameterTypes().length != 0) continue;
             if (method.getReturnType() == void.class) continue;
             if (method.isAnnotationPresent(Transient.class)) continue;
 
             String propertyName = null;
-			if (methodName.charAt(0) == 'g') {
-				if (methodName.length() < 4 || !Character.isUpperCase(methodName.charAt(3)))
+			if (methodName.charAt(0) == 'g') { // start with 'get'
+				if (methodName.length() < 4)
 					continue;
 
-				propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-			} else {
-				if (methodName.length() < 3 || !Character.isUpperCase(methodName.charAt(2)))
+				if(Character.isUpperCase(methodName.charAt(3))) {
+					propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+				} else {
+					propertyName = methodName.substring(3);
+				}
+			} else { // start with 'is'
+				if (methodName.length() < 3)
 					continue;
 
-				propertyName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
+				if(Character.isUpperCase(methodName.charAt(2))) {
+					propertyName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
+				} else {
+					propertyName = methodName.substring(2);
+				}
 			}
 			
 			Field field = null;

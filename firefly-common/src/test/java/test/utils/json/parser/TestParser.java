@@ -26,6 +26,7 @@ import test.utils.json.MapObj;
 import test.utils.json.Profile;
 import test.utils.json.SimpleObj;
 import test.utils.json.SimpleObj2;
+import test.utils.json.SpecialPropertyObject;
 import test.utils.json.User;
 import test.utils.json.github.MediaContent;
 import test.utils.json.github.Player;
@@ -473,6 +474,28 @@ public class TestParser {
 		Assert.assertThat(cal2.get(Calendar.SECOND), is(0));
 	}
 	
+	@Test
+	public void testSpecialPropertyObject() {
+		SpecialPropertyObject s = new SpecialPropertyObject();
+		System.out.println(s);
+		s.init();
+		String json = Json.toJson(s);
+		System.out.println(json);
+		
+		SpecialPropertyObject s2 = Json.toObject(json, SpecialPropertyObject.class);
+		System.out.println(s2);
+		
+		Assert.assertThat(s2.getiOS(), is(s.getiOS()));
+		Assert.assertThat(s2.getiPad(), is(s.getiPad()));
+		Assert.assertThat(s2.getiPhone(), is(s.getiPhone()));
+		Assert.assertThat(s2.isiText(), is(s.isiText()));
+		
+		Assert.assertThat(s2.aOS, is(s.aOS));
+		Assert.assertThat(s2.aPad, is(s.aPad));
+		Assert.assertThat(s2.aPhone, is(s.aPhone));
+		Assert.assertThat(s2.aText, is(s.aText));
+	}
+	
 	public static void main3(String[] args) {
 		String json = "{  \"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" :  {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
 		JsonObject jsonObject = Json.toJsonObject(json);
@@ -487,7 +510,7 @@ public class TestParser {
 		System.out.println(date.getClass() == new Date().getClass());
 	}
 	
-	public static void main(String[] args) {
+	public static void main5(String[] args) {
 		Calendar cal = Calendar.getInstance();
 		cal.set(2015, Calendar.JANUARY, 25, 14, 53, 12);
 		System.out.println(cal.get(Calendar.HOUR_OF_DAY));
@@ -500,6 +523,17 @@ public class TestParser {
 		
 		DateFormatObject obj2 = Json.toObject(json, DateFormatObject.class);
 		System.out.println(obj2);
+	}
+	
+	public static void main(String[] args) {
+		SpecialPropertyObject s = new SpecialPropertyObject();
+		System.out.println(s);
+		s.init();
+		String json = Json.toJson(s);
+		System.out.println(json);
+		
+		SpecialPropertyObject s2 = Json.toObject(json, SpecialPropertyObject.class);
+		System.out.println(s2);
 	}
 	
 	public static void main2(String[] args) {

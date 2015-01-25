@@ -31,17 +31,17 @@ public class DecodeCompiler {
 			method.setAccessible(true);
 			String methodName = method.getName();
 			
+			if (method.getDeclaringClass().equals(Object.class)) continue;
 			if (method.getName().length() < 4) continue;
             if (!method.getName().startsWith("set")) continue;
             if (method.getParameterTypes().length != 1) continue;
             if (Modifier.isStatic(method.getModifiers())) continue;
             if (Modifier.isAbstract(method.getModifiers())) continue;
             if (method.isAnnotationPresent(Transient.class)) continue;
-            
-            if (methodName.length() < 4 || !Character.isUpperCase(methodName.charAt(3)))
-				continue;
+            if (methodName.length() < 4) continue;
             
             String propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+//            System.out.println(propertyName);
             Field field = null;
 			try {
 				field = clazz.getDeclaredField(propertyName);
