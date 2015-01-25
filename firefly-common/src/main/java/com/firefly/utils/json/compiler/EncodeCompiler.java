@@ -6,6 +6,7 @@ import java.lang.reflect.Modifier;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.firefly.utils.json.annotation.DateFormat;
 import com.firefly.utils.json.annotation.Transient;
 import com.firefly.utils.json.serializer.SerialStateMachine;
 import com.firefly.utils.json.support.FieldInvoke;
@@ -63,11 +64,19 @@ public class EncodeCompiler {
 			fieldMetaInfo.setPropertyName(propertyName, false);
 			fieldMetaInfo.setPropertyInvoke(new MethodInvoke(method));
 			
-			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(fieldClazz));
+			DateFormat d = null;
+			if(field != null) {
+				d = field.getAnnotation(DateFormat.class);
+			}
+			if(d == null) {
+				d = method.getAnnotation(DateFormat.class);
+			}
+			
+			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(fieldClazz, d));
 			fieldSet.add(fieldMetaInfo);
 		}
 		
-		for(Field field : clazz.getFields()) { // public字段序列化构造
+		for(Field field : clazz.getFields()) { // construct public field serializer
 			if(Modifier.isTransient(field.getModifiers()) || field.isAnnotationPresent(Transient.class) || Modifier.isStatic(field.getModifiers()))
 				continue;
 			
@@ -75,7 +84,7 @@ public class EncodeCompiler {
 			SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
 			fieldMetaInfo.setPropertyName(field.getName(), false);
 			fieldMetaInfo.setPropertyInvoke(new FieldInvoke(field));
-			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(field.getType()));
+			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(field.getType(), field.getAnnotation(DateFormat.class)));
 			fieldSet.add(fieldMetaInfo);
 		}
 		

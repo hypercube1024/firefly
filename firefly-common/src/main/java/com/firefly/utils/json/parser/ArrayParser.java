@@ -18,7 +18,7 @@ public class ArrayParser implements Parser {
 	public ArrayParser(Class<?> clazz) {
 		elementMetaInfo = new ParserMetaInfo();
 		elementMetaInfo.setType(clazz);
-		elementMetaInfo.setParser(ParserStateMachine.getParser(clazz));
+		elementMetaInfo.setParser(ParserStateMachine.getParser(clazz, null));
 	}
 
 	@Override

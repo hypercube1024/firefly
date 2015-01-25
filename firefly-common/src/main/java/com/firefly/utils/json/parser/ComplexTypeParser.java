@@ -29,7 +29,7 @@ public abstract class ComplexTypeParser implements Parser {
 	protected ParserMetaInfo elementMetaInfo;
 	
 	protected ComplexTypeParser(Type elementType) {
-		if(elementType instanceof ParameterizedType) { // 集合元素是参数类型
+		if(elementType instanceof ParameterizedType) {
     		ParameterizedType pt = (ParameterizedType)elementType;
     		Class<?> rawClass = (Class<?>) (pt.getRawType());
     		elementMetaInfo = new ParserMetaInfo();
@@ -56,13 +56,13 @@ public abstract class ComplexTypeParser implements Parser {
             	elementMetaInfo.setParser(new MapParser(eleType));
         	} else {
         		elementMetaInfo.setType(rawClass);
-        		elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass));
+        		elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, null));
         	}
     	} else if (elementType instanceof Class) {
-        	Class<?> eleClass = (Class<?>) elementType; // 获取集合元素Parser
+        	Class<?> eleClass = (Class<?>) elementType;
         	elementMetaInfo = new ParserMetaInfo();
         	elementMetaInfo.setType(eleClass);
-        	elementMetaInfo.setParser(ParserStateMachine.getParser(eleClass));
+        	elementMetaInfo.setParser(ParserStateMachine.getParser(eleClass, null));
     	} else if(elementType instanceof GenericArrayType) {
     		GenericArrayType t = (GenericArrayType)elementType;
     		Class<?> eleType = (Class<?>)t.getGenericComponentType();
@@ -71,7 +71,7 @@ public abstract class ComplexTypeParser implements Parser {
     		
     		elementMetaInfo = new ParserMetaInfo();
         	elementMetaInfo.setType(rawClass);
-        	elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass));
+        	elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, null));
     	} else {
     		throw new JsonException("mot support type " + elementType);
     	}

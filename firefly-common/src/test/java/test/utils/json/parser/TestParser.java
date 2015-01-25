@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.nullValue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,6 +20,7 @@ import test.utils.json.ArrayObj;
 import test.utils.json.Bar;
 import test.utils.json.Book;
 import test.utils.json.CollectionObj;
+import test.utils.json.DateFormatObject;
 import test.utils.json.DateObj;
 import test.utils.json.MapObj;
 import test.utils.json.Profile;
@@ -409,11 +411,95 @@ public class TestParser {
 		Assert.assertThat(jsonObject.getJsonObject("key2").getString("key4"), is("world"));
 	}
 	
-	public static void main(String[] args) {
+	@Test
+	public void testDateFormat() {
+		Calendar cal = Calendar.getInstance();
+		cal.set(2015, Calendar.JANUARY, 25, 14, 53, 12);
+		
+		DateFormatObject obj = new DateFormatObject();
+		System.out.println(obj);
+		obj.init(cal);
+		String json = Json.toJson(obj);
+		System.out.println(json);
+		
+		DateFormatObject obj2 = Json.toObject(json, DateFormatObject.class);
+		System.out.println(obj2);
+		
+		Assert.assertThat(obj2.title, is(obj.title));
+		
+		Calendar calDateDefault = Calendar.getInstance();
+		calDateDefault.setTime(obj2.getDateDefault());
+		Assert.assertThat(calDateDefault.get(Calendar.YEAR), is(cal.get(Calendar.YEAR)));
+		Assert.assertThat(calDateDefault.get(Calendar.MONTH), is(cal.get(Calendar.MONTH)));
+		Assert.assertThat(calDateDefault.get(Calendar.DAY_OF_MONTH), is(cal.get(Calendar.DAY_OF_MONTH)));
+		Assert.assertThat(calDateDefault.get(Calendar.HOUR_OF_DAY), is(cal.get(Calendar.HOUR_OF_DAY)));
+		Assert.assertThat(calDateDefault.get(Calendar.MINUTE), is(cal.get(Calendar.MINUTE)));
+		Assert.assertThat(calDateDefault.get(Calendar.SECOND), is(cal.get(Calendar.SECOND)));
+		
+		Calendar dateFieldDefaultFormat = Calendar.getInstance();
+		dateFieldDefaultFormat.setTime(obj2.getDateFieldDefaultFormat());
+		Assert.assertThat(dateFieldDefaultFormat.get(Calendar.YEAR), is(cal.get(Calendar.YEAR)));
+		Assert.assertThat(dateFieldDefaultFormat.get(Calendar.MONTH), is(cal.get(Calendar.MONTH)));
+		Assert.assertThat(dateFieldDefaultFormat.get(Calendar.DAY_OF_MONTH), is(cal.get(Calendar.DAY_OF_MONTH)));
+		Assert.assertThat(dateFieldDefaultFormat.get(Calendar.HOUR_OF_DAY), is(cal.get(Calendar.HOUR_OF_DAY)));
+		Assert.assertThat(dateFieldDefaultFormat.get(Calendar.MINUTE), is(cal.get(Calendar.MINUTE)));
+		Assert.assertThat(dateFieldDefaultFormat.get(Calendar.SECOND), is(cal.get(Calendar.SECOND)));
+
+		Calendar dateFieldTimestamp = Calendar.getInstance();
+		dateFieldTimestamp.setTime(obj2.getDateFieldTimestamp());
+		Assert.assertThat(dateFieldTimestamp.get(Calendar.YEAR), is(cal.get(Calendar.YEAR)));
+		Assert.assertThat(dateFieldTimestamp.get(Calendar.MONTH), is(cal.get(Calendar.MONTH)));
+		Assert.assertThat(dateFieldTimestamp.get(Calendar.DAY_OF_MONTH), is(cal.get(Calendar.DAY_OF_MONTH)));
+		Assert.assertThat(dateFieldTimestamp.get(Calendar.HOUR_OF_DAY), is(cal.get(Calendar.HOUR_OF_DAY)));
+		Assert.assertThat(dateFieldTimestamp.get(Calendar.MINUTE), is(cal.get(Calendar.MINUTE)));
+		Assert.assertThat(dateFieldTimestamp.get(Calendar.SECOND), is(cal.get(Calendar.SECOND)));
+
+		Calendar dateFieldFormat1 = Calendar.getInstance();
+		dateFieldFormat1.setTime(obj2.dateFieldFormat1);
+		Assert.assertThat(dateFieldFormat1.get(Calendar.YEAR), is(cal.get(Calendar.YEAR)));
+		Assert.assertThat(dateFieldFormat1.get(Calendar.MONTH), is(cal.get(Calendar.MONTH)));
+		Assert.assertThat(dateFieldFormat1.get(Calendar.DAY_OF_MONTH), is(cal.get(Calendar.DAY_OF_MONTH)));
+		Assert.assertThat(dateFieldFormat1.get(Calendar.HOUR_OF_DAY), is(cal.get(Calendar.HOUR_OF_DAY)));
+		Assert.assertThat(dateFieldFormat1.get(Calendar.MINUTE), is(cal.get(Calendar.MINUTE)));
+		Assert.assertThat(dateFieldFormat1.get(Calendar.SECOND), is(cal.get(Calendar.SECOND)));
+		
+		Calendar cal2 = Calendar.getInstance();
+		cal2.setTime(obj2.getDateMethodFormat());
+		Assert.assertThat(cal2.get(Calendar.YEAR), is(cal.get(Calendar.YEAR)));
+		Assert.assertThat(cal2.get(Calendar.MONTH), is(cal.get(Calendar.MONTH)));
+		Assert.assertThat(cal2.get(Calendar.DAY_OF_MONTH), is(cal.get(Calendar.DAY_OF_MONTH)));
+		Assert.assertThat(cal2.get(Calendar.HOUR_OF_DAY), is(0));
+		Assert.assertThat(cal2.get(Calendar.MINUTE), is(0));
+		Assert.assertThat(cal2.get(Calendar.SECOND), is(0));
+	}
+	
+	public static void main3(String[] args) {
 		String json = "{  \"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" :  {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
 		JsonObject jsonObject = Json.toJsonObject(json);
 		System.out.println(jsonObject.getJsonArray("arrayKey"));
 		System.out.println(jsonObject.getJsonObject("key2").getString("key4"));
+	}
+	
+	public static void main4(String[] args) {
+		Date date = new Date();
+		System.out.println(date.getClass() == Date.class);
+		System.out.println(Date.class.isAssignableFrom(java.sql.Date.class));
+		System.out.println(date.getClass() == new Date().getClass());
+	}
+	
+	public static void main(String[] args) {
+		Calendar cal = Calendar.getInstance();
+		cal.set(2015, Calendar.JANUARY, 25, 14, 53, 12);
+		System.out.println(cal.get(Calendar.HOUR_OF_DAY));
+		
+		DateFormatObject obj = new DateFormatObject();
+		System.out.println(obj);
+		obj.init(cal);
+		String json = Json.toJson(obj);
+		System.out.println(json);
+		
+		DateFormatObject obj2 = Json.toObject(json, DateFormatObject.class);
+		System.out.println(obj2);
 	}
 	
 	public static void main2(String[] args) {

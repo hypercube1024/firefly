@@ -12,12 +12,15 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.firefly.utils.collection.IdentityHashMap;
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
+import com.firefly.utils.json.annotation.DateFormat;
 import com.firefly.utils.json.exception.JsonException;
 
 public class ParserStateMachine {
 	
 	private static final IdentityHashMap<Class<?>, Parser> PARSER_MAP = new IdentityHashMap<Class<?>, Parser>();
 	private static final Lock lock = new ReentrantLock();
+	
+	private static final TimestampParser TIMESTAMP = new TimestampParser();
 	
 	static {
 		PARSER_MAP.put(int.class, new IntParser());
@@ -61,11 +64,22 @@ public class ParserStateMachine {
 		PARSER_MAP.put(String[].class, new ArrayParser(String.class));
 	}
 	
-	public static Parser getParser(Class<?> clazz) {
+	public static Parser getParser(Class<?> clazz, DateFormat dateFormat) {
 		lock.lock();
 		try {
 			Parser ret = PARSER_MAP.get(clazz);
-			if(ret == null) {
+			if (dateFormat != null && clazz == Date.class) {
+				switch (dateFormat.type()) {
+				case DATE_PATTERN_STRING:
+					ret = new DateParser(dateFormat.value());
+					break;
+				case TIMESTAMP:
+					ret = TIMESTAMP;
+					break;
+				default:
+					break;
+				}
+			} else if(ret == null) {
 				if (clazz.isEnum()) {
 					ret = new EnumParser(clazz);
 					PARSER_MAP.put(clazz, ret);
@@ -90,7 +104,7 @@ public class ParserStateMachine {
 	
 	@SuppressWarnings("unchecked")
 	public static <T> T toObject(JsonReader reader, Class<?> clazz) throws IOException {
-		Parser parser = getParser(clazz);
+		Parser parser = getParser(clazz, null);
 		return (T) parser.convertTo(reader, clazz);
 	}
 }

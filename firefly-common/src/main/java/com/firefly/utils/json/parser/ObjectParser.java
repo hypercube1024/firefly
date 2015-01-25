@@ -52,7 +52,7 @@ public class ObjectParser implements Parser {
 			if(!reader.isColon())
 				throw new JsonException("missing ':'");
 			
-			if(field == null) { // 顺序相同，快速跳过
+			if(field == null) { // the same order，skip
 				parser.invoke(obj, reader);
 			} else {
 				ParserMetaInfo np = find(field);
@@ -66,7 +66,7 @@ public class ObjectParser implements Parser {
 				break;
 			
 			char ch = reader.readAndSkipBlank();
-			if(ch == '}') // json string 的域数量比元信息少，提前结束
+			if(ch == '}') // if JSON string fields is less than the meta information，end reading
 				return obj;
 
 			if(ch != ',')
@@ -80,7 +80,7 @@ public class ObjectParser implements Parser {
 		if(ch != ',')
 			throw new JsonException("json string is not object format");
 		
-		for(;;) { // json string 的域数量比元信息多，继续读取
+		for(;;) { // if JSON string fields is more than the meta information, continue reading
 			char[] field = reader.readChars();
 			if(!reader.isColon())
 				throw new JsonException("missing ':'");
@@ -92,7 +92,7 @@ public class ObjectParser implements Parser {
 				reader.skipValue();
 			
 			char c = reader.readAndSkipBlank();
-			if(c == '}') // 读到末尾
+			if(c == '}') // the object end symbol
 				return obj;
 
 			

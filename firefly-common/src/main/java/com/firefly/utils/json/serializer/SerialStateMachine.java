@@ -14,6 +14,7 @@ import com.firefly.utils.collection.IdentityHashMap;
 import com.firefly.utils.json.JsonWriter;
 import com.firefly.utils.json.Serializer;
 import com.firefly.utils.json.annotation.CircularReferenceCheck;
+import com.firefly.utils.json.annotation.DateFormat;
 
 abstract public class SerialStateMachine {
 	private static final IdentityHashMap<Class<?>, Serializer> SERIAL_MAP = new IdentityHashMap<Class<?>, Serializer>();
@@ -23,6 +24,7 @@ abstract public class SerialStateMachine {
 	private static final Serializer ARRAY = new ArraySerializer();
 	private static final DynamicObjectSerializer DYNAMIC = new DynamicObjectSerializer();
 	private static final StringValueSerializer STRING_VALUE = new StringValueSerializer();
+	private static final TimestampSerializer TIMESTAMP = new TimestampSerializer();
 
 	static {
 		SERIAL_MAP.put(long.class, new LongSerializer());
@@ -89,9 +91,20 @@ abstract public class SerialStateMachine {
 		return ret;
 	}
 	
-	public static Serializer getSerializerInCompiling(Class<?> clazz) {
+	public static Serializer getSerializerInCompiling(Class<?> clazz, DateFormat dateFormat) {
 		Serializer ret = SERIAL_MAP.get(clazz);
-		if (ret == null || ret instanceof ObjectSerializer || ret instanceof ObjectNoCheckSerializer) {
+		if (dateFormat != null && (clazz == Date.class || Date.class.isAssignableFrom(clazz))) {
+			switch (dateFormat.type()) {
+			case DATE_PATTERN_STRING:
+				ret = new DateSerializer(dateFormat.value());
+				break;
+			case TIMESTAMP:
+				ret = TIMESTAMP;
+				break;
+			default:
+				break;
+			}
+		} else if (ret == null || ret instanceof ObjectSerializer || ret instanceof ObjectNoCheckSerializer) {
 			if (clazz.isEnum()) {
 				ret = new EnumSerializer(clazz);
 				SERIAL_MAP.put(clazz, ret);
