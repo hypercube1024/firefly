@@ -14,7 +14,7 @@ public class ObjectNoCheckSerializer implements Serializer {
 	
 	private SerializerMetaInfo[] serializerMetaInfos;
 	
-	public ObjectNoCheckSerializer(Class<?> clazz) {
+	public void init(Class<?> clazz) {
 		serializerMetaInfos = EncodeCompiler.compile(clazz);
 	}
 

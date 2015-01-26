@@ -9,10 +9,16 @@ public class JsonObject extends HashMap<String, Object> {
 	private static final long serialVersionUID = 1016483993009899270L;
 	
 	public JsonObject getJsonObject(String key) {
-		return (JsonObject)get(key);
+		Object ret = get(key);
+		if(ret instanceof String && "null".equals(ret))
+			return null;
+		return (JsonObject)ret;
 	}
 	
 	public JsonArray getJsonArray(String key) {
+		Object ret = get(key);
+		if(ret instanceof String && "null".equals(ret))
+			return null;
 		return (JsonArray)get(key);
 	}
 	

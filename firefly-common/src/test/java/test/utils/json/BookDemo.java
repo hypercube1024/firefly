@@ -5,6 +5,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import com.firefly.utils.json.Json;
+import com.firefly.utils.json.JsonObject;
 
 public class BookDemo {
 	public static void main1(String[] args) throws Throwable {
@@ -15,7 +16,7 @@ public class BookDemo {
 		System.out.println(type instanceof ParameterizedType);
 	}
 	
-	public static void main(String[] args) {
+	public static void main2(String[] args) {
 		Book book = new Book();
 		book.setPrice(10.0);
 		book.setId(331);
@@ -35,7 +36,7 @@ public class BookDemo {
 		
 	}
 	
-	public static void main2(String[] args) {
+	public static void main(String[] args) throws Throwable {
 		Book book = new Book();
 		book.setPrice(10.0);
 		book.setId(331);
@@ -47,28 +48,37 @@ public class BookDemo {
 		TestBook t = new TestBook();
 		t.setObj(new Object());
 		t.setBook(book);
-		System.out.println("t: " + Json.toJson(t));
+		String t0 = Json.toJson(t);
+		System.out.println("t0: " + t0);
+		JsonObject o = Json.toJsonObject(t0);
+		JsonObject obj1 = o.getJsonObject("obj");
+		System.out.println(obj1 == null);
+		System.out.println(obj1);
 		
 		t = new TestBook();
 		t.setObj(book);
 		t.setBook(book);
-		System.out.println("t: " + Json.toJson(t));
+		System.out.println("t1: " + Json.toJson(t));
 		t.setObj(new Object());
-		System.out.println("t: " + Json.toJson(t));
+		System.out.println("t2: " + Json.toJson(t));
 		t.setObj(book);
-		System.out.println("t: " + Json.toJson(t));
+		System.out.println("t3: " + Json.toJson(t));
 
 		TestBook2<Book> t2 = new TestBook2<Book>();
 		t2.setObj(book);
 		t2.setBook(null);
-		System.out.println("t2: " + Json.toJson(t2));
+		System.out.println("t4: " + Json.toJson(t2));
 		t2.setObj(book);
-		System.out.println("t2: " + Json.toJson(t2));
+		System.out.println("t5: " + Json.toJson(t2));
 		
 		TestBook2<Object> t3 = new TestBook2<Object>();
 		t3.setObj(book);
 		t3.setBook(book);
 		System.out.println(Json.toJson(t3));
+		
+//		Field field = TestBook2.class.getDeclaredField("obj");
+//		System.out.println(field.getName());
+//		System.out.println(field.getType());
 	}
 	
 	public static class TestBook {

@@ -19,6 +19,8 @@ import org.junit.Test;
 import test.utils.json.ArrayObj;
 import test.utils.json.Bar;
 import test.utils.json.Book;
+import test.utils.json.BookDemo.TestBook;
+import test.utils.json.BookDemo.TestBook2;
 import test.utils.json.CollectionObj;
 import test.utils.json.DateFormatObject;
 import test.utils.json.DateObj;
@@ -496,6 +498,67 @@ public class TestParser {
 		Assert.assertThat(s2.aText, is(s.aText));
 	}
 	
+	@Test
+	public void testRuntimeSerialization() {
+		Book book = new Book();
+		book.setPrice(10.0);
+		book.setId(331);
+		book.setText("very good");
+		book.setSell(true);
+		book.setTitle("gook book");
+		System.out.println(Json.toJson(book));
+		
+		TestBook t = new TestBook();
+		t.setObj(new Object());
+		t.setBook(book);
+		String t0 = Json.toJson(t);
+		JsonObject o = Json.toJsonObject(t0);
+		Assert.assertThat(o.getJsonObject("book").getInteger("id"), is(331));
+		Assert.assertThat(o.getJsonObject("obj"), nullValue());
+		
+		t = new TestBook();
+		t.setObj(book);
+		t.setBook(book);
+		String t1 = Json.toJson(t);
+		o = Json.toJsonObject(t1);
+		Assert.assertThat(o.getJsonObject("book").getInteger("id"), is(331));
+		Assert.assertThat(o.getJsonObject("obj").getInteger("id"), is(331));
+
+		t.setObj(new Object());
+		String t2 = Json.toJson(t);
+		o = Json.toJsonObject(t2);
+		Assert.assertThat(o.getJsonObject("book").getInteger("id"), is(331));
+		Assert.assertThat(o.getJsonObject("obj"), nullValue());
+
+		t.setObj(book);
+		String t3 = Json.toJson(t);
+		o = Json.toJsonObject(t3);
+		Assert.assertThat(o.getJsonObject("book").getInteger("id"), is(331));
+		Assert.assertThat(o.getJsonObject("obj").getInteger("id"), is(331));
+
+		TestBook2<Book> tb2 = new TestBook2<Book>();
+		tb2.setObj(book);
+		tb2.setBook(null);
+		String t4 = Json.toJson(tb2);
+		o = Json.toJsonObject(t4);
+		Assert.assertThat(o.getJsonObject("book"), nullValue());
+		Assert.assertThat(o.getJsonObject("obj").getInteger("id"), is(331));
+		
+		tb2.setObj(book);
+		String t5 = Json.toJson(tb2);
+		o = Json.toJsonObject(t5);
+		Assert.assertThat(o.getJsonObject("book"), nullValue());
+		Assert.assertThat(o.getJsonObject("obj").getInteger("id"), is(331));
+		
+		TestBook2<Object> tb3 = new TestBook2<Object>();
+		tb3.setObj(book);
+		tb3.setBook(book);
+		String t6 = Json.toJson(tb3);
+		o = Json.toJsonObject(t6);
+		Assert.assertThat(o.getJsonObject("book").getInteger("id"), is(331));
+		Assert.assertThat(o.getJsonObject("obj").getInteger("id"), is(331));
+	}
+	
 	public static void main3(String[] args) {
 		String json = "{  \"key1\":333, \"arrayKey\":[444, \"array\"], \"key2\" :  {\"key3\" : \"hello\", \"key4\":\"world\" }, \"booleanKey\" : true }   ";
 		JsonObject jsonObject = Json.toJsonObject(json);
@@ -525,7 +588,7 @@ public class TestParser {
 		System.out.println(obj2);
 	}
 	
-	public static void main(String[] args) {
+	public static void main6(String[] args) {
 		SpecialPropertyObject s = new SpecialPropertyObject();
 		System.out.println(s);
 		s.init();
@@ -534,6 +597,10 @@ public class TestParser {
 		
 		SpecialPropertyObject s2 = Json.toObject(json, SpecialPropertyObject.class);
 		System.out.println(s2);
+	}
+	
+	public static void main(String[] args) {
+		new TestParser().test2();
 	}
 	
 	public static void main2(String[] args) {

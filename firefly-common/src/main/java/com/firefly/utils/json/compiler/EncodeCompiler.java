@@ -80,7 +80,7 @@ public class EncodeCompiler {
 				d = method.getAnnotation(DateFormat.class);
 			}
 			
-			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(fieldClazz, d));
+			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializer(fieldClazz, d));
 			fieldSet.add(fieldMetaInfo);
 		}
 		
@@ -92,7 +92,7 @@ public class EncodeCompiler {
 			SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
 			fieldMetaInfo.setPropertyName(field.getName(), false);
 			fieldMetaInfo.setPropertyInvoke(new FieldInvoke(field));
-			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializerInCompiling(field.getType(), field.getAnnotation(DateFormat.class)));
+			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializer(field.getType(), field.getAnnotation(DateFormat.class)));
 			fieldSet.add(fieldMetaInfo);
 		}
 		

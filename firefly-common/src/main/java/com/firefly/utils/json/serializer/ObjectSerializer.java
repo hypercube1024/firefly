@@ -14,7 +14,7 @@ public class ObjectSerializer implements Serializer {
 	
 	private SerializerMetaInfo[] serializerMetaInfos;
 	
-	public ObjectSerializer(Class<?> clazz) {
+	public void init(Class<?> clazz) {
 		serializerMetaInfos = EncodeCompiler.compile(clazz);
 	}
 
