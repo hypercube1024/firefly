@@ -1,9 +1,12 @@
 package com.firefly.codec.spdy.frames.control;
 
+import java.nio.ByteBuffer;
+
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
 
 public class PingFrame extends ControlFrame {
+	
 	private final int pingId;
 
 	public PingFrame(short version, int pingId) {
@@ -18,6 +21,18 @@ public class PingFrame extends ControlFrame {
 	@Override
 	public String toString() {
 		return "PingFrame [pingId=" + pingId + "]";
+	}
+
+	@Override
+	public ByteBuffer toByteBuffer() {
+		int frameBodyLength = 4;
+        int totalLength = ControlFrame.HEADER_LENGTH + frameBodyLength;
+        
+        ByteBuffer buffer = ByteBuffer.allocate(totalLength);
+        generateControlFrameHeader(frameBodyLength, buffer);
+        buffer.putInt(pingId);
+        buffer.flip();
+        return buffer;
 	}
 
 }

@@ -1,7 +1,10 @@
 package com.firefly.codec.spdy.frames;
 
-public class ControlFrame {
+import java.nio.ByteBuffer;
+
+abstract public class ControlFrame implements Serialization {
 	public static final int HEADER_LENGTH = 8;
+	public static final int VERSION = 3;
 
 	private final short version;
 	private final ControlFrameType type;
@@ -25,6 +28,15 @@ public class ControlFrame {
 	public byte getFlags() {
 		return flags;
 	}
+	
+	protected void generateControlFrameHeader(int frameLength, ByteBuffer buffer) {
+        buffer.putShort((short)(0x8000 + version));
+        buffer.putShort(type.getCode());
+        int flagsAndLength = flags;
+        flagsAndLength <<= 24;
+        flagsAndLength += frameLength;
+        buffer.putInt(flagsAndLength);
+    }
 
 	@Override
 	public String toString() {

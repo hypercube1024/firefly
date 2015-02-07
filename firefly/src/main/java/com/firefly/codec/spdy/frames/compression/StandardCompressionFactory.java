@@ -32,8 +32,7 @@ public class StandardCompressionFactory implements CompressionFactory {
 
 		@Override
 		public int compress(byte[] output) {
-			return deflater.deflate(output, 0, output.length,
-					Deflater.SYNC_FLUSH);
+			return deflater.deflate(output, 0, output.length, Deflater.SYNC_FLUSH);
 		}
 	}
 

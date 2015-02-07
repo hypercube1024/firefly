@@ -1,5 +1,7 @@
 package com.firefly.codec.spdy.frames.control;
 
+import java.nio.ByteBuffer;
+
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
 
@@ -25,6 +27,19 @@ public class WindowUpdateFrame extends ControlFrame {
 	public String toString() {
 		return "WindowUpdateFrame [streamId=" + streamId + ", windowDelta="
 				+ windowDelta + "]";
+	}
+
+	@Override
+	public ByteBuffer toByteBuffer() {
+		int frameBodyLength = 8;
+        int totalLength = ControlFrame.HEADER_LENGTH + frameBodyLength;
+        
+        ByteBuffer buffer = ByteBuffer.allocate(totalLength);
+        generateControlFrameHeader(frameBodyLength, buffer);
+        buffer.putInt(streamId & 0x7F_FF_FF_FF);
+        buffer.putInt(windowDelta & 0x7F_FF_FF_FF);
+        buffer.flip();
+        return buffer;
 	}
 
 }

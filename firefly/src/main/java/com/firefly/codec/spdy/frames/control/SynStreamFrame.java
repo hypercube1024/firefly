@@ -1,9 +1,13 @@
 package com.firefly.codec.spdy.frames.control;
 
+import java.nio.ByteBuffer;
+
 import com.firefly.codec.spdy.frames.Constants;
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
-import com.firefly.codec.spdy.frames.Fields;
+import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
+import com.firefly.codec.spdy.frames.exception.SessionException;
+import com.firefly.codec.spdy.frames.exception.StreamException;
 
 public class SynStreamFrame extends ControlFrame {
 	
@@ -59,4 +63,37 @@ public class SynStreamFrame extends ControlFrame {
 				+ associatedStreamId + ", priority=" + priority + ", slot="
 				+ slot + ", headers=" + headers + "]";
 	}
+
+	@Override
+	public ByteBuffer toByteBuffer() {
+		ByteBuffer headersBuffer = headers.toByteBuffer();
+        int frameLength = 10 + headersBuffer.remaining();
+        if (frameLength > 0xFF_FF_FF) {
+            // Too many headers, but unfortunately we have already modified the compression
+            // context, so we have no other choice than tear down the connection.
+            throw new SessionException(SessionStatus.PROTOCOL_ERROR, "Too many headers");
+        }
+        int totalLength = ControlFrame.HEADER_LENGTH + frameLength;
+        
+        ByteBuffer buffer = ByteBuffer.allocate(totalLength);
+        generateControlFrameHeader(frameLength, buffer);
+        buffer.putInt(streamId & 0x7F_FF_FF_FF);
+        buffer.putInt(associatedStreamId & 0x7F_FF_FF_FF);
+        writePriority(streamId, getVersion(), priority, buffer);
+        buffer.put((byte)slot);
+        buffer.put(headersBuffer);
+        buffer.flip();
+		return buffer;
+	}
+	
+	private void writePriority(int streamId, short version, byte priority, ByteBuffer buffer) {
+        switch (version) {
+            case VERSION:
+                priority <<= 5;
+                break;
+            default:
+                throw new StreamException(streamId, StreamErrorCode.UNSUPPORTED_VERSION);
+        }
+        buffer.put(priority);
+    }
 }

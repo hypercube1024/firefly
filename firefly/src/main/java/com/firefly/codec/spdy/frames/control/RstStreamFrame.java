@@ -1,5 +1,6 @@
 package com.firefly.codec.spdy.frames.control;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,9 +10,9 @@ import com.firefly.codec.spdy.frames.ControlFrameType;
 public class RstStreamFrame extends ControlFrame {
 
 	private final int streamId;
-	private final ErrorCode statusCode;
+	private final StreamErrorCode statusCode;
 
-	public RstStreamFrame(short version, int streamId, ErrorCode statusCode) {
+	public RstStreamFrame(short version, int streamId, StreamErrorCode statusCode) {
 		super(version, ControlFrameType.RST_STREAM, (byte) 0);
 		this.streamId = streamId;
 		this.statusCode = statusCode;
@@ -21,7 +22,7 @@ public class RstStreamFrame extends ControlFrame {
 		return streamId;
 	}
 
-	public ErrorCode getStatusCode() {
+	public StreamErrorCode getStatusCode() {
 		return statusCode;
 	}
 	
@@ -31,7 +32,7 @@ public class RstStreamFrame extends ControlFrame {
 				+ statusCode + "]";
 	}
 
-	public static enum ErrorCode {
+	public static enum StreamErrorCode {
 		
 		PROTOCOL_ERROR(1),
 		INVALID_STREAM(2),
@@ -44,13 +45,13 @@ public class RstStreamFrame extends ControlFrame {
 		STREAM_ALREADY_CLOSED(9),
 		FRAME_TOO_LARGE(11);
 		
-		public static ErrorCode from(int code) {
+		public static StreamErrorCode from(int code) {
 			return Codes.codes.get(code);
 		}
 
 		private final int code;
 
-		private ErrorCode(int code) {
+		private StreamErrorCode(int code) {
 			this.code = code;
 			Codes.codes.put(code, this);
 		}
@@ -65,8 +66,21 @@ public class RstStreamFrame extends ControlFrame {
 		}
 
 		private static class Codes {
-			private static final Map<Integer, ErrorCode> codes = new HashMap<>();
+			private static final Map<Integer, StreamErrorCode> codes = new HashMap<>();
 		}
+	}
+
+	@Override
+	public ByteBuffer toByteBuffer() {
+		int frameBodyLength = 8;
+		int totalLength = ControlFrame.HEADER_LENGTH + frameBodyLength;
+		
+		ByteBuffer buffer = ByteBuffer.allocate(totalLength);
+		generateControlFrameHeader(frameBodyLength, buffer);
+		buffer.putInt(streamId & 0x7F_FF_FF_FF);
+        buffer.putInt(statusCode.code());
+        buffer.flip();
+        return buffer;
 	}
 	
 }

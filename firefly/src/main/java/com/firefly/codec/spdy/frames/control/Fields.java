@@ -1,12 +1,21 @@
-package com.firefly.codec.spdy.frames;
+package com.firefly.codec.spdy.frames.control;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class Fields {
+import com.firefly.codec.spdy.frames.Serialization;
+import com.firefly.codec.spdy.frames.compression.CompressionFactory;
+import com.firefly.codec.spdy.frames.compression.StandardCompressionFactory;
+
+public class Fields implements Serialization, Iterable<Fields.Field> {
+	
+	private static final CompressionFactory compressionFactory = new StandardCompressionFactory();
+	private static final HeadersBlockGenerator headersBlockGenerator = new HeadersBlockGenerator(compressionFactory.newCompressor());
 	
 	private final Map<String, Field> fields;
 	
@@ -84,12 +93,26 @@ public class Fields {
 		public String getValue() {
 			return values.get(0);
 		}
-
+		
+		public boolean hasMultipleValues(){
+            return values.size() > 1;
+        }
+		
 		@Override
 		public String toString() {
 			return "Field [name=" + name + ", values=" + values + "]";
 		}
 
+	}
+
+	@Override
+	public Iterator<Field> iterator() {
+		return fields.values().iterator();
+	}
+	
+	@Override
+	public ByteBuffer toByteBuffer() {
+		return headersBlockGenerator.generate(this);
 	}
 	
 }
