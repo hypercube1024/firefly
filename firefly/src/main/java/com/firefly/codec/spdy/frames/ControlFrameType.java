@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum ControlFrameType {
+	
 	SYN_STREAM((short) 1), 
 	SYN_REPLY((short) 2), 
 	RST_STREAM((short) 3), 

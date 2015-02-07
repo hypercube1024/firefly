@@ -6,6 +6,8 @@ import com.firefly.codec.spdy.frames.ControlFrameType;
 import com.firefly.codec.spdy.frames.Fields;
 
 public class SynStreamFrame extends ControlFrame {
+	
+	public static final byte FLAG_UNIDIRECTIONAL = 2;
 
 	private final int streamId;
 	private final int associatedStreamId;
@@ -43,19 +45,18 @@ public class SynStreamFrame extends ControlFrame {
 		return headers;
 	}
 
+	public boolean isClose() {
+		return (getFlags() & Constants.FLAG_CLOSE) == Constants.FLAG_CLOSE;
+	}
+
+	public boolean isUnidirectional() {
+		return (getFlags() & FLAG_UNIDIRECTIONAL) == FLAG_UNIDIRECTIONAL;
+	}
+
 	@Override
 	public String toString() {
 		return "SynStreamFrame [streamId=" + streamId + ", associatedStreamId="
 				+ associatedStreamId + ", priority=" + priority + ", slot="
 				+ slot + ", headers=" + headers + "]";
 	}
-	
-	public boolean isClose() {
-        return (getFlags() & Constants.FLAG_CLOSE) == Constants.FLAG_CLOSE;
-    }
-
-    public boolean isUnidirectional() {
-        return (getFlags() & Constants.FLAG_UNIDIRECTIONAL) == Constants.FLAG_UNIDIRECTIONAL;
-    }
-
 }

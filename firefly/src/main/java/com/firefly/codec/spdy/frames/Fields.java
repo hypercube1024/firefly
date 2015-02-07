@@ -1,6 +1,7 @@
 package com.firefly.codec.spdy.frames;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,7 +33,9 @@ public class Fields {
 			field = new Field(name, value);
 			fields.put(name, field);
 		} else {
-			field.getValues().add(value);
+			List<String> list = new ArrayList<>(field.getValues());
+			list.add(value);
+			fields.put(key, new Field(key, list));
 		}
 	}
 	
@@ -62,7 +65,7 @@ public class Fields {
 		private final List<String> values;
 
 		public Field(String name, String value) {
-			this(name, Arrays.asList(value));
+			this(name, Collections.singletonList(value));
 		}
 
 		public Field(String name, List<String> values) {
