@@ -22,22 +22,22 @@ public class HeadersBlockGenerator {
 	public ByteBuffer generate(Fields headers) {
 		// TODO: ByteArrayOutputStream is quite inefficient, but grows on
 		// demand; optimize using ByteBuffer ?
-		final Charset iso1 = StandardCharsets.ISO_8859_1;
+		final Charset charset = StandardCharsets.UTF_8;
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream(headers.getSize() * 64);
 		writeCount(buffer, headers.getSize());
 		for (Fields.Field header : headers) {
 			String name = header.getName().toLowerCase(Locale.ENGLISH);
-			byte[] nameBytes = name.getBytes(iso1);
+			byte[] nameBytes = name.getBytes(charset);
 			writeNameLength(buffer, nameBytes.length);
 			buffer.write(nameBytes, 0, nameBytes.length);
 
 			// Most common path first
 			String value = header.getValue();
-			byte[] valueBytes = value.getBytes(iso1);
+			byte[] valueBytes = value.getBytes(charset);
 			if (header.hasMultipleValues()) {
 				List<String> values = header.getValues();
 				for (int i = 1; i < values.size(); ++i) {
-					byte[] moreValueBytes = values.get(i).getBytes(iso1);
+					byte[] moreValueBytes = values.get(i).getBytes(charset);
 					byte[] newValueBytes = Arrays.copyOf(valueBytes, valueBytes.length + 1 + moreValueBytes.length);
 					newValueBytes[valueBytes.length] = 0;
 					System.arraycopy(moreValueBytes, 0, newValueBytes, valueBytes.length + 1, moreValueBytes.length);
