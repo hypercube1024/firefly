@@ -8,13 +8,11 @@ public class DataFrame implements Serialization{
     private final int streamId;
     private final byte flags;
     private final int length;
-    private final ByteBuffer data;
 
-	public DataFrame(int streamId, byte flags, ByteBuffer data) {
+	public DataFrame(int streamId, byte flags, int length) {
 		this.streamId = streamId;
 		this.flags = flags;
-		this.length = data.remaining();
-		this.data = data;
+		this.length = length;
 	}
 
 	public int getStreamId() {
@@ -27,10 +25,6 @@ public class DataFrame implements Serialization{
 
 	public int getLength() {
 		return length;
-	}
-	
-	public ByteBuffer getData() {
-		return data;
 	}
 
 	public boolean isClose() {
@@ -51,7 +45,6 @@ public class DataFrame implements Serialization{
         flagsAndLength <<= 24;
         flagsAndLength += length;
         buffer.putInt(flagsAndLength);
-        buffer.put(data);
 		return buffer;
 	}
     
