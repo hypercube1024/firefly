@@ -1,7 +1,5 @@
 package com.firefly.codec.spdy.frames;
 
-import java.util.HashMap;
-import java.util.Map;
 
 public enum ControlFrameType {
 	
@@ -17,14 +15,14 @@ public enum ControlFrameType {
 	CREDENTIAL((short) 10);
 
 	public static ControlFrameType from(short code) {
-		return Codes.codes.get(code);
+		return Codes.codes[code - 1];
 	}
 
 	private final short code;
 
 	private ControlFrameType(short code) {
 		this.code = code;
-		Codes.codes.put(code, this);
+		Codes.codes[code - 1] = this;
 	}
 
 	public short getCode() {
@@ -32,6 +30,6 @@ public enum ControlFrameType {
 	}
 
 	private static class Codes {
-		private static final Map<Short, ControlFrameType> codes = new HashMap<>();
+		private static final ControlFrameType[] codes = new ControlFrameType[10];
 	}
 }
