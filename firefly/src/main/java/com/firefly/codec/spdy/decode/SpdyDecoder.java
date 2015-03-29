@@ -2,27 +2,41 @@ package com.firefly.codec.spdy.decode;
 
 import java.nio.ByteBuffer;
 
+import com.firefly.codec.spdy.decode.exception.DecodingStateException;
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class SpdyDecoder implements Decoder {
+	
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
 	private static final Parser parser = new SpdyParser();
 
 	@Override
 	public void decode(ByteBuffer buf, Session session) throws Throwable {
 		final ByteBuffer now = getBuffer(buf, session);
-		DecodeStatus decodeStatus = parser.parse(buf, session);
-		switch (decodeStatus) {
-		case BUFFER_UNDERFLOW:
-			save(now, session);
-			break;
-		case COMPLETE:
-			break;
-		case ERROR:
-			break;
-		default:
-			break;
+		DecodeStatus decodeStatus = parser.parse(now, session);
+		log.debug("spdy decoding status: {}", decodeStatus);
+		
+		while(true) {
+			switch (decodeStatus) {
+			case INIT:
+				reset(now, session);
+				decodeStatus = parser.parse(now, session);
+				break;
+			case BUFFER_UNDERFLOW:
+				save(now, session);
+				return;
+			case COMPLETE:
+				reset(now, session);
+				return;
+			case ERROR:
+				return;
+			default:
+				throw new DecodingStateException("Parsing SPDY frame decoding status error");
+			}
 		}
 		
 	}
@@ -45,6 +59,14 @@ public class SpdyDecoder implements Decoder {
 		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
 		if (buf.hasRemaining())
 			attachment.byteBuffer = buf;
+	}
+	
+	private void reset(ByteBuffer buf, Session session) {
+		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
+		attachment.frameType = null;
+		attachment.controlFrameParserState = ControlFrameParserState.HEAD;
+		attachment.controlFrameHeader = null;
+		// TODO reset
 	}
 
 }

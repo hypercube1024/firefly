@@ -19,4 +19,5 @@ public class TestControlFrameType {
 		Assert.assertThat(ControlFrameType.PING.getCode(), is((short)6));
 		Assert.assertThat(ControlFrameType.CREDENTIAL.getCode(), is((short)10));
 	}
+	
 }
