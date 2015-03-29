@@ -14,6 +14,7 @@ import com.firefly.codec.spdy.decode.control.SynReplyBodyParser;
 import com.firefly.codec.spdy.decode.control.SynStreamBodyParser;
 import com.firefly.codec.spdy.decode.control.WindowUpdateBodyParser;
 import com.firefly.codec.spdy.decode.exception.DecodingStateException;
+import com.firefly.codec.spdy.decode.utils.NumberProcessUtils;
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
 import com.firefly.net.Session;
@@ -40,12 +41,10 @@ public class ControlFrameParser implements Parser {
 			switch (attachment.controlFrameParserState) {
 			case HEAD:
 				if(buffer.remaining() >= ControlFrame.HEADER_LENGTH) {
-					final short version = (short)(buffer.getShort() & 0x7F_FF);
+					final short version = NumberProcessUtils.to15bitsShort(buffer.getShort());
 					final ControlFrameType type = ControlFrameType.from(buffer.getShort());
 					final byte flags = buffer.get();
-					int length = buffer.get() & 0xff; // convert to unsigned integer
-					length <<= 16;
-					length += buffer.getShort() & 0xff_ff; // convert to unsigned integer
+					int length = NumberProcessUtils.to24bitsInteger(buffer.get(), buffer.getShort());
 					
 					attachment.controlFrameHeader = new ControlFrameHeader(version, type, flags, length);
 					attachment.controlFrameParserState = ControlFrameParserState.BODY;
