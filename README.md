@@ -6,7 +6,7 @@ Firefly framework is a high performance full-stack java web framework. It helps 
 
 Running firefly is very easy, now you can download the dependency from Apache Central Repository, the pom is:
 
-```
+```xml
 	<dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly-common</artifactId>
