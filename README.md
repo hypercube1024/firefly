@@ -10,22 +10,22 @@ Running firefly is very easy, now you can download the dependency from Apache Ce
 	<dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly-common</artifactId>
-      <version>3.0.4</version>
+      <version>3.0.4.5</version>
     </dependency>
     <dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly-template</artifactId>
-      <version>3.0.4</version>
+      <version>3.0.4.5</version>
     </dependency>
     <dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly-nettool</artifactId>
-      <version>3.0.4</version>
+      <version>3.0.4.5</version>
     </dependency>
     <dependency>
       <groupId>com.fireflysource</groupId>
       <artifactId>firefly</artifactId>
-      <version>3.0.4</version>
+      <version>3.0.4.5</version>
     </dependency>
 ```
 
