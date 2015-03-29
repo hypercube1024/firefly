@@ -7,4 +7,5 @@ import com.firefly.net.tcp.ssl.SSLSession;
 public class SpdySessionAttachment {
 	public SSLSession sslSession;
 	public ByteBuffer byteBuffer;
+	public FrameType frameType;
 }
