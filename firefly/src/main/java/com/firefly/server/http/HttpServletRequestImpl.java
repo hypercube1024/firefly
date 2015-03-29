@@ -33,6 +33,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
 import com.firefly.net.Session;
+import com.firefly.server.Config;
 import com.firefly.server.exception.HttpServerException;
 import com.firefly.server.io.PipedStream;
 import com.firefly.server.utils.StringParser;

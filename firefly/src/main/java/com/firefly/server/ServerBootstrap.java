@@ -8,7 +8,6 @@ import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.net.tcp.nio.TcpServer;
-import com.firefly.server.http.Config;
 import com.firefly.server.http.HttpDecoder;
 import com.firefly.server.http.HttpEncoder;
 import com.firefly.server.http.HttpHandler;

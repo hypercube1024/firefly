@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 
-import com.firefly.server.http.Config;
+import com.firefly.server.Config;
 import com.firefly.utils.time.HashTimeWheel;
 import com.firefly.utils.time.Millisecond100Clock;
 

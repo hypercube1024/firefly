@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
+import com.firefly.server.Config;
 import com.firefly.server.io.ByteArrayPipedStream;
 import com.firefly.server.io.FilePipedStream;
 import com.firefly.utils.StringUtils;

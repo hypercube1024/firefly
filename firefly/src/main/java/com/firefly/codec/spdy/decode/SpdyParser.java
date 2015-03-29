@@ -2,6 +2,7 @@ package com.firefly.codec.spdy.decode;
 
 import java.nio.ByteBuffer;
 
+import com.firefly.codec.spdy.decode.exception.DecodingStateException;
 import com.firefly.net.Session;
 
 public class SpdyParser implements Parser {
@@ -33,7 +34,7 @@ public class SpdyParser implements Parser {
 				
 				break;
 			default:
-				break;
+				throw new DecodingStateException("Parsing SPDY frame type error");
 			}
 		}
 		return DecodeStatus.COMPLETE;

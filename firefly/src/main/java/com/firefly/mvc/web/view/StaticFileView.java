@@ -14,8 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
+import com.firefly.server.Config;
 import com.firefly.server.exception.HttpServerException;
-import com.firefly.server.http.Config;
 import com.firefly.server.http.Constants;
 import com.firefly.server.http.HttpServletResponseImpl;
 import com.firefly.server.io.StaticFileOutputStream;

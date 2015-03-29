@@ -10,7 +10,6 @@ import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebHandler;
 import com.firefly.mvc.web.view.StaticFileView;
 import com.firefly.mvc.web.view.TemplateView;
-import com.firefly.server.http.Config;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 

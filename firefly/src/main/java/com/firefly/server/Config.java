@@ -1,4 +1,4 @@
-package com.firefly.server.http;
+package com.firefly.server;
 
 import java.util.Map;
 
@@ -11,6 +11,8 @@ import javax.servlet.http.HttpSessionListener;
 
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.Session;
+import com.firefly.server.http.FileAccessFilter;
+import com.firefly.server.http.HttpConnectionListener;
 import com.firefly.server.session.HttpSessionManager;
 import com.firefly.server.session.LocalHttpSessionManager;
 

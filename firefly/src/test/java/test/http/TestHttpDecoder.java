@@ -12,7 +12,7 @@ import javax.servlet.ServletInputStream;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.server.http.Config;
+import com.firefly.server.Config;
 import com.firefly.server.http.HttpDecoder;
 import com.firefly.server.http.HttpServletRequestImpl;
 import com.firefly.server.http.HttpServletResponseImpl;

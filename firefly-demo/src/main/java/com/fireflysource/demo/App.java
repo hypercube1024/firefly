@@ -3,8 +3,8 @@ package com.fireflysource.demo;
 import java.io.File;
 
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
+import com.firefly.server.Config;
 import com.firefly.server.ServerBootstrap;
-import com.firefly.server.http.Config;
 
 /**
  * Hello world!
