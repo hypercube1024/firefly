@@ -57,7 +57,7 @@ When you have finished these operations above-mentioned, run the class 'Bootstra
 
 Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly depends on Java Compiler API that isn't in JRE.    
 
-More details you can find in [guide document](http://www.fireflysource.com/docs/firefly-guide.html)
+More details you can find in [Wiki](https://github.com/hypercube1024/firefly/wiki/Guide) or [guide document](http://www.fireflysource.com/docs/firefly-guide.html)
 
 ##Contact information
 E-mail: qptkk@163.com  
