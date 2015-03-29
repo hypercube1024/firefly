@@ -55,7 +55,7 @@ firefly-access=INFO,/Users/qiupengtao/develop/logs
 When you have finished these operations above-mentioned, run the class 'Bootstrap' and visit the URL http://localhost:8080/ in your browser, you will see the 'Hello World'.  
 
 
-Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly depends on Java Compiler API that dosen't exist in JRE.    
+Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly depends on Java Compiler API that doesn't exist in JRE.    
 
 More details you can find in [Wiki](https://github.com/hypercube1024/firefly/wiki/Guide) or [guide document](http://www.fireflysource.com/docs/firefly-guide.html)
 
