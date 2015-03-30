@@ -14,18 +14,18 @@ abstract public class NumberProcessUtils {
 		return i & 0xff_ff_ff_ffL;
 	}
 	
-	public static int to24bitsInteger(byte highOrder, short lowOrder) {
+	public static int toUnsigned24bitsInteger(byte highOrder, short lowOrder) {
 		int x = toUnsignedInteger(highOrder);
 		x <<= 16;
 		x += toUnsignedInteger(lowOrder);
 		return x;
 	}
 	
-	public static short to15bitsShort(short i) {
+	public static short toUnsigned15bitsShort(short i) {
 		return (short)(i & 0x7F_FF);
 	}
 	
-	public static int to31bitsInteger(int i) {
+	public static int toUnsigned31bitsInteger(int i) {
 		return i &  0x7F_FF_FF_FF;
 	}
 }

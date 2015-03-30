@@ -41,10 +41,10 @@ public class ControlFrameParser implements Parser {
 			switch (attachment.controlFrameParserState) {
 			case HEAD:
 				if(buffer.remaining() >= ControlFrame.HEADER_LENGTH) {
-					final short version = NumberProcessUtils.to15bitsShort(buffer.getShort());
+					final short version = NumberProcessUtils.toUnsigned15bitsShort(buffer.getShort());
 					final ControlFrameType type = ControlFrameType.from(buffer.getShort());
 					final byte flags = buffer.get();
-					int length = NumberProcessUtils.to24bitsInteger(buffer.get(), buffer.getShort());
+					int length = NumberProcessUtils.toUnsigned24bitsInteger(buffer.get(), buffer.getShort());
 					
 					attachment.controlFrameHeader = new ControlFrameHeader(version, type, flags, length);
 					attachment.controlFrameParserState = ControlFrameParserState.BODY;
