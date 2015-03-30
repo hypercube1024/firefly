@@ -4,15 +4,17 @@ import java.nio.ByteBuffer;
 
 import com.firefly.codec.spdy.decode.exception.DecodingStateException;
 import com.firefly.net.Session;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 
-public class SpdyParser implements Parser {
+public class SpdyParser extends AbstractParser {
 	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private final ControlFrameParser controlFrameParser;
+	private final DataFrameParser dataFrameParser;
 	
-	private static final ControlFrameParser controlFrameParser = new ControlFrameParser();
-	private static final DataFrameParser dataFrameParser = new DataFrameParser();
+	public SpdyParser(SpdyDecodingEvent spdyDecodingEvent) {
+		super(spdyDecodingEvent);
+		dataFrameParser = new DataFrameParser(spdyDecodingEvent);
+		controlFrameParser = new ControlFrameParser(spdyDecodingEvent);
+	}
 
 	@Override
 	public DecodeStatus parse(ByteBuffer buf, Session session) {

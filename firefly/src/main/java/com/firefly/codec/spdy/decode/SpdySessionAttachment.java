@@ -8,7 +8,10 @@ import com.firefly.net.tcp.ssl.SSLSession;
 public class SpdySessionAttachment {
 	public SSLSession sslSession;
 	public ByteBuffer byteBuffer;
+	
+	// decoding state
 	public FrameType frameType;
 	public ControlFrameParserState controlFrameParserState = ControlFrameParserState.HEAD;
+	
 	public ControlFrameHeader controlFrameHeader;
 }

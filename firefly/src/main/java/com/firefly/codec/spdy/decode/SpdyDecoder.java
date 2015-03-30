@@ -12,7 +12,11 @@ public class SpdyDecoder implements Decoder {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
-	private static final Parser parser = new SpdyParser();
+	private final Parser parser;
+	
+	public SpdyDecoder(SpdyDecodingEvent spdyDecodingEvent) {
+		parser = new SpdyParser(spdyDecodingEvent);
+	}
 
 	@Override
 	public void decode(ByteBuffer buf, Session session) throws Throwable {

@@ -16,11 +16,11 @@ public class SynStreamFrame extends ControlFrame {
 	private final int streamId;
 	private final int associatedStreamId;
 	private final byte priority;
-	private final short slot;
+	private final byte slot;
 	private final Fields headers;
 
 	public SynStreamFrame(short version, byte flags, int streamId,
-			int associatedStreamId, byte priority, short slot, Fields headers) {
+			int associatedStreamId, byte priority, byte slot, Fields headers) {
 		super(version, ControlFrameType.SYN_STREAM, flags);
 		this.streamId = streamId;
 		this.associatedStreamId = associatedStreamId;
@@ -80,7 +80,7 @@ public class SynStreamFrame extends ControlFrame {
         buffer.putInt(streamId & 0x7F_FF_FF_FF);
         buffer.putInt(associatedStreamId & 0x7F_FF_FF_FF);
         writePriority(streamId, getVersion(), priority, buffer);
-        buffer.put((byte)slot);
+        buffer.put(slot);
         buffer.put(headersBuffer);
         buffer.flip();
 		return buffer;

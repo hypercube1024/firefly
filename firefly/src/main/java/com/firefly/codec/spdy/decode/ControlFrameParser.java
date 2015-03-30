@@ -19,19 +19,24 @@ import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
 import com.firefly.net.Session;
 
-public class ControlFrameParser implements Parser {
+public class ControlFrameParser extends AbstractParser {
 	
-	private static final Parser[] parsers = new Parser[] {
-		new SynStreamBodyParser(),
-		new SynReplyBodyParser(),
-		new RstStreamBodyParser(),
-		new SettingsBodyParser(),
-		new NoOpBodyParser(),
-		new PingBodyParser(),
-		new GoAwayBodyParser(),
-		new HeadersBodyParser(),
-		new WindowUpdateBodyParser(),
-		new CredentialBodyParser()};
+	private final Parser[] parsers;
+	
+	public ControlFrameParser(SpdyDecodingEvent spdyDecodingEvent) {
+		super(spdyDecodingEvent);
+		parsers = new Parser[] {
+				new SynStreamBodyParser(spdyDecodingEvent),
+				new SynReplyBodyParser(spdyDecodingEvent),
+				new RstStreamBodyParser(spdyDecodingEvent),
+				new SettingsBodyParser(spdyDecodingEvent),
+				new NoOpBodyParser(spdyDecodingEvent),
+				new PingBodyParser(spdyDecodingEvent),
+				new GoAwayBodyParser(spdyDecodingEvent),
+				new HeadersBodyParser(spdyDecodingEvent),
+				new WindowUpdateBodyParser(spdyDecodingEvent),
+				new CredentialBodyParser(spdyDecodingEvent)};
+	}	
 
 	@Override
 	public DecodeStatus parse(ByteBuffer buffer, Session session) {
@@ -63,19 +68,6 @@ public class ControlFrameParser implements Parser {
 	
 	private Parser getParser(ControlFrameType frameType) {
 		return parsers[frameType.getCode() - 1];
-	}
-	
-	public static void main(String[] args) {
-		byte x = -1;
-		System.out.println(x);
-		System.out.println(0xff);
-		int y = x & 0xff;
-		int z = x;
-		System.out.println(y);
-		System.out.println(z);
-		
-		byte a = (byte)0xff - 1;
-		System.out.println(a & 0xff);
 	}
 
 }

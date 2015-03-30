@@ -2,11 +2,16 @@ package com.firefly.codec.spdy.decode.control;
 
 import java.nio.ByteBuffer;
 
+import com.firefly.codec.spdy.decode.AbstractParser;
 import com.firefly.codec.spdy.decode.DecodeStatus;
-import com.firefly.codec.spdy.decode.Parser;
+import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
 import com.firefly.net.Session;
 
-public class RstStreamBodyParser implements Parser {
+public class RstStreamBodyParser extends AbstractParser {
+
+	public RstStreamBodyParser(SpdyDecodingEvent spdyDecodingEvent) {
+		super(spdyDecodingEvent);
+	}
 
 	@Override
 	public DecodeStatus parse(ByteBuffer buf, Session session) {
