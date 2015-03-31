@@ -9,25 +9,26 @@ import com.firefly.codec.spdy.frames.control.Settings;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
+import com.firefly.net.Session;
 
 public interface SpdyDecodingEvent {
 	
-	public void onSynStream(SynStreamFrame synStreamFrame);
+	public void onSynStream(SynStreamFrame synStreamFrame, Session session);
 	
-	public void onSynReply(SynReplyFrame synReplyFrame);
+	public void onSynReply(SynReplyFrame synReplyFrame, Session session);
 	
-	public void onRstStream(RstStreamFrame rstStreamFrame);
+	public void onRstStream(RstStreamFrame rstStreamFrame, Session session);
 	
-	public void onSettings(Settings settings);
+	public void onSettings(Settings settings, Session session);
 	
-	public void onPing(PingFrame pingFrame);
+	public void onPing(PingFrame pingFrame, Session session);
 	
-	public void onGoAway(GoAwayFrame goAwayFrame);
+	public void onGoAway(GoAwayFrame goAwayFrame, Session session);
 	
-	public void onHeaders(HeadersFrame headersFrame);
+	public void onHeaders(HeadersFrame headersFrame, Session session);
 	
-	public void onWindowUpdate(WindowUpdateFrame windowUpdateFrame);
+	public void onWindowUpdate(WindowUpdateFrame windowUpdateFrame, Session session);
 	
-	public void onData(DataFrame dataFrame);
+	public void onData(DataFrame dataFrame, Session session);
 	
 }
