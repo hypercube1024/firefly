@@ -7,6 +7,7 @@ import com.firefly.codec.spdy.decode.DecodeStatus;
 import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.decode.utils.NumberProcessUtils;
+import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.net.Session;
 
 public class SynStreamBodyParser extends AbstractParser {
@@ -21,6 +22,8 @@ public class SynStreamBodyParser extends AbstractParser {
 			return DecodeStatus.BUFFER_UNDERFLOW;
 		
 		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
+		
+		log.debug("control frame's length is {}", attachment.controlFrameHeader.getLength());
 		if(buffer.remaining() < attachment.controlFrameHeader.getLength()) {
 			return DecodeStatus.BUFFER_UNDERFLOW;
 		}
@@ -34,6 +37,18 @@ public class SynStreamBodyParser extends AbstractParser {
 		byte slot = buffer.get(); // 1 bytes
 		
 		// TODO The header block length is the total length - 10 bytes
+		int headerBlockLength = attachment.controlFrameHeader.getLength() - 10;
+		log.debug("The syn stream header block's length is {}", headerBlockLength);
+		if(headerBlockLength > 0) {
+			// TODO header block parser
+		} else {
+			SynStreamFrame synStreamFrame = new SynStreamFrame(attachment.controlFrameHeader.getVersion(), 
+					attachment.controlFrameHeader.getFlags(), 
+					streamId, associatedStreamId, 
+					(byte)priority, slot, null);
+			spdyDecodingEvent.onSynStream(synStreamFrame, session);
+			return buffer.hasRemaining() ? DecodeStatus.INIT : DecodeStatus.COMPLETE;
+		}
 		return null;
 	}
 

@@ -12,6 +12,7 @@ import com.firefly.codec.spdy.frames.exception.StreamException;
 public class SynStreamFrame extends ControlFrame {
 	
 	public static final byte FLAG_UNIDIRECTIONAL = 2;
+	public static final byte FLAG_FIN = 1;
 
 	private final int streamId;
 	private final int associatedStreamId;
