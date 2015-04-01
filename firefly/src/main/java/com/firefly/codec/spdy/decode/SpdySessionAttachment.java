@@ -14,4 +14,11 @@ public class SpdySessionAttachment {
 	public ControlFrameParserState controlFrameParserState = ControlFrameParserState.HEAD;
 	
 	public ControlFrameHeader controlFrameHeader;
+	
+	public void reset() {
+		this.byteBuffer = null;
+		this.frameType = null;
+		this.controlFrameParserState = ControlFrameParserState.HEAD;
+		this.controlFrameHeader = null;
+	}
 }

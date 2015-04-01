@@ -67,10 +67,7 @@ public class SpdyDecoder implements Decoder {
 	
 	private void reset(ByteBuffer buf, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
-		attachment.byteBuffer = null;
-		attachment.frameType = null;
-		attachment.controlFrameParserState = ControlFrameParserState.HEAD;
-		attachment.controlFrameHeader = null;
+		attachment.reset();
 		// TODO reset
 	}
 
