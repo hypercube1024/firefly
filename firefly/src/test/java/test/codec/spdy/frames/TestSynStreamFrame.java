@@ -41,23 +41,31 @@ public class TestSynStreamFrame {
 					System.out.println("receive syn stream frame: " + synStreamFrame);
 					Assert.assertThat(synStreamFrame, is(s));
 				}});
-			
-			ByteBuffer b0 = s.toByteBuffer();
-			System.out.println("b0's size is " + b0.remaining());
-			List<ByteBuffer> list = split(b0, 10);
+
+			// test sync flush
+			List<ByteBuffer> list = new ArrayList<ByteBuffer>();
+			for (int i = 0; i < 5; i++) {
+				ByteBuffer b1 = s.toByteBuffer();
+				System.out.println("b1's size is " + b1.remaining());
+				list.add(b1);
+			}
 			for(ByteBuffer b : list) {
 				decoder.decode(b, session);
 			}
 			Assert.assertThat(attachment.isInitialized(), is(true));
 			
-			for (int i = 0; i < 5; i++) {
-				ByteBuffer b1 = s.toByteBuffer();
-				System.out.println("b1's size is " + b1.remaining());
-				decoder.decode(b1, session);
+			// test split
+			ByteBuffer b2 = s.toByteBuffer();
+			System.out.println("b2's size is " + b2.remaining());
+			list = split(b2, 7);
+			for(ByteBuffer b : list) {
+				decoder.decode(b, session);
 			}
 			Assert.assertThat(attachment.isInitialized(), is(true));
 			
-			list = split(s.toByteBuffer(), 7);
+			ByteBuffer b3 = s.toByteBuffer();
+			System.out.println("b3's size is " + b3.remaining());
+			list = split(b3, 10);
 			for(ByteBuffer b : list) {
 				decoder.decode(b, session);
 			}
