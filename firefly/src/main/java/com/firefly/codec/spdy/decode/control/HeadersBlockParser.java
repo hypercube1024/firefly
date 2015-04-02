@@ -1,11 +1,14 @@
 package com.firefly.codec.spdy.decode.control;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.zip.ZipException;
 
+import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.compression.CompressionDictionary;
 import com.firefly.codec.spdy.frames.compression.CompressionFactory;
 import com.firefly.codec.spdy.frames.compression.DefaultCompressionFactory;
@@ -19,12 +22,9 @@ import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class HeadersBlockParser {
+public class HeadersBlockParser implements Closeable {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
-	public static final HeadersBlockParser DEFAULT_PARSER = new HeadersBlockParser(
-			DefaultCompressionFactory.getCompressionfactory().newDecompressor());
 	
 	private final CompressionFactory.Decompressor decompressor;
 	
@@ -32,8 +32,14 @@ public class HeadersBlockParser {
 		this.decompressor = decompressor;
 		this.decompressor.setDefaultDictionary(CompressionDictionary.DICTIONARY_V3);
 	}
+	
+	public static HeadersBlockParser newInstance() {
+		return new HeadersBlockParser(DefaultCompressionFactory.getCompressionfactory().newDecompressor());
+	}
 
 	public Fields parse(int streamId, int length, ByteBuffer compressedBuffer, Session session) {
+		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
+		
 		byte[] compressed = new byte[length];
 		compressedBuffer.get(compressed);
 		ByteBuffer decompressedBuffer = null;
@@ -49,7 +55,7 @@ public class HeadersBlockParser {
 		int count = decompressedBuffer.getInt();
 		log.debug("spdy header block count is {}", count);
 		
-		Fields headers = new Fields(new HashMap<String, Field>());
+		Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
 		for (int i = 0; i < count; i++) {
 			int nameLength = decompressedBuffer.getInt();
 			if(nameLength == 0) {
@@ -73,6 +79,11 @@ public class HeadersBlockParser {
 			}
 		}
 		return headers;
+	}
+
+	@Override
+	public void close() throws IOException {
+		decompressor.close();
 	}
 
 }

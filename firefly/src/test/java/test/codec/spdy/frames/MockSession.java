@@ -7,17 +7,18 @@ import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 
 public class MockSession implements Session {
+	
+	private Object attachment;
 
 	@Override
 	public void attachObject(Object attachment) {
-		// TODO Auto-generated method stub
+		this.attachment = attachment;
 
 	}
 
 	@Override
 	public Object getAttachment() {
-		// TODO Auto-generated method stub
-		return null;
+		return attachment;
 	}
 
 	@Override

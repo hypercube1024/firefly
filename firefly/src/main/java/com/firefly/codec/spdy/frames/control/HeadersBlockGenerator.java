@@ -1,6 +1,8 @@
 package com.firefly.codec.spdy.frames.control;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -10,13 +12,18 @@ import java.util.Locale;
 
 import com.firefly.codec.spdy.frames.compression.CompressionDictionary;
 import com.firefly.codec.spdy.frames.compression.CompressionFactory;
+import com.firefly.codec.spdy.frames.compression.DefaultCompressionFactory;
 
-public class HeadersBlockGenerator {
+public class HeadersBlockGenerator implements Closeable {
 	private final CompressionFactory.Compressor compressor;
 
 	public HeadersBlockGenerator(CompressionFactory.Compressor compressor) {
 		this.compressor = compressor;
 		this.compressor.setDictionary(CompressionDictionary.DICTIONARY_V3);
+	}
+	
+	public static HeadersBlockGenerator newInstance() {
+		return new HeadersBlockGenerator(DefaultCompressionFactory.getCompressionfactory().newCompressor());
 	}
 
 	public ByteBuffer generate(Fields headers) {
@@ -65,5 +72,10 @@ public class HeadersBlockGenerator {
 
 	private void writeValueLength(ByteArrayOutputStream buffer, int length) {
 		writeCount(buffer, length);
+	}
+
+	@Override
+	public void close() throws IOException {
+		compressor.close();
 	}
 }

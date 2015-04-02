@@ -9,17 +9,15 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.firefly.codec.spdy.frames.Serialization;
-import com.firefly.codec.spdy.frames.compression.DefaultCompressionFactory;
 
 public class Fields implements Serialization, Iterable<Fields.Field> {
 	
-	private static final HeadersBlockGenerator headersBlockGenerator = new HeadersBlockGenerator(
-			DefaultCompressionFactory.getCompressionfactory().newCompressor());
-	
+	private final HeadersBlockGenerator headersBlockGenerator;
 	private final Map<String, Field> fields;
 	
-	public Fields(Map<String, Field> fields) {
+	public Fields(Map<String, Field> fields, HeadersBlockGenerator headersBlockGenerator) {
 		this.fields = fields;
+		this.headersBlockGenerator = headersBlockGenerator;
 	}
 	
 	public Field get(String name) {

@@ -43,8 +43,8 @@ public class SynStreamBodyParser extends AbstractParser {
 		
 		SynStreamFrame synStreamFrame = null;
 		if(headerBlockLength > 0) {
-			// TODO header block parser
-			Fields fields = HeadersBlockParser.DEFAULT_PARSER.parse(associatedStreamId, headerBlockLength, buffer, session);
+			// header block parser
+			Fields fields = attachment.headersBlockParser.parse(associatedStreamId, headerBlockLength, buffer, session);
 			synStreamFrame = new SynStreamFrame(attachment.controlFrameHeader.getVersion(), 
 					attachment.controlFrameHeader.getFlags(), 
 					streamId, associatedStreamId, 

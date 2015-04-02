@@ -62,7 +62,8 @@ public class SynStreamFrame extends ControlFrame {
 	public String toString() {
 		return "SynStreamFrame [streamId=" + streamId + ", associatedStreamId="
 				+ associatedStreamId + ", priority=" + priority + ", slot="
-				+ slot + ", headers=" + headers + "]";
+				+ slot + ", headers=" + headers + ", toString()="
+				+ super.toString() + "]";
 	}
 
 	@Override
@@ -97,4 +98,42 @@ public class SynStreamFrame extends ControlFrame {
         }
         buffer.put(priority);
     }
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + associatedStreamId;
+		result = prime * result + ((headers == null) ? 0 : headers.hashCode());
+		result = prime * result + priority;
+		result = prime * result + slot;
+		result = prime * result + streamId;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SynStreamFrame other = (SynStreamFrame) obj;
+		if (associatedStreamId != other.associatedStreamId)
+			return false;
+		if (headers == null) {
+			if (other.headers != null)
+				return false;
+		} else if (!headers.equals(other.headers))
+			return false;
+		if (priority != other.priority)
+			return false;
+		if (slot != other.slot)
+			return false;
+		if (streamId != other.streamId)
+			return false;
+		return true;
+	}
+	
 }
