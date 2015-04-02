@@ -26,7 +26,7 @@ import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
 import com.firefly.net.Session;
 
-public class TestSynStreamFrame {
+public class TestSynStreamFrame extends TestBase{
 
 	@Test
 	public void testSynStream() throws Throwable {
@@ -52,6 +52,18 @@ public class TestSynStreamFrame {
 			for(ByteBuffer b : list) {
 				decoder.decode(b, session);
 			}
+			Assert.assertThat(attachment.isInitialized(), is(true));
+			
+			// test merge
+			list = new ArrayList<ByteBuffer>();
+			for (int i = 0; i < 10; i++) {
+				ByteBuffer b1 = s.toByteBuffer();
+				System.out.println("b1's size is " + b1.remaining());
+				list.add(b1);
+			}
+			ByteBuffer mergeByteBuffer = merge(list);
+			System.out.println("merget byte buffer size is " + mergeByteBuffer.remaining());
+			decoder.decode(mergeByteBuffer, session);
 			Assert.assertThat(attachment.isInitialized(), is(true));
 			
 			// test split
@@ -82,17 +94,6 @@ public class TestSynStreamFrame {
 
 		SynStreamFrame s = new SynStreamFrame((short)3, SynStreamFrame.FLAG_FIN, 1, 0, (byte)1, (byte)0, headers);
 		return s;
-	}
-	
-	
-	public static List<ByteBuffer> split(ByteBuffer buf, int size) {
-		List<ByteBuffer> list = new ArrayList<>();
-		while(buf.hasRemaining()) {
-			byte[] bytes = new byte[Math.min(size, buf.remaining())];
-			buf.get(bytes);
-			list.add(ByteBuffer.wrap(bytes));
-		}
-		return list;
 	}
 	
 	abstract static class SynStreamEvent implements SpdyDecodingEvent {
