@@ -17,10 +17,11 @@ public class PingFrame extends ControlFrame {
 	public int getPingId() {
 		return pingId;
 	}
-
+	
 	@Override
 	public String toString() {
-		return "PingFrame [pingId=" + pingId + "]";
+		return "PingFrame [pingId=" + pingId + ", toString()="
+				+ super.toString() + "]";
 	}
 
 	@Override

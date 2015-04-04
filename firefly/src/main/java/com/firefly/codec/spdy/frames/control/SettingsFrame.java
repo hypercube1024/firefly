@@ -26,7 +26,8 @@ public class SettingsFrame extends ControlFrame {
 
 	@Override
 	public String toString() {
-		return "SettingsFrame [settings=" + settings + "]";
+		return "SettingsFrame [settings=" + settings + ", toString()="
+				+ super.toString() + "]";
 	}
 
 	@Override
