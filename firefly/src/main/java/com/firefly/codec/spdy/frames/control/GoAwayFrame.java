@@ -26,7 +26,7 @@ public class GoAwayFrame extends ControlFrame {
 	@Override
 	public String toString() {
 		return "GoAwayFrame [lastStreamId=" + lastStreamId + ", statusCode="
-				+ statusCode + "]";
+				+ statusCode + ", toString()=" + super.toString() + "]";
 	}
 
 	@Override
