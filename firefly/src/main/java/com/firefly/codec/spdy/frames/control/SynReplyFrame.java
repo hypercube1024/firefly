@@ -55,4 +55,32 @@ public class SynReplyFrame extends ControlFrame {
         return buffer;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((headers == null) ? 0 : headers.hashCode());
+		result = prime * result + streamId;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SynReplyFrame other = (SynReplyFrame) obj;
+		if (headers == null) {
+			if (other.headers != null)
+				return false;
+		} else if (!headers.equals(other.headers))
+			return false;
+		if (streamId != other.streamId)
+			return false;
+		return true;
+	}
+
 }

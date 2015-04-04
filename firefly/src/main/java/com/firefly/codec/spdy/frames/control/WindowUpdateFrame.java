@@ -42,4 +42,29 @@ public class WindowUpdateFrame extends ControlFrame {
         return buffer;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + streamId;
+		result = prime * result + windowDelta;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		WindowUpdateFrame other = (WindowUpdateFrame) obj;
+		if (streamId != other.streamId)
+			return false;
+		if (windowDelta != other.windowDelta)
+			return false;
+		return true;
+	}
+
 }

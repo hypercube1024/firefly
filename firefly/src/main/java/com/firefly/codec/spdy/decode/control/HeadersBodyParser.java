@@ -14,8 +14,10 @@ public class HeadersBodyParser extends AbstractParser {
 	}
 
 	@Override
-	public DecodeStatus parse(ByteBuffer buf, Session session) {
-		// TODO Auto-generated method stub
+	public DecodeStatus parse(ByteBuffer buffer, Session session) {
+		if(isControlFrameUnderflow(buffer, session))
+			return DecodeStatus.BUFFER_UNDERFLOW;
+		
 		return null;
 	}
 

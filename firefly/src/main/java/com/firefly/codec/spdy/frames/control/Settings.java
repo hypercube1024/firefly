@@ -40,18 +40,29 @@ public class Settings implements Iterable<Settings.Setting> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null || getClass() != obj.getClass())
-			return false;
-		Settings that = (Settings) obj;
-		return settings.equals(that.settings);
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((settings == null) ? 0 : settings.hashCode());
+		return result;
 	}
 
 	@Override
-	public int hashCode() {
-		return settings.hashCode();
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Settings other = (Settings) obj;
+		if (settings == null) {
+			if (other.settings != null)
+				return false;
+		} else if (!settings.equals(other.settings))
+			return false;
+		return true;
 	}
 
 	@Override

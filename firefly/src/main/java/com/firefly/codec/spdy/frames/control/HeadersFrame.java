@@ -10,6 +10,7 @@ import com.firefly.codec.spdy.frames.exception.SessionException;
 public class HeadersFrame extends ControlFrame {
 	
 	public static final byte FLAG_RESET_COMPRESSION = 2;
+	public static final byte FLAG_FIN = 1;
 
 	private final int streamId;
 	private final Fields headers;
@@ -54,4 +55,33 @@ public class HeadersFrame extends ControlFrame {
         buffer.flip();
         return buffer;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((headers == null) ? 0 : headers.hashCode());
+		result = prime * result + streamId;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		HeadersFrame other = (HeadersFrame) obj;
+		if (headers == null) {
+			if (other.headers != null)
+				return false;
+		} else if (!headers.equals(other.headers))
+			return false;
+		if (streamId != other.streamId)
+			return false;
+		return true;
+	}
+	
 }
