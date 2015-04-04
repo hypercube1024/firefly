@@ -35,7 +35,7 @@ public class TestPing extends TestBase{
 					System.out.println("receive ping frame: " + pingFrame);
 					Assert.assertThat(pingFrame, is(s));
 				}});
-			testControlFrame(decoder, s, session);
+			testSpdyFrame(decoder, s, session);
 		}
 	}
 	

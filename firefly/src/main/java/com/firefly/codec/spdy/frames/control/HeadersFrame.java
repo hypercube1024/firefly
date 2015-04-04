@@ -2,7 +2,6 @@ package com.firefly.codec.spdy.frames.control;
 
 import java.nio.ByteBuffer;
 
-import com.firefly.codec.spdy.frames.Constants;
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
 import com.firefly.codec.spdy.frames.exception.SessionException;
@@ -30,7 +29,7 @@ public class HeadersFrame extends ControlFrame {
 	}
 
 	public boolean isClose() {
-		return (getFlags() & Constants.FLAG_CLOSE) == Constants.FLAG_CLOSE;
+		return (getFlags() & FLAG_FIN) == FLAG_FIN;
 	}
 
 	public boolean isResetCompression() {
@@ -82,6 +81,12 @@ public class HeadersFrame extends ControlFrame {
 		if (streamId != other.streamId)
 			return false;
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "HeadersFrame [streamId=" + streamId + ", headers=" + headers
+				+ ", toString()=" + super.toString() + "]";
 	}
 	
 }

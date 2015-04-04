@@ -2,12 +2,13 @@ package com.firefly.codec.spdy.frames.control;
 
 import java.nio.ByteBuffer;
 
-import com.firefly.codec.spdy.frames.Constants;
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
 import com.firefly.codec.spdy.frames.exception.SessionException;
 
 public class SynReplyFrame extends ControlFrame {
+	
+	public static final byte FLAG_FIN = 1;
 	
 	private final int streamId;
 	private final Fields headers;
@@ -27,7 +28,7 @@ public class SynReplyFrame extends ControlFrame {
 	}
 
 	public boolean isClose() {
-		return (getFlags() & Constants.FLAG_CLOSE) == Constants.FLAG_CLOSE;
+		return (getFlags() & FLAG_FIN) == FLAG_FIN;
 	}
 
 	@Override

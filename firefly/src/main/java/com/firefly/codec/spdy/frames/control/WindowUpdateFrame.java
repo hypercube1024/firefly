@@ -26,7 +26,7 @@ public class WindowUpdateFrame extends ControlFrame {
 	@Override
 	public String toString() {
 		return "WindowUpdateFrame [streamId=" + streamId + ", windowDelta="
-				+ windowDelta + "]";
+				+ windowDelta + ", toString()=" + super.toString() + "]";
 	}
 
 	@Override

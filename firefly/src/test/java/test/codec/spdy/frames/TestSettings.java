@@ -55,7 +55,7 @@ public class TestSettings extends TestBase {
 					System.out.println("receive settings frame: " + settingsFrame);
 					Assert.assertThat(settingsFrame, is(s));
 				}});
-			testControlFrame(decoder, s, session);
+			testSpdyFrame(decoder, s, session);
 		}
 	}
 	

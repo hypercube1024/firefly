@@ -10,7 +10,7 @@ import org.junit.Assert;
 
 import com.firefly.codec.spdy.decode.SpdyDecoder;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
-import com.firefly.codec.spdy.frames.ControlFrame;
+import com.firefly.codec.spdy.frames.Serialization;
 import com.firefly.net.Session;
 
 public class TestBase {
@@ -38,7 +38,7 @@ public class TestBase {
 		return list;
 	}
 	
-	protected void testControlFrame(SpdyDecoder decoder, ControlFrame s, Session session) throws Throwable {
+	protected void testSpdyFrame(SpdyDecoder decoder, Serialization s, Session session) throws Throwable {
 		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
 		// test sync flush
 		List<ByteBuffer> list = new ArrayList<ByteBuffer>();

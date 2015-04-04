@@ -49,7 +49,7 @@ public class ControlFrameParser extends AbstractParser {
 					final short version = NumberProcessUtils.toUnsigned15bitsShort(buffer.getShort());
 					final ControlFrameType type = ControlFrameType.from(buffer.getShort());
 					final byte flags = buffer.get();
-					int length = NumberProcessUtils.toUnsigned24bitsInteger(buffer.get(), buffer.getShort());
+					final int length = NumberProcessUtils.toUnsigned24bitsInteger(buffer.get(), buffer.getShort());
 					
 					attachment.controlFrameHeader = new ControlFrameHeader(version, type, flags, length);
 					attachment.controlFrameParserState = ControlFrameParserState.BODY;

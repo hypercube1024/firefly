@@ -36,7 +36,7 @@ public class TestGoAway extends TestBase {
 					System.out.println("receive go away frame: " + goAwayFrame);
 					Assert.assertThat(goAwayFrame, is(s));
 				}});
-			testControlFrame(decoder, s, session);
+			testSpdyFrame(decoder, s, session);
 		}
 	}
 	

@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 
 import com.firefly.codec.spdy.decode.control.ControlFrameHeader;
 import com.firefly.codec.spdy.decode.control.HeadersBlockParser;
+import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.HeadersBlockGenerator;
 import com.firefly.net.tcp.ssl.SSLSession;
 
@@ -19,20 +20,26 @@ public class SpdySessionAttachment implements Closeable {
 	// decoding state
 	public FrameType frameType;
 	public ControlFrameParserState controlFrameParserState = ControlFrameParserState.HEAD;
+	public DataFrameParserState dataFrameParserState = DataFrameParserState.HEAD;
 	public ControlFrameHeader controlFrameHeader;
+	public DataFrame dataFrame;
 	
 	public void reset() {
-		this.byteBuffer = null;
-		this.frameType = null;
-		this.controlFrameParserState = ControlFrameParserState.HEAD;
-		this.controlFrameHeader = null;
+		byteBuffer = null;
+		frameType = null;
+		controlFrameParserState = ControlFrameParserState.HEAD;
+		dataFrameParserState = DataFrameParserState.HEAD;
+		controlFrameHeader = null;
+		dataFrame = null;
 	}
 	
 	public boolean isInitialized() {
 		return byteBuffer == null 
 				&& frameType == null
 				&& controlFrameParserState == ControlFrameParserState.HEAD
-				&& controlFrameHeader == null;
+				&& dataFrameParserState == DataFrameParserState.HEAD
+				&& controlFrameHeader == null
+				&& dataFrame == null;
 	}
 
 	@Override

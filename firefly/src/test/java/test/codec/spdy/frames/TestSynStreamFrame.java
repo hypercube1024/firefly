@@ -39,7 +39,7 @@ public class TestSynStreamFrame extends TestBase{
 					Assert.assertThat(synStreamFrame, is(s));
 				}});
 
-			testControlFrame(decoder, s, session);
+			testSpdyFrame(decoder, s, session);
 		}
 	}
 	

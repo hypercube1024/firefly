@@ -40,7 +40,7 @@ public class TestSynReplyFrame extends TestBase {
 					Assert.assertThat(synReplyFrame, is(s));
 				}});
 			
-			testControlFrame(decoder, s, session);
+			testSpdyFrame(decoder, s, session);
 		}
 	}
 	

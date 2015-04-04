@@ -17,13 +17,16 @@ public abstract class AbstractParser implements Parser {
 		this.spdyDecodingEvent = spdyDecodingEvent;
 	}
 	
-	protected boolean isControlFrameUnderflow(ByteBuffer buffer, Session session) {
-		if(!buffer.hasRemaining())
-			return true;
-		
+	protected boolean isControlFrameUnderflow(ByteBuffer buffer, Session session) {		
 		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
 		log.debug("control frame's length is {}", attachment.controlFrameHeader.getLength());
 		return buffer.remaining() < attachment.controlFrameHeader.getLength();
+	}
+	
+	protected boolean isDataFrameUnderflow(ByteBuffer buffer, Session session) {
+		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
+		log.debug("data frame's length is {}", attachment.dataFrame.getLength());
+		return buffer.remaining() < attachment.dataFrame.getLength();
 	}
 
 }
