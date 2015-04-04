@@ -1,8 +1,6 @@
 package com.firefly.codec.spdy.frames.control;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
@@ -46,14 +44,14 @@ public class RstStreamFrame extends ControlFrame {
 		FRAME_TOO_LARGE(11);
 		
 		public static StreamErrorCode from(int code) {
-			return Codes.codes.get(code);
+			return Codes.codes[code - 1];
 		}
 
 		private final int code;
 
 		private StreamErrorCode(int code) {
 			this.code = code;
-			Codes.codes.put(code, this);
+			Codes.codes[code - 1] = this;
 		}
 
 		public int code() {
@@ -66,7 +64,7 @@ public class RstStreamFrame extends ControlFrame {
 		}
 
 		private static class Codes {
-			private static final Map<Integer, StreamErrorCode> codes = new HashMap<>();
+			private static final StreamErrorCode[] codes = new StreamErrorCode[12];
 		}
 	}
 

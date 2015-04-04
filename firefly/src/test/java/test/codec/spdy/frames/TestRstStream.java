@@ -41,6 +41,13 @@ public class TestRstStream extends TestBase {
 		}
 	}
 	
+	@Test
+	public void testStreamErrorCode() {
+		Assert.assertThat(StreamErrorCode.from(1), is(StreamErrorCode.PROTOCOL_ERROR));
+		Assert.assertThat(StreamErrorCode.from(9), is(StreamErrorCode.STREAM_ALREADY_CLOSED));
+		Assert.assertThat(StreamErrorCode.from(11), is(StreamErrorCode.FRAME_TOO_LARGE));
+	}
+	
 	public static RstStreamFrame newInstance() {
 		RstStreamFrame rstStreamFrame = new RstStreamFrame((short)3, 22, StreamErrorCode.INTERNAL_ERROR);
 		return rstStreamFrame;
