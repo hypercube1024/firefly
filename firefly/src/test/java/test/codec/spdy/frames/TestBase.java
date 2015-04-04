@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
@@ -39,13 +40,19 @@ public class TestBase {
 	}
 	
 	protected void testSpdyFrame(SpdyDecoder decoder, Serialization s, Session session) throws Throwable {
+		testSpdyFrame(decoder, Arrays.asList(s), session);
+	}
+	
+	protected void testSpdyFrame(SpdyDecoder decoder, List<Serialization> serializationList, Session session) throws Throwable {
 		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
 		// test sync flush
 		List<ByteBuffer> list = new ArrayList<ByteBuffer>();
 		for (int i = 0; i < 10; i++) {
-			ByteBuffer b1 = s.toByteBuffer();
-			System.out.println("b1's size is " + b1.remaining());
-			list.add(b1);
+			for(Serialization s : serializationList) {
+				ByteBuffer b1 = s.toByteBuffer();
+				System.out.println("b1's size is " + b1.remaining());
+				list.add(b1);
+			}
 		}
 		for(ByteBuffer b : list) {
 			decoder.decode(b, session);
@@ -55,9 +62,11 @@ public class TestBase {
 		// test merge
 		list = new ArrayList<ByteBuffer>();
 		for (int i = 0; i < 10; i++) {
-			ByteBuffer b1 = s.toByteBuffer();
-			System.out.println("b1's size is " + b1.remaining());
-			list.add(b1);
+			for(Serialization s : serializationList) {
+				ByteBuffer b1 = s.toByteBuffer();
+				System.out.println("b1's size is " + b1.remaining());
+				list.add(b1);
+			}
 		}
 		ByteBuffer mergeByteBuffer = merge(list);
 		System.out.println("merge byte buffer size is " + mergeByteBuffer.remaining());
@@ -65,22 +74,24 @@ public class TestBase {
 		Assert.assertThat(attachment.isInitialized(), is(true));
 		
 		// test split
-		ByteBuffer b2 = s.toByteBuffer();
-		System.out.println("b2's size is " + b2.remaining());
-		list = split(b2, 7);
-		System.out.println("split b2 into a list the size is " + list.size());
-		for(ByteBuffer b : list) {
-			decoder.decode(b, session);
+		for(Serialization s : serializationList) {
+			ByteBuffer b2 = s.toByteBuffer();
+			System.out.println("b2's size is " + b2.remaining());
+			list = split(b2, 7);
+			System.out.println("split b2 into a list the size is " + list.size());
+			for(ByteBuffer b : list) {
+				decoder.decode(b, session);
+			}
+			Assert.assertThat(attachment.isInitialized(), is(true));
+			
+			ByteBuffer b3 = s.toByteBuffer();
+			System.out.println("b3's size is " + b3.remaining());
+			list = split(b3, 10);
+			System.out.println("split b3 into a list the size is " + list.size());
+			for(ByteBuffer b : list) {
+				decoder.decode(b, session);
+			}
+			Assert.assertThat(attachment.isInitialized(), is(true));
 		}
-		Assert.assertThat(attachment.isInitialized(), is(true));
-		
-		ByteBuffer b3 = s.toByteBuffer();
-		System.out.println("b3's size is " + b3.remaining());
-		list = split(b3, 10);
-		System.out.println("split b3 into a list the size is " + list.size());
-		for(ByteBuffer b : list) {
-			decoder.decode(b, session);
-		}
-		Assert.assertThat(attachment.isInitialized(), is(true));
 	}
 }
