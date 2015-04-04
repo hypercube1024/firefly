@@ -5,7 +5,7 @@ import com.firefly.codec.spdy.frames.control.GoAwayFrame;
 import com.firefly.codec.spdy.frames.control.HeadersFrame;
 import com.firefly.codec.spdy.frames.control.PingFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame;
-import com.firefly.codec.spdy.frames.control.Settings;
+import com.firefly.codec.spdy.frames.control.SettingsFrame;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
@@ -19,7 +19,7 @@ public interface SpdyDecodingEvent {
 	
 	public void onRstStream(RstStreamFrame rstStreamFrame, Session session);
 	
-	public void onSettings(Settings settings, Session session);
+	public void onSettings(SettingsFrame settingsFrame, Session session);
 	
 	public void onPing(PingFrame pingFrame, Session session);
 	

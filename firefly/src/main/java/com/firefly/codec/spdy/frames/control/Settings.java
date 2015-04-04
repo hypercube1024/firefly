@@ -76,14 +76,14 @@ public class Settings implements Iterable<Settings.Setting> {
 		CLIENT_CERTIFICATE_VECTOR_SIZE(8);
 
 		public static ID from(int code) {
-			return Codes.codes.get(code);
+			return Codes.codes[code - 1];
 		}
 
 		private final int code;
 
 		private ID(int code) {
 			this.code = code;
-			Codes.codes.put(code, this);
+			Codes.codes[code - 1] = this;
 		}
 
 		public int code() {
@@ -96,7 +96,7 @@ public class Settings implements Iterable<Settings.Setting> {
 		}
 
 		private static class Codes {
-			private static final Map<Integer, ID> codes = new HashMap<>();
+			private static final ID[] codes = new ID[8];
 		}
 	}
 
@@ -105,14 +105,18 @@ public class Settings implements Iterable<Settings.Setting> {
 		NONE((byte) 0), PERSIST((byte) 1), PERSISTED((byte) 2);
 
 		public static Flag from(byte code) {
-			return Codes.codes.get(code);
+			return Codes.codes[code];
+		}
+		
+		public static Flag from(int code) {
+			return Codes.codes[code];
 		}
 
 		private final byte code;
 
 		private Flag(byte code) {
 			this.code = code;
-			Codes.codes.put(code, this);
+			Codes.codes[code] = this;
 		}
 
 		public byte code() {
@@ -120,7 +124,7 @@ public class Settings implements Iterable<Settings.Setting> {
 		}
 
 		private static class Codes {
-			private static final Map<Byte, Flag> codes = new HashMap<>();
+			private static final Flag[] codes = new Flag[3];
 		}
 	}
 

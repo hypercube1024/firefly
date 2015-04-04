@@ -14,7 +14,7 @@ import com.firefly.codec.spdy.frames.control.HeadersFrame;
 import com.firefly.codec.spdy.frames.control.PingFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
-import com.firefly.codec.spdy.frames.control.Settings;
+import com.firefly.codec.spdy.frames.control.SettingsFrame;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
@@ -61,7 +61,7 @@ public class TestRstStream extends TestBase {
 		public void onSynReply(SynReplyFrame synReplyFrame, Session session) {}
 
 		@Override
-		public void onSettings(Settings settings, Session session) {}
+		public void onSettings(SettingsFrame settings, Session session) {}
 
 		@Override
 		public void onPing(PingFrame pingFrame, Session session) {}
