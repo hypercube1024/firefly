@@ -33,7 +33,7 @@ public class SynReplyFrame extends ControlFrame {
 	@Override
 	public String toString() {
 		return "SynReplyFrame [streamId=" + streamId + ", headers=" + headers
-				+ "]";
+				+ ", toString()=" + super.toString() + "]";
 	}
 
 	@Override

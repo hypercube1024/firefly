@@ -18,16 +18,11 @@ public class SynStreamBodyParser extends AbstractParser {
 	}
 
 	@Override
-	public DecodeStatus parse(ByteBuffer buffer, Session session) {
-		if(!buffer.hasRemaining())
+	public DecodeStatus parse(ByteBuffer buffer, Session session) {		
+		if(isControlFrameUnderflow(buffer, session))
 			return DecodeStatus.BUFFER_UNDERFLOW;
 		
 		SpdySessionAttachment attachment = (SpdySessionAttachment)session.getAttachment();
-		
-		log.debug("control frame's length is {}", attachment.controlFrameHeader.getLength());
-		if(buffer.remaining() < attachment.controlFrameHeader.getLength()) {
-			return DecodeStatus.BUFFER_UNDERFLOW;
-		}
 		
 		// SYN stream basic fields length is 10 bytes 
 		int streamId = NumberProcessUtils.toUnsigned31bitsInteger(buffer.getInt()); // 4 bytes
@@ -44,7 +39,7 @@ public class SynStreamBodyParser extends AbstractParser {
 		SynStreamFrame synStreamFrame = null;
 		if(headerBlockLength > 0) {
 			// header block parser
-			Fields fields = attachment.headersBlockParser.parse(associatedStreamId, headerBlockLength, buffer, session);
+			Fields fields = attachment.headersBlockParser.parse(streamId, headerBlockLength, buffer, session);
 			synStreamFrame = new SynStreamFrame(attachment.controlFrameHeader.getVersion(), 
 					attachment.controlFrameHeader.getFlags(), 
 					streamId, associatedStreamId, 

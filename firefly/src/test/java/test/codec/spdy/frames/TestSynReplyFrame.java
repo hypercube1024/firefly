@@ -23,40 +23,42 @@ import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
 import com.firefly.net.Session;
 
-public class TestSynStreamFrame extends TestBase{
+public class TestSynReplyFrame extends TestBase {
 
 	@Test
-	public void testSynStream() throws Throwable {
+	public void testSynReplyFrame() throws Throwable {
 		try(SpdySessionAttachment attachment = new SpdySessionAttachment()) {
 			MockSession session = new MockSession();
 			session.attachObject(attachment);
 			
-			final SynStreamFrame s = newSynStreamFrame(attachment);
-			SpdyDecoder decoder = new SpdyDecoder(new SynStreamEvent(){
-				@Override
-				public void onSynStream(SynStreamFrame synStreamFrame, Session session) {
-					System.out.println("receive syn stream frame: " + synStreamFrame);
-					Assert.assertThat(synStreamFrame, is(s));
-				}});
+			final SynReplyFrame s = newInstance(attachment);
+			SpdyDecoder decoder = new SpdyDecoder(new SynReplyEvent(){
 
+				@Override
+				public void onSynReply(SynReplyFrame synReplyFrame, Session session) {
+					System.out.println("receive syn reply frame: " + synReplyFrame);
+					Assert.assertThat(synReplyFrame, is(s));
+				}});
+			
 			testControlFrame(decoder, s, session);
 		}
 	}
 	
-	public static SynStreamFrame newSynStreamFrame(SpdySessionAttachment attachment) {
+	public static SynReplyFrame newInstance(SpdySessionAttachment attachment) {
 		Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
-		headers.put("test1", "testValue1");
-		headers.put("test2", "testValue2");
-		headers.add("testM1", "testm1");
-		headers.add("testM2", "testm2");
+		headers.put("testReply1", "testReplyValue1");
+		headers.put("testReply2", "testReplyValue2");		
+		for (int i = 0; i < 15; i++) {
+			headers.add("testMReply", "testm" + i);
+		}
 
-		SynStreamFrame s = new SynStreamFrame((short)3, SynStreamFrame.FLAG_FIN, 1, 0, (byte)1, (byte)0, headers);
-		return s;
+		SynReplyFrame synReplyFrame = new SynReplyFrame((short)3, (byte)0, 20, headers);
+		return synReplyFrame;
 	}
 	
-	abstract static class SynStreamEvent implements SpdyDecodingEvent {
+	abstract static class SynReplyEvent implements SpdyDecodingEvent {
 		@Override
-		public void onSynReply(SynReplyFrame synReplyFrame, Session session) {}
+		public void onSynStream(SynStreamFrame synStreamFrame, Session session) {}
 
 		@Override
 		public void onRstStream(RstStreamFrame rstStreamFrame,Session session) {}
@@ -79,5 +81,4 @@ public class TestSynStreamFrame extends TestBase{
 		@Override
 		public void onData(DataFrame dataFrame, Session session) {}
 	}
-	
 }

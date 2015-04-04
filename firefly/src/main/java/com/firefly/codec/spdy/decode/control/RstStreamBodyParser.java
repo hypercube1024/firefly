@@ -5,6 +5,9 @@ import java.nio.ByteBuffer;
 import com.firefly.codec.spdy.decode.AbstractParser;
 import com.firefly.codec.spdy.decode.DecodeStatus;
 import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
+import com.firefly.codec.spdy.decode.utils.NumberProcessUtils;
+import com.firefly.codec.spdy.frames.control.RstStreamFrame;
+import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
 import com.firefly.net.Session;
 
 public class RstStreamBodyParser extends AbstractParser {
@@ -14,9 +17,15 @@ public class RstStreamBodyParser extends AbstractParser {
 	}
 
 	@Override
-	public DecodeStatus parse(ByteBuffer buf, Session session) {
-		// TODO Auto-generated method stub
-		return null;
+	public DecodeStatus parse(ByteBuffer buffer, Session session) {
+		if(isControlFrameUnderflow(buffer, session))
+			return DecodeStatus.BUFFER_UNDERFLOW;
+		
+		int streamId = NumberProcessUtils.toUnsigned31bitsInteger(buffer.getInt()); // 4 bytes
+		int statusCode = buffer.getInt();
+		RstStreamFrame rstStreamFrame = new RstStreamFrame((short)3, streamId, StreamErrorCode.from(statusCode));
+		spdyDecodingEvent.onRstStream(rstStreamFrame, session);
+		return buffer.hasRemaining() ? DecodeStatus.INIT : DecodeStatus.COMPLETE;
 	}
 
 }
