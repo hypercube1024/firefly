@@ -542,7 +542,7 @@ In this case, when you visit http://localhost:8080/fruit/apple, the browser will
 This is a classic web application architecture. The controller handles HTTP request, and the business logic is in the service.
 
 ## HTTP server
-You don't need any other web server for startup. It just runs `ServerBootstrap.start(config)` in main method.
+It just runs `ServerBootstrap.start(config)` in main method to start HTTP server.
 
 {% highlight java %}
 public class App {
