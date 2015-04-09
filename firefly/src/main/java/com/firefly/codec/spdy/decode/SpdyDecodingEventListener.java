@@ -11,7 +11,7 @@ import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
 import com.firefly.net.Session;
 
-public interface SpdyDecodingEvent {
+public interface SpdyDecodingEventListener {
 	
 	public void onSynStream(SynStreamFrame synStreamFrame, Session session);
 	

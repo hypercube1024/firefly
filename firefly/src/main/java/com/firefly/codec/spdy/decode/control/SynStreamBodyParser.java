@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import com.firefly.codec.spdy.decode.AbstractParser;
 import com.firefly.codec.spdy.decode.DecodeStatus;
-import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
+import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.decode.utils.NumberProcessUtils;
 import com.firefly.codec.spdy.frames.control.Fields;
@@ -13,7 +13,7 @@ import com.firefly.net.Session;
 
 public class SynStreamBodyParser extends AbstractParser {
 
-	public SynStreamBodyParser(SpdyDecodingEvent spdyDecodingEvent) {
+	public SynStreamBodyParser(SpdyDecodingEventListener spdyDecodingEvent) {
 		super(spdyDecodingEvent);
 	}
 

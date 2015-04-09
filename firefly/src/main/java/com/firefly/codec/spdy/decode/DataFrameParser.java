@@ -9,7 +9,7 @@ import com.firefly.net.Session;
 
 public class DataFrameParser extends AbstractParser {
 
-	public DataFrameParser(SpdyDecodingEvent spdyDecodingEvent) {
+	public DataFrameParser(SpdyDecodingEventListener spdyDecodingEvent) {
 		super(spdyDecodingEvent);
 	}
 

@@ -14,7 +14,7 @@ public class SpdyDecoder implements Decoder {
 	
 	private final Parser parser;
 	
-	public SpdyDecoder(SpdyDecodingEvent spdyDecodingEvent) {
+	public SpdyDecoder(SpdyDecodingEventListener spdyDecodingEvent) {
 		parser = new SpdyParser(spdyDecodingEvent);
 	}
 

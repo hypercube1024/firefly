@@ -23,7 +23,7 @@ public class ControlFrameParser extends AbstractParser {
 	
 	private final Parser[] parsers;
 	
-	public ControlFrameParser(SpdyDecodingEvent spdyDecodingEvent) {
+	public ControlFrameParser(SpdyDecodingEventListener spdyDecodingEvent) {
 		super(spdyDecodingEvent);
 		parsers = new Parser[] {
 				new SynStreamBodyParser(spdyDecodingEvent),

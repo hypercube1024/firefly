@@ -17,12 +17,15 @@ public class SpdySessionAttachment implements Closeable {
 	public SSLSession sslSession;
 	public ByteBuffer byteBuffer;
 	
-	// decoding state
+	// stream state
 	public FrameType frameType;
 	public ControlFrameParserState controlFrameParserState = ControlFrameParserState.HEAD;
 	public DataFrameParserState dataFrameParserState = DataFrameParserState.HEAD;
 	public ControlFrameHeader controlFrameHeader;
 	public DataFrame dataFrame;
+	
+	// other attachment
+	public Object attachment;
 	
 	public void reset() {
 		byteBuffer = null;

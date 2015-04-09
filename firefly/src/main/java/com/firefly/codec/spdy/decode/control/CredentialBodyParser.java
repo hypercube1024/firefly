@@ -4,13 +4,13 @@ import java.nio.ByteBuffer;
 
 import com.firefly.codec.spdy.decode.AbstractParser;
 import com.firefly.codec.spdy.decode.DecodeStatus;
-import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
+import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.exception.DecodingStateException;
 import com.firefly.net.Session;
 
 public class CredentialBodyParser extends AbstractParser {
 
-	public CredentialBodyParser(SpdyDecodingEvent spdyDecodingEvent) {
+	public CredentialBodyParser(SpdyDecodingEventListener spdyDecodingEvent) {
 		super(spdyDecodingEvent);
 	}
 

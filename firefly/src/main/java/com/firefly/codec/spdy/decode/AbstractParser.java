@@ -11,9 +11,9 @@ public abstract class AbstractParser implements Parser {
 
 	protected static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
-	protected SpdyDecodingEvent spdyDecodingEvent;
+	protected SpdyDecodingEventListener spdyDecodingEvent;
 
-	public AbstractParser(SpdyDecodingEvent spdyDecodingEvent) {
+	public AbstractParser(SpdyDecodingEventListener spdyDecodingEvent) {
 		this.spdyDecodingEvent = spdyDecodingEvent;
 	}
 	

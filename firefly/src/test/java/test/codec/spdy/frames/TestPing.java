@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.codec.spdy.decode.SpdyDecoder;
-import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
+import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.GoAwayFrame;
@@ -43,7 +43,7 @@ public class TestPing extends TestBase{
 		return new PingFrame((short)3, 20);
 	}
 	
-	abstract static class PingFrameEvent implements SpdyDecodingEvent {
+	abstract static class PingFrameEvent implements SpdyDecodingEventListener {
 		@Override
 		public void onSynStream(SynStreamFrame synStreamFrame, Session session) {}
 

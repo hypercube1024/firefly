@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.codec.spdy.decode.SpdyDecoder;
-import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
+import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.GoAwayFrame;
@@ -84,7 +84,7 @@ public class TestSettings extends TestBase {
 		return settingsFrame;
 	}
 	
-	abstract static class SettingsFrameEvent implements SpdyDecodingEvent {
+	abstract static class SettingsFrameEvent implements SpdyDecodingEventListener {
 		@Override
 		public void onSynStream(SynStreamFrame synStreamFrame, Session session) {}
 

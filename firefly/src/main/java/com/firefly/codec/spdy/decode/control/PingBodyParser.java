@@ -4,14 +4,14 @@ import java.nio.ByteBuffer;
 
 import com.firefly.codec.spdy.decode.AbstractParser;
 import com.firefly.codec.spdy.decode.DecodeStatus;
-import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
+import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.control.PingFrame;
 import com.firefly.net.Session;
 
 public class PingBodyParser extends AbstractParser {
 
-	public PingBodyParser(SpdyDecodingEvent spdyDecodingEvent) {
+	public PingBodyParser(SpdyDecodingEventListener spdyDecodingEvent) {
 		super(spdyDecodingEvent);
 	}
 

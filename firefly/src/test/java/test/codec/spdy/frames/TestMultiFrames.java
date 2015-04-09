@@ -9,7 +9,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.codec.spdy.decode.SpdyDecoder;
-import com.firefly.codec.spdy.decode.SpdyDecodingEvent;
+import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.Serialization;
@@ -43,7 +43,7 @@ public class TestMultiFrames extends TestBase {
 				TestRstStream.newInstance()
 			);
 			
-			SpdyDecoder decoder = new SpdyDecoder(new SpdyDecodingEvent() {
+			SpdyDecoder decoder = new SpdyDecoder(new SpdyDecodingEventListener() {
 				
 				@Override
 				public void onWindowUpdate(WindowUpdateFrame windowUpdateFrame, Session session) {

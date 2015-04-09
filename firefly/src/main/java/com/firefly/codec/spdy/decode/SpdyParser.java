@@ -10,7 +10,7 @@ public class SpdyParser extends AbstractParser {
 	private final ControlFrameParser controlFrameParser;
 	private final DataFrameParser dataFrameParser;
 	
-	public SpdyParser(SpdyDecodingEvent spdyDecodingEvent) {
+	public SpdyParser(SpdyDecodingEventListener spdyDecodingEvent) {
 		super(spdyDecodingEvent);
 		dataFrameParser = new DataFrameParser(spdyDecodingEvent);
 		controlFrameParser = new ControlFrameParser(spdyDecodingEvent);

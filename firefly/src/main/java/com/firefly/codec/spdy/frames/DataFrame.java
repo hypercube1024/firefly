@@ -3,7 +3,7 @@ package com.firefly.codec.spdy.frames;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class DataFrame implements Serialization{
+public class DataFrame implements Serialization {
 	public static final int HEADER_LENGTH = 8;
 	public static final byte FLAG_FIN = 1;
 
@@ -15,6 +15,11 @@ public class DataFrame implements Serialization{
 	public DataFrame(int streamId, byte flags) {
 		this.streamId = streamId;
 		this.flags = flags;
+	}
+	
+	public DataFrame(int streamId, byte flags, byte[] data) {
+		this(streamId, flags);
+		this.data = data;
 	}
 
 	public int getStreamId() {
