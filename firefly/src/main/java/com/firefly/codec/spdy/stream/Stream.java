@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.Fields;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
+import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.exception.StreamException;
 
 public class Stream implements Comparable<Stream> {
@@ -48,8 +49,13 @@ public class Stream implements Comparable<Stream> {
 		flush();
 	}
 	
-	public Stream syn(short version, byte flags, int associatedStreamId, byte slot, Fields headers) {
-		// TODO
+	public synchronized Stream syn(short version, byte flags, int associatedStreamId, byte slot, Fields headers) {
+		if(isSyn)
+			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has been sent");
+		
+		SynStreamFrame synStreamFrame = new SynStreamFrame(version, flags, id, associatedStreamId, flags, slot, headers);
+		connection.getSession().encode(synStreamFrame);
+		isSyn = true;
 		return this;
 	}
 	
