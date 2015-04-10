@@ -18,7 +18,7 @@ import com.firefly.server.Config;
 import com.firefly.server.exception.HttpServerException;
 import com.firefly.server.http.Constants;
 import com.firefly.server.http.HttpServletResponseImpl;
-import com.firefly.server.io.StaticFileOutputStream;
+import com.firefly.server.http.io.StaticFileOutputStream;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;

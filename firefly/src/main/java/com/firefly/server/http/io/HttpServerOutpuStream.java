@@ -1,4 +1,4 @@
-package com.firefly.server.io;
+package com.firefly.server.http.io;
 
 import java.io.IOException;
 import java.util.LinkedList;
