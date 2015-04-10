@@ -19,14 +19,16 @@ import com.firefly.codec.spdy.frames.control.SettingsFrame;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
+import com.firefly.codec.spdy.stream.Connection;
 import com.firefly.net.Session;
 
 public class TestDataFrame extends TestBase {
 
 	@Test
 	public void testDataFrame() throws Throwable {
-		try(SpdySessionAttachment attachment = new SpdySessionAttachment()) {
-			MockSession session = new MockSession();
+		MockSession session = new MockSession();
+		Connection connection = new Connection(session, false);
+		try(SpdySessionAttachment attachment = new SpdySessionAttachment(connection)) {
 			session.attachObject(attachment);
 			
 			final DataFrame s = newInstance();

@@ -15,6 +15,8 @@ public class Stream implements Comparable<Stream> {
 	private final LinkedList<DataFrame> outboundBuffer = new LinkedList<>();
 	private final byte priority;
 	private boolean isSyn;
+	private volatile boolean inboundClosed = false;
+	private volatile boolean outboundClosed = false;
 	private final StreamEventListener streamEventListener;
 	
 	public Stream(Connection connection, int id, byte priority, boolean isSyn, StreamEventListener streamEventListener) {
@@ -44,7 +46,7 @@ public class Stream implements Comparable<Stream> {
 		return streamEventListener;
 	}
 
-	public void windowUpdate(int delta) {
+	public void updateWindow(int delta) {
 		windowControl.addWindowSize(delta);
 		flush();
 	}
@@ -53,10 +55,19 @@ public class Stream implements Comparable<Stream> {
 		if(isSyn)
 			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has been sent");
 		
-		SynStreamFrame synStreamFrame = new SynStreamFrame(version, flags, id, associatedStreamId, flags, slot, headers);
-		connection.getSession().encode(synStreamFrame);
-		isSyn = true;
-		return this;
+		if(outboundClosed)
+			throw new StreamException(id, StreamErrorCode.STREAM_ALREADY_CLOSED, "The stream " + id + " has been closed");
+		
+		try {
+			SynStreamFrame synStreamFrame = new SynStreamFrame(version, flags, id, associatedStreamId, flags, slot, headers);
+			connection.getSession().encode(synStreamFrame);
+			isSyn = true;
+			return this;
+		} finally {
+			if(flags == SynStreamFrame.FLAG_FIN) {
+				closeOutbound();
+			}
+		}
 	}
 	
 	public Stream reply(short version, byte flags, Fields headers) {
@@ -75,6 +86,9 @@ public class Stream implements Comparable<Stream> {
 	public synchronized Stream sendData(byte[] data, byte flags) {
 		if(!isSyn)
 			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has not been sent");
+		
+		if(outboundClosed)
+			throw new StreamException(id, StreamErrorCode.STREAM_ALREADY_CLOSED, "The stream " + id + " has been closed");
 			
 		outboundBuffer.offer(new DataFrame(id, flags, data));
 		flush();
@@ -91,12 +105,15 @@ public class Stream implements Comparable<Stream> {
 			if(dataFrame.getLength() > windowControl.windowSize())
 				break;
 			
-			connection.getSession().encode(dataFrame);
-			connection.getWindowControl().reduceWindowSize(dataFrame.getLength());
-			windowControl.reduceWindowSize(dataFrame.getLength());
-			outboundBuffer.poll();
-			if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
-				connection.remove(this);
+			try {
+				connection.getSession().encode(dataFrame);
+				connection.getWindowControl().reduceWindowSize(dataFrame.getLength());
+				windowControl.reduceWindowSize(dataFrame.getLength());
+				outboundBuffer.poll();
+			} finally {
+				if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
+					closeOutbound();
+				}
 			}
 		}
 	}
@@ -133,6 +150,26 @@ public class Stream implements Comparable<Stream> {
 		if (id != other.id)
 			return false;
 		return true;
+	}
+
+	public boolean isInboundClosed() {
+		return inboundClosed;
+	}
+
+	public boolean isOutboundClosed() {
+		return outboundClosed;
+	}
+	
+	public synchronized void closeInbound() {
+		inboundClosed = true;
+		if(outboundClosed)
+			connection.remove(this);
+	}
+	
+	public synchronized void closeOutbound() {
+		outboundClosed = true;
+		if(inboundClosed)
+			connection.remove(this);
 	}
 	
 }

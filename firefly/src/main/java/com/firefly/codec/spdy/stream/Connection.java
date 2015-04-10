@@ -61,7 +61,11 @@ public class Connection {
 		return stream;
 	}
 	
-	public void windowUpdate(int delta) {
+	public Stream getStream(int id) {
+		return map.get(id);
+	}
+	
+	public void updateWindow(int delta) {
 		windowControl.addWindowSize(delta);
 		for(Stream stream : navigableSet) {
 			stream.flush();

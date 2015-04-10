@@ -8,6 +8,7 @@ import com.firefly.codec.spdy.decode.control.ControlFrameHeader;
 import com.firefly.codec.spdy.decode.control.HeadersBlockParser;
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.HeadersBlockGenerator;
+import com.firefly.codec.spdy.stream.Connection;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class SpdySessionAttachment implements Closeable {
@@ -24,9 +25,16 @@ public class SpdySessionAttachment implements Closeable {
 	public ControlFrameHeader controlFrameHeader;
 	public DataFrame dataFrame;
 	
+	// spdy connection
+	public final Connection connection;
+	
 	// other attachment
 	public Object attachment;
 	
+	public SpdySessionAttachment(Connection connection) {
+		this.connection = connection;
+	}
+
 	public void reset() {
 		byteBuffer = null;
 		frameType = null;

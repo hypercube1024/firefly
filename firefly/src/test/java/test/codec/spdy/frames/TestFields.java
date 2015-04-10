@@ -13,6 +13,7 @@ import org.junit.Test;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.control.Fields;
 import com.firefly.codec.spdy.frames.control.Fields.Field;
+import com.firefly.codec.spdy.stream.Connection;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 
@@ -27,11 +28,11 @@ public class TestFields {
 		String name3 = "Key3";
 		String value3 = "testvalue3";
 
-		
-		try(SpdySessionAttachment spdySessionAttachment = new SpdySessionAttachment()) {
-			MockSession session = new MockSession();
-			session.attachObject(spdySessionAttachment);
-			Fields headers = new Fields(new HashMap<String, Field>(), spdySessionAttachment.headersBlockGenerator);
+		MockSession session = new MockSession();
+		Connection connection = new Connection(session, false);
+		try(SpdySessionAttachment attachment = new SpdySessionAttachment(connection)) {
+			session.attachObject(attachment);
+			Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
 			headers.put(name1, value1);
 			String[] values = StringUtils.split(value2, "\u0000");
 			for(String v : values) {
@@ -43,7 +44,7 @@ public class TestFields {
 			for (int i = 0; i < 3; i++) {
 				ByteBuffer compressed = headers.toByteBuffer();
 				System.out.println(compressed.remaining());
-				Fields decompressed = spdySessionAttachment.headersBlockParser.parse(1, compressed.remaining(), compressed, session);
+				Fields decompressed = attachment.headersBlockParser.parse(1, compressed.remaining(), compressed, session);
 				
 				Assert.assertThat(decompressed.getSize(), is(headers.getSize()));
 				Assert.assertThat(decompressed.get(name1), is(headers.get(name1)));
@@ -56,7 +57,9 @@ public class TestFields {
 	
 	@Test
 	public void testFields() throws IOException {
-		try(SpdySessionAttachment spdySessionAttachment = new SpdySessionAttachment()) {
+		MockSession session = new MockSession();
+		Connection connection = new Connection(session, false);
+		try(SpdySessionAttachment spdySessionAttachment = new SpdySessionAttachment(connection)) {
 			String name = "Get-TEST";
 			String valueString = "value1\u0000APPLE2\u0000WINDOWS";
 			Fields headers = new Fields(new HashMap<String, Field>(), spdySessionAttachment.headersBlockGenerator);

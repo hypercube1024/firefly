@@ -19,8 +19,6 @@ public abstract class StreamEventListener implements SpdyDecodingEventListener {
 	public void onGoAway(GoAwayFrame goAwayFrame, Session session) {}
 	
 	@Override
-	public void onWindowUpdate(WindowUpdateFrame windowUpdateFrame, Session session) {
-		
-	}
+	public void onWindowUpdate(WindowUpdateFrame windowUpdateFrame, Session session) {}
 
 }
