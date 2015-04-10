@@ -92,6 +92,7 @@ public class Stream implements Comparable<Stream> {
 				break;
 			
 			connection.getSession().encode(dataFrame);
+			connection.getWindowControl().reduceWindowSize(dataFrame.getLength());
 			windowControl.reduceWindowSize(dataFrame.getLength());
 			outboundBuffer.poll();
 			if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
