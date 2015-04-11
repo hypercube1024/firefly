@@ -933,6 +933,7 @@ Environment:
  * JVM arguments: -XX:+AggressiveOpts -XX:+UseParallelGC -XX:+UseParallelOldGC -Xmx1024m -Xms1024m
  * CPU: Intel Core i5 2.3GHz
  * RAM: 8G
+ * Gigabit LAN
 
 Test case:
 {% highlight text %}
@@ -973,7 +974,7 @@ Percentage of the requests served within a certain time (ms)
   99%      8
  100%     96 (longest request)
 {% endhighlight %} 
-
+The max bandwidth of Gigabit LAN is about 100MBytes / sec. In this case, the transfer rate is about 96MBytes / sec, it's the max throughput of Gigabit network. 
 
 ##Contact information
 E-mail: qptkk@163.com  
