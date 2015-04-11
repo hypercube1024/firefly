@@ -30,7 +30,7 @@ public class HeadersBodyParser extends AbstractParser {
 		HeadersFrame headersFrame = null;
 		if(headerBlockLength > 0) {
 			// header block parser
-			Fields fields = attachment.headersBlockParser.parse(streamId, headerBlockLength, buffer, session);
+			Fields fields = attachment.getConnection().getHeadersBlockParser().parse(streamId, headerBlockLength, buffer, session);
 			headersFrame = new HeadersFrame(attachment.controlFrameHeader.getVersion(),
 					attachment.controlFrameHeader.getFlags(), 
 					streamId, fields);

@@ -17,18 +17,18 @@ public interface SpdyDecodingEventListener {
 	
 	public void onSynReply(SynReplyFrame synReplyFrame, Session session);
 	
+	public void onHeaders(HeadersFrame headersFrame, Session session);
+	
 	public void onRstStream(RstStreamFrame rstStreamFrame, Session session);
+	
+	public void onData(DataFrame dataFrame, Session session);
+	
 	
 	public void onSettings(SettingsFrame settingsFrame, Session session);
 	
 	public void onPing(PingFrame pingFrame, Session session);
 	
 	public void onGoAway(GoAwayFrame goAwayFrame, Session session);
-	
-	public void onHeaders(HeadersFrame headersFrame, Session session);
-	
+
 	public void onWindowUpdate(WindowUpdateFrame windowUpdateFrame, Session session);
-	
-	public void onData(DataFrame dataFrame, Session session);
-	
 }

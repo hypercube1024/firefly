@@ -46,7 +46,7 @@ public class TestHeaders extends TestBase {
 	}
 	
 	public static HeadersFrame newInstance(SpdySessionAttachment attachment) {
-		Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
+		Fields headers = new Fields(new HashMap<String, Field>(), attachment.getConnection().getHeadersBlockGenerator());
 		headers.put("testHeaders1", "testHeadersValue1");
 		headers.put("testHeaders2", "testHeadersValue2");		
 		for (int i = 0; i < 110; i++) {

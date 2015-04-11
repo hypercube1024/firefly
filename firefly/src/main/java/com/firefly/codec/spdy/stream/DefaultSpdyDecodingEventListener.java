@@ -18,11 +18,11 @@ import com.firefly.net.Session;
 
 public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListener {
 
-	private final StreamEventListener streamEventListener;
+	private final StreamEventListener inboundStreamEventListener;
 	private final SettingsManager settingsManager;
 	
-	public DefaultSpdyDecodingEventListener(StreamEventListener streamEventListener, SettingsManager settingsManager) {
-		this.streamEventListener = streamEventListener;
+	public DefaultSpdyDecodingEventListener(StreamEventListener inboundStreamEventListener, SettingsManager settingsManager) {
+		this.inboundStreamEventListener = inboundStreamEventListener;
 		this.settingsManager = settingsManager;
 	}
 
@@ -32,10 +32,10 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 		Connection connection = attachment.getConnection();
 		int initWindowSize = connection.getInboundInitWindowSize();
 		
-		Stream stream = new Stream(connection, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener, initWindowSize);
+		Stream stream = new Stream(connection, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, inboundStreamEventListener, initWindowSize);
 		try {
 			connection.addStream(stream);
-			stream.getStreamEventListener().onSynStream(synStreamFrame, session);
+			stream.getStreamEventListener().onSynStream(synStreamFrame, stream, connection);
 		} finally {
 			if(synStreamFrame.getFlags() == SynStreamFrame.FLAG_FIN) {
 				stream.closeInbound();
@@ -53,7 +53,7 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 			throw new StreamException(synReplyFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + synReplyFrame.getStreamId() + " does not exist");
 		}
 		try {
-			stream.getStreamEventListener().onSynReply(synReplyFrame, session);
+			stream.getStreamEventListener().onSynReply(synReplyFrame, stream, connection);
 		} finally {
 			if(synReplyFrame.getFlags() == SynReplyFrame.FLAG_FIN) {
 				stream.closeInbound();
@@ -71,7 +71,7 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 			throw new StreamException(headersFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + headersFrame.getStreamId() + " does not exist");
 		}
 		try {
-			stream.getStreamEventListener().onHeaders(headersFrame, session);
+			stream.getStreamEventListener().onHeaders(headersFrame, stream, connection);
 		} finally {
 			if(headersFrame.getFlags() == HeadersFrame.FLAG_FIN) {
 				stream.closeInbound();
@@ -89,7 +89,7 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 			throw new StreamException(dataFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + dataFrame.getStreamId() + " does not exist");
 		}
 		try {
-			stream.getStreamEventListener().onData(dataFrame, session);
+			stream.getStreamEventListener().onData(dataFrame, stream, connection);
 			
 			// window update
 			session.encode(new WindowUpdateFrame(Version.V3, 0, dataFrame.getLength()));
@@ -111,7 +111,7 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 			throw new StreamException(rstStreamFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + rstStreamFrame.getStreamId() + " does not exist");
 		}
 		try {
-			stream.getStreamEventListener().onRstStream(rstStreamFrame, session);
+			stream.getStreamEventListener().onRstStream(rstStreamFrame, stream, connection);
 		} finally {
 			stream.closeInbound();
 			stream.closeOutbound();

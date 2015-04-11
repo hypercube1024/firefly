@@ -46,7 +46,7 @@ public class TestSynStreamFrame extends TestBase{
 	}
 	
 	public static SynStreamFrame newSynStreamFrame(SpdySessionAttachment attachment) {
-		Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
+		Fields headers = new Fields(new HashMap<String, Field>(), attachment.getConnection().getHeadersBlockGenerator());
 		headers.put("test1", "testValue1");
 		headers.put("test2", "testValue2");
 		headers.add("testM1", "testm1");

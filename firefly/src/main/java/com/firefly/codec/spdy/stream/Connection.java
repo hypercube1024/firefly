@@ -1,27 +1,38 @@
 package com.firefly.codec.spdy.stream;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.firefly.codec.spdy.decode.control.HeadersBlockParser;
+import com.firefly.codec.spdy.frames.control.Fields;
+import com.firefly.codec.spdy.frames.control.Fields.Field;
 import com.firefly.codec.spdy.frames.control.GoAwayFrame;
+import com.firefly.codec.spdy.frames.control.HeadersBlockGenerator;
 import com.firefly.codec.spdy.frames.control.PingFrame;
 import com.firefly.codec.spdy.frames.control.Settings.ID;
 import com.firefly.codec.spdy.frames.control.Settings.Setting;
 import com.firefly.codec.spdy.frames.control.SettingsFrame;
 import com.firefly.net.Session;
 
-public class Connection {
-	private final Session session;
-	private final WindowControl windowControl;
-	private final int id;
-	private final NavigableSet<Stream> navigableSet = new ConcurrentSkipListSet<>();
-	private final Map<Integer, Stream> map = new ConcurrentHashMap<>();
-	private final boolean clientMode;
+public class Connection implements Closeable{
+	
+	private HeadersBlockParser headersBlockParser = HeadersBlockParser.newInstance();
+	private HeadersBlockGenerator headersBlockGenerator = HeadersBlockGenerator.newInstance();
+	private Session session;
+	private NavigableSet<Stream> navigableSet = new ConcurrentSkipListSet<>();
+	private Map<Integer, Stream> map = new ConcurrentHashMap<>();
+	private WindowControl windowControl;
 	private AtomicInteger streamIdGenerator;
 	public volatile SettingsFrame inboundSettingsFrame;
+	
+	private final int id;
+	private final boolean clientMode;
 	
 	public Connection(Session session, boolean clientMode) {
 		this.session = session;
@@ -40,18 +51,34 @@ public class Connection {
 		return id;
 	}
 	
+	public int getWindowSize() {
+		return windowControl.windowSize();
+	}
+	
 	public boolean isClientMode() {
 		return clientMode;
 	}
 
-	public void addStream(Stream stream) {
+	public HeadersBlockParser getHeadersBlockParser() {
+		return headersBlockParser;
+	}
+
+	public HeadersBlockGenerator getHeadersBlockGenerator() {
+		return headersBlockGenerator;
+	}
+
+	void addStream(Stream stream) {
 		map.put(stream.getId(), stream);
 		navigableSet.add(stream);
 	}
 	
-	public void remove(Stream stream) {
+	void remove(Stream stream) {
 		map.remove(stream.getId());
 		navigableSet.remove(stream);
+	}
+	
+	public Fields createFields() {
+		return new Fields(new HashMap<String, Field>(), getHeadersBlockGenerator());
 	}
 	
 	public Stream createStream(StreamEventListener streamEventListener) {
@@ -87,7 +114,7 @@ public class Connection {
 		return map.get(id);
 	}
 	
-	public void updateWindow(int delta) {
+	void updateWindow(int delta) {
 		windowControl.addWindowSize(delta);
 		for(Stream stream : navigableSet) {
 			stream.flush();
@@ -138,5 +165,20 @@ public class Connection {
 	
 	private int generateStreamId() {
 		return streamIdGenerator.getAndAdd(2);
+	}
+
+	@Override
+	public void close() throws IOException {
+		headersBlockGenerator.close();
+		headersBlockParser.close();
+		
+		headersBlockParser = null;
+		headersBlockGenerator = null;
+		session = null;
+		navigableSet = null;
+		map = null;
+		windowControl = null;
+		streamIdGenerator = null;
+		inboundSettingsFrame = null;
 	}
 }

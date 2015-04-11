@@ -47,7 +47,7 @@ public class TestSynReplyFrame extends TestBase {
 	}
 	
 	public static SynReplyFrame newInstance(SpdySessionAttachment attachment) {
-		Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
+		Fields headers = new Fields(new HashMap<String, Field>(), attachment.getConnection().getHeadersBlockGenerator());
 		headers.put("testReply1", "testReplyValue1");
 		headers.put("testReply2", "testReplyValue2");		
 		for (int i = 0; i < 15; i++) {

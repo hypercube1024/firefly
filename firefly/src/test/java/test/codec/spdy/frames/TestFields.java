@@ -32,7 +32,7 @@ public class TestFields {
 		Connection connection = new Connection(session, false);
 		try(SpdySessionAttachment attachment = new SpdySessionAttachment(connection)) {
 			session.attachObject(attachment);
-			Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
+			Fields headers = new Fields(new HashMap<String, Field>(), attachment.getConnection().getHeadersBlockGenerator());
 			headers.put(name1, value1);
 			String[] values = StringUtils.split(value2, "\u0000");
 			for(String v : values) {
@@ -44,7 +44,7 @@ public class TestFields {
 			for (int i = 0; i < 3; i++) {
 				ByteBuffer compressed = headers.toByteBuffer();
 				System.out.println(compressed.remaining());
-				Fields decompressed = attachment.headersBlockParser.parse(1, compressed.remaining(), compressed, session);
+				Fields decompressed = connection.getHeadersBlockParser().parse(1, compressed.remaining(), compressed, session);
 				
 				Assert.assertThat(decompressed.getSize(), is(headers.getSize()));
 				Assert.assertThat(decompressed.get(name1), is(headers.get(name1)));
@@ -62,7 +62,7 @@ public class TestFields {
 		try(SpdySessionAttachment spdySessionAttachment = new SpdySessionAttachment(connection)) {
 			String name = "Get-TEST";
 			String valueString = "value1\u0000APPLE2\u0000WINDOWS";
-			Fields headers = new Fields(new HashMap<String, Field>(), spdySessionAttachment.headersBlockGenerator);
+			Fields headers = new Fields(new HashMap<String, Field>(), connection.getHeadersBlockGenerator());
 			
 			String[] values = StringUtils.split(valueString, "\u0000");
 			for(String v : values) {

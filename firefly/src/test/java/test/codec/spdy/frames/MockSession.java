@@ -2,14 +2,18 @@ package test.codec.spdy.frames;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
+import com.firefly.codec.spdy.encode.SpdyEncoder;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 
 public class MockSession implements Session {
 	
 	private Object attachment;
-
+	private SpdyEncoder spdyEncoder = new SpdyEncoder();
+	public LinkedList<ByteBuffer> outboundData = new LinkedList<>();
+	
 	@Override
 	public void attachObject(Object attachment) {
 		this.attachment = attachment;
@@ -29,14 +33,16 @@ public class MockSession implements Session {
 
 	@Override
 	public void encode(Object message) {
-		// TODO Auto-generated method stub
-
+		try {
+			spdyEncoder.encode(message, this);
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void write(ByteBuffer byteBuffer) {
-		// TODO Auto-generated method stub
-
+		outboundData.offer(byteBuffer);
 	}
 
 	@Override

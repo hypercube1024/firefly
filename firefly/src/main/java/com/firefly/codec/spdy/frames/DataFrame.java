@@ -20,6 +20,7 @@ public class DataFrame implements Serialization {
 	public DataFrame(int streamId, byte flags, byte[] data) {
 		this(streamId, flags);
 		this.data = data;
+		this.length = data.length;
 	}
 
 	public int getStreamId() {

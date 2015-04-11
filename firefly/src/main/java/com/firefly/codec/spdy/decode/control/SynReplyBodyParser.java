@@ -33,7 +33,7 @@ public class SynReplyBodyParser extends AbstractParser {
 		SynReplyFrame synReplyFrame = null;
 		if(headerBlockLength > 0) {
 			// header block parser
-			Fields fields = attachment.headersBlockParser.parse(streamId, headerBlockLength, buffer, session);
+			Fields fields = attachment.getConnection().getHeadersBlockParser().parse(streamId, headerBlockLength, buffer, session);
 			synReplyFrame = new SynReplyFrame(attachment.controlFrameHeader.getVersion(),
 					attachment.controlFrameHeader.getFlags(), 
 					streamId, fields);

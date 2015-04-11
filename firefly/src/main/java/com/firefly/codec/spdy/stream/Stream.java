@@ -1,9 +1,11 @@
 package com.firefly.codec.spdy.stream;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.Fields;
+import com.firefly.codec.spdy.frames.control.Fields.Field;
 import com.firefly.codec.spdy.frames.control.HeadersFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
@@ -47,13 +49,21 @@ public class Stream implements Comparable<Stream> {
 	public StreamEventListener getStreamEventListener() {
 		return streamEventListener;
 	}
+	
+	public int getWindowSize() {
+		return windowControl.windowSize();
+	}
 
-	public void updateWindow(int delta) {
+	void updateWindow(int delta) {
 		windowControl.addWindowSize(delta);
 		flush();
 	}
 	
-	public synchronized Stream syn(short version, byte flags, int associatedStreamId, byte slot, Fields headers) {
+	public Fields createFields() {
+		return new Fields(new HashMap<String, Field>(), connection.getHeadersBlockGenerator());
+	}
+	
+	public synchronized Stream syn(short version, byte flags, int associatedStreamId, byte slot, Fields fields) {
 		if(isSyn)
 			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has been sent");
 		
@@ -61,7 +71,7 @@ public class Stream implements Comparable<Stream> {
 			throw new StreamException(id, StreamErrorCode.STREAM_ALREADY_CLOSED, "The stream " + id + " has been closed");
 		
 		try {
-			SynStreamFrame synStreamFrame = new SynStreamFrame(version, flags, id, associatedStreamId, flags, slot, headers);
+			SynStreamFrame synStreamFrame = new SynStreamFrame(version, flags, id, associatedStreamId, flags, slot, fields);
 			connection.getSession().encode(synStreamFrame);
 			isSyn = true;
 			return this;

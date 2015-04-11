@@ -55,7 +55,7 @@ public class HeadersBlockParser implements Closeable {
 		int count = decompressedBuffer.getInt();
 		log.debug("spdy header block count is {}", count);
 		
-		Fields headers = new Fields(new HashMap<String, Field>(), attachment.headersBlockGenerator);
+		Fields headers = new Fields(new HashMap<String, Field>(), attachment.getConnection().getHeadersBlockGenerator());
 		for (int i = 0; i < count; i++) {
 			int nameLength = decompressedBuffer.getInt();
 			if(nameLength == 0) {
