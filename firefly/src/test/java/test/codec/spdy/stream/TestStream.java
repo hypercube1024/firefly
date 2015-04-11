@@ -184,4 +184,8 @@ public class TestStream {
 		Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(64 * 1024));
 	}
 	
+	public void testBigData() throws Throwable {
+		
+	}
+	
 }
