@@ -7,6 +7,7 @@ import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.Fields;
 import com.firefly.codec.spdy.frames.control.Fields.Field;
 import com.firefly.codec.spdy.frames.control.HeadersFrame;
+import com.firefly.codec.spdy.frames.control.RstStreamFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
@@ -22,6 +23,7 @@ public class Stream implements Comparable<Stream> {
 	private volatile boolean inboundClosed = false;
 	private volatile boolean outboundClosed = false;
 	private final StreamEventListener streamEventListener;
+	public Object attachment;
 	
 	public Stream(Connection connection, int id, byte priority, boolean isSyn, StreamEventListener streamEventListener) {
 		this.connection = connection;
@@ -100,6 +102,17 @@ public class Stream implements Comparable<Stream> {
 			if(flags == SynReplyFrame.FLAG_FIN) {
 				closeOutbound();
 			}
+		}
+	}
+	
+	public Stream rst(short version, StreamErrorCode statusCode) {
+		try {
+			RstStreamFrame rst = new RstStreamFrame(version, id, statusCode);
+			connection.getSession().encode(rst);
+			return this;
+		} finally {
+			closeInbound();
+			closeOutbound();
 		}
 	}
 	
@@ -196,13 +209,13 @@ public class Stream implements Comparable<Stream> {
 		return outboundClosed;
 	}
 	
-	public synchronized void closeInbound() {
+	synchronized void closeInbound() {
 		inboundClosed = true;
 		if(outboundClosed)
 			connection.remove(this);
 	}
 	
-	public synchronized void closeOutbound() {
+	synchronized void closeOutbound() {
 		outboundClosed = true;
 		if(inboundClosed)
 			connection.remove(this);

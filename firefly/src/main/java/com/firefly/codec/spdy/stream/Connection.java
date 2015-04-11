@@ -30,6 +30,7 @@ public class Connection implements Closeable{
 	private WindowControl windowControl;
 	private AtomicInteger streamIdGenerator;
 	public volatile SettingsFrame inboundSettingsFrame;
+	public Object attachment;
 	
 	private final int id;
 	private final boolean clientMode;
@@ -180,5 +181,6 @@ public class Connection implements Closeable{
 		windowControl = null;
 		streamIdGenerator = null;
 		inboundSettingsFrame = null;
+		attachment = null;
 	}
 }

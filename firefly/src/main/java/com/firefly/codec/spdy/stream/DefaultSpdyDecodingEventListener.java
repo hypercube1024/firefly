@@ -128,10 +128,9 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 			connection.updateWindow(windowUpdateFrame.getWindowDelta());
 		} else {
 			Stream stream = connection.getStream(streamId);
-			if(stream == null)
-				throw new StreamException(streamId, StreamErrorCode.PROTOCOL_ERROR, "The stream " + streamId + " does not exist");
-			
-			stream.updateWindow(windowUpdateFrame.getWindowDelta());
+			if(stream != null) {
+				stream.updateWindow(windowUpdateFrame.getWindowDelta());
+			}
 		}
 	}
 

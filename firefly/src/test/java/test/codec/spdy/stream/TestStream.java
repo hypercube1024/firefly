@@ -2,6 +2,8 @@ package test.codec.spdy.stream;
 
 import static org.hamcrest.Matchers.is;
 
+import java.nio.ByteBuffer;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -10,6 +12,7 @@ import test.codec.spdy.frames.MockSession;
 import com.firefly.codec.spdy.decode.SpdyDecoder;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.DataFrame;
+import com.firefly.codec.spdy.frames.Version;
 import com.firefly.codec.spdy.frames.control.Fields;
 import com.firefly.codec.spdy.frames.control.HeadersFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame;
@@ -86,7 +89,13 @@ public class TestStream {
 
 			@Override
 			public void onData(DataFrame dataFrame, Stream stream, Connection connection) {
-
+				System.out.println("Server receives data -> " + dataFrame);
+				if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
+					Fields headers = stream.createFields();
+					headers.put("response", "ok");
+					stream.reply(Version.V3, (byte)0, headers);
+					stream.sendLastData("the server has received messages".getBytes());
+				}
 			}}, null));
 		
 		// Client creates a stream
@@ -99,7 +108,8 @@ public class TestStream {
 
 			@Override
 			public void onSynReply(SynReplyFrame synReplyFrame, Stream stream, Connection connection) {
-
+				System.out.println("Client receives reply frame -> " + synReplyFrame);
+				Assert.assertThat(synReplyFrame.getHeaders().get("response").getValue(), is("ok"));
 			}
 
 			@Override
@@ -114,7 +124,10 @@ public class TestStream {
 
 			@Override
 			public void onData(DataFrame dataFrame, Stream stream, Connection connection) {
-
+				System.out.println("Client receives data -> " + dataFrame);
+				if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
+					Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
+				}
 			}});
 		
 		Assert.assertThat(clientStream.getId(), is(1));
@@ -127,35 +140,48 @@ public class TestStream {
 		headers.put("test2", "testValue2");
 		headers.add("testM1", "testm1");
 		headers.add("testM2", "testm2");
-		clientStream.syn((short)3, (byte)0, 0, (byte)0, headers);
+		clientStream.syn(Version.V3, (byte)0, 0, (byte)0, headers);
 		Assert.assertThat(clientStream.getWindowSize(), is(64 * 1024));
 		Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(64 * 1024));
 		
 		// Server receives a SYN stream
 		serverDecoder.decode(clientSession.outboundData.poll(), serverSession);
 		
-		
-		
+		// Client sends data frames
 		int currentWindowSize = 64 * 1024;
 		byte[] data = "hello world".getBytes();
 		clientStream.sendData(data);
 		currentWindowSize -= data.length;
 		Assert.assertThat(clientStream.getWindowSize(), is(currentWindowSize));
 		Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(currentWindowSize));
-		
 
 		data = "data2".getBytes();
 		clientStream.sendData(data);
 		currentWindowSize -= data.length;
 		Assert.assertThat(clientStream.getWindowSize(), is(currentWindowSize));
 		Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(currentWindowSize));
+		
+		data = "data3".getBytes();
+		clientStream.sendLastData(data);
+		currentWindowSize -= data.length;
+		Assert.assertThat(clientStream.getWindowSize(), is(currentWindowSize));
+		Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(currentWindowSize));
+		Assert.assertThat(clientStream.isOutboundClosed(), is(true));
+		Assert.assertThat(clientStream.isInboundClosed(), is(false));
+		
+		// Server receives data
+		ByteBuffer buf = null;
+		while( (buf = clientSession.outboundData.poll()) != null ) {
+			serverDecoder.decode(buf, serverSession);
+		}
+		
+		// Server sends window update and replies
+		while( (buf = serverSession.outboundData.poll()) != null ) {
+			clientDecoder.decode(buf, clientSession);
+		}
+		Assert.assertThat(clientStream.isOutboundClosed(), is(true));
+		Assert.assertThat(clientStream.isInboundClosed(), is(true));
+		Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(64 * 1024));
 	}
 	
-	public static void main(String[] args) {
-		int currentWindowSize = 64 * 1024;
-		System.out.println(currentWindowSize);
-		byte[] data = "hello world".getBytes();
-		currentWindowSize -= data.length;
-		System.out.println(currentWindowSize);
-	}
 }
