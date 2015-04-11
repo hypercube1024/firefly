@@ -1,9 +1,12 @@
 package com.firefly.codec.spdy.frames.control;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import com.firefly.codec.spdy.frames.Serialization;
 
 public class Settings implements Iterable<Settings.Setting> {
 
@@ -139,7 +142,7 @@ public class Settings implements Iterable<Settings.Setting> {
 		}
 	}
 
-	public static class Setting {
+	public static class Setting implements Serialization {
 		private final ID id;
 		private final Flag flag;
 		private final int value;
@@ -198,6 +201,22 @@ public class Settings implements Iterable<Settings.Setting> {
 		public String toString() {
 			return "Setting [id=" + id + ", flag=" + flag + ", value=" + value
 					+ "]";
+		}
+
+		@Override
+		public ByteBuffer toByteBuffer() {
+			ByteBuffer buffer = ByteBuffer.allocate(8);
+			int id = id().code();
+            byte flags = flag().code();
+            int idAndFlags = convertIdAndFlags(id, flags);
+            buffer.putInt(idAndFlags);
+            buffer.putInt(value());
+            buffer.flip();
+			return buffer;
+		}
+		
+		private int convertIdAndFlags(int id, byte flags) {
+			return (flags << 24) + (id & 0xFF_FF_FF);
 		}
 
 	}

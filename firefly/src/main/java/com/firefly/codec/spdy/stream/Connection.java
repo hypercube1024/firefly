@@ -14,12 +14,14 @@ public class Connection {
 	private final int id;
 	private final NavigableSet<Stream> navigableSet = new ConcurrentSkipListSet<>();
 	private final Map<Integer, Stream> map = new ConcurrentHashMap<>();
+	private final boolean clientMode;
 	private AtomicInteger streamIdGenerator;
 	
 	public Connection(Session session, boolean clientMode) {
 		this.session = session;
 		this.windowControl = new WindowControl();
 		this.id = session.getSessionId();
+		this.clientMode = clientMode;
 		streamIdGenerator = clientMode ? new AtomicInteger(1) : new AtomicInteger(2);
 	}
 	
@@ -32,6 +34,10 @@ public class Connection {
 		return id;
 	}
 	
+	public boolean isClientMode() {
+		return clientMode;
+	}
+
 	public void addStream(Stream stream) {
 		map.put(stream.getId(), stream);
 		navigableSet.add(stream);

@@ -26,13 +26,17 @@ public class SpdySessionAttachment implements Closeable {
 	public DataFrame dataFrame;
 	
 	// spdy connection
-	public final Connection connection;
+	private Connection connection;
 	
 	// other attachment
 	public Object attachment;
 	
 	public SpdySessionAttachment(Connection connection) {
 		this.connection = connection;
+	}
+
+	public Connection getConnection() {
+		return connection;
 	}
 
 	public void reset() {
@@ -61,5 +65,7 @@ public class SpdySessionAttachment implements Closeable {
 		}
 		headersBlockGenerator.close();
 		headersBlockParser.close();
+		connection = null;
+		attachment = null;
 	}
 }

@@ -23,10 +23,11 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 	@Override
 	public void onSynStream(SynStreamFrame synStreamFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
+		Connection connection = attachment.getConnection();
 		
-		Stream stream = new Stream(attachment.connection, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener);
-		attachment.connection.addStream(stream);
+		Stream stream = new Stream(connection, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener);
 		try {
+			connection.addStream(stream);
 			stream.getStreamEventListener().onSynStream(synStreamFrame, session);
 		} finally {
 			if(synStreamFrame.getFlags() == SynStreamFrame.FLAG_FIN) {
@@ -38,10 +39,12 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 	@Override
 	public void onSynReply(SynReplyFrame synReplyFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
-		Stream stream = attachment.connection.getStream(synReplyFrame.getStreamId());
-		if(stream == null)
-			throw new StreamException(synReplyFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + synReplyFrame.getStreamId() + " does not exist");
+		Connection connection = attachment.getConnection();
 		
+		Stream stream = connection.getStream(synReplyFrame.getStreamId());
+		if(stream == null) {
+			throw new StreamException(synReplyFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + synReplyFrame.getStreamId() + " does not exist");
+		}
 		try {
 			stream.getStreamEventListener().onSynReply(synReplyFrame, session);
 		} finally {
@@ -54,10 +57,12 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 	@Override
 	public void onHeaders(HeadersFrame headersFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
-		Stream stream = attachment.connection.getStream(headersFrame.getStreamId());
-		if(stream == null)
+		Connection connection = attachment.getConnection();
+		
+		Stream stream = connection.getStream(headersFrame.getStreamId());
+		if(stream == null) {
 			throw new StreamException(headersFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + headersFrame.getStreamId() + " does not exist");
-
+		}
 		try {
 			stream.getStreamEventListener().onHeaders(headersFrame, session);
 		} finally {
@@ -70,10 +75,12 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 	@Override
 	public void onData(DataFrame dataFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
-		Stream stream = attachment.connection.getStream(dataFrame.getStreamId());
-		if(stream == null)
+		Connection connection = attachment.getConnection();
+		
+		Stream stream = connection.getStream(dataFrame.getStreamId());
+		if(stream == null) {
 			throw new StreamException(dataFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + dataFrame.getStreamId() + " does not exist");
-
+		}
 		try {
 			stream.getStreamEventListener().onData(dataFrame, session);
 			
@@ -90,10 +97,12 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 	@Override
 	public void onRstStream(RstStreamFrame rstStreamFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
-		Stream stream = attachment.connection.getStream(rstStreamFrame.getStreamId());
-		if(stream == null)
-			throw new StreamException(rstStreamFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + rstStreamFrame.getStreamId() + " does not exist");
+		Connection connection = attachment.getConnection();
 		
+		Stream stream = connection.getStream(rstStreamFrame.getStreamId());
+		if(stream == null) {
+			throw new StreamException(rstStreamFrame.getStreamId(), StreamErrorCode.PROTOCOL_ERROR, "The stream " + rstStreamFrame.getStreamId() + " does not exist");
+		}
 		try {
 			stream.getStreamEventListener().onRstStream(rstStreamFrame, session);
 		} finally {
@@ -105,11 +114,13 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 	@Override
 	public void onWindowUpdate(WindowUpdateFrame windowUpdateFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
+		Connection connection = attachment.getConnection();
+		
 		int streamId = windowUpdateFrame.getStreamId();
 		if(streamId == 0) {
-			attachment.connection.updateWindow(windowUpdateFrame.getWindowDelta());
+			connection.updateWindow(windowUpdateFrame.getWindowDelta());
 		} else {
-			Stream stream = attachment.connection.getStream(streamId);
+			Stream stream = connection.getStream(streamId);
 			if(stream == null)
 				throw new StreamException(streamId, StreamErrorCode.PROTOCOL_ERROR, "The stream " + streamId + " does not exist");
 			

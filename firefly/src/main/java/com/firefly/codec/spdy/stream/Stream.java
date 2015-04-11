@@ -4,7 +4,9 @@ import java.util.LinkedList;
 
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.Fields;
+import com.firefly.codec.spdy.frames.control.HeadersFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
+import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.exception.StreamException;
 
@@ -14,7 +16,7 @@ public class Stream implements Comparable<Stream> {
 	private final int id;
 	private final LinkedList<DataFrame> outboundBuffer = new LinkedList<>();
 	private final byte priority;
-	private boolean isSyn;
+	private volatile boolean isSyn;
 	private volatile boolean inboundClosed = false;
 	private volatile boolean outboundClosed = false;
 	private final StreamEventListener streamEventListener;
@@ -70,9 +72,38 @@ public class Stream implements Comparable<Stream> {
 		}
 	}
 	
+	private void sendingCheck() {
+		if(!isSyn)
+			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has not been sent");
+		
+		if(outboundClosed)
+			throw new StreamException(id, StreamErrorCode.STREAM_ALREADY_CLOSED, "The stream " + id + " has been closed");
+	}
+	
 	public Stream reply(short version, byte flags, Fields headers) {
-		// TODO
-		return this;
+		sendingCheck();
+		try {
+			SynReplyFrame synReplyFrame = new SynReplyFrame(version, flags, id, headers);
+			connection.getSession().encode(synReplyFrame);
+			return this;
+		} finally {
+			if(flags == SynReplyFrame.FLAG_FIN) {
+				closeOutbound();
+			}
+		}
+	}
+	
+	public Stream sendHeaders(short version, byte flags, Fields headers) {
+		sendingCheck();
+		try {
+			HeadersFrame headersFrame = new HeadersFrame(version, flags, id, headers);
+			connection.getSession().encode(headersFrame);
+			return this;
+		} finally {
+			if(flags == HeadersFrame.FLAG_FIN) {
+				closeOutbound();
+			}
+		}
 	}
 	
 	public Stream sendData(byte[] data) {
@@ -84,12 +115,7 @@ public class Stream implements Comparable<Stream> {
 	}
 	
 	public synchronized Stream sendData(byte[] data, byte flags) {
-		if(!isSyn)
-			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has not been sent");
-		
-		if(outboundClosed)
-			throw new StreamException(id, StreamErrorCode.STREAM_ALREADY_CLOSED, "The stream " + id + " has been closed");
-			
+		sendingCheck();
 		outboundBuffer.offer(new DataFrame(id, flags, data));
 		flush();
 		return this;
