@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.firefly.codec.spdy.decode.control.HeadersBlockParser;
+import com.firefly.codec.spdy.frames.Version;
 import com.firefly.codec.spdy.frames.control.Fields;
 import com.firefly.codec.spdy.frames.control.Fields.Field;
 import com.firefly.codec.spdy.frames.control.GoAwayFrame;
@@ -29,6 +30,8 @@ public class Connection implements Closeable{
 	private Map<Integer, Stream> map = new ConcurrentHashMap<>();
 	private WindowControl windowControl;
 	private AtomicInteger streamIdGenerator;
+	private AtomicInteger pingIdGenerator;
+	private Map<Integer, PingEventListener> initiatedPing = new HashMap<>();
 	public volatile SettingsFrame inboundSettingsFrame;
 	public Object attachment;
 	
@@ -41,6 +44,7 @@ public class Connection implements Closeable{
 		this.id = session.getSessionId();
 		this.clientMode = clientMode;
 		streamIdGenerator = clientMode ? new AtomicInteger(1) : new AtomicInteger(2);
+		pingIdGenerator = clientMode ? new AtomicInteger(1) : new AtomicInteger(2);
 	}
 	
 	public Connection(Session session, boolean clientMode, int initWindowSize) {
@@ -126,8 +130,42 @@ public class Connection implements Closeable{
 		session.encode(settingsFrame);
 	}
 	
-	public void ping(PingFrame pingFrame) {
+	public synchronized void ping(PingEventListener pingEventListener) {
+		PingFrame pingFrame = new PingFrame(Version.V3, generatePingId());
 		session.encode(pingFrame);
+		initiatedPing.put(pingFrame.getPingId(), pingEventListener);
+	}
+	
+	synchronized void responsePing(PingFrame pingFrame) {
+		if(clientMode) {
+			if(isOdd(pingFrame.getPingId())) {
+				PingEventListener pingEventListener = initiatedPing.get(pingFrame.getPingId());
+				if(pingEventListener != null) {
+					pingEventListener.onPing(pingFrame, this);
+					initiatedPing.remove(pingFrame.getPingId());
+				}
+			} else {
+				session.encode(pingFrame);
+			}
+		} else {
+			if(isEven(pingFrame.getPingId())) {
+				PingEventListener pingEventListener = initiatedPing.get(pingFrame.getPingId());
+				if(pingEventListener != null) {
+					pingEventListener.onPing(pingFrame, this);
+					initiatedPing.remove(pingFrame.getPingId());
+				}
+			} else {
+				session.encode(pingFrame);
+			}
+		}
+	}
+	
+	private boolean isOdd(int x) {
+		return (x % 2) != 0;
+	}
+	
+	private boolean isEven(int x) {
+		return (x % 2) == 0;
 	}
 	
 	public void goAway(GoAwayFrame goAwayFrame) {
@@ -167,6 +205,10 @@ public class Connection implements Closeable{
 	private int generateStreamId() {
 		return streamIdGenerator.getAndAdd(2);
 	}
+	
+	private int generatePingId() {
+		return pingIdGenerator.getAndAdd(2); 
+	}
 
 	@Override
 	public void close() throws IOException {
@@ -180,7 +222,9 @@ public class Connection implements Closeable{
 		map = null;
 		windowControl = null;
 		streamIdGenerator = null;
+		pingIdGenerator = null;
 		inboundSettingsFrame = null;
 		attachment = null;
+		initiatedPing = null;
 	}
 }

@@ -146,8 +146,9 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 
 	@Override
 	public void onPing(PingFrame pingFrame, Session session) {
-		// TODO Auto-generated method stub
-
+		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
+		Connection connection = attachment.getConnection();
+		connection.responsePing(pingFrame);
 	}
 
 	@Override
