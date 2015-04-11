@@ -6,6 +6,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.firefly.codec.spdy.frames.control.GoAwayFrame;
+import com.firefly.codec.spdy.frames.control.PingFrame;
+import com.firefly.codec.spdy.frames.control.Settings.ID;
+import com.firefly.codec.spdy.frames.control.Settings.Setting;
+import com.firefly.codec.spdy.frames.control.SettingsFrame;
 import com.firefly.net.Session;
 
 public class Connection {
@@ -16,6 +21,7 @@ public class Connection {
 	private final Map<Integer, Stream> map = new ConcurrentHashMap<>();
 	private final boolean clientMode;
 	private AtomicInteger streamIdGenerator;
+	public volatile SettingsFrame inboundSettingsFrame;
 	
 	public Connection(Session session, boolean clientMode) {
 		this.session = session;
@@ -49,11 +55,11 @@ public class Connection {
 	}
 	
 	public Stream createStream(StreamEventListener streamEventListener) {
-		return createStream((byte)0, streamEventListener);
+		return createStream((byte)0, streamEventListener, getInboundInitWindowSize());
 	}
 	
 	public Stream createStream(byte priority, StreamEventListener streamEventListener) {
-		return createStream(priority, streamEventListener, 0);
+		return createStream(priority, streamEventListener, getInboundInitWindowSize());
 	}
 	
 	public Stream createStream(byte priority, StreamEventListener streamEventListener, int initWindowSize) {
@@ -67,6 +73,16 @@ public class Connection {
 		return stream;
 	}
 	
+	public int getInboundInitWindowSize() {
+		int initWindowSize = 0;
+		if(inboundSettingsFrame != null) {
+			Setting setting = inboundSettingsFrame.getSettings().get(ID.INITIAL_WINDOW_SIZE);
+			if(setting != null)
+				initWindowSize = setting.value();
+		}
+		return initWindowSize;
+	}
+	
 	public Stream getStream(int id) {
 		return map.get(id);
 	}
@@ -78,6 +94,17 @@ public class Connection {
 		}
 	}
 	
+	public void sendSettingsFrame(SettingsFrame settingsFrame) {
+		session.encode(settingsFrame);
+	}
+	
+	public void ping(PingFrame pingFrame) {
+		session.encode(pingFrame);
+	}
+	
+	public void goAway(GoAwayFrame goAwayFrame) {
+		session.encode(goAwayFrame);
+	}
 
 	@Override
 	public int hashCode() {

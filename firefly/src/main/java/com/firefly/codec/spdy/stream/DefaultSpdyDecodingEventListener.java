@@ -18,14 +18,21 @@ import com.firefly.net.Session;
 
 public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListener {
 
-	private StreamEventListener streamEventListener;
+	private final StreamEventListener streamEventListener;
+	private final SettingsManager settingsManager;
 	
+	public DefaultSpdyDecodingEventListener(StreamEventListener streamEventListener, SettingsManager settingsManager) {
+		this.streamEventListener = streamEventListener;
+		this.settingsManager = settingsManager;
+	}
+
 	@Override
 	public void onSynStream(SynStreamFrame synStreamFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
 		Connection connection = attachment.getConnection();
+		int initWindowSize = connection.getInboundInitWindowSize();
 		
-		Stream stream = new Stream(connection, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener);
+		Stream stream = new Stream(connection, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener, initWindowSize);
 		try {
 			connection.addStream(stream);
 			stream.getStreamEventListener().onSynStream(synStreamFrame, session);
@@ -130,8 +137,12 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 
 	@Override
 	public void onSettings(SettingsFrame settingsFrame, Session session) {
-		// TODO Auto-generated method stub
-
+		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
+		Connection connection = attachment.getConnection();
+		connection.inboundSettingsFrame = settingsFrame;
+		if(connection.isClientMode()) {
+			settingsManager.saveSettings(settingsFrame);
+		}
 	}
 
 	@Override

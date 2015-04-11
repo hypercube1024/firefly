@@ -1,4 +1,4 @@
-package com.firefly.server.io;
+package com.firefly.utils.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

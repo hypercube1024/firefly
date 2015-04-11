@@ -14,12 +14,12 @@ import java.util.UUID;
 
 import javax.servlet.http.Part;
 
-import com.firefly.server.io.ByteArrayPipedStream;
-import com.firefly.server.io.FilePipedStream;
-import com.firefly.server.io.PipedStream;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.io.ByteArrayPipedStream;
+import com.firefly.utils.io.FilePipedStream;
 import com.firefly.utils.io.FileUtils;
+import com.firefly.utils.io.PipedStream;
 
 public class PartImpl implements Part {
 	

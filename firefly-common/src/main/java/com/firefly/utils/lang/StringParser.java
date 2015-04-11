@@ -16,7 +16,7 @@
  */
 
 
-package com.firefly.server.utils;
+package com.firefly.utils.lang;
 
 
 /**

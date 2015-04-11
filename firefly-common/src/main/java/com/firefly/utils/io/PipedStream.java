@@ -1,4 +1,4 @@
-package com.firefly.server.io;
+package com.firefly.utils.io;
 
 import java.io.Closeable;
 import java.io.IOException;

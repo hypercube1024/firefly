@@ -1,4 +1,4 @@
-package com.firefly.server.io;
+package com.firefly.utils.io;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -10,12 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class FilePipedStream implements PipedStream {
-	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
 	private OutputStream out;
 	private InputStream in;
@@ -43,7 +38,7 @@ public class FilePipedStream implements PipedStream {
 			if(out != null)
 				out.close();
 		}
-		log.info("temp file [{}] piped stream close!", temp.getName());
+
 		in = null;
 		out = null;
 		temp = null;

@@ -7,10 +7,10 @@ import java.nio.ByteBuffer;
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
 import com.firefly.server.Config;
-import com.firefly.server.io.ByteArrayPipedStream;
-import com.firefly.server.io.FilePipedStream;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.io.ByteArrayPipedStream;
+import com.firefly.utils.io.FilePipedStream;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
