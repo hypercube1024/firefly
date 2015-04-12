@@ -23,20 +23,20 @@ import com.firefly.net.Session;
 
 public class Connection implements Closeable{
 	
-	private HeadersBlockParser headersBlockParser = HeadersBlockParser.newInstance();
-	private HeadersBlockGenerator headersBlockGenerator = HeadersBlockGenerator.newInstance();
+	private final HeadersBlockParser headersBlockParser = HeadersBlockParser.newInstance();
+	private final HeadersBlockGenerator headersBlockGenerator = HeadersBlockGenerator.newInstance();
+	private final WindowControl windowControl;
+	private final AtomicInteger streamIdGenerator;
+	private final AtomicInteger pingIdGenerator;
+	private final int id;
+	private final boolean clientMode;
 	private Session session;
 	private NavigableSet<Stream> navigableSet = new ConcurrentSkipListSet<>();
 	private Map<Integer, Stream> map = new ConcurrentHashMap<>();
-	private WindowControl windowControl;
-	private AtomicInteger streamIdGenerator;
-	private AtomicInteger pingIdGenerator;
 	private Map<Integer, PingEventListener> initiatedPing = new HashMap<>();
+	private volatile boolean isClosed = false;
 	public volatile SettingsFrame inboundSettingsFrame;
 	public Object attachment;
-	
-	private final int id;
-	private final boolean clientMode;
 	
 	public Connection(Session session, boolean clientMode) {
 		this.session = session;
@@ -73,11 +73,13 @@ public class Connection implements Closeable{
 	}
 
 	void addStream(Stream stream) {
+		checkState();
 		map.put(stream.getId(), stream);
 		navigableSet.add(stream);
 	}
 	
 	void remove(Stream stream) {
+		checkState();
 		map.remove(stream.getId());
 		navigableSet.remove(stream);
 	}
@@ -87,14 +89,15 @@ public class Connection implements Closeable{
 	}
 	
 	public Stream createStream(StreamEventListener streamEventListener) {
-		return createStream((byte)0, streamEventListener, getInboundInitWindowSize());
+		return createStream((byte)0, streamEventListener, getCurrentInitWindowSize());
 	}
 	
 	public Stream createStream(byte priority, StreamEventListener streamEventListener) {
-		return createStream(priority, streamEventListener, getInboundInitWindowSize());
+		return createStream(priority, streamEventListener, getCurrentInitWindowSize());
 	}
 	
 	public Stream createStream(byte priority, StreamEventListener streamEventListener, int initWindowSize) {
+		checkState();
 		if(priority < 0 || priority > 7)
 			throw new IllegalArgumentException("The stream's priority is must in 0 to 7");
 		if(streamEventListener == null)
@@ -105,8 +108,8 @@ public class Connection implements Closeable{
 		return stream;
 	}
 	
-	public int getInboundInitWindowSize() {
-		int initWindowSize = 0;
+	public int getCurrentInitWindowSize() {
+		int initWindowSize = WindowControl.DEFAULT_INITIALIZED_WINDOW_SIZE;
 		if(inboundSettingsFrame != null) {
 			Setting setting = inboundSettingsFrame.getSettings().get(ID.INITIAL_WINDOW_SIZE);
 			if(setting != null)
@@ -116,6 +119,7 @@ public class Connection implements Closeable{
 	}
 	
 	public Stream getStream(int id) {
+		checkState();
 		return map.get(id);
 	}
 	
@@ -131,12 +135,14 @@ public class Connection implements Closeable{
 	}
 	
 	public synchronized void ping(PingEventListener pingEventListener) {
+		checkState();
 		PingFrame pingFrame = new PingFrame(Version.V3, generatePingId());
 		session.encode(pingFrame);
 		initiatedPing.put(pingFrame.getPingId(), pingEventListener);
 	}
 	
 	synchronized void responsePing(PingFrame pingFrame) {
+		checkState();
 		if(clientMode) {
 			if(isOdd(pingFrame.getPingId())) {
 				PingEventListener pingEventListener = initiatedPing.get(pingFrame.getPingId());
@@ -209,20 +215,21 @@ public class Connection implements Closeable{
 	private int generatePingId() {
 		return pingIdGenerator.getAndAdd(2); 
 	}
+	
+	private void checkState() {
+		if(isClosed)
+			throw new IllegalStateException("The connection " + id + " has been closed");
+	}
 
 	@Override
 	public void close() throws IOException {
+		isClosed = true;
 		headersBlockGenerator.close();
 		headersBlockParser.close();
 		
-		headersBlockParser = null;
-		headersBlockGenerator = null;
 		session = null;
 		navigableSet = null;
 		map = null;
-		windowControl = null;
-		streamIdGenerator = null;
-		pingIdGenerator = null;
 		inboundSettingsFrame = null;
 		attachment = null;
 		initiatedPing = null;

@@ -139,6 +139,10 @@ public class Stream implements Comparable<Stream> {
 	
 	public synchronized Stream sendData(byte[] data, byte flags) {
 		sendingCheck();
+		if(data.length > connection.getCurrentInitWindowSize()) {
+			// TODO split into small data
+		}
+		
 		outboundBuffer.offer(new DataFrame(id, flags, data));
 		flush();
 		return this;

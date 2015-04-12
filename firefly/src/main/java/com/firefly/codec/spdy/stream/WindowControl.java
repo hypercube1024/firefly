@@ -3,7 +3,9 @@ package com.firefly.codec.spdy.stream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WindowControl {
-	private final AtomicInteger windowSize = new AtomicInteger(64 * 1024);
+	public static final int DEFAULT_INITIALIZED_WINDOW_SIZE = 64 * 1024;
+	
+	private final AtomicInteger windowSize = new AtomicInteger(DEFAULT_INITIALIZED_WINDOW_SIZE);
 	
 	public WindowControl() {}
 	
