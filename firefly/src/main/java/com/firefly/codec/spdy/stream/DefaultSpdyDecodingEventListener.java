@@ -139,6 +139,7 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
 		Connection connection = attachment.getConnection();
 		connection.inboundSettingsFrame = settingsFrame;
+		connection.setCurrentInitializedWindowSize(connection.getCurrentInitWindowSize());
 		if(connection.isClientMode()) {
 			settingsManager.saveSettings(settingsFrame);
 		}

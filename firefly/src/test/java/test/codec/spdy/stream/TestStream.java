@@ -23,6 +23,7 @@ import com.firefly.codec.spdy.stream.DefaultSpdyDecodingEventListener;
 import com.firefly.codec.spdy.stream.SettingsManager;
 import com.firefly.codec.spdy.stream.Stream;
 import com.firefly.codec.spdy.stream.StreamEventListener;
+import com.firefly.codec.spdy.stream.WindowControl;
 
 public class TestStream {
 	
@@ -182,6 +183,8 @@ public class TestStream {
 			Assert.assertThat(clientStream.isOutboundClosed(), is(true));
 			Assert.assertThat(clientStream.isInboundClosed(), is(true));
 			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(64 * 1024));
+			
+			System.out.println("===================================================================");
 		}
 	}
 	
@@ -279,9 +282,27 @@ public class TestStream {
 			}
 			Assert.assertThat(clientStream.isOutboundClosed(), is(true));
 			Assert.assertThat(clientStream.isInboundClosed(), is(true));
-			
+			System.out.println("===================================================================");
 		}
 	}
+	
+	public void testSendDataGreaterThanWindowSize() {
+		// TODO
+	}
+	
+	@Test
+	public void testSetCurrentInitializedWindowSize() {
+		WindowControl windowControl = new WindowControl(WindowControl.DEFAULT_INITIALIZED_WINDOW_SIZE);
+		windowControl.reduceWindowSize(60 * 1024);
+		windowControl.setCurrentInitializedWindowSize(16 * 1024);
+		Assert.assertThat(windowControl.windowSize(), is(-44 * 1024));
+		
+		windowControl = new WindowControl(WindowControl.DEFAULT_INITIALIZED_WINDOW_SIZE);
+		windowControl.reduceWindowSize(60 * 1024);
+		windowControl.setCurrentInitializedWindowSize(128 * 1024);
+		Assert.assertThat(windowControl.windowSize(), is(68 * 1024));
+	}
+	
 	
 	public void testPing() throws Throwable {
 		
@@ -299,4 +320,7 @@ public class TestStream {
 	
 	}
 	
+	public static void main(String[] args) throws Throwable {
+		new TestStream().testWindowSizeIsNotEnough();
+	}
 }

@@ -6,9 +6,9 @@ import com.firefly.codec.spdy.decode.AbstractParser;
 import com.firefly.codec.spdy.decode.DecodeStatus;
 import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
-import com.firefly.codec.spdy.decode.utils.NumberProcessUtils;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
+import com.firefly.codec.utils.NumberProcessUtils;
 import com.firefly.net.Session;
 
 public class RstStreamBodyParser extends AbstractParser {

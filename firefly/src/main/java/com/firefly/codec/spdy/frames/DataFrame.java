@@ -3,6 +3,8 @@ package com.firefly.codec.spdy.frames;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import com.firefly.utils.codec.Base64;
+
 public class DataFrame implements Serialization {
 	public static final int HEADER_LENGTH = 8;
 	public static final byte FLAG_FIN = 1;
@@ -30,10 +32,6 @@ public class DataFrame implements Serialization {
 	public byte getFlags() {
 		return flags;
 	}
-
-	public int getDataSize() {
-		return data != null ? data.length : 0;
-	}
 	
 	public byte[] getData() {
 		return data;
@@ -57,19 +55,22 @@ public class DataFrame implements Serialization {
 		return (flags & FLAG_FIN) == FLAG_FIN;
 	}
 
+	
+
 	@Override
 	public String toString() {
 		return "DataFrame [streamId=" + streamId + ", flags=" + flags
-				+ ", length=" + getDataSize() + "]";
+				+ ", length=" + length + ", data=" + Base64.encodeToString(data, false)
+				+ "]";
 	}
 
 	@Override
 	public ByteBuffer toByteBuffer() {
-		ByteBuffer buffer = ByteBuffer.allocate(HEADER_LENGTH + getDataSize());
+		ByteBuffer buffer = ByteBuffer.allocate(HEADER_LENGTH + length);
 		buffer.putInt(streamId & 0x7F_FF_FF_FF);
 		int flagsAndLength = flags;
         flagsAndLength <<= 24;
-        flagsAndLength += getDataSize();
+        flagsAndLength += length;
         buffer.putInt(flagsAndLength);
         if(data != null)
         	buffer.put(data);

@@ -40,7 +40,7 @@ public class Connection implements Closeable{
 	
 	public Connection(Session session, boolean clientMode) {
 		this.session = session;
-		this.windowControl = new WindowControl();
+		this.windowControl = new WindowControl(WindowControl.DEFAULT_INITIALIZED_WINDOW_SIZE);
 		this.id = session.getSessionId();
 		this.clientMode = clientMode;
 		streamIdGenerator = clientMode ? new AtomicInteger(1) : new AtomicInteger(2);
@@ -112,10 +112,16 @@ public class Connection implements Closeable{
 		int initWindowSize = WindowControl.DEFAULT_INITIALIZED_WINDOW_SIZE;
 		if(inboundSettingsFrame != null) {
 			Setting setting = inboundSettingsFrame.getSettings().get(ID.INITIAL_WINDOW_SIZE);
-			if(setting != null)
+			if(setting != null && setting.value() > 0)
 				initWindowSize = setting.value();
 		}
 		return initWindowSize;
+	}
+	
+	void setCurrentInitializedWindowSize(int currentInitializedWindowSize) {
+		for(Stream stream : navigableSet) {
+			stream.setCurrentInitializedWindowSize(currentInitializedWindowSize);
+		}
 	}
 	
 	public Stream getStream(int id) {

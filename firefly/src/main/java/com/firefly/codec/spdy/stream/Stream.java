@@ -2,6 +2,7 @@ package com.firefly.codec.spdy.stream;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.control.Fields;
@@ -12,8 +13,10 @@ import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.exception.StreamException;
+import com.firefly.codec.utils.ByteArrayUtils;
 
 public class Stream implements Comparable<Stream> {
+	
 	private final WindowControl windowControl;
 	private final Connection connection;
 	private final int id;
@@ -25,19 +28,13 @@ public class Stream implements Comparable<Stream> {
 	private final StreamEventListener streamEventListener;
 	public Object attachment;
 	
-	public Stream(Connection connection, int id, byte priority, boolean isSyn, StreamEventListener streamEventListener) {
+	public Stream(Connection connection, int id, byte priority, boolean isSyn, StreamEventListener streamEventListener, int initWindowSize) {
 		this.connection = connection;
 		this.id = id;
 		this.priority = priority;
 		this.isSyn = isSyn;
 		this.streamEventListener = streamEventListener;
-		this.windowControl = new WindowControl();
-	}
-	
-	public Stream(Connection connection, int id, byte priority, boolean isSyn, StreamEventListener streamEventListener, int initWindowSize) {
-		this(connection, id, priority, isSyn, streamEventListener);
-		if(initWindowSize > 0)
-			windowControl.setWindowSize(initWindowSize);
+		this.windowControl = new WindowControl(initWindowSize);
 	}
 
 	public int getId() {
@@ -56,6 +53,10 @@ public class Stream implements Comparable<Stream> {
 		return windowControl.windowSize();
 	}
 
+	void setCurrentInitializedWindowSize(int currentInitializedWindowSize) {
+		windowControl.setCurrentInitializedWindowSize(currentInitializedWindowSize);
+	}
+	
 	void updateWindow(int delta) {
 		windowControl.addWindowSize(delta);
 		flush();
@@ -138,11 +139,7 @@ public class Stream implements Comparable<Stream> {
 	}
 	
 	public synchronized Stream sendData(byte[] data, byte flags) {
-		sendingCheck();
-		if(data.length > connection.getCurrentInitWindowSize()) {
-			// TODO split into small data
-		}
-		
+		sendingCheck();		
 		outboundBuffer.offer(new DataFrame(id, flags, data));
 		flush();
 		return this;
@@ -155,18 +152,34 @@ public class Stream implements Comparable<Stream> {
 				break;
 			if(dataFrame.getLength() > connection.getWindowControl().windowSize())
 				break;
-			if(dataFrame.getLength() > windowControl.windowSize())
-				break;
 			
-			try {
-				connection.getSession().encode(dataFrame);
-				connection.getWindowControl().reduceWindowSize(dataFrame.getLength());
-				windowControl.reduceWindowSize(dataFrame.getLength());
+			int windowSize = windowControl.windowSize();
+			if(windowSize <= 0)
+				break;
+			if(dataFrame.getLength() > windowSize) {
+				// split into many small data blocks
+				List<byte[]> list = ByteArrayUtils.splitData(dataFrame.getData(), windowSize, 2);
+				// flush the first data block
+				_flushData(new DataFrame(dataFrame.getStreamId(), (byte)0, list.get(0)));
+				// remove current data frame
 				outboundBuffer.poll();
-			} finally {
-				if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
-					closeOutbound();
-				}
+				// insert the remained data block to the head of queue
+				outboundBuffer.offerFirst(new DataFrame(dataFrame.getStreamId(), dataFrame.getFlags(), list.get(1)));
+			} else {
+				_flushData(dataFrame);
+				outboundBuffer.poll();
+			}
+		}
+	}
+	
+	private void _flushData(DataFrame dataFrame) {
+		try {
+			connection.getSession().encode(dataFrame);
+			connection.getWindowControl().reduceWindowSize(dataFrame.getLength());
+			windowControl.reduceWindowSize(dataFrame.getLength());
+		} finally {
+			if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
+				closeOutbound();
 			}
 		}
 	}

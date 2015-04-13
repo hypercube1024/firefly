@@ -14,9 +14,9 @@ import com.firefly.codec.spdy.decode.control.SynReplyBodyParser;
 import com.firefly.codec.spdy.decode.control.SynStreamBodyParser;
 import com.firefly.codec.spdy.decode.control.WindowUpdateBodyParser;
 import com.firefly.codec.spdy.decode.exception.DecodingStateException;
-import com.firefly.codec.spdy.decode.utils.NumberProcessUtils;
 import com.firefly.codec.spdy.frames.ControlFrame;
 import com.firefly.codec.spdy.frames.ControlFrameType;
+import com.firefly.codec.utils.NumberProcessUtils;
 import com.firefly.net.Session;
 
 public class ControlFrameParser extends AbstractParser {

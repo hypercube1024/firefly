@@ -3,8 +3,8 @@ package com.firefly.codec.spdy.decode;
 import java.nio.ByteBuffer;
 
 import com.firefly.codec.spdy.decode.exception.DecodingStateException;
-import com.firefly.codec.spdy.decode.utils.NumberProcessUtils;
 import com.firefly.codec.spdy.frames.DataFrame;
+import com.firefly.codec.utils.NumberProcessUtils;
 import com.firefly.net.Session;
 
 public class DataFrameParser extends AbstractParser {

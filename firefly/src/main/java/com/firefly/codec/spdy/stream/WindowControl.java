@@ -5,12 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class WindowControl {
 	public static final int DEFAULT_INITIALIZED_WINDOW_SIZE = 64 * 1024;
 	
-	private final AtomicInteger windowSize = new AtomicInteger(DEFAULT_INITIALIZED_WINDOW_SIZE);
-	
-	public WindowControl() {}
+	private final AtomicInteger windowSize;
+	private volatile int currentInitializedWindowSize;
 	
 	public WindowControl(int initWindowSize) {
-		windowSize.set(initWindowSize);
+		windowSize = new AtomicInteger(initWindowSize);
+		currentInitializedWindowSize = initWindowSize;
 	}
 	
 	public int reduceWindowSize(int delta) {
@@ -27,5 +27,10 @@ public class WindowControl {
 	
 	public void setWindowSize(int size) {
 		windowSize.set(size);
+	}
+
+	public void setCurrentInitializedWindowSize(int currentInitializedWindowSize) {
+		windowSize.set(windowSize.get() - (this.currentInitializedWindowSize - currentInitializedWindowSize)); 
+		this.currentInitializedWindowSize = currentInitializedWindowSize;
 	}
 }

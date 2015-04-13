@@ -1,4 +1,4 @@
-package com.firefly.codec.spdy.decode.utils;
+package com.firefly.codec.utils;
 
 abstract public class NumberProcessUtils {
 	
