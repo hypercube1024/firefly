@@ -36,7 +36,7 @@ public class Connection implements Closeable{
 	private NavigableSet<Stream> navigableSet = new ConcurrentSkipListSet<>(new Comparator<Stream>(){
 		@Override
 		public int compare(Stream o1, Stream o2) {
-			return Byte.compare(o1.getPriority(), o2.getPriority());
+			return Byte.compare(o2.getPriority(), o1.getPriority());
 		}});
 	private Map<Integer, Stream> map = new ConcurrentHashMap<>();
 	
