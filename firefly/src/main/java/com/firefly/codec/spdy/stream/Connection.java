@@ -97,27 +97,25 @@ public class Connection implements Closeable{
 	}
 	
 	public Stream createStream(StreamEventListener streamEventListener) {
-		return createStream((byte)0, streamEventListener, getCurrentInitWindowSize());
+		return createStream(generateStreamId(), (byte)0, false, streamEventListener, getCurrentInitWindowSize());
 	}
 	
 	public Stream createStream(byte priority, StreamEventListener streamEventListener) {
-		return createStream(priority, streamEventListener, getCurrentInitWindowSize());
+		return createStream(generateStreamId(), priority, false, streamEventListener, getCurrentInitWindowSize());
 	}
 	
-	private Stream createStream(byte priority, StreamEventListener streamEventListener, int initWindowSize) {
+	Stream createStream(SynStreamFrame synStreamFrame, StreamEventListener streamEventListener) {
+		return createStream(synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener, getCurrentInitWindowSize());
+	}
+	
+	private Stream createStream(int streamId, byte priority, boolean isSyn, StreamEventListener streamEventListener, int initWindowSize) {
 		checkState();
 		if(priority < 0 || priority > 7)
 			throw new IllegalArgumentException("The stream's priority is must in 0 to 7");
 		if(streamEventListener == null)
 			throw new IllegalArgumentException("The stream event listener is null");
 		
-		Stream stream = new Stream(this, generateStreamId(), priority, false, streamEventListener, initWindowSize);
-		addStream(stream);
-		return stream;
-	}
-	
-	Stream createStream(SynStreamFrame synStreamFrame, StreamEventListener streamEventListener) {
-		Stream stream = new Stream(this, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener, getCurrentInitWindowSize());
+		Stream stream = new Stream(this, streamId, priority, isSyn, streamEventListener, initWindowSize);
 		addStream(stream);
 		return stream;
 	}

@@ -73,12 +73,11 @@ public class Stream {
 	}
 	
 	public synchronized Stream syn(short version, byte flags, int associatedStreamId, byte slot, Fields fields) {
+		checkState();
+		
 		if(isSyn)
 			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has been sent");
-		
-		if(outboundClosed)
-			throw new StreamException(id, StreamErrorCode.STREAM_ALREADY_CLOSED, "The stream " + id + " has been closed");
-		
+
 		try {
 			SynStreamFrame synStreamFrame = new SynStreamFrame(version, flags, id, associatedStreamId, flags, slot, fields);
 			connection.getSession().encode(synStreamFrame);
@@ -91,16 +90,13 @@ public class Stream {
 		}
 	}
 	
-	private void sendingCheck() {
-		if(!isSyn)
-			throw new StreamException(id, StreamErrorCode.PROTOCOL_ERROR, "The SYN stream has not been sent");
-		
+	private void checkState() {		
 		if(outboundClosed)
 			throw new StreamException(id, StreamErrorCode.STREAM_ALREADY_CLOSED, "The stream " + id + " has been closed");
 	}
 	
 	public Stream reply(short version, byte flags, Fields headers) {
-		sendingCheck();
+		checkState();
 		try {
 			SynReplyFrame synReplyFrame = new SynReplyFrame(version, flags, id, headers);
 			connection.getSession().encode(synReplyFrame);
@@ -124,7 +120,7 @@ public class Stream {
 	}
 	
 	public Stream sendHeaders(short version, byte flags, Fields headers) {
-		sendingCheck();
+		checkState();
 		try {
 			HeadersFrame headersFrame = new HeadersFrame(version, flags, id, headers);
 			connection.getSession().encode(headersFrame);
@@ -145,7 +141,7 @@ public class Stream {
 	}
 	
 	public synchronized Stream sendData(byte[] data, byte flags) {
-		sendingCheck();		
+		checkState();		
 		outboundBuffer.offer(new DataFrame(id, flags, data));
 		flush();
 		return this;
