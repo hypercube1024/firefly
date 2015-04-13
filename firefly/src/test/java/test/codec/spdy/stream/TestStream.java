@@ -3,6 +3,8 @@ package test.codec.spdy.stream;
 import static org.hamcrest.Matchers.is;
 
 import java.nio.ByteBuffer;
+import java.util.Comparator;
+import java.util.TreeSet;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -320,6 +322,19 @@ public class TestStream {
 	}
 	
 	public static void main(String[] args) throws Throwable {
-		new TestStream().testWindowSizeIsNotEnough();
+		TreeSet<Integer> tree = new TreeSet<Integer>(new Comparator<Integer>(){
+
+			@Override
+			public int compare(Integer o1, Integer o2) {
+				return Integer.compare(o1, o2);
+			}});
+		
+		tree.add(3);
+		tree.add(4);
+		tree.add(2);
+		tree.add(0);
+		for(Integer i : tree) {
+			System.out.println(i);
+		}
 	}
 }
