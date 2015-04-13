@@ -20,6 +20,7 @@ import com.firefly.codec.spdy.frames.control.PingFrame;
 import com.firefly.codec.spdy.frames.control.Settings.ID;
 import com.firefly.codec.spdy.frames.control.Settings.Setting;
 import com.firefly.codec.spdy.frames.control.SettingsFrame;
+import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.net.Session;
 
 public class Connection implements Closeable{
@@ -79,7 +80,7 @@ public class Connection implements Closeable{
 		return headersBlockGenerator;
 	}
 
-	void addStream(Stream stream) {
+	private void addStream(Stream stream) {
 		checkState();
 		map.put(stream.getId(), stream);
 		navigableSet.add(stream);
@@ -103,7 +104,7 @@ public class Connection implements Closeable{
 		return createStream(priority, streamEventListener, getCurrentInitWindowSize());
 	}
 	
-	public Stream createStream(byte priority, StreamEventListener streamEventListener, int initWindowSize) {
+	private Stream createStream(byte priority, StreamEventListener streamEventListener, int initWindowSize) {
 		checkState();
 		if(priority < 0 || priority > 7)
 			throw new IllegalArgumentException("The stream's priority is must in 0 to 7");
@@ -115,7 +116,13 @@ public class Connection implements Closeable{
 		return stream;
 	}
 	
-	public int getCurrentInitWindowSize() {
+	Stream createStream(SynStreamFrame synStreamFrame, StreamEventListener streamEventListener) {
+		Stream stream = new Stream(this, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, streamEventListener, getCurrentInitWindowSize());
+		addStream(stream);
+		return stream;
+	}
+	
+	private int getCurrentInitWindowSize() {
 		int initWindowSize = WindowControl.DEFAULT_INITIALIZED_WINDOW_SIZE;
 		if(inboundSettingsFrame != null) {
 			Setting setting = inboundSettingsFrame.getSettings().get(ID.INITIAL_WINDOW_SIZE);

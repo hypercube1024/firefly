@@ -30,15 +30,16 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 	public void onSynStream(SynStreamFrame synStreamFrame, Session session) {
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
 		Connection connection = attachment.getConnection();
-		int initWindowSize = connection.getCurrentInitWindowSize();
 		
-		Stream stream = new Stream(connection, synStreamFrame.getStreamId(), synStreamFrame.getPriority(), true, inboundStreamEventListener, initWindowSize);
+		Stream stream = connection.createStream(synStreamFrame, inboundStreamEventListener);
 		try {
-			connection.addStream(stream);
 			stream.getStreamEventListener().onSynStream(synStreamFrame, stream, connection);
 		} finally {
 			if(synStreamFrame.getFlags() == SynStreamFrame.FLAG_FIN) {
 				stream.closeInbound();
+			}
+			if(synStreamFrame.getFlags() == SynStreamFrame.FLAG_UNIDIRECTIONAL) {
+				stream.closeOutbound();
 			}
 		}
 	}
