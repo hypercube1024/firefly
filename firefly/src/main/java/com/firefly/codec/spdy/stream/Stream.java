@@ -15,7 +15,7 @@ import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.exception.StreamException;
 import com.firefly.codec.utils.ByteArrayUtils;
 
-public class Stream implements Comparable<Stream> {
+public class Stream {
 	
 	private final WindowControl windowControl;
 	private final Connection connection;
@@ -186,11 +186,6 @@ public class Stream implements Comparable<Stream> {
 				closeOutbound();
 			}
 		}
-	}
-
-	@Override
-	public int compareTo(Stream o) {
-		return Byte.compare(priority, o.priority);
 	}
 
 	@Override

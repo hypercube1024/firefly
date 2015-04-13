@@ -299,6 +299,9 @@ public class TestStream {
 		Assert.assertThat(windowControl.windowSize(), is(68 * 1024));
 	}
 	
+	public void testStreamPriority() {
+		
+	}
 	
 	public void testPing() throws Throwable {
 		

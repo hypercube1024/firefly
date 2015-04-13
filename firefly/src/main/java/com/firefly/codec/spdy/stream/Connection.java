@@ -2,6 +2,7 @@ package com.firefly.codec.spdy.stream;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -31,8 +32,14 @@ public class Connection implements Closeable{
 	private final int id;
 	private final boolean clientMode;
 	private Session session;
-	private NavigableSet<Stream> navigableSet = new ConcurrentSkipListSet<>();
+	
+	private NavigableSet<Stream> navigableSet = new ConcurrentSkipListSet<>(new Comparator<Stream>(){
+		@Override
+		public int compare(Stream o1, Stream o2) {
+			return Byte.compare(o1.getPriority(), o2.getPriority());
+		}});
 	private Map<Integer, Stream> map = new ConcurrentHashMap<>();
+	
 	private Map<Integer, PingEventListener> initiatedPing = new HashMap<>();
 	private volatile boolean isClosed = false;
 	private volatile SettingsFrame inboundSettingsFrame;
