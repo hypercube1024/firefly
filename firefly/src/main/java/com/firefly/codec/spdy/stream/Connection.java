@@ -35,7 +35,7 @@ public class Connection implements Closeable{
 	private Map<Integer, Stream> map = new ConcurrentHashMap<>();
 	private Map<Integer, PingEventListener> initiatedPing = new HashMap<>();
 	private volatile boolean isClosed = false;
-	public volatile SettingsFrame inboundSettingsFrame;
+	private volatile SettingsFrame inboundSettingsFrame;
 	public Object attachment;
 	
 	public Connection(Session session, boolean clientMode) {
@@ -118,9 +118,10 @@ public class Connection implements Closeable{
 		return initWindowSize;
 	}
 	
-	void setCurrentInitializedWindowSize(int currentInitializedWindowSize) {
+	public void setInboundSettingsFrame(SettingsFrame inboundSettingsFrame) {
+		this.inboundSettingsFrame = inboundSettingsFrame;
 		for(Stream stream : navigableSet) {
-			stream.setCurrentInitializedWindowSize(currentInitializedWindowSize);
+			stream.setCurrentInitializedWindowSize(getCurrentInitWindowSize());
 		}
 	}
 	

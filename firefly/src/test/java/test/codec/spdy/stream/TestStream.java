@@ -254,9 +254,9 @@ public class TestStream {
 			byte[] data2 = s.toString().getBytes();
 			clientStream.sendData(data1);
 			clientStream.sendLastData(data2);
-			Assert.assertThat(clientStream.getWindowSize(), is(24 * 1024));
-			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(24 * 1024));
-			Assert.assertThat(clientSession.outboundData.size(), is(1));
+			Assert.assertThat(clientStream.getWindowSize(), is(0));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(0));
+			Assert.assertThat(clientSession.outboundData.size(), is(2));
 			
 			
 			ByteBuffer buf = null;
@@ -284,10 +284,6 @@ public class TestStream {
 			Assert.assertThat(clientStream.isInboundClosed(), is(true));
 			System.out.println("===================================================================");
 		}
-	}
-	
-	public void testSendDataGreaterThanWindowSize() {
-		// TODO
 	}
 	
 	@Test

@@ -52,6 +52,12 @@ public class Stream implements Comparable<Stream> {
 	public int getWindowSize() {
 		return windowControl.windowSize();
 	}
+	
+	public int getAvailableWindowSize() {
+		int connectionWindowSize = connection.getWindowControl().windowSize();
+		int streamWindowSize = this.windowControl.windowSize();
+		return Math.min(connectionWindowSize, streamWindowSize);
+	}
 
 	void setCurrentInitializedWindowSize(int currentInitializedWindowSize) {
 		windowControl.setCurrentInitializedWindowSize(currentInitializedWindowSize);
@@ -150,15 +156,13 @@ public class Stream implements Comparable<Stream> {
 			DataFrame dataFrame = outboundBuffer.peek();
 			if(dataFrame == null)
 				break;
-			if(dataFrame.getLength() > connection.getWindowControl().windowSize())
+			int availableWindowSize = getAvailableWindowSize();
+			if(availableWindowSize <= 0)
 				break;
-			
-			int windowSize = windowControl.windowSize();
-			if(windowSize <= 0)
-				break;
-			if(dataFrame.getLength() > windowSize) {
-				// split into many small data blocks
-				List<byte[]> list = ByteArrayUtils.splitData(dataFrame.getData(), windowSize, 2);
+
+			if(dataFrame.getLength() > availableWindowSize) {
+				// split into two small data blocks
+				List<byte[]> list = ByteArrayUtils.splitData(dataFrame.getData(), availableWindowSize, 2);
 				// flush the first data block
 				_flushData(new DataFrame(dataFrame.getStreamId(), (byte)0, list.get(0)));
 				// remove current data frame
