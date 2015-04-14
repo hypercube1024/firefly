@@ -8,8 +8,8 @@ import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.control.Fields;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
-import com.firefly.codec.utils.NumberProcessUtils;
 import com.firefly.net.Session;
+import com.firefly.utils.codec.NumberProcessUtils;
 
 public class SynReplyBodyParser extends AbstractParser {
 

@@ -1,4 +1,4 @@
-package test.codec.utils;
+package test.utils.codec;
 
 import static org.hamcrest.Matchers.is;
 
@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.codec.utils.ByteArrayUtils;
+import com.firefly.utils.codec.ByteArrayUtils;
 
 public class TestByteArrayUtils {
 	@Test

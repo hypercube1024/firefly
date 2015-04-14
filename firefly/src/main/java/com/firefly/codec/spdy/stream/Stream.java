@@ -13,7 +13,7 @@ import com.firefly.codec.spdy.frames.control.RstStreamFrame.StreamErrorCode;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.exception.StreamException;
-import com.firefly.codec.utils.ByteArrayUtils;
+import com.firefly.utils.codec.ByteArrayUtils;
 
 public class Stream {
 	

@@ -8,8 +8,8 @@ import com.firefly.codec.spdy.decode.SpdyDecodingEventListener;
 import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.control.Settings;
 import com.firefly.codec.spdy.frames.control.SettingsFrame;
-import com.firefly.codec.utils.NumberProcessUtils;
 import com.firefly.net.Session;
+import com.firefly.utils.codec.NumberProcessUtils;
 
 public class SettingsBodyParser extends AbstractParser {
 

@@ -1,4 +1,4 @@
-package com.firefly.codec.utils;
+package com.firefly.utils.codec;
 
 import java.util.ArrayList;
 import java.util.List;
