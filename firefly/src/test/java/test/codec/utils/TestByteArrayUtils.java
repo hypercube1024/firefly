@@ -35,5 +35,14 @@ public class TestByteArrayUtils {
 		Assert.assertThat(new String(list.get(0)), is("he"));
 		Assert.assertThat(new String(list.get(1)), is("ll"));
 		Assert.assertThat(new String(list.get(2)), is("o world!"));
+		
+		list = ByteArrayUtils.splitData(data, 12, 3);
+		Assert.assertThat(list.size(), is(1));
+		Assert.assertThat(new String(list.get(0)), is("hello world!"));
+		
+		list = ByteArrayUtils.splitData(data, 7, 4);
+		Assert.assertThat(list.size(), is(2));
+		Assert.assertThat(new String(list.get(0)), is("hello w"));
+		Assert.assertThat(new String(list.get(1)), is("orld!"));
 	}
 }
