@@ -1,43 +1,37 @@
 package com.firefly.codec.utils;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public abstract class ByteArrayUtils {
 	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
 	public static List<byte[]> splitData(byte[] data, int size, int part) {
-		List<byte[]> list = splitData(data, size);
-		if(list == null)
-			return null;
+		if(size > data.length)
+			throw new IllegalArgumentException("the part size is greater than data's length");
 		
-		List<byte[]> ret = new ArrayList<>();
-		int index = 0;
-		for (int i = 0; i < part - 1; i++) {
-			ret.add(list.get(i));
-			index++;
+		List<byte[]> list = new ArrayList<>();
+		int srcPos = 0;
+		int len = size;
+		byte[] dest = null;
+		int blocks = part - 1;
+		for(int i = 0; i < blocks; i++) {
+			dest = new byte[len];
+			System.arraycopy(data, srcPos, dest, 0, dest.length);
+			list.add(dest);
+			srcPos = srcPos + len;
+			if(srcPos >= data.length)
+				return list;
+			len = Math.min(data.length - srcPos, size);
 		}
-		ByteArrayOutputStream out = new ByteArrayOutputStream(data.length);
-		try {
-			while(index < list.size()) {
-				out.write(list.get(index));
-				index++;
-			}
-		} catch (Throwable t) {
-			log.error("merge data error", t);
-		}
-		ret.add(out.toByteArray());
-		return ret;
+		dest = new byte[data.length - srcPos];
+		System.arraycopy(data, srcPos, dest, 0, dest.length);
+		list.add(dest);
+		return list;
 	}
 	
 	public static List<byte[]> splitData(byte[] data, int size) {
 		if(size > data.length)
-			return null;
+			throw new IllegalArgumentException("the part size is greater than data's length");
 		
 		List<byte[]> list = new ArrayList<>();
 		int srcPos = 0;
