@@ -1,6 +1,7 @@
 package test.codec.spdy.stream;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import java.nio.ByteBuffer;
 
@@ -15,11 +16,13 @@ import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.Version;
 import com.firefly.codec.spdy.frames.control.Fields;
 import com.firefly.codec.spdy.frames.control.HeadersFrame;
+import com.firefly.codec.spdy.frames.control.PingFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.stream.Connection;
 import com.firefly.codec.spdy.stream.DefaultSpdyDecodingEventListener;
+import com.firefly.codec.spdy.stream.PingEventListener;
 import com.firefly.codec.spdy.stream.SettingsManager;
 import com.firefly.codec.spdy.stream.Stream;
 import com.firefly.codec.spdy.stream.StreamEventListener;
@@ -450,8 +453,50 @@ public class TestStream {
 		}
 	}
 	
+	@Test
 	public void testPing() throws Throwable {
+		MockSession clientSession = new MockSession();
+		MockSession serverSession = new MockSession();
 		
+		try(SpdySessionAttachment clientAttachment = new SpdySessionAttachment(new Connection(clientSession, true));
+		SpdySessionAttachment serverAttachment = new SpdySessionAttachment(new Connection(serverSession, false));) {
+		
+			clientSession.attachObject(clientAttachment);
+			serverSession.attachObject(serverAttachment);
+			
+			serverAttachment.getConnection().ping(new PingEventListener(){
+
+				@Override
+				public void onPing(PingFrame pingFrame, Connection connection) {
+					Assert.assertThat(pingFrame.getPingId() % 2, is(0));
+					System.out.println("Server receives ping " + pingFrame);
+				}});
+			
+			ByteBuffer buf = null;
+			while( (buf = serverSession.outboundData.poll()) != null ) {
+				clientDecoder.decode(buf, clientSession);
+			}
+			
+			while( (buf = clientSession.outboundData.poll()) != null ) {
+				serverDecoder.decode(buf, serverSession);
+			}
+			
+			clientAttachment.getConnection().ping(new PingEventListener(){
+
+				@Override
+				public void onPing(PingFrame pingFrame, Connection connection) {
+					Assert.assertThat(pingFrame.getPingId() % 2, is(not(0)));
+					System.out.println("Client receives ping " + pingFrame);
+				}});
+			
+			while( (buf = clientSession.outboundData.poll()) != null ) {
+				serverDecoder.decode(buf, serverSession);
+			}
+			
+			while( (buf = serverSession.outboundData.poll()) != null ) {
+				clientDecoder.decode(buf, clientSession);
+			}
+		}
 	}
 	
 	public void testSettings() throws Throwable {
