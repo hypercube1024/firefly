@@ -18,16 +18,37 @@ import com.firefly.net.Session;
 
 public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListener {
 
-	private final StreamEventListener inboundStreamEventListener;
-	private final SettingsManager settingsManager;
+	private StreamEventListener inboundStreamEventListener;
+	private SettingsManager settingsManager;
 	
+	public DefaultSpdyDecodingEventListener() {}
+	
+	public DefaultSpdyDecodingEventListener(SettingsManager settingsManager) {
+		this.settingsManager = settingsManager;
+	}
+
+	public DefaultSpdyDecodingEventListener(StreamEventListener inboundStreamEventListener) {
+		this.inboundStreamEventListener = inboundStreamEventListener;
+	}
+
 	public DefaultSpdyDecodingEventListener(StreamEventListener inboundStreamEventListener, SettingsManager settingsManager) {
 		this.inboundStreamEventListener = inboundStreamEventListener;
 		this.settingsManager = settingsManager;
 	}
 
+	public void setInboundStreamEventListener(StreamEventListener inboundStreamEventListener) {
+		this.inboundStreamEventListener = inboundStreamEventListener;
+	}
+
+	public void setSettingsManager(SettingsManager settingsManager) {
+		this.settingsManager = settingsManager;
+	}
+
 	@Override
 	public void onSynStream(SynStreamFrame synStreamFrame, Session session) {
+		if(inboundStreamEventListener == null)
+			return;
+		
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
 		Connection connection = attachment.getConnection();
 		
@@ -140,7 +161,7 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 		SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
 		Connection connection = attachment.getConnection();
 		connection.setInboundSettingsFrame(settingsFrame);
-		if(connection.isClientMode()) {
+		if(connection.isClientMode() && settingsManager != null) {
 			settingsManager.saveSettings(settingsFrame);
 		}
 	}

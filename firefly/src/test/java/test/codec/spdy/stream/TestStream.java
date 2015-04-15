@@ -3,8 +3,6 @@ package test.codec.spdy.stream;
 import static org.hamcrest.Matchers.is;
 
 import java.nio.ByteBuffer;
-import java.util.Comparator;
-import java.util.TreeSet;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,33 +27,7 @@ import com.firefly.codec.spdy.stream.WindowControl;
 
 public class TestStream {
 	
-	SpdyDecoder clientDecoder = new SpdyDecoder(new DefaultSpdyDecodingEventListener(new StreamEventListener(){
-		
-		@Override
-		public void onSynStream(SynStreamFrame synStreamFrame, Stream stream, Connection connection) {
-
-		}
-
-		@Override
-		public void onSynReply(SynReplyFrame synReplyFrame, Stream stream, Connection connection) {
-
-		}
-
-		@Override
-		public void onRstStream(RstStreamFrame rstStreamFrame, Stream stream, Connection connection) {
-
-		}
-
-		@Override
-		public void onHeaders(HeadersFrame headersFrame, Stream stream, Connection connection) {
-
-		}
-
-		@Override
-		public void onData(DataFrame dataFrame, Stream stream, Connection connection) {
-
-		}}, new SettingsManager(null, "localhost", 7777)));
-	
+	SpdyDecoder clientDecoder = new SpdyDecoder(new DefaultSpdyDecodingEventListener(new SettingsManager(null, "localhost", 7777)));
 	SpdyDecoder serverDecoder = new SpdyDecoder(new DefaultSpdyDecodingEventListener(new StreamEventListener(){
 
 		@Override
@@ -88,7 +60,7 @@ public class TestStream {
 				stream.reply(Version.V3, (byte)0, headers);
 				stream.sendLastData("the server has received messages".getBytes());
 			}
-		}}, null));
+		}}));
 
 	@Test
 	public void testWindowUpdate() throws Throwable {
@@ -301,8 +273,181 @@ public class TestStream {
 		Assert.assertThat(windowControl.windowSize(), is(68 * 1024));
 	}
 	
-	public void testStreamPriority() {
+	@Test
+	public void testStreamPriority() throws Throwable {
+		MockSession clientSession = new MockSession();
+		MockSession serverSession = new MockSession();
 		
+		try(SpdySessionAttachment clientAttachment = new SpdySessionAttachment(new Connection(clientSession, true));
+		SpdySessionAttachment serverAttachment = new SpdySessionAttachment(new Connection(serverSession, false));) {
+		
+			clientSession.attachObject(clientAttachment);
+			serverSession.attachObject(serverAttachment);
+			
+			// Client creates a stream
+			Stream clientStream1 = clientAttachment.getConnection().createStream((byte) 1, new StreamEventListener(){
+	
+				@Override
+				public void onSynStream(SynStreamFrame synStreamFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onSynReply(SynReplyFrame synReplyFrame, Stream stream, Connection connection) {
+					System.out.println("Client 1 receives reply frame -> " + synReplyFrame);
+					Assert.assertThat(synReplyFrame.getHeaders().get("response").getValue(), is("ok"));
+				}
+	
+				@Override
+				public void onRstStream(RstStreamFrame rstStreamFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onHeaders(HeadersFrame headersFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onData(DataFrame dataFrame, Stream stream, Connection connection) {
+					System.out.println("Client 1 receives data -> " + dataFrame);
+					if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
+						Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
+					}
+				}});
+			
+			Assert.assertThat(clientStream1.getId(), is(1));
+			Assert.assertThat(clientStream1.getPriority(), is((byte)1));
+			Assert.assertThat(clientAttachment.getConnection().getStream(1) == clientStream1, is(true));
+			
+			Stream clientStream2 = clientAttachment.getConnection().createStream((byte) 2, new StreamEventListener(){
+				
+				@Override
+				public void onSynStream(SynStreamFrame synStreamFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onSynReply(SynReplyFrame synReplyFrame, Stream stream, Connection connection) {
+					System.out.println("Client 2 receives reply frame -> " + synReplyFrame);
+					Assert.assertThat(synReplyFrame.getHeaders().get("response").getValue(), is("ok"));
+				}
+	
+				@Override
+				public void onRstStream(RstStreamFrame rstStreamFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onHeaders(HeadersFrame headersFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onData(DataFrame dataFrame, Stream stream, Connection connection) {
+					System.out.println("Client 2 receives data -> " + dataFrame);
+					if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
+						Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
+					}
+				}});
+			
+			Assert.assertThat(clientStream2.getId(), is(3));
+			Assert.assertThat(clientStream2.getPriority(), is((byte)2));
+			Assert.assertThat(clientAttachment.getConnection().getStream(3) == clientStream2, is(true));
+			
+			
+			// Client sends a SYN stream to server
+			Fields headers = clientStream1.createFields();
+			headers.put("testStream1", "testStream1");
+			clientStream1.syn(Version.V3, (byte)0, 0, (byte)0, headers);
+			Assert.assertThat(clientStream1.getWindowSize(), is(64 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(64 * 1024));
+			
+			headers = clientStream2.createFields();
+			headers.put("testStream2", "testStream2");
+			clientStream2.syn(Version.V3, (byte)0, 0, (byte)0, headers);
+			Assert.assertThat(clientStream2.getWindowSize(), is(64 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(64 * 1024));
+			Assert.assertThat(clientSession.outboundData.size(), is(2));
+			
+			// Client sends data to server
+			StringBuilder s = new StringBuilder(40 * 1024);
+			for (int i = 0; i < 40 * 1024; i++) {
+				s.append('b');
+			}
+			byte[] data1 = s.toString().getBytes();
+			byte[] data2 = s.toString().getBytes();
+			
+			s = new StringBuilder(23 * 1024);
+			for (int i = 0; i < 23 * 1024; i++) {
+				s.append('c');
+			}
+			byte[] data3 = s.toString().getBytes();
+			byte[] data4 = s.toString().getBytes();
+			
+			clientStream2.sendData(data3);
+			clientStream2.sendLastData(data4);
+			clientStream1.sendData(data1);
+			clientStream1.sendLastData(data2);
+			
+			
+			Assert.assertThat(clientStream1.getWindowSize(), is(46 * 1024));
+			Assert.assertThat(clientStream2.getWindowSize(), is(18 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(0));
+			Assert.assertThat(clientSession.outboundData.size(), is(5));
+			
+			ByteBuffer buf = null;
+			// Server receives data
+			while( (buf = clientSession.outboundData.poll()) != null ) {
+				serverDecoder.decode(buf, serverSession);
+			}
+			
+			// Server sends window update and replies
+			clientDecoder.decode(serverSession.outboundData.poll(), clientSession); // connection window update
+			Assert.assertThat(clientStream1.getWindowSize(), is(23 * 1024));
+			Assert.assertThat(clientStream2.getWindowSize(), is(18 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(0));
+			
+			clientDecoder.decode(serverSession.outboundData.poll(), clientSession); // stream 3 window update
+			Assert.assertThat(clientStream1.getWindowSize(), is(23 * 1024));
+			Assert.assertThat(clientStream2.getWindowSize(), is(41 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(0));
+			
+			clientDecoder.decode(serverSession.outboundData.poll(), clientSession); // stream 3 reply
+			Assert.assertThat(clientStream1.getWindowSize(), is(23 * 1024));
+			Assert.assertThat(clientStream2.getWindowSize(), is(41 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(0));
+			
+			clientDecoder.decode(serverSession.outboundData.poll(), clientSession); // stream 3 data
+			Assert.assertThat(clientStream1.getWindowSize(), is(23 * 1024));
+			Assert.assertThat(clientStream2.getWindowSize(), is(41 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(0));
+			Assert.assertThat(clientStream2.isOutboundClosed(), is(true));
+			Assert.assertThat(clientStream2.isInboundClosed(), is(true));
+			
+			clientDecoder.decode(serverSession.outboundData.poll(), clientSession); // connection window update, client retains 16kb
+			Assert.assertThat(clientStream1.getWindowSize(), is(0 * 1024));
+			Assert.assertThat(clientStream2.getWindowSize(), is(41 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(0));
+			
+			// Client receives reply frame
+			while( (buf = serverSession.outboundData.poll()) != null ) {
+				clientDecoder.decode(buf, clientSession);
+			}
+			Assert.assertThat(clientStream1.getWindowSize(), is(2 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(2 * 1024));
+			
+			// Server receives the last data
+			while( (buf = clientSession.outboundData.poll()) != null ) {
+				serverDecoder.decode(buf, serverSession);
+			}
+			// Client receives reply frame
+			while( (buf = serverSession.outboundData.poll()) != null ) {
+				clientDecoder.decode(buf, clientSession);
+			}
+			Assert.assertThat(clientStream1.isOutboundClosed(), is(true));
+			Assert.assertThat(clientStream1.isInboundClosed(), is(true));
+		}
 	}
 	
 	public void testPing() throws Throwable {
@@ -319,22 +464,5 @@ public class TestStream {
 	
 	public void testGoAway() throws Throwable {
 	
-	}
-	
-	public static void main(String[] args) throws Throwable {
-		TreeSet<Integer> tree = new TreeSet<Integer>(new Comparator<Integer>(){
-
-			@Override
-			public int compare(Integer o1, Integer o2) {
-				return Integer.compare(o1, o2);
-			}});
-		
-		tree.add(3);
-		tree.add(4);
-		tree.add(2);
-		tree.add(0);
-		for(Integer i : tree) {
-			System.out.println(i);
-		}
 	}
 }
