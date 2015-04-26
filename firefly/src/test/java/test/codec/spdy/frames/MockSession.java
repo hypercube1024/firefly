@@ -13,6 +13,7 @@ public class MockSession implements Session {
 	private Object attachment;
 	private SpdyEncoder spdyEncoder = new SpdyEncoder();
 	public LinkedList<ByteBuffer> outboundData = new LinkedList<>();
+	private boolean isOpen = true;
 	
 	@Override
 	public void attachObject(Object attachment) {
@@ -95,8 +96,7 @@ public class MockSession implements Session {
 
 	@Override
 	public void close(boolean immediately) {
-		// TODO Auto-generated method stub
-
+		isOpen = false;
 	}
 
 	@Override
@@ -107,8 +107,7 @@ public class MockSession implements Session {
 
 	@Override
 	public boolean isOpen() {
-		// TODO Auto-generated method stub
-		return false;
+		return isOpen;
 	}
 
 	@Override

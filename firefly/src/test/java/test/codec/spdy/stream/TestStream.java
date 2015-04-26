@@ -3,6 +3,8 @@ package test.codec.spdy.stream;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 
 import org.junit.Assert;
@@ -15,11 +17,15 @@ import com.firefly.codec.spdy.decode.SpdySessionAttachment;
 import com.firefly.codec.spdy.frames.DataFrame;
 import com.firefly.codec.spdy.frames.Version;
 import com.firefly.codec.spdy.frames.control.Fields;
+import com.firefly.codec.spdy.frames.control.Fields.Field;
+import com.firefly.codec.spdy.frames.control.GoAwayFrame;
 import com.firefly.codec.spdy.frames.control.HeadersFrame;
 import com.firefly.codec.spdy.frames.control.PingFrame;
 import com.firefly.codec.spdy.frames.control.RstStreamFrame;
+import com.firefly.codec.spdy.frames.control.SessionStatus;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
+import com.firefly.codec.spdy.frames.exception.SessionException;
 import com.firefly.codec.spdy.stream.Connection;
 import com.firefly.codec.spdy.stream.DefaultSpdyDecodingEventListener;
 import com.firefly.codec.spdy.stream.PingEventListener;
@@ -30,13 +36,24 @@ import com.firefly.codec.spdy.stream.WindowControl;
 
 public class TestStream {
 	
-	SpdyDecoder clientDecoder = new SpdyDecoder(new DefaultSpdyDecodingEventListener(new SettingsManager(null, "localhost", 7777)));
-	SpdyDecoder serverDecoder = new SpdyDecoder(new DefaultSpdyDecodingEventListener(new StreamEventListener(){
+	static SpdyDecoder clientDecoder = null;
+	static SpdyDecoder serverDecoder = null;
+	static {
+	try {
+		clientDecoder = new SpdyDecoder(new DefaultSpdyDecodingEventListener(new SettingsManager(new File(TestStream.class.getResource("/").toURI()), "localhost", 7777)));
+	} catch (URISyntaxException e) {
+		e.printStackTrace();
+	}
+	serverDecoder = new SpdyDecoder(new DefaultSpdyDecodingEventListener(new StreamEventListener(){
 
 		@Override
 		public void onSynStream(SynStreamFrame synStreamFrame, Stream stream, Connection connection) {
 			System.out.println("Server receives syn stream -> " + synStreamFrame);
-			
+			Field field = synStreamFrame.getHeaders().get("Connection");
+			if(field != null && field.getValue().equals("close")) {
+				GoAwayFrame goAwayFrame = new GoAwayFrame(Version.V3, synStreamFrame.getStreamId(), SessionStatus.OK);
+				connection.goAway(goAwayFrame);
+			}
 		}
 
 		@Override
@@ -63,7 +80,13 @@ public class TestStream {
 				stream.reply(Version.V3, (byte)0, headers);
 				stream.sendLastData("the server has received messages".getBytes());
 			}
+		}
+
+		@Override
+		public void onGoAway(GoAwayFrame goAwayFrame, Stream stream, Connection connection) {
+			
 		}}));
+	}
 
 	@Test
 	public void testWindowUpdate() throws Throwable {
@@ -106,6 +129,11 @@ public class TestStream {
 					if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
 						Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
 					}
+				}
+
+				@Override
+				public void onGoAway(GoAwayFrame goAwayFrame, Stream stream, Connection connection) {
+					
 				}});
 			
 			Assert.assertThat(clientStream.getId(), is(1));
@@ -206,6 +234,11 @@ public class TestStream {
 					if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
 						Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
 					}
+				}
+
+				@Override
+				public void onGoAway(GoAwayFrame goAwayFrame, Stream stream, Connection connection) {
+					
 				}});
 			
 			Assert.assertThat(clientStream.getId(), is(1));
@@ -317,6 +350,11 @@ public class TestStream {
 					if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
 						Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
 					}
+				}
+
+				@Override
+				public void onGoAway(GoAwayFrame goAwayFrame, Stream stream, Connection connection) {
+					
 				}});
 			
 			Assert.assertThat(clientStream1.getId(), is(1));
@@ -352,6 +390,11 @@ public class TestStream {
 					if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
 						Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
 					}
+				}
+
+				@Override
+				public void onGoAway(GoAwayFrame goAwayFrame, Stream stream, Connection connection) {
+					
 				}});
 			
 			Assert.assertThat(clientStream2.getId(), is(3));
@@ -507,7 +550,101 @@ public class TestStream {
 		
 	}
 	
+	@Test
 	public void testGoAway() throws Throwable {
+		MockSession clientSession = new MockSession();
+		MockSession serverSession = new MockSession();
+		
+		try(SpdySessionAttachment clientAttachment = new SpdySessionAttachment(new Connection(clientSession, true));
+		SpdySessionAttachment serverAttachment = new SpdySessionAttachment(new Connection(serverSession, false));) {
+		
+			clientSession.attachObject(clientAttachment);
+			serverSession.attachObject(serverAttachment);
+			
+			// Client creates a stream
+			Stream clientStream = clientAttachment.getConnection().createStream((byte) 1, new StreamEventListener(){
 	
+				@Override
+				public void onSynStream(SynStreamFrame synStreamFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onSynReply(SynReplyFrame synReplyFrame, Stream stream, Connection connection) {
+					System.out.println("Client 1 receives reply frame -> " + synReplyFrame);
+					Assert.assertThat(synReplyFrame.getHeaders().get("response").getValue(), is("ok"));
+				}
+	
+				@Override
+				public void onRstStream(RstStreamFrame rstStreamFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onHeaders(HeadersFrame headersFrame, Stream stream, Connection connection) {
+	
+				}
+	
+				@Override
+				public void onData(DataFrame dataFrame, Stream stream, Connection connection) {
+					System.out.println("Client 1 receives data -> " + dataFrame);
+					if(dataFrame.getFlags() == DataFrame.FLAG_FIN) {
+						Assert.assertThat(new String(dataFrame.getData()), is("the server has received messages"));
+					}
+				}
+
+				@Override
+				public void onGoAway(GoAwayFrame goAwayFrame, Stream stream, Connection connection) {
+					System.out.println("Client receives go away frame -> " + goAwayFrame);
+					Assert.assertThat(goAwayFrame.getStatusCode(), is(SessionStatus.OK));
+				}});
+			
+			Assert.assertThat(clientStream.getId(), is(1));
+			Assert.assertThat(clientStream.getPriority(), is((byte)1));
+			Assert.assertThat(clientAttachment.getConnection().getStream(1) == clientStream, is(true));
+			
+			// Client sends a SYN stream to server
+			Fields headers = clientStream.createFields();
+			headers.put("Connection", "close");
+			clientStream.syn(Version.V3, (byte)0, 0, (byte)0, headers);
+			Assert.assertThat(clientStream.getWindowSize(), is(64 * 1024));
+			Assert.assertThat(clientAttachment.getConnection().getWindowSize(), is(64 * 1024));
+			
+			// Server receives a SYN stream
+			serverDecoder.decode(clientSession.outboundData.poll(), serverSession);
+			
+			// Client receives frame
+			ByteBuffer buf = null;
+			while( (buf = serverSession.outboundData.poll()) != null ) {
+				clientDecoder.decode(buf, clientSession);
+			}
+			Assert.assertThat(clientSession.isOpen(), is(false));
+		}
+	}
+	
+	@Test(expected=SessionException.class)
+	public void testGoAwayException() throws Throwable {
+		MockSession clientSession = new MockSession();
+		MockSession serverSession = new MockSession();
+		
+		try(SpdySessionAttachment clientAttachment = new SpdySessionAttachment(new Connection(clientSession, true));
+		SpdySessionAttachment serverAttachment = new SpdySessionAttachment(new Connection(serverSession, false));) {
+		
+			clientSession.attachObject(clientAttachment);
+			serverSession.attachObject(serverAttachment);
+			
+			GoAwayFrame goAwayFrame = new GoAwayFrame(Version.V3, 0, SessionStatus.OK);
+			serverAttachment.getConnection().goAway(goAwayFrame);
+			
+			ByteBuffer buf = null;
+			while( (buf = serverSession.outboundData.poll()) != null ) {
+				clientDecoder.decode(buf, clientSession);
+			}
+		}
+	}
+	
+	public static void main(String[] args) throws Throwable {
+		File file = new File(TestStream.class.getResource("/").toURI());
+		System.out.println(file.isDirectory());
 	}
 }

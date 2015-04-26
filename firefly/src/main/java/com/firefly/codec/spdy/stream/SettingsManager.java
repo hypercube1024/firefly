@@ -17,15 +17,16 @@ public class SettingsManager {
 	}
 
 	public void saveSettings(SettingsFrame settingsFrame) {
-		
+		// TODO not implement
 	}
 	
 	public SettingsFrame loadSettings() {
+		// TODO not implement
 		return null;
 	}
 	
 	public void remove() {
-		
+		// TODO not implement
 	}
 	
 }

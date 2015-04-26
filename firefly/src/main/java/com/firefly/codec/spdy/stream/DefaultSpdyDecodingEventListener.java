@@ -13,6 +13,7 @@ import com.firefly.codec.spdy.frames.control.SettingsFrame;
 import com.firefly.codec.spdy.frames.control.SynReplyFrame;
 import com.firefly.codec.spdy.frames.control.SynStreamFrame;
 import com.firefly.codec.spdy.frames.control.WindowUpdateFrame;
+import com.firefly.codec.spdy.frames.exception.SessionException;
 import com.firefly.codec.spdy.frames.exception.StreamException;
 import com.firefly.net.Session;
 
@@ -175,8 +176,21 @@ public class DefaultSpdyDecodingEventListener implements SpdyDecodingEventListen
 
 	@Override
 	public void onGoAway(GoAwayFrame goAwayFrame, Session session) {
-		// TODO Auto-generated method stub
-
+		try {
+			SpdySessionAttachment attachment = (SpdySessionAttachment) session.getAttachment();
+			Connection connection = attachment.getConnection();
+			if(goAwayFrame.getLastStreamId() == 0) {
+				throw new SessionException(goAwayFrame.getStatusCode());
+			}
+			
+			Stream stream = connection.getStream(goAwayFrame.getLastStreamId());
+			if(stream == null) {
+				throw new SessionException(goAwayFrame.getStatusCode());
+			}
+			stream.getStreamEventListener().onGoAway(goAwayFrame, stream, connection);
+		} finally {
+			session.close(false);
+		}
 	}
 
 }
