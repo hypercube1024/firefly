@@ -26,7 +26,7 @@ public class FileLogTask implements LogTask {
 				break;
 
 			try {
-				Thread.sleep(200L);
+				Thread.sleep(500L);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
