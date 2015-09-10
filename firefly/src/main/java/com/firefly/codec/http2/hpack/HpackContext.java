@@ -1,5 +1,18 @@
 package com.firefly.codec.http2.hpack;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import com.firefly.codec.http2.model.HttpField;
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.utils.collection.ArrayQueue;
+import com.firefly.utils.collection.ArrayTernaryTrie;
+import com.firefly.utils.collection.Trie;
+
 public class HpackContext {
 	
 	public static final String[][] STATIC_TABLE = 
@@ -67,4 +80,148 @@ public class HpackContext {
 	        /* 60 */ {"via",null},
 	        /* 61 */ {"www-authenticate",null},
 	    };
+	
+	private static final Map<HttpField,Entry> staticFieldMap = new HashMap<>();
+    private static final Trie<StaticEntry> staticNameMap = new ArrayTernaryTrie<>(true,512);
+    private static final StaticEntry[] staticTableByHeader = new StaticEntry[HttpHeader.UNKNOWN.ordinal()];
+    private static final StaticEntry[] staticTable=new StaticEntry[STATIC_TABLE.length];
+    
+    static {
+    	Set<String> added = new HashSet<>();
+    	 for (int i = 1; i < STATIC_TABLE.length; i++) {
+    		 StaticEntry entry = null;
+
+             String name  = STATIC_TABLE[i][0];
+             String value = STATIC_TABLE[i][1];
+             HttpHeader header = HttpHeader.CACHE.get(name);
+             if (header!=null && value!=null) {
+            	 switch (header) {
+            	 	case C_METHOD: {
+            	 		HttpMethod method = HttpMethod.CACHE.get(value);
+            	 		if (method!=null)
+            	 			entry=new StaticEntry(i,new StaticTableHttpField(header,name,value,method));
+					
+                         break;
+            	 	}
+            	 	default:
+            	 		break;
+            	 }
+             }
+    	 }
+    	
+    }
+	
+	@SuppressWarnings("unused")
+	private class DynamicTable extends ArrayQueue<HpackContext.Entry> {
+
+        private DynamicTable(int initCapacity, int growBy) {
+            super(initCapacity,growBy);
+        }
+
+        @Override
+        protected void resizeUnsafe(int newCapacity) {
+            // Relay on super.growUnsafe to pack all entries 0 to _nextSlot
+            super.resizeUnsafe(newCapacity);
+            for (int s=0;s<_nextSlot;s++)
+                ((Entry)_elements[s])._slot=s;
+        }
+
+        @Override
+        public boolean enqueue(Entry e) {
+            return super.enqueue(e);
+        }
+
+        @Override
+        public Entry dequeue() {
+            return super.dequeue();
+        }
+
+		private int index(Entry entry) {
+            return entry._slot >= _nextE ? _size - entry._slot + _nextE : _nextSlot - entry._slot;
+        }
+
+    }
+	
+	
+	public static class Entry {
+		final HttpField _field;
+        int _slot;
+        
+        Entry(int index,String name, String value) {    
+            _slot=index;
+            _field=new HttpField(name,value);
+        }
+        
+        Entry(int slot, HttpField field) {    
+            _slot=slot;
+            _field=field;
+        }
+        
+        public int getSize() {
+            return 32+_field.getName().length()+_field.getValue().length();
+        }
+        
+        public HttpField getHttpField() {
+            return _field;
+        }
+        
+        public boolean isStatic() {
+            return false;
+        }
+        
+        public byte[] getStaticHuffmanValue() {
+            return null;
+        }
+        
+        public int getSlot() {
+            return _slot;
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("{%s,%d,%s,%x}",isStatic()?"S":"D",_slot,_field,hashCode());
+        }
+	}
+	
+	public static class StaticEntry extends Entry {
+        private final byte[] _huffmanValue;
+        private final byte _encodedField;
+        
+        StaticEntry(int index,HttpField field) {    
+            super(index,field);
+            String value = field.getValue();
+            if (value!=null && value.length()>0)
+            {
+                int huffmanLen = Huffman.octetsNeeded(value);
+                int lenLen = NBitInteger.octectsNeeded(7,huffmanLen);
+                _huffmanValue = new byte[1+lenLen+huffmanLen];
+                ByteBuffer buffer = ByteBuffer.wrap(_huffmanValue); 
+                        
+                // Indicate Huffman
+                buffer.put((byte)0x80);
+                // Add huffman length
+                NBitInteger.encode(buffer,7,huffmanLen);
+                // Encode value
+                Huffman.encode(buffer,value);       
+            }
+            else
+                _huffmanValue=null;
+            
+            _encodedField=(byte)(0x80|index);
+        }
+
+        @Override
+        public boolean isStatic() {
+            return true;
+        }
+        
+        @Override
+        public byte[] getStaticHuffmanValue() {
+            return _huffmanValue;
+        }
+        
+        public byte getEncodedField() {
+            return _encodedField;
+        }
+    }
 }
