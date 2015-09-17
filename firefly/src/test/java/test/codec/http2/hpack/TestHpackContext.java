@@ -141,4 +141,51 @@ public class TestHpackContext {
         assertEquals(":method", ctx.get(":method").getHttpField().getName());
         assertTrue(ctx.get(":method").isStatic()); 
     }
+	
+	@Test
+    public void testIndexes() {
+		// Only enough space for 5 entries
+        HpackContext ctx = new HpackContext(38 * 5);
+        
+        HttpField methodPost = new HttpField(":method", "POST");
+        HttpField[] field = 
+        {
+           new HttpField("fo0","b0r"),
+           new HttpField("fo1","b1r"),
+           new HttpField("fo2","b2r"),
+           new HttpField("fo3","b3r"),
+           new HttpField("fo4","b4r"),
+           new HttpField("fo5","b5r"),
+           new HttpField("fo6","b6r"),
+           new HttpField("fo7","b7r"),
+           new HttpField("fo8","b8r"),
+           new HttpField("fo9","b9r"),
+           new HttpField("foA","bAr"),
+        };
+        
+        Entry[] entry = new Entry[100];
+        
+        // Lookup the index of a static field
+        assertEquals(0, ctx.size());
+        assertEquals(":authority", ctx.get(1).getHttpField().getName());
+        assertEquals(3, ctx.index(ctx.get(methodPost)));
+        assertEquals(methodPost, ctx.get(3).getHttpField());
+        assertEquals("www-authenticate", ctx.get(61).getHttpField().getName());
+        assertEquals(null, ctx.get(62));
+        
+        // Add a single entry  
+        entry[0] = ctx.add(field[0]);
+        
+        // Check new entry is 62 
+        assertEquals(1, ctx.size());
+        assertEquals(62, ctx.index(entry[0]));
+        assertEquals(entry[0], ctx.get(62));
+        
+        // and statics have moved up 0
+        assertEquals(":authority", ctx.get(1).getHttpField().getName());
+        assertEquals(3, ctx.index(ctx.get(methodPost)));
+        assertEquals(methodPost, ctx.get(3).getHttpField());
+        assertEquals("www-authenticate", ctx.get(61).getHttpField().getName());
+        assertEquals(null, ctx.get(62 + ctx.size()));
+    }
 }
