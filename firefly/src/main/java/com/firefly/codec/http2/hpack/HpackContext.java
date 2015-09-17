@@ -13,8 +13,12 @@ import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.utils.collection.ArrayQueue;
 import com.firefly.utils.collection.ArrayTernaryTrie;
 import com.firefly.utils.collection.Trie;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class HpackContext {
+	
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
 	public static final String[][] STATIC_TABLE = 
 	    {
@@ -85,7 +89,7 @@ public class HpackContext {
 	private static final Map<HttpField,Entry> staticFieldMap = new HashMap<>();
     private static final Trie<StaticEntry> staticNameMap = new ArrayTernaryTrie<>(true,512);
     private static final StaticEntry[] staticTableByHeader = new StaticEntry[HttpHeader.UNKNOWN.ordinal()];
-    private static final StaticEntry[] staticTable=new StaticEntry[STATIC_TABLE.length];
+    private static final StaticEntry[] staticTable = new StaticEntry[STATIC_TABLE.length];
     
     static {
     	Set<String> added = new HashSet<>();
@@ -95,29 +99,74 @@ public class HpackContext {
              String name  = STATIC_TABLE[i][0];
              String value = STATIC_TABLE[i][1];
              HttpHeader header = HttpHeader.CACHE.get(name);
-             if (header!=null && value!=null) {
+             if (header != null && value != null) {
             	 switch (header) {
             	 	case C_METHOD: {
             	 		HttpMethod method = HttpMethod.CACHE.get(value);
-            	 		if (method!=null) {
-            	 			entry=new StaticEntry(i, new StaticTableHttpField(header,name,value,method));
+            	 		if (method != null) {
+            	 			entry = new StaticEntry(i, new StaticTableHttpField(header,name,value,method));
             	 		}
             	 		break;
             	 	}
             	 	case C_SCHEME: {
                         HttpScheme scheme = HttpScheme.CACHE.get(value);
-                        if (scheme!=null)
-                            entry=new StaticEntry(i, new StaticTableHttpField(header,name,value,scheme));
+                        if (scheme != null) {
+                            entry = new StaticEntry(i, new StaticTableHttpField(header,name,value,scheme));
+                        }
+                        break;
+                    }
+            	 	case C_STATUS: {
+                        entry = new StaticEntry(i,new StaticTableHttpField(header,name,value,Integer.valueOf(value)));
                         break;
                     }
             	 	default:
             	 		break;
             	 }
              }
+             
+             
+             if (entry == null) {
+                 entry = new StaticEntry(i, header == null ? new HttpField(STATIC_TABLE[i][0], value) : new HttpField(header, name, value));
+             }
+             staticTable[i] = entry;
+             
+             if (entry.field.getValue() != null) {
+                 staticFieldMap.put(entry.field,entry);
+             }
+             if (!added.contains(entry.field.getName())) {
+                 added.add(entry.field.getName());
+                 staticNameMap.put(entry.field.getName(),entry);
+                 if (staticNameMap.get(entry.field.getName()) == null)
+                     throw new IllegalStateException("name trie too small");
+             }
     	 }
+    	 
+    	 for (HttpHeader h : HttpHeader.values()) {
+             StaticEntry entry = staticNameMap.get(h.asString());
+             if (entry!=null)
+                 staticTableByHeader[h.ordinal()]=entry;
+         }
     	
     }
-	
+    
+    private int maxDynamicTableSizeInBytes;
+    private int dynamicTableSizeInBytes;
+    private final DynamicTable dynamicTable;
+    private final Map<HttpField,Entry> fieldMap = new HashMap<>();
+    private final Map<String,Entry> nameMap = new HashMap<>();
+    
+    HpackContext(int maxDynamicTableSize) {
+        this.maxDynamicTableSizeInBytes = maxDynamicTableSize;
+        int guesstimateEntries = 10 + maxDynamicTableSize / (32 + 10 + 10);
+        dynamicTable = new DynamicTable(guesstimateEntries,guesstimateEntries + 10);
+        if(log.isDebugEnable())
+        	log.debug("HdrTbl[{}] created max={}", hashCode(), maxDynamicTableSize);
+    }
+    
+    
+    
+    
+    
 	@SuppressWarnings("unused")
 	private class DynamicTable extends ArrayQueue<HpackContext.Entry> {
 
@@ -130,7 +179,7 @@ public class HpackContext {
             // Relay on super.growUnsafe to pack all entries 0 to _nextSlot
             super.resizeUnsafe(newCapacity);
             for (int s=0;s<_nextSlot;s++)
-                ((Entry)_elements[s])._slot=s;
+                ((Entry)_elements[s]).slot=s;
         }
 
         @Override
@@ -144,32 +193,32 @@ public class HpackContext {
         }
 
 		private int index(Entry entry) {
-            return entry._slot >= _nextE ? _size - entry._slot + _nextE : _nextSlot - entry._slot;
+            return entry.slot >= _nextE ? _size - entry.slot + _nextE : _nextSlot - entry.slot;
         }
 
     }
 	
 	
 	public static class Entry {
-		final HttpField _field;
-        int _slot;
+		final HttpField field;
+        int slot;
         
         Entry(int index,String name, String value) {    
-            _slot=index;
-            _field=new HttpField(name,value);
+            slot = index;
+            field = new HttpField(name,value);
         }
         
         Entry(int slot, HttpField field) {    
-            _slot=slot;
-            _field=field;
+            this.slot = slot;
+            this.field = field;
         }
         
         public int getSize() {
-            return 32+_field.getName().length()+_field.getValue().length();
+            return 32 + field.getName().length() + field.getValue().length();
         }
         
         public HttpField getHttpField() {
-            return _field;
+            return field;
         }
         
         public boolean isStatic() {
@@ -181,28 +230,27 @@ public class HpackContext {
         }
         
         public int getSlot() {
-            return _slot;
+            return slot;
         }
         
         @Override
         public String toString() {
-            return String.format("{%s,%d,%s,%x}",isStatic()?"S":"D",_slot,_field,hashCode());
+            return String.format("{%s,%d,%s,%x}", isStatic()?"S":"D", slot, field, hashCode());
         }
 	}
 	
 	public static class StaticEntry extends Entry {
-        private final byte[] _huffmanValue;
-        private final byte _encodedField;
+        private final byte[] huffmanValue;
+        private final byte encodedField;
         
         StaticEntry(int index,HttpField field) {    
             super(index,field);
             String value = field.getValue();
-            if (value!=null && value.length()>0)
-            {
+            if (value != null && value.length()>0) {
                 int huffmanLen = Huffman.octetsNeeded(value);
                 int lenLen = NBitInteger.octectsNeeded(7,huffmanLen);
-                _huffmanValue = new byte[1+lenLen+huffmanLen];
-                ByteBuffer buffer = ByteBuffer.wrap(_huffmanValue); 
+                huffmanValue = new byte[1+lenLen+huffmanLen];
+                ByteBuffer buffer = ByteBuffer.wrap(huffmanValue); 
                         
                 // Indicate Huffman
                 buffer.put((byte)0x80);
@@ -210,11 +258,10 @@ public class HpackContext {
                 NBitInteger.encode(buffer,7,huffmanLen);
                 // Encode value
                 Huffman.encode(buffer,value);       
+            } else {
+                huffmanValue = null;
             }
-            else
-                _huffmanValue=null;
-            
-            _encodedField=(byte)(0x80|index);
+            encodedField = (byte)(0x80|index);
         }
 
         @Override
@@ -224,11 +271,11 @@ public class HpackContext {
         
         @Override
         public byte[] getStaticHuffmanValue() {
-            return _huffmanValue;
+            return huffmanValue;
         }
         
         public byte getEncodedField() {
-            return _encodedField;
+            return encodedField;
         }
     }
 }
