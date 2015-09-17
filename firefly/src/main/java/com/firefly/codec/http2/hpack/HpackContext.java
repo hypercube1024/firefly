@@ -9,6 +9,7 @@ import java.util.Set;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.utils.collection.ArrayQueue;
 import com.firefly.utils.collection.ArrayTernaryTrie;
 import com.firefly.utils.collection.Trie;
@@ -98,11 +99,17 @@ public class HpackContext {
             	 switch (header) {
             	 	case C_METHOD: {
             	 		HttpMethod method = HttpMethod.CACHE.get(value);
-            	 		if (method!=null)
-            	 			entry=new StaticEntry(i,new StaticTableHttpField(header,name,value,method));
-					
-                         break;
+            	 		if (method!=null) {
+            	 			entry=new StaticEntry(i, new StaticTableHttpField(header,name,value,method));
+            	 		}
+            	 		break;
             	 	}
+            	 	case C_SCHEME: {
+                        HttpScheme scheme = HttpScheme.CACHE.get(value);
+                        if (scheme!=null)
+                            entry=new StaticEntry(i, new StaticTableHttpField(header,name,value,scheme));
+                        break;
+                    }
             	 	default:
             	 		break;
             	 }
