@@ -10,6 +10,7 @@ import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.codec.http2.model.HttpScheme;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.collection.ArrayQueue;
 import com.firefly.utils.collection.ArrayTernaryTrie;
 import com.firefly.utils.collection.Trie;
@@ -144,7 +145,7 @@ public class HpackContext {
     	 for (HttpHeader h : HttpHeader.values()) {
              StaticEntry entry = staticNameMap.get(h.asString());
              if (entry!=null)
-                 staticTableByHeader[h.ordinal()]=entry;
+                 staticTableByHeader[h.ordinal()] = entry;
          }
     	
     }
@@ -155,7 +156,7 @@ public class HpackContext {
     private final Map<HttpField,Entry> fieldMap = new HashMap<>();
     private final Map<String,Entry> nameMap = new HashMap<>();
     
-    HpackContext(int maxDynamicTableSize) {
+    public HpackContext(int maxDynamicTableSize) {
         this.maxDynamicTableSizeInBytes = maxDynamicTableSize;
         int guesstimateEntries = 10 + maxDynamicTableSize / (32 + 10 + 10);
         dynamicTable = new DynamicTable(guesstimateEntries,guesstimateEntries + 10);
@@ -163,11 +164,135 @@ public class HpackContext {
         	log.debug("HdrTbl[{}] created max={}", hashCode(), maxDynamicTableSize);
     }
     
+    public void resize(int newMaxDynamicTableSize) {
+        if (log.isDebugEnable()) {
+            log.debug("HdrTbl[{}] resized max={}->{}", hashCode(), maxDynamicTableSizeInBytes, newMaxDynamicTableSize);
+        }
+        maxDynamicTableSizeInBytes = newMaxDynamicTableSize;
+        int guesstimateEntries = 10 + newMaxDynamicTableSize / (32 + 10 + 10);
+        evict();
+        dynamicTable.resizeUnsafe(guesstimateEntries);
+    }
     
+    public Entry get(HttpField field) {
+        Entry entry = fieldMap.get(field);
+        if (entry == null)
+            entry = staticFieldMap.get(field);
+        return entry;
+    }
     
+    public Entry get(String name) {
+        Entry entry = staticNameMap.get(name);
+        if (entry != null)
+            return entry;
+        return nameMap.get(StringUtils.asciiToLowerCase(name));
+    }
     
+    public Entry get(int index) {
+        if (index < staticTable.length)
+            return staticTable[index];
+            
+        int d = dynamicTable.size() - index + staticTable.length - 1;
+
+        if (d >= 0) 
+            return dynamicTable.getUnsafe(d);      
+        return null;
+    }
     
-	@SuppressWarnings("unused")
+    public Entry get(HttpHeader header) {
+        Entry e = staticTableByHeader[header.ordinal()];
+        if (e == null)
+            return get(header.asString());
+        return e;
+    }
+
+    public static Entry getStatic(HttpHeader header) {
+        return staticTableByHeader[header.ordinal()];
+    }
+    
+    public Entry add(HttpField field) {
+        int slot = dynamicTable.getNextSlotUnsafe();
+        Entry entry = new Entry(slot,field);
+        int size = entry.getSize();
+        if (size > maxDynamicTableSizeInBytes) {
+            if (log.isDebugEnable())
+                log.debug("HdrTbl[{}] !added size {}>{}",hashCode(), size, maxDynamicTableSizeInBytes);
+            return null;
+        }
+        dynamicTableSizeInBytes += size;
+        dynamicTable.addUnsafe(entry);
+        fieldMap.put(field,entry);
+        nameMap.put(StringUtils.asciiToLowerCase(field.getName()),entry);
+
+        if (log.isDebugEnable()) {
+            log.debug("HdrTbl[{}] added {}", hashCode(), entry);
+        }
+        evict();
+        return entry;
+    }
+
+    /**
+     * @return Current dynamic table size in entries
+     */
+    public int size() {
+        return dynamicTable.size();
+    }
+    
+    /**
+     * @return Current Dynamic table size in Octets
+     */
+    public int getDynamicTableSize() {
+        return dynamicTableSizeInBytes;
+    }
+
+    /**
+     * @return Max Dynamic table size in Octets
+     */
+    public int getMaxDynamicTableSize()  {
+        return maxDynamicTableSizeInBytes;
+    }
+
+    public int index(Entry entry) {
+        if (entry.slot < 0)
+            return 0;
+        if (entry.isStatic())
+            return entry.slot;
+
+        return dynamicTable.index(entry) + staticTable.length - 1;
+    }
+    
+    public static int staticIndex(HttpHeader header) {
+        if (header == null)
+            return 0;
+        Entry entry = staticNameMap.get(header.asString());
+        if (entry == null)
+            return 0;
+        return entry.getSlot();
+    }
+    
+    private void evict() {
+        while (dynamicTableSizeInBytes > maxDynamicTableSizeInBytes) {
+            Entry entry = dynamicTable.pollUnsafe();
+            if (log.isDebugEnable()) {
+                log.debug("HdrTbl[{}] evict {}", hashCode(), entry);
+            }
+            dynamicTableSizeInBytes -= entry.getSize();
+            entry.slot = -1;
+            fieldMap.remove(entry.getHttpField());
+            String lc = StringUtils.asciiToLowerCase(entry.getHttpField().getName());
+            if (entry == nameMap.get(lc))
+                nameMap.remove(lc);
+        }
+        if (log.isDebugEnable())
+            log.debug("HdrTbl[{}] entries={}, size={}, max={}", hashCode(), dynamicTable.size(), dynamicTableSizeInBytes, maxDynamicTableSizeInBytes);
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("HpackContext@%x{entries=%d,size=%d,max=%d}", hashCode(), dynamicTable.size(), dynamicTableSizeInBytes, maxDynamicTableSizeInBytes);
+    }
+    
+
 	private class DynamicTable extends ArrayQueue<HpackContext.Entry> {
 
         private DynamicTable(int initCapacity, int growBy) {
@@ -235,7 +360,7 @@ public class HpackContext {
         
         @Override
         public String toString() {
-            return String.format("{%s,%d,%s,%x}", isStatic()?"S":"D", slot, field, hashCode());
+            return String.format("{%s,%d,%s,%x}", isStatic() ? "S" : "D", slot, field, hashCode());
         }
 	}
 	
@@ -243,7 +368,7 @@ public class HpackContext {
         private final byte[] huffmanValue;
         private final byte encodedField;
         
-        StaticEntry(int index,HttpField field) {    
+        StaticEntry(int index, HttpField field) {    
             super(index,field);
             String value = field.getValue();
             if (value != null && value.length()>0) {
