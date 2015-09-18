@@ -371,10 +371,10 @@ public class HpackContext {
         StaticEntry(int index, HttpField field) {    
             super(index,field);
             String value = field.getValue();
-            if (value != null && value.length()>0) {
+            if (value != null && value.length() > 0) {
                 int huffmanLen = Huffman.octetsNeeded(value);
-                int lenLen = NBitInteger.octectsNeeded(7,huffmanLen);
-                huffmanValue = new byte[1+lenLen+huffmanLen];
+                int lenLen = NBitInteger.octectsNeeded(7, huffmanLen);
+                huffmanValue = new byte[1 + lenLen + huffmanLen];
                 ByteBuffer buffer = ByteBuffer.wrap(huffmanValue); 
                         
                 // Indicate Huffman
