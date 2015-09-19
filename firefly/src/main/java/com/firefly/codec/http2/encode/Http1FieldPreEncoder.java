@@ -1,10 +1,9 @@
-package com.firefly.codec.http2.hpack;
+package com.firefly.codec.http2.encode;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.Arrays;
 
-import com.firefly.codec.http2.model.HttpFieldPreEncoder;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
 

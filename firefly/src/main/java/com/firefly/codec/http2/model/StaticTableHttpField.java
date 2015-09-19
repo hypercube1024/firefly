@@ -1,7 +1,4 @@
-package com.firefly.codec.http2.hpack;
-
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpHeader;
+package com.firefly.codec.http2.model;
 
 public class StaticTableHttpField extends HttpField {
 	private final Object value;

@@ -1,4 +1,8 @@
-package com.firefly.codec.http2.model;
+package com.firefly.codec.http2.encode;
+
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.codec.http2.model.PreEncodedHttpField;
 
 /**
  * Interface to pre-encode HttpFields. Used by {@link PreEncodedHttpField}

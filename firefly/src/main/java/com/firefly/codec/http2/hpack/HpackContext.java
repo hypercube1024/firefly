@@ -10,6 +10,7 @@ import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.codec.http2.model.HttpScheme;
+import com.firefly.codec.http2.model.StaticTableHttpField;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.collection.ArrayQueue;
 import com.firefly.utils.collection.ArrayTernaryTrie;

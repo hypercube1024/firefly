@@ -1,3 +1,21 @@
+//
+//  ========================================================================
+//  Copyright (c) 1995-2015 Mort Bay Consulting Pty. Ltd.
+//  ------------------------------------------------------------------------
+//  All rights reserved. This program and the accompanying materials
+//  are made available under the terms of the Eclipse Public License v1.0
+//  and Apache License v2.0 which accompanies this distribution.
+//
+//      The Eclipse Public License is available at
+//      http://www.eclipse.org/legal/epl-v10.html
+//
+//      The Apache License v2.0 is available at
+//      http://www.opensource.org/licenses/apache2.0.php
+//
+//  You may elect to redistribute this code under either of these licenses.
+//  ========================================================================
+//
+
 package com.firefly.utils.io;
 
 import java.io.File;
@@ -14,6 +32,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import com.firefly.utils.lang.TypeUtils;
+
+/* ------------------------------------------------------------------------------- */
 /**
  * Buffer utility methods.
  * <p>
@@ -78,10 +99,10 @@ import java.util.Arrays;
  * will compact the buffer if there is no space.
  * </p>
  */
-public class BufferUtil {
-	static final int TEMP_BUFFER_SIZE = 4096;
-	static final byte SPACE = 0x20;
-	static final byte MINUS = '-';
+public class BufferUtils {
+	public static final int TEMP_BUFFER_SIZE = 4096;
+	public static final byte SPACE = 0x20;
+	public static final byte MINUS = '-';
 	static final byte[] DIGIT = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6',
 			(byte) '7', (byte) '8', (byte) '9', (byte) 'A', (byte) 'B', (byte) 'C', (byte) 'D', (byte) 'E',
 			(byte) 'F' };
@@ -462,18 +483,29 @@ public class BufferUtil {
 	}
 
 	/**
-	 * Convert the buffer to an UTF-8 String
+	 * Convert the buffer to an ISO-8859-1 String
 	 * 
 	 * @param buffer
 	 *            The buffer to convert in flush mode. The buffer is unchanged
 	 * @return The buffer as a string.
 	 */
 	public static String toString(ByteBuffer buffer) {
-		return toString(buffer, StandardCharsets.UTF_8);
+		return toString(buffer, StandardCharsets.ISO_8859_1);
 	}
 
 	/**
 	 * Convert the buffer to an UTF-8 String
+	 * 
+	 * @param buffer
+	 *            The buffer to convert in flush mode. The buffer is unchanged
+	 * @return The buffer as a string.
+	 */
+	public static String toUTF8String(ByteBuffer buffer) {
+		return toString(buffer, StandardCharsets.UTF_8);
+	}
+
+	/**
+	 * Convert the buffer to an ISO-8859-1 String
 	 * 
 	 * @param buffer
 	 *            The buffer to convert in flush mode. The buffer is unchanged
@@ -758,7 +790,7 @@ public class BufferUtil {
 	}
 
 	public static ByteBuffer toBuffer(String s) {
-		return toBuffer(s, StandardCharsets.UTF_8);
+		return toBuffer(s, StandardCharsets.ISO_8859_1);
 	}
 
 	public static ByteBuffer toBuffer(String s, Charset charset) {
@@ -798,7 +830,7 @@ public class BufferUtil {
 	}
 
 	public static ByteBuffer toDirectBuffer(String s) {
-		return toDirectBuffer(s, StandardCharsets.UTF_8);
+		return toDirectBuffer(s, StandardCharsets.ISO_8859_1);
 	}
 
 	public static ByteBuffer toDirectBuffer(String s, Charset charset) {
@@ -830,6 +862,146 @@ public class BufferUtil {
 		buf.append(",r=");
 		buf.append(buffer.remaining());
 		buf.append("]");
+		return buf.toString();
+	}
+
+	public static String toDetailString(ByteBuffer[] buffer) {
+		StringBuilder builder = new StringBuilder();
+		builder.append('[');
+		for (int i = 0; i < buffer.length; i++) {
+			if (i > 0)
+				builder.append(',');
+			builder.append(toDetailString(buffer[i]));
+		}
+		builder.append(']');
+		return builder.toString();
+	}
+
+	/**
+	 * Convert Buffer to string ID independent of content
+	 */
+	private static void idString(ByteBuffer buffer, StringBuilder out) {
+		out.append(buffer.getClass().getSimpleName());
+		out.append("@");
+		if (buffer.hasArray() && buffer.arrayOffset() == 4) {
+			out.append('T');
+			byte[] array = buffer.array();
+			TypeUtils.toHex(array[0], out);
+			TypeUtils.toHex(array[1], out);
+			TypeUtils.toHex(array[2], out);
+			TypeUtils.toHex(array[3], out);
+		} else
+			out.append(Integer.toHexString(System.identityHashCode(buffer)));
+	}
+
+	/**
+	 * Convert Buffer to string ID independent of content
+	 * 
+	 * @param buffer
+	 *            the buffet to generate a string ID from
+	 * @return A string showing the buffer ID
+	 */
+	public static String toIDString(ByteBuffer buffer) {
+		StringBuilder buf = new StringBuilder();
+		idString(buffer, buf);
+		return buf.toString();
+	}
+
+	/**
+	 * Convert Buffer to a detail debug string of pointers and content
+	 * 
+	 * @param buffer
+	 *            the buffer to generate a detail string from
+	 * @return A string showing the pointers and content of the buffer
+	 */
+	public static String toDetailString(ByteBuffer buffer) {
+		if (buffer == null)
+			return "null";
+
+		StringBuilder buf = new StringBuilder();
+		idString(buffer, buf);
+		buf.append("[p=");
+		buf.append(buffer.position());
+		buf.append(",l=");
+		buf.append(buffer.limit());
+		buf.append(",c=");
+		buf.append(buffer.capacity());
+		buf.append(",r=");
+		buf.append(buffer.remaining());
+		buf.append("]={");
+
+		appendDebugString(buf, buffer);
+
+		buf.append("}");
+
+		return buf.toString();
+	}
+
+	private static void appendDebugString(StringBuilder buf, ByteBuffer buffer) {
+		for (int i = 0; i < buffer.position(); i++) {
+			appendContentChar(buf, buffer.get(i));
+			if (i == 16 && buffer.position() > 32) {
+				buf.append("...");
+				i = buffer.position() - 16;
+			}
+		}
+		buf.append("<<<");
+		for (int i = buffer.position(); i < buffer.limit(); i++) {
+			appendContentChar(buf, buffer.get(i));
+			if (i == buffer.position() + 16 && buffer.limit() > buffer.position() + 32) {
+				buf.append("...");
+				i = buffer.limit() - 16;
+			}
+		}
+		buf.append(">>>");
+		int limit = buffer.limit();
+		buffer.limit(buffer.capacity());
+		for (int i = limit; i < buffer.capacity(); i++) {
+			appendContentChar(buf, buffer.get(i));
+			if (i == limit + 16 && buffer.capacity() > limit + 32) {
+				buf.append("...");
+				i = buffer.capacity() - 16;
+			}
+		}
+		buffer.limit(limit);
+	}
+
+	private static void appendContentChar(StringBuilder buf, byte b) {
+		if (b == '\\')
+			buf.append("\\\\");
+		else if (b >= ' ')
+			buf.append((char) b);
+		else if (b == '\r')
+			buf.append("\\r");
+		else if (b == '\n')
+			buf.append("\\n");
+		else if (b == '\t')
+			buf.append("\\t");
+		else
+			buf.append("\\x").append(TypeUtils.toHexString(b));
+	}
+
+	/**
+	 * Convert buffer to a Hex Summary String.
+	 * 
+	 * @param buffer
+	 *            the buffer to generate a hex byte summary from
+	 * @return A string showing the escaped content of the buffer around the
+	 *         position and limit (marked with &lt;&lt;&lt; and &gt;&gt;&gt;)
+	 */
+	public static String toHexSummary(ByteBuffer buffer) {
+		if (buffer == null)
+			return "null";
+		StringBuilder buf = new StringBuilder();
+
+		buf.append("b[").append(buffer.remaining()).append("]=");
+		for (int i = buffer.position(); i < buffer.limit(); i++) {
+			TypeUtils.toHex(buffer.get(i), buf);
+			if (i == buffer.position() + 24 && buffer.limit() > buffer.position() + 32) {
+				buf.append("...");
+				i = buffer.limit() - 8;
+			}
+		}
 		return buf.toString();
 	}
 

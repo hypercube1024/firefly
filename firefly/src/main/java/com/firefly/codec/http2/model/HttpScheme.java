@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
-import com.firefly.utils.io.BufferUtil;
+import com.firefly.utils.io.BufferUtils;
 
 public enum HttpScheme {
 	HTTP("http"), HTTPS("https"), WS("ws"), WSS("wss");
@@ -39,7 +39,7 @@ public enum HttpScheme {
 
 	HttpScheme(String s) {
 		string = s;
-		buffer = BufferUtil.toBuffer(s);
+		buffer = BufferUtils.toBuffer(s);
 	}
 
 	public ByteBuffer asByteBuffer() {

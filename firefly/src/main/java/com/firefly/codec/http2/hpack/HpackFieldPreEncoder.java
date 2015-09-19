@@ -2,10 +2,10 @@ package com.firefly.codec.http2.hpack;
 
 import java.nio.ByteBuffer;
 
-import com.firefly.codec.http2.model.HttpFieldPreEncoder;
+import com.firefly.codec.http2.encode.HttpFieldPreEncoder;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.utils.io.BufferUtil;
+import com.firefly.utils.io.BufferUtils;
 
 public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 
@@ -18,8 +18,8 @@ public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 	public byte[] getEncodedField(HttpHeader header, String name, String value) {
 		boolean not_indexed = HpackEncoder.DO_NOT_INDEX.contains(header);
 
-		ByteBuffer buffer = BufferUtil.allocate(name.length() + value.length() + 10);
-		BufferUtil.clearToFill(buffer);
+		ByteBuffer buffer = BufferUtils.allocate(name.length() + value.length() + 10);
+		BufferUtils.clearToFill(buffer);
 		boolean huffman;
 		int bits;
 
@@ -52,7 +52,7 @@ public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 
 		HpackEncoder.encodeValue(buffer, huffman, value);
 
-		BufferUtil.flipToFlush(buffer, 0);
-		return BufferUtil.toArray(buffer);
+		BufferUtils.flipToFlush(buffer, 0);
+		return BufferUtils.toArray(buffer);
 	}
 }

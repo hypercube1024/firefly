@@ -3,8 +3,9 @@ package com.firefly.codec.http2.model;
 import java.nio.ByteBuffer;
 import java.util.ServiceLoader;
 
+import com.firefly.codec.http2.encode.Http1FieldPreEncoder;
+import com.firefly.codec.http2.encode.HttpFieldPreEncoder;
 import com.firefly.codec.http2.hpack.HpackFieldPreEncoder;
-import com.firefly.codec.http2.hpack.Http1FieldPreEncoder;
 
 /* ------------------------------------------------------------ */
 /**
