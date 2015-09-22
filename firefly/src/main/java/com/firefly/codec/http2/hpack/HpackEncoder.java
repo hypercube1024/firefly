@@ -46,6 +46,44 @@ public class HpackEncoder {
         for (HttpStatus.Code code : HttpStatus.Code.values())
             status[code.getCode()] = new PreEncodedHttpField(HttpHeader.C_STATUS,Integer.toString(code.getCode()));
     }
+	
+	private final HpackContext context;
+    private int remoteMaxDynamicTableSize;
+    private int localMaxDynamicTableSize;
+    
+    public HpackEncoder() {
+        this(4096,4096);
+    }
+
+    public HpackEncoder(int localMaxDynamicTableSize) {
+        this(localMaxDynamicTableSize,4096);
+    }
+
+	public HpackEncoder(int remoteMaxDynamicTableSize, int localMaxDynamicTableSize) {
+		this.remoteMaxDynamicTableSize = remoteMaxDynamicTableSize;
+		this.localMaxDynamicTableSize = localMaxDynamicTableSize;
+		context = new HpackContext(remoteMaxDynamicTableSize);
+	}
+
+	public int getRemoteMaxDynamicTableSize() {
+		return remoteMaxDynamicTableSize;
+	}
+
+	public void setRemoteMaxDynamicTableSize(int remoteMaxDynamicTableSize) {
+		this.remoteMaxDynamicTableSize = remoteMaxDynamicTableSize;
+	}
+
+	public int getLocalMaxDynamicTableSize() {
+		return localMaxDynamicTableSize;
+	}
+
+	public void setLocalMaxDynamicTableSize(int localMaxDynamicTableSize) {
+		this.localMaxDynamicTableSize = localMaxDynamicTableSize;
+	}
+
+	public HpackContext getContext() {
+		return context;
+	}
 
 	static void encodeValue(ByteBuffer buffer, boolean huffman, String value) {
 		if (huffman) {
