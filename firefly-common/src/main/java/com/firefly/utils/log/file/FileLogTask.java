@@ -1,7 +1,11 @@
 package com.firefly.utils.log.file;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
@@ -11,26 +15,43 @@ import com.firefly.utils.log.LogTask;
 
 public class FileLogTask implements LogTask {
 	private volatile boolean start;
-	private Queue<LogItem> queue = new ConcurrentLinkedQueue<LogItem>();
+	private BlockingQueue<LogItem> queue = new LinkedTransferQueue<>();
 	private Thread thread = new Thread(this, "firefly log thread");
-	
-	public FileLogTask() {
+	private final Map<String, Log> logMap;
+
+	public FileLogTask(Map<String, Log> logMap) {
 		thread.setPriority(Thread.MIN_PRIORITY);
+		this.logMap = logMap;
 	}
 
 	@Override
 	public void run() {
 		while (true) {
-			write();
-			if (!start && queue.isEmpty())
-				break;
-
 			try {
-				Thread.sleep(500L);
+				for (LogItem logItem = null; (logItem = queue.poll(1000, TimeUnit.MILLISECONDS)) != null;) {
+					Log log = LogFactory.getInstance().getLog(logItem.getName());
+					if (log instanceof FileLog) {
+						((FileLog) log).write(logItem);
+					}
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			LogFactory.getInstance().flush();
 
+			if (!start && queue.isEmpty()) {
+				for (Entry<String, Log> entry : logMap.entrySet()) {
+					Log log = entry.getValue();
+					if (log instanceof FileLog) {
+						try {
+							((FileLog) log).close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				break;
+			}
 		}
 	}
 
@@ -60,15 +81,5 @@ public class FileLogTask implements LogTask {
 			throw new IllegalArgumentException("log name is empty");
 
 		queue.offer(logItem);
-	}
-
-	private void write() {
-		for (LogItem logItem = null; (logItem = queue.poll()) != null;) {
-			Log log = LogFactory.getInstance().getLog(logItem.getName());
-			if (log instanceof FileLog) {
-				((FileLog)log).write(logItem);
-			}
-		}
-		LogFactory.getInstance().flush();
 	}
 }

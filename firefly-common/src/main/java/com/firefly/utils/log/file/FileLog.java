@@ -23,7 +23,7 @@ public class FileLog implements Log, Closeable {
 	private static final int bufferSize = 512 * 1024;
 	
 
-	public void write(LogItem logItem) {
+	void write(LogItem logItem) {
 		if (consoleOutput) {
 //			System.out.println("test...");
 			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
@@ -70,7 +70,7 @@ public class FileLog implements Log, Closeable {
 		}
 		return bufferedWriter;
 	}
-
+	
 	public void setConsoleOutput(boolean consoleOutput) {
 		this.consoleOutput = consoleOutput;
 	}

@@ -19,7 +19,7 @@ public class LogFactory {
 	private Map<String, Integer> levelMap = new HashMap<String, Integer>();
 	public static final SafeSimpleDateFormat dayDateFormat = new SafeSimpleDateFormat(
 			"yyyy-MM-dd");
-	private LogTask logTask = new FileLogTask();
+	private LogTask logTask = new FileLogTask(logMap);
 
 	private static class Holder {
 		private static LogFactory instance = new LogFactory();
@@ -147,16 +147,6 @@ public class LogFactory {
 
 	public void shutdown() {
 		logTask.shutdown();
-		for (Entry<String, Log> entry : logMap.entrySet()) {
-			Log log = entry.getValue();
-			if (log instanceof FileLog) {
-				try {
-					((FileLog) log).close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
 	}
 
 	public void start() {

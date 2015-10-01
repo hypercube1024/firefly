@@ -6,9 +6,15 @@ import java.util.EnumSet;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.PreEncodedHttpField;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class HpackEncoder {
+	
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	
 	private final static HttpField[] status = new HttpField[599];
 
 	final static EnumSet<HttpHeader> DO_NOT_HUFFMAN = EnumSet.of(
@@ -83,6 +89,10 @@ public class HpackEncoder {
 
 	public HpackContext getContext() {
 		return context;
+	}
+	
+	public void encode(ByteBuffer buffer,  MetaData metadata) {
+		
 	}
 
 	static void encodeValue(ByteBuffer buffer, boolean huffman, String value) {

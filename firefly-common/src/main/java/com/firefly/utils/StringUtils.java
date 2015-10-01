@@ -9,24 +9,18 @@ public class StringUtils {
 
 	public static final String EMPTY = "";
 	public static final String[] EMPTY_STRING_ARRAY = new String[0];
-	
-	public static final char[] lowercases = {
-        '\000','\001','\002','\003','\004','\005','\006','\007',
-        '\010','\011','\012','\013','\014','\015','\016','\017',
-        '\020','\021','\022','\023','\024','\025','\026','\027',
-        '\030','\031','\032','\033','\034','\035','\036','\037',
-        '\040','\041','\042','\043','\044','\045','\046','\047',
-        '\050','\051','\052','\053','\054','\055','\056','\057',
-        '\060','\061','\062','\063','\064','\065','\066','\067',
-        '\070','\071','\072','\073','\074','\075','\076','\077',
-        '\100','\141','\142','\143','\144','\145','\146','\147',
-        '\150','\151','\152','\153','\154','\155','\156','\157',
-        '\160','\161','\162','\163','\164','\165','\166','\167',
-        '\170','\171','\172','\133','\134','\135','\136','\137',
-        '\140','\141','\142','\143','\144','\145','\146','\147',
-        '\150','\151','\152','\153','\154','\155','\156','\157',
-        '\160','\161','\162','\163','\164','\165','\166','\167',
-        '\170','\171','\172','\173','\174','\175','\176','\177' };
+
+	public static final char[] lowercases = { '\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007', '\010',
+			'\011', '\012', '\013', '\014', '\015', '\016', '\017', '\020', '\021', '\022', '\023', '\024', '\025',
+			'\026', '\027', '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037', '\040', '\041', '\042',
+			'\043', '\044', '\045', '\046', '\047', '\050', '\051', '\052', '\053', '\054', '\055', '\056', '\057',
+			'\060', '\061', '\062', '\063', '\064', '\065', '\066', '\067', '\070', '\071', '\072', '\073', '\074',
+			'\075', '\076', '\077', '\100', '\141', '\142', '\143', '\144', '\145', '\146', '\147', '\150', '\151',
+			'\152', '\153', '\154', '\155', '\156', '\157', '\160', '\161', '\162', '\163', '\164', '\165', '\166',
+			'\167', '\170', '\171', '\172', '\133', '\134', '\135', '\136', '\137', '\140', '\141', '\142', '\143',
+			'\144', '\145', '\146', '\147', '\150', '\151', '\152', '\153', '\154', '\155', '\156', '\157', '\160',
+			'\161', '\162', '\163', '\164', '\165', '\166', '\167', '\170', '\171', '\172', '\173', '\174', '\175',
+			'\176', '\177' };
 
 	// Splitting
 	// -----------------------------------------------------------------------
@@ -203,8 +197,7 @@ public class StringUtils {
 	 * @return an array of parsed Strings, <code>null</code> if null String
 	 *         input
 	 */
-	private static String[] splitWorker(String str, String separatorChars,
-			int max, boolean preserveAllTokens) {
+	private static String[] splitWorker(String str, String separatorChars, int max, boolean preserveAllTokens) {
 		// Performance tuned for 2.0 (JDK1.4)
 		// Direct code is quicker than StringTokenizer.
 		// Also, StringTokenizer uses isSpace() not isWhitespace()
@@ -305,8 +298,7 @@ public class StringUtils {
 	 * @return an array of parsed Strings, <code>null</code> if null String
 	 *         input
 	 */
-	private static String[] splitWorker(String str, char separatorChar,
-			boolean preserveAllTokens) {
+	private static String[] splitWorker(String str, char separatorChar, boolean preserveAllTokens) {
 		// Performance tuned for 2.0 (JDK1.4)
 
 		if (str == null) {
@@ -339,149 +331,179 @@ public class StringUtils {
 		}
 		return list.toArray(EMPTY_STRING_ARRAY);
 	}
-	
-	 /**
-     * <p>Splits the provided text into an array, separator string specified.</p>
-     *
-     * <p>The separator(s) will not be included in the returned String array.
-     * Adjacent separators are treated as one separator.</p>
-     *
-     * <p>A <code>null</code> input String returns <code>null</code>.
-     * A <code>null</code> separator splits on whitespace.</p>
-     *
-     * <pre>
-     * StringUtils.splitByWholeSeparator(null, *)               = null
-     * StringUtils.splitByWholeSeparator("", *)                 = []
-     * StringUtils.splitByWholeSeparator("ab de fg", null)      = ["ab", "de", "fg"]
-     * StringUtils.splitByWholeSeparator("ab   de fg", null)    = ["ab", "de", "fg"]
-     * StringUtils.splitByWholeSeparator("ab:cd:ef", ":")       = ["ab", "cd", "ef"]
-     * StringUtils.splitByWholeSeparator("ab-!-cd-!-ef", "-!-") = ["ab", "cd", "ef"]
-     * </pre>
-     *
-     * @param str  the String to parse, may be null
-     * @param separator  String containing the String to be used as a delimiter,
-     *  <code>null</code> splits on whitespace
-     * @return an array of parsed Strings, <code>null</code> if null String was input
-     */
-    public static String[] splitByWholeSeparator(String str, String separator) {
-        return splitByWholeSeparatorWorker( str, separator, -1, false ) ;
-    }
-    
-    /**
-     * <p>Splits the provided text into an array, separator string specified.
-     * Returns a maximum of <code>max</code> substrings.</p>
-     *
-     * <p>The separator(s) will not be included in the returned String array.
-     * Adjacent separators are treated as one separator.</p>
-     *
-     * <p>A <code>null</code> input String returns <code>null</code>.
-     * A <code>null</code> separator splits on whitespace.</p>
-     *
-     * <pre>
-     * StringUtils.splitByWholeSeparator(null, *, *)               = null
-     * StringUtils.splitByWholeSeparator("", *, *)                 = []
-     * StringUtils.splitByWholeSeparator("ab de fg", null, 0)      = ["ab", "de", "fg"]
-     * StringUtils.splitByWholeSeparator("ab   de fg", null, 0)    = ["ab", "de", "fg"]
-     * StringUtils.splitByWholeSeparator("ab:cd:ef", ":", 2)       = ["ab", "cd:ef"]
-     * StringUtils.splitByWholeSeparator("ab-!-cd-!-ef", "-!-", 5) = ["ab", "cd", "ef"]
-     * StringUtils.splitByWholeSeparator("ab-!-cd-!-ef", "-!-", 2) = ["ab", "cd-!-ef"]
-     * </pre>
-     *
-     * @param str  the String to parse, may be null
-     * @param separator  String containing the String to be used as a delimiter,
-     *  <code>null</code> splits on whitespace
-     * @param max  the maximum number of elements to include in the returned
-     *  array. A zero or negative value implies no limit.
-     * @return an array of parsed Strings, <code>null</code> if null String was input
-     */
-    public static String[] splitByWholeSeparator( String str, String separator, int max ) {
-        return splitByWholeSeparatorWorker(str, separator, max, false);
-    }
-    
-    /**
-     * Performs the logic for the <code>splitByWholeSeparatorPreserveAllTokens</code> methods.
-     *
-     * @param str  the String to parse, may be <code>null</code>
-     * @param separator  String containing the String to be used as a delimiter,
-     *  <code>null</code> splits on whitespace
-     * @param max  the maximum number of elements to include in the returned
-     *  array. A zero or negative value implies no limit.
-     * @param preserveAllTokens if <code>true</code>, adjacent separators are
-     * treated as empty token separators; if <code>false</code>, adjacent
-     * separators are treated as one separator.
-     * @return an array of parsed Strings, <code>null</code> if null String input
-     * @since 2.4
-     */
-    private static String[] splitByWholeSeparatorWorker(String str, String separator, int max,
-                                                        boolean preserveAllTokens)
-    {
-        if (str == null) {
-            return null;
-        }
 
-        int len = str.length();
+	/**
+	 * <p>
+	 * Splits the provided text into an array, separator string specified.
+	 * </p>
+	 *
+	 * <p>
+	 * The separator(s) will not be included in the returned String array.
+	 * Adjacent separators are treated as one separator.
+	 * </p>
+	 *
+	 * <p>
+	 * A <code>null</code> input String returns <code>null</code>. A
+	 * <code>null</code> separator splits on whitespace.
+	 * </p>
+	 *
+	 * <pre>
+	 * StringUtils.splitByWholeSeparator(null, *)               = null
+	 * StringUtils.splitByWholeSeparator("", *)                 = []
+	 * StringUtils.splitByWholeSeparator("ab de fg", null)      = ["ab", "de", "fg"]
+	 * StringUtils.splitByWholeSeparator("ab   de fg", null)    = ["ab", "de", "fg"]
+	 * StringUtils.splitByWholeSeparator("ab:cd:ef", ":")       = ["ab", "cd", "ef"]
+	 * StringUtils.splitByWholeSeparator("ab-!-cd-!-ef", "-!-") = ["ab", "cd", "ef"]
+	 * </pre>
+	 *
+	 * @param str
+	 *            the String to parse, may be null
+	 * @param separator
+	 *            String containing the String to be used as a delimiter,
+	 *            <code>null</code> splits on whitespace
+	 * @return an array of parsed Strings, <code>null</code> if null String was
+	 *         input
+	 */
+	public static String[] splitByWholeSeparator(String str, String separator) {
+		return splitByWholeSeparatorWorker(str, separator, -1, false);
+	}
 
-        if (len == 0) {
-            return EMPTY_STRING_ARRAY;
-        }
+	/**
+	 * <p>
+	 * Splits the provided text into an array, separator string specified.
+	 * Returns a maximum of <code>max</code> substrings.
+	 * </p>
+	 *
+	 * <p>
+	 * The separator(s) will not be included in the returned String array.
+	 * Adjacent separators are treated as one separator.
+	 * </p>
+	 *
+	 * <p>
+	 * A <code>null</code> input String returns <code>null</code>. A
+	 * <code>null</code> separator splits on whitespace.
+	 * </p>
+	 *
+	 * <pre>
+	 * StringUtils.splitByWholeSeparator(null, *, *)               = null
+	 * StringUtils.splitByWholeSeparator("", *, *)                 = []
+	 * StringUtils.splitByWholeSeparator("ab de fg", null, 0)      = ["ab", "de", "fg"]
+	 * StringUtils.splitByWholeSeparator("ab   de fg", null, 0)    = ["ab", "de", "fg"]
+	 * StringUtils.splitByWholeSeparator("ab:cd:ef", ":", 2)       = ["ab", "cd:ef"]
+	 * StringUtils.splitByWholeSeparator("ab-!-cd-!-ef", "-!-", 5) = ["ab", "cd", "ef"]
+	 * StringUtils.splitByWholeSeparator("ab-!-cd-!-ef", "-!-", 2) = ["ab", "cd-!-ef"]
+	 * </pre>
+	 *
+	 * @param str
+	 *            the String to parse, may be null
+	 * @param separator
+	 *            String containing the String to be used as a delimiter,
+	 *            <code>null</code> splits on whitespace
+	 * @param max
+	 *            the maximum number of elements to include in the returned
+	 *            array. A zero or negative value implies no limit.
+	 * @return an array of parsed Strings, <code>null</code> if null String was
+	 *         input
+	 */
+	public static String[] splitByWholeSeparator(String str, String separator, int max) {
+		return splitByWholeSeparatorWorker(str, separator, max, false);
+	}
 
-        if ((separator == null) || (EMPTY.equals(separator))) {
-            // Split on whitespace.
-            return splitWorker(str, null, max, preserveAllTokens);
-        }
+	/**
+	 * Performs the logic for the
+	 * <code>splitByWholeSeparatorPreserveAllTokens</code> methods.
+	 *
+	 * @param str
+	 *            the String to parse, may be <code>null</code>
+	 * @param separator
+	 *            String containing the String to be used as a delimiter,
+	 *            <code>null</code> splits on whitespace
+	 * @param max
+	 *            the maximum number of elements to include in the returned
+	 *            array. A zero or negative value implies no limit.
+	 * @param preserveAllTokens
+	 *            if <code>true</code>, adjacent separators are treated as empty
+	 *            token separators; if <code>false</code>, adjacent separators
+	 *            are treated as one separator.
+	 * @return an array of parsed Strings, <code>null</code> if null String
+	 *         input
+	 * @since 2.4
+	 */
+	private static String[] splitByWholeSeparatorWorker(String str, String separator, int max,
+			boolean preserveAllTokens) {
+		if (str == null) {
+			return null;
+		}
 
-        int separatorLength = separator.length();
+		int len = str.length();
 
-        ArrayList<String> substrings = new ArrayList<String>();
-        int numberOfSubstrings = 0;
-        int beg = 0;
-        int end = 0;
-        while (end < len) {
-            end = str.indexOf(separator, beg);
+		if (len == 0) {
+			return EMPTY_STRING_ARRAY;
+		}
 
-            if (end > -1) {
-                if (end > beg) {
-                    numberOfSubstrings += 1;
+		if ((separator == null) || (EMPTY.equals(separator))) {
+			// Split on whitespace.
+			return splitWorker(str, null, max, preserveAllTokens);
+		}
 
-                    if (numberOfSubstrings == max) {
-                        end = len;
-                        substrings.add(str.substring(beg));
-                    } else {
-                        // The following is OK, because String.substring( beg, end ) excludes
-                        // the character at the position 'end'.
-//                    	System.out.println("sub " + beg + "|" + end +"|" + str.substring(beg, end));
-                        substrings.add(str.substring(beg, end));
+		int separatorLength = separator.length();
 
-                        // Set the starting point for the next search.
-                        // The following is equivalent to beg = end + (separatorLength - 1) + 1,
-                        // which is the right calculation:
-                        beg = end + separatorLength;
-                    }
-                } else {
-                    // We found a consecutive occurrence of the separator, so skip it.
-                    if (preserveAllTokens) {
-                        numberOfSubstrings += 1;
-                        if (numberOfSubstrings == max) {
-                            end = len;
-                            substrings.add(str.substring(beg));
-                        } else {
-                            substrings.add(EMPTY);
-                        }
-                    }
-                    beg = end + separatorLength;
-                }
-            } else {
-                // String.substring( beg ) goes from 'beg' to the end of the String.
-//            	System.out.println("sub~~ " + beg + "|" + end +"|" + str.substring(beg));
-            	String t = str.substring(beg);
-            	if(!t.equals(EMPTY))
-            		substrings.add(str.substring(beg));
-                end = len;
-            }
-        }
+		ArrayList<String> substrings = new ArrayList<String>();
+		int numberOfSubstrings = 0;
+		int beg = 0;
+		int end = 0;
+		while (end < len) {
+			end = str.indexOf(separator, beg);
 
-        return substrings.toArray(EMPTY_STRING_ARRAY);
-    }
+			if (end > -1) {
+				if (end > beg) {
+					numberOfSubstrings += 1;
+
+					if (numberOfSubstrings == max) {
+						end = len;
+						substrings.add(str.substring(beg));
+					} else {
+						// The following is OK, because String.substring( beg,
+						// end ) excludes
+						// the character at the position 'end'.
+						// System.out.println("sub " + beg + "|" + end +"|" +
+						// str.substring(beg, end));
+						substrings.add(str.substring(beg, end));
+
+						// Set the starting point for the next search.
+						// The following is equivalent to beg = end +
+						// (separatorLength - 1) + 1,
+						// which is the right calculation:
+						beg = end + separatorLength;
+					}
+				} else {
+					// We found a consecutive occurrence of the separator, so
+					// skip it.
+					if (preserveAllTokens) {
+						numberOfSubstrings += 1;
+						if (numberOfSubstrings == max) {
+							end = len;
+							substrings.add(str.substring(beg));
+						} else {
+							substrings.add(EMPTY);
+						}
+					}
+					beg = end + separatorLength;
+				}
+			} else {
+				// String.substring( beg ) goes from 'beg' to the end of the
+				// String.
+				// System.out.println("sub~~ " + beg + "|" + end +"|" +
+				// str.substring(beg));
+				String t = str.substring(beg);
+				if (!t.equals(EMPTY))
+					substrings.add(str.substring(beg));
+				end = len;
+			}
+		}
+
+		return substrings.toArray(EMPTY_STRING_ARRAY);
+	}
 
 	public static boolean hasText(String str) {
 		return hasText((CharSequence) str);
@@ -509,9 +531,9 @@ public class StringUtils {
 	}
 
 	/**
-	 * Replace the pattern using a map, such as a pattern, 
-	 * such as A pattern is "hello ${foo}" and the map is {"foo" : "world"}, 
-	 * when you execute this function, the result is "hello world"
+	 * Replace the pattern using a map, such as a pattern, such as A pattern is
+	 * "hello ${foo}" and the map is {"foo" : "world"}, when you execute this
+	 * function, the result is "hello world"
 	 *
 	 * @param s
 	 *            The pattern string.
@@ -520,30 +542,28 @@ public class StringUtils {
 	 * @return The string replaced.
 	 */
 	public static String replace(String s, Map<String, Object> map) {
-		StringBuilder ret = new StringBuilder((int)(s.length() * 1.5));
+		StringBuilder ret = new StringBuilder((int) (s.length() * 1.5));
 		int cursor = 0;
-		for (int start, end; (start = s.indexOf("${", cursor)) != -1
-				&& (end = s.indexOf("}", start)) != -1;) {
-			ret.append(s.substring(cursor, start)).append(
-					map.get(s.substring(start + 2, end)));
+		for (int start, end; (start = s.indexOf("${", cursor)) != -1 && (end = s.indexOf("}", start)) != -1;) {
+			ret.append(s.substring(cursor, start)).append(map.get(s.substring(start + 2, end)));
 			cursor = end + 1;
 		}
 		ret.append(s.substring(cursor, s.length()));
 		return ret.toString();
 	}
 
-	public static String replace(String s, Object...objs) {
-		if(objs == null || objs.length == 0)
+	public static String replace(String s, Object... objs) {
+		if (objs == null || objs.length == 0)
 			return s;
-		if(s.indexOf("{}") == -1)
+		if (s.indexOf("{}") == -1)
 			return s;
 
-		StringBuilder ret = new StringBuilder((int)(s.length() * 1.5));
+		StringBuilder ret = new StringBuilder((int) (s.length() * 1.5));
 		int cursor = 0;
 		int index = 0;
-		for(int start; (start = s.indexOf("{}", cursor)) != -1 ;) {
+		for (int start; (start = s.indexOf("{}", cursor)) != -1;) {
 			ret.append(s.substring(cursor, start));
-			if(index < objs.length)
+			if (index < objs.length)
 				ret.append(objs[index]);
 			else
 				ret.append("{}");
@@ -553,7 +573,7 @@ public class StringUtils {
 		ret.append(s.substring(cursor, s.length()));
 		return ret.toString();
 	}
-	
+
 	public static String escapeXML(String str) {
 		if (str == null)
 			return "";
@@ -593,53 +613,199 @@ public class StringUtils {
 		}
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Convert a string that is unicode form to a normal string.
-	 * @param s The unicode form of a string, e.g. "\\u8001\\u9A6C"
-	 * @return Normal string 
+	 * 
+	 * @param s
+	 *            The unicode form of a string, e.g. "\\u8001\\u9A6C"
+	 * @return Normal string
 	 */
-	public static String unicodeToString(String s) {      
-        StringBuilder sb = new StringBuilder();      
-        StringTokenizer st = new StringTokenizer(s, "\\u");      
-        while(st.hasMoreTokens()){
-        	String token = st.nextToken();
-        	if(token.length() > 4) {
-        		sb.append((char)Integer.parseInt(token.substring(0, 4), 16));
-        		sb.append(token.substring(4));
-        	} else {
-        		sb.append((char)Integer.parseInt(token, 16));
-        	}
-        }      
-        return sb.toString();      
-    }
-	
-    /**
-     * fast lower case conversion. Only works on ascii (not unicode)
-     * @param s the string to convert
-     * @return a lower case version of s
-     */
-    public static String asciiToLowerCase(String s) {
-        char[] c = null;
-        int i=s.length();
+	public static String unicodeToString(String s) {
+		StringBuilder sb = new StringBuilder();
+		StringTokenizer st = new StringTokenizer(s, "\\u");
+		while (st.hasMoreTokens()) {
+			String token = st.nextToken();
+			if (token.length() > 4) {
+				sb.append((char) Integer.parseInt(token.substring(0, 4), 16));
+				sb.append(token.substring(4));
+			} else {
+				sb.append((char) Integer.parseInt(token, 16));
+			}
+		}
+		return sb.toString();
+	}
 
-        // look for first conversion
-        while (i-- > 0) {
-            char c1=s.charAt(i);
-            if (c1<=127) {
-                char c2=lowercases[c1];
-                if (c1!=c2) {
-                    c=s.toCharArray();
-                    c[i]=c2;
-                    break;
-                }
-            }
-        }
+	/**
+	 * fast lower case conversion. Only works on ascii (not unicode)
+	 * 
+	 * @param s
+	 *            the string to convert
+	 * @return a lower case version of s
+	 */
+	public static String asciiToLowerCase(String s) {
+		char[] c = null;
+		int i = s.length();
 
-        while (i-- > 0) {
-            if(c[i] <= 127)
-                c[i] = lowercases[c[i]];
-        }
-        return c==null?s:new String(c);
-    }
+		// look for first conversion
+		while (i-- > 0) {
+			char c1 = s.charAt(i);
+			if (c1 <= 127) {
+				char c2 = lowercases[c1];
+				if (c1 != c2) {
+					c = s.toCharArray();
+					c[i] = c2;
+					break;
+				}
+			}
+		}
+
+		while (i-- > 0) {
+			if (c[i] <= 127)
+				c[i] = lowercases[c[i]];
+		}
+		return c == null ? s : new String(c);
+	}
+
+	/**
+	 * Append 2 digits (zero padded) to the StringBuffer
+	 * 
+	 * @param buf
+	 *            the buffer to append to
+	 * @param i
+	 *            the value to append
+	 */
+	public static void append2digits(StringBuffer buf, int i) {
+		if (i < 100) {
+			buf.append((char) (i / 10 + '0'));
+			buf.append((char) (i % 10 + '0'));
+		}
+	}
+
+	/**
+	 * Append 2 digits (zero padded) to the StringBuilder
+	 * 
+	 * @param buf
+	 *            the buffer to append to
+	 * @param i
+	 *            the value to append
+	 */
+	public static void append2digits(StringBuilder buf, int i) {
+		if (i < 100) {
+			buf.append((char) (i / 10 + '0'));
+			buf.append((char) (i % 10 + '0'));
+		}
+	}
+
+	/**
+	 * Append substring to StringBuilder
+	 * 
+	 * @param buf
+	 *            StringBuilder to append to
+	 * @param s
+	 *            String to append from
+	 * @param offset
+	 *            The offset of the substring
+	 * @param length
+	 *            The length of the substring
+	 */
+	public static void append(StringBuilder buf, String s, int offset, int length) {
+		synchronized (buf) {
+			int end = offset + length;
+			for (int i = offset; i < end; i++) {
+				if (i >= s.length())
+					break;
+				buf.append(s.charAt(i));
+			}
+		}
+	}
+
+	/**
+	 * append hex digit
+	 * 
+	 * @param buf
+	 *            the buffer to append to
+	 * @param b
+	 *            the byte to append
+	 * @param base
+	 *            the base of the hex output (almost always 16).
+	 * 
+	 */
+	public static void append(StringBuilder buf, byte b, int base) {
+		int bi = 0xff & b;
+		int c = '0' + (bi / base) % base;
+		if (c > '9')
+			c = 'a' + (c - '0' - 10);
+		buf.append((char) c);
+		c = '0' + bi % base;
+		if (c > '9')
+			c = 'a' + (c - '0' - 10);
+		buf.append((char) c);
+	}
+
+	/**
+	 * Convert String to an integer. Parses up to the first non-numeric
+	 * character. If no number is found an IllegalArgumentException is thrown
+	 * 
+	 * @param string
+	 *            A String containing an integer.
+	 * @param from
+	 *            The index to start parsing from
+	 * @return an int
+	 */
+	public static int toInt(String string, int from) {
+		int val = 0;
+		boolean started = false;
+		boolean minus = false;
+
+		for (int i = from; i < string.length(); i++) {
+			char b = string.charAt(i);
+			if (b <= ' ') {
+				if (started)
+					break;
+			} else if (b >= '0' && b <= '9') {
+				val = val * 10 + (b - '0');
+				started = true;
+			} else if (b == '-' && !started) {
+				minus = true;
+			} else
+				break;
+		}
+
+		if (started)
+			return minus ? (-val) : val;
+		throw new NumberFormatException(string);
+	}
+
+	/**
+	 * Convert String to an long. Parses up to the first non-numeric character.
+	 * If no number is found an IllegalArgumentException is thrown
+	 * 
+	 * @param string
+	 *            A String containing an integer.
+	 * @return an int
+	 */
+	public static long toLong(String string) {
+		long val = 0;
+		boolean started = false;
+		boolean minus = false;
+
+		for (int i = 0; i < string.length(); i++) {
+			char b = string.charAt(i);
+			if (b <= ' ') {
+				if (started)
+					break;
+			} else if (b >= '0' && b <= '9') {
+				val = val * 10L + (b - '0');
+				started = true;
+			} else if (b == '-' && !started) {
+				minus = true;
+			} else
+				break;
+		}
+
+		if (started)
+			return minus ? (-val) : val;
+		throw new NumberFormatException(string);
+	}
 }
