@@ -2,8 +2,8 @@ package com.firefly.codec.http2.model;
 
 public class BadMessageException extends RuntimeException {
 	private static final long serialVersionUID = -4907256166019479626L;
-	final int _code;
-	final String _reason;
+	public final int _code;
+	public final String _reason;
 
 	public BadMessageException() {
 		this(400, null);

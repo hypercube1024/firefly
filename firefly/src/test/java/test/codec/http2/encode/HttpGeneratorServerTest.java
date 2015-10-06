@@ -1,4 +1,4 @@
-package test.codec.http2.model;
+package test.codec.http2.encode;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;

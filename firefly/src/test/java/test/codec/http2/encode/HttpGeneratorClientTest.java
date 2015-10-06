@@ -16,7 +16,7 @@
 //  ========================================================================
 //
 
-package test.codec.http2.model;
+package test.codec.http2.encode;
 
 import java.nio.ByteBuffer;
 
