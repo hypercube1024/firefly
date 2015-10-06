@@ -63,7 +63,7 @@ import com.firefly.utils.log.LogFactory;
  * of subsequent messages.
  * </p>
  * <p>
- * If the system property "org.eclipse.jetty.http.HttpParser.STRICT" is set to
+ * If the system property "org.fireflysource.http.HttpParser.STRICT" is set to
  * true, then the parser will strictly pass on the exact strings received for
  * methods and header fields. Otherwise a fast case insensitive string lookup is
  * used that may alter the case of the method and/or headers
