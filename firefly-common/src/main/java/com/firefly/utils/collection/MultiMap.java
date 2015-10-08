@@ -284,12 +284,12 @@ public class MultiMap<V> extends HashMap<String, List<V>> {
 
 	@Override
 	public String toString() {
-		Iterator<Entry<String, List<V>>> iter = entrySet().iterator();
+		Iterator<Map.Entry<String, List<V>>> iter = entrySet().iterator();
 		StringBuilder sb = new StringBuilder();
 		sb.append('{');
 		boolean delim = false;
 		while (iter.hasNext()) {
-			Entry<String, List<V>> e = iter.next();
+			Map.Entry<String, List<V>> e = iter.next();
 			if (delim) {
 				sb.append(", ");
 			}
