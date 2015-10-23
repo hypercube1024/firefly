@@ -46,6 +46,7 @@ public class Parser {
         HeaderBlockFragments headerBlockFragments = new HeaderBlockFragments();
 
 		bodyParsers[FrameType.DATA.getType()] = new DataBodyParser(headerParser, listener);
+		bodyParsers[FrameType.HEADERS.getType()] = new HeadersBodyParser(headerParser, listener, headerBlockParser, headerBlockFragments);
 		bodyParsers[FrameType.PRIORITY.getType()] = new PriorityBodyParser(headerParser, listener);
 	}
 

@@ -1,6 +1,7 @@
 package com.firefly.codec.http2.encode;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
@@ -20,5 +21,5 @@ public abstract class FrameGenerator {
 		return headerGenerator.generate(frameType, Frame.HEADER_LENGTH + length, length, flags, streamId);
 	}
 
-	public abstract ByteBuffer generate(Frame frame);
+	public abstract List<ByteBuffer> generate(Frame frame);
 }

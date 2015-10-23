@@ -1,7 +1,7 @@
 package com.firefly.codec.http2.encode;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.firefly.codec.http2.frame.Flags;
@@ -20,7 +20,7 @@ public class DataGenerator {
 		if (streamId < 0)
 			throw new IllegalArgumentException("Invalid stream id: " + streamId);
 
-		List<ByteBuffer> list = new ArrayList<>();
+		List<ByteBuffer> list = new LinkedList<>();
 		int dataLength = data.remaining();
 		int maxFrameSize = headerGenerator.getMaxFrameSize();
 

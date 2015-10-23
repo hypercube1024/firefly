@@ -1,6 +1,8 @@
 package com.firefly.codec.http2.encode;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
 
 import com.firefly.codec.http2.frame.Flags;
 import com.firefly.codec.http2.frame.Frame;
@@ -14,10 +16,10 @@ public class PriorityGenerator extends FrameGenerator {
 	}
 
 	@Override
-	public ByteBuffer generate(Frame frame) {
+	public List<ByteBuffer> generate(Frame frame) {
 		PriorityFrame priorityFrame = (PriorityFrame) frame;
-		return generatePriority(priorityFrame.getStreamId(), priorityFrame.getParentStreamId(),
-				priorityFrame.getWeight(), priorityFrame.isExclusive());
+		return Arrays.asList(generatePriority(priorityFrame.getStreamId(), priorityFrame.getParentStreamId(),
+				priorityFrame.getWeight(), priorityFrame.isExclusive()));
 	}
 
 	public ByteBuffer generatePriority(int streamId, int parentStreamId, int weight, boolean exclusive) {
