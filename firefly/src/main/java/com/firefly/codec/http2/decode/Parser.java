@@ -52,6 +52,9 @@ public class Parser {
 		bodyParsers[FrameType.SETTINGS.getType()] = new SettingsBodyParser(headerParser, listener);
 		bodyParsers[FrameType.PUSH_PROMISE.getType()] = new PushPromiseBodyParser(headerParser, listener, headerBlockParser);
 		bodyParsers[FrameType.PING.getType()] = new PingBodyParser(headerParser, listener);
+		bodyParsers[FrameType.GO_AWAY.getType()] = new GoAwayBodyParser(headerParser, listener);
+		bodyParsers[FrameType.WINDOW_UPDATE.getType()] = new WindowUpdateBodyParser(headerParser, listener);
+		bodyParsers[FrameType.CONTINUATION.getType()] = new ContinuationBodyParser(headerParser, listener, headerBlockParser, headerBlockFragments);
 	}
 
 	private void reset() {
