@@ -31,7 +31,7 @@ import com.firefly.utils.log.LogFactory;
  * <b>Notes</b>
  * <p>
  * The UTF-8 charset is assumed, unless otherwise defined by either passing a
- * parameter or setting the "org.eclipse.jetty.util.UrlEncoding.charset" System
+ * parameter or setting the "org.firefly.utils.UrlEncoding.charset" System
  * property.
  * </p>
  * <p>

@@ -48,6 +48,10 @@ public class Parser {
 		bodyParsers[FrameType.DATA.getType()] = new DataBodyParser(headerParser, listener);
 		bodyParsers[FrameType.HEADERS.getType()] = new HeadersBodyParser(headerParser, listener, headerBlockParser, headerBlockFragments);
 		bodyParsers[FrameType.PRIORITY.getType()] = new PriorityBodyParser(headerParser, listener);
+		bodyParsers[FrameType.RST_STREAM.getType()] = new ResetBodyParser(headerParser, listener);
+		bodyParsers[FrameType.SETTINGS.getType()] = new SettingsBodyParser(headerParser, listener);
+		bodyParsers[FrameType.PUSH_PROMISE.getType()] = new PushPromiseBodyParser(headerParser, listener, headerBlockParser);
+		bodyParsers[FrameType.PING.getType()] = new PingBodyParser(headerParser, listener);
 	}
 
 	private void reset() {

@@ -24,25 +24,30 @@ import com.firefly.utils.log.LogFactory;
  */
 public class MimeTypes {
 	public enum Type {
-		FORM_ENCODED("application/x-www-form-urlencoded"), MESSAGE_HTTP("message/http"), MULTIPART_BYTERANGES(
-				"multipart/byteranges"),
+		FORM_ENCODED("application/x-www-form-urlencoded"), 
+		MESSAGE_HTTP("message/http"), 
+		MULTIPART_BYTERANGES("multipart/byteranges"),
 
-		TEXT_HTML("text/html"), TEXT_PLAIN("text/plain"), TEXT_XML("text/xml"), TEXT_JSON("text/json",
-				StandardCharsets.UTF_8), APPLICATION_JSON("application/json", StandardCharsets.UTF_8),
+		TEXT_HTML("text/html"), 
+		TEXT_PLAIN("text/plain"), 
+		TEXT_XML("text/xml"), 
+		TEXT_JSON("text/json", StandardCharsets.UTF_8), 
+		APPLICATION_JSON("application/json", StandardCharsets.UTF_8),
 
-		TEXT_HTML_8859_1("text/html;charset=iso-8859-1", TEXT_HTML), TEXT_HTML_UTF_8("text/html;charset=utf-8",
-				TEXT_HTML),
+		TEXT_HTML_8859_1("text/html;charset=iso-8859-1", TEXT_HTML), 
+		TEXT_HTML_UTF_8("text/html;charset=utf-8",TEXT_HTML),
 
-		TEXT_PLAIN_8859_1("text/plain;charset=iso-8859-1", TEXT_PLAIN), TEXT_PLAIN_UTF_8("text/plain;charset=utf-8",
-				TEXT_PLAIN),
+		TEXT_PLAIN_8859_1("text/plain;charset=iso-8859-1", TEXT_PLAIN), 
+		TEXT_PLAIN_UTF_8("text/plain;charset=utf-8", TEXT_PLAIN),
 
-		TEXT_XML_8859_1("text/xml;charset=iso-8859-1", TEXT_XML), TEXT_XML_UTF_8("text/xml;charset=utf-8", TEXT_XML),
+		TEXT_XML_8859_1("text/xml;charset=iso-8859-1", TEXT_XML), 
+		TEXT_XML_UTF_8("text/xml;charset=utf-8", TEXT_XML),
 
-		TEXT_JSON_8859_1("text/json;charset=iso-8859-1", TEXT_JSON), TEXT_JSON_UTF_8("text/json;charset=utf-8",
-				TEXT_JSON),
+		TEXT_JSON_8859_1("text/json;charset=iso-8859-1", TEXT_JSON), 
+		TEXT_JSON_UTF_8("text/json;charset=utf-8", TEXT_JSON),
 
-		APPLICATION_JSON_8859_1("text/json;charset=iso-8859-1",
-				APPLICATION_JSON), APPLICATION_JSON_UTF_8("text/json;charset=utf-8", APPLICATION_JSON);
+		APPLICATION_JSON_8859_1("text/json;charset=iso-8859-1", APPLICATION_JSON), 
+		APPLICATION_JSON_UTF_8("text/json;charset=utf-8", APPLICATION_JSON);
 
 		private final String _string;
 		private final Type _base;
@@ -141,7 +146,7 @@ public class MimeTypes {
 		}
 
 		try {
-			ResourceBundle mime = ResourceBundle.getBundle("org/eclipse/jetty/http/mime");
+			ResourceBundle mime = ResourceBundle.getBundle("com/firefly/http/mime");
 			Enumeration<String> i = mime.getKeys();
 			while (i.hasMoreElements()) {
 				String ext = i.nextElement();
@@ -154,7 +159,7 @@ public class MimeTypes {
 		}
 
 		try {
-			ResourceBundle encoding = ResourceBundle.getBundle("org/eclipse/jetty/http/encoding");
+			ResourceBundle encoding = ResourceBundle.getBundle("com/firefly/http/encoding");
 			Enumeration<String> i = encoding.getKeys();
 			while (i.hasMoreElements()) {
 				String type = i.nextElement();

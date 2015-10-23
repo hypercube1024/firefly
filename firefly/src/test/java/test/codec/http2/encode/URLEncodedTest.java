@@ -28,7 +28,7 @@ public class URLEncodedTest {
 		 * the default of UTF-8. Beware however that you will have to @Ignore
 		 * all the other tests other than testUrlEncodedStream!
 		 * 
-		 * System.setProperty("org.eclipse.jetty.util.UrlEncoding.charset",
+		 * System.setProperty("org.firefly.utils.UrlEncoding.charset",
 		 * StringUtil.__ISO_8859_1);
 		 */
 	}
@@ -205,7 +205,7 @@ public class URLEncodedTest {
 	public void testCharsetViaSystemProperty() throws Exception {
 		/*
 		 * Uncomment to test setting a non-UTF-8 default character encoding
-		 * using the SystemProperty org.eclipse.jetty.util.UrlEncoding.charset.
+		 * using the SystemProperty org.firefly.utils.UrlEncoding.charset.
 		 * You will also need to uncomment the static initializer that sets this
 		 * SystemProperty near the top of this file.
 		 * 
