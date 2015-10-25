@@ -28,6 +28,7 @@ public class SSLClientDemo {
 			@Override
 			public void sessionOpened(final Session session) throws Throwable {
 				final SSLEngine sslEngine = sslContext.createSSLEngine();
+				System.out.println(sslContext.getProtocol());
 				SessionInfo info = new SessionInfo();
 				info.sslSession = new SSLSession(sslContext, sslEngine, session, true, 
 				new SSLEventHandler(){
