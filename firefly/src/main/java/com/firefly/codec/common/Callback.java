@@ -26,11 +26,6 @@ public interface Callback {
 		@Override
 		public void failed(Throwable x) {
 		}
-
-		@Override
-		public boolean isNonBlocking() {
-			return false;
-		}
 	};
 
 	/**
@@ -51,20 +46,5 @@ public interface Callback {
 	 *            the reason for the operation failure
 	 */
 	public void failed(Throwable x);
-
-	/**
-	 * @return True if the callback is known to never block the caller
-	 */
-	public boolean isNonBlocking();
-
-	/**
-	 * Callback interface that declares itself as non-blocking
-	 */
-	public static abstract class NonBlocking implements Callback {
-		@Override
-		public boolean isNonBlocking() {
-			return true;
-		}
-	}
 
 }

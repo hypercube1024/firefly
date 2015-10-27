@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.Flags;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
@@ -14,6 +15,10 @@ public class DataGenerator {
 
 	public DataGenerator(HeaderGenerator headerGenerator) {
 		this.headerGenerator = headerGenerator;
+	}
+
+	public List<ByteBuffer> generate(DataFrame frame, int maxLength) {
+		return generateData(frame.getStreamId(), frame.getData(), frame.isEndStream(), maxLength);
 	}
 
 	public List<ByteBuffer> generateData(int streamId, ByteBuffer data, boolean last, int maxLength) {
@@ -30,7 +35,8 @@ public class DataGenerator {
 			return list;
 		}
 
-		// Other cases, we need to slice the original buffer into multiple frames.
+		// Other cases, we need to slice the original buffer into multiple
+		// frames.
 		int length = Math.min(maxLength, dataLength);
 		int frames = length / maxFrameSize;
 		if (frames * maxFrameSize != length)
@@ -56,7 +62,8 @@ public class DataGenerator {
 		if (last)
 			flags |= Flags.END_STREAM;
 
-		ByteBuffer header = headerGenerator.generate(FrameType.DATA, Frame.HEADER_LENGTH + length, length, flags, streamId);
+		ByteBuffer header = headerGenerator.generate(FrameType.DATA, Frame.HEADER_LENGTH + length, length, flags,
+				streamId);
 		BufferUtils.flipToFlush(header, 0);
 		list.add(header);
 		list.add(data);
