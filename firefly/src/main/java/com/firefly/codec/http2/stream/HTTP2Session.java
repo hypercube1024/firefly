@@ -34,6 +34,7 @@ import com.firefly.codec.http2.frame.ResetFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.utils.concurrent.Atomics;
+import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -48,6 +49,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	private final AtomicInteger sendWindow = new AtomicInteger();
 	private final AtomicInteger recvWindow = new AtomicInteger();
 	private final AtomicReference<CloseState> closed = new AtomicReference<>(CloseState.NOT_CLOSED);
+	private final Scheduler scheduler;
 	private final com.firefly.net.Session endPoint;
 	private final Generator generator;
 	private final Listener listener;
@@ -58,8 +60,9 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	private long streamIdleTimeout;
 	private boolean pushEnabled;
 
-	public HTTP2Session(com.firefly.net.Session endPoint, Generator generator, Listener listener,
+	public HTTP2Session(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator, Listener listener,
 			FlowControlStrategy flowControl, int initialStreamId, int streamIdleTimeout) {
+		this.scheduler = scheduler;
 		this.endPoint = endPoint;
 		this.generator = generator;
 		this.listener = listener;
@@ -559,8 +562,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	}
 
 	protected StreamSPI newStream(int streamId) {
-		// return new HTTP2Stream(scheduler, this, streamId);
-		return null; // TODO implement
+		return new HTTP2Stream(scheduler, this, streamId);
 	}
 
 	@Override

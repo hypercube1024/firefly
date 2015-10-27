@@ -3,6 +3,8 @@ package com.firefly.utils.time;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.firefly.utils.concurrent.Scheduler;
+
 public class HashTimeWheel {
 	private int maxTimers = 60; // slot's number in wheel
 	private long interval = 1000; // the clock's accuracy
@@ -123,7 +125,7 @@ public class HashTimeWheel {
 		}
 	}
 	
-	public static class Future {
+	public static class Future implements Scheduler.Future {
 		private HashTimeWheel timeWheel;
 		private int index;
 		private TimerTask task;
@@ -139,6 +141,7 @@ public class HashTimeWheel {
 		 * cancel current task
 		 * @return if it return true, which cancel task success, else it fail
 		 */
+		@Override
 		public boolean cancel() {
 			return timeWheel.remove(task, index);
 		}
