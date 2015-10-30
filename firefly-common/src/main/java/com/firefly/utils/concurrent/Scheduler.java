@@ -7,5 +7,11 @@ public interface Scheduler {
 		public boolean cancel();
 	}
 	
-	public Future schedule(Runnable task, long delay, TimeUnit units);
+	public void shutdown();
+
+	public Future schedule(Runnable task, long delay, TimeUnit unit);
+
+	public Future scheduleWithFixedDelay(Runnable task, long initialDelay, long delay, TimeUnit unit);
+
+	public Future scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit);
 }

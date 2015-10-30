@@ -14,12 +14,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * could occur.
  */
 public abstract class IdleTimeout {
-	private final Scheduler _scheduler;
-	private final AtomicReference<Scheduler.Future> _timeout = new AtomicReference<>();
-	private volatile long _idleTimeout;
-	private volatile long _idleTimestamp = System.currentTimeMillis();
+	private final Scheduler scheduler;
+	private final AtomicReference<Scheduler.Future> timeout = new AtomicReference<>();
+	private volatile long idleTimeout;
+	private volatile long idleTimestamp = System.currentTimeMillis();
 
-	private final Runnable _idleTask = new Runnable() {
+	private final Runnable idleTask = new Runnable() {
 		@Override
 		public void run() {
 			long idleLeft = checkIdleTimeout();
@@ -33,15 +33,15 @@ public abstract class IdleTimeout {
 	 *            A scheduler used to schedule checks for the idle timeout.
 	 */
 	public IdleTimeout(Scheduler scheduler) {
-		_scheduler = scheduler;
+		this.scheduler = scheduler;
 	}
 
 	public Scheduler getScheduler() {
-		return _scheduler;
+		return scheduler;
 	}
 
 	public long getIdleTimestamp() {
-		return _idleTimestamp;
+		return idleTimestamp;
 	}
 
 	public long getIdleFor() {
@@ -49,12 +49,12 @@ public abstract class IdleTimeout {
 	}
 
 	public long getIdleTimeout() {
-		return _idleTimeout;
+		return idleTimeout;
 	}
 
 	public void setIdleTimeout(long idleTimeout) {
-		long old = _idleTimeout;
-		_idleTimeout = idleTimeout;
+		long old = idleTimeout;
+		this.idleTimeout = idleTimeout;
 
 		// Do we have an old timeout
 		if (old > 0) {
@@ -76,14 +76,14 @@ public abstract class IdleTimeout {
 	 * This method should be called when non-idle activity has taken place.
 	 */
 	public void notIdle() {
-		_idleTimestamp = System.currentTimeMillis();
+		idleTimestamp = System.currentTimeMillis();
 	}
 
 	private void scheduleIdleTimeout(long delay) {
 		Scheduler.Future newTimeout = null;
-		if (isOpen() && delay > 0 && _scheduler != null)
-			newTimeout = _scheduler.schedule(_idleTask, delay, TimeUnit.MILLISECONDS);
-		Scheduler.Future oldTimeout = _timeout.getAndSet(newTimeout);
+		if (isOpen() && delay > 0 && scheduler != null)
+			newTimeout = scheduler.schedule(idleTask, delay, TimeUnit.MILLISECONDS);
+		Scheduler.Future oldTimeout = timeout.getAndSet(newTimeout);
 		if (oldTimeout != null)
 			oldTimeout.cancel();
 	}
@@ -93,8 +93,8 @@ public abstract class IdleTimeout {
 	}
 
 	private void activate() {
-		if (_idleTimeout > 0)
-			_idleTask.run();
+		if (idleTimeout > 0)
+			idleTask.run();
 	}
 
 	public void onClose() {
@@ -102,7 +102,7 @@ public abstract class IdleTimeout {
 	}
 
 	private void deactivate() {
-		Scheduler.Future oldTimeout = _timeout.getAndSet(null);
+		Scheduler.Future oldTimeout = timeout.getAndSet(null);
 		if (oldTimeout != null)
 			oldTimeout.cancel();
 	}
