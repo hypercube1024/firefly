@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
@@ -834,7 +835,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			super(frame, stream, callback);
 		}
 
-		public Throwable generate(List<ByteBuffer> buffers) {
+		@Override
+		public Throwable generate(Queue<ByteBuffer> buffers) {
 			try {
 				buffers.addAll(generator.control(frame));
 				if (log.isDebugEnable())
@@ -945,7 +947,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			return ((DataFrame) frame).remaining();
 		}
 
-		public Throwable generate(List<ByteBuffer> buffers) {
+		@Override
+		public Throwable generate(Queue<ByteBuffer> buffers) {
 			try {
 				int flowControlLength = dataRemaining();
 

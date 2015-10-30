@@ -30,7 +30,7 @@ public class HTTP2Flusher extends IteratingCallback {
 	private final List<Entry> actives = new ArrayList<>();
 	private final Queue<Entry> completes = new ArrayDeque<>();
 	private final HTTP2Session session;
-	private final List<ByteBuffer> buffers = new LinkedList<>();
+	private final Queue<ByteBuffer> buffers = new LinkedList<>();
 
 	public HTTP2Flusher(HTTP2Session session) {
 		this.session = session;
@@ -195,11 +195,13 @@ public class HTTP2Flusher extends IteratingCallback {
 
 		for (int i = 0; i < actives.size(); ++i) {
 			Entry entry = actives.get(i);
-			Throwable failure = entry.generate(buffers);
-			if (failure != null) {
-				// Failure to generate the entry is catastrophic.
-				failed(failure);
-				return Action.SUCCEEDED;
+			synchronized (this) {
+				Throwable failure = entry.generate(buffers);
+				if (failure != null) {
+					// Failure to generate the entry is catastrophic.
+					failed(failure);
+					return Action.SUCCEEDED;
+				}
 			}
 		}
 
@@ -207,7 +209,8 @@ public class HTTP2Flusher extends IteratingCallback {
 			log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
 					actives.size(), actives);
 
-		for (ByteBuffer buf : buffers) {
+		ByteBuffer buf = null;
+		while((buf = buffers.poll()) != null) {
 			session.getEndPoint().write(buf);
 		}
 		return Action.SCHEDULED;
@@ -303,7 +306,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			return 0;
 		}
 
-		public Throwable generate(List<ByteBuffer> buffers) {
+		public Throwable generate(Queue<ByteBuffer> buffers) {
 			return null;
 		}
 
@@ -353,4 +356,5 @@ public class HTTP2Flusher extends IteratingCallback {
 			flowControl.onWindowUpdate(session, stream, frame);
 		}
 	}
+	
 }
