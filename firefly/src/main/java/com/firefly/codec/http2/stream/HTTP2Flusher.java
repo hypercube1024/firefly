@@ -193,9 +193,9 @@ public class HTTP2Flusher extends IteratingCallback {
 			return Action.IDLE;
 		}
 
-		for (int i = 0; i < actives.size(); ++i) {
-			Entry entry = actives.get(i);
-			synchronized (this) {
+		synchronized (this) {
+			for (int i = 0; i < actives.size(); ++i) {
+				Entry entry = actives.get(i);
 				Throwable failure = entry.generate(buffers);
 				if (failure != null) {
 					// Failure to generate the entry is catastrophic.
@@ -203,20 +203,20 @@ public class HTTP2Flusher extends IteratingCallback {
 					return Action.SUCCEEDED;
 				}
 			}
-		}
 
-		if (log.isDebugEnable())
-			log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
-					actives.size(), actives);
+			if (log.isDebugEnable())
+				log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
+						actives.size(), actives);
 
-		ByteBuffer buf = null;
-		while((buf = buffers.poll()) != null) {
-			session.getEndPoint().write(buf);
+			ByteBuffer buf = null;
+			while ((buf = buffers.poll()) != null) {
+				session.getEndPoint().write(buf);
+			}
 		}
 		return Action.SCHEDULED;
 	}
 
-	public int getBufferTotalLength() {
+	private int getBufferTotalLength() {
 		int length = 0;
 		for (ByteBuffer buf : buffers) {
 			length += buf.remaining();
@@ -226,7 +226,9 @@ public class HTTP2Flusher extends IteratingCallback {
 
 	@Override
 	public void succeeded() {
-		buffers.clear();
+		synchronized (this) {
+			buffers.clear();
+		}
 
 		// Transfer active items to avoid reentrancy.
 		for (int i = 0; i < actives.size(); ++i)
@@ -255,7 +257,9 @@ public class HTTP2Flusher extends IteratingCallback {
 		if (log.isDebugEnable())
 			log.debug("Failed", x);
 
-		buffers.clear();
+		synchronized (this) {
+			buffers.clear();
+		}
 
 		// Transfer active items to avoid reentrancy.
 		for (int i = 0; i < actives.size(); ++i)
@@ -356,5 +360,5 @@ public class HTTP2Flusher extends IteratingCallback {
 			flowControl.onWindowUpdate(session, stream, frame);
 		}
 	}
-	
+
 }
