@@ -4,6 +4,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.firefly.utils.time.Millisecond100Clock;
+
 /**
  * An Abstract implementation of an Idle Timeout.
  * <p>
@@ -17,7 +19,7 @@ public abstract class IdleTimeout {
 	private final Scheduler scheduler;
 	private final AtomicReference<Scheduler.Future> timeout = new AtomicReference<>();
 	private volatile long idleTimeout;
-	private volatile long idleTimestamp = System.currentTimeMillis();
+	private volatile long idleTimestamp = Millisecond100Clock.currentTimeMillis();
 
 	private final Runnable idleTask = new Runnable() {
 		@Override
@@ -45,7 +47,7 @@ public abstract class IdleTimeout {
 	}
 
 	public long getIdleFor() {
-		return System.currentTimeMillis() - getIdleTimestamp();
+		return Millisecond100Clock.currentTimeMillis() - getIdleTimestamp();
 	}
 
 	public long getIdleTimeout() {
@@ -76,7 +78,7 @@ public abstract class IdleTimeout {
 	 * This method should be called when non-idle activity has taken place.
 	 */
 	public void notIdle() {
-		idleTimestamp = System.currentTimeMillis();
+		idleTimestamp = Millisecond100Clock.currentTimeMillis();
 	}
 
 	private void scheduleIdleTimeout(long delay) {
@@ -111,7 +113,7 @@ public abstract class IdleTimeout {
 		if (isOpen()) {
 			long idleTimestamp = getIdleTimestamp();
 			long idleTimeout = getIdleTimeout();
-			long idleElapsed = System.currentTimeMillis() - idleTimestamp;
+			long idleElapsed = Millisecond100Clock.currentTimeMillis() - idleTimestamp;
 			long idleLeft = idleTimeout - idleElapsed;
 
 			// System.out.println("{} idle timeout check, elapsed: {} ms,
