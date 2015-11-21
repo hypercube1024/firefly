@@ -46,6 +46,11 @@ public class Generator {
 		headerGenerator.setMaxFrameSize(maxFrameSize);
 	}
 
+	@SuppressWarnings("unchecked")
+	public <T extends FrameGenerator> T getControlGenerator(FrameType type) {
+		return (T) this.generators[type.getType()];
+	}
+	
 	public List<ByteBuffer> control(Frame frame) {
 		return generators[frame.getType().getType()].generate(frame);
 	}
