@@ -1,15 +1,21 @@
 package com.firefly.server.http2;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import com.firefly.codec.http2.decode.ServerParser;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.stream.BufferingFlowControlStrategy;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.SimpleFlowControlStrategy;
+import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 
-public class HTTP2SessionAttachment {
+public class HTTP2SessionAttachment implements Closeable {
 
+	public SSLSession sslSession;
+	public Object attachment;
 	private final ServerParser serverParser;
 	private final Generator generator;
 	private final com.firefly.net.Session endPoint;
@@ -53,6 +59,14 @@ public class HTTP2SessionAttachment {
 
 	public static Scheduler getScheduler() {
 		return scheduler;
+	}
+
+	@Override
+	public void close() throws IOException {
+		if(sslSession != null) {
+			sslSession.close();
+		}
+		attachment = null;
 	}
 	
 }

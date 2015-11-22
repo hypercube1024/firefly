@@ -52,6 +52,11 @@ public class HTTP2DecoderTest {
 		final HTTP2MockSession session = new HTTP2MockSession();
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setFlowControlStrategy("simple");
+		
+		final Map<Integer, Integer> settings = new HashMap<>();
+		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
+		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
+		
 		final HTTP2SessionAttachment attachment = new HTTP2SessionAttachment(http2Configuration, session, 
 				new ServerSessionListener(){
 
@@ -59,7 +64,7 @@ public class HTTP2DecoderTest {
 					public Map<Integer, Integer> onPreface(Session session) {
 						System.out.println("on preface: " + session.isClosed());
 						Assert.assertThat(session.isClosed(), is(false));
-						return null;
+						return settings;
 					}
 
 					@Override
@@ -148,10 +153,6 @@ public class HTTP2DecoderTest {
 		MetaData.Request metaData = new MetaData.Request("POST", HttpScheme.HTTP,
 				new HostPortHttpField("localhost:8080"), "/data", HttpVersion.HTTP_2, fields);
 		
-		Map<Integer, Integer> settings = new HashMap<>();
-		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
-		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
-		
 		DataFrame smallDataFrame = new DataFrame(streamId, ByteBuffer.wrap(smallContent), false);
 		DataFrame bigDateFrame = new DataFrame(streamId, ByteBuffer.wrap(bigContent), true);
 		
@@ -161,13 +162,15 @@ public class HTTP2DecoderTest {
 		List<ByteBuffer> list = new LinkedList<>();
 		list.add(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));
 		list.add(settingsGenerator.generateSettings(settings, false));
-		list.addAll(headersGenerator.generateHeaders(streamId, metaData, null, true));
+		list.addAll(headersGenerator.generateHeaders(streamId, metaData, null, false));
 		list.addAll(attachment.getGenerator().data(smallDataFrame, smallContent.length));
 		list.addAll(attachment.getGenerator().data(bigDateFrame, bigContent.length));
 		
 		for(ByteBuffer buffer : list) {
 			decoder.decode(buffer, session);
 		}
+		System.out.println("out data: " + session.outboundData.size());
+		attachment.close();
 	}
 
 	@Test
@@ -275,5 +278,6 @@ public class HTTP2DecoderTest {
 		
 		Assert.assertThat(session.outboundData.size(), greaterThan(0));
 		System.out.println("out data: " + session.outboundData.size());
+		attachment.close();
 	}
 }

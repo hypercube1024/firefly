@@ -211,6 +211,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			ByteBuffer buf = null;
 			while ((buf = buffers.poll()) != null) {
 				session.getEndPoint().write(buf);
+				this.succeeded();
 			}
 		}
 		return Action.SCHEDULED;
