@@ -9,6 +9,7 @@ import com.firefly.codec.http2.stream.BufferingFlowControlStrategy;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.SimpleFlowControlStrategy;
 import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.server.Config;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 
@@ -21,7 +22,7 @@ public class HTTP2SessionAttachment implements Closeable {
 	private final com.firefly.net.Session endPoint;
 	private static final Scheduler scheduler = Schedulers.createScheduler();
 	
-	public HTTP2SessionAttachment(HTTP2Configuration config, com.firefly.net.Session endPoint, ServerSessionListener serverSessionListener) {
+	public HTTP2SessionAttachment(Config config, com.firefly.net.Session endPoint, ServerSessionListener serverSessionListener) {
 		this.endPoint = endPoint;
 		FlowControlStrategy flowControl = null;
 		switch (config.getFlowControlStrategy()) {
@@ -41,7 +42,7 @@ public class HTTP2SessionAttachment implements Closeable {
 		http2ServerSession.setMaxLocalStreams(config.getMaxConcurrentStreams());
 		http2ServerSession.setMaxRemoteStreams(config.getMaxConcurrentStreams());
 
-		this.serverParser = new ServerParser(http2ServerSession, config.getMaxDynamicTableSize(), config.getRequestHeaderSize());
+		this.serverParser = new ServerParser(http2ServerSession, config.getMaxDynamicTableSize(), config.getMaxRequestHeadLength());
 		endPoint.attachObject(this);
 	}
 

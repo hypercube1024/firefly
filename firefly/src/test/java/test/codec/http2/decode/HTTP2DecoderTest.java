@@ -34,7 +34,7 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
-import com.firefly.server.http2.HTTP2Configuration;
+import com.firefly.server.Config;
 import com.firefly.server.http2.HTTP2Decoder;
 import com.firefly.server.http2.HTTP2SessionAttachment;
 import com.firefly.server.http2.ServerSessionListener;
@@ -50,7 +50,7 @@ public class HTTP2DecoderTest {
 		random.nextBytes(bigContent);
 		final HTTP2Decoder decoder = new HTTP2Decoder();
 		final HTTP2MockSession session = new HTTP2MockSession();
-		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
+		final Config http2Configuration = new Config();
 		http2Configuration.setFlowControlStrategy("simple");
 		
 		final Map<Integer, Integer> settings = new HashMap<>();
@@ -177,7 +177,7 @@ public class HTTP2DecoderTest {
 	public void testHeaders() throws Throwable {
 		final HTTP2Decoder decoder = new HTTP2Decoder();
 		final HTTP2MockSession session = new HTTP2MockSession();
-		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
+		final Config http2Configuration = new Config();
 		final HTTP2SessionAttachment attachment = new HTTP2SessionAttachment(http2Configuration, session, 
 				new ServerSessionListener(){
 
