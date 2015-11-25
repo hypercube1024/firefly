@@ -15,7 +15,7 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 	
 	public Object attachment;
 	protected final SSLSession sslSession;
-	protected final com.firefly.net.Session tcpSession;
+	protected final Session tcpSession;
 	protected final Parser parser;
 	protected final Generator generator;
 	
