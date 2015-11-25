@@ -144,6 +144,7 @@ public class HTTP2DecoderTest {
 					@Override
 					public void onAccept(Session session) {
 					}});
+		session.attachObject(attachment);
 		
 		int streamId = 5;
 		HttpFields fields = new HttpFields();
@@ -256,6 +257,7 @@ public class HTTP2DecoderTest {
 					@Override
 					public void onAccept(Session session) {
 					}});
+		session.attachObject(attachment);
 		
 		int streamId = 5;
 		HttpFields fields = new HttpFields();

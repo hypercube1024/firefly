@@ -43,7 +43,6 @@ public class HTTP2ServerSessionAttachment implements Closeable {
 		http2ServerSession.setMaxRemoteStreams(config.getMaxConcurrentStreams());
 
 		this.serverParser = new ServerParser(http2ServerSession, config.getMaxDynamicTableSize(), config.getMaxRequestHeadLength());
-		endPoint.attachObject(this);
 	}
 
 	public ServerParser getServerParser() {
