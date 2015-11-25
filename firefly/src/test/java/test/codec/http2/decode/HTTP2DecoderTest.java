@@ -35,8 +35,8 @@ import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.server.Config;
-import com.firefly.server.http2.HTTP2Decoder;
-import com.firefly.server.http2.HTTP2SessionAttachment;
+import com.firefly.server.http2.HTTP2ServerDecoder;
+import com.firefly.server.http2.HTTP2ServerSessionAttachment;
 import com.firefly.server.http2.ServerSessionListener;
 
 public class HTTP2DecoderTest {
@@ -48,7 +48,7 @@ public class HTTP2DecoderTest {
 		Random random = new Random();
 		random.nextBytes(smallContent);
 		random.nextBytes(bigContent);
-		final HTTP2Decoder decoder = new HTTP2Decoder();
+		final HTTP2ServerDecoder decoder = new HTTP2ServerDecoder();
 		final HTTP2MockSession session = new HTTP2MockSession();
 		final Config http2Configuration = new Config();
 		http2Configuration.setFlowControlStrategy("simple");
@@ -57,7 +57,7 @@ public class HTTP2DecoderTest {
 		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
 		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
 		
-		final HTTP2SessionAttachment attachment = new HTTP2SessionAttachment(http2Configuration, session, 
+		final HTTP2ServerSessionAttachment attachment = new HTTP2ServerSessionAttachment(http2Configuration, session, 
 				new ServerSessionListener(){
 
 					@Override
@@ -170,15 +170,16 @@ public class HTTP2DecoderTest {
 			decoder.decode(buffer, session);
 		}
 		System.out.println("out data: " + session.outboundData.size());
+		Assert.assertThat(session.outboundData.size(), greaterThan(1));
 		attachment.close();
 	}
 
 	@Test
 	public void testHeaders() throws Throwable {
-		final HTTP2Decoder decoder = new HTTP2Decoder();
+		final HTTP2ServerDecoder decoder = new HTTP2ServerDecoder();
 		final HTTP2MockSession session = new HTTP2MockSession();
 		final Config http2Configuration = new Config();
-		final HTTP2SessionAttachment attachment = new HTTP2SessionAttachment(http2Configuration, session, 
+		final HTTP2ServerSessionAttachment attachment = new HTTP2ServerSessionAttachment(http2Configuration, session, 
 				new ServerSessionListener(){
 
 					@Override
@@ -278,6 +279,7 @@ public class HTTP2DecoderTest {
 		
 		Assert.assertThat(session.outboundData.size(), greaterThan(0));
 		System.out.println("out data: " + session.outboundData.size());
+		Assert.assertThat(session.outboundData.size(), greaterThan(1));
 		attachment.close();
 	}
 }

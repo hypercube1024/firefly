@@ -13,7 +13,7 @@ import com.firefly.server.Config;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 
-public class HTTP2SessionAttachment implements Closeable {
+public class HTTP2ServerSessionAttachment implements Closeable {
 
 	public SSLSession sslSession;
 	public Object attachment;
@@ -22,7 +22,7 @@ public class HTTP2SessionAttachment implements Closeable {
 	private final com.firefly.net.Session endPoint;
 	private static final Scheduler scheduler = Schedulers.createScheduler();
 	
-	public HTTP2SessionAttachment(Config config, com.firefly.net.Session endPoint, ServerSessionListener serverSessionListener) {
+	public HTTP2ServerSessionAttachment(Config config, com.firefly.net.Session endPoint, ServerSessionListener serverSessionListener) {
 		this.endPoint = endPoint;
 		FlowControlStrategy flowControl = null;
 		switch (config.getFlowControlStrategy()) {

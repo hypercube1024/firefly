@@ -5,11 +5,11 @@ import java.nio.ByteBuffer;
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
 
-public class HTTP2Decoder implements Decoder {
+public class HTTP2ServerDecoder implements Decoder {
 
 	@Override
 	public void decode(ByteBuffer buffer, Session session) throws Throwable {
-		HTTP2SessionAttachment http2Session = (HTTP2SessionAttachment)session.getAttachment();
+		HTTP2ServerSessionAttachment http2Session = (HTTP2ServerSessionAttachment)session.getAttachment();
 		http2Session.getServerParser().parse(buffer);;
 	}
 
