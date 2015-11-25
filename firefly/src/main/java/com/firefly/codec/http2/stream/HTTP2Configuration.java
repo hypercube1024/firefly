@@ -1,9 +1,6 @@
-package com.firefly.client.http2;
+package com.firefly.codec.http2.stream;
 
-import com.firefly.codec.http2.stream.FlowControlStrategy;
-
-public class HTTP2ClientConfiguration {
-	
+public class HTTP2Configuration {
 	private int maxDynamicTableSize = 4096;
 	private int streamIdleTimeout;
 	private String flowControlStrategy = "buffer";

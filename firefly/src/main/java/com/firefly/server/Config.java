@@ -9,7 +9,6 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
-import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.Session;
 import com.firefly.server.http.FileAccessFilter;
@@ -25,14 +24,6 @@ public class Config {
 	private Map<Integer, String> errorPage;
 	private String serverHome, host, servletPath = "", contextPath = "", tempdir;
 	private int port;
-	
-	// HTTP2 settings
-	private int maxDynamicTableSize = 4096;
-	private int streamIdleTimeout;
-	private String flowControlStrategy = "buffer";
-	private int initialStreamSendWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
-	private int maxConcurrentStreams = -1;
-    private int maxHeaderBlockFragment = 0;
 	
 	// HTTP settings
 	private int maxRequestLineLength = 8 * 1024,
@@ -447,54 +438,6 @@ public class Config {
 
 	public void setAsynchronousPoolKeepAliveTime(int asynchronousPoolKeepAliveTime) {
 		this.asynchronousPoolKeepAliveTime = asynchronousPoolKeepAliveTime;
-	}
-
-	public int getMaxDynamicTableSize() {
-		return maxDynamicTableSize;
-	}
-
-	public void setMaxDynamicTableSize(int maxDynamicTableSize) {
-		this.maxDynamicTableSize = maxDynamicTableSize;
-	}
-
-	public int getStreamIdleTimeout() {
-		return streamIdleTimeout;
-	}
-
-	public void setStreamIdleTimeout(int streamIdleTimeout) {
-		this.streamIdleTimeout = streamIdleTimeout;
-	}
-
-	public String getFlowControlStrategy() {
-		return flowControlStrategy;
-	}
-
-	public void setFlowControlStrategy(String flowControlStrategy) {
-		this.flowControlStrategy = flowControlStrategy;
-	}
-
-	public int getInitialStreamSendWindow() {
-		return initialStreamSendWindow;
-	}
-
-	public void setInitialStreamSendWindow(int initialStreamSendWindow) {
-		this.initialStreamSendWindow = initialStreamSendWindow;
-	}
-
-	public int getMaxConcurrentStreams() {
-		return maxConcurrentStreams;
-	}
-
-	public void setMaxConcurrentStreams(int maxConcurrentStreams) {
-		this.maxConcurrentStreams = maxConcurrentStreams;
-	}
-
-	public int getMaxHeaderBlockFragment() {
-		return maxHeaderBlockFragment;
-	}
-
-	public void setMaxHeaderBlockFragment(int maxHeaderBlockFragment) {
-		this.maxHeaderBlockFragment = maxHeaderBlockFragment;
 	}
 	
 }

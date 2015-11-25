@@ -9,8 +9,8 @@ public class HTTP2ClientDecoder implements Decoder {
 
 	@Override
 	public void decode(ByteBuffer buf, Session session) throws Throwable {
-		HTTP2ClientSessionAttachment attachment = (HTTP2ClientSessionAttachment) session.getAttachment();
-		attachment.getParser().parse(buf);
+		HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) session.getAttachment();
+		http2ClientConnection.getParser().parse(buf);
 	}
 
 }

@@ -98,16 +98,6 @@ public class HttpGenerator {
 		_needCRLF = false;
 	}
 
-	@Deprecated
-	public boolean getSendServerVersion() {
-		return (_send & SEND_SERVER) != 0;
-	}
-
-	@Deprecated
-	public void setSendServerVersion(boolean sendServerVersion) {
-		throw new UnsupportedOperationException();
-	}
-
 	public State getState() {
 		return _state;
 	}

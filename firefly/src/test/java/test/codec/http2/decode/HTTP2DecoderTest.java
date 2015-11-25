@@ -31,12 +31,12 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
-import com.firefly.server.Config;
 import com.firefly.server.http2.HTTP2ServerDecoder;
-import com.firefly.server.http2.HTTP2ServerSessionAttachment;
+import com.firefly.server.http2.HTTP2ServerConnection;
 import com.firefly.server.http2.ServerSessionListener;
 
 public class HTTP2DecoderTest {
@@ -50,14 +50,14 @@ public class HTTP2DecoderTest {
 		random.nextBytes(bigContent);
 		final HTTP2ServerDecoder decoder = new HTTP2ServerDecoder();
 		final HTTP2MockSession session = new HTTP2MockSession();
-		final Config http2Configuration = new Config();
+		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setFlowControlStrategy("simple");
 		
 		final Map<Integer, Integer> settings = new HashMap<>();
 		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
 		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
 		
-		final HTTP2ServerSessionAttachment attachment = new HTTP2ServerSessionAttachment(http2Configuration, session, 
+		final HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(http2Configuration, session, null,
 				new ServerSessionListener(){
 
 					@Override
@@ -144,7 +144,6 @@ public class HTTP2DecoderTest {
 					@Override
 					public void onAccept(Session session) {
 					}});
-		session.attachObject(attachment);
 		
 		int streamId = 5;
 		HttpFields fields = new HttpFields();
@@ -157,30 +156,30 @@ public class HTTP2DecoderTest {
 		DataFrame smallDataFrame = new DataFrame(streamId, ByteBuffer.wrap(smallContent), false);
 		DataFrame bigDateFrame = new DataFrame(streamId, ByteBuffer.wrap(bigContent), true);
 		
-		HeadersGenerator headersGenerator = attachment.getGenerator().getControlGenerator(FrameType.HEADERS);
-		SettingsGenerator settingsGenerator = attachment.getGenerator().getControlGenerator(FrameType.SETTINGS);
+		HeadersGenerator headersGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.HEADERS);
+		SettingsGenerator settingsGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.SETTINGS);
 
 		List<ByteBuffer> list = new LinkedList<>();
 		list.add(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));
 		list.add(settingsGenerator.generateSettings(settings, false));
 		list.addAll(headersGenerator.generateHeaders(streamId, metaData, null, false));
-		list.addAll(attachment.getGenerator().data(smallDataFrame, smallContent.length));
-		list.addAll(attachment.getGenerator().data(bigDateFrame, bigContent.length));
+		list.addAll(http2ServerConnection.getGenerator().data(smallDataFrame, smallContent.length));
+		list.addAll(http2ServerConnection.getGenerator().data(bigDateFrame, bigContent.length));
 		
 		for(ByteBuffer buffer : list) {
 			decoder.decode(buffer, session);
 		}
 		System.out.println("out data: " + session.outboundData.size());
 		Assert.assertThat(session.outboundData.size(), greaterThan(1));
-		attachment.close();
+		http2ServerConnection.close();
 	}
 
 	@Test
 	public void testHeaders() throws Throwable {
 		final HTTP2ServerDecoder decoder = new HTTP2ServerDecoder();
 		final HTTP2MockSession session = new HTTP2MockSession();
-		final Config http2Configuration = new Config();
-		final HTTP2ServerSessionAttachment attachment = new HTTP2ServerSessionAttachment(http2Configuration, session, 
+		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
+		final HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(http2Configuration, session, null,
 				new ServerSessionListener(){
 
 					@Override
@@ -257,7 +256,6 @@ public class HTTP2DecoderTest {
 					@Override
 					public void onAccept(Session session) {
 					}});
-		session.attachObject(attachment);
 		
 		int streamId = 5;
 		HttpFields fields = new HttpFields();
@@ -268,8 +266,8 @@ public class HTTP2DecoderTest {
 		Map<Integer, Integer> settings = new HashMap<>();
 		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
 		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
-		HeadersGenerator headersGenerator = attachment.getGenerator().getControlGenerator(FrameType.HEADERS);
-		SettingsGenerator settingsGenerator = attachment.getGenerator().getControlGenerator(FrameType.SETTINGS);
+		HeadersGenerator headersGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.HEADERS);
+		SettingsGenerator settingsGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.SETTINGS);
 		
 		List<ByteBuffer> list = new LinkedList<>();
 		list.add(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));
@@ -282,6 +280,6 @@ public class HTTP2DecoderTest {
 		Assert.assertThat(session.outboundData.size(), greaterThan(0));
 		System.out.println("out data: " + session.outboundData.size());
 		Assert.assertThat(session.outboundData.size(), greaterThan(1));
-		attachment.close();
+		http2ServerConnection.close();
 	}
 }
