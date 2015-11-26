@@ -2,7 +2,11 @@ package com.firefly.codec.http2.stream;
 
 public class HTTP2Configuration {
 
+	// SSL/TLS settings
 	private boolean secure;
+	private String credentialPath, keystorePassword, keyPassword;
+
+	// HTTP2 settings
 	private int maxDynamicTableSize = 4096;
 	private int streamIdleTimeout;
 	private String flowControlStrategy = "buffer";
@@ -10,14 +14,6 @@ public class HTTP2Configuration {
 	private int maxConcurrentStreams = -1;
 	private int maxHeaderBlockFragment = 0;
 	private int maxRequestHeadLength = 16 * 1024;
-
-	public boolean isSecure() {
-		return secure;
-	}
-
-	public void setSecure(boolean secure) {
-		this.secure = secure;
-	}
 
 	public int getMaxDynamicTableSize() {
 		return maxDynamicTableSize;
@@ -73,6 +69,38 @@ public class HTTP2Configuration {
 
 	public void setMaxRequestHeadLength(int maxRequestHeadLength) {
 		this.maxRequestHeadLength = maxRequestHeadLength;
+	}
+
+	public boolean isSecure() {
+		return secure;
+	}
+
+	public void setSecure(boolean secure) {
+		this.secure = secure;
+	}
+
+	public String getCredentialPath() {
+		return credentialPath;
+	}
+
+	public void setCredentialPath(String credentialPath) {
+		this.credentialPath = credentialPath;
+	}
+
+	public String getKeystorePassword() {
+		return keystorePassword;
+	}
+
+	public void setKeystorePassword(String keystorePassword) {
+		this.keystorePassword = keystorePassword;
+	}
+
+	public String getKeyPassword() {
+		return keyPassword;
+	}
+
+	public void setKeyPassword(String keyPassword) {
+		this.keyPassword = keyPassword;
 	}
 
 }
