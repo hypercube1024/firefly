@@ -1,6 +1,8 @@
 package com.firefly.codec.http2.stream;
 
 public class HTTP2Configuration {
+
+	private boolean secure;
 	private int maxDynamicTableSize = 4096;
 	private int streamIdleTimeout;
 	private String flowControlStrategy = "buffer";
@@ -8,6 +10,14 @@ public class HTTP2Configuration {
 	private int maxConcurrentStreams = -1;
 	private int maxHeaderBlockFragment = 0;
 	private int maxRequestHeadLength = 16 * 1024;
+
+	public boolean isSecure() {
+		return secure;
+	}
+
+	public void setSecure(boolean secure) {
+		this.secure = secure;
+	}
 
 	public int getMaxDynamicTableSize() {
 		return maxDynamicTableSize;
