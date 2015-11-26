@@ -47,7 +47,7 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 	
 	abstract protected Parser initParser(HTTP2Configuration config);
 
-	public HTTP2Session getHttp2Session() {
+	public com.firefly.codec.http2.stream.Session getHttp2Session() {
 		return http2Session;
 	}
 
