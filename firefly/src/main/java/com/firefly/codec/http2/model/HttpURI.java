@@ -91,6 +91,7 @@ public class HttpURI {
 
 	public HttpURI(HttpURI uri) {
 		this(uri.scheme, uri.host, uri.port, uri.path, uri.param, uri.query, uri.fragment);
+		this.uri = uri.uri;
 	}
 
 	public HttpURI(String uri) {
@@ -249,10 +250,6 @@ public class HttpURI {
 					break;
 
 				case '@':
-					user = uri.substring(mark, i);
-					mark = i + 1;
-					break;
-
 				case ';':
 				case '?':
 				case '#':

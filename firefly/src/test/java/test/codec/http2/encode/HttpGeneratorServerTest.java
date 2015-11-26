@@ -146,16 +146,16 @@ public class HttpGeneratorServerTest {
 		head = BufferUtils.toString(header);
 		BufferUtils.clear(header);
 		assertThat(head, containsString("HTTP/1.1 200 OK"));
-		assertThat(head, containsString("Server: Firefly(3.0)"));
-		assertThat(head, containsString("X-Powered-By: Firefly(3.0)"));
+		assertThat(head, containsString("Server: Firefly 3.0"));
+		assertThat(head, containsString("X-Powered-By: Firefly 3.0"));
 		gen.reset();
 		gen.generateResponse(infoF, header, null, null, true);
 		head = BufferUtils.toString(header);
 		BufferUtils.clear(header);
 		assertThat(head, containsString("HTTP/1.1 200 OK"));
-		assertThat(head, not(containsString("Server: Firefly(3.0)")));
+		assertThat(head, not(containsString("Server: Firefly 3.0")));
 		assertThat(head, containsString("Server: SomeServer"));
-		assertThat(head, containsString("X-Powered-By: Firefly(3.0)"));
+		assertThat(head, containsString("X-Powered-By: Firefly 3.0"));
 		assertThat(head, containsString("X-Powered-By: SomePower"));
 		gen.reset();
 
@@ -164,16 +164,16 @@ public class HttpGeneratorServerTest {
 		head = BufferUtils.toString(header);
 		BufferUtils.clear(header);
 		assertThat(head, containsString("HTTP/1.1 200 OK"));
-		assertThat(head, not(containsString("Server: Firefly(3.0)")));
-		assertThat(head, not(containsString("X-Powered-By: Firefly(3.0)")));
+		assertThat(head, not(containsString("Server: Firefly 3.0")));
+		assertThat(head, not(containsString("X-Powered-By: Firefly 3.0")));
 		gen.reset();
 		gen.generateResponse(infoF, header, null, null, true);
 		head = BufferUtils.toString(header);
 		BufferUtils.clear(header);
 		assertThat(head, containsString("HTTP/1.1 200 OK"));
-		assertThat(head, not(containsString("Server: Firefly(3.0)")));
+		assertThat(head, not(containsString("Server: Firefly 3.0")));
 		assertThat(head, containsString("Server: SomeServer"));
-		assertThat(head, not(containsString("X-Powered-By: Firefly(3.0)")));
+		assertThat(head, not(containsString("X-Powered-By: Firefly 3.0")));
 		assertThat(head, containsString("X-Powered-By: SomePower"));
 		gen.reset();
 	}
@@ -375,7 +375,8 @@ public class HttpGeneratorServerTest {
 		assertEquals(HttpGenerator.Result.NEED_INFO, result);
 		assertEquals(HttpGenerator.State.START, gen.getState());
 
-		MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_1_1, 200, null, new HttpFields(), 59);
+		MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_1_1, 200, null, new HttpFields(),
+				BufferUtils.length(content0) + BufferUtils.length(content1));
 		info.getFields().add("Last-Modified", DateGenerator.__01Jan1970);
 		result = gen.generateResponse(info, null, null, content0, false);
 		assertEquals(HttpGenerator.Result.NEED_HEADER, result);

@@ -128,7 +128,6 @@ public class MetaData implements Iterable<HttpField> {
 					new HttpFields(request.getFields()), request.getContentLength());
 		}
 
-		// TODO MetaData should be immuttable!!!
 		public void recycle() {
 			super.recycle();
 			_method = null;

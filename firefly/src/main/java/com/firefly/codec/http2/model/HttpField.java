@@ -3,6 +3,8 @@ package com.firefly.codec.http2.model;
 import java.util.ArrayList;
 import java.util.Objects;
 
+import com.firefly.utils.StringUtils;
+
 public class HttpField {
 	private final static String __zeroquality = "q=0";
 	private final HttpHeader header;
@@ -155,7 +157,7 @@ public class HttpField {
 	 * Look for a value in a possible multi valued field
 	 * 
 	 * @param search
-	 *            Values to search for
+	 *            Values to search for (case insensitive)
 	 * @return True iff the value is contained in the field value entirely or as
 	 *         an element of a quoted comma separated list. List element
 	 *         parameters (eg qualities) are ignored, except if they are q=0, in
@@ -168,6 +170,8 @@ public class HttpField {
 			return false;
 		if (value == null)
 			return false;
+
+		search = StringUtils.asciiToLowerCase(search);
 
 		int state = 0;
 		int match = 0;
@@ -197,7 +201,7 @@ public class HttpField {
 					break;
 
 				default: // character
-					match = c == search.charAt(0) ? 1 : -1;
+					match = Character.toLowerCase(c) == search.charAt(0) ? 1 : -1;
 					state = 1;
 					break;
 				}
@@ -220,8 +224,7 @@ public class HttpField {
 				default:
 					if (match > 0) {
 						if (match < search.length())
-							match = c == search.charAt(match) ? (match + 1)
-									: -1;
+							match = Character.toLowerCase(c) == search.charAt(match) ? (match + 1) : -1;
 						else if (c != ' ' && c != '\t')
 							match = -1;
 					}
@@ -243,8 +246,7 @@ public class HttpField {
 				default:
 					if (match >= 0) {
 						if (match < search.length())
-							match = c == search.charAt(match) ? (match + 1)
-									: -1;
+							match = Character.toLowerCase(c) == search.charAt(match) ? (match + 1) : -1;
 						else
 							match = -1;
 					}
@@ -254,7 +256,7 @@ public class HttpField {
 			case 3: // In Quoted character in quoted token
 				if (match >= 0) {
 					if (match < search.length())
-						match = c == search.charAt(match) ? (match + 1) : -1;
+						match = Character.toLowerCase(c) == search.charAt(match) ? (match + 1) : -1;
 					else
 						match = -1;
 				}
@@ -288,8 +290,7 @@ public class HttpField {
 				switch (c) {
 				case ',': // end token
 					// Have we matched the token and not q=0?
-					if (param != __zeroquality.length()
-							&& match == search.length())
+					if (param != __zeroquality.length() && match == search.length())
 						return true;
 					param = 0;
 					state = 0;
@@ -302,8 +303,7 @@ public class HttpField {
 				default:
 					if (param >= 0) {
 						if (param < __zeroquality.length())
-							param = c == __zeroquality.charAt(param) ? (param + 1)
-									: -1;
+							param = Character.toLowerCase(c) == __zeroquality.charAt(param) ? (param + 1) : -1;
 						else if (c != '0' && c != '.')
 							param = -1;
 					}
@@ -381,8 +381,7 @@ public class HttpField {
 	public static class IntValueHttpField extends HttpField {
 		private final int _int;
 
-		public IntValueHttpField(HttpHeader header, String name, String value,
-				int intValue) {
+		public IntValueHttpField(HttpHeader header, String name, String value, int intValue) {
 			super(header, name, value);
 			_int = intValue;
 		}
@@ -413,8 +412,7 @@ public class HttpField {
 	public static class LongValueHttpField extends HttpField {
 		private final long _long;
 
-		public LongValueHttpField(HttpHeader header, String name, String value,
-				long longValue) {
+		public LongValueHttpField(HttpHeader header, String name, String value, long longValue) {
 			super(header, name, value);
 			_long = longValue;
 		}

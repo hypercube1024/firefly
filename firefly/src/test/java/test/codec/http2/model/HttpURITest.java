@@ -69,6 +69,12 @@ public class HttpURITest {
 	}
 
 	@Test
+	public void testAt() throws Exception {
+		HttpURI uri = new HttpURI("/@foo/bar");
+		assertEquals("/@foo/bar", uri.getPath());
+	}
+
+	@Test
 	public void testParams() throws Exception {
 		HttpURI uri = new HttpURI("/foo/bar");
 		assertEquals("/foo/bar", uri.getPath());
