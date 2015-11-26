@@ -982,14 +982,12 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			flowControl.onDataSent(stream, length);
 			// Do we have more to send ?
 			DataFrame dataFrame = (DataFrame) frame;
-			if (dataFrame.remaining() > 0) {
-				// We have written part of the frame, but there is more to
-				// write.
-				// We need to keep the correct ordering of frames, to avoid that
-				// other
-				// frames for the same stream are written before this one is
-				// finished.
-				flusher.prepend(this);
+			if (dataFrame.remaining() > 0) {				
+				// We have written part of the frame, but there is more to write.
+                // The API will not allow to send two data frames for the same
+                // stream so we append the unfinished frame at the end to allow
+                // better interleaving with other streams.
+                flusher.append(this);
 			} else {
 				// Only now we can update the close state
 				// and eventually remove the stream.
