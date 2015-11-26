@@ -520,10 +520,10 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				break;
 		}
 
-		StreamSPI stream = newStream(streamId);
+		StreamSPI stream = newStream(streamId, true);
 		if (streams.putIfAbsent(streamId, stream) == null) {
 			stream.setIdleTimeout(getStreamIdleTimeout());
-			flowControl.onStreamCreated(stream, true);
+			flowControl.onStreamCreated(stream);
 			if (log.isDebugEnable())
 				log.debug("Created local {}", stream);
 			return stream;
@@ -546,13 +546,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				break;
 		}
 
-		StreamSPI stream = newStream(streamId);
+		StreamSPI stream = newStream(streamId, false);
 
 		// SPEC: duplicate stream is treated as connection error.
 		if (streams.putIfAbsent(streamId, stream) == null) {
 			updateLastStreamId(streamId);
 			stream.setIdleTimeout(getStreamIdleTimeout());
-			flowControl.onStreamCreated(stream, false);
+			flowControl.onStreamCreated(stream);
 			if (log.isDebugEnable())
 				log.debug("Created remote {}", stream);
 			return stream;
@@ -562,25 +562,26 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		}
 	}
 
-	protected StreamSPI newStream(int streamId) {
-		return new HTTP2Stream(scheduler, this, streamId);
+	protected StreamSPI newStream(int streamId, boolean local) {
+		return new HTTP2Stream(scheduler, this, streamId, local);
 	}
 
 	@Override
-	public void removeStream(StreamSPI stream, boolean local) {
+	public void removeStream(StreamSPI stream) {
 		StreamSPI removed = streams.remove(stream.getId());
 		if (removed != null) {
 			assert removed == stream;
 
+			boolean local = stream.isLocal();
 			if (local)
 				localStreamCount.decrementAndGet();
 			else
 				remoteStreamCount.decrementAndGet();
 
-			flowControl.onStreamDestroyed(stream, local);
+			flowControl.onStreamDestroyed(stream);
 
 			if (log.isDebugEnable())
-				log.debug("Removed {}", stream);
+				log.debug("Removed {}, {}", local ? "local" : "remote", stream);
 		}
 	}
 
@@ -891,13 +892,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			case HEADERS: {
 				HeadersFrame headersFrame = (HeadersFrame) frame;
 				if (stream.updateClose(headersFrame.isEndStream(), true))
-					removeStream(stream, true);
+					removeStream(stream);
 				break;
 			}
 			case RST_STREAM: {
 				if (stream != null) {
 					stream.close();
-					removeStream(stream, true);
+					removeStream(stream);
 				}
 				break;
 			}
@@ -993,7 +994,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				// Only now we can update the close state
 				// and eventually remove the stream.
 				if (stream.updateClose(dataFrame.isEndStream(), true))
-					removeStream(stream, true);
+					removeStream(stream);
 				callback.succeeded();
 			}
 		}

@@ -66,15 +66,15 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 	}
 
 	@Override
-	public void onStreamCreated(StreamSPI stream, boolean local) {
-		super.onStreamCreated(stream, local);
+	public void onStreamCreated(StreamSPI stream) {
+		super.onStreamCreated(stream);
 		streamLevels.put(stream, new AtomicInteger());
 	}
 
 	@Override
-	public void onStreamDestroyed(StreamSPI stream, boolean local) {
+	public void onStreamDestroyed(StreamSPI stream) {
 		streamLevels.remove(stream);
-		super.onStreamDestroyed(stream, local);
+		super.onStreamDestroyed(stream);
 	}
 
 	@Override

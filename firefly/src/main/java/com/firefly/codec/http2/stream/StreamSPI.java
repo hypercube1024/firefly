@@ -24,6 +24,11 @@ public interface StreamSPI extends Stream, Closeable {
 	 * @see #setAttribute(String, Object)
 	 */
 	public static final String CHANNEL_ATTRIBUTE = StreamSPI.class.getName() + ".channel";
+	
+	/**
+     * @return whether this stream is local or remote
+     */
+    public boolean isLocal();
 
 	@Override
 	public SessionSPI getSession();

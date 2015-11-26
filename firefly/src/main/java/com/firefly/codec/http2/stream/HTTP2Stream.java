@@ -30,19 +30,26 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
 	private final AtomicInteger recvWindow = new AtomicInteger();
 	private final SessionSPI session;
 	private final int streamId;
+	private final boolean local;
 	private volatile Listener listener;
 	private volatile boolean localReset;
 	private volatile boolean remoteReset;
 
-	public HTTP2Stream(Scheduler scheduler, SessionSPI session, int streamId) {
+	public HTTP2Stream(Scheduler scheduler, SessionSPI session, int streamId, boolean local) {
 		super(scheduler);
 		this.session = session;
 		this.streamId = streamId;
+		this.local = local;
 	}
 
 	@Override
 	public int getId() {
 		return streamId;
+	}
+	
+	@Override
+	public boolean isLocal() {
+		return local;
 	}
 
 	@Override
@@ -180,7 +187,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
 
 	private void onHeaders(HeadersFrame frame, Callback callback) {
 		if (updateClose(frame.isEndStream(), false))
-			session.removeStream(this, false);
+			session.removeStream(this);
 		callback.succeeded();
 	}
 
@@ -207,14 +214,14 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
 		}
 
 		if (updateClose(frame.isEndStream(), false))
-			session.removeStream(this, false);
+			session.removeStream(this);
 		notifyData(this, frame, callback);
 	}
 
 	private void onReset(ResetFrame frame, Callback callback) {
 		remoteReset = true;
 		close();
-		session.removeStream(this, false);
+		session.removeStream(this);
 		callback.succeeded();
 		notifyReset(this, frame);
 	}

@@ -5,9 +5,9 @@ import com.firefly.codec.http2.frame.WindowUpdateFrame;
 public interface FlowControlStrategy {
 	public static int DEFAULT_WINDOW_SIZE = 65535;
 
-	public void onStreamCreated(StreamSPI stream, boolean local);
+	public void onStreamCreated(StreamSPI stream);
 
-	public void onStreamDestroyed(StreamSPI stream, boolean local);
+	public void onStreamDestroyed(StreamSPI stream);
 
 	public void updateInitialStreamWindow(SessionSPI session, int initialStreamWindow, boolean local);
 

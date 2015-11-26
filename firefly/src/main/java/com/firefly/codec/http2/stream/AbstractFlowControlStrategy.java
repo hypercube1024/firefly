@@ -24,13 +24,13 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 	}
 
 	@Override
-	public void onStreamCreated(StreamSPI stream, boolean local) {
+	public void onStreamCreated(StreamSPI stream) {
 		stream.updateSendWindow(initialStreamSendWindow);
 		stream.updateRecvWindow(initialStreamRecvWindow);
 	}
 
 	@Override
-	public void onStreamDestroyed(StreamSPI stream, boolean local) {
+	public void onStreamDestroyed(StreamSPI stream) {
 	}
 
 	@Override

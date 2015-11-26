@@ -27,10 +27,8 @@ public interface SessionSPI extends Session {
 	 *
 	 * @param stream
 	 *            the stream to remove
-	 * @param local
-	 *            whether the stream is local or remote
 	 */
-	public void removeStream(StreamSPI stream, boolean local);
+	public void removeStream(StreamSPI stream);
 
 	/**
 	 * <p>
