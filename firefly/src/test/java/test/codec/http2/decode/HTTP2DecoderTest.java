@@ -14,6 +14,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.firefly.codec.common.Callback;
+import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.encode.HeadersGenerator;
 import com.firefly.codec.http2.encode.SettingsGenerator;
 import com.firefly.codec.http2.frame.DataFrame;
@@ -156,15 +157,17 @@ public class HTTP2DecoderTest {
 		DataFrame smallDataFrame = new DataFrame(streamId, ByteBuffer.wrap(smallContent), false);
 		DataFrame bigDateFrame = new DataFrame(streamId, ByteBuffer.wrap(bigContent), true);
 		
-		HeadersGenerator headersGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.HEADERS);
-		SettingsGenerator settingsGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.SETTINGS);
+		Generator generator = new Generator(http2Configuration.getMaxDynamicTableSize(), http2Configuration.getMaxHeaderBlockFragment());
+		
+		HeadersGenerator headersGenerator = generator.getControlGenerator(FrameType.HEADERS);
+		SettingsGenerator settingsGenerator = generator.getControlGenerator(FrameType.SETTINGS);
 
 		List<ByteBuffer> list = new LinkedList<>();
 		list.add(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));
 		list.add(settingsGenerator.generateSettings(settings, false));
 		list.addAll(headersGenerator.generateHeaders(streamId, metaData, null, false));
-		list.addAll(http2ServerConnection.getGenerator().data(smallDataFrame, smallContent.length));
-		list.addAll(http2ServerConnection.getGenerator().data(bigDateFrame, bigContent.length));
+		list.addAll(generator.data(smallDataFrame, smallContent.length));
+		list.addAll(generator.data(bigDateFrame, bigContent.length));
 		
 		for(ByteBuffer buffer : list) {
 			decoder.decode(buffer, session);
@@ -266,8 +269,11 @@ public class HTTP2DecoderTest {
 		Map<Integer, Integer> settings = new HashMap<>();
 		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
 		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
-		HeadersGenerator headersGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.HEADERS);
-		SettingsGenerator settingsGenerator = http2ServerConnection.getGenerator().getControlGenerator(FrameType.SETTINGS);
+		
+		Generator generator = new Generator(http2Configuration.getMaxDynamicTableSize(), http2Configuration.getMaxHeaderBlockFragment());
+		
+		HeadersGenerator headersGenerator = generator.getControlGenerator(FrameType.HEADERS);
+		SettingsGenerator settingsGenerator = generator.getControlGenerator(FrameType.SETTINGS);
 		
 		List<ByteBuffer> list = new LinkedList<>();
 		list.add(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));

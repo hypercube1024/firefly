@@ -16,6 +16,8 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 	public Object attachment;
 	protected final SSLSession sslSession;
 	protected final Session tcpSession;
+	
+	protected final HTTP2Session http2Session;
 	protected final Parser parser;
 	protected final Generator generator;
 	
@@ -36,20 +38,19 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 			break;
 		}
 		this.generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());
-		this.parser = initParser(config, flowControl, listener);
+		this.http2Session = initHTTP2Session(config, flowControl, listener);
+		this.parser = initParser(config);
 		tcpSession.attachObject(this);
 	}
 	
-	abstract protected Parser initParser(HTTP2Configuration config, FlowControlStrategy flowControl, Listener listener);
-
-	public Parser getParser() {
-		return parser;
-	}
-
-	public Generator getGenerator() {
-		return generator;
-	}
+	abstract protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl, Listener listener);
 	
+	abstract protected Parser initParser(HTTP2Configuration config);
+
+	public HTTP2Session getHttp2Session() {
+		return http2Session;
+	}
+
 	public void close() throws IOException {
 		if (sslSession != null) {
 			sslSession.close();
