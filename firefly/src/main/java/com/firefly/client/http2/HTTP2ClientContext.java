@@ -6,7 +6,7 @@ import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.net.tcp.ssl.SSLEventHandler;
 
 public class HTTP2ClientContext {
-	private Listener listener;
-	private SSLEventHandler sslEventHandler;
-	private ALPN.ClientProvider clientProvider;
+	public Listener listener;
+	public SSLEventHandler sslEventHandler;
+	public ALPN.ClientProvider clientProvider;
 }
