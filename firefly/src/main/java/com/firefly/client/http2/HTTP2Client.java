@@ -1,42 +1,50 @@
 package com.firefly.client.http2;
 
-import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.core.AbstractLifeCycle;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class HTTP2Client extends AbstractLifeCycle{
-	
-	private final HTTP2Configuration http2Configuration;
+import com.firefly.codec.common.Promise;
+import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.core.AbstractLifeCycle;
+import com.firefly.net.Client;
+import com.firefly.net.tcp.aio.AsynchronousTcpClient;
+import com.firefly.utils.log.LogFactory;
+
+public class HTTP2Client extends AbstractLifeCycle {
+
+	private final Client client;
+	private final Map<Integer, HTTP2ClientContext> http2ClientContext = new ConcurrentHashMap<>();
+	private final AtomicInteger sessionId = new AtomicInteger(0);
 
 	public HTTP2Client(HTTP2Configuration http2Configuration) {
-		this.http2Configuration = http2Configuration;
+		if (http2Configuration == null)
+			throw new IllegalArgumentException("the http2 configuration is null");
+
+		this.client = new AsynchronousTcpClient(new HTTP2ClientDecoder(), new HTTP2ClientEncoder(),
+				new HTTP2ClientHandler(http2Configuration, http2ClientContext), http2Configuration.getTcpIdleTimeout());
+	}
+
+	public void connect(String host, int port, Promise<HTTP2ClientConnection> promise, Listener listener) {
+		start();
+		HTTP2ClientContext context = new HTTP2ClientContext();
+		context.promise = promise;
+		context.listener = listener;
+		int id = sessionId.getAndIncrement();
+		http2ClientContext.put(id, context);
+		client.connect(host, port, id);
 	}
 
 	@Override
-	public void start() {
-		if(isStarted())
-			return;
-		
-		synchronized(this) {
-			if(isStarted())
-				return;
-			
-			
-			start = true;
-		}
+	protected void init() {
 	}
 
 	@Override
-	public void stop() {
-		if(isStopped())
-			return;
-		
-		synchronized(this) {
-			if(isStopped())
-				return;
-			// TODO implements the stop method
-			
-			start = false;
-		}
+	protected void destroy() {
+		if (client != null)
+			client.shutdown();
+		LogFactory.getInstance().shutdown();
 	}
 
 }

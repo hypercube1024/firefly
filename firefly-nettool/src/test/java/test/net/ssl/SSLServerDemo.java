@@ -72,7 +72,8 @@ public class SSLServerDemo {
 			@Override
 			public void exceptionCaught(Session session, Throwable t) throws Throwable {
 				t.printStackTrace();
-				session.close(true);
+				if(session.isOpen())
+					session.close(true);
 			}}, 1000 * 5);	
 		server.start("localhost", 7676);
 	}

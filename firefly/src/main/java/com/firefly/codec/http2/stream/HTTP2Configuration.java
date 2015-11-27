@@ -2,18 +2,29 @@ package com.firefly.codec.http2.stream;
 
 public class HTTP2Configuration {
 
+	// TCP settings
+	private int tcpIdleTimeout = 10 * 1000;
+
 	// SSL/TLS settings
 	private boolean secure;
 	private String credentialPath, keystorePassword, keyPassword;
 
 	// HTTP2 settings
 	private int maxDynamicTableSize = 4096;
-	private int streamIdleTimeout;
+	private int streamIdleTimeout = 10 * 1000;
 	private String flowControlStrategy = "buffer";
 	private int initialStreamSendWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
 	private int maxConcurrentStreams = -1;
 	private int maxHeaderBlockFragment = 0;
 	private int maxRequestHeadLength = 16 * 1024;
+
+	public int getTcpIdleTimeout() {
+		return tcpIdleTimeout;
+	}
+
+	public void setTcpIdleTimeout(int tcpIdleTimeout) {
+		this.tcpIdleTimeout = tcpIdleTimeout;
+	}
 
 	public int getMaxDynamicTableSize() {
 		return maxDynamicTableSize;

@@ -36,5 +36,9 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection {
 	Generator getGenerator() {
 		return generator;
 	}
+	
+	SSLSession getSSLSession() {
+		return sslSession;
+	}
 
 }

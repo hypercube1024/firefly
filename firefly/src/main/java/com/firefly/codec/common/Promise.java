@@ -22,7 +22,7 @@ public interface Promise<C> {
 	 *            the context
 	 * @see #failed(Throwable)
 	 */
-	public abstract void succeeded(C result);
+	public void succeeded(C result);
 
 	/**
 	 * <p>

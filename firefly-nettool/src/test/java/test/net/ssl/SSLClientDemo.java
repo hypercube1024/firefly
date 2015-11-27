@@ -79,7 +79,8 @@ public class SSLClientDemo {
 			public void exceptionCaught(Session session, Throwable t)
 					throws Throwable {
 				t.printStackTrace();
-				session.close(true);
+				if(session.isOpen())
+					session.close(true);
 			}}, 1000 * 5);
 		
 		int sessionId = client.connect("localhost", 7676);

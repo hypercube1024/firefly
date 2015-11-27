@@ -13,5 +13,37 @@ public abstract class AbstractLifeCycle implements LifeCycle {
 	public boolean isStopped() {
 		return !start;
 	}
+	
+	@Override
+	public void start() {
+		if (isStarted())
+			return;
+
+		synchronized (this) {
+			if (isStarted())
+				return;
+			
+			init();
+			start = true;
+		}
+	}
+
+	@Override
+	public void stop() {
+		if (isStopped())
+			return;
+
+		synchronized (this) {
+			if (isStopped())
+				return;
+			
+			destroy();
+			start = false;
+		}
+	}
+	
+	abstract protected void init();
+	
+	abstract protected void destroy();
 
 }
