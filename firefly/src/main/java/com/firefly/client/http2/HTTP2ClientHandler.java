@@ -9,10 +9,14 @@ import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import org.eclipse.jetty.alpn.ALPN;
+
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLContextFactory;
+import com.firefly.net.tcp.ssl.SSLEventHandler;
+import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -55,13 +59,43 @@ public class HTTP2ClientHandler implements Handler {
 			session.close(true);
 			return;
 		}
-		
-		if(config.isSecure()) {
-			if(sslContext == null) {
+
+		if (config.isSecure()) {
+			if (sslContext == null) {
 				context.promise.failed(new IllegalStateException("the ssl context is null"));
 				return;
 			}
 			final SSLEngine sslEngine = sslContext.createSSLEngine();
+			final SSLSession sslSession = new SSLSession(sslContext, sslEngine, session, true, new SSLEventHandler() {
+
+				@Override
+				public void handshakeFinished(SSLSession sslSession) {
+					// TODO
+				}
+			}, new ALPN.ClientProvider() {
+
+				@Override
+				public List<String> protocols() {
+					return protocols;
+				}
+
+				@Override
+				public void unsupported() {
+					ALPN.remove(sslEngine);
+				}
+
+				@Override
+				public void selected(String protocol) {
+
+					if (protocols.contains(protocol)) {
+						ALPN.remove(sslEngine);
+					} else {
+						log.info("Could not negotiate protocol: server [{}] - client {}", protocol, protocols);
+						// TODO
+					}
+
+				}
+			});
 			// TODO create http2 connection
 		} else {
 			new HTTP2ClientConnection(config, session, null, context.listener);
