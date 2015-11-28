@@ -52,7 +52,7 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 	}
 
 	public void close() throws IOException {
-		if (sslSession != null) {
+		if (sslSession != null && sslSession.isOpen()) {
 			sslSession.close();
 		}
 		if(tcpSession != null && tcpSession.isOpen()) {

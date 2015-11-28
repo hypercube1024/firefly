@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.firefly.codec.common.DecoderWrap;
+import com.firefly.codec.common.EncoderWrap;
 import com.firefly.codec.common.Promise;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.Session.Listener;
@@ -22,7 +24,18 @@ public class HTTP2Client extends AbstractLifeCycle {
 		if (http2Configuration == null)
 			throw new IllegalArgumentException("the http2 configuration is null");
 
-		this.client = new AsynchronousTcpClient(new HTTP2ClientDecoder(), new HTTP2ClientEncoder(),
+		DecoderWrap decoder;
+		EncoderWrap encoder;
+
+		if (http2Configuration.isSecure()) {
+			decoder = new SecureDecoder(new HTTP2ClientDecoder());
+			encoder = new HTTP2ClientEncoder(new SecureEncoder());
+		} else {
+			decoder = new DecoderWrap(new HTTP2ClientDecoder());
+			encoder = new EncoderWrap(new HTTP2ClientEncoder());
+		}
+
+		this.client = new AsynchronousTcpClient(decoder, encoder,
 				new HTTP2ClientHandler(http2Configuration, http2ClientContext), http2Configuration.getTcpIdleTimeout());
 	}
 

@@ -27,7 +27,9 @@ public class SSLClientDemo {
 			
 			@Override
 			public void sessionOpened(final Session session) throws Throwable {
+				long start = System.currentTimeMillis();
 				final SSLEngine sslEngine = sslContext.createSSLEngine();
+				System.out.println("client create ssl engine elapsed time is " + (System.currentTimeMillis() - start));
 				System.out.println(sslContext.getProtocol());
 				SessionInfo info = new SessionInfo();
 				info.sslSession = new SSLSession(sslContext, sslEngine, session, true, 
@@ -83,8 +85,11 @@ public class SSLClientDemo {
 					session.close(true);
 			}}, 1000 * 5);
 		
-		int sessionId = client.connect("localhost", 7676);
-		System.out.println("client session id: " + sessionId);
+		for (int i = 0; i < 10; i++) {
+			int sessionId = client.connect("localhost", 7676);
+			System.out.println("client session id: " + sessionId);
+		}
+		
 	}
 
 }

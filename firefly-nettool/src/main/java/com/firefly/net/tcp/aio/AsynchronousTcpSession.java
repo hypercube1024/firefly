@@ -44,7 +44,9 @@ public class AsynchronousTcpSession implements Session {
 		this.worker = worker;
 		this.socketChannel = socketChannel;
 		if (config.getReceiveByteBufferSize() > 0) {
-			log.debug("fix buffer size: {}", config.getReceiveByteBufferSize());
+			if(log.isDebugEnable()) {
+				log.debug("fix buffer size: {}", config.getReceiveByteBufferSize());
+			}
 			receiveBufferSizePredictor = new FixedReceiveBufferSizePredictor(config.getReceiveByteBufferSize());
 		} else {
 			log.debug("adaptive buffer size");
@@ -147,7 +149,8 @@ public class AsynchronousTcpSession implements Session {
 			try {
 				socketChannel.close();
 			} catch (AsynchronousCloseException e) {
-				log.debug("session {} asynchronous close", sessionId);
+				if(log.isDebugEnable())
+					log.debug("session {} asynchronous close", sessionId);
 			} catch (IOException e) {
 				log.error("channel close error", e);
 			}

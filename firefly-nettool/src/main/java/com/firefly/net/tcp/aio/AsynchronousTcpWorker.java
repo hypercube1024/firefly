@@ -61,7 +61,9 @@ public class AsynchronousTcpWorker implements Worker{
 			public void completed(Integer readBytes, AsynchronousTcpSession session) {
 				session.lastReadTime = Millisecond100Clock.currentTimeMillis();
 				if(readBytes <= 0) {
-					log.debug("The channel {} input is shutdown, {}", session.getSessionId(),  readBytes);
+					if(log.isDebugEnable()) {
+						log.debug("The channel {} input is shutdown, {}", session.getSessionId(),  readBytes);
+					}
 					session.close(true);
 					pool.release(buf);
 					return;
@@ -84,7 +86,9 @@ public class AsynchronousTcpWorker implements Worker{
 			@Override
 			public void failed(Throwable t, AsynchronousTcpSession session) {
 				if(t instanceof InterruptedByTimeoutException) {
-					log.debug("session {} reads data timout", session.getSessionId());
+					if(log.isDebugEnable()) {
+						log.debug("session {} reads data timout", session.getSessionId());
+					}
 				} else {
 					log.error("socket channel reads error", t);
 				}
@@ -117,7 +121,9 @@ public class AsynchronousTcpWorker implements Worker{
 				public void completed(Integer writeBytes, AsynchronousTcpSession session) {
 					session.lastWrittenTime = Millisecond100Clock.currentTimeMillis();
 					if(writeBytes <= 0) {
-						log.debug("The channel {} output is shutdown, {}", session.getSessionId(), writeBytes);
+						if(log.isDebugEnable()) {
+							log.debug("The channel {} output is shutdown, {}", session.getSessionId(), writeBytes);
+						}
 						session.close(true);
 						return;
 					}
@@ -136,7 +142,9 @@ public class AsynchronousTcpWorker implements Worker{
 				@Override
 				public void failed(Throwable t, AsynchronousTcpSession session) {
 					if(t instanceof InterruptedByTimeoutException) {
-						log.debug("session {} writes data timout", session.getSessionId());
+						if(log.isDebugEnable()) {
+							log.debug("session {} writes data timout", session.getSessionId());
+						}
 					} else {
 						log.error("socket channel writes error", t);
 					}

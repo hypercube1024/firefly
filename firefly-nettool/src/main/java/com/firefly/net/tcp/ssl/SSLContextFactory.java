@@ -28,7 +28,7 @@ public abstract class SSLContextFactory {
 	    TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 	    tmf.init(ks);
 
-	    sslContext = SSLContext.getInstance("TLS");
+	    sslContext = SSLContext.getInstance("TLSv1.2");
 	    sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 		return sslContext;
 	}

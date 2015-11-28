@@ -1,5 +1,7 @@
 package test.net.ssl;
 
+import java.security.Provider;
+import java.security.Security;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
@@ -16,6 +18,10 @@ import com.firefly.net.tcp.ssl.SSLEventHandler;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class SSLServerDemo {
+	public static void main2(String[] args) {
+		for(Provider provider : Security.getProviders())
+			System.out.println(provider);
+	}
 
 	public static void main(String[] args) throws Throwable {
 		Server server = new AsynchronousTcpServer(
@@ -27,15 +33,16 @@ public class SSLServerDemo {
 			
 			@Override
 			public void sessionOpened(Session session) throws Throwable {
+				long start = System.currentTimeMillis();
 				final SSLEngine sslEngine = sslContext.createSSLEngine();
+				System.out.println("server create ssl engine elapsed time is " + (System.currentTimeMillis() - start));
 				SessionInfo info = new SessionInfo();
 				info.sslSession = new SSLSession(sslContext, sslEngine, session, false, 
 				new SSLEventHandler(){
 
 					@Override
 					public void handshakeFinished(SSLSession session) {
-						
-						
+						System.out.println("server handshake finished!");
 					}}, 
 				new ALPN.ServerProvider(){
 

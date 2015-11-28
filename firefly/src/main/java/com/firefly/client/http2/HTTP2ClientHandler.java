@@ -27,7 +27,7 @@ public class HTTP2ClientHandler implements Handler {
 
 	private final HTTP2Configuration config;
 	private final Map<Integer, HTTP2ClientContext> http2ClientContext;
-	private final List<String> protocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14");
+	private final List<String> protocols = Arrays.asList("http/1.1", "h2", "h2-17", "h2-16", "h2-15", "h2-14");
 	private SSLContext sslContext;
 
 	public HTTP2ClientHandler(HTTP2Configuration config, Map<Integer, HTTP2ClientContext> http2ClientContext) {
@@ -52,8 +52,9 @@ public class HTTP2ClientHandler implements Handler {
 	}
 
 	@Override
-	public void sessionOpened(Session session) throws Throwable {
-		HTTP2ClientContext context = http2ClientContext.get(session.getSessionId());
+	@SuppressWarnings("resource")
+	public void sessionOpened(final Session session) throws Throwable {
+		final HTTP2ClientContext context = http2ClientContext.get(session.getSessionId());
 		if (context == null) {
 			log.error("http2 client can not get the client context of session {}", session.getSessionId());
 			session.close(true);
@@ -65,12 +66,13 @@ public class HTTP2ClientHandler implements Handler {
 				context.promise.failed(new IllegalStateException("the ssl context is null"));
 				return;
 			}
+			
 			final SSLEngine sslEngine = sslContext.createSSLEngine();
-			final SSLSession sslSession = new SSLSession(sslContext, sslEngine, session, true, new SSLEventHandler() {
+			new SSLSession(sslContext, sslEngine, session, true, new SSLEventHandler() {
 
 				@Override
 				public void handshakeFinished(SSLSession sslSession) {
-					// TODO
+					context.promise.succeeded(new HTTP2ClientConnection(config, session, sslSession, context.listener));
 				}
 			}, new ALPN.ClientProvider() {
 
@@ -86,27 +88,31 @@ public class HTTP2ClientHandler implements Handler {
 
 				@Override
 				public void selected(String protocol) {
-
 					if (protocols.contains(protocol)) {
+						// TODO select decoder
+						if(protocol.equals("http/1.1")) {
+							
+						} else {
+							
+						}
 						ALPN.remove(sslEngine);
 					} else {
 						log.info("Could not negotiate protocol: server [{}] - client {}", protocol, protocols);
-						// TODO
+						ALPN.remove(sslEngine);
+						session.close(false);
 					}
-
 				}
 			});
-			// TODO create http2 connection
 		} else {
-			new HTTP2ClientConnection(config, session, null, context.listener);
+			context.promise.succeeded(new HTTP2ClientConnection(config, session, null, context.listener));
 		}
 	}
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
-		HTTP2ClientConnection attachment = (HTTP2ClientConnection) session.getAttachment();
-		if (attachment != null) {
-			attachment.close();
+		HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) session.getAttachment();
+		if (http2ClientConnection != null) {
+			http2ClientConnection.close();
 		}
 	}
 

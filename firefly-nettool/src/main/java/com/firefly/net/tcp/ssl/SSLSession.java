@@ -134,7 +134,9 @@ public class SSLSession implements Closeable {
             while(true) {
 	            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
 	            initialHSStatus = result.getHandshakeStatus();
-	            log.debug("do hs receive initial status -> {} | {} | {}", initialHSStatus, result.getStatus(), initialHSComplete);
+	            if(log.isDebugEnable()) {
+	            	log.debug("do hs receive initial status -> {} | {} | {}", initialHSStatus, result.getStatus(), initialHSComplete);
+	            }
 	            switch (result.getStatus()) {
 	            case OK:
 	                switch (initialHSStatus) {
@@ -186,7 +188,9 @@ public class SSLSession implements Closeable {
 	    	while(true) {
 		        result = sslEngine.wrap(hsBuffer, writeBuf);
 		        initialHSStatus = result.getHandshakeStatus();
-		        log.debug("do hs response initial status -> {} | {} | {}", initialHSStatus, result.getStatus(), initialHSComplete);
+		        if(log.isDebugEnable()) {
+		        	log.debug("do hs response initial status -> {} | {} | {}", initialHSStatus, result.getStatus(), initialHSComplete);
+		        }
 		        switch (result.getStatus()) {
 		        case OK:
 		            if (initialHSStatus == HandshakeStatus.NEED_TASK)
@@ -260,6 +264,10 @@ public class SSLSession implements Closeable {
         }
 	}
 	
+	public boolean isOpen() {
+		return !closed;
+	}
+	
 	/**
      * This method is used to decrypt data, it implied do handshake
      * @param receiveBuffer
@@ -274,8 +282,9 @@ public class SSLSession implements Closeable {
     	if (!initialHSComplete)
             throw new IllegalStateException("The initial handshake is not complete.");
     	
-    	log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
-    		
+    	if(log.isDebugEnable()) {
+    		log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
+    	}
     	merge(receiveBuffer);
     	if(!inNetBuffer.hasRemaining())
     		return null;
