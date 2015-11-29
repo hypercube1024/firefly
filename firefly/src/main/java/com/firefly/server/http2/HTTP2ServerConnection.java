@@ -7,6 +7,7 @@ import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTP2Session;
+import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -38,5 +39,13 @@ public class HTTP2ServerConnection extends AbstractHTTP2Connection {
 
 	Generator getGenerator() {
 		return generator;
+	}
+	
+	SSLSession getSSLSession() {
+		return sslSession;
+	}
+	
+	SessionSPI getSessionSPI() {
+		return http2Session;
 	}
 }
