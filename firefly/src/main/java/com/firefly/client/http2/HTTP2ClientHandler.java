@@ -174,8 +174,6 @@ public class HTTP2ClientHandler implements Handler {
 
 	@Override
 	public void messageRecieved(Session session, Object message) throws Throwable {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
