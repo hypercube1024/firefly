@@ -12,8 +12,7 @@ public class HTTP2MockSession implements Session {
 	private Object attachment;
 	public LinkedList<ByteBuffer> outboundData = new LinkedList<>();
 	private boolean isOpen = true;
-	
-	
+
 	@Override
 	public void attachObject(Object attachment) {
 		this.attachment = attachment;
@@ -32,8 +31,7 @@ public class HTTP2MockSession implements Session {
 
 	@Override
 	public void encode(Object message) {
-		// TODO Auto-generated method stub
-
+		write((ByteBuffer) message);
 	}
 
 	@Override

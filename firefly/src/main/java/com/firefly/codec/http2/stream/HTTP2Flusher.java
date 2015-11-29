@@ -210,7 +210,7 @@ public class HTTP2Flusher extends IteratingCallback {
 
 			ByteBuffer buf = null;
 			while ((buf = buffers.poll()) != null) {
-				session.getEndPoint().write(buf);
+				session.getEndPoint().encode(buf);
 				this.succeeded();
 			}
 		}
