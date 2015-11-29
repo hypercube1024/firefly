@@ -14,6 +14,7 @@ public class HTTP2Configuration {
 	private int streamIdleTimeout = 10 * 1000;
 	private String flowControlStrategy = "buffer";
 	private int initialStreamSendWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
+	private int initialSessionRecvWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
 	private int maxConcurrentStreams = -1;
 	private int maxHeaderBlockFragment = 0;
 	private int maxRequestHeadLength = 16 * 1024;
@@ -48,6 +49,14 @@ public class HTTP2Configuration {
 
 	public void setFlowControlStrategy(String flowControlStrategy) {
 		this.flowControlStrategy = flowControlStrategy;
+	}
+
+	public int getInitialSessionRecvWindow() {
+		return initialSessionRecvWindow;
+	}
+
+	public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
+		this.initialSessionRecvWindow = initialSessionRecvWindow;
 	}
 
 	public int getInitialStreamSendWindow() {

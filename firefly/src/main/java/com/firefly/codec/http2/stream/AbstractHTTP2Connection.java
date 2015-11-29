@@ -21,6 +21,8 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 	protected final Parser parser;
 	protected final Generator generator;
 	
+	protected volatile boolean closed;
+	
 	protected static final Scheduler scheduler = Schedulers.createScheduler();
 
 	public AbstractHTTP2Connection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession, Listener listener) {
@@ -51,6 +53,10 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 		return http2Session;
 	}
 
+	public boolean isOpen() {
+		return !closed;
+	}
+	
 	public void close() throws IOException {
 		if (sslSession != null && sslSession.isOpen()) {
 			sslSession.close();
@@ -59,6 +65,7 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 			tcpSession.close(false);
 		}
 		attachment = null;
+		closed = true;
 	}
 	
 }
