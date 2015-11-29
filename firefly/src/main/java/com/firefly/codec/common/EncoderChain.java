@@ -3,13 +3,13 @@ package com.firefly.codec.common;
 import com.firefly.net.Encoder;
 import com.firefly.net.Session;
 
-public class EncoderWrap implements Encoder {
+public class EncoderChain implements Encoder {
 	
 	protected volatile Encoder next;
 	
-	public EncoderWrap() {}
+	public EncoderChain() {}
 
-	public EncoderWrap(Encoder next) {
+	public EncoderChain(Encoder next) {
 		this.next = next;
 	}
 

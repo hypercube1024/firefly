@@ -2,11 +2,11 @@ package com.firefly.client.http2;
 
 import java.nio.ByteBuffer;
 
-import com.firefly.codec.common.DecoderWrap;
+import com.firefly.codec.common.DecoderChain;
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
 
-public class SecureDecoder extends DecoderWrap {
+public class SecureDecoder extends DecoderChain {
 
 	public SecureDecoder() {
 	}

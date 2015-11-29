@@ -5,13 +5,13 @@ import java.nio.ByteBuffer;
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
 
-public class DecoderWrap implements Decoder {
+public class DecoderChain implements Decoder {
 
 	protected volatile Decoder next;
 	
-	public DecoderWrap() {}
+	public DecoderChain() {}
 	
-	public DecoderWrap(Decoder next) {
+	public DecoderChain(Decoder next) {
 		this.next = next;
 	}
 

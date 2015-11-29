@@ -1,10 +1,10 @@
 package com.firefly.client.http2;
 
-import com.firefly.codec.common.EncoderWrap;
+import com.firefly.codec.common.EncoderChain;
 import com.firefly.net.Encoder;
 import com.firefly.net.Session;
 
-public class HTTP2ClientEncoder extends EncoderWrap {
+public class HTTP2ClientEncoder extends EncoderChain {
 	
 	public HTTP2ClientEncoder() {}
 	
