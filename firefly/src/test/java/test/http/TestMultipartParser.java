@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+
+import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.Part;
 
@@ -52,6 +54,24 @@ public class TestMultipartParser {
 	
 				public int read(byte[] b, int off, int len) throws IOException {
 					return in.read(b, off, len);
+				}
+
+				@Override
+				public boolean isFinished() {
+					// TODO Auto-generated method stub
+					return false;
+				}
+
+				@Override
+				public boolean isReady() {
+					// TODO Auto-generated method stub
+					return false;
+				}
+
+				@Override
+				public void setReadListener(ReadListener readListener) {
+					// TODO Auto-generated method stub
+					
 				}
 			}, "multipart/form-data; boundary=----WebKitFormBoundaryo6OWJFZoG8w62LBM", "UTF-8");
 		} finally {

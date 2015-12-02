@@ -319,4 +319,10 @@ public class MockServletContext extends MockServletObject implements
 		
 	}
 
+	@Override
+	public String getVirtualServerName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 
 import com.firefly.server.http.HttpServletRequestImpl;
 import com.firefly.server.http.HttpServletResponseImpl;
@@ -114,5 +115,17 @@ public class HttpServerOutpuStream extends ServletOutputStream {
 
 	abstract protected class ChunkedData {
 		abstract void write() throws IOException;
+	}
+
+	@Override
+	public boolean isReady() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void setWriteListener(WriteListener writeListener) {
+		// TODO Auto-generated method stub
+		
 	}
 }

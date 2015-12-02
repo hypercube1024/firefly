@@ -536,4 +536,9 @@ public class HttpServletResponseImpl implements HttpServletResponse {
 		request.systemReq = true;
 	}
 
+	@Override
+	public void setContentLengthLong(long len) {
+		headMap.put("Content-Length", String.valueOf(len));
+	}
+
 }

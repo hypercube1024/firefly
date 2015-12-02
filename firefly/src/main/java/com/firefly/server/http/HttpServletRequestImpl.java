@@ -20,6 +20,7 @@ import java.util.TreeMap;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -30,6 +31,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
 import com.firefly.net.Session;
@@ -130,6 +132,24 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 				@Override
 				public int read(byte[] b, int off, int len) throws IOException {
 					return in.read(b, off, len);
+				}
+
+				@Override
+				public boolean isFinished() {
+					// TODO Auto-generated method stub
+					return false;
+				}
+
+				@Override
+				public boolean isReady() {
+					// TODO Auto-generated method stub
+					return false;
+				}
+
+				@Override
+				public void setReadListener(ReadListener readListener) {
+					// TODO Auto-generated method stub
+					
 				}
 			};
 		}
@@ -955,6 +975,24 @@ public class HttpServletRequestImpl implements HttpServletRequest {
 			getParts();
 		
 		return multipartFormData.getPart(name);
+	}
+
+	@Override
+	public long getContentLengthLong() {
+		String v = getHeader("Content-Length");
+		return v != null ? Long.parseLong(v) : 0;
+	}
+
+	@Override
+	public String changeSessionId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

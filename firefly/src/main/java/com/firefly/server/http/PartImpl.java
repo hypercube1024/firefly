@@ -136,4 +136,10 @@ public class PartImpl implements Part {
 		return pipedStream.getOutputStream();
 	}
 
+	@Override
+	public String getSubmittedFileName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

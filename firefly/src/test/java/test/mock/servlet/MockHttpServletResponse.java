@@ -224,4 +224,10 @@ public class MockHttpServletResponse implements HttpServletResponse {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public void setContentLengthLong(long len) {
+		// TODO Auto-generated method stub
+		
+	}
 }
