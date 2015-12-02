@@ -1,8 +1,6 @@
-package com.firefly.codec.common;
+package com.firefly.utils.concurrent;
 
 import java.nio.channels.ClosedChannelException;
-
-import com.firefly.utils.concurrent.Locker;
 
 /**
  * This specialized callback implements a pattern that allows a large job to be

@@ -4,10 +4,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.firefly.codec.common.Callback;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.utils.concurrent.Atomics;
+import com.firefly.utils.concurrent.Callback;
 
 /**
  * <p>

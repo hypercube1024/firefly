@@ -2,8 +2,8 @@ package com.firefly.codec.http2.stream;
 
 import java.io.Closeable;
 
-import com.firefly.codec.common.Callback;
 import com.firefly.codec.http2.frame.Frame;
+import com.firefly.utils.concurrent.Callback;
 
 /**
  * <p>

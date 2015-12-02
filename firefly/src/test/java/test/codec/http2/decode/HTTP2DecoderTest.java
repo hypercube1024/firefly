@@ -13,7 +13,6 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.codec.common.Callback;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.encode.HeadersGenerator;
 import com.firefly.codec.http2.encode.SettingsGenerator;
@@ -39,6 +38,7 @@ import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.server.http2.HTTP2ServerDecoder;
 import com.firefly.server.http2.HTTP2ServerConnection;
 import com.firefly.server.http2.ServerSessionListener;
+import com.firefly.utils.concurrent.Callback;
 
 public class HTTP2DecoderTest {
 	

@@ -1,11 +1,11 @@
 package com.firefly.codec.http2.stream;
 
-import com.firefly.codec.common.Callback;
-import com.firefly.codec.common.Promise;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.PushPromiseFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.Promise;
 
 /**
  * <p>

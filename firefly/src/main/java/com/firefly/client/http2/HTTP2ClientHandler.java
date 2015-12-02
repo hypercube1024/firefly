@@ -13,7 +13,6 @@ import javax.net.ssl.SSLEngine;
 
 import org.eclipse.jetty.alpn.ALPN;
 
-import com.firefly.codec.common.Callback;
 import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
@@ -26,6 +25,7 @@ import com.firefly.net.tcp.ssl.SSLContextFactory;
 import com.firefly.net.tcp.ssl.SSLEventHandler;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 

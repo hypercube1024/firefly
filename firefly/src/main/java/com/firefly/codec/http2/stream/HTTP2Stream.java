@@ -9,15 +9,15 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.firefly.codec.common.Callback;
-import com.firefly.codec.common.Promise;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PushPromiseFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IdleTimeout;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;

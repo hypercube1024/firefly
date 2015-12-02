@@ -1,6 +1,5 @@
 package com.firefly.client.http2;
 
-import com.firefly.codec.common.Callback;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PushPromiseFrame;
@@ -8,6 +7,7 @@ import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.StreamSPI;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;

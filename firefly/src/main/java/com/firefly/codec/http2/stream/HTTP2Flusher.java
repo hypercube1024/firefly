@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import com.firefly.codec.common.Callback;
-import com.firefly.codec.common.IteratingCallback;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.utils.collection.ArrayQueue;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.IteratingCallback;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
