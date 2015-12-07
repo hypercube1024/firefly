@@ -24,27 +24,23 @@ public interface StreamSPI extends Stream, Closeable {
 	 * @see #setAttribute(String, Object)
 	 */
 	public static final String CHANNEL_ATTRIBUTE = StreamSPI.class.getName() + ".channel";
-	
+
 	/**
-     * @return whether this stream is local or remote
-     */
-    public boolean isLocal();
+	 * @return whether this stream is local or remote
+	 */
+	public boolean isLocal();
 
 	@Override
 	public SessionSPI getSession();
 
 	/**
-	 * @return the {@link org.eclipse.jetty.http2.api.Stream.Listener}
-	 *         associated with this stream
-	 * @see #setListener(Listener)
+	 * @return the associated with this stream
 	 */
 	public Listener getListener();
 
 	/**
 	 * @param listener
-	 *            the {@link org.eclipse.jetty.http2.api.Stream.Listener}
-	 *            associated with this stream
-	 * @see #getListener()
+	 *            the associated with this stream
 	 */
 	public void setListener(Listener listener);
 

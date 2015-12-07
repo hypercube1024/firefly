@@ -29,7 +29,7 @@ public class ServerParser extends Parser {
 	 * </p>
 	 * <p>
 	 * A direct upgrade is initiated when
-	 * {@code org.eclipse.jetty.server.HttpConnection} sees a request with these
+	 * HTTP connection sees a request with these
 	 * bytes:
 	 * </p>
 	 * 

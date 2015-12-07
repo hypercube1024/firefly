@@ -14,11 +14,9 @@ import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
  * but it does assist with query string formatting.
  * </p>
  * <p>
- * UTF-8 encoding is used by default for % encoded characters. This may be
- * overridden with the org.eclipse.jetty.util.URI.charset system property.
+ * UTF-8 encoding is used by default for % encoded characters. 
  * </p>
  * 
- * @see UrlEncoded
  */
 public class URIUtils implements Cloneable {
 	public static final String SLASH = "/";

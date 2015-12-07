@@ -25,7 +25,7 @@ import java.util.Set;
  * and not mutated during that access.  If concurrent mutations of the
  * Trie is required external locks need to be applied.
  * </p>
- * @param <V>
+ * @param <V> the element of entry
  */
 public class ArrayTrie<V> extends AbstractTrie<V> {
 

@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * A Trie String lookup data structure.
  * 
- * @param <V>
+ * @param <V> the element of entry
  */
 public interface Trie<V> {
 
@@ -37,6 +37,8 @@ public interface Trie<V> {
 	 * 
 	 * @param s
 	 *            The key
+	 * 
+	 * @return The value or null if not found
 	 */
 	public V get(String s);
 
@@ -49,6 +51,8 @@ public interface Trie<V> {
 	 *            The offset within the string of the key
 	 * @param len
 	 *            the length of the key
+	 *            
+	 * @return The value or null if not found
 	 */
 	public V get(String s, int offset, int len);
 
