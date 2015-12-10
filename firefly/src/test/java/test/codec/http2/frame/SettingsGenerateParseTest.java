@@ -66,6 +66,7 @@ public class SettingsGenerateParseTest {
 			while (buffer.hasRemaining()) {
 				parser.parse(buffer);
 			}
+
 		}
 
 		return frames;
@@ -85,10 +86,10 @@ public class SettingsGenerateParseTest {
 
 		Map<Integer, Integer> settings1 = new HashMap<>();
 		settings1.put(13, 17);
-
 		ByteBuffer buffer = generator.generateSettings(settings1, true);
 		// Modify the length of the frame to make it invalid
-		buffer.putShort(1, (short) (buffer.getShort(1) - 1));
+		ByteBuffer bytes = buffer;
+		bytes.putShort(1, (short) (bytes.getShort(1) - 1));
 
 		while (buffer.hasRemaining()) {
 			parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
@@ -114,17 +115,22 @@ public class SettingsGenerateParseTest {
 		Integer value = 17;
 		settings1.put(key, value);
 
-		ByteBuffer buffer = generator.generateSettings(settings1, true);
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			ByteBuffer buffer = generator.generateSettings(settings1, true);
 
-		while (buffer.hasRemaining()) {
-			parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			while (buffer.hasRemaining()) {
+				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			}
+
+			Assert.assertEquals(1, frames.size());
+			SettingsFrame frame = frames.get(0);
+			Map<Integer, Integer> settings2 = frame.getSettings();
+			Assert.assertEquals(1, settings2.size());
+			Assert.assertEquals(value, settings2.get(key));
+			Assert.assertTrue(frame.isReply());
 		}
-
-		Assert.assertEquals(1, frames.size());
-		SettingsFrame frame = frames.get(0);
-		Map<Integer, Integer> settings2 = frame.getSettings();
-		Assert.assertEquals(1, settings2.size());
-		Assert.assertEquals(value, settings2.get(key));
-		Assert.assertTrue(frame.isReply());
 	}
 }

@@ -63,15 +63,20 @@ public class ResetGenerateParseTest {
 		int streamId = 13;
 		int error = 17;
 
-		ByteBuffer buffer = generator.generateReset(streamId, error);
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			ByteBuffer buffer = generator.generateReset(streamId, error);
 
-		while (buffer.hasRemaining()) {
-			parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			while (buffer.hasRemaining()) {
+				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			}
+
+			Assert.assertEquals(1, frames.size());
+			ResetFrame frame = frames.get(0);
+			Assert.assertEquals(streamId, frame.getStreamId());
+			Assert.assertEquals(error, frame.getError());
 		}
-
-		Assert.assertEquals(1, frames.size());
-		ResetFrame frame = frames.get(0);
-		Assert.assertEquals(streamId, frame.getStreamId());
-		Assert.assertEquals(error, frame.getError());
 	}
 }

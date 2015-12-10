@@ -33,13 +33,14 @@ public class PingGenerateParseTest {
 		// Iterate a few times to be sure generator and parser are properly
 		// reset.
 		for (int i = 0; i < 2; ++i) {
-
 			ByteBuffer buffer = generator.generatePing(payload, true);
 
 			frames.clear();
+
 			while (buffer.hasRemaining()) {
 				parser.parse(buffer);
 			}
+
 		}
 
 		Assert.assertEquals(1, frames.size());
@@ -63,16 +64,21 @@ public class PingGenerateParseTest {
 		byte[] payload = new byte[8];
 		new Random().nextBytes(payload);
 
-		ByteBuffer buffer = generator.generatePing(payload, true);
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			ByteBuffer buffer = generator.generatePing(payload, true);
 
-		while (buffer.hasRemaining()) {
-			parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			while (buffer.hasRemaining()) {
+				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			}
+
+			Assert.assertEquals(1, frames.size());
+			PingFrame frame = frames.get(0);
+			Assert.assertArrayEquals(payload, frame.getPayload());
+			Assert.assertTrue(frame.isReply());
 		}
-
-		Assert.assertEquals(1, frames.size());
-		PingFrame frame = frames.get(0);
-		Assert.assertArrayEquals(payload, frame.getPayload());
-		Assert.assertTrue(frame.isReply());
 	}
 
 	@Test

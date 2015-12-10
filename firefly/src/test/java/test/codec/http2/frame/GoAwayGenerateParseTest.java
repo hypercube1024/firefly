@@ -65,16 +65,21 @@ public class GoAwayGenerateParseTest {
 		byte[] payload = new byte[16];
 		new Random().nextBytes(payload);
 
-		ByteBuffer buffer = generator.generateGoAway(lastStreamId, error, payload);
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			ByteBuffer buffer = generator.generateGoAway(lastStreamId, error, payload);
 
-		while (buffer.hasRemaining()) {
-			parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			while (buffer.hasRemaining()) {
+				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			}
+
+			Assert.assertEquals(1, frames.size());
+			GoAwayFrame frame = frames.get(0);
+			Assert.assertEquals(lastStreamId, frame.getLastStreamId());
+			Assert.assertEquals(error, frame.getError());
+			Assert.assertArrayEquals(payload, frame.getPayload());
 		}
-
-		Assert.assertEquals(1, frames.size());
-		GoAwayFrame frame = frames.get(0);
-		Assert.assertEquals(lastStreamId, frame.getLastStreamId());
-		Assert.assertEquals(error, frame.getError());
-		Assert.assertArrayEquals(payload, frame.getPayload());
 	}
 }

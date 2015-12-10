@@ -37,14 +37,13 @@ public class PushPromiseGenerateParseTest {
 		int promisedStreamId = 17;
 		HttpFields fields = new HttpFields();
 		fields.put("Accept", "text/html");
-		fields.put("User-Agent", "Firefly");
+		fields.put("User-Agent", "Jetty");
 		MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP,
 				new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
 
 		// Iterate a few times to be sure generator and parser are properly
 		// reset.
 		for (int i = 0; i < 2; ++i) {
-
 			List<ByteBuffer> list = generator.generatePushPromise(streamId, promisedStreamId, metaData);
 
 			frames.clear();
@@ -84,28 +83,33 @@ public class PushPromiseGenerateParseTest {
 		int promisedStreamId = 17;
 		HttpFields fields = new HttpFields();
 		fields.put("Accept", "text/html");
-		fields.put("User-Agent", "Firefly");
+		fields.put("User-Agent", "Jetty");
 		MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP,
 				new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
 
-		List<ByteBuffer> list = generator.generatePushPromise(streamId, promisedStreamId, metaData);
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			List<ByteBuffer> list = generator.generatePushPromise(streamId, promisedStreamId, metaData);
 
-		for (ByteBuffer buffer : list) {
-			while (buffer.hasRemaining()) {
-				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			for (ByteBuffer buffer : list) {
+				while (buffer.hasRemaining()) {
+					parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+				}
 			}
-		}
 
-		Assert.assertEquals(1, frames.size());
-		PushPromiseFrame frame = frames.get(0);
-		Assert.assertEquals(streamId, frame.getStreamId());
-		Assert.assertEquals(promisedStreamId, frame.getPromisedStreamId());
-		MetaData.Request request = (MetaData.Request) frame.getMetaData();
-		Assert.assertEquals(metaData.getMethod(), request.getMethod());
-		Assert.assertEquals(metaData.getURI(), request.getURI());
-		for (int j = 0; j < fields.size(); ++j) {
-			HttpField field = fields.getField(j);
-			Assert.assertTrue(request.getFields().contains(field));
+			Assert.assertEquals(1, frames.size());
+			PushPromiseFrame frame = frames.get(0);
+			Assert.assertEquals(streamId, frame.getStreamId());
+			Assert.assertEquals(promisedStreamId, frame.getPromisedStreamId());
+			MetaData.Request request = (MetaData.Request) frame.getMetaData();
+			Assert.assertEquals(metaData.getMethod(), request.getMethod());
+			Assert.assertEquals(metaData.getURI(), request.getURI());
+			for (int j = 0; j < fields.size(); ++j) {
+				HttpField field = fields.getField(j);
+				Assert.assertTrue(request.getFields().contains(field));
+			}
 		}
 	}
 }

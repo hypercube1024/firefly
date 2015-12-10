@@ -96,15 +96,20 @@ public class DataGenerateParseTest {
 			}
 		}, 4096, 8192);
 
-		ByteBuffer data = ByteBuffer.wrap(largeContent);
-		List<ByteBuffer> list = generator.generateData(13, data.slice(), true, data.remaining());
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			ByteBuffer data = ByteBuffer.wrap(largeContent);
+			List<ByteBuffer> list = generator.generateData(13, data.slice(), true, data.remaining());
 
-		for (ByteBuffer buffer : list) {
-			while (buffer.hasRemaining()) {
-				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			for (ByteBuffer buffer : list) {
+				while (buffer.hasRemaining()) {
+					parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+				}
 			}
-		}
 
-		Assert.assertEquals(largeContent.length, frames.size());
+			Assert.assertEquals(largeContent.length, frames.size());
+		}
 	}
 }

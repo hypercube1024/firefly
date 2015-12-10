@@ -40,6 +40,7 @@ public class PriorityGenerateParseTest {
 			while (buffer.hasRemaining()) {
 				parser.parse(buffer);
 			}
+
 		}
 
 		Assert.assertEquals(1, frames.size());
@@ -67,17 +68,22 @@ public class PriorityGenerateParseTest {
 		int weight = 3;
 		boolean exclusive = true;
 
-		ByteBuffer buffer = generator.generatePriority(streamId, parentStreamId, weight, exclusive);
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			ByteBuffer buffer = generator.generatePriority(streamId, parentStreamId, weight, exclusive);
 
-		while (buffer.hasRemaining()) {
-			parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			while (buffer.hasRemaining()) {
+				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			}
+
+			Assert.assertEquals(1, frames.size());
+			PriorityFrame frame = frames.get(0);
+			Assert.assertEquals(streamId, frame.getStreamId());
+			Assert.assertEquals(parentStreamId, frame.getParentStreamId());
+			Assert.assertEquals(weight, frame.getWeight());
+			Assert.assertEquals(exclusive, frame.isExclusive());
 		}
-
-		Assert.assertEquals(1, frames.size());
-		PriorityFrame frame = frames.get(0);
-		Assert.assertEquals(streamId, frame.getStreamId());
-		Assert.assertEquals(parentStreamId, frame.getParentStreamId());
-		Assert.assertEquals(weight, frame.getWeight());
-		Assert.assertEquals(exclusive, frame.isExclusive());
 	}
 }
