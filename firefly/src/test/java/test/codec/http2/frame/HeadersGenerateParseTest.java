@@ -29,7 +29,7 @@ public class HeadersGenerateParseTest {
 		int streamId = 13;
 		HttpFields fields = new HttpFields();
 		fields.put("Accept", "text/html");
-		fields.put("User-Agent", "Firefly");
+		fields.put("User-Agent", "Jetty");
 		MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP,
 				new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
 
@@ -86,38 +86,44 @@ public class HeadersGenerateParseTest {
 			}
 		}, 4096, 8192);
 
-		int streamId = 13;
-		HttpFields fields = new HttpFields();
-		fields.put("Accept", "text/html");
-		fields.put("User-Agent", "Firefly");
-		MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP,
-				new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
+		// Iterate a few times to be sure generator and parser are properly
+		// reset.
+		for (int i = 0; i < 2; ++i) {
+			int streamId = 13;
+			HttpFields fields = new HttpFields();
+			fields.put("Accept", "text/html");
+			fields.put("User-Agent", "Jetty");
+			MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP,
+					new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
 
-		PriorityFrame priorityFrame = new PriorityFrame(streamId, 3 * streamId, 200, true);
-		List<ByteBuffer> list = generator.generateHeaders(streamId, metaData, priorityFrame, true);
+			PriorityFrame priorityFrame = new PriorityFrame(streamId, 3 * streamId, 200, true);
+			List<ByteBuffer> list = generator.generateHeaders(streamId, metaData, priorityFrame, true);
 
-		for (ByteBuffer buffer : list) {
-			while (buffer.hasRemaining()) {
-				parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+			frames.clear();
+			for (ByteBuffer buffer : list) {
+				buffer = buffer.slice();
+				while (buffer.hasRemaining()) {
+					parser.parse(ByteBuffer.wrap(new byte[] { buffer.get() }));
+				}
 			}
-		}
 
-		Assert.assertEquals(1, frames.size());
-		HeadersFrame frame = frames.get(0);
-		Assert.assertEquals(streamId, frame.getStreamId());
-		Assert.assertTrue(frame.isEndStream());
-		MetaData.Request request = (MetaData.Request) frame.getMetaData();
-		Assert.assertEquals(metaData.getMethod(), request.getMethod());
-		Assert.assertEquals(metaData.getURI(), request.getURI());
-		for (int j = 0; j < fields.size(); ++j) {
-			HttpField field = fields.getField(j);
-			Assert.assertTrue(request.getFields().contains(field));
+			Assert.assertEquals(1, frames.size());
+			HeadersFrame frame = frames.get(0);
+			Assert.assertEquals(streamId, frame.getStreamId());
+			Assert.assertTrue(frame.isEndStream());
+			MetaData.Request request = (MetaData.Request) frame.getMetaData();
+			Assert.assertEquals(metaData.getMethod(), request.getMethod());
+			Assert.assertEquals(metaData.getURI(), request.getURI());
+			for (int j = 0; j < fields.size(); ++j) {
+				HttpField field = fields.getField(j);
+				Assert.assertTrue(request.getFields().contains(field));
+			}
+			PriorityFrame priority = frame.getPriority();
+			Assert.assertNotNull(priority);
+			Assert.assertEquals(priorityFrame.getStreamId(), priority.getStreamId());
+			Assert.assertEquals(priorityFrame.getParentStreamId(), priority.getParentStreamId());
+			Assert.assertEquals(priorityFrame.getWeight(), priority.getWeight());
+			Assert.assertEquals(priorityFrame.isExclusive(), priority.isExclusive());
 		}
-		PriorityFrame priority = frame.getPriority();
-		Assert.assertNotNull(priority);
-		Assert.assertEquals(priorityFrame.getStreamId(), priority.getStreamId());
-		Assert.assertEquals(priorityFrame.getParentStreamId(), priority.getParentStreamId());
-		Assert.assertEquals(priorityFrame.getWeight(), priority.getWeight());
-		Assert.assertEquals(priorityFrame.isExclusive(), priority.isExclusive());
 	}
 }

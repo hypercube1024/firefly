@@ -43,6 +43,10 @@ public class HeaderBlockParser {
 
 			MetaData result = hpackDecoder.decode(toDecode);
 			buffer.limit(limit);
+			
+			if(blockBuffer != null) {
+				blockBuffer = null;
+			}
 			return result;
 		}
 	}
