@@ -55,6 +55,9 @@ public class AsynchronousTcpWorker implements Worker{
 		final int predictedRecvBufSize = predictor.nextReceiveBufferSize();
 		final ByteBuffer buf = pool.acquire(predictedRecvBufSize);
 
+		if(log.isDebugEnable()) {
+			log.debug("current socket channel is open {} for input", socketChannel.isOpen());
+		}
 		socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, currentSession, new CompletionHandler<Integer, AsynchronousTcpSession>(){
 
 			@Override
@@ -64,9 +67,12 @@ public class AsynchronousTcpWorker implements Worker{
 					if(log.isDebugEnable()) {
 						log.debug("The channel {} input is shutdown, {}", session.getSessionId(),  readBytes);
 					}
-					session.close(true);
-					pool.release(buf);
-					return;
+					try {
+						session.close(true);
+						return;
+					} finally {
+						pool.release(buf);
+					}
 				}
 				buf.flip();
 				// Update the predictor.
@@ -92,7 +98,14 @@ public class AsynchronousTcpWorker implements Worker{
 				} else {
 					log.error("socket channel reads error", t);
 				}
+				
 				try {
+					if(socketChannel.isOpen()) {
+						socketChannel.shutdownInput();
+						socketChannel.shutdownOutput();
+					}
+				} catch (IOException e) {
+					log.error("socket channel shutdown input error", t);
 					session.close(true);
 				} finally {
 					pool.release(buf);
@@ -105,6 +118,9 @@ public class AsynchronousTcpWorker implements Worker{
 			return;
 		
 		if(obj == Session.CLOSE_FLAG) {
+			if(log.isDebugEnable()) {
+				log.debug("the socket channel {} will close", currentSession.getSessionId());
+			}
 			try {
 				socketChannel.shutdownInput();
 				socketChannel.shutdownOutput();
@@ -114,7 +130,10 @@ public class AsynchronousTcpWorker implements Worker{
 			}
 			return;
 		}
-		if(obj instanceof ByteBuffer) {		
+		if(obj instanceof ByteBuffer) {	
+			if(log.isDebugEnable()) {
+				log.debug("current socket channel is open {} for output", socketChannel.isOpen());
+			}
 			socketChannel.write(((ByteBuffer)obj), config.getTimeout(), TimeUnit.MILLISECONDS, currentSession, new CompletionHandler<Integer, AsynchronousTcpSession>(){
 				
 				@Override
@@ -149,8 +168,10 @@ public class AsynchronousTcpWorker implements Worker{
 						log.error("socket channel writes error", t);
 					}
 					try {
-						socketChannel.shutdownInput();
-						socketChannel.shutdownOutput();
+						if(socketChannel.isOpen()) {
+							socketChannel.shutdownOutput();
+							socketChannel.shutdownInput();
+						}
 					} catch (IOException e) {
 						log.error("socket channel shutdown output error", t);
 						session.close(true);

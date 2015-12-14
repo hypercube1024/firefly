@@ -206,14 +206,11 @@ public class HTTP2Flusher extends IteratingCallback {
 
 			if (log.isDebugEnable())
 				log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
-						actives.size(), actives);
+						actives.size());
 
 			ByteBuffer buf = null;
 			while ((buf = buffers.poll()) != null) {
 				session.getEndPoint().encode(buf);
-				if(log.isDebugEnable()) {
-					log.debug("Writing buffer {}", buf.remaining());
-				}
 			}
 			this.succeeded();
 		}
@@ -240,7 +237,7 @@ public class HTTP2Flusher extends IteratingCallback {
 		actives.clear();
 
 		if (log.isDebugEnable())
-			log.debug("Written {} frames for {}", completes.size(), completes);
+			log.debug("Written {} frames for {}", completes.size());
 
 		// Drain the frames one by one to avoid reentrancy.
 		while (!completes.isEmpty()) {

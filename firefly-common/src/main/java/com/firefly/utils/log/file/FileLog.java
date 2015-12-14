@@ -24,21 +24,20 @@ public class FileLog implements Log, Closeable {
 	
 
 	void write(LogItem logItem) {
-		if (consoleOutput) {
-//			System.out.println("test...");
-			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
-			System.out.println(logItem.toString());
-		}
-		
-		if (!fileOutput)
-			return;
-		
-		Date d = new Date();
 		try {
+			if (consoleOutput) {
+				logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
+				System.out.println(logItem.toString());
+			}
+			
+			if (!fileOutput)
+				return;
+		
+			Date d = new Date();
 			bufferedWriter = getBufferedWriter(LogFactory.dayDateFormat.format(d));
 			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
 			bufferedWriter.append(logItem.toString() + CL);
-		} catch (IOException e) {
+		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 	}

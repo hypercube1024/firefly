@@ -609,9 +609,14 @@ public class StringUtils {
 		int index = 0;
 		for (int start; (start = s.indexOf("{}", cursor)) != -1;) {
 			ret.append(s.substring(cursor, start));
-			if (index < objs.length)
-				ret.append(objs[index]);
-			else
+			if (index < objs.length) {
+				try {
+					ret.append(objs[index]);
+				} catch (Throwable t) {
+					t.printStackTrace();
+					System.out.println(objs[index].getClass());
+				}
+			} else
 				ret.append("{}");
 			cursor = start + 2;
 			index++;

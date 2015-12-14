@@ -34,7 +34,7 @@ public class FileLogTask implements LogTask {
 						((FileLog) log).write(logItem);
 					}
 				}
-			} catch (InterruptedException e) {
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 			LogFactory.getInstance().flush();

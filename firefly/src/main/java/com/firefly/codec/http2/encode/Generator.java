@@ -34,6 +34,7 @@ public class Generator {
 		this.generators[FrameType.WINDOW_UPDATE.getType()] = new WindowUpdateGenerator(headerGenerator);
 		this.generators[FrameType.CONTINUATION.getType()] = null; // Never generated explicitly.
 		this.generators[FrameType.PREFACE.getType()] = new PrefaceGenerator();
+		this.generators[FrameType.DISCONNECT.getType()] = new DisconnectGenerator();
 
 		this.dataGenerator = new DataGenerator(headerGenerator);
 	}
