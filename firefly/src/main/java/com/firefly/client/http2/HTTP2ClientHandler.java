@@ -100,18 +100,20 @@ public class HTTP2ClientHandler implements Handler {
 
 				@Override
 				public void selected(String protocol) {
-					if (protocols.contains(protocol)) {
-						// TODO select decoder
-						if (protocol.equals("http/1.1")) {
+					try {
+						if (protocols.contains(protocol)) {
+							// TODO select decoder
+							if (protocol.equals("http/1.1")) {
 
+							} else {
+
+							}
 						} else {
-
+							log.info("Could not negotiate protocol: server [{}] - client {}", protocol, protocols);
+							session.close(false);
 						}
+					} finally {
 						ALPN.remove(sslEngine);
-					} else {
-						log.info("Could not negotiate protocol: server [{}] - client {}", protocol, protocols);
-						ALPN.remove(sslEngine);
-						session.close(false);
 					}
 				}
 			});

@@ -28,8 +28,8 @@ public class HTTP2Client extends AbstractLifeCycle {
 		EncoderChain encoder;
 
 		if (http2Configuration.isSecure()) {
-			decoder = new SecureDecoder(new HTTP2ClientDecoder());
-			encoder = new HTTP2ClientEncoder(new SecureEncoder());
+			decoder = new ClientSecureDecoder(new HTTP2ClientDecoder());
+			encoder = new HTTP2ClientEncoder(new ClientSecureEncoder());
 		} else {
 			decoder = new DecoderChain(new HTTP2ClientDecoder());
 			encoder = new EncoderChain(new HTTP2ClientEncoder());

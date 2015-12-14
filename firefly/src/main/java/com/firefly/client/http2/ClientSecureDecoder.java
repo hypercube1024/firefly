@@ -6,12 +6,12 @@ import com.firefly.codec.common.DecoderChain;
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
 
-public class SecureDecoder extends DecoderChain {
+public class ClientSecureDecoder extends DecoderChain {
 
-	public SecureDecoder() {
+	public ClientSecureDecoder() {
 	}
 
-	public SecureDecoder(Decoder next) {
+	public ClientSecureDecoder(Decoder next) {
 		super(next);
 	}
 
