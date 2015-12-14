@@ -116,132 +116,132 @@ public class FileLog implements Log, Closeable {
 
 	@Override
 	public void trace(String str) {
-		if (level > Log.TRACE)
+		if (!isTraceEnable())
 			return;
 		add(str, "TRACE", null, new Object[0]);
 	}
 
 	@Override
 	public void trace(String str, Object... objs) {
-		if (level > Log.TRACE)
+		if (!isTraceEnable())
 			return;
 		add(str, "TRACE", null, objs);
 	}
 
 	@Override
 	public void trace(String str, Throwable throwable, Object... objs) {
-		if (level > Log.TRACE)
+		if (!isTraceEnable())
 			return;
 		add(str, "TRACE", null, objs);
 	}
 
 	@Override
 	public void debug(String str) {
-		if (level > Log.DEBUG)
+		if (!isDebugEnable())
 			return;
 		add(str, "DEBUG", null, new Object[0]);
 	}
 
 	@Override
 	public void debug(String str, Object... objs) {
-		if (level > Log.DEBUG)
+		if (!isDebugEnable())
 			return;
 		add(str, "DEBUG", null, objs);
 	}
 
 	@Override
 	public void debug(String str, Throwable throwable, Object... objs) {
-		if (level > Log.DEBUG)
+		if (!isDebugEnable())
 			return;
 		add(str, "DEBUG", throwable, objs);
 	}
 
 	@Override
 	public void info(String str) {
-		if (level > Log.INFO)
+		if (!isInfoEnable())
 			return;
 		add(str, "INFO", null, new Object[0]);
 	}
 
 	@Override
 	public void info(String str, Object... objs) {
-		if (level > Log.INFO)
+		if (!isInfoEnable())
 			return;
 		add(str, "INFO", null, objs);
 	}
 
 	@Override
 	public void info(String str, Throwable throwable, Object... objs) {
-		if (level > Log.INFO)
+		if (!isInfoEnable())
 			return;
 		add(str, "INFO", throwable, objs);
 	}
 
 	@Override
 	public void warn(String str) {
-		if (level > Log.WARN)
+		if (!isWarnEnable())
 			return;
 		add(str, "WARN", null, new Object[0]);
 	}
 
 	@Override
 	public void warn(String str, Object... objs) {
-		if (level > Log.WARN)
+		if (!isWarnEnable())
 			return;
 		add(str, "WARN", null, objs);
 	}
 
 	@Override
 	public void warn(String str, Throwable throwable, Object... objs) {
-		if (level > Log.WARN)
+		if (!isWarnEnable())
 			return;
 		add(str, "WARN", throwable, objs);
 	}
 
 	@Override
 	public void error(String str, Object... objs) {
-		if (level > Log.ERROR)
+		if (!isErrorEnable())
 			return;
 		add(str, "ERROR", null, objs);
 	}
 
 	@Override
 	public void error(String str, Throwable throwable, Object... objs) {
-		if (level > Log.ERROR)
+		if (!isErrorEnable())
 			return;
 		add(str, "ERROR", throwable, objs);
 	}
 
 	@Override
 	public void error(String str) {
-		if (level > Log.ERROR)
+		if (!isErrorEnable())
 			return;
 		add(str, "ERROR", null, new Object[0]);
 	}
 
 	@Override
 	public boolean isTraceEnable() {
-		return level > Log.TRACE;
+		return level <= Log.TRACE;
 	}
 
 	@Override
 	public boolean isDebugEnable() {
-		return level > Log.DEBUG;
+		return level <= Log.DEBUG;
 	}
 
 	@Override
 	public boolean isInfoEnable() {
-		return level > Log.INFO;
+		return level <= Log.INFO;
 	}
 
 	@Override
 	public boolean isWarnEnable() {
-		return level > Log.WARN;
+		return level <= Log.WARN;
 	}
 
 	@Override
 	public boolean isErrorEnable() {
-		return level > Log.ERROR;
+		return level <= Log.ERROR;
 	}
 
 }

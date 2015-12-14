@@ -65,9 +65,6 @@ public class ServerParser extends Parser {
 	@Override
 	public void parse(ByteBuffer buffer) {
 		try {
-			if (log.isDebugEnable())
-				log.debug("Parsing {}", buffer);
-
 			while (true) {
 				switch (state) {
 				case PREFACE: {
