@@ -4,7 +4,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTP2ClientConnection;
@@ -35,7 +37,8 @@ public class HTTP2ClientDemo {
 		http2Configuration.setTcpIdleTimeout(10 * 60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 		
-
+		// Two SETTINGS frames, the initial one and the one we send from the server.
+		final CountDownLatch settingsLatch = new CountDownLatch(1);
 		FuturePromise<HTTP2ClientConnection> promise = new FuturePromise<>();
 		client.connect("127.0.0.1", 6677, promise, new Listener() {
 
@@ -56,6 +59,7 @@ public class HTTP2ClientDemo {
 			@Override
 			public void onSettings(Session session, SettingsFrame frame) {
 				System.out.println("client settings frame:" + frame);
+				settingsLatch.countDown();
 			}
 
 			@Override
@@ -128,20 +132,21 @@ public class HTTP2ClientDemo {
 		final DataFrame smallDataFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap(smallContent), false);
 		final DataFrame bigDateFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap(bigContent), true);
 
+		System.out.println("small data remaining " + smallDataFrame.remaining());
+		settingsLatch.await(5, TimeUnit.SECONDS);
+		clientStream.data(smallDataFrame, new Callback() {
 
-//		clientStream.data(smallDataFrame, new Callback() {
-//
-//			@Override
-//			public void succeeded() {
-//				System.out.println("client sents data success");
+			@Override
+			public void succeeded() {
+				System.out.println("client sents data success");
 //				clientStream.data(bigDateFrame, Callback.NOOP);
-//			}
-//
-//			@Override
-//			public void failed(Throwable x) {
-//				System.out.println("client sents data failure");
-//			}
-//		});
+			}
+
+			@Override
+			public void failed(Throwable x) {
+				System.out.println("client sents data failure");
+			}
+		});
 		
 	}
 }
