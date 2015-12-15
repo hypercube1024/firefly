@@ -64,14 +64,17 @@ public class HTTP2ClientDemo {
 
 			@Override
 			public void onReset(Session session, ResetFrame frame) {
+				System.out.println("client reset " + frame);
 			}
 
 			@Override
 			public void onClose(Session session, GoAwayFrame frame) {
+				System.out.println("client closed " + frame);
 			}
 
 			@Override
 			public void onFailure(Session session, Throwable failure) {
+				failure.printStackTrace();
 			}
 		});
 
@@ -83,7 +86,7 @@ public class HTTP2ClientDemo {
 		MetaData.Request metaData = new MetaData.Request("POST", HttpScheme.HTTP,
 				new HostPortHttpField("127.0.0.1:6677"), "/data", HttpVersion.HTTP_2, fields);
 
-		HeadersFrame headersFrame = new HeadersFrame(5, metaData, null, false);
+		HeadersFrame headersFrame = new HeadersFrame(metaData, null, false);
 		FuturePromise<Stream> streamPromise = new FuturePromise<>();
 		connection.getHttp2Session().newStream(headersFrame, streamPromise, new Stream.Listener() {
 
@@ -104,10 +107,12 @@ public class HTTP2ClientDemo {
 
 			@Override
 			public void onReset(Stream stream, ResetFrame frame) {
+				System.out.println("client reset: " + stream + "|" + frame);
 			}
 
 			@Override
 			public void onTimeout(Stream stream, Throwable x) {
+				x.printStackTrace();
 			}
 		});
 
@@ -124,19 +129,19 @@ public class HTTP2ClientDemo {
 		final DataFrame bigDateFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap(bigContent), true);
 
 
-		clientStream.data(smallDataFrame, new Callback() {
-
-			@Override
-			public void succeeded() {
-				System.out.println("client sents data success");
-				clientStream.data(bigDateFrame, Callback.NOOP);
-			}
-
-			@Override
-			public void failed(Throwable x) {
-				System.out.println("client sents data failure");
-			}
-		});
+//		clientStream.data(smallDataFrame, new Callback() {
+//
+//			@Override
+//			public void succeeded() {
+//				System.out.println("client sents data success");
+//				clientStream.data(bigDateFrame, Callback.NOOP);
+//			}
+//
+//			@Override
+//			public void failed(Throwable x) {
+//				System.out.println("client sents data failure");
+//			}
+//		});
 		
 	}
 }

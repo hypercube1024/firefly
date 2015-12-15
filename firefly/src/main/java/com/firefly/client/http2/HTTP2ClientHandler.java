@@ -164,6 +164,7 @@ public class HTTP2ClientHandler implements Handler {
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
+		log.info("client session {} closed", session.getSessionId());
 		try {
 			HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) session.getAttachment();
 			if (http2ClientConnection != null && http2ClientConnection.isOpen()) {

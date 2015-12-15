@@ -61,12 +61,12 @@ public class HTTP2ServerDemo {
 
 					@Override
 					public void onReset(Stream stream, ResetFrame frame) {
-
+						System.out.println("server reset: " + stream + "|" + frame);
 					}
 
 					@Override
 					public void onTimeout(Stream stream, Throwable x) {
-
+						x.printStackTrace();
 					}
 				};
 			}
@@ -82,10 +82,12 @@ public class HTTP2ServerDemo {
 
 			@Override
 			public void onReset(Session session, ResetFrame frame) {
+				System.out.println("server reset " + frame);
 			}
 
 			@Override
 			public void onClose(Session session, GoAwayFrame frame) {
+				System.out.println("server closed " + frame);
 			}
 
 			@Override
