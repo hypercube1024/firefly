@@ -16,7 +16,6 @@ import com.firefly.net.EventManager;
 import com.firefly.net.OutputEntry;
 import com.firefly.net.ReceiveBufferSizePredictor;
 import com.firefly.net.Worker;
-import com.firefly.net.buffer.ThreadSafeIOBufferPool;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -24,7 +23,6 @@ import com.firefly.utils.time.Millisecond100Clock;
 public class AsynchronousTcpWorker implements Worker {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private ThreadSafeIOBufferPool pool = new ThreadSafeIOBufferPool();
 	private final Config config;
 	final EventManager eventManager;
 
@@ -56,7 +54,7 @@ public class AsynchronousTcpWorker implements Worker {
 
 		final ReceiveBufferSizePredictor predictor = currentSession.receiveBufferSizePredictor;
 		final int predictedRecvBufSize = predictor.nextReceiveBufferSize();
-		final ByteBuffer buf = pool.acquire(predictedRecvBufSize);
+		final ByteBuffer buf = ByteBuffer.allocate(predictedRecvBufSize);
 
 		if (log.isDebugEnable()) {
 			log.debug("current socket channel is open {} for input", socketChannel.isOpen());
@@ -71,12 +69,8 @@ public class AsynchronousTcpWorker implements Worker {
 							if (log.isDebugEnable()) {
 								log.debug("The channel {} input is closed, {}", session.getSessionId(), readBytes);
 							}
-							try {
-								session.close(true);
-								return;
-							} finally {
-								pool.release(buf);
-							}
+							session.close(true);
+							return;
 						}
 						buf.flip();
 						// Update the predictor.
@@ -88,7 +82,6 @@ public class AsynchronousTcpWorker implements Worker {
 						} catch (Throwable t) {
 							eventManager.executeExceptionTask(session, t);
 						} finally {
-							pool.release(buf);
 							read(socketChannel, session);
 						}
 					}
@@ -102,12 +95,8 @@ public class AsynchronousTcpWorker implements Worker {
 						} else {
 							log.error("socket channel reads error", t);
 						}
-
-						try {
-							shutdownSocketChannel(socketChannel);
-						} finally {
-							pool.release(buf);
-						}
+						
+						shutdownSocketChannel(socketChannel);
 					}
 				});
 	}
