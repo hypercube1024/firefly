@@ -10,6 +10,7 @@ import com.firefly.net.OutputEntry;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.io.BufferUtils;
 
 public class HTTP2MockSession implements Session {
 
@@ -114,6 +115,7 @@ public class HTTP2MockSession implements Session {
 	@Override
 	public void write(ByteBuffer byteBuffer, Callback callback) {
 		outboundData.offer(byteBuffer);
+		byteBuffer.flip();
 		callback.succeeded();
 	}
 
@@ -121,6 +123,7 @@ public class HTTP2MockSession implements Session {
 	public void write(ByteBuffer[] buffers, Callback callback) {
 		for(ByteBuffer buffer : buffers) {
 			outboundData.offer(buffer);
+			buffer.flip();
 		}
 		callback.succeeded();
 		
@@ -128,8 +131,7 @@ public class HTTP2MockSession implements Session {
 
 	@Override
 	public void write(Collection<ByteBuffer> buffers, Callback callback) {
-		outboundData.addAll(buffers);
-		callback.succeeded();
+		write(buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), callback);
 	}
 
 	@Override
