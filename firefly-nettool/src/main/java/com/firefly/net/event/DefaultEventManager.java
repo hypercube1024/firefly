@@ -16,7 +16,7 @@ public class DefaultEventManager implements EventManager {
 	private Config config;
 
 	public DefaultEventManager(Config config) {
-		log.info("CurrentThreadEventManager");
+		log.info("default event manager");
 		this.config = config;
 	}
 
