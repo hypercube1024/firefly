@@ -96,7 +96,7 @@ public class AsynchronousTcpWorker implements Worker {
 							log.error("socket channel reads error", t);
 						}
 						
-						shutdownSocketChannel(socketChannel);
+						session.shutdownSocketChannel();
 					}
 				});
 	}
@@ -110,7 +110,7 @@ public class AsynchronousTcpWorker implements Worker {
 		} else {
 			log.error("socket channel writes error", t);
 		}
-		shutdownSocketChannel(socketChannel);
+		session.shutdownSocketChannel();
 		entry.getCallback().failed(t);
 	}
 
@@ -121,7 +121,7 @@ public class AsynchronousTcpWorker implements Worker {
 			if (log.isDebugEnable()) {
 				log.debug("The channel {} output is closed, {}", session.getSessionId(), writeBytes);
 			}
-			shutdownSocketChannel(socketChannel);
+			session.shutdownSocketChannel();
 			return;
 		}
 		session.writtenBytes += writeBytes;
@@ -182,18 +182,9 @@ public class AsynchronousTcpWorker implements Worker {
 			break;
 		case DISCONNECTION:
 			log.debug("the socket channel {} will close", currentSession.getSessionId());
-			shutdownSocketChannel(socketChannel);
+			currentSession.shutdownSocketChannel();
 		default:
 			break;
-		}
-	}
-
-	private void shutdownSocketChannel(AsynchronousSocketChannel socketChannel) {
-		try {
-			socketChannel.shutdownOutput();
-			socketChannel.shutdownInput();
-		} catch (IOException e) {
-			log.error("socket channel shutdown error", e);
 		}
 	}
 

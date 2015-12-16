@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -180,6 +181,17 @@ public class AsynchronousTcpSession implements Session {
 			worker.eventManager.executeCloseTask(this);
 		} else {
 			write(DISCONNECTION_FLAG);
+		}
+	}
+	
+	void shutdownSocketChannel() {
+		try {
+			socketChannel.shutdownOutput();
+			socketChannel.shutdownInput();
+		} catch(ClosedChannelException e) {
+			log.debug("socket channel is closed", e);
+		} catch (IOException e) {
+			log.error("socket channel shutdown error", e);
 		}
 	}
 	
