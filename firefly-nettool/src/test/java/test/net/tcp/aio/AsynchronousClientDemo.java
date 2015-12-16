@@ -17,8 +17,7 @@ public class AsynchronousClientDemo {
 				"localhost", 9900, 
 				new StringLineDecoder(), 
 				new StringLineEncoder(), 
-				new PipelineClientHandler(), 
-				"aio");
+				new PipelineClientHandler());
 		
 		long start = System.currentTimeMillis();
 		TcpConnection c = client.connect().get();

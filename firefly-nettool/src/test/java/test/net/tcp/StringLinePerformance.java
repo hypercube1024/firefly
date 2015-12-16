@@ -144,7 +144,7 @@ public class StringLinePerformance {
 	public static void main(String[] args) {
 		ExecutorService executorService = Executors.newFixedThreadPool(THREAD);
 		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900,
-				new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler(), "nio");
+				new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler());
 		final CyclicBarrier barrier = new CyclicBarrier(THREAD, new StatTask());
 
 		for (int i = 0; i < THREAD; i++)

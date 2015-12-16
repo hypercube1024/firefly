@@ -13,7 +13,7 @@ import com.firefly.utils.log.LogFactory;
 
 public class SimpleTcpClientExample {
 	public static void main(String[] args) throws Throwable {
-		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler(), "nio");
+		final SimpleTcpClient client = new SimpleTcpClient("localhost", 9900, new StringLineDecoder(), new StringLineEncoder(), new PipelineClientHandler());
 		long start = System.currentTimeMillis();
 		TcpConnection c = client.connect().get();
 		long end = System.currentTimeMillis();

@@ -4,9 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTP2ClientConnection;
@@ -29,16 +27,16 @@ import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
+import com.firefly.utils.io.BufferUtils;
 
 public class HTTP2ClientDemo {
-	public static void main(String[] args) throws InterruptedException, ExecutionException, UnsupportedEncodingException {
+	public static void main(String[] args)
+			throws InterruptedException, ExecutionException, UnsupportedEncodingException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setFlowControlStrategy("simple");
 		http2Configuration.setTcpIdleTimeout(10 * 60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
-		
-		// Two SETTINGS frames, the initial one and the one we send from the server.
-		final CountDownLatch settingsLatch = new CountDownLatch(1);
+
 		FuturePromise<HTTP2ClientConnection> promise = new FuturePromise<>();
 		client.connect("127.0.0.1", 6677, promise, new Listener() {
 
@@ -59,7 +57,6 @@ public class HTTP2ClientDemo {
 			@Override
 			public void onSettings(Session session, SettingsFrame frame) {
 				System.out.println("client settings frame:" + frame);
-				settingsLatch.countDown();
 			}
 
 			@Override
@@ -106,7 +103,9 @@ public class HTTP2ClientDemo {
 
 			@Override
 			public void onData(Stream stream, DataFrame frame, Callback callback) {
-				System.out.println("client receives data:" + frame);
+				System.out.println("client receives data:" + frame.remaining() + "|"
+						+ BufferUtils.toUTF8String(frame.getData()));
+				callback.succeeded();
 			}
 
 			@Override
@@ -123,27 +122,38 @@ public class HTTP2ClientDemo {
 		final Stream clientStream = streamPromise.get();
 		System.out.println("client stream id: " + clientStream.getId());
 
-		
-
-		final DataFrame smallDataFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap("hello world!".getBytes("UTF-8")), false);
-		final DataFrame bigDataFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap("big hello world!".getBytes("UTF-8")), true);
+		final DataFrame smallDataFrame = new DataFrame(clientStream.getId(),
+				ByteBuffer.wrap("hello world!".getBytes("UTF-8")), false);
+		final DataFrame bigDataFrame = new DataFrame(clientStream.getId(),
+				ByteBuffer.wrap("big hello world!".getBytes("UTF-8")), true);
 
 		System.out.println("small data remaining " + smallDataFrame.remaining());
 		System.out.println("big data remaining " + bigDataFrame.remaining());
-		settingsLatch.await(5, TimeUnit.SECONDS);
+
 		clientStream.data(smallDataFrame, new Callback() {
 
 			@Override
 			public void succeeded() {
-				System.out.println("client sents data success");
-				clientStream.data(bigDataFrame, Callback.NOOP);
+				System.out.println("client sents small data success");
+				clientStream.data(bigDataFrame, new Callback(){
+
+					@Override
+					public void succeeded() {
+						System.out.println("client sents big data success");
+						
+					}
+
+					@Override
+					public void failed(Throwable x) {
+						System.out.println("client sents big data failure");
+					}});
 			}
 
 			@Override
 			public void failed(Throwable x) {
-				System.out.println("client sents data failure");
+				System.out.println("client sents small data failure");
 			}
 		});
-		
+
 	}
 }

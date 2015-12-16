@@ -14,6 +14,8 @@ import org.eclipse.jetty.alpn.ALPN;
 
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -197,7 +199,7 @@ public class SSLSession implements Closeable {
 		                initialHSStatus = doTasks();
 		
 		            writeBuf.flip();
-		            session.write(writeBuf);
+		            session.write(writeBuf, Callback.NOOP);
 		            break wrap;
 		            
 		        case BUFFER_OVERFLOW:
@@ -329,6 +331,15 @@ public class SSLSession implements Closeable {
             }
         }
     }
+    
+    public int write(ByteBuffer[] outputBuffers, Callback callback) throws Throwable {
+    	int ret = 0;
+    	CountingCallback countingCallback = new CountingCallback(callback, outputBuffers.length);
+    	for(ByteBuffer outputBuffer : outputBuffers) {
+    		ret += write(outputBuffer, countingCallback);
+    	}
+    	return ret;
+    }
 	
 	/**
      * This method is used to encrypt and flush to socket channel
@@ -337,7 +348,7 @@ public class SSLSession implements Closeable {
      * @return writen length
      * @throws Throwable sslEngine error during data write
      */
-    public int write(ByteBuffer outputBuffer) throws Throwable {
+    public int write(ByteBuffer outputBuffer, Callback callback) throws Throwable {
     	if (!initialHSComplete)
             throw new IllegalStateException("The initial handshake is not complete.");
     	
@@ -361,7 +372,7 @@ public class SSLSession implements Closeable {
 		                doTasks();
 		            
 		            writeBuf.flip();
-		            session.write(writeBuf);
+		            session.write(writeBuf, callback);
 		            break wrap;
 		
 		        case BUFFER_OVERFLOW:
@@ -403,12 +414,14 @@ public class SSLSession implements Closeable {
      * @throws Throwable
      * 			A runtime exception
      */
-    public long transferTo(FileChannel fc, long pos, long len) throws Throwable {
+    public long transferTo(FileChannel fc, long pos, long len, Callback callback) throws Throwable {
     	if (!initialHSComplete)
             throw new IllegalStateException();
 
     	long ret = 0;
     	int bufferSize = 1024 * 8;
+    	long bufferCount = (len + bufferSize - 1) / bufferSize;
+		CountingCallback countingCallback = new CountingCallback(callback, (int)bufferCount);
     	try {
 	    	ByteBuffer buf = ByteBuffer.allocate(bufferSize);
 	    	int i = 0;
@@ -417,7 +430,7 @@ public class SSLSession implements Closeable {
 	    			ret += i;
 	    			pos += i;
 	    			buf.flip();
-	    			write(buf);
+	    			write(buf, countingCallback);
 	    			buf = ByteBuffer.allocate(bufferSize);
 	    		}
 	    		if(ret >= len)
@@ -429,10 +442,10 @@ public class SSLSession implements Closeable {
     	return ret;
     }
     
-	public long transferFileRegion(FileRegion file) throws Throwable {
+	public long transferFileRegion(FileRegion file, Callback callback) throws Throwable {
     	long ret = 0;
     	try {
-    		ret = transferTo(file.getFile(), file.getPosition(), file.getCount());
+    		ret = transferTo(file.getFile(), file.getPosition(), file.getCount(), callback);
     	} finally {
     		file.releaseExternalResources();
     	}

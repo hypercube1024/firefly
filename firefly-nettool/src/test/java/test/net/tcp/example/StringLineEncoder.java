@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Encoder;
 import com.firefly.net.Session;
+import com.firefly.utils.concurrent.Callback;
 
 public class StringLineEncoder implements Encoder {
 
@@ -14,7 +15,7 @@ public class StringLineEncoder implements Encoder {
 		String str = message + LINE_LIMITOR;
 
 		ByteBuffer byteBuffer = ByteBuffer.wrap(str.getBytes());
-		session.write(byteBuffer);
+		session.write(byteBuffer, Callback.NOOP);
 	}
 
 }

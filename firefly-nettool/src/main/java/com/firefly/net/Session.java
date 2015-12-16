@@ -2,13 +2,17 @@ package com.firefly.net;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.utils.concurrent.Callback;
 
 public interface Session {
-	int CLOSE = 0;
-	int OPEN = 1;
-	String CLOSE_FLAG = "#firefly-session-close";
+	
+	public static final DisconnectionOutputEntry DISCONNECTION_FLAG = new DisconnectionOutputEntry(null, null);
+	
+	public static final int CLOSE = 0;
+	public static final int OPEN = 1;
 
 	void attachObject(Object attachment);
 	
@@ -17,10 +21,16 @@ public interface Session {
 	void fireReceiveMessage(Object message);
 
 	void encode(Object message);
-
-	void write(ByteBuffer byteBuffer);
 	
-	void write(FileRegion fileRegion);
+	void write(OutputEntry<?> entry);
+	
+	void write(ByteBuffer byteBuffer, Callback callback);
+	
+	void write(ByteBuffer[] buffers, Callback callback);
+	
+	void write(Collection<ByteBuffer> buffers, Callback callback);
+	
+	void write(FileRegion file, Callback callback);
 
 	int getSessionId();
 

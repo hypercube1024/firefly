@@ -56,7 +56,8 @@ public class HTTP2ServerDemo {
 
 					@Override
 					public void onData(Stream stream, DataFrame frame, Callback callback) {
-						System.out.println("server data size:" + frame.remaining() + "|" + BufferUtils.toUTF8String(frame.getData()));
+						System.out.println("server data size:" + frame.remaining() + "|"
+								+ BufferUtils.toUTF8String(frame.getData()));
 						callback.succeeded();
 					}
 

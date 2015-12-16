@@ -10,6 +10,7 @@ import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.net.support.wrap.client.SessionAttachment;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -56,7 +57,7 @@ public class SendFileHandler implements Handler {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			session.write(fileRegion);
+			session.write(fileRegion, Callback.NOOP);
 		} else {
 			log.debug("recive: " + str);
 			session.encode(message);

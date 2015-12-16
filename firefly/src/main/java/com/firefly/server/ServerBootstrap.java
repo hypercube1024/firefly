@@ -7,7 +7,6 @@ import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
-import com.firefly.net.tcp.nio.TcpServer;
 import com.firefly.server.http.HttpDecoder;
 import com.firefly.server.http.HttpEncoder;
 import com.firefly.server.http.HttpHandler;
@@ -74,63 +73,33 @@ public class ServerBootstrap {
 		
 		log.info("firefly server tempdir [{}]", config.getTempdir());
 		log.info("keep alive [{}]", config.isKeepAlive());
-		log.info("net processor type [{}]", config.getNetProcessorType());
+		log.info("net processor type [aio]");
 		log.info("max connection timeout [{}]", config.getMaxConnectionTimeout());
 		if(config.isSecure()) {
 			log.info("enable SSL");
-			Server server = null;
-			switch (config.getNetProcessorType()) {
-			case "nio":
-				server = new TcpServer(
-						new SSLDecoder(new HttpDecoder(config)), 
-						new SSLEncoder(), 
-						new HttpHandler(controller, config), 
-						config.getMaxConnectionTimeout());
-				server.start(config.getHost(), config.getPort());
-				break;
-			case "aio":
-				config.setRequestHandler("currentThread");
-				com.firefly.net.Config netConfig = new com.firefly.net.Config();
-				netConfig.setDecoder(new SSLDecoder(new HttpDecoder(config)));
-				netConfig.setEncoder(new SSLEncoder());
-				netConfig.setHandler(new HttpHandler(controller, config));
-				netConfig.setTimeout(config.getMaxConnectionTimeout());
-				netConfig.setAsynchronousMaximumPoolSize(config.getAsynchronousMaximumPoolSize());
-				netConfig.setAsynchronousPoolKeepAliveTime(config.getAsynchronousPoolKeepAliveTime());
-				server = new AsynchronousTcpServer();
-				server.setConfig(netConfig);
-				server.start(config.getHost(), config.getPort());
-				break;
-			default:
-				break;
-			}
+			config.setRequestHandler("currentThread");
+			com.firefly.net.Config netConfig = new com.firefly.net.Config();
+			netConfig.setDecoder(new SSLDecoder(new HttpDecoder(config)));
+			netConfig.setEncoder(new SSLEncoder());
+			netConfig.setHandler(new HttpHandler(controller, config));
+			netConfig.setTimeout(config.getMaxConnectionTimeout());
+			netConfig.setAsynchronousMaximumPoolSize(config.getAsynchronousMaximumPoolSize());
+			netConfig.setAsynchronousPoolKeepAliveTime(config.getAsynchronousPoolKeepAliveTime());
+			Server server = new AsynchronousTcpServer();
+			server.setConfig(netConfig);
+			server.start(config.getHost(), config.getPort());
 		} else {
-			Server server = null;
-			switch (config.getNetProcessorType()) {
-			case "nio":
-				server = new TcpServer(
-						new HttpDecoder(config), 
-						new HttpEncoder(), 
-						new HttpHandler(controller, config), 
-						config.getMaxConnectionTimeout());
-				server.start(config.getHost(), config.getPort());
-				break;
-			case "aio":				
-				config.setRequestHandler("currentThread");
-				com.firefly.net.Config netConfig = new com.firefly.net.Config();
-				netConfig.setDecoder(new HttpDecoder(config));
-				netConfig.setEncoder(new HttpEncoder());
-				netConfig.setHandler(new HttpHandler(controller, config));
-				netConfig.setTimeout(config.getMaxConnectionTimeout());
-				netConfig.setAsynchronousMaximumPoolSize(config.getAsynchronousMaximumPoolSize());
-				netConfig.setAsynchronousPoolKeepAliveTime(config.getAsynchronousPoolKeepAliveTime());
-				server = new AsynchronousTcpServer();
-				server.setConfig(netConfig);
-				server.start(config.getHost(), config.getPort());
-				break;
-			default:
-				break;
-			}
+			config.setRequestHandler("currentThread");
+			com.firefly.net.Config netConfig = new com.firefly.net.Config();
+			netConfig.setDecoder(new HttpDecoder(config));
+			netConfig.setEncoder(new HttpEncoder());
+			netConfig.setHandler(new HttpHandler(controller, config));
+			netConfig.setTimeout(config.getMaxConnectionTimeout());
+			netConfig.setAsynchronousMaximumPoolSize(config.getAsynchronousMaximumPoolSize());
+			netConfig.setAsynchronousPoolKeepAliveTime(config.getAsynchronousPoolKeepAliveTime());
+			Server server = new AsynchronousTcpServer();
+			server.setConfig(netConfig);
+			server.start(config.getHost(), config.getPort());
 		}
 	}
 }

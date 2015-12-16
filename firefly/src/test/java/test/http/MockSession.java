@@ -3,12 +3,15 @@ package test.http;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+import com.firefly.net.OutputEntry;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.server.http.HttpServletRequestImpl;
 import com.firefly.server.http.SessionAttachment;
+import com.firefly.utils.concurrent.Callback;
 
 public class MockSession implements Session {
 	
@@ -97,18 +100,6 @@ public class MockSession implements Session {
 	}
 
 	@Override
-	public void write(ByteBuffer byteBuffer) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void write(FileRegion fileRegion) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public void attachObject(Object attachment) {
 		this.attachment = attachment;
 	}
@@ -116,6 +107,36 @@ public class MockSession implements Session {
 	@Override
 	public Object getAttachment() {
 		return attachment;
+	}
+
+	@Override
+	public void write(ByteBuffer byteBuffer, Callback callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void write(ByteBuffer[] buffers, Callback callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void write(Collection<ByteBuffer> buffers, Callback callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void write(FileRegion file, Callback callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void write(OutputEntry<?> entry) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

@@ -2,10 +2,14 @@ package test.codec.http2.decode;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.LinkedList;
 
+import com.firefly.net.ByteBufferArrayOutputEntry;
+import com.firefly.net.OutputEntry;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.utils.concurrent.Callback;
 
 public class HTTP2MockSession implements Session {
 
@@ -31,18 +35,10 @@ public class HTTP2MockSession implements Session {
 
 	@Override
 	public void encode(Object message) {
-		write((ByteBuffer) message);
-	}
-
-	@Override
-	public void write(ByteBuffer byteBuffer) {
-		outboundData.offer(byteBuffer);
-	}
-
-	@Override
-	public void write(FileRegion fileRegion) {
-		// TODO Auto-generated method stub
-
+		if (message instanceof ByteBufferArrayOutputEntry) {
+			ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) message;
+			write(outputEntry);
+		}
 	}
 
 	@Override
@@ -113,6 +109,39 @@ public class HTTP2MockSession implements Session {
 	public InetSocketAddress getRemoteAddress() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void write(ByteBuffer byteBuffer, Callback callback) {
+		outboundData.offer(byteBuffer);
+		callback.succeeded();
+	}
+
+	@Override
+	public void write(ByteBuffer[] buffers, Callback callback) {
+		for(ByteBuffer buffer : buffers) {
+			outboundData.offer(buffer);
+		}
+		callback.succeeded();
+		
+	}
+
+	@Override
+	public void write(Collection<ByteBuffer> buffers, Callback callback) {
+		outboundData.addAll(buffers);
+		callback.succeeded();
+	}
+
+	@Override
+	public void write(FileRegion file, Callback callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void write(OutputEntry<?> entry) {
+		ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry)entry;
+		write(outputEntry.getData(), outputEntry.getCallback());
 	}
 
 }

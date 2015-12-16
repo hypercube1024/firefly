@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import com.firefly.net.Encoder;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.concurrent.Callback;
 
 public class SSLEncoder implements Encoder {
 
@@ -17,7 +18,7 @@ public class SSLEncoder implements Encoder {
 		
 		String str = message + LINE_LIMITOR;
 		ByteBuffer byteBuffer = ByteBuffer.wrap(str.getBytes("UTF-8"));
-		c.write(byteBuffer);
+		c.write(byteBuffer, Callback.NOOP);
 	}
 
 }

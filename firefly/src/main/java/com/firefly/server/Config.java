@@ -46,7 +46,6 @@ public class Config {
 	private String requestHandler = "currentThread"; // threadPool, currentThread
 	
 	// asynchronous I/O thread pool settings
-	private String netProcessorType = "aio"; // nio, aio
 	private int asynchronousMaximumPoolSize = 64;
 	private int asynchronousPoolKeepAliveTime = 15 * 1000;
 	
@@ -414,14 +413,6 @@ public class Config {
 
 	public void setRequestHandler(String requestHandler) {
 		this.requestHandler = requestHandler;
-	}
-
-	public String getNetProcessorType() {
-		return netProcessorType;
-	}
-
-	public void setNetProcessorType(String netProcessorType) {
-		this.netProcessorType = netProcessorType;
 	}
 
 	public int getAsynchronousMaximumPoolSize() {

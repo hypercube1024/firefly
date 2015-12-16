@@ -1,11 +1,9 @@
 package com.firefly.server.http2;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.common.EncoderChain;
+import com.firefly.net.ByteBufferArrayOutputEntry;
 import com.firefly.net.Encoder;
 import com.firefly.net.Session;
-import com.firefly.net.buffer.FileRegion;
 
 public class HTTP2ServerEncoder extends EncoderChain {
 
@@ -21,10 +19,10 @@ public class HTTP2ServerEncoder extends EncoderChain {
 		if (next != null) {
 			next.encode(message, session);
 		} else {
-			if (message instanceof ByteBuffer)
-				session.write((ByteBuffer) message);
-			else if (message instanceof FileRegion)
-				session.write((FileRegion) message);
+			if (message instanceof ByteBufferArrayOutputEntry) {
+				ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) message;
+				session.write(outputEntry);
+			}
 		}
 	}
 
