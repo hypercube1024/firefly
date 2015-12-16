@@ -167,21 +167,22 @@ public class AsynchronousTcpSession implements Session {
 	}
 
 	@Override
-	public void close(boolean immediately) {
-		if(immediately) {
-			try {
-				socketChannel.close();
-			} catch (AsynchronousCloseException e) {
-				if(log.isDebugEnable())
-					log.debug("session {} asynchronous close", sessionId);
-			} catch (IOException e) {
-				log.error("channel close error", e);
-			}
-			state = CLOSE;
-			worker.eventManager.executeCloseTask(this);
-		} else {
-			write(DISCONNECTION_FLAG);
+	public void close() {
+		write(DISCONNECTION_FLAG);
+	}
+	
+	@Override
+	public void closeNow() {
+		try {
+			socketChannel.close();
+		} catch (AsynchronousCloseException e) {
+			if(log.isDebugEnable())
+				log.debug("session {} asynchronous close", sessionId);
+		} catch (IOException e) {
+			log.error("channel close error", e);
 		}
+		state = CLOSE;
+		worker.eventManager.executeCloseTask(this);
 	}
 	
 	void shutdownSocketChannel() {

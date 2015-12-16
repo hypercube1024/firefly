@@ -72,12 +72,6 @@ public class MockSession implements Session {
 	}
 
 	@Override
-	public void close(boolean immediately) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public int getState() {
 		// TODO Auto-generated method stub
 		return 0;
@@ -135,6 +129,18 @@ public class MockSession implements Session {
 
 	@Override
 	public void write(OutputEntry<?> entry) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void close() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void closeNow() {
 		// TODO Auto-generated method stub
 		
 	}

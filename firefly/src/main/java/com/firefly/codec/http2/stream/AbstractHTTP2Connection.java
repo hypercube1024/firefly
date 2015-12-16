@@ -62,7 +62,7 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 			sslSession.close();
 		}
 		if(tcpSession != null && tcpSession.isOpen()) {
-			tcpSession.close(false);
+			tcpSession.close();
 		}
 		attachment = null;
 		closed = true;

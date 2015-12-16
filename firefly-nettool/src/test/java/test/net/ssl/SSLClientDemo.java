@@ -82,7 +82,7 @@ public class SSLClientDemo {
 					throws Throwable {
 				t.printStackTrace();
 				if(session.isOpen())
-					session.close(true);
+					session.closeNow();
 			}}, 1000 * 5);
 		
 		for (int i = 0; i < 10; i++) {

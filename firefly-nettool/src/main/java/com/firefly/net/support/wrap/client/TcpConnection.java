@@ -45,8 +45,12 @@ abstract public class TcpConnection {
 		return session.getSessionId();
 	}
 
-	public void close(boolean b) {
-		session.close(b);
+	public void close() {
+		session.close();
+	}
+	
+	public void closeNow() {
+		session.closeNow();
 	}
 
 	public boolean isOpen() {

@@ -735,7 +735,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	public void disconnect() {
 		if (log.isDebugEnable())
 			log.debug("Disconnecting {}", this);
-		endPoint.close(false);
+		endPoint.close();
 	}
 
 	private void terminate() {
@@ -911,7 +911,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			case GO_AWAY: {
 				// We just sent a GO_AWAY, only shutdown the
 				// output without closing yet, to allow reads.
-				getEndPoint().close(false); // TODO the firefly TCP session does
+				getEndPoint().close(); // TODO the firefly TCP session does
 											// not implement half-closed method
 				break;
 			}

@@ -80,7 +80,7 @@ public class TestTcpClientAndServer {
 			Assert.assertThat((String) c.send("hello client 2").get(), is("hello client 2"));
 			Assert.assertThat((String) c.send("quit").get(), is("bye!"));
 		} finally {
-			c.close(false);
+			c.close();
 		}
 		
 	}

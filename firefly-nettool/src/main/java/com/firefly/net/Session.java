@@ -46,7 +46,9 @@ public interface Session {
 	
 	long getWrittenBytes();
 
-	void close(boolean immediately);
+	void close();
+	
+	void closeNow();
 
 	int getState();
 

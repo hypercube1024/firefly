@@ -27,7 +27,7 @@ public class StringLineHandler implements Handler {
 		String str = (String) message;
 		if (str.equals("quit")) {
 			session.encode("bye!");
-			session.close(false);
+			session.close();
 		} else {
 			log.debug("recive: " + str);
 			session.encode(message);

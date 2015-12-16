@@ -35,7 +35,7 @@ public class SendFileHandler implements Handler {
 		String str = (String) message;
 		if (str.equals("quit")) {
 			session.encode("bye!");
-			session.close(false);
+			session.close();
 		} else if (str.equals("getfile")) {
 			RandomAccessFile raf = null;
 			File file = null;

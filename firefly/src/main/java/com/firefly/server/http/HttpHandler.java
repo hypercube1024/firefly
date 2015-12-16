@@ -89,7 +89,7 @@ public class HttpHandler implements Handler {
 	@Override
 	public void exceptionCaught(Session session, Throwable t) throws Throwable {
 		log.error("server handle error", t);
-		session.close(true);
+		session.closeNow();
 	}
 
 	public void shutdown() {

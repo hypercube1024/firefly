@@ -89,7 +89,7 @@ public class ThreadPoolWrapper {
 							String msg = "Server is temporarily overloaded, waiting for business process is timeout";
 							SystemHtmlPage.responseSystemPage(request, response, config.getEncoding(), HttpServletResponse.SC_SERVICE_UNAVAILABLE, msg);
 						} else {
-							request.session.close(true);
+							request.session.closeNow();
 						}
 					} finally {
 						((BusinessLogicFutureTask<Void>)r).cancel(false);
@@ -110,7 +110,7 @@ public class ThreadPoolWrapper {
 						String msg = "Server internal error";
 						SystemHtmlPage.responseSystemPage(request, response, config.getEncoding(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
 					} else {
-						request.session.close(true);
+						request.session.closeNow();
 					}
 				}
 			}

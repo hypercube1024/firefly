@@ -66,8 +66,8 @@ public class AsynchronousClientDemo {
 		TcpConnection c3 = fc3.get();
 		System.out.println("con2|" + c2.send("getfile").get());
 		System.out.println("con3|" + c3.send("test c3").get());
-		c2.close(false);
-		c3.close(false);
+		c2.close();
+		c3.close();
 		
 		TcpConnection c4 = client.connect().get();
 		for(;;) {

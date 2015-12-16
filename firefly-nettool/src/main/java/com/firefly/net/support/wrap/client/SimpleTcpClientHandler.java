@@ -54,7 +54,7 @@ abstract public class SimpleTcpClientHandler implements Handler {
     @Override
     public void exceptionCaught(Session session, Throwable t) throws Throwable {
         log.error("client session error", t);
-        session.close(true);
+        session.closeNow();
     }
 
 }

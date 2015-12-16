@@ -82,7 +82,7 @@ public class NetBufferedOutputStream extends OutputStream {
 		try {
 			flush();
 			if (!keepAlive)
-				session.close(false);
+				session.close();
 		} finally {
 			if(!hasSavedAccessLog) {
 				access.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", 

@@ -65,7 +65,7 @@ public class HTTP2ClientHandler implements Handler {
 		final HTTP2ClientContext context = http2ClientContext.get(session.getSessionId());
 		if (context == null) {
 			log.error("http2 client can not get the client context of session {}", session.getSessionId());
-			session.close(true);
+			session.closeNow();
 			return;
 		}
 
@@ -110,7 +110,7 @@ public class HTTP2ClientHandler implements Handler {
 							}
 						} else {
 							log.info("Could not negotiate protocol: server [{}] - client {}", protocol, protocols);
-							session.close(false);
+							session.close();
 						}
 					} finally {
 						ALPN.remove(sslEngine);

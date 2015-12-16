@@ -85,7 +85,7 @@ public class HTTP2MockSession implements Session {
 	}
 
 	@Override
-	public void close(boolean immediately) {
+	public void close() {
 		isOpen = false;
 	}
 
@@ -144,6 +144,11 @@ public class HTTP2MockSession implements Session {
 	public void write(OutputEntry<?> entry) {
 		ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry)entry;
 		write(outputEntry.getData(), outputEntry.getCallback());
+	}
+
+	@Override
+	public void closeNow() {
+		isOpen = false;
 	}
 
 }

@@ -80,7 +80,7 @@ public class SSLServerDemo {
 			public void exceptionCaught(Session session, Throwable t) throws Throwable {
 				t.printStackTrace();
 				if(session.isOpen())
-					session.close(true);
+					session.closeNow();
 			}}, 1000 * 5);	
 		server.start("localhost", 7676);
 	}

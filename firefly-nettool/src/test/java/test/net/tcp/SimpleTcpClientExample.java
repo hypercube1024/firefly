@@ -60,7 +60,7 @@ public class SimpleTcpClientExample {
 		TcpConnection c2 = fc2.get();
 		TcpConnection c3 = fc3.get();
 		System.out.println("con2|" + c2.send("getfile").get());
-		c2.close(false);
+		c2.close();
 		
 		c3.send("test c3", new MessageReceivedCallback() {
 
@@ -69,7 +69,7 @@ public class SimpleTcpClientExample {
 				System.out.println("con3|" + obj.toString());
 			}
 		});
-		c3.close(true);;
+		c3.closeNow();;
 		
 		Thread.sleep(4000);
 		client.shutdown();

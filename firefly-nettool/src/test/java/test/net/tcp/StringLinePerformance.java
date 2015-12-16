@@ -48,7 +48,7 @@ public class StringLinePerformance {
 				e.printStackTrace();
 			} finally {
 				if (c != null)
-					c.close(false);
+					c.close();
 			}
 			log.debug("session {} complete", c.getId());
 

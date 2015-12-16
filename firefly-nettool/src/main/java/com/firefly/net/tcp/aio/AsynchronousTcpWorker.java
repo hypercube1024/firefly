@@ -69,7 +69,7 @@ public class AsynchronousTcpWorker implements Worker {
 							if (log.isDebugEnable()) {
 								log.debug("The channel {} input is closed, {}", session.getSessionId(), readBytes);
 							}
-							session.close(true);
+							session.closeNow();
 							return;
 						}
 						buf.flip();
