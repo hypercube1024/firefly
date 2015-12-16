@@ -1,6 +1,5 @@
-package com.firefly.net.tcp.aio;
+package com.firefly.net;
 
-import com.firefly.net.OutputEntry;
 import com.firefly.utils.concurrent.Callback;
 
 public abstract class AbstractOutputEntry<T> implements OutputEntry<T> {
