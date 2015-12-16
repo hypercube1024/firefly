@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
-import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -14,6 +13,10 @@ public class HTTP2ServerDecoder implements Decoder {
 
 	@Override
 	public void decode(ByteBuffer buffer, Session session) throws Throwable {
+		if(!buffer.hasArray()) {
+			throw new IllegalArgumentException("the byte buffer has not array");
+		}
+		
 		if(!buffer.hasRemaining())
 			return;
 
@@ -21,8 +24,7 @@ public class HTTP2ServerDecoder implements Decoder {
 			log.debug("server receives the data {}", buffer.remaining());
 		
 		HTTP2ServerConnection connection = (HTTP2ServerConnection) session.getAttachment();
-		// TODO convert direct buffer to heap buffer.  optimize it ?
-		connection.getParser().parse(ByteBuffer.wrap(BufferUtils.toArray(buffer)));
+		connection.getParser().parse(buffer);
 	}
 
 }
