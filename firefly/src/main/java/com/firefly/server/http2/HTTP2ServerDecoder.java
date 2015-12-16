@@ -17,12 +17,13 @@ public class HTTP2ServerDecoder implements Decoder {
 		if(!buffer.hasRemaining())
 			return;
 		
+		ByteBuffer newBuffer = BufferUtils.copy(buffer);
 		if(log.isDebugEnable())
-			log.debug("server receives the data {}, {}", buffer.remaining(), buffer.hasRemaining());
+			log.debug("server receives the data {}, {}", newBuffer.remaining(), newBuffer.hasRemaining());
 		
 		HTTP2ServerConnection connection = (HTTP2ServerConnection) session.getAttachment();
 		// TODO convert direct buffer to heap buffer.  optimize it ?
-		connection.getParser().parse(ByteBuffer.wrap(BufferUtils.toArray(buffer)));
+		connection.getParser().parse(newBuffer);
 	}
 
 }

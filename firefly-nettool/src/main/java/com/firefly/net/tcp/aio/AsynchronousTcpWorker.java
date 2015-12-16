@@ -106,7 +106,6 @@ public class AsynchronousTcpWorker implements Worker{
 					}
 				} catch (IOException e) {
 					log.error("socket channel shutdown input error", t);
-					session.close(true);
 				} finally {
 					pool.release(buf);
 				}
@@ -126,7 +125,6 @@ public class AsynchronousTcpWorker implements Worker{
 				socketChannel.shutdownOutput();
 			} catch (IOException e) {
 				log.error("shutdown input and output error", e);
-				currentSession.close(true);
 			}
 			return;
 		}
@@ -143,7 +141,13 @@ public class AsynchronousTcpWorker implements Worker{
 						if(log.isDebugEnable()) {
 							log.debug("The channel {} output is shutdown, {}", session.getSessionId(), writeBytes);
 						}
-						session.close(true);
+//						session.close(true);
+						try {
+							socketChannel.shutdownOutput();
+							socketChannel.shutdownInput();
+						} catch (IOException e) {
+							log.error("socket channel shutdown output error", e);
+						}
 						return;
 					}
 					session.writtenBytes += writeBytes;
@@ -174,7 +178,6 @@ public class AsynchronousTcpWorker implements Worker{
 						}
 					} catch (IOException e) {
 						log.error("socket channel shutdown output error", t);
-						session.close(true);
 					}
 				}});
 		}

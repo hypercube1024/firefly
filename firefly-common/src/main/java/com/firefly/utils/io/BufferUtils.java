@@ -108,6 +108,13 @@ public class BufferUtils {
 			(byte) 'F' };
 
 	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.wrap(new byte[0]);
+	
+	public static ByteBuffer copy(ByteBuffer buffer) {
+		ByteBuffer newBuffer = ByteBuffer.allocate(buffer.remaining());
+		newBuffer.put(buffer);
+		newBuffer.flip();
+		return newBuffer;
+	}
 
 	/**
 	 * Allocate ByteBuffer in flush mode. The position and limit will both be
