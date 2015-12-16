@@ -73,6 +73,9 @@ public class AsynchronousTcpWorker implements Worker {
 							return;
 						}
 						
+						if (log.isDebugEnable()) {
+							log.debug("the session {} read {} bytes", session.getSessionId(), readBytes);
+						}
 						// Update the predictor.
 						session.bufferSizePredictor.previousReceivedBufferSize(readBytes);
 						session.readBytes += readBytes;
@@ -126,8 +129,12 @@ public class AsynchronousTcpWorker implements Worker {
 			session.shutdownSocketChannel();
 			return;
 		}
+		
+		if(log.isDebugEnable()) {
+			log.debug("the session {} writes {} bytes", session.getSessionId(), writeBytes);
+		}
+		
 		session.writtenBytes += writeBytes;
-
 		entry.getCallback().succeeded();
 
 		synchronized (session.lock) {

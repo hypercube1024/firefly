@@ -21,7 +21,7 @@ public class HTTP2ClientDecoder implements Decoder {
 			return;
 
 		if (log.isDebugEnable())
-			log.debug("client receives the data {}", buffer.remaining());
+			log.debug("the client session {} received the {} bytes", session.getSessionId(), buffer.remaining());
 
 		HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) session.getAttachment();
 		http2ClientConnection.getParser().parse(buffer);

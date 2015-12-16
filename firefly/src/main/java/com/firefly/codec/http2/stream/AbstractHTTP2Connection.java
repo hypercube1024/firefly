@@ -37,6 +37,7 @@ public abstract class AbstractHTTP2Connection implements Closeable {
 			flowControl = new SimpleFlowControlStrategy(config.getInitialStreamSendWindow());
 			break;
 		default:
+			flowControl = new SimpleFlowControlStrategy(config.getInitialStreamSendWindow());
 			break;
 		}
 		this.generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());
