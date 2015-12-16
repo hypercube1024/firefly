@@ -14,8 +14,8 @@ import com.firefly.net.ByteBufferOutputEntry;
 import com.firefly.net.Config;
 import com.firefly.net.EventManager;
 import com.firefly.net.OutputEntry;
-import com.firefly.net.ReceiveBufferSizePredictor;
 import com.firefly.net.Worker;
+import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -52,12 +52,12 @@ public class AsynchronousTcpWorker implements Worker {
 		if (!currentSession.isOpen())
 			return;
 
-		final ReceiveBufferSizePredictor predictor = currentSession.receiveBufferSizePredictor;
-		final int predictedRecvBufSize = predictor.nextReceiveBufferSize();
-		final ByteBuffer buf = ByteBuffer.allocate(predictedRecvBufSize);
+		final int bufferSize = BufferUtils.normalizeBufferSize(currentSession.bufferSizePredictor.nextBufferSize());
+		final ByteBuffer buf = ByteBuffer.allocate(bufferSize);
 
 		if (log.isDebugEnable()) {
 			log.debug("current socket channel is open {} for input", socketChannel.isOpen());
+			log.debug("current buffer size is {}", bufferSize);
 		}
 		socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, currentSession,
 				new CompletionHandler<Integer, AsynchronousTcpSession>() {
@@ -72,11 +72,13 @@ public class AsynchronousTcpWorker implements Worker {
 							session.closeNow();
 							return;
 						}
-						buf.flip();
+						
 						// Update the predictor.
-						predictor.previousReceiveBufferSize(readBytes);
+						session.bufferSizePredictor.previousReceivedBufferSize(readBytes);
 						session.readBytes += readBytes;
 						session.lastReadTime = Millisecond100Clock.currentTimeMillis();
+						
+						buf.flip();
 						try {
 							config.getDecoder().decode(buf, session);
 						} catch (Throwable t) {

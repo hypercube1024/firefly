@@ -8,7 +8,7 @@ public class ThreadSafeIOBufferPool implements ReceiveBufferPool {
 	private final ThreadLocal<ReceiveBufferPool> receiveBufferPool = new ThreadLocal<ReceiveBufferPool>(){
 		@Override
 		protected ReceiveBufferPool initialValue() {
-			return new SocketReceiveBufferPool();
+			return new IOBufferPool();
 		}
 	};
 	

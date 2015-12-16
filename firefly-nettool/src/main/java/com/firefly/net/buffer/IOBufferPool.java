@@ -4,10 +4,11 @@ import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 
 import com.firefly.net.ReceiveBufferPool;
+import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class SocketReceiveBufferPool implements ReceiveBufferPool {
+public class IOBufferPool implements ReceiveBufferPool {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private static final int POOL_SIZE = 8;
@@ -39,8 +40,8 @@ public class SocketReceiveBufferPool implements ReceiveBufferPool {
 			buf.clear();
 			return buf;
 		}
-
-		int allocateSize = normalizeCapacity(size);
+		
+		int allocateSize = BufferUtils.normalizeBufferSize(size);
 		log.debug("acquire read size: {}", allocateSize);
 
 		ByteBuffer buf = ByteBuffer.allocateDirect(allocateSize);
@@ -76,18 +77,4 @@ public class SocketReceiveBufferPool implements ReceiveBufferPool {
 		}
 	}
 
-	/**
-	 * The capacity modulo 1024 is 0
-	 * @param capacity
-	 * 			the buffer size
-	 * @return the buffer size that modulo 1024 is 0
-	 */
-	public static final int normalizeCapacity(int capacity) {
-		int q = capacity >>> 10;
-		int r = capacity & 1023;
-		if (r != 0) {
-			q++;
-		}
-		return q << 10;
-	}
 }

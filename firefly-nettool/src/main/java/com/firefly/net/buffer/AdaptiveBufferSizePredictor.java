@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.firefly.net.ReceiveBufferSizePredictor;
+import com.firefly.net.BufferSizePredictor;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 
-public class AdaptiveReceiveBufferSizePredictor implements
-		ReceiveBufferSizePredictor {
+public class AdaptiveBufferSizePredictor implements
+		BufferSizePredictor {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	static final int DEFAULT_MINIMUM = 64;
@@ -86,7 +86,7 @@ public class AdaptiveReceiveBufferSizePredictor implements
 	 * parameters, the expected buffer size starts from {@code 1024}, does not
 	 * go down below {@code 64}, and does not go up above {@code 65536}.
 	 */
-	public AdaptiveReceiveBufferSizePredictor() {
+	public AdaptiveBufferSizePredictor() {
 		this(DEFAULT_MINIMUM, DEFAULT_INITIAL, DEFAULT_MAXIMUM);
 	}
 
@@ -100,7 +100,7 @@ public class AdaptiveReceiveBufferSizePredictor implements
 	 * @param maximum
 	 *            the inclusive upper bound of the expected buffer size
 	 */
-	public AdaptiveReceiveBufferSizePredictor(int minimum, int initial,
+	public AdaptiveBufferSizePredictor(int minimum, int initial,
 			int maximum) {
 		if (minimum <= 0) {
 			throw new IllegalArgumentException("minimum: " + minimum);
@@ -131,13 +131,13 @@ public class AdaptiveReceiveBufferSizePredictor implements
 	}
 
 	@Override
-	public int nextReceiveBufferSize() {
+	public int nextBufferSize() {
 		return nextReceiveBufferSize;
 	}
 
 	@Override
-	public void previousReceiveBufferSize(int previousReceiveBufferSize) {
-		if (previousReceiveBufferSize <= SIZE_TABLE[Math.max(0, index
+	public void previousReceivedBufferSize(int previousReceivedBufferSize) {
+		if (previousReceivedBufferSize <= SIZE_TABLE[Math.max(0, index
 				- INDEX_DECREMENT - 1)]) {
 			if (decreaseNow) {
 				index = Math.max(index - INDEX_DECREMENT, minIndex);
@@ -146,7 +146,7 @@ public class AdaptiveReceiveBufferSizePredictor implements
 			} else {
 				decreaseNow = true;
 			}
-		} else if (previousReceiveBufferSize >= nextReceiveBufferSize) {
+		} else if (previousReceivedBufferSize >= nextReceiveBufferSize) {
 			index = Math.min(index + INDEX_INCREMENT, maxIndex);
 			nextReceiveBufferSize = SIZE_TABLE[index];
 			decreaseNow = false;

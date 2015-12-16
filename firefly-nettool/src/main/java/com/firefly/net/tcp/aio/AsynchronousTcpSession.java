@@ -15,11 +15,10 @@ import com.firefly.net.ByteBufferArrayOutputEntry;
 import com.firefly.net.ByteBufferOutputEntry;
 import com.firefly.net.Config;
 import com.firefly.net.OutputEntry;
-import com.firefly.net.ReceiveBufferSizePredictor;
+import com.firefly.net.BufferSizePredictor;
 import com.firefly.net.Session;
-import com.firefly.net.buffer.AdaptiveReceiveBufferSizePredictor;
+import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
-import com.firefly.net.buffer.FixedReceiveBufferSizePredictor;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferUtils;
@@ -41,7 +40,7 @@ public class AsynchronousTcpSession implements Session {
 	private volatile InetSocketAddress remoteAddress;
 	volatile int state;
 	final Queue<OutputEntry<?>> writeBuffer = new LinkedList<>();
-	final ReceiveBufferSizePredictor receiveBufferSizePredictor;
+	final BufferSizePredictor bufferSizePredictor = new AdaptiveBufferSizePredictor();
 	boolean isWriting = false;
 	Object lock = new Object();
 
@@ -51,15 +50,7 @@ public class AsynchronousTcpSession implements Session {
 		this.config = config;
 		this.worker = worker;
 		this.socketChannel = socketChannel;
-		if (config.getReceiveByteBufferSize() > 0) {
-			if(log.isDebugEnable()) {
-				log.debug("fix buffer size: {}", config.getReceiveByteBufferSize());
-			}
-			receiveBufferSizePredictor = new FixedReceiveBufferSizePredictor(config.getReceiveByteBufferSize());
-		} else {
-			log.debug("adaptive buffer size");
-			receiveBufferSizePredictor = new AdaptiveReceiveBufferSizePredictor();
-		}
+
 		try {
 			localAddress = (InetSocketAddress) socketChannel.getLocalAddress();
 		} catch (Throwable t) {

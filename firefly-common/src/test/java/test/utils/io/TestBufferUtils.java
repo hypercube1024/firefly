@@ -1,6 +1,6 @@
 package test.utils.io;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -20,6 +20,20 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.BufferUtils;
 
 public class TestBufferUtils {
+	
+	@Test
+	public void testNormalizeCapacity() {
+		Assert.assertThat(BufferUtils.normalizeBufferSize(5), is(1024));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(1023), is(1024));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(1024), is(1024));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(70), is(1024));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(1025), is(1024 * 2));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(1900), is(1024 * 2));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(2048), is(1024 * 2));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(2049), is(1024 * 3));
+		Assert.assertThat(BufferUtils.normalizeBufferSize(5000), is(1024 * 5));
+	}
+	
 	@Test
 	public void testToInt() throws Exception {
 		ByteBuffer buf[] = { BufferUtils.toBuffer("0"), BufferUtils.toBuffer(" 42 "), BufferUtils.toBuffer("   43abc"),

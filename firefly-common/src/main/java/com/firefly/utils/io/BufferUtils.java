@@ -70,9 +70,9 @@ import com.firefly.utils.lang.TypeUtils;
  * 
  * <pre>
  * ByteBuffer buffer = BufferUtil.allocate(1024);
- * assert(buffer.remaining() == 0);
+ * assert (buffer.remaining() == 0);
  * BufferUtil.clear(buffer);
- * assert(buffer.remaining() == 0);
+ * assert (buffer.remaining() == 0);
  * </pre>
  * <p>
  * If the BufferUtil methods {@link #fill(ByteBuffer, byte[], int, int)},
@@ -109,6 +109,22 @@ public class BufferUtils {
 
 	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.wrap(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBuffer[0];
+
+	/**
+	 * The capacity modulo 1024 is 0
+	 * 
+	 * @param capacity
+	 *            the buffer size
+	 * @return the buffer size that modulo 1024 is 0
+	 */
+	public static int normalizeBufferSize(int capacity) {
+		int q = capacity >>> 10;
+		int r = capacity & 1023;
+		if (r != 0) {
+			q++;
+		}
+		return q << 10;
+	}
 
 	/**
 	 * Allocate ByteBuffer in flush mode. The position and limit will both be

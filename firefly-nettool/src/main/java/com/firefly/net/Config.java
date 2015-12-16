@@ -3,7 +3,6 @@ package com.firefly.net;
 public class Config {
 	
 	private int timeout = 10 * 1000;
-	private int receiveByteBufferSize = 0;
 	private int workerThreads;
 	{
 		int workers = Runtime.getRuntime().availableProcessors();
@@ -41,20 +40,6 @@ public class Config {
 	 */
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
-	}
-
-	public int getReceiveByteBufferSize() {
-		return receiveByteBufferSize;
-	}
-
-	/**
-	 * Set the the buffer that is used to receive net data size, if the value less than 0 or equals 0
-	 * it will use the adaptive buffer size
-	 *  
-	 * @param receiveByteBufferSize the buffer size
-	 */
-	public void setReceiveByteBufferSize(int receiveByteBufferSize) {
-		this.receiveByteBufferSize = receiveByteBufferSize;
 	}
 
 	public int getWorkerThreads() {
