@@ -1,9 +1,9 @@
 package test.codec.http2;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +31,7 @@ import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 
 public class HTTP2ClientDemo {
-	public static void main(String[] args) throws InterruptedException, ExecutionException {
+	public static void main(String[] args) throws InterruptedException, ExecutionException, UnsupportedEncodingException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setFlowControlStrategy("simple");
 		http2Configuration.setTcpIdleTimeout(10 * 60 * 1000);
@@ -86,7 +86,7 @@ public class HTTP2ClientDemo {
 		HttpFields fields = new HttpFields();
 		fields.put(HttpHeader.ACCEPT, "text/html");
 		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
-		fields.put(HttpHeader.CONTENT_LENGTH, "72");
+		fields.put(HttpHeader.CONTENT_LENGTH, "28");
 		MetaData.Request metaData = new MetaData.Request("POST", HttpScheme.HTTP,
 				new HostPortHttpField("127.0.0.1:6677"), "/data", HttpVersion.HTTP_2, fields);
 
@@ -123,23 +123,20 @@ public class HTTP2ClientDemo {
 		final Stream clientStream = streamPromise.get();
 		System.out.println("client stream id: " + clientStream.getId());
 
-		final byte[] smallContent = new byte[22];
-		final byte[] bigContent = new byte[50];
-		Random random = new Random();
-		random.nextBytes(smallContent);
-		random.nextBytes(bigContent);
+		
 
-		final DataFrame smallDataFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap(smallContent), false);
-		final DataFrame bigDateFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap(bigContent), true);
+		final DataFrame smallDataFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap("hello world!".getBytes("UTF-8")), false);
+		final DataFrame bigDataFrame = new DataFrame(clientStream.getId(), ByteBuffer.wrap("big hello world!".getBytes("UTF-8")), true);
 
 		System.out.println("small data remaining " + smallDataFrame.remaining());
+		System.out.println("big data remaining " + bigDataFrame.remaining());
 		settingsLatch.await(5, TimeUnit.SECONDS);
 		clientStream.data(smallDataFrame, new Callback() {
 
 			@Override
 			public void succeeded() {
 				System.out.println("client sents data success");
-//				clientStream.data(bigDateFrame, Callback.NOOP);
+				clientStream.data(bigDataFrame, Callback.NOOP);
 			}
 
 			@Override

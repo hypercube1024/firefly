@@ -17,6 +17,7 @@ import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerSessionListener;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.io.BufferUtils;
 
 public class HTTP2ServerDemo {
 	public static void main(String[] args) {
@@ -55,7 +56,7 @@ public class HTTP2ServerDemo {
 
 					@Override
 					public void onData(Stream stream, DataFrame frame, Callback callback) {
-						System.out.println("server data size:" + frame.remaining());
+						System.out.println("server data size:" + frame.remaining() + "|" + BufferUtils.toUTF8String(frame.getData()));
 						callback.succeeded();
 					}
 

@@ -63,7 +63,7 @@ public class AsynchronousTcpWorker implements Worker{
 			@Override
 			public void completed(Integer readBytes, AsynchronousTcpSession session) {
 				session.lastReadTime = Millisecond100Clock.currentTimeMillis();
-				if(readBytes <= 0) {
+				if(readBytes < 0) {
 					if(log.isDebugEnable()) {
 						log.debug("The channel {} input is shutdown, {}", session.getSessionId(),  readBytes);
 					}
@@ -137,7 +137,7 @@ public class AsynchronousTcpWorker implements Worker{
 				@Override
 				public void completed(Integer writeBytes, AsynchronousTcpSession session) {
 					session.lastWrittenTime = Millisecond100Clock.currentTimeMillis();
-					if(writeBytes <= 0) {
+					if(writeBytes < 0) {
 						if(log.isDebugEnable()) {
 							log.debug("The channel {} output is shutdown, {}", session.getSessionId(), writeBytes);
 						}
