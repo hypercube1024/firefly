@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -39,10 +38,10 @@ public class AsynchronousTcpSession implements Session {
 
 	private final int sessionId;
 	private final long openTime;
-	private volatile long lastReadTime;
-	private volatile long lastWrittenTime;
-	private AtomicLong readBytes = new AtomicLong(0);
-	private AtomicLong	writtenBytes = new AtomicLong(0);
+	private long lastReadTime;
+	private long lastWrittenTime;
+	private long readBytes = 0;
+	private long writtenBytes = 0;
 	private volatile int state;
 	private final AsynchronousSocketChannel socketChannel;
 
@@ -83,7 +82,8 @@ public class AsynchronousTcpSession implements Session {
 						session.lastReadTime = Millisecond100Clock.currentTimeMillis();
 						if (currentReadBytes < 0) {
 							if (log.isDebugEnable()) {
-								log.debug("the session {} input is closed, {}", session.getSessionId(), currentReadBytes);
+								log.debug("the session {} input is closed, {}", session.getSessionId(),
+										currentReadBytes);
 							}
 							session.closeNow();
 							return;
@@ -94,7 +94,7 @@ public class AsynchronousTcpSession implements Session {
 						}
 						// Update the predictor.
 						session.bufferSizePredictor.previousReceivedBufferSize(currentReadBytes);
-						session.readBytes.addAndGet(currentReadBytes);
+						session.readBytes += currentReadBytes;
 
 						buf.flip();
 						try {
@@ -147,7 +147,7 @@ public class AsynchronousTcpSession implements Session {
 			log.debug("the session {} writes {} bytes", getSessionId(), currentWritenBytes);
 		}
 
-		writtenBytes.addAndGet(currentWritenBytes);
+		writtenBytes += currentWritenBytes;
 		callback.succeeded();
 
 		outputLock.lock();
@@ -366,12 +366,12 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public long getReadBytes() {
-		return readBytes.get();
+		return readBytes;
 	}
 
 	@Override
 	public long getWrittenBytes() {
-		return writtenBytes.get();
+		return writtenBytes;
 	}
 
 	@Override
