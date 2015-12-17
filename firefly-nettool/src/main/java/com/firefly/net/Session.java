@@ -49,6 +49,10 @@ public interface Session {
 	void close();
 	
 	void closeNow();
+	
+	void shutdownOutput();
+	
+	void shutdownInput();
 
 	int getState();
 

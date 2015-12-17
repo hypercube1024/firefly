@@ -827,15 +827,9 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	@Override
 	public String toString() {
 		return String.format("%s@%x{l:%s <-> r:%s,queueSize=%d,sendWindow=%s,recvWindow=%s,streams=%d,%s}",
-                getClass().getSimpleName(),
-                hashCode(),
-                getEndPoint().getLocalAddress(),
-                getEndPoint().getRemoteAddress(),
-                flusher.getQueueSize(),
-                sendWindow,
-                recvWindow,
-                streams.size(),
-                closed);
+				getClass().getSimpleName(), hashCode(), getEndPoint().getLocalAddress(),
+				getEndPoint().getRemoteAddress(), flusher.getQueueSize(), sendWindow, recvWindow, streams.size(),
+				closed);
 	}
 
 	private class ControlEntry extends HTTP2Flusher.Entry {
@@ -918,8 +912,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			case GO_AWAY: {
 				// We just sent a GO_AWAY, only shutdown the
 				// output without closing yet, to allow reads.
-				getEndPoint().close(); // TODO the firefly TCP session does
-											// not implement half-closed method
+				getEndPoint().shutdownOutput();
 				break;
 			}
 			case WINDOW_UPDATE: {
@@ -989,12 +982,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			flowControl.onDataSent(stream, length);
 			// Do we have more to send ?
 			DataFrame dataFrame = (DataFrame) frame;
-			if (dataFrame.remaining() > 0) {				
-				// We have written part of the frame, but there is more to write.
-                // The API will not allow to send two data frames for the same
-                // stream so we append the unfinished frame at the end to allow
-                // better interleaving with other streams.
-                flusher.append(this);
+			if (dataFrame.remaining() > 0) {
+				// We have written part of the frame, but there is more to
+				// write.
+				// The API will not allow to send two data frames for the same
+				// stream so we append the unfinished frame at the end to allow
+				// better interleaving with other streams.
+				flusher.append(this);
 			} else {
 				// Only now we can update the close state
 				// and eventually remove the stream.

@@ -145,4 +145,16 @@ public class MockSession implements Session {
 		
 	}
 
+	@Override
+	public void shutdownOutput() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void shutdownInput() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

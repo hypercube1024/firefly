@@ -19,15 +19,15 @@ public class SendFileHandler implements Handler {
 
 	@Override
 	public void sessionOpened(Session session) throws Throwable {
-		log.debug("session open |" + session.getSessionId());
-		log.debug("local: " + session.getLocalAddress());
-		log.debug("remote: " + session.getRemoteAddress());
+		log.info("session {} is opened ", session.getSessionId());
+		log.debug("local: {}", session.getLocalAddress());
+		log.debug("remote: {}", session.getRemoteAddress());
 		session.attachObject(new SessionAttachment());
 	}
 
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
-		log.debug("session close|" + session.getSessionId());
+		log.debug("session {} is closed", session.getSessionId());
 	}
 
 	@Override
@@ -40,8 +40,7 @@ public class SendFileHandler implements Handler {
 			RandomAccessFile raf = null;
 			File file = null;
 			try {
-				file = new File(SendFileHandler.class.getResource(
-						"/testFile.txt").toURI());
+				file = new File(SendFileHandler.class.getResource("/testFile.txt").toURI());
 			} catch (URISyntaxException e) {
 				e.printStackTrace();
 			}
@@ -52,8 +51,8 @@ public class SendFileHandler implements Handler {
 			}
 			FileRegion fileRegion = null;
 			try {
-                assert raf != null;
-                fileRegion = new FileRegion(raf, 0, raf.length());
+				assert raf != null;
+				fileRegion = new FileRegion(raf, 0, raf.length());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -66,7 +65,7 @@ public class SendFileHandler implements Handler {
 	}
 
 	@Override
-	public void exceptionCaught(Session session, Throwable t) throws Throwable{
+	public void exceptionCaught(Session session, Throwable t) throws Throwable {
 		log.error(t.getMessage() + "|" + session.getSessionId(), t);
 	}
 

@@ -151,4 +151,16 @@ public class HTTP2MockSession implements Session {
 		isOpen = false;
 	}
 
+	@Override
+	public void shutdownOutput() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void shutdownInput() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

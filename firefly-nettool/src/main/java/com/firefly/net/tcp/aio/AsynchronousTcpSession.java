@@ -110,13 +110,13 @@ public class AsynchronousTcpSession implements Session {
 					public void failed(Throwable t, AsynchronousTcpSession session) {
 						if (t instanceof InterruptedByTimeoutException) {
 							if (log.isDebugEnabled()) {
-								log.debug("the session {} reading data timout", session.getSessionId());
+								log.debug("the session {} reading data is timout. is the channel open? {}", getSessionId(), socketChannel.isOpen());
 							}
 						} else {
 							log.error("the session {} read data is failed", t, session.getSessionId());
 						}
 
-						session.shutdownSocketChannel();
+						session.closeNow();
 					}
 				});
 	}
@@ -124,12 +124,12 @@ public class AsynchronousTcpSession implements Session {
 	private void writingFailedCallback(Callback callback, Throwable t) {
 		if (t instanceof InterruptedByTimeoutException) {
 			if (log.isDebugEnabled()) {
-				log.debug("the session {} writing data timout", getSessionId());
+				log.debug("the session {} writing data is timout. is the channel open? {}", getSessionId(), socketChannel.isOpen());
 			}
 		} else {
 			log.error("the session {} writes data is failed", t, getSessionId());
 		}
-		shutdownSocketChannel();
+		closeNow();
 		callback.failed(t);
 	}
 
@@ -139,7 +139,7 @@ public class AsynchronousTcpSession implements Session {
 			if (log.isDebugEnabled()) {
 				log.debug("the session {} output is closed, {}", getSessionId(), currentWritenBytes);
 			}
-			shutdownSocketChannel();
+			closeNow();
 			return;
 		}
 
@@ -326,6 +326,28 @@ public class AsynchronousTcpSession implements Session {
 		}
 		state = CLOSE;
 		eventManager.executeCloseTask(this);
+	}
+	
+	@Override
+	public void shutdownOutput() {
+		try {
+			socketChannel.shutdownOutput();
+		} catch (ClosedChannelException e) {
+			log.debug("the session {} is closed", e, sessionId);
+		} catch (IOException e) {
+			log.error("the session {} shutdown output error", e, sessionId);
+		}
+	}
+	
+	@Override
+	public void shutdownInput() {
+		try {
+			socketChannel.shutdownInput();
+		} catch (ClosedChannelException e) {
+			log.debug("the session {} is closed", e, sessionId);
+		} catch (IOException e) {
+			log.error("the session {} shutdown input error", e, sessionId);
+		}
 	}
 
 	private void shutdownSocketChannel() {
