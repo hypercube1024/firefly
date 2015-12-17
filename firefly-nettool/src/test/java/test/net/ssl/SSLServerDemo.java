@@ -35,7 +35,7 @@ public class SSLServerDemo {
 			public void sessionOpened(Session session) throws Throwable {
 				long start = System.currentTimeMillis();
 				final SSLEngine sslEngine = sslContext.createSSLEngine();
-				System.out.println("server create ssl engine elapsed time is " + (System.currentTimeMillis() - start));
+				System.out.println("server creates ssl engine elapsed time is " + (System.currentTimeMillis() - start));
 				SessionInfo info = new SessionInfo();
 				info.sslSession = new SSLSession(sslContext, sslEngine, session, false, 
 				new SSLEventHandler(){
@@ -54,7 +54,7 @@ public class SSLServerDemo {
 
 					@Override
 					public String select(List<String> protocols) {
-						System.out.println("client current protocols: " + protocols + "and select " + protocols.get(0));
+						System.out.println("client current protocols are " + protocols + "and selects " + protocols.get(0));
 						ALPN.remove(sslEngine);
 						return protocols.get(0);
 					}});
@@ -63,7 +63,7 @@ public class SSLServerDemo {
 
 			@Override
 			public void sessionClosed(Session session) throws Throwable {
-				System.out.println("server session close: " + session.getSessionId());
+				System.out.println("server session closed: " + session.getSessionId());
 				SessionInfo sessionAttachment = (SessionInfo)session.getAttachment();
 				if(sslContext != null && sessionAttachment.sslSession != null) {
 					sessionAttachment.sslSession.close();
@@ -72,7 +72,7 @@ public class SSLServerDemo {
 
 			@Override
 			public void messageRecieved(Session session, Object message) throws Throwable {
-				System.out.println("server receive message: " + message);
+				System.out.println("server receives message: " + message);
 				session.encode(message);
 			}
 
