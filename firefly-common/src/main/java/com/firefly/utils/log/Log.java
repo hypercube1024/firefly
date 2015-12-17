@@ -4,7 +4,7 @@ public interface Log {
 
 	String CL = "\r\n";
 	
-	boolean isTraceEnable();
+	boolean isTraceEnabled();
 
 	void trace(String str);
 	
@@ -12,7 +12,7 @@ public interface Log {
 
 	void trace(String str, Throwable throwable, Object... objs);
 	
-	boolean isDebugEnable();
+	boolean isDebugEnabled();
 
 	void debug(String str);
 	
@@ -20,7 +20,7 @@ public interface Log {
 
 	void debug(String str, Throwable throwable, Object... objs);
 	
-	boolean isInfoEnable();
+	boolean isInfoEnabled();
 
 	void info(String str);
 	
@@ -28,7 +28,7 @@ public interface Log {
 
 	void info(String str, Throwable throwable, Object... objs);
 	
-	boolean isWarnEnable();
+	boolean isWarnEnabled();
 
 	void warn(String str);
 	
@@ -36,7 +36,7 @@ public interface Log {
 
 	void warn(String str, Throwable throwable, Object... objs);
 	
-	boolean isErrorEnable();
+	boolean isErrorEnabled();
 
 	void error(String str);
 	

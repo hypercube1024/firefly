@@ -116,7 +116,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 	@Override
 	public void onData(final DataFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		int streamId = frame.getStreamId();
@@ -146,7 +146,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				});
 			}
 		} else {
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Ignoring {}, stream #{} not found", frame, streamId);
 			// We must enlarge the session flow control window,
 			// otherwise other requests will be stalled.
@@ -159,13 +159,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 	@Override
 	public void onPriority(PriorityFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 	}
 
 	@Override
 	public void onReset(ResetFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		StreamSPI stream = getStream(frame.getStreamId());
@@ -182,7 +182,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	}
 
 	public void onSettings(SettingsFrame frame, boolean reply) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		if (frame.isReply())
@@ -194,7 +194,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			int value = entry.getValue();
 			switch (key) {
 			case SettingsFrame.HEADER_TABLE_SIZE: {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Update HPACK header table size to {}", value);
 				generator.setHeaderTableSize(value);
 				break;
@@ -210,18 +210,18 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			}
 			case SettingsFrame.MAX_CONCURRENT_STREAMS: {
 				maxLocalStreams = value;
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Update max local concurrent streams to {}", maxLocalStreams);
 				break;
 			}
 			case SettingsFrame.INITIAL_WINDOW_SIZE: {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Update initial window size to {}", value);
 				flowControl.updateInitialStreamWindow(this, value, false);
 				break;
 			}
 			case SettingsFrame.MAX_FRAME_SIZE: {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Update max frame size to {}", value);
 				// SPEC: check the max frame size is sane.
 				if (value < Frame.DEFAULT_MAX_LENGTH || value > Frame.MAX_MAX_LENGTH) {
@@ -252,7 +252,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 	@Override
 	public void onPing(PingFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		if (frame.isReply()) {
@@ -283,7 +283,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	 */
 	@Override
 	public void onGoAway(final GoAwayFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		while (true) {
@@ -309,7 +309,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				break;
 			}
 			default: {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Ignored {}, already closed", frame);
 				return;
 			}
@@ -319,7 +319,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 	@Override
 	public void onWindowUpdate(WindowUpdateFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		int streamId = frame.getStreamId();
@@ -457,7 +457,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				break;
 			}
 			default: {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Ignoring close {}/{}, already closed", error, reason);
 				callback.succeeded();
 				return false;
@@ -500,7 +500,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	}
 
 	private void frame(HTTP2Flusher.Entry entry, boolean flush) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Sending {}", entry.frame);
 		// Ping frames are prepended to process them as soon as possible.
 		boolean queued = entry.frame.getType() == FrameType.PING ? flusher.prepend(entry) : flusher.append(entry);
@@ -524,7 +524,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		if (streams.putIfAbsent(streamId, stream) == null) {
 			stream.setIdleTimeout(getStreamIdleTimeout());
 			flowControl.onStreamCreated(stream);
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Created local {}", stream);
 			return stream;
 		} else {
@@ -553,7 +553,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			updateLastStreamId(streamId);
 			stream.setIdleTimeout(getStreamIdleTimeout());
 			flowControl.onStreamCreated(stream);
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Created remote {}", stream);
 			return stream;
 		} else {
@@ -580,7 +580,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 			flowControl.onStreamDestroyed(stream);
 
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Removed {}, {}", local ? "local" : "remote", stream);
 		}
 	}
@@ -660,13 +660,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	 */
 	@Override
 	public void onShutdown() {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Shutting down {}", this);
 
 		switch (closed.get()) {
 		case NOT_CLOSED: {
 			// The other peer did not send a GO_AWAY, no need to be gentle.
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Abrupt close for {}", this);
 			abort(new ClosedChannelException());
 			break;
@@ -733,7 +733,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	}
 
 	public void disconnect() {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Disconnecting {}", this);
 		endPoint.close();
 	}
@@ -847,12 +847,12 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		public Throwable generate(Queue<ByteBuffer> buffers) {
 			try {
 				buffers.addAll(generator.control(frame));
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Generated {}", frame);
 				prepare();
 				return null;
 			} catch (Throwable x) {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Failure generating frame " + frame, x);
 				return x;
 			}
@@ -971,14 +971,14 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				int window = Math.min(streamSendWindow, sessionSendWindow);
 
 				int length = this.length = Math.min(flowControlLength, window);
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Generated {}, length/window={}/{}", frame, length, window);
 
 				buffers.addAll(generator.data((DataFrame) frame, length));
 				flowControl.onDataSending(stream, length);
 				return null;
 			} catch (Throwable x) {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Failure generating frame " + frame, x);
 				return x;
 			}

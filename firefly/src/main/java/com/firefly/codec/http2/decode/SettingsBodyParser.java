@@ -80,7 +80,7 @@ public class SettingsBodyParser extends BodyParser {
 			case SETTING_VALUE: {
 				if (buffer.remaining() >= 4) {
 					settingValue = buffer.getInt();
-					if (log.isDebugEnable())
+					if (log.isDebugEnabled())
 						log.debug(String.format("setting %d=%d", settingId, settingValue));
 					settings.put(settingId, settingValue);
 					state = State.SETTING_ID;
@@ -102,7 +102,7 @@ public class SettingsBodyParser extends BodyParser {
 				if (cursor > 0 && length <= 0)
 					return connectionFailure(buffer, ErrorCode.FRAME_SIZE_ERROR.code, "invalid_settings_frame");
 				if (cursor == 0) {
-					if (log.isDebugEnable())
+					if (log.isDebugEnabled())
 						log.debug(String.format("setting %d=%d", settingId, settingValue));
 					settings.put(settingId, settingValue);
 					state = State.SETTING_ID;

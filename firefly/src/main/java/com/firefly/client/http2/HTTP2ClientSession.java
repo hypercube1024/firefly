@@ -22,13 +22,13 @@ public class HTTP2ClientSession extends HTTP2Session {
 
 	@Override
 	public void onHeaders(HeadersFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		int streamId = frame.getStreamId();
 		StreamSPI stream = getStream(streamId);
 		if (stream == null) {
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Ignoring {}, stream #{} not found", frame, streamId);
 		} else {
 			stream.process(frame, Callback.NOOP);
@@ -49,14 +49,14 @@ public class HTTP2ClientSession extends HTTP2Session {
 
 	@Override
 	public void onPushPromise(PushPromiseFrame frame) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Received {}", frame);
 
 		int streamId = frame.getStreamId();
 		int pushStreamId = frame.getPromisedStreamId();
 		StreamSPI stream = getStream(streamId);
 		if (stream == null) {
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Ignoring {}, stream #{} not found", frame, streamId);
 		} else {
 			StreamSPI pushStream = createRemoteStream(pushStreamId);

@@ -49,7 +49,7 @@ public class HpackDecoder {
 	}
 
 	public MetaData decode(ByteBuffer buffer) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug(String.format("CtxTbl[%x] decoding %d octets", context.hashCode(), buffer.remaining()));
 
 		// If the buffer is big, don't even think about decoding it
@@ -58,7 +58,7 @@ public class HpackDecoder {
 					"Header frame size " + buffer.remaining() + ">" + builder.getMaxSize());
 
 		while (buffer.hasRemaining()) {
-			if (log.isDebugEnable()) {
+			if (log.isDebugEnabled()) {
 				int l = Math.min(buffer.remaining(), 16);
 				// TODO: not guaranteed the buffer has a backing array !
 				log.debug(
@@ -74,7 +74,7 @@ public class HpackDecoder {
 				if (entry == null) {
 					throw new BadMessageException("Unknown index " + index);
 				} else if (entry.isStatic()) {
-					if (log.isDebugEnable())
+					if (log.isDebugEnabled())
 						log.debug("decode IdxStatic {}", entry);
 					// emit field
 					builder.emit(entry.getHttpField());
@@ -82,7 +82,7 @@ public class HpackDecoder {
 					// TODO copy and add to reference set if there is room
 					// _context.add(entry.getHttpField());
 				} else {
-					if (log.isDebugEnable())
+					if (log.isDebugEnabled())
 						log.debug("decode Idx {}", entry);
 					// emit
 					builder.emit(entry.getHttpField());
@@ -102,7 +102,7 @@ public class HpackDecoder {
 				case 3: // 7.3
 					// change table size
 					int size = NBitInteger.decode(buffer, 5);
-					if (log.isDebugEnable())
+					if (log.isDebugEnabled())
 						log.debug("decode resize=" + size);
 					if (size > localMaxDynamicTableSize)
 						throw new IllegalArgumentException();
@@ -194,7 +194,7 @@ public class HpackDecoder {
 					}
 				}
 
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("decoded '" + field + "' by Lit"
 							+ (name_index > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"))
 							+ (huffmanValue ? "HuffVal" : "LitVal") + (indexed ? "Idx" : ""));

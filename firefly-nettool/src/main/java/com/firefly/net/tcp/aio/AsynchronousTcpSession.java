@@ -71,7 +71,7 @@ public class AsynchronousTcpSession implements Session {
 		final int bufferSize = BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize());
 		final ByteBuffer buf = ByteBuffer.allocate(bufferSize);
 
-		if (log.isDebugEnable()) {
+		if (log.isDebugEnabled()) {
 			log.debug("the session {} buffer size is {}", getSessionId(), bufferSize);
 		}
 		socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, this,
@@ -81,7 +81,7 @@ public class AsynchronousTcpSession implements Session {
 					public void completed(Integer currentReadBytes, AsynchronousTcpSession session) {
 						session.lastReadTime = Millisecond100Clock.currentTimeMillis();
 						if (currentReadBytes < 0) {
-							if (log.isDebugEnable()) {
+							if (log.isDebugEnabled()) {
 								log.debug("the session {} input is closed, {}", session.getSessionId(),
 										currentReadBytes);
 							}
@@ -89,7 +89,7 @@ public class AsynchronousTcpSession implements Session {
 							return;
 						}
 
-						if (log.isDebugEnable()) {
+						if (log.isDebugEnabled()) {
 							log.debug("the session {} read {} bytes", session.getSessionId(), currentReadBytes);
 						}
 						// Update the predictor.
@@ -109,7 +109,7 @@ public class AsynchronousTcpSession implements Session {
 					@Override
 					public void failed(Throwable t, AsynchronousTcpSession session) {
 						if (t instanceof InterruptedByTimeoutException) {
-							if (log.isDebugEnable()) {
+							if (log.isDebugEnabled()) {
 								log.debug("the session {} reading data timout", session.getSessionId());
 							}
 						} else {
@@ -123,7 +123,7 @@ public class AsynchronousTcpSession implements Session {
 
 	private void writingFailedCallback(Callback callback, Throwable t) {
 		if (t instanceof InterruptedByTimeoutException) {
-			if (log.isDebugEnable()) {
+			if (log.isDebugEnabled()) {
 				log.debug("the session {} writing data timout", getSessionId());
 			}
 		} else {
@@ -136,14 +136,14 @@ public class AsynchronousTcpSession implements Session {
 	private void writingCompletedCallback(Callback callback, long currentWritenBytes) {
 		lastWrittenTime = Millisecond100Clock.currentTimeMillis();
 		if (currentWritenBytes < 0) {
-			if (log.isDebugEnable()) {
+			if (log.isDebugEnabled()) {
 				log.debug("the session {} output is closed, {}", getSessionId(), currentWritenBytes);
 			}
 			shutdownSocketChannel();
 			return;
 		}
 
-		if (log.isDebugEnable()) {
+		if (log.isDebugEnabled()) {
 			log.debug("the session {} writes {} bytes", getSessionId(), currentWritenBytes);
 		}
 
@@ -170,7 +170,7 @@ public class AsynchronousTcpSession implements Session {
 		switch (entry.getOutputEntryType()) {
 		case BYTE_BUFFER:
 			ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) entry;
-			if (log.isDebugEnable()) {
+			if (log.isDebugEnabled()) {
 				log.debug("the session {} will write buffer {}", getSessionId(),
 						byteBufferOutputEntry.getData().remaining());
 			}
@@ -297,7 +297,7 @@ public class AsynchronousTcpSession implements Session {
 					write(buf, countingCallback);
 					buf = ByteBuffer.allocate((int) bufferSize);
 				}
-				if (log.isDebugEnable()) {
+				if (log.isDebugEnabled()) {
 					log.debug("write file ret {} | len {}", ret, len);
 				}
 				if (ret >= len)
@@ -319,7 +319,7 @@ public class AsynchronousTcpSession implements Session {
 		try {
 			socketChannel.close();
 		} catch (AsynchronousCloseException e) {
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("the session {} asynchronously closed", sessionId);
 		} catch (IOException e) {
 			log.error("the session {} close error", e, sessionId);

@@ -110,7 +110,7 @@ public class FileLog implements Log, Closeable {
 		item.setContent(str);
 		item.setObjs(objs);
 		item.setThrowable(throwable);
-		if (isDebugEnable()) {
+		if (isDebugEnabled()) {
 			item.setStackTraceElement(getStackTraceElement());
 		}
 		LogFactory.getInstance().getLogTask().add(item);
@@ -118,131 +118,131 @@ public class FileLog implements Log, Closeable {
 
 	@Override
 	public void trace(String str) {
-		if (!isTraceEnable())
+		if (!isTraceEnabled())
 			return;
 		add(str, LogLevel.TRACE.getName(), null, new Object[0]);
 	}
 
 	@Override
 	public void trace(String str, Object... objs) {
-		if (!isTraceEnable())
+		if (!isTraceEnabled())
 			return;
 		add(str, LogLevel.TRACE.getName(), null, objs);
 	}
 
 	@Override
 	public void trace(String str, Throwable throwable, Object... objs) {
-		if (!isTraceEnable())
+		if (!isTraceEnabled())
 			return;
 		add(str, LogLevel.TRACE.getName(), null, objs);
 	}
 
 	@Override
 	public void debug(String str) {
-		if (!isDebugEnable())
+		if (!isDebugEnabled())
 			return;
 		add(str, LogLevel.DEBUG.getName(), null, new Object[0]);
 	}
 
 	@Override
 	public void debug(String str, Object... objs) {
-		if (!isDebugEnable())
+		if (!isDebugEnabled())
 			return;
 		add(str, LogLevel.DEBUG.getName(), null, objs);
 	}
 
 	@Override
 	public void debug(String str, Throwable throwable, Object... objs) {
-		if (!isDebugEnable())
+		if (!isDebugEnabled())
 			return;
 		add(str, LogLevel.DEBUG.getName(), throwable, objs);
 	}
 
 	@Override
 	public void info(String str) {
-		if (!isInfoEnable())
+		if (!isInfoEnabled())
 			return;
 		add(str, LogLevel.INFO.getName(), null, new Object[0]);
 	}
 
 	@Override
 	public void info(String str, Object... objs) {
-		if (!isInfoEnable())
+		if (!isInfoEnabled())
 			return;
 		add(str, LogLevel.INFO.getName(), null, objs);
 	}
 
 	@Override
 	public void info(String str, Throwable throwable, Object... objs) {
-		if (!isInfoEnable())
+		if (!isInfoEnabled())
 			return;
 		add(str, LogLevel.INFO.getName(), throwable, objs);
 	}
 
 	@Override
 	public void warn(String str) {
-		if (!isWarnEnable())
+		if (!isWarnEnabled())
 			return;
 		add(str, LogLevel.WARN.getName(), null, new Object[0]);
 	}
 
 	@Override
 	public void warn(String str, Object... objs) {
-		if (!isWarnEnable())
+		if (!isWarnEnabled())
 			return;
 		add(str, LogLevel.WARN.getName(), null, objs);
 	}
 
 	@Override
 	public void warn(String str, Throwable throwable, Object... objs) {
-		if (!isWarnEnable())
+		if (!isWarnEnabled())
 			return;
 		add(str, LogLevel.WARN.getName(), throwable, objs);
 	}
 
 	@Override
 	public void error(String str, Object... objs) {
-		if (!isErrorEnable())
+		if (!isErrorEnabled())
 			return;
 		add(str, LogLevel.ERROR.getName(), null, objs);
 	}
 
 	@Override
 	public void error(String str, Throwable throwable, Object... objs) {
-		if (!isErrorEnable())
+		if (!isErrorEnabled())
 			return;
 		add(str, LogLevel.ERROR.getName(), throwable, objs);
 	}
 
 	@Override
 	public void error(String str) {
-		if (!isErrorEnable())
+		if (!isErrorEnabled())
 			return;
 		add(str, LogLevel.ERROR.getName(), null, new Object[0]);
 	}
 
 	@Override
-	public boolean isTraceEnable() {
+	public boolean isTraceEnabled() {
 		return level.isEnabled(LogLevel.TRACE);
 	}
 
 	@Override
-	public boolean isDebugEnable() {
+	public boolean isDebugEnabled() {
 		return level.isEnabled(LogLevel.DEBUG);
 	}
 
 	@Override
-	public boolean isInfoEnable() {
+	public boolean isInfoEnabled() {
 		return level.isEnabled(LogLevel.INFO);
 	}
 
 	@Override
-	public boolean isWarnEnable() {
+	public boolean isWarnEnabled() {
 		return level.isEnabled(LogLevel.WARN);
 	}
 
 	@Override
-	public boolean isErrorEnable() {
+	public boolean isErrorEnabled() {
 		return level.isEnabled(LogLevel.ERROR);
 	}
 

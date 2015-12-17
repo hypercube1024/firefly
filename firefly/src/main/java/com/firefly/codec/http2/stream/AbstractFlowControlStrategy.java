@@ -50,7 +50,7 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 		for (Stream stream : session.getStreams()) {
 			if (local) {
 				((StreamSPI) stream).updateRecvWindow(delta);
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Updated initial stream recv window {} -> {} for {}", previousInitialStreamWindow,
 							initialStreamWindow, stream);
 			} else {
@@ -66,12 +66,12 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 			// The stream may have been removed concurrently.
 			if (stream != null) {
 				int oldSize = stream.updateSendWindow(delta);
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Updated stream send window {} -> {} for {}", oldSize, oldSize + delta, stream);
 			}
 		} else {
 			int oldSize = session.updateSendWindow(delta);
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Updated session send window {} -> {} for {}", oldSize, oldSize + delta, session);
 		}
 	}
@@ -79,12 +79,12 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 	@Override
 	public void onDataReceived(SessionSPI session, StreamSPI stream, int length) {
 		int oldSize = session.updateRecvWindow(-length);
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Data received, updated session recv window {} -> {} for {}", oldSize, oldSize - length, session);
 
 		if (stream != null) {
 			oldSize = stream.updateRecvWindow(-length);
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Data received, updated stream recv window {} -> {} for {}", oldSize, oldSize - length,
 						stream);
 		}
@@ -101,11 +101,11 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 
 		SessionSPI session = stream.getSession();
 		int oldSize = session.updateSendWindow(-length);
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Updated session send window {} -> {} for {}", oldSize, oldSize - length, session);
 
 		oldSize = stream.updateSendWindow(-length);
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Updated stream send window {} -> {} for {}", oldSize, oldSize - length, stream);
 	}
 
@@ -115,13 +115,13 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 
 	@Override
 	public void onSessionStalled(SessionSPI session) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Session stalled {}", session);
 	}
 
 	@Override
 	public void onStreamStalled(StreamSPI stream) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Stream stalled {}", stream);
 	}
 }

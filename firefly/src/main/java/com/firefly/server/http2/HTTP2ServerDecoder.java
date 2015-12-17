@@ -20,7 +20,7 @@ public class HTTP2ServerDecoder implements Decoder {
 		if(!buffer.hasRemaining())
 			return;
 
-		if(log.isDebugEnable())
+		if(log.isDebugEnabled())
 			log.debug("the server session {} received the {} bytes", session.getSessionId(), buffer.remaining());
 		
 		HTTP2ServerConnection connection = (HTTP2ServerConnection) session.getAttachment();

@@ -127,7 +127,7 @@ public class HttpParser {
 	private final static EnumSet<State> __idleStates = EnumSet.of(State.START, State.END, State.CLOSE, State.CLOSED);
 	private final static EnumSet<State> __completeStates = EnumSet.of(State.END, State.CLOSE, State.CLOSED);
 
-	private final boolean DEBUG = log.isDebugEnable(); // Cache debug to help
+	private final boolean DEBUG = log.isDebugEnabled(); // Cache debug to help
 														// branch prediction
 	private final HttpHandler _handler;
 	private final RequestHandler _requestHandler;
@@ -1112,7 +1112,7 @@ public class HttpParser {
 			BufferUtils.clear(buffer);
 
 			Throwable cause = e.getCause();
-			boolean stack = log.isDebugEnable() || (!(cause instanceof NumberFormatException)
+			boolean stack = log.isDebugEnabled() || (!(cause instanceof NumberFormatException)
 					&& (cause instanceof RuntimeException || cause instanceof Error));
 
 			if (stack)

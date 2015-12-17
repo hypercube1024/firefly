@@ -57,7 +57,7 @@ public class HTTP2Flusher extends IteratingCallback {
 				fail = true;
 			} else {
 				frames.add(0, entry);
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Prepended {}, frames={}", entry, Arrays.toString(frames.toArray()));
 			}
 		}
@@ -73,7 +73,7 @@ public class HTTP2Flusher extends IteratingCallback {
 				fail = true;
 			} else {
 				frames.offer(entry);
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Appended {}, frames={}", entry, Arrays.toString(frames.toArray()));
 			}
 		}
@@ -99,7 +99,7 @@ public class HTTP2Flusher extends IteratingCallback {
 
 	@Override
 	protected synchronized Action process() throws Exception {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Flushing {}", session);
 
 		// First thing, update the window sizes, so we can
@@ -116,7 +116,7 @@ public class HTTP2Flusher extends IteratingCallback {
 
 		int index = 0;
 		int size = frames.size();
-		if (log.isDebugEnable()) {
+		if (log.isDebugEnabled()) {
 			log.debug("All frames {}, {}", frames.size(), Arrays.toString(frames.toArray()));
 		}
 		while (index < size) {
@@ -128,7 +128,7 @@ public class HTTP2Flusher extends IteratingCallback {
 				remove(index);
 				--size;
 				resets.add(entry);
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Gathered for reset {}", entry);
 				continue;
 			}
@@ -175,7 +175,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			--size;
 			actives.add(entry);
 
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Gathered for write {}", entry);
 		}
 		streams.clear();
@@ -191,7 +191,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			if (isClosed())
 				fail(new ClosedChannelException(), true);
 
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Flushed {}", session);
 
 			return Action.IDLE;
@@ -207,7 +207,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			}
 		}
 
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
 					actives.size(), Arrays.toString(actives.toArray()));
 
@@ -234,7 +234,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			completes.add(actives.get(i));
 		actives.clear();
 
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Written {} frames for {}", completes.size(), Arrays.toString(completes.toArray()));
 
 		// Drain the frames one by one to avoid reentrancy.
@@ -253,7 +253,7 @@ public class HTTP2Flusher extends IteratingCallback {
 
 	@Override
 	protected synchronized void onCompleteFailure(Throwable x) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Failed", x);
 
 		buffers.clear();
@@ -279,7 +279,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			frames.clear();
 		}
 
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("{}, queued={}", closed ? "Closing" : "Failing", queued.size());
 
 		for (Entry entry : queued)

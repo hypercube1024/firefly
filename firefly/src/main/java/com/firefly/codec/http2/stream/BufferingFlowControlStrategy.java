@@ -88,18 +88,18 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 		if (level > maxLevel) {
 			level = sessionLevel.getAndSet(0);
 			session.updateRecvWindow(level);
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Data consumed, updated session recv window by {}/{} for {}", level, maxLevel, session);
 			windowFrame = new WindowUpdateFrame(0, level);
 		} else {
-			if (log.isDebugEnable())
+			if (log.isDebugEnabled())
 				log.debug("Data consumed, session recv window level {}/{} for {}", level, maxLevel, session);
 		}
 
 		Frame[] windowFrames = Frame.EMPTY_ARRAY;
 		if (stream != null) {
 			if (stream.isClosed()) {
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Data consumed, ignoring update stream recv window by {} for closed {}", length, stream);
 			} else {
 				AtomicInteger streamLevel = streamLevels.get(stream);
@@ -109,7 +109,7 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 					if (level > maxLevel) {
 						level = streamLevel.getAndSet(0);
 						stream.updateRecvWindow(level);
-						if (log.isDebugEnable())
+						if (log.isDebugEnabled())
 							log.debug("Data consumed, updated stream recv window by {}/{} for {}", level, maxLevel,
 									stream);
 						WindowUpdateFrame frame = new WindowUpdateFrame(stream.getId(), level);
@@ -118,7 +118,7 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 						else
 							windowFrames = new Frame[] { frame };
 					} else {
-						if (log.isDebugEnable())
+						if (log.isDebugEnabled())
 							log.debug("Data consumed, stream recv window level {}/{} for {}", level, maxLevel, session);
 					}
 				}

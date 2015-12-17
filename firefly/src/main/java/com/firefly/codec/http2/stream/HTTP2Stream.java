@@ -137,7 +137,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
 	@Override
 	protected void onIdleExpired(TimeoutException timeout) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Idle timeout {}ms expired on {}", getIdleTimeout(), this);
 
 		// The stream is now gone, we must close it to
@@ -248,7 +248,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
 	@Override
 	public boolean updateClose(boolean update, boolean local) {
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Update close for {} close={} local={}", this, update, local);
 
 		if (!update)

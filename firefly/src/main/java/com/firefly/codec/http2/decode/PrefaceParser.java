@@ -46,7 +46,7 @@ public class PrefaceParser {
 			++cursor;
 			if (cursor == PrefaceFrame.PREFACE_BYTES.length) {
 				cursor = 0;
-				if (log.isDebugEnable())
+				if (log.isDebugEnabled())
 					log.debug("Parsed preface bytes");
 				return true;
 			}

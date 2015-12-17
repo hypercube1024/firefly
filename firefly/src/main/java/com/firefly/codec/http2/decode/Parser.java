@@ -111,7 +111,7 @@ public class Parser {
 			return false;
 
 		int frameType = getFrameType();
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Parsed {} frame header", FrameType.from(frameType));
 
 		if (continuation) {
@@ -142,7 +142,7 @@ public class Parser {
 		}
 
 		FrameType frameType = FrameType.from(type);
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Parsing {} frame", frameType);
 
 		BodyParser bodyParser = bodyParsers[type];
@@ -152,7 +152,7 @@ public class Parser {
 			if (!bodyParser.parse(buffer))
 				return false;
 		}
-		if (log.isDebugEnable())
+		if (log.isDebugEnabled())
 			log.debug("Parsed {} frame", frameType);
 		reset();
 		return true;

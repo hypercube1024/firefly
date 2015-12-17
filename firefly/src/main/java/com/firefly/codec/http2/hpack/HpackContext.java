@@ -161,12 +161,12 @@ public class HpackContext {
         this.maxDynamicTableSizeInBytes = maxDynamicTableSize;
         int guesstimateEntries = 10 + maxDynamicTableSize / (32 + 10 + 10);
         dynamicTable = new DynamicTable(guesstimateEntries,guesstimateEntries + 10);
-        if(log.isDebugEnable())
+        if(log.isDebugEnabled())
         	log.debug("HdrTbl[{}] created max={}", hashCode(), maxDynamicTableSize);
     }
     
     public void resize(int newMaxDynamicTableSize) {
-        if (log.isDebugEnable()) {
+        if (log.isDebugEnabled()) {
             log.debug("HdrTbl[{}] resized max={}->{}", hashCode(), maxDynamicTableSizeInBytes, newMaxDynamicTableSize);
         }
         maxDynamicTableSizeInBytes = newMaxDynamicTableSize;
@@ -216,7 +216,7 @@ public class HpackContext {
         Entry entry = new Entry(slot,field);
         int size = entry.getSize();
         if (size > maxDynamicTableSizeInBytes) {
-            if (log.isDebugEnable())
+            if (log.isDebugEnabled())
                 log.debug("HdrTbl[{}] !added size {}>{}",hashCode(), size, maxDynamicTableSizeInBytes);
             return null;
         }
@@ -225,7 +225,7 @@ public class HpackContext {
         fieldMap.put(field,entry);
         nameMap.put(StringUtils.asciiToLowerCase(field.getName()),entry);
 
-        if (log.isDebugEnable()) {
+        if (log.isDebugEnabled()) {
             log.debug("HdrTbl[{}] added {}", hashCode(), entry);
         }
         evict();
@@ -274,7 +274,7 @@ public class HpackContext {
     private void evict() {
         while (dynamicTableSizeInBytes > maxDynamicTableSizeInBytes) {
             Entry entry = dynamicTable.pollUnsafe();
-            if (log.isDebugEnable()) {
+            if (log.isDebugEnabled()) {
                 log.debug("HdrTbl[{}] evict {}", hashCode(), entry);
             }
             dynamicTableSizeInBytes -= entry.getSize();
@@ -284,7 +284,7 @@ public class HpackContext {
             if (entry == nameMap.get(lc))
                 nameMap.remove(lc);
         }
-        if (log.isDebugEnable())
+        if (log.isDebugEnabled())
             log.debug("HdrTbl[{}] entries={}, size={}, max={}", hashCode(), dynamicTable.size(), dynamicTableSizeInBytes, maxDynamicTableSizeInBytes);
     }
     
