@@ -6,9 +6,11 @@ import java.io.StringWriter;
 import com.firefly.utils.StringUtils;
 
 public class LogItem {
+	
 	private String name, content, date, level;
 	private Object[] objs;
 	private Throwable throwable;
+	private StackTraceElement stackTraceElement;
 	private String logStr;
 
 	public void setThrowable(Throwable throwable) {
@@ -43,6 +45,14 @@ public class LogItem {
 		this.date = date;
 	}
 
+	public StackTraceElement getStackTraceElement() {
+		return stackTraceElement;
+	}
+
+	public void setStackTraceElement(StackTraceElement stackTraceElement) {
+		this.stackTraceElement = stackTraceElement;
+	}
+
 	@Override
 	public String toString() {
 		if (logStr == null) {
@@ -61,7 +71,11 @@ public class LogItem {
 				content += str.toString();
 			}
 
-			logStr = level + " " + date + "\t" + content;
+			if(stackTraceElement != null) {
+				logStr = level + " " + date + " " + stackTraceElement + "\t" + content;
+			} else {
+				logStr = level + " " + date + "\t" + content;
+			}
 		}
 		return logStr;
 	}

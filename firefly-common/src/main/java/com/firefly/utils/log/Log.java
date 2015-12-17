@@ -1,11 +1,7 @@
 package com.firefly.utils.log;
 
 public interface Log {
-	int TRACE = 0;
-	int DEBUG = 1;
-	int INFO = 2;
-	int WARN = 3;
-	int ERROR = 4;
+
 	String CL = "\r\n";
 	
 	boolean isTraceEnable();

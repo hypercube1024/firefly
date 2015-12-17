@@ -52,7 +52,7 @@ public class LogTest {
 	private File getFile(Log log) {
 		if(log instanceof FileLog) {
 			FileLog fileLog = (FileLog)log;
-			File file = new File(fileLog.getPath(), fileLog.getName() + "." + LogFactory.dayDateFormat.format(new Date()) + ".txt");
+			File file = new File(fileLog.getPath(), fileLog.getName() + "." + LogFactory.DAY_DATE_FORMAT.format(new Date()) + ".txt");
 			if(file.exists())
 				return file;
 			else
@@ -100,7 +100,7 @@ public class LogTest {
 		
 		
 		try {
-			Thread.sleep(2500L);
+			Thread.sleep(3000L);
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
@@ -227,7 +227,7 @@ public class LogTest {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		try {
 			log.info("test {} aa {}", "log1", 2);
 			log.info("test {} bb {}", "log1", 2);
@@ -255,12 +255,15 @@ public class LogTest {
 
 			defaultLog.debug("default log debug");
 			defaultLog.info("default log info");
+			defaultLog.warn("default log warn");
+			defaultLog.error("default log error");
 
 			try {
 				test3();
 			} catch (Throwable t) {
 				log4.error("test exception", t);
 			}
+			Thread.sleep(3000L);
 		} finally {
 			LogFactory.getInstance().shutdown();
 		}
