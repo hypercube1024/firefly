@@ -351,14 +351,8 @@ public class AsynchronousTcpSession implements Session {
 	}
 
 	private void shutdownSocketChannel() {
-		try {
-			socketChannel.shutdownOutput();
-			socketChannel.shutdownInput();
-		} catch (ClosedChannelException e) {
-			log.debug("the session {} is closed", e, sessionId);
-		} catch (IOException e) {
-			log.error("the session {} shutdown error", e, sessionId);
-		}
+		shutdownOutput();
+		shutdownInput();
 	}
 
 	@Override
