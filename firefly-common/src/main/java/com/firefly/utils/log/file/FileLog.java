@@ -23,6 +23,7 @@ public class FileLog implements Log, Closeable {
 	private BufferedWriter bufferedWriter;
 	private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
 	private static final int bufferSize = 512 * 1024;
+	private static final boolean stackTrace = Boolean.getBoolean("debugMode");
 
 	void write(LogItem logItem) {
 		try {
@@ -110,7 +111,7 @@ public class FileLog implements Log, Closeable {
 		item.setContent(str);
 		item.setObjs(objs);
 		item.setThrowable(throwable);
-		if (isDebugEnabled()) {
+		if (stackTrace) {
 			item.setStackTraceElement(getStackTraceElement());
 		}
 		LogFactory.getInstance().getLogTask().add(item);
