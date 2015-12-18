@@ -121,24 +121,20 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 
 	protected BeanDefinition findBeanDefinition(String key) {
 		check(key);
-		BeanDefinition ret = null;
 		for (BeanDefinition beanDefinition : beanDefinitions) {
 			if (key.equals(beanDefinition.getId())) {
-				ret = beanDefinition;
-				break;
+				return beanDefinition;
 			} else if (key.equals(beanDefinition.getClassName())) {
-				ret = beanDefinition;
-				break;
+				return beanDefinition;
 			} else {
 				for (String interfaceName : beanDefinition.getInterfaceNames()) {
 					if (key.equals(interfaceName)) {
-						ret = beanDefinition;
-						break;
+						return beanDefinition;
 					}
 				}
 			}
 		}
-		return ret;
+		return null;
 	}
 
 	protected void error(String msg) {
