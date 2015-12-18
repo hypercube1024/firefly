@@ -102,7 +102,7 @@ public class LogTest {
 		
 		
 		try {
-			Thread.sleep(3000L);
+			Thread.sleep(2000L);
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
@@ -222,14 +222,15 @@ public class LogTest {
 		LogFactory.getInstance().shutdown();
 	}
 	
-	public static void main2(String[] args) throws Throwable {
+	public static void main(String[] args) throws Throwable {
+		long data = 0;
 		while(true) {
-			log.info("test {} aa {}", "log1", 2);
+			defaultLog.info("test {} data {}", "log", data++);
 			Thread.sleep(1000);
 		}
 	}
 	
-	public static void main(String[] args) throws InterruptedException {
+	public static void main2(String[] args) throws InterruptedException {
 		try {
 			log.info("test {} aa {}", "log1", 2);
 			log.info("test {} bb {}", "log1", 2);

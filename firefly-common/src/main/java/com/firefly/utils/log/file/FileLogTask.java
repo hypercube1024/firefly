@@ -1,6 +1,5 @@
 package com.firefly.utils.log.file;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
@@ -12,6 +11,7 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.log.LogItem;
 import com.firefly.utils.log.LogTask;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class FileLogTask implements LogTask {
 	private volatile boolean start;
@@ -26,6 +26,7 @@ public class FileLogTask implements LogTask {
 
 	@Override
 	public void run() {
+		long flushedTime = Millisecond100Clock.currentTimeMillis();
 		while (true) {
 			try {
 				for (LogItem logItem = null; (logItem = queue.poll(1000, TimeUnit.MILLISECONDS)) != null;) {
@@ -33,21 +34,32 @@ public class FileLogTask implements LogTask {
 					if (log instanceof FileLog) {
 						((FileLog) log).write(logItem);
 					}
+					
+					// flush all log buffer per one second
+					long timeDifference = Millisecond100Clock.currentTimeMillis() - flushedTime;
+					if(timeDifference > 1000) {
+						LogFactory.getInstance().flushAll();
+						flushedTime = Millisecond100Clock.currentTimeMillis();
+					}
 				}
+				
+				LogFactory.getInstance().flushAll();
+				flushedTime = Millisecond100Clock.currentTimeMillis();
 			} catch (Throwable e) {
 				e.printStackTrace();
+				try {
+					// avoid CPU exhausting
+					Thread.sleep(2000L);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
 			}
-			LogFactory.getInstance().flush();
-
+			
 			if (!start && queue.isEmpty()) {
 				for (Entry<String, Log> entry : logMap.entrySet()) {
 					Log log = entry.getValue();
 					if (log instanceof FileLog) {
-						try {
-							((FileLog) log).close();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+						((FileLog) log).close();
 					}
 				}
 				break;

@@ -141,15 +141,11 @@ public class LogFactory {
 		}
 	}
 
-	public void flush() {
+	public void flushAll() {
 		for (Entry<String, Log> entry : logMap.entrySet()) {
 			Log log = entry.getValue();
 			if (log instanceof FileLog) {
-				try {
-					((FileLog)log).flush();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				((FileLog)log).flush();
 			}
 		}
 	}

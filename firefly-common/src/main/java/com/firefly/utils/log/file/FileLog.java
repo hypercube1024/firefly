@@ -22,54 +22,76 @@ public class FileLog implements Log, Closeable {
 	private boolean fileOutput;
 	private BufferedWriter bufferedWriter;
 	private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
-	private static final int bufferSize = 512 * 1024;
+	private static final int bufferSize = 4 * 1024;
 	private static final boolean stackTrace = Boolean.getBoolean("debugMode");
 
 	void write(LogItem logItem) {
-		try {
-			if (consoleOutput) {
-				logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
-				System.out.println(logItem.toString());
-			}
-
-			if (!fileOutput)
-				return;
-
+		if (consoleOutput) {
+			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
+			System.out.println(logItem.toString());
+		}
+		
+		if (fileOutput) {
 			Date d = new Date();
-			bufferedWriter = getBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(d));
-			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
-			bufferedWriter.append(logItem.toString() + CL);
-		} catch (Throwable e) {
-			e.printStackTrace();
+			boolean success = getBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(d));
+			if(success) {
+				logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
+				try {
+					bufferedWriter.append(logItem.toString() + CL);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} else {
+				System.err.println("The log " + toString() + " can not get buffered writer!");
+			}
 		}
 	}
 
-	public void flush() throws IOException {
-		if (bufferedWriter != null)
-			bufferedWriter.flush();
+	public void flush() {
+		if (bufferedWriter != null) {
+			try {
+				bufferedWriter.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	@Override
-	public void close() throws IOException {
-		if (bufferedWriter != null)
-			bufferedWriter.close();
-	}
-
-	private BufferedWriter getBufferedWriter(String newDate) throws IOException {
-		if (bufferedWriter == null || !currentDate.equals(newDate)) {
-			File file = new File(path, name + "." + newDate + ".txt");
-			boolean ret = true;
-			if (!file.exists()) {
-				ret = file.createNewFile();
-			}
-			if (ret) {
-				close();
-				bufferedWriter = new BufferedWriter(new FileWriter(file, true), bufferSize);
-				currentDate = newDate;
-				System.out.println("get new log buffer, the file path is " + file.getAbsolutePath());
+	public void close() {
+		if (bufferedWriter != null) {
+			try {
+				bufferedWriter.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
-		return bufferedWriter;
+	}
+	
+	private boolean createNewBufferedWriter(String newDate) {
+		File file = new File(path, name + "." + newDate + ".txt");
+		try {
+			bufferedWriter = new BufferedWriter(new FileWriter(file, true), bufferSize);
+			currentDate = newDate;
+			System.out.println("get new log buffer, the file path is " + file.getAbsolutePath());
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	private boolean getBufferedWriter(String newDate) {
+		if (bufferedWriter == null) {
+			return createNewBufferedWriter(newDate);
+		} else {
+			if(!currentDate.equals(newDate)) {
+				close();
+				return createNewBufferedWriter(newDate);
+			} else {
+				return true;
+			}
+		}
 	}
 
 	public void setConsoleOutput(boolean consoleOutput) {
