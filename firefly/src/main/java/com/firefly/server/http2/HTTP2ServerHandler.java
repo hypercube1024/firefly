@@ -61,10 +61,13 @@ public class HTTP2ServerHandler implements Handler {
 
 				@Override
 				public void handshakeFinished(SSLSession sslSession) {
-					// initialize HTTP2 server connection
-					if(session.getAttachment() instanceof HttpVersion) {
-						HttpVersion httpVersion = (HttpVersion)session.getAttachment();
-						session.attachObject(new HTTP2ServerConnection(config, session, sslSession, listener, httpVersion));
+					if (session.getAttachment() instanceof HttpVersion) {
+						HttpVersion httpVersion = (HttpVersion) session.getAttachment();
+						if (httpVersion == HttpVersion.HTTP_2) {
+							session.attachObject(new HTTP2ServerConnection(config, session, sslSession, listener));
+						} else {
+							// TODO initialize HTTP 1.1 server connection
+						}
 					} else {
 						log.error("HTTP2 server can not get the HTTP version of session {}", session.getSessionId());
 						session.closeNow();
@@ -80,10 +83,10 @@ public class HTTP2ServerHandler implements Handler {
 				@Override
 				public String select(List<String> clientProtocols) {
 					try {
-						for(String clientProtocol : clientProtocols) {
-							for(String serverProtocol : serverProtocols) {
-								if(serverProtocol.equals(clientProtocol)) {
-									if(serverProtocol.equals("http/1.1")) {
+						for (String clientProtocol : clientProtocols) {
+							for (String serverProtocol : serverProtocols) {
+								if (serverProtocol.equals(clientProtocol)) {
+									if (serverProtocol.equals("http/1.1")) {
 										session.attachObject(HttpVersion.HTTP_1_1);
 									} else {
 										session.attachObject(HttpVersion.HTTP_2);
@@ -100,7 +103,7 @@ public class HTTP2ServerHandler implements Handler {
 			});
 		} else {
 			// TODO negotiate protocol without ALPN
-			session.attachObject(new HTTP2ServerConnection(config, session, null, listener, HttpVersion.HTTP_2));
+			session.attachObject(new HTTP2ServerConnection(config, session, null, listener));
 		}
 	}
 
@@ -129,7 +132,6 @@ public class HTTP2ServerHandler implements Handler {
 		if (http2ServerConnection != null && http2ServerConnection.isOpen()) {
 			http2ServerConnection.close();
 		}
-
 	}
 
 }

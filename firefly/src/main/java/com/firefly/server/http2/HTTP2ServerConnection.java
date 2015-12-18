@@ -3,7 +3,6 @@ package com.firefly.server.http2;
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.decode.ServerParser;
 import com.firefly.codec.http2.encode.Generator;
-import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -16,8 +15,8 @@ import com.firefly.net.tcp.ssl.SSLSession;
 public class HTTP2ServerConnection extends AbstractHTTP2Connection {
 
 	public HTTP2ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
-			ServerSessionListener serverSessionListener, HttpVersion httpVersion) {
-		super(config, tcpSession, sslSession, serverSessionListener, httpVersion);
+			ServerSessionListener serverSessionListener) {
+		super(config, tcpSession, sslSession, serverSessionListener);
 	}
 
 	protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,

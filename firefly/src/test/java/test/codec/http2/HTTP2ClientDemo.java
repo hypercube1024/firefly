@@ -22,6 +22,7 @@ import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.codec.http2.stream.Stream;
@@ -37,7 +38,7 @@ public class HTTP2ClientDemo {
 		http2Configuration.setTcpIdleTimeout(5 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
-		FuturePromise<HTTP2ClientConnection> promise = new FuturePromise<>();
+		FuturePromise<HTTPConnection> promise = new FuturePromise<>();
 		client.connect("127.0.0.1", 6677, promise, new Listener() {
 
 			@Override
@@ -79,7 +80,7 @@ public class HTTP2ClientDemo {
 			}
 		});
 
-		HTTP2ClientConnection connection = promise.get();
+		HTTPConnection connection = promise.get();
 		HttpFields fields = new HttpFields();
 		fields.put(HttpHeader.ACCEPT, "text/html");
 		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
@@ -87,37 +88,40 @@ public class HTTP2ClientDemo {
 		MetaData.Request metaData = new MetaData.Request("POST", HttpScheme.HTTP,
 				new HostPortHttpField("127.0.0.1:6677"), "/data", HttpVersion.HTTP_2, fields);
 
-		HeadersFrame headersFrame = new HeadersFrame(metaData, null, false);
+		HTTP2ClientConnection clientConnection = (HTTP2ClientConnection) connection;
+
 		FuturePromise<Stream> streamPromise = new FuturePromise<>();
-		connection.getHttp2Session().newStream(headersFrame, streamPromise, new Stream.Listener() {
+		clientConnection.getHttp2Session().newStream(new HeadersFrame(metaData, null, false), streamPromise,
+				new Stream.Listener() {
 
-			@Override
-			public void onHeaders(Stream stream, HeadersFrame frame) {
-				System.out.println("client receives headers: " + frame);
-			}
+					@Override
+					public void onHeaders(Stream stream, HeadersFrame frame) {
+						System.out.println("client receives headers: " + frame);
+					}
 
-			@Override
-			public com.firefly.codec.http2.stream.Stream.Listener onPush(Stream stream, PushPromiseFrame frame) {
-				return null;
-			}
+					@Override
+					public com.firefly.codec.http2.stream.Stream.Listener onPush(Stream stream,
+							PushPromiseFrame frame) {
+						return null;
+					}
 
-			@Override
-			public void onData(Stream stream, DataFrame frame, Callback callback) {
-				System.out.println("client receives data:" + frame.remaining() + "|"
-						+ BufferUtils.toUTF8String(frame.getData()));
-				callback.succeeded();
-			}
+					@Override
+					public void onData(Stream stream, DataFrame frame, Callback callback) {
+						System.out.println("client receives data:" + frame.remaining() + "|"
+								+ BufferUtils.toUTF8String(frame.getData()));
+						callback.succeeded();
+					}
 
-			@Override
-			public void onReset(Stream stream, ResetFrame frame) {
-				System.out.println("client reset: " + stream + "|" + frame);
-			}
+					@Override
+					public void onReset(Stream stream, ResetFrame frame) {
+						System.out.println("client reset: " + stream + "|" + frame);
+					}
 
-			@Override
-			public void onTimeout(Stream stream, Throwable x) {
-				x.printStackTrace();
-			}
-		});
+					@Override
+					public void onTimeout(Stream stream, Throwable x) {
+						x.printStackTrace();
+					}
+				});
 
 		final Stream clientStream = streamPromise.get();
 		System.out.println("client stream id: " + clientStream.getId());
@@ -135,18 +139,19 @@ public class HTTP2ClientDemo {
 			@Override
 			public void succeeded() {
 				System.out.println("client sents small data success");
-				clientStream.data(bigDataFrame, new Callback(){
+				clientStream.data(bigDataFrame, new Callback() {
 
 					@Override
 					public void succeeded() {
 						System.out.println("client sents big data success");
-						
+
 					}
 
 					@Override
 					public void failed(Throwable x) {
 						System.out.println("client sents big data failure");
-					}});
+					}
+				});
 			}
 
 			@Override

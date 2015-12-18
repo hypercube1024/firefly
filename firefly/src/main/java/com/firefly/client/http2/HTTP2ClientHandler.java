@@ -16,7 +16,6 @@ import org.eclipse.jetty.alpn.ALPN;
 import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
-import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.SessionSPI;
@@ -36,7 +35,7 @@ public class HTTP2ClientHandler implements Handler {
 
 	private final HTTP2Configuration config;
 	private final Map<Integer, HTTP2ClientContext> http2ClientContext;
-	private final List<String> protocols = Arrays.asList("http/1.1", "h2", "h2-17", "h2-16", "h2-15", "h2-14");
+	private final List<String> protocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1");
 	private SSLContext sslContext;
 
 	public HTTP2ClientHandler(HTTP2Configuration config, Map<Integer, HTTP2ClientContext> http2ClientContext) {
@@ -82,9 +81,9 @@ public class HTTP2ClientHandler implements Handler {
 				@Override
 				public void handshakeFinished(SSLSession sslSession) {
 					if (context.serverSelectedProtocol.equals("http/1.1")) {
-						// TODO support http 1.1
+						initializeHTTP1ClientConnection(session, context, sslSession);
 					} else {
-						initializeHTTP2ClientConnection(session, context, sslSession, HttpVersion.HTTP_2);
+						initializeHTTP2ClientConnection(session, context, sslSession);
 					}
 				}
 			}, new ALPN.ClientProvider() {
@@ -105,7 +104,8 @@ public class HTTP2ClientHandler implements Handler {
 						if (protocols.contains(protocol)) {
 							context.serverSelectedProtocol = protocol;
 						} else {
-							log.info("The client can not negotiate protocol. server [{}] - client {}", protocol, protocols);
+							log.info("The client can not negotiate protocol. server [{}] - client {}", protocol,
+									protocols);
 							session.close();
 						}
 					} finally {
@@ -115,15 +115,20 @@ public class HTTP2ClientHandler implements Handler {
 			});
 		} else {
 			// TODO negotiate protocol without ALPN
-
-			initializeHTTP2ClientConnection(session, context, null, HttpVersion.HTTP_2);
+			initializeHTTP2ClientConnection(session, context, null);
 		}
 	}
 
+	private void initializeHTTP1ClientConnection(final Session session, final HTTP2ClientContext context,
+			final SSLSession sslSession) {
+		// TODO not implements
+	}
+
 	private void initializeHTTP2ClientConnection(final Session session, final HTTP2ClientContext context,
-			final SSLSession sslSession, final HttpVersion httpVersion) {
+			final SSLSession sslSession) {
+
 		final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession,
-				context.listener, httpVersion);
+				context.listener);
 		Map<Integer, Integer> settings = context.listener.onPreface(connection.getHttp2Session());
 		if (settings == null) {
 			settings = Collections.emptyMap();
