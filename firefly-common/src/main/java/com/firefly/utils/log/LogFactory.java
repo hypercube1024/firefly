@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import com.firefly.utils.StringUtils;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.file.FileLog;
 import com.firefly.utils.log.file.FileLogTask;
 import com.firefly.utils.time.SafeSimpleDateFormat;
@@ -17,6 +18,8 @@ public class LogFactory {
 	public static final SafeSimpleDateFormat DAY_DATE_FORMAT = new SafeSimpleDateFormat("yyyy-MM-dd");
 	public static final String CONFIGURATION_FILE_NAME = "firefly-log.properties";
 	public static final String DEFAULT_LOG_NAME = "firefly-system";
+	public static final String DEFAULT_LOG_LEVEL = "INFO";
+	public static final File DEFAULT_LOG_DIRECTORY = new File(System.getProperty("user.dir"), "logs");
 	
 	private final Map<String, Log> logMap;
 	private final LogTask logTask;
@@ -33,8 +36,6 @@ public class LogFactory {
 		logMap = new HashMap<String, Log>();
 		logTask = new FileLogTask(logMap);
 
-		createDefaultLog();
-		
 		try {
 			Properties properties = loadLogConfigurationFile();
 			parseProperties(properties);
@@ -42,39 +43,11 @@ public class LogFactory {
 			e.printStackTrace();
 		}
 		
+		if(logMap.get(DEFAULT_LOG_NAME) == null) {
+			createDefaultLog();
+		}
+		
 		logTask.start();
-	}
-
-	private void createDefaultLog() {
-		FileLog fileLog = new FileLog();
-		fileLog.setName(DEFAULT_LOG_NAME);
-		fileLog.setLevel(LogLevel.INFO);
-		
-		boolean setLogDirectorySuccess = false;
-		File logDir = new File(System.getProperty("user.dir"), "logs");
-		if(logDir.isDirectory() && logDir.exists()) {
-			fileLog.setPath(logDir.getAbsolutePath());
-			setLogDirectorySuccess = true;
-		} else {
-			boolean success = logDir.mkdirs();
-			if(success) {
-				fileLog.setPath(logDir.getAbsolutePath());
-				setLogDirectorySuccess = true;
-			} else {
-				setLogDirectorySuccess = false;
-			}
-		}
-		
-		if(setLogDirectorySuccess) {
-			fileLog.setFileOutput(true);
-			fileLog.setConsoleOutput(false);
-		} else {
-			fileLog.setFileOutput(false);
-			fileLog.setConsoleOutput(true);
-		}
-		
-		logMap.put(DEFAULT_LOG_NAME, fileLog);
-		System.out.println("create default log: " + fileLog.toString());
 	}
 	
 	private Properties loadLogConfigurationFile() throws IOException{
@@ -84,48 +57,87 @@ public class LogFactory {
 		}
 		return properties;
 	}
+	
+	private boolean createLogDirectory(File file) {
+		if(file.exists() && file.isDirectory()) {
+			return true;
+		} else {
+			return file.mkdirs();
+		}
+	}
+	
+	private void createDefaultLog() {
+		createLog(DEFAULT_LOG_NAME, DEFAULT_LOG_LEVEL, null, false);
+	}
+
+	private void createLog(String name, String level, String path, boolean console) {
+		FileLog fileLog = new FileLog();
+		fileLog.setName(name);
+		fileLog.setLevel(LogLevel.fromName(level));
+		
+		boolean createLogDirectorySuccess = false;
+		if(VerifyUtils.isNotEmpty(path)) {
+			File file = new File(path);
+			createLogDirectorySuccess = createLogDirectory(file);
+			if(createLogDirectorySuccess) {
+				fileLog.setPath(path);
+				fileLog.setFileOutput(true);
+			} else {
+				createLogDirectorySuccess = createLogDirectory(DEFAULT_LOG_DIRECTORY);
+				if(createLogDirectorySuccess) {
+					fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
+					fileLog.setFileOutput(true);
+				} else {
+					fileLog.setFileOutput(false);
+				}
+			}
+		} else {
+			createLogDirectorySuccess = createLogDirectory(DEFAULT_LOG_DIRECTORY);
+			if(createLogDirectorySuccess) {
+				fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
+				fileLog.setFileOutput(true);
+			} else {
+				fileLog.setFileOutput(false);
+			}
+		}
+		
+		if(createLogDirectorySuccess) {
+			fileLog.setConsoleOutput(console);
+		} else {
+			fileLog.setConsoleOutput(true);
+			System.err.println("create log directory is failure");
+		}
+		
+		logMap.put(name, fileLog);
+		System.out.println("initialize log " + fileLog.toString());
+	}
 
 	private void parseProperties(Properties properties) {
 		for (Entry<Object, Object> entry : properties.entrySet()) {
 			String name = (String) entry.getKey();
 			String value = (String) entry.getValue();
-//			System.out.println(name + "|" + value);
 
 			String[] strs = StringUtils.split(value, ',');
-			if (strs.length < 2) {
-				System.err.println("the log configuration file format is illegal");
-				continue;
-			}
 
-			String path = strs[1];
-			FileLog fileLog = new FileLog();
-			fileLog.setName(name);
-			fileLog.setLevel(LogLevel.fromName(strs[0]));
-
-			if ("console".equalsIgnoreCase(path)) {
-				fileLog.setFileOutput(false);
-				fileLog.setConsoleOutput(true);
-			} else {
-				File file = new File(path);
-				if(file.exists() && file.isDirectory()) {
-					fileLog.setPath(path);
-					fileLog.setFileOutput(true);
+			switch (strs.length) {
+			case 1:
+				createLog(name, strs[0], null, false);
+				break;
+			case 2:
+				if("console".equalsIgnoreCase(strs[1])) {
+					createLog(name, strs[0], null, true);
 				} else {
-					boolean success = file.mkdirs();
-					if(success) {
-						fileLog.setPath(path);
-						fileLog.setFileOutput(true);
-					} else {
-						System.err.println("create directory " + path + " failure");
-						continue;
-					}
+					createLog(name, strs[0], strs[1], false);
 				}
-
-				if (strs.length > 2)
-					fileLog.setConsoleOutput("console".equalsIgnoreCase(strs[2]));
+				break;
+			case 3:
+				createLog(name, strs[0], strs[1], "console".equalsIgnoreCase(strs[2]));
+				break;
+			default:
+				System.err.println("The log " + name + " configuration format is illegal. It will use default log configuration");
+				createLog(name, DEFAULT_LOG_LEVEL, null, false);
+				break;
 			}
-			logMap.put(name, fileLog);
-			System.out.println("initialize log " + fileLog.toString() + " success");
 		}
 	}
 

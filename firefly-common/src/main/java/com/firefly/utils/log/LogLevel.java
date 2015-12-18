@@ -37,11 +37,23 @@ public enum LogLevel {
 	}
 
 	public static LogLevel fromLevel(int level) {
-		return levels[level];
+		if(level >= 0 && level < levels.length) {
+			return levels[level];
+		} else {
+			return INFO;
+		}
 	}
 
 	public static LogLevel fromName(String name) {
-		return levelNameMap.get(name);
+		if(name == null)
+			return INFO;
+		
+		LogLevel logLevel = levelNameMap.get(name);
+		if(logLevel == null) {
+			return INFO;
+		} else {
+			return levelNameMap.get(name);
+		}
 	}
 	
 }

@@ -1,3 +1,0 @@
-INFO 2015-12-17 13:49:09	default log info
-WARN 2015-12-17 13:49:09	default log warn
-ERROR 2015-12-17 13:49:09	default log error

@@ -249,8 +249,8 @@ public class FileLog implements Log, Closeable {
 
 	@Override
 	public String toString() {
-		return "FileLog [level=" + level.getName() + ", path=" + path + ", name=" + name + ", consoleOutput="
-				+ consoleOutput + ", fileOutput=" + fileOutput + "]";
+		return "[level=" + level.getName() + ", name=" + name + ", path=" + path + ", consoleOutput=" + consoleOutput
+				+ ", fileOutput=" + fileOutput + "]";
 	}
 
 	public static StackTraceElement getStackTraceElement() {

@@ -33,6 +33,8 @@ public class LogTest {
 			"test-console");
 	private static final Log defaultLog = LogFactory.getInstance().getLog(
 			"firefly-system");
+	private static final Log illegalLog = LogFactory.getInstance().getLog(
+			"test-illegal");
 
 	@Before
 	public void init() {
@@ -257,6 +259,12 @@ public class LogTest {
 			defaultLog.info("default log info");
 			defaultLog.warn("default log warn");
 			defaultLog.error("default log error");
+			
+			illegalLog.trace("test log trace");
+			illegalLog.debug("test log debug");
+			illegalLog.info("test log info");
+			illegalLog.warn("test log warn");
+			illegalLog.error("test log error");
 
 			try {
 				test3();
