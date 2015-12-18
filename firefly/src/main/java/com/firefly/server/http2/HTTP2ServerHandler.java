@@ -3,15 +3,14 @@ package com.firefly.server.http2;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.eclipse.jetty.alpn.ALPN;
 
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
@@ -28,8 +27,8 @@ public class HTTP2ServerHandler implements Handler {
 
 	private final HTTP2Configuration config;
 	private final ServerSessionListener listener;
-	private final Set<String> protocolSet = new HashSet<>(Arrays.asList("http/1.1", "h2", "h2-17", "h2-16", "h2-15", "h2-14"));
-	private final String defaultProtocol = "h2";
+	private final List<String> serverProtocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1");
+	private final String defaultProtocol = "http/1.1";
 	private SSLContext sslContext;
 
 	public HTTP2ServerHandler(HTTP2Configuration config, ServerSessionListener listener) {
@@ -63,7 +62,13 @@ public class HTTP2ServerHandler implements Handler {
 				@Override
 				public void handshakeFinished(SSLSession sslSession) {
 					// initialize HTTP2 server connection
-					session.attachObject(new HTTP2ServerConnection(config, session, sslSession, listener));
+					if(session.getAttachment() instanceof HttpVersion) {
+						HttpVersion httpVersion = (HttpVersion)session.getAttachment();
+						session.attachObject(new HTTP2ServerConnection(config, session, sslSession, listener, httpVersion));
+					} else {
+						log.error("HTTP2 server can not get the HTTP version of session {}", session.getSessionId());
+						session.closeNow();
+					}
 				}
 			}, new ALPN.ServerProvider() {
 
@@ -73,11 +78,18 @@ public class HTTP2ServerHandler implements Handler {
 				}
 
 				@Override
-				public String select(List<String> protocols) {
+				public String select(List<String> clientProtocols) {
 					try {
-						for(String protocol : protocols) {
-							if(protocolSet.contains(protocol)) {
-								return protocol;
+						for(String clientProtocol : clientProtocols) {
+							for(String serverProtocol : serverProtocols) {
+								if(serverProtocol.equals(clientProtocol)) {
+									if(serverProtocol.equals("http/1.1")) {
+										session.attachObject(HttpVersion.HTTP_1_1);
+									} else {
+										session.attachObject(HttpVersion.HTTP_2);
+									}
+									return clientProtocol;
+								}
 							}
 						}
 						return defaultProtocol;
@@ -88,7 +100,7 @@ public class HTTP2ServerHandler implements Handler {
 			});
 		} else {
 			// TODO negotiate protocol without ALPN
-			session.attachObject(new HTTP2ServerConnection(config, session, null, listener));
+			session.attachObject(new HTTP2ServerConnection(config, session, null, listener, HttpVersion.HTTP_2));
 		}
 	}
 

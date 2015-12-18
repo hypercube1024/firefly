@@ -16,6 +16,7 @@ import org.eclipse.jetty.alpn.ALPN;
 import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.SessionSPI;
@@ -83,7 +84,7 @@ public class HTTP2ClientHandler implements Handler {
 					if (context.serverSelectedProtocol.equals("http/1.1")) {
 						// TODO support http 1.1
 					} else {
-						initializeHTTP2ClientConnection(session, context, sslSession);
+						initializeHTTP2ClientConnection(session, context, sslSession, HttpVersion.HTTP_2);
 					}
 				}
 			}, new ALPN.ClientProvider() {
@@ -102,14 +103,9 @@ public class HTTP2ClientHandler implements Handler {
 				public void selected(String protocol) {
 					try {
 						if (protocols.contains(protocol)) {
-							// TODO select decoder
-							if (protocol.equals("http/1.1")) {
-
-							} else {
-
-							}
+							context.serverSelectedProtocol = protocol;
 						} else {
-							log.info("Could not negotiate protocol: server [{}] - client {}", protocol, protocols);
+							log.info("The client can not negotiate protocol. server [{}] - client {}", protocol, protocols);
 							session.close();
 						}
 					} finally {
@@ -120,14 +116,14 @@ public class HTTP2ClientHandler implements Handler {
 		} else {
 			// TODO negotiate protocol without ALPN
 
-			initializeHTTP2ClientConnection(session, context, null);
+			initializeHTTP2ClientConnection(session, context, null, HttpVersion.HTTP_2);
 		}
 	}
 
 	private void initializeHTTP2ClientConnection(final Session session, final HTTP2ClientContext context,
-			final SSLSession sslSession) {
+			final SSLSession sslSession, final HttpVersion httpVersion) {
 		final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession,
-				context.listener);
+				context.listener, httpVersion);
 		Map<Integer, Integer> settings = context.listener.onPreface(connection.getHttp2Session());
 		if (settings == null) {
 			settings = Collections.emptyMap();
@@ -172,6 +168,8 @@ public class HTTP2ClientHandler implements Handler {
 			}
 		} catch (Throwable t) {
 			log.error("http2 conection close exception", t);
+		} finally {
+			http2ClientContext.remove(session.getSessionId());
 		}
 	}
 

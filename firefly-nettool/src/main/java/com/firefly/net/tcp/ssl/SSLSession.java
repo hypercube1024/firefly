@@ -22,6 +22,7 @@ import com.firefly.utils.log.LogFactory;
 public class SSLSession implements Closeable {
 	
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final boolean debugMode = Boolean.getBoolean("debugMode");
 	
 	protected final Session session;
 	protected final SSLEngine sslEngine;
@@ -71,7 +72,7 @@ public class SSLSession implements Closeable {
     	this.sslEventHandler = sslEventHandler;
     	
     	if(provider != null) {
-//        	ALPN.debug = true;
+        	ALPN.debug = debugMode;
         	ALPN.put(sslEngine, provider);
         }
     	

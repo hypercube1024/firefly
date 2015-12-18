@@ -47,7 +47,7 @@ public class AsynchronousTcpSession implements Session {
 
 	private final Config config;
 	private final EventManager eventManager;
-	private Object attachment;
+	private volatile Object attachment;
 
 	private final Lock outputLock = new ReentrantLock();
 	private boolean isWriting = false;
