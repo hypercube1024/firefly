@@ -69,7 +69,7 @@ public class SimpleTcpClientExample {
 				System.out.println("con3|" + obj.toString());
 			}
 		});
-		c3.closeNow();;
+		c3.close();;
 		
 		Thread.sleep(4000);
 		client.shutdown();
