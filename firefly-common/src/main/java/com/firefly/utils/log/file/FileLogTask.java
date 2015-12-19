@@ -23,10 +23,21 @@ public class FileLogTask implements LogTask {
 		thread.setPriority(Thread.MIN_PRIORITY);
 		this.logMap = logMap;
 	}
+	
+	private long flushAllPerSecond(final long lastFlushedTime) {
+		// flush all log buffer per one second
+		long timeDifference = Millisecond100Clock.currentTimeMillis() - lastFlushedTime;
+		if(timeDifference > 1000) {
+			LogFactory.getInstance().flushAll();
+			return Millisecond100Clock.currentTimeMillis();
+		} else {
+			return lastFlushedTime;
+		}
+	}
 
 	@Override
 	public void run() {
-		long flushedTime = Millisecond100Clock.currentTimeMillis();
+		long lastFlushedTime = Millisecond100Clock.currentTimeMillis();
 		while (true) {
 			try {
 				for (LogItem logItem = null; (logItem = queue.poll(1000, TimeUnit.MILLISECONDS)) != null;) {
@@ -34,17 +45,10 @@ public class FileLogTask implements LogTask {
 					if (log instanceof FileLog) {
 						((FileLog) log).write(logItem);
 					}
-					
-					// flush all log buffer per one second
-					long timeDifference = Millisecond100Clock.currentTimeMillis() - flushedTime;
-					if(timeDifference > 1000) {
-						LogFactory.getInstance().flushAll();
-						flushedTime = Millisecond100Clock.currentTimeMillis();
-					}
+					lastFlushedTime = flushAllPerSecond(lastFlushedTime);
 				}
 				
-				LogFactory.getInstance().flushAll();
-				flushedTime = Millisecond100Clock.currentTimeMillis();
+				lastFlushedTime = flushAllPerSecond(lastFlushedTime);
 			} catch (Throwable e) {
 				e.printStackTrace();
 				try {
