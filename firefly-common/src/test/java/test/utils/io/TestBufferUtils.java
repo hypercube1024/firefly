@@ -2,13 +2,17 @@ package test.utils.io;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -20,7 +24,7 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.BufferUtils;
 
 public class TestBufferUtils {
-	
+
 	@Test
 	public void testNormalizeCapacity() {
 		Assert.assertThat(BufferUtils.normalizeBufferSize(5), is(1024));
@@ -33,7 +37,7 @@ public class TestBufferUtils {
 		Assert.assertThat(BufferUtils.normalizeBufferSize(2049), is(1024 * 3));
 		Assert.assertThat(BufferUtils.normalizeBufferSize(5000), is(1024 * 5));
 	}
-	
+
 	@Test
 	public void testToInt() throws Exception {
 		ByteBuffer buf[] = { BufferUtils.toBuffer("0"), BufferUtils.toBuffer(" 42 "), BufferUtils.toBuffer("   43abc"),
@@ -271,5 +275,38 @@ public class TestBufferUtils {
 		BufferUtils.append(buffer, bytes, 0, capacity);
 		BufferUtils.writeTo(buffer.asReadOnlyBuffer(), out);
 		assertThat("Bytes in out equal bytes in buffer", Arrays.equals(bytes, out.toByteArray()), is(true));
+	}
+
+	@Test
+	public void testMappedFile() throws Exception {
+		String data = "Now is the time for all good men to come to the aid of the party";
+		File file = File.createTempFile("test", ".txt");
+		file.deleteOnExit();
+		try (FileWriter out = new FileWriter(file);) {
+			out.write(data);
+		}
+
+		ByteBuffer mapped = BufferUtils.toMappedBuffer(file);
+		assertEquals(data, BufferUtils.toString(mapped));
+		assertTrue(BufferUtils.isMappedBuffer(mapped));
+
+		ByteBuffer direct = BufferUtils.allocateDirect(data.length());
+		direct.clear();
+		direct.put(data.getBytes(StandardCharsets.ISO_8859_1));
+		direct.flip();
+		assertEquals(data, BufferUtils.toString(direct));
+		assertFalse(BufferUtils.isMappedBuffer(direct));
+
+		ByteBuffer slice = direct.slice();
+		assertEquals(data, BufferUtils.toString(slice));
+		assertFalse(BufferUtils.isMappedBuffer(slice));
+
+		ByteBuffer duplicate = direct.duplicate();
+		assertEquals(data, BufferUtils.toString(duplicate));
+		assertFalse(BufferUtils.isMappedBuffer(duplicate));
+
+		ByteBuffer readonly = direct.asReadOnlyBuffer();
+		assertEquals(data, BufferUtils.toString(readonly));
+		assertFalse(BufferUtils.isMappedBuffer(readonly));
 	}
 }

@@ -1,40 +1,25 @@
-//
-//  ========================================================================
-//  Copyright (c) 1995-2015 Mort Bay Consulting Pty. Ltd.
-//  ------------------------------------------------------------------------
-//  All rights reserved. This program and the accompanying materials
-//  are made available under the terms of the Eclipse Public License v1.0
-//  and Apache License v2.0 which accompanies this distribution.
-//
-//      The Eclipse Public License is available at
-//      http://www.eclipse.org/legal/epl-v10.html
-//
-//      The Apache License v2.0 is available at
-//      http://www.opensource.org/licenses/apache2.0.php
-//
-//  You may elect to redistribute this code under either of these licenses.
-//  ========================================================================
-//
-
 package com.firefly.utils.io;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 
 import com.firefly.utils.lang.TypeUtils;
 
-/* ------------------------------------------------------------------------------- */
 /**
  * Buffer utility methods.
  * <p>
@@ -55,7 +40,7 @@ import com.firefly.utils.lang.TypeUtils;
  * worth of garbage.
  * </p>
  * <p>
- * The BufferUtil class provides a set of utilities that operate on the
+ * The BufferUtils class provides a set of utilities that operate on the
  * convention that ByteBuffers will always be left, passed in an API or returned
  * from a method in the flush mode - ie with valid data between the pos and
  * limit. This convention is adopted so as to avoid confusion as to what state a
@@ -69,13 +54,13 @@ import com.firefly.utils.lang.TypeUtils;
  * </p>
  * 
  * <pre>
- * ByteBuffer buffer = BufferUtil.allocate(1024);
+ * ByteBuffer buffer = BufferUtils.allocate(1024);
  * assert (buffer.remaining() == 0);
- * BufferUtil.clear(buffer);
+ * BufferUtils.clear(buffer);
  * assert (buffer.remaining() == 0);
  * </pre>
  * <p>
- * If the BufferUtil methods {@link #fill(ByteBuffer, byte[], int, int)},
+ * If the BufferUtils methods {@link #fill(ByteBuffer, byte[], int, int)},
  * {@link #append(ByteBuffer, byte[], int, int)} or
  * {@link #put(ByteBuffer, ByteBuffer)} are used, then the caller does not need
  * to explicitly switch the buffer to fill mode. If the caller wishes to use
@@ -87,7 +72,7 @@ import com.firefly.utils.lang.TypeUtils;
  * </p>
  * 
  * <pre>
- * int pos = BufferUtil.flipToFill(buffer);
+ * int pos = BufferUtils.flipToFill(buffer);
  * try {
  * 	buffer.put(data);
  * } finally {
@@ -101,15 +86,15 @@ import com.firefly.utils.lang.TypeUtils;
  */
 public class BufferUtils {
 	public static final int TEMP_BUFFER_SIZE = 4096;
-	public static final byte SPACE = 0x20;
-	public static final byte MINUS = '-';
+	static final byte SPACE = 0x20;
+	static final byte MINUS = '-';
 	static final byte[] DIGIT = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6',
 			(byte) '7', (byte) '8', (byte) '9', (byte) 'A', (byte) 'B', (byte) 'C', (byte) 'D', (byte) 'E',
 			(byte) 'F' };
 
 	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.wrap(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBuffer[0];
-
+	
 	/**
 	 * The capacity modulo 1024 is 0
 	 * 
@@ -861,9 +846,36 @@ public class BufferUtils {
 	}
 
 	public static ByteBuffer toMappedBuffer(File file) throws IOException {
-		try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-			return raf.getChannel().map(MapMode.READ_ONLY, 0, raf.length());
+		try (FileChannel channel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
+			return channel.map(MapMode.READ_ONLY, 0, file.length());
 		}
+	}
+
+	static final Field fdMappedByteBuffer;
+
+	static {
+		Field fd = null;
+		try {
+			fd = MappedByteBuffer.class.getDeclaredField("fd");
+			fd.setAccessible(true);
+		} catch (Exception e) {
+		}
+		fdMappedByteBuffer = fd;
+	}
+
+	public static boolean isMappedBuffer(ByteBuffer buffer) {
+		if (!(buffer instanceof MappedByteBuffer))
+			return false;
+		MappedByteBuffer mapped = (MappedByteBuffer) buffer;
+
+		if (fdMappedByteBuffer != null) {
+			try {
+				if (fdMappedByteBuffer.get(mapped) instanceof FileDescriptor)
+					return true;
+			} catch (Exception e) {
+			}
+		}
+		return false;
 	}
 
 	public static String toSummaryString(ByteBuffer buffer) {
@@ -955,32 +967,36 @@ public class BufferUtils {
 	}
 
 	private static void appendDebugString(StringBuilder buf, ByteBuffer buffer) {
-		for (int i = 0; i < buffer.position(); i++) {
-			appendContentChar(buf, buffer.get(i));
-			if (i == 16 && buffer.position() > 32) {
-				buf.append("...");
-				i = buffer.position() - 16;
+		try {
+			for (int i = 0; i < buffer.position(); i++) {
+				appendContentChar(buf, buffer.get(i));
+				if (i == 16 && buffer.position() > 32) {
+					buf.append("...");
+					i = buffer.position() - 16;
+				}
 			}
-		}
-		buf.append("<<<");
-		for (int i = buffer.position(); i < buffer.limit(); i++) {
-			appendContentChar(buf, buffer.get(i));
-			if (i == buffer.position() + 16 && buffer.limit() > buffer.position() + 32) {
-				buf.append("...");
-				i = buffer.limit() - 16;
+			buf.append("<<<");
+			for (int i = buffer.position(); i < buffer.limit(); i++) {
+				appendContentChar(buf, buffer.get(i));
+				if (i == buffer.position() + 16 && buffer.limit() > buffer.position() + 32) {
+					buf.append("...");
+					i = buffer.limit() - 16;
+				}
 			}
-		}
-		buf.append(">>>");
-		int limit = buffer.limit();
-		buffer.limit(buffer.capacity());
-		for (int i = limit; i < buffer.capacity(); i++) {
-			appendContentChar(buf, buffer.get(i));
-			if (i == limit + 16 && buffer.capacity() > limit + 32) {
-				buf.append("...");
-				i = buffer.capacity() - 16;
+			buf.append(">>>");
+			int limit = buffer.limit();
+			buffer.limit(buffer.capacity());
+			for (int i = limit; i < buffer.capacity(); i++) {
+				appendContentChar(buf, buffer.get(i));
+				if (i == limit + 16 && buffer.capacity() > limit + 32) {
+					buf.append("...");
+					i = buffer.capacity() - 16;
+				}
 			}
+			buffer.limit(limit);
+		} catch (Throwable x) {
+			buf.append("!!concurrent mod!!");
 		}
-		buffer.limit(limit);
 	}
 
 	private static void appendContentChar(StringBuilder buf, byte b) {
