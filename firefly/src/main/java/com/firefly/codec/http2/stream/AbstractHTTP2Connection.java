@@ -11,9 +11,9 @@ import com.firefly.codec.http2.stream.Session.Listener;;
 
 public abstract class AbstractHTTP2Connection extends AbstractHTTPConnection {
 
-	protected HTTP2Session http2Session;
-	protected Parser parser;
-	protected Generator generator;
+	protected final HTTP2Session http2Session;
+	protected final Parser parser;
+	protected final Generator generator;
 
 	protected static final Scheduler scheduler = Schedulers.createScheduler();
 

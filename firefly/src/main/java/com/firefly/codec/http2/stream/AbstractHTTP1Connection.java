@@ -10,14 +10,14 @@ import com.firefly.net.tcp.ssl.SSLSession;
 
 abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
 
-	protected HttpParser parser;
-	protected HttpGenerator generator;
+	protected final HttpParser parser;
+	protected final HttpGenerator generator;
 
 	public AbstractHTTP1Connection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession,
 			RequestHandler requestHandler, ResponseHandler responseHandler) {
 		super(sslSession, tcpSession, HttpVersion.HTTP_1_1);
 
-		initHttpParser(config, requestHandler, responseHandler);
+		parser = initHttpParser(config, requestHandler, responseHandler);
 		generator = new HttpGenerator();
 	}
 

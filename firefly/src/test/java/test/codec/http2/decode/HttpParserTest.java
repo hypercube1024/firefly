@@ -1274,6 +1274,26 @@ public class HttpParserTest {
 		assertFalse(_headerCompleted);
 		assertEquals(_bad, "Bad Continuation");
 	}
+	
+	@Test
+	public void testParseRequest2() {
+		ByteBuffer buffer = BufferUtils.toBuffer("GET / H");
+		HttpParser.RequestHandler handler = new Handler();
+		HttpParser parser = new HttpParser(handler);
+		
+		parser.parseNext(buffer);
+		assertEquals(0, buffer.remaining());
+		assertNull(_methodOrVersion);
+		assertNull(_uriOrStatus);
+		assertNull(_versionOrReason);
+		
+		buffer = BufferUtils.toBuffer("TTP/1.1\r\n");
+		parser.parseNext(buffer);
+		assertEquals(0, buffer.remaining());
+		assertEquals("GET", _methodOrVersion);
+		assertEquals("/", _uriOrStatus);
+		assertEquals("HTTP/1.1", _versionOrReason);
+	}
 
 	@Test
 	public void testParseRequest() throws Exception {
