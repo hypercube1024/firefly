@@ -13,5 +13,7 @@ public interface HTTPConnection extends Closeable {
 	void setAttachment(Object attachment);
 
 	boolean isOpen();
+	
+	boolean isEncrypted();
 
 }

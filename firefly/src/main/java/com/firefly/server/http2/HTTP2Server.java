@@ -1,9 +1,9 @@
 package com.firefly.server.http2;
 
-import com.firefly.codec.common.DecoderChain;
-import com.firefly.codec.common.EncoderChain;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.core.AbstractLifeCycle;
+import com.firefly.net.DecoderChain;
+import com.firefly.net.EncoderChain;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.utils.log.LogFactory;
@@ -31,11 +31,11 @@ public class HTTP2Server extends AbstractLifeCycle {
 		EncoderChain encoder;
 		
 		if (http2Configuration.isSecure()) {
-			decoder = new ServerSecureDecoder(new HTTP2ServerDecoder());
-			encoder = new HTTP2ServerEncoder(new ServerSecureEncoder());
+			decoder = new ServerSecureDecoder(new HTTP1ServerDecoder(new HTTP2ServerDecoder()));
+			encoder = new HTTP1ServerEncoder(new HTTP2ServerEncoder(new ServerSecureEncoder()));
 		} else {
-			decoder = new DecoderChain(new HTTP2ServerDecoder());
-			encoder = new EncoderChain(new HTTP2ServerEncoder());
+			decoder = new HTTP1ServerDecoder(new HTTP2ServerDecoder());
+			encoder = new HTTP1ServerEncoder(new HTTP2ServerEncoder());
 		}
 		
 		this.server = new AsynchronousTcpServer(decoder, encoder, new HTTP2ServerHandler(http2Configuration, listener), http2Configuration.getTcpIdleTimeout());

@@ -4,13 +4,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.firefly.codec.common.DecoderChain;
-import com.firefly.codec.common.EncoderChain;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.core.AbstractLifeCycle;
 import com.firefly.net.Client;
+import com.firefly.net.DecoderChain;
+import com.firefly.net.EncoderChain;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.log.LogFactory;
@@ -29,11 +29,11 @@ public class HTTP2Client extends AbstractLifeCycle {
 		EncoderChain encoder;
 
 		if (http2Configuration.isSecure()) {
-			decoder = new ClientSecureDecoder(new HTTP2ClientDecoder());
-			encoder = new HTTP2ClientEncoder(new ClientSecureEncoder());
+			decoder = new ClientSecureDecoder(new HTTP1ClientDecoder(new HTTP2ClientDecoder()));
+			encoder = new HTTP1ClientEncoder(new HTTP2ClientEncoder(new ClientSecureEncoder()));
 		} else {
-			decoder = new DecoderChain(new HTTP2ClientDecoder());
-			encoder = new EncoderChain(new HTTP2ClientEncoder());
+			decoder = new HTTP1ClientDecoder(new HTTP2ClientDecoder());
+			encoder = new HTTP1ClientEncoder(new HTTP2ClientEncoder());
 		}
 
 		this.client = new AsynchronousTcpClient(decoder, encoder,

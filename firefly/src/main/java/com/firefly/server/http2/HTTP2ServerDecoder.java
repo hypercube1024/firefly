@@ -2,12 +2,12 @@ package com.firefly.server.http2;
 
 import java.nio.ByteBuffer;
 
-import com.firefly.net.Decoder;
+import com.firefly.net.DecoderChain;
 import com.firefly.net.Session;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class HTTP2ServerDecoder implements Decoder {
+public class HTTP2ServerDecoder extends DecoderChain {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 

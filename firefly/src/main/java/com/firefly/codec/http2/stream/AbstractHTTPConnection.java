@@ -50,4 +50,9 @@ public class AbstractHTTPConnection implements HTTPConnection {
 		}
 	}
 
+	@Override
+	public boolean isEncrypted() {
+		return sslSession != null;
+	}
+
 }
