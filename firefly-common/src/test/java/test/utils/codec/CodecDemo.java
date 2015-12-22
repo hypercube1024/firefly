@@ -2,7 +2,7 @@ package test.utils.codec;
 
 import java.util.Arrays;
 
-import com.firefly.utils.codec.Base64;
+import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.codec.HexUtils;
 
 public class CodecDemo {
@@ -16,10 +16,10 @@ public class CodecDemo {
 			strBuilder.append(i).append("+");
 		}
 
-		String ret = Base64.encodeToString(strBuilder.toString().getBytes(), false);
+		String ret = Base64Utils.encodeToString(strBuilder.toString().getBytes());
 		System.out.println(ret);
 		
-		byte[] b = Base64.decode(ret);
+		byte[] b = Base64Utils.decodeFromString(ret);
 		System.out.println(new String(b));
 		
 		byte[] b1 = {-128, 3};
