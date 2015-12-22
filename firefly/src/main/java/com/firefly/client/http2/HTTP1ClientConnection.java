@@ -72,6 +72,15 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	HttpGenerator getGenerator() {
 		return generator;
 	}
+	
+	public void upgradeHTTP2WithCleartext(HTTPRequest request, HTTPResponseHandler handler) {
+		if(isEncrypted()) {
+			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
+		}
+			
+		checkWrite(handler);
+		// TODO
+	}
 
 	public void request(HTTPRequest request, HTTPResponseHandler handler) {
 		checkWrite(handler);

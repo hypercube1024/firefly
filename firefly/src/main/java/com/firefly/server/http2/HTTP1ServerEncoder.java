@@ -18,6 +18,11 @@ public class HTTP1ServerEncoder extends EncoderChain {
 			next.encode(message, session);
 		} else if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
 			// TODO http1 generator
+			if(connection.isEncrypted()) {
+				next.encode(message, session);
+			} else {
+				
+			}
 		}
 	}
 

@@ -12,22 +12,21 @@ public class ClientSecureEncoder extends EncoderChain {
 	@Override
 	public void encode(Object message, Session session) throws Throwable {
 		HTTPConnection connection = (HTTPConnection) session.getAttachment();
-		if (message instanceof ByteBufferArrayOutputEntry) {
-			ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) message;
-			if (connection.getHttpVersion() == HttpVersion.HTTP_2)
-				((HTTP2ClientConnection) connection).getSSLSession().write(outputEntry.getData(),
+		if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
+			HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) connection;
+			if (message instanceof ByteBufferArrayOutputEntry) {
+				ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) message;
+				http2ClientConnection.getSSLSession().write(outputEntry.getData(),
 						outputEntry.getCallback());
-			else if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
-				// TODO
-			}
-		} else if (message instanceof ByteBufferOutputEntry) {
-			ByteBufferOutputEntry outputEntry = (ByteBufferOutputEntry) message;
-			if (connection.getHttpVersion() == HttpVersion.HTTP_2)
-				((HTTP2ClientConnection) connection).getSSLSession().write(outputEntry.getData(),
+			} else if (message instanceof ByteBufferOutputEntry) {
+				ByteBufferOutputEntry outputEntry = (ByteBufferOutputEntry) message;
+				http2ClientConnection.getSSLSession().write(outputEntry.getData(),
 						outputEntry.getCallback());
-			else if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
-				// TODO
 			}
+			
+		} else if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
+			// TODO
+			
 		}
 	}
 
