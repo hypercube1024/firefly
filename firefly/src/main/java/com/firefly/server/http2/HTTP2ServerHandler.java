@@ -12,6 +12,7 @@ import org.eclipse.jetty.alpn.ALPN;
 
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLContextFactory;
@@ -111,9 +112,9 @@ public class HTTP2ServerHandler implements Handler {
 	public void sessionClosed(Session session) throws Throwable {
 		log.info("server session {} closed", session.getSessionId());
 		try {
-			HTTP2ServerConnection http2ServerConnection = (HTTP2ServerConnection) session.getAttachment();
-			if (http2ServerConnection != null && http2ServerConnection.isOpen()) {
-				http2ServerConnection.close();
+			HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();
+			if (httpConnection != null && httpConnection.isOpen()) {
+				httpConnection.close();
 			}
 		} catch (Throwable t) {
 			log.error("http2 conection close exception", t);
@@ -128,9 +129,9 @@ public class HTTP2ServerHandler implements Handler {
 	@Override
 	public void exceptionCaught(Session session, Throwable t) throws Throwable {
 		log.error("server handling exception", t);
-		HTTP2ServerConnection http2ServerConnection = (HTTP2ServerConnection) session.getAttachment();
-		if (http2ServerConnection != null && http2ServerConnection.isOpen()) {
-			http2ServerConnection.close();
+		HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();
+		if (httpConnection != null && httpConnection.isOpen()) {
+			httpConnection.close();
 		}
 	}
 

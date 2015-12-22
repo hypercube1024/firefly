@@ -3,6 +3,7 @@ package com.firefly.codec.http2.stream;
 import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
+import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.net.Session;
@@ -12,6 +13,7 @@ abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
 
 	protected final HttpParser parser;
 	protected final HttpGenerator generator;
+	protected final Generator http2Generator;
 
 	public AbstractHTTP1Connection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession,
 			RequestHandler requestHandler, ResponseHandler responseHandler) {
@@ -19,6 +21,7 @@ abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
 
 		parser = initHttpParser(config, requestHandler, responseHandler);
 		generator = new HttpGenerator();
+		http2Generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());
 	}
 
 	abstract protected HttpParser initHttpParser(HTTP2Configuration config, RequestHandler requestHandler,
