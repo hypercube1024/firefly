@@ -2,6 +2,7 @@ package com.firefly.client.http2;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritePendingException;
 import java.util.List;
@@ -120,17 +121,38 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	public void request(HTTPRequest request, HTTPResponseHandler handler) {
 		checkWrite(handler);
-		// TODO
+		tcpSession.encode(request);
 	}
 
 	public void request(HTTPRequest request, ByteBuffer data, HTTPResponseHandler handler) {
 		checkWrite(handler);
-		// TODO
+		tcpSession.encode(request);
+		tcpSession.encode(data);
 	}
 
 	public void request(HTTPRequest request, ByteBuffer[] data, HTTPResponseHandler handler) {
 		checkWrite(handler);
-		// TODO
+		tcpSession.encode(request);
+		tcpSession.encode(data);
+	}
+	
+	public OutputStream requestWithStream(HTTPRequest request, HTTPResponseHandler handler) {
+		checkWrite(handler);
+		return new OutputStream(){
+			
+			@Override
+			public void write(byte b[], int off, int len) throws IOException {
+				ByteBuffer buffer = BufferUtils.allocate(len);
+				BufferUtils.append(buffer, b, off, len);
+				tcpSession.encode(buffer);
+			}
+
+			@Override
+			public void write(int b) throws IOException {
+				ByteBuffer buffer = BufferUtils.allocate(1);
+				BufferUtils.append(buffer, (byte)b);
+				tcpSession.encode(buffer);
+			}};
 	}
 
 	private void checkWrite(HTTPResponseHandler handler) {
