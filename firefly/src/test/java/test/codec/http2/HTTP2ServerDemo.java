@@ -18,8 +18,13 @@ import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerSessionListener;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class HTTP2ServerDemo {
+
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+
 	public static void main(String[] args) {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setFlowControlStrategy("simple");
@@ -33,20 +38,20 @@ public class HTTP2ServerDemo {
 
 			@Override
 			public Map<Integer, Integer> onPreface(Session session) {
-				System.out.println("server on preface: " + session);
+				log.info("server received preface: {}", session);
 				return settings;
 			}
 
 			@Override
 			public Listener onNewStream(Stream stream, HeadersFrame frame) {
-				System.out.println("server on new stream: " + stream.getId());
-				System.out.println("server on new stream headers: " + frame.getMetaData().toString());
+				log.info("server created new stream: {}", stream.getId());
+				log.info("server created new stream headers: {}", frame.getMetaData().toString());
 
 				return new Listener() {
 
 					@Override
 					public void onHeaders(Stream stream, HeadersFrame frame) {
-						System.out.println("server on headers: " + frame.getMetaData());
+						log.info("server received headers: {}", frame.getMetaData());
 					}
 
 					@Override
@@ -56,26 +61,25 @@ public class HTTP2ServerDemo {
 
 					@Override
 					public void onData(Stream stream, DataFrame frame, Callback callback) {
-						System.out.println("server data size:" + frame.remaining() + "|"
-								+ BufferUtils.toUTF8String(frame.getData()));
+						log.info("server received data {}, {}", BufferUtils.toUTF8String(frame.getData()), frame);
 						callback.succeeded();
 					}
 
 					@Override
 					public void onReset(Stream stream, ResetFrame frame) {
-						System.out.println("server reset: " + stream + "|" + frame);
+						log.info("server reseted: {} | {}", stream, frame);
 					}
 
 					@Override
 					public void onTimeout(Stream stream, Throwable x) {
-						x.printStackTrace();
+						log.error("the server stream {}, is timeout", x, stream);
 					}
 				};
 			}
 
 			@Override
 			public void onSettings(Session session, SettingsFrame frame) {
-				System.out.println("on settings: " + frame.toString());
+				log.info("server received settings: {}", frame);
 			}
 
 			@Override
@@ -84,17 +88,17 @@ public class HTTP2ServerDemo {
 
 			@Override
 			public void onReset(Session session, ResetFrame frame) {
-				System.out.println("server reset " + frame);
+				log.info("server reset " + frame);
 			}
 
 			@Override
 			public void onClose(Session session, GoAwayFrame frame) {
-				System.out.println("server closed " + frame);
+				log.info("server closed " + frame);
 			}
 
 			@Override
 			public void onFailure(Session session, Throwable failure) {
-				failure.printStackTrace();
+				log.error("server failure, {}", failure, session);
 			}
 
 			@Override

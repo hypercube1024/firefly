@@ -29,8 +29,13 @@ import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class HTTP2ClientDemo {
+
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+
 	public static void main(String[] args)
 			throws InterruptedException, ExecutionException, UnsupportedEncodingException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
@@ -43,7 +48,7 @@ public class HTTP2ClientDemo {
 
 			@Override
 			public Map<Integer, Integer> onPreface(Session session) {
-				System.out.println("client preface: " + session);
+				log.info("client preface: {}", session);
 				Map<Integer, Integer> settings = new HashMap<>();
 				settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
 				settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
@@ -57,7 +62,7 @@ public class HTTP2ClientDemo {
 
 			@Override
 			public void onSettings(Session session, SettingsFrame frame) {
-				System.out.println("client settings frame:" + frame);
+				log.info("client received settings frame: {}", frame);
 			}
 
 			@Override
@@ -66,17 +71,17 @@ public class HTTP2ClientDemo {
 
 			@Override
 			public void onReset(Session session, ResetFrame frame) {
-				System.out.println("client reset " + frame);
+				log.info("client resets {}", frame);
 			}
 
 			@Override
 			public void onClose(Session session, GoAwayFrame frame) {
-				System.out.println("client closed " + frame);
+				log.info("client is closed {}", frame);
 			}
 
 			@Override
 			public void onFailure(Session session, Throwable failure) {
-				failure.printStackTrace();
+				log.error("client failure, {}", failure, session);
 			}
 		});
 
@@ -96,7 +101,7 @@ public class HTTP2ClientDemo {
 
 					@Override
 					public void onHeaders(Stream stream, HeadersFrame frame) {
-						System.out.println("client receives headers: " + frame);
+						log.info("client received headers: {}", frame);
 					}
 
 					@Override
@@ -107,56 +112,52 @@ public class HTTP2ClientDemo {
 
 					@Override
 					public void onData(Stream stream, DataFrame frame, Callback callback) {
-						System.out.println("client receives data:" + frame.remaining() + "|"
-								+ BufferUtils.toUTF8String(frame.getData()));
+						log.info("client received data: {}, {}", BufferUtils.toUTF8String(frame.getData()), frame);
 						callback.succeeded();
 					}
 
 					@Override
 					public void onReset(Stream stream, ResetFrame frame) {
-						System.out.println("client reset: " + stream + "|" + frame);
+						log.info("client reset: {}, {}", stream, frame);
 					}
 
 					@Override
 					public void onTimeout(Stream stream, Throwable x) {
-						x.printStackTrace();
+						log.error("the client stream {} is timeout", x, stream);
 					}
 				});
 
 		final Stream clientStream = streamPromise.get();
-		System.out.println("client stream id: " + clientStream.getId());
+		log.info("client stream id is ", clientStream.getId());
 
 		final DataFrame smallDataFrame = new DataFrame(clientStream.getId(),
 				ByteBuffer.wrap("hello world!".getBytes("UTF-8")), false);
 		final DataFrame bigDataFrame = new DataFrame(clientStream.getId(),
 				ByteBuffer.wrap("big hello world!".getBytes("UTF-8")), true);
 
-		System.out.println("small data remaining " + smallDataFrame.remaining());
-		System.out.println("big data remaining " + bigDataFrame.remaining());
-
 		clientStream.data(smallDataFrame, new Callback() {
 
 			@Override
 			public void succeeded() {
-				System.out.println("client sents small data success");
+				log.info("client sents small data success");
 				clientStream.data(bigDataFrame, new Callback() {
 
 					@Override
 					public void succeeded() {
-						System.out.println("client sents big data success");
+						log.info("client sents big data success");
 
 					}
 
 					@Override
 					public void failed(Throwable x) {
-						System.out.println("client sents big data failure");
+						log.info("client sents big data failure");
 					}
 				});
 			}
 
 			@Override
 			public void failed(Throwable x) {
-				System.out.println("client sents small data failure");
+				log.info("client sents small data failure");
 			}
 		});
 
