@@ -1,9 +1,6 @@
 package com.firefly.client.http2;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.firefly.codec.http2.model.HttpField;
+import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpVersion;
 
 public class HTTPResponse {
@@ -13,7 +10,7 @@ public class HTTPResponse {
 	protected String reason;
 	protected boolean messageCompleted;
 	protected boolean headerCompleted;
-	protected List<HttpField> httpFields = new ArrayList<>();
+	protected HttpFields httpFields;
 	protected boolean earlyEOF;
 
 	public HttpVersion getVersion() {
@@ -56,11 +53,11 @@ public class HTTPResponse {
 		this.headerCompleted = headerCompleted;
 	}
 
-	public List<HttpField> getHttpFields() {
+	public HttpFields getHttpFields() {
 		return httpFields;
 	}
 
-	public void setHttpFields(List<HttpField> httpFields) {
+	public void setHttpFields(HttpFields httpFields) {
 		this.httpFields = httpFields;
 	}
 

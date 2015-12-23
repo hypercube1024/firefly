@@ -14,11 +14,13 @@ abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
 	protected final HttpParser parser;
 	protected final HttpGenerator generator;
 	protected final Generator http2Generator;
+	protected final HTTP2Configuration config;
 
 	public AbstractHTTP1Connection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession,
 			RequestHandler requestHandler, ResponseHandler responseHandler) {
 		super(sslSession, tcpSession, HttpVersion.HTTP_1_1);
 
+		this.config = config;
 		parser = initHttpParser(config, requestHandler, responseHandler);
 		generator = new HttpGenerator();
 		http2Generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());

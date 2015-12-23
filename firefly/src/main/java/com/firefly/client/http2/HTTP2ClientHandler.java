@@ -1,7 +1,5 @@
 package com.firefly.client.http2;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -9,18 +7,12 @@ import javax.net.ssl.SSLEngine;
 
 import org.eclipse.jetty.alpn.ALPN;
 
-import com.firefly.codec.http2.frame.PrefaceFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
-import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLEventHandler;
 import com.firefly.net.tcp.ssl.SSLSession;
-import com.firefly.utils.concurrent.Callback;
 
 public class HTTP2ClientHandler extends AbstractHTTPHandler {
 
@@ -111,40 +103,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 			final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession,
 					context.listener);
 			session.attachObject(connection);
-
-			Map<Integer, Integer> settings = context.listener.onPreface(connection.getHttp2Session());
-			if (settings == null) {
-				settings = Collections.emptyMap();
-			}
-			PrefaceFrame prefaceFrame = new PrefaceFrame();
-			SettingsFrame settingsFrame = new SettingsFrame(settings, false);
-			SessionSPI sessionSPI = connection.getSessionSPI();
-			int windowDelta = config.getInitialSessionRecvWindow() - FlowControlStrategy.DEFAULT_WINDOW_SIZE;
-			Callback callback = new Callback() {
-
-				@Override
-				public void succeeded() {
-					context.promise.succeeded(connection);
-				}
-
-				@Override
-				public void failed(Throwable x) {
-					try {
-						connection.close();
-					} catch (IOException e) {
-						log.error("http2 connection initialization error", e);
-					}
-					context.promise.failed(x);
-				}
-			};
-
-			if (windowDelta > 0) {
-				sessionSPI.updateRecvWindow(windowDelta);
-				sessionSPI.frames(null, callback, prefaceFrame, settingsFrame, new WindowUpdateFrame(0, windowDelta));
-			} else {
-				sessionSPI.frames(null, callback, prefaceFrame, settingsFrame);
-			}
-
+			connection.initialize(config, context.promise, context.listener);
 		} finally {
 			http2ClientContext.remove(session.getSessionId());
 		}

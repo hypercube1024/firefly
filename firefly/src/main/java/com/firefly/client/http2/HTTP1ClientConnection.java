@@ -15,12 +15,15 @@ import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.codec.Base64Utils;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -90,12 +93,56 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		return sslSession;
 	}
 
-	public void upgradeHTTP2WithCleartext(HTTPRequest request, SettingsFrame settings, HTTPResponseHandler handler) {
+	public void upgradeHTTP2WithCleartext(HTTPRequest request, SettingsFrame settings,
+			final Promise<HTTPConnection> promise, final Listener listener, final HTTPResponseHandler handler) {
 		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}
 
-		checkWrite(handler);
+		HTTPResponseHandler HTTPResponseHandlerWrap = new HTTPResponseHandler() {
+
+			@Override
+			public void earlyEOF() {
+				handler.earlyEOF();
+			}
+
+			@Override
+			public boolean content(ByteBuffer item, HTTPResponse response, HTTPConnection connection) {
+				return handler.content(item, response, connection);
+			}
+
+			@Override
+			public boolean headerComplete(HTTPResponse response, HTTPConnection connection) {
+				return handler.headerComplete(response, connection);
+			}
+
+			@Override
+			public boolean messageComplete(HTTPResponse response, HTTPConnection connection) {
+
+				String connectionValue = response.getHttpFields().get(HttpHeader.CONNECTION);
+				String upgradeValue = response.getHttpFields().get(HttpHeader.UPGRADE);
+				if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101
+						&& "Upgrade".equalsIgnoreCase(connectionValue) && "h2c".equalsIgnoreCase(upgradeValue)) {
+					
+					// initialize http2 client connection;
+					final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(config, tcpSession,
+							sslSession, listener);
+					tcpSession.attachObject(http2Connection);
+					http2Connection.initialize(config, promise, listener);
+
+					return handler.messageComplete(response, connection);
+				} else {
+					return handler.messageComplete(response, connection);
+				}
+			}
+
+			@Override
+			public void badMessage(int status, String reason, HTTPResponse response, HTTPConnection connection) {
+				handler.badMessage(status, reason);
+			}
+		};
+
+		checkWrite(HTTPResponseHandlerWrap);
 		// generate http2 upgrading headers
 		request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
 		request.getFields().add(new HttpField(HttpHeader.UPGRADE, "h2c"));
