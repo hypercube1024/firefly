@@ -99,7 +99,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}
 
-		HTTPResponseHandler HTTPResponseHandlerWrap = new HTTPResponseHandler() {
+		HTTPResponseHandler httpResponseHandlerWrap = new HTTPResponseHandler() {
 
 			@Override
 			public void earlyEOF() {
@@ -118,7 +118,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 			@Override
 			public boolean messageComplete(HTTPResponse response, HTTPConnection connection) {
-
 				String connectionValue = response.getHttpFields().get(HttpHeader.CONNECTION);
 				String upgradeValue = response.getHttpFields().get(HttpHeader.UPGRADE);
 				if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101
@@ -142,7 +141,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			}
 		};
 
-		checkWrite(HTTPResponseHandlerWrap);
+		checkWrite(httpResponseHandlerWrap);
+		
 		// generate http2 upgrading headers
 		request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
 		request.getFields().add(new HttpField(HttpHeader.UPGRADE, "h2c"));
