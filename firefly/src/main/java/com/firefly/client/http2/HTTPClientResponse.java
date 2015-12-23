@@ -2,39 +2,20 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.codec.http2.model.MetaData;
 
-public class HTTPResponse {
+public class HTTPClientResponse extends MetaData.Response {
 	
-	protected HttpVersion version;
-	protected int status;
-	protected String reason;
 	protected boolean messageCompleted;
 	protected boolean headerCompleted;
-	protected HttpFields httpFields;
 	protected boolean earlyEOF;
-
-	public HttpVersion getVersion() {
-		return version;
+	
+	public HTTPClientResponse(HttpVersion version, int status, String reason) {
+		super(version, status, reason, new HttpFields(), -1);
 	}
-
-	public void setVersion(HttpVersion version) {
-		this.version = version;
-	}
-
-	public int getStatus() {
-		return status;
-	}
-
-	public void setStatus(int status) {
-		this.status = status;
-	}
-
-	public String getReason() {
-		return reason;
-	}
-
-	public void setReason(String reason) {
-		this.reason = reason;
+	
+	public HTTPClientResponse(HttpVersion version, int status, String reason, HttpFields fields, long contentLength) {
+		super(version, status, reason, fields, contentLength);
 	}
 
 	public boolean isMessageCompleted() {
@@ -51,14 +32,6 @@ public class HTTPResponse {
 
 	public void setHeaderCompleted(boolean headerCompleted) {
 		this.headerCompleted = headerCompleted;
-	}
-
-	public HttpFields getHttpFields() {
-		return httpFields;
-	}
-
-	public void setHttpFields(HttpFields httpFields) {
-		this.httpFields = httpFields;
 	}
 
 	public boolean isEarlyEOF() {

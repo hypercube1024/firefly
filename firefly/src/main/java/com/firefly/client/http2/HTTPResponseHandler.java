@@ -10,20 +10,17 @@ import com.firefly.codec.http2.stream.HTTPConnection;
 public abstract class HTTPResponseHandler implements ResponseHandler {
 	
 	protected HTTPConnection connection;
-	protected HTTPResponse response;
+	protected HTTPClientResponse response;
 
 	@Override
 	public final boolean startResponse(HttpVersion version, int status, String reason) {
-		response = new HTTPResponse();
-		response.version = version;
-		response.status = status;
-		response.reason = reason;
+		response = new HTTPClientResponse(version, status, reason);
 		return false;
 	}
 	
 	@Override
 	public final void parsedHeader(HttpField field) {
-		response.httpFields.add(field);
+		response.getFields().add(field);
 	}
 	
 	@Override
@@ -51,12 +48,12 @@ public abstract class HTTPResponseHandler implements ResponseHandler {
 		badMessage(status, reason, response, connection);
 	}
 	
-	abstract public boolean content(ByteBuffer item, HTTPResponse response, HTTPConnection connection);
+	abstract public boolean content(ByteBuffer item, HTTPClientResponse response, HTTPConnection connection);
 	
-	abstract public boolean headerComplete(HTTPResponse response, HTTPConnection connection);
+	abstract public boolean headerComplete(HTTPClientResponse response, HTTPConnection connection);
 	
-	abstract public boolean messageComplete(HTTPResponse response, HTTPConnection connection);
+	abstract public boolean messageComplete(HTTPClientResponse response, HTTPConnection connection);
 	
-	abstract public void badMessage(int status, String reason, HTTPResponse response, HTTPConnection connection);
+	abstract public void badMessage(int status, String reason, HTTPClientResponse response, HTTPConnection connection);
 	
 }

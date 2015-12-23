@@ -44,22 +44,22 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		}
 
 		@Override
-		public boolean content(ByteBuffer item, HTTPResponse response, HTTPConnection connection) {
+		public boolean content(ByteBuffer item, HTTPClientResponse response, HTTPConnection connection) {
 			return writing.get().content(item, response, connection);
 		}
 
 		@Override
-		public boolean headerComplete(HTTPResponse response, HTTPConnection connection) {
+		public boolean headerComplete(HTTPClientResponse response, HTTPConnection connection) {
 			return writing.get().headerComplete(response, connection);
 		}
 
 		@Override
-		public boolean messageComplete(HTTPResponse response, HTTPConnection connection) {
+		public boolean messageComplete(HTTPClientResponse response, HTTPConnection connection) {
 			return writing.getAndSet(null).messageComplete(response, connection);
 		}
 
 		@Override
-		public void badMessage(int status, String reason, HTTPResponse response, HTTPConnection connection) {
+		public void badMessage(int status, String reason, HTTPClientResponse response, HTTPConnection connection) {
 			writing.get().badMessage(status, reason, response, connection);
 		}
 
@@ -93,7 +93,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		return sslSession;
 	}
 
-	public void upgradeHTTP2WithCleartext(HTTPRequest request, SettingsFrame settings,
+	public void upgradeHTTP2WithCleartext(HTTPClientRequest request, SettingsFrame settings,
 			final Promise<HTTPConnection> promise, final Listener listener, final HTTPResponseHandler handler) {
 		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
@@ -107,19 +107,19 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			}
 
 			@Override
-			public boolean content(ByteBuffer item, HTTPResponse response, HTTPConnection connection) {
+			public boolean content(ByteBuffer item, HTTPClientResponse response, HTTPConnection connection) {
 				return handler.content(item, response, connection);
 			}
 
 			@Override
-			public boolean headerComplete(HTTPResponse response, HTTPConnection connection) {
+			public boolean headerComplete(HTTPClientResponse response, HTTPConnection connection) {
 				return handler.headerComplete(response, connection);
 			}
 
 			@Override
-			public boolean messageComplete(HTTPResponse response, HTTPConnection connection) {
-				String connectionValue = response.getHttpFields().get(HttpHeader.CONNECTION);
-				String upgradeValue = response.getHttpFields().get(HttpHeader.UPGRADE);
+			public boolean messageComplete(HTTPClientResponse response, HTTPConnection connection) {
+				String connectionValue = response.getFields().get(HttpHeader.CONNECTION);
+				String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
 				if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101
 						&& "Upgrade".equalsIgnoreCase(connectionValue) && "h2c".equalsIgnoreCase(upgradeValue)) {
 					
@@ -136,7 +136,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			}
 
 			@Override
-			public void badMessage(int status, String reason, HTTPResponse response, HTTPConnection connection) {
+			public void badMessage(int status, String reason, HTTPClientResponse response, HTTPConnection connection) {
 				handler.badMessage(status, reason);
 			}
 		};
@@ -168,24 +168,24 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		tcpSession.encode(request);
 	}
 
-	public void request(HTTPRequest request, HTTPResponseHandler handler) {
+	public void request(HTTPClientRequest request, HTTPResponseHandler handler) {
 		checkWrite(handler);
 		tcpSession.encode(request);
 	}
 
-	public void request(HTTPRequest request, ByteBuffer data, HTTPResponseHandler handler) {
-		checkWrite(handler);
-		tcpSession.encode(request);
-		tcpSession.encode(data);
-	}
-
-	public void request(HTTPRequest request, ByteBuffer[] data, HTTPResponseHandler handler) {
+	public void request(HTTPClientRequest request, ByteBuffer data, HTTPResponseHandler handler) {
 		checkWrite(handler);
 		tcpSession.encode(request);
 		tcpSession.encode(data);
 	}
 
-	public OutputStream requestWithStream(HTTPRequest request, HTTPResponseHandler handler) {
+	public void request(HTTPClientRequest request, ByteBuffer[] data, HTTPResponseHandler handler) {
+		checkWrite(handler);
+		tcpSession.encode(request);
+		tcpSession.encode(data);
+	}
+
+	public OutputStream requestWithStream(HTTPClientRequest request, HTTPResponseHandler handler) {
 		checkWrite(handler);
 		return new OutputStream() {
 
