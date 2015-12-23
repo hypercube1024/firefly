@@ -86,6 +86,10 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		return generator;
 	}
 	
+	SSLSession getSSLSession() {
+		return sslSession;
+	}
+	
 	public void upgradeHTTP2WithCleartext(HTTPRequest request, SettingsFrame settings, HTTPResponseHandler handler) {
 		if(isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");

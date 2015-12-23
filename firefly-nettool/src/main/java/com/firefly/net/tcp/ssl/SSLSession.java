@@ -452,4 +452,8 @@ public class SSLSession implements Closeable {
     	}
     	return ret;
     }
+	
+	public boolean isHandshakeFinished() {
+		return initialHSComplete;
+	}
 }

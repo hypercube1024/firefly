@@ -36,8 +36,6 @@ public abstract class AbstractHTTP2Connection extends AbstractHTTPConnection {
 		this.generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());
 		this.http2Session = initHTTP2Session(config, flowControl, listener);
 		this.parser = initParser(config);
-
-		tcpSession.attachObject(this);
 	}
 
 	abstract protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,

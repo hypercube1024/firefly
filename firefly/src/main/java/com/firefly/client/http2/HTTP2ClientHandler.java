@@ -1,5 +1,7 @@
 package com.firefly.client.http2;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -7,12 +9,18 @@ import javax.net.ssl.SSLEngine;
 
 import org.eclipse.jetty.alpn.ALPN;
 
+import com.firefly.codec.http2.frame.PrefaceFrame;
+import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
+import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLEventHandler;
 import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.concurrent.Callback;
 
 public class HTTP2ClientHandler extends AbstractHTTPHandler {
 
@@ -24,7 +32,6 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 	}
 
 	@Override
-	@SuppressWarnings("resource")
 	public void sessionOpened(final Session session) throws Throwable {
 		final HTTP2ClientContext context = http2ClientContext.get(session.getSessionId());
 
@@ -41,14 +48,15 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 			}
 
 			final SSLEngine sslEngine = sslContext.createSSLEngine();
-			new SSLSession(sslContext, sslEngine, session, true, new SSLEventHandler() {
+			session.attachObject(new SSLSession(sslContext, sslEngine, session, true, new SSLEventHandler() {
 
 				@Override
 				public void handshakeFinished(SSLSession sslSession) {
+					log.debug("client session {} SSL handshake finished", session.getSessionId());
 					if (context.httpVersion == HttpVersion.HTTP_1_1) {
-						initializeHTTP1ClientConnection(session, context, sslSession);
+						initializeHTTP1ClientConnection(session, context, (SSLSession)session.getAttachment());
 					} else {
-						initializeHTTP2ClientConnection(session, context, sslSession);
+						initializeHTTP2ClientConnection(session, context, (SSLSession)session.getAttachment());
 					}
 				}
 			}, new ALPN.ClientProvider() {
@@ -67,6 +75,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 				public void selected(String protocol) {
 					try {
 						if (protocols.contains(protocol)) {
+							log.debug("HTTP2 client selected protocol {}", protocol);
 							if ("http/1.1".equalsIgnoreCase(protocol)) {
 								context.httpVersion = HttpVersion.HTTP_1_1;
 							} else {
@@ -81,10 +90,10 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 						ALPN.remove(sslEngine);
 					}
 				}
-			});
+			}));
 		} else {
 			// TODO negotiate protocol without ALPN
-			initializeHTTP2ClientConnection(session, context, null);
+			initializeHTTP1ClientConnection(session, context, null);
 		}
 	}
 
@@ -100,7 +109,43 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 	private void initializeHTTP2ClientConnection(final Session session, final HTTP2ClientContext context,
 			final SSLSession sslSession) {
 		try {
-			HTTP2ClientConnection.initialize(config, session, context, sslSession);
+			final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession,
+					context.listener);
+			session.attachObject(connection);
+			
+			Map<Integer, Integer> settings = context.listener.onPreface(connection.getHttp2Session());
+			if (settings == null) {
+				settings = Collections.emptyMap();
+			}
+			PrefaceFrame prefaceFrame = new PrefaceFrame();
+			SettingsFrame settingsFrame = new SettingsFrame(settings, false);
+			SessionSPI sessionSPI = connection.getSessionSPI();
+			int windowDelta = config.getInitialSessionRecvWindow() - FlowControlStrategy.DEFAULT_WINDOW_SIZE;
+			Callback callback = new Callback() {
+
+				@Override
+				public void succeeded() {
+					context.promise.succeeded(connection);
+				}
+
+				@Override
+				public void failed(Throwable x) {
+					try {
+						connection.close();
+					} catch (IOException e) {
+						log.error("http2 connection initialization error", e);
+					}
+					context.promise.failed(x);
+				}
+			};
+
+			if (windowDelta > 0) {
+				sessionSPI.updateRecvWindow(windowDelta);
+				sessionSPI.frames(null, callback, prefaceFrame, settingsFrame, new WindowUpdateFrame(0, windowDelta));
+			} else {
+				sessionSPI.frames(null, callback, prefaceFrame, settingsFrame);
+			}
+			
 		} finally {
 			http2ClientContext.remove(session.getSessionId());
 		}
