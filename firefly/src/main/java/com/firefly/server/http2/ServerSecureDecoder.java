@@ -25,14 +25,14 @@ public class ServerSecureDecoder extends DecoderChain {
 			ByteBuffer plaintext;
 			if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
 				plaintext = ((HTTP2ServerConnection) connection).getSSLSession().read(buf);
-				if (plaintext != null && next != null)
-					next.decode(plaintext, session);
 			} else if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
-				// TODO
+				plaintext = ((HTTP1ServerConnection) connection).getSSLSession().read(buf);
 			} else {
 				throw new IllegalStateException(
 						"server does not support the http version " + connection.getHttpVersion());
 			}
+			if (plaintext != null && next != null)
+				next.decode(plaintext, session);
 		} else if (session.getAttachment() instanceof HTTP2ServerSSLHandshakeContext) {
 			HTTP2ServerSSLHandshakeContext context = (HTTP2ServerSSLHandshakeContext) session.getAttachment();
 			SSLSession sslSession = context.sslSession;

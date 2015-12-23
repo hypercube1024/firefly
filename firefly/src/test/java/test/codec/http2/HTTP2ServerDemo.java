@@ -1,8 +1,10 @@
 package test.codec.http2;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.GoAwayFrame;
 import com.firefly.codec.http2.frame.HeadersFrame;
@@ -10,6 +12,8 @@ import com.firefly.codec.http2.frame.PingFrame;
 import com.firefly.codec.http2.frame.PushPromiseFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.model.HttpField;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
@@ -105,7 +109,55 @@ public class HTTP2ServerDemo {
 			@Override
 			public void onAccept(Session session) {
 			}
-		});
+		}, new RequestHandler(){
+
+			@Override
+			public boolean content(ByteBuffer item) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public boolean headerComplete() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public boolean messageComplete() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public void parsedHeader(HttpField field) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void earlyEOF() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void badMessage(int status, String reason) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public int getHeaderCacheSize() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public boolean startRequest(String method, String uri, HttpVersion version) {
+				// TODO Auto-generated method stub
+				return false;
+			}});
 
 		server.start();
 	}

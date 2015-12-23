@@ -6,6 +6,7 @@ import javax.net.ssl.SSLEngine;
 
 import org.eclipse.jetty.alpn.ALPN;
 
+import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -16,10 +17,13 @@ import com.firefly.net.tcp.ssl.SSLSession;
 public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
 	private final ServerSessionListener listener;
+	private final RequestHandler requestHandler;
 
-	public HTTP2ServerHandler(HTTP2Configuration config, ServerSessionListener listener) {
+	public HTTP2ServerHandler(HTTP2Configuration config, ServerSessionListener listener,
+			RequestHandler requestHandler) {
 		super(config);
 		this.listener = listener;
+		this.requestHandler = requestHandler;
 	}
 
 	@Override
@@ -33,14 +37,16 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 				public void handshakeFinished(SSLSession sslSession) {
 					log.debug("server session {} SSL handshake finished", session.getSessionId());
 					if (session.getAttachment() instanceof HTTP2ServerSSLHandshakeContext) {
-						HTTP2ServerSSLHandshakeContext context = (HTTP2ServerSSLHandshakeContext) session.getAttachment();
+						HTTP2ServerSSLHandshakeContext context = (HTTP2ServerSSLHandshakeContext) session
+								.getAttachment();
 						HttpVersion httpVersion = context.httpVersion;
 						log.debug("server current HTTP version is {}", httpVersion);
 
 						if (httpVersion == HttpVersion.HTTP_2) {
 							session.attachObject(new HTTP2ServerConnection(config, session, sslSession, listener));
 						} else {
-							// TODO initialize HTTP 1.1 server connection
+							session.attachObject(
+									new HTTP1ServerConnection(config, session, sslSession, requestHandler));
 						}
 					} else {
 						log.error("HTTP2 server can not get the HTTP version of session {}", session.getSessionId());
@@ -57,7 +63,8 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 				@Override
 				public String select(List<String> clientProtocols) {
 					try {
-						HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext)session.getAttachment();
+						HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext) session
+								.getAttachment();
 						for (String clientProtocol : clientProtocols) {
 							for (String serverProtocol : protocols) {
 								if (serverProtocol.equals(clientProtocol)) {
@@ -79,11 +86,10 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 					}
 				}
 			});
-			
+
 			session.attachObject(handshakeContext);
 		} else {
-			// TODO negotiate protocol without ALPN
-			
+			session.attachObject(new HTTP1ServerConnection(config, session, null, requestHandler));
 		}
 	}
 

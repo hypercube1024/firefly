@@ -1,5 +1,6 @@
 package com.firefly.server.http2;
 
+import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.core.AbstractLifeCycle;
 import com.firefly.net.DecoderChain;
@@ -14,12 +15,9 @@ public class HTTP2Server extends AbstractLifeCycle {
 	private final String host; 
 	private final int port;
 	
-	public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration, ServerSessionListener listener) {
+	public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration, ServerSessionListener listener, RequestHandler requestHandler) {
 		if (http2Configuration == null)
 			throw new IllegalArgumentException("the http2 configuration is null");
-		
-		if (listener == null)
-			throw new IllegalArgumentException("the http2 server listener is null");
 		
 		if(host == null)
 			throw new IllegalArgumentException("the http2 server host is empty");
@@ -38,7 +36,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 			encoder = new HTTP1ServerEncoder(new HTTP2ServerEncoder());
 		}
 		
-		this.server = new AsynchronousTcpServer(decoder, encoder, new HTTP2ServerHandler(http2Configuration, listener), http2Configuration.getTcpIdleTimeout());
+		this.server = new AsynchronousTcpServer(decoder, encoder, new HTTP2ServerHandler(http2Configuration, listener, requestHandler), http2Configuration.getTcpIdleTimeout());
 	}
 
 	@Override

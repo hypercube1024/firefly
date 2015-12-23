@@ -26,7 +26,7 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public class HTTP1ClientConnection extends AbstractHTTP1Connection {
-	
+
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final ResponseHandlerWrap wrap;
@@ -62,7 +62,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	}
 
-	public HTTP1ClientConnection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession) {
+	public HTTP1ClientConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession) {
 		this(config, sslSession, tcpSession, new ResponseHandlerWrap());
 	}
 
@@ -85,31 +85,29 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	HttpGenerator getGenerator() {
 		return generator;
 	}
-	
+
 	SSLSession getSSLSession() {
 		return sslSession;
 	}
-	
+
 	public void upgradeHTTP2WithCleartext(HTTPRequest request, SettingsFrame settings, HTTPResponseHandler handler) {
-		if(isEncrypted()) {
+		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}
-			
-		// TODO wrap the response handler 
-		
-		
+
 		checkWrite(handler);
-		// TODO generate http2 upgrading headers
+		// generate http2 upgrading headers
 		request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
 		request.getFields().add(new HttpField(HttpHeader.UPGRADE, "h2c"));
-		if(settings != null) {
+		if (settings != null) {
 			List<ByteBuffer> byteBuffers = http2Generator.control(settings);
-			if(byteBuffers != null && byteBuffers.size() > 0) {
-				try(ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-					for(ByteBuffer buffer : byteBuffers) {
+			if (byteBuffers != null && byteBuffers.size() > 0) {
+				try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+					for (ByteBuffer buffer : byteBuffers) {
 						out.write(BufferUtils.toArray(buffer));
 					}
-					request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, Base64Utils.encodeToUrlSafeString(out.toByteArray())));
+					request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS,
+							Base64Utils.encodeToUrlSafeString(out.toByteArray())));
 				} catch (IOException e) {
 					log.error("generate http2 upgrading settings exception", e);
 				}
@@ -119,7 +117,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		} else {
 			request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, " "));
 		}
-		
+
 		tcpSession.encode(request);
 	}
 
@@ -139,11 +137,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		tcpSession.encode(request);
 		tcpSession.encode(data);
 	}
-	
+
 	public OutputStream requestWithStream(HTTPRequest request, HTTPResponseHandler handler) {
 		checkWrite(handler);
-		return new OutputStream(){
-			
+		return new OutputStream() {
+
 			@Override
 			public void write(byte b[], int off, int len) throws IOException {
 				ByteBuffer buffer = BufferUtils.allocate(len);
@@ -154,9 +152,10 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			@Override
 			public void write(int b) throws IOException {
 				ByteBuffer buffer = BufferUtils.allocate(1);
-				BufferUtils.append(buffer, (byte)b);
+				BufferUtils.append(buffer, (byte) b);
 				tcpSession.encode(buffer);
-			}};
+			}
+		};
 	}
 
 	private void checkWrite(HTTPResponseHandler handler) {

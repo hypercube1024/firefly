@@ -54,9 +54,9 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 				public void handshakeFinished(SSLSession sslSession) {
 					log.debug("client session {} SSL handshake finished", session.getSessionId());
 					if (context.httpVersion == HttpVersion.HTTP_1_1) {
-						initializeHTTP1ClientConnection(session, context, (SSLSession)session.getAttachment());
+						initializeHTTP1ClientConnection(session, context, (SSLSession) session.getAttachment());
 					} else {
-						initializeHTTP2ClientConnection(session, context, (SSLSession)session.getAttachment());
+						initializeHTTP2ClientConnection(session, context, (SSLSession) session.getAttachment());
 					}
 				}
 			}, new ALPN.ClientProvider() {
@@ -92,7 +92,6 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 				}
 			}));
 		} else {
-			// TODO negotiate protocol without ALPN
 			initializeHTTP1ClientConnection(session, context, null);
 		}
 	}
@@ -100,7 +99,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 	private void initializeHTTP1ClientConnection(final Session session, final HTTP2ClientContext context,
 			final SSLSession sslSession) {
 		try {
-			// TODO not implements
+			session.attachObject(new HTTP1ClientConnection(config, session, sslSession));
 		} finally {
 			http2ClientContext.remove(session.getSessionId());
 		}
@@ -112,7 +111,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 			final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession,
 					context.listener);
 			session.attachObject(connection);
-			
+
 			Map<Integer, Integer> settings = context.listener.onPreface(connection.getHttp2Session());
 			if (settings == null) {
 				settings = Collections.emptyMap();
@@ -145,7 +144,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 			} else {
 				sessionSPI.frames(null, callback, prefaceFrame, settingsFrame);
 			}
-			
+
 		} finally {
 			http2ClientContext.remove(session.getSessionId());
 		}
