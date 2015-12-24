@@ -33,10 +33,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final ResponseHandlerWrap wrap;
+	private volatile HTTPClientRequest request;
+	private volatile HttpGenerator.Result generatorResult;
 
-	private static class ResponseHandlerWrap extends HTTPResponseHandler {
+	private static class ResponseHandlerWrap extends HTTP1ClientResponseHandler {
 
-		private final AtomicReference<HTTPResponseHandler> writing = new AtomicReference<>();
+		private final AtomicReference<HTTP1ClientResponseHandler> writing = new AtomicReference<>();
 
 		@Override
 		public void earlyEOF() {
@@ -44,22 +46,22 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		}
 
 		@Override
-		public boolean content(ByteBuffer item, HTTPClientResponse response, HTTPConnection connection) {
+		public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
 			return writing.get().content(item, response, connection);
 		}
 
 		@Override
-		public boolean headerComplete(HTTPClientResponse response, HTTPConnection connection) {
+		public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
 			return writing.get().headerComplete(response, connection);
 		}
 
 		@Override
-		public boolean messageComplete(HTTPClientResponse response, HTTPConnection connection) {
+		public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
 			return writing.getAndSet(null).messageComplete(response, connection);
 		}
 
 		@Override
-		public void badMessage(int status, String reason, HTTPClientResponse response, HTTPConnection connection) {
+		public void badMessage(int status, String reason, HTTPClientResponse response, HTTP1ClientConnection connection) {
 			writing.get().badMessage(status, reason, response, connection);
 		}
 
@@ -92,14 +94,25 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	SSLSession getSSLSession() {
 		return sslSession;
 	}
+	
+	public HTTPClientRequest getRequest() {
+		return request;
+	}
+
+	void reset() {
+		request = null;
+		generatorResult = null;
+		generator.reset();
+		parser.reset();
+	}
 
 	public void upgradeHTTP2WithCleartext(HTTPClientRequest request, SettingsFrame settings,
-			final Promise<HTTPConnection> promise, final Listener listener, final HTTPResponseHandler handler) {
+			final Promise<HTTPConnection> promise, final Listener listener, final HTTP1ClientResponseHandler handler) {
 		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}
 
-		HTTPResponseHandler httpResponseHandlerWrap = new HTTPResponseHandler() {
+		HTTP1ClientResponseHandler httpResponseHandlerWrap = new HTTP1ClientResponseHandler() {
 
 			@Override
 			public void earlyEOF() {
@@ -107,17 +120,17 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			}
 
 			@Override
-			public boolean content(ByteBuffer item, HTTPClientResponse response, HTTPConnection connection) {
+			public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
 				return handler.content(item, response, connection);
 			}
 
 			@Override
-			public boolean headerComplete(HTTPClientResponse response, HTTPConnection connection) {
+			public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
 				return handler.headerComplete(response, connection);
 			}
 
 			@Override
-			public boolean messageComplete(HTTPClientResponse response, HTTPConnection connection) {
+			public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
 				String connectionValue = response.getFields().get(HttpHeader.CONNECTION);
 				String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
 				if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101
@@ -136,12 +149,10 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			}
 
 			@Override
-			public void badMessage(int status, String reason, HTTPClientResponse response, HTTPConnection connection) {
+			public void badMessage(int status, String reason, HTTPClientResponse response, HTTP1ClientConnection connection) {
 				handler.badMessage(status, reason);
 			}
 		};
-
-		checkWrite(httpResponseHandlerWrap);
 		
 		// generate http2 upgrading headers
 		request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
@@ -165,49 +176,102 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, " "));
 		}
 
-		tcpSession.encode(request);
+		request(request, httpResponseHandlerWrap);
 	}
 
-	public void request(HTTPClientRequest request, HTTPResponseHandler handler) {
-		checkWrite(handler);
-		tcpSession.encode(request);
+	public void request(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
+		requestWithData(request, null, handler);
 	}
 
-	public void request(HTTPClientRequest request, ByteBuffer data, HTTPResponseHandler handler) {
-		checkWrite(handler);
-		tcpSession.encode(request);
-		tcpSession.encode(data);
-	}
-
-	public void request(HTTPClientRequest request, ByteBuffer[] data, HTTPResponseHandler handler) {
-		checkWrite(handler);
-		tcpSession.encode(request);
-		tcpSession.encode(data);
-	}
-
-	public OutputStream requestWithStream(HTTPClientRequest request, HTTPResponseHandler handler) {
-		checkWrite(handler);
-		return new OutputStream() {
-
-			@Override
-			public void write(byte b[], int off, int len) throws IOException {
-				ByteBuffer buffer = BufferUtils.allocate(len);
-				BufferUtils.append(buffer, b, off, len);
-				tcpSession.encode(buffer);
+	public void requestWithData(HTTPClientRequest request, ByteBuffer data, HTTP1ClientResponseHandler handler) {
+		checkWrite(request, handler);
+		ByteBuffer header = ByteBuffer.allocate(config.getMaxRequestHeadLength());
+		try {
+			generatorResult = generator.generateRequest(request, header, null, data, true);
+			if(generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMPLETING) {
+				tcpSession.encode(header);
+				tcpSession.encode(data);
+				generatorResult = generator.generateRequest(null, null, null, null, true);
+				if(generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
+					log.debug("client session {} generates the HTTP message completely", tcpSession.getSessionId());
+				} else {
+					generator.reset();
+					throw new IllegalStateException("Client generates http message exception.");
+				}
+			} else {
+				generator.reset();
+				throw new IllegalStateException("Client generates http message exception.");
 			}
-
-			@Override
-			public void write(int b) throws IOException {
-				ByteBuffer buffer = BufferUtils.allocate(1);
-				BufferUtils.append(buffer, (byte) b);
-				tcpSession.encode(buffer);
-			}
-		};
+		} catch (IOException e) {
+			generator.reset();
+			log.error("client generates the HTTP message exception", e);
+		}
 	}
 
-	private void checkWrite(HTTPResponseHandler handler) {
+	public void requestWithByteBufferArray(HTTPClientRequest request, ByteBuffer[] dataArray, HTTP1ClientResponseHandler handler) {
+		if(dataArray == null || dataArray.length == 0) {
+			request(request, handler);
+		} else if(dataArray.length == 1) {
+			requestWithData(request, dataArray[0], handler);
+		} else {
+			checkWrite(request, handler);
+			ByteBuffer header = ByteBuffer.allocate(config.getMaxRequestHeadLength());
+			try {
+				generatorResult = generator.generateRequest(request, header, null, dataArray[0], false);
+				if(generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
+					tcpSession.encode(header);
+					tcpSession.encode(dataArray[0]);
+				} else {
+					generator.reset();
+					throw new IllegalStateException("Client generates http message exception.");
+				}
+				
+				for (int i = 1; i < dataArray.length; i++) {
+					ByteBuffer data = dataArray[i];
+					if(generator.isChunking()) {
+						// TODO
+					} else {
+						generatorResult = generator.generateRequest(request, header, null, data, false);
+						if(generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
+							tcpSession.encode(header);
+							tcpSession.encode(data);
+						} else {
+							generator.reset();
+							throw new IllegalStateException("Client generates http message exception.");
+						}
+					}
+				}
+				
+				if(generator.isChunking()) {
+					// TODO
+				} else {
+					generatorResult = generator.generateRequest(null, null, null, null, true);
+					if(generatorResult == HttpGenerator.Result.CONTINUE && generator.getState() == HttpGenerator.State.COMPLETING) {
+						generatorResult = generator.generateRequest(null, null, null, null, true);
+						if(generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
+							
+						}
+					}
+				}
+			} catch (IOException e) {
+				generator.reset();
+				log.error("client generates the HTTP header exception", e);
+			}
+		}
+		
+	}
+
+	public OutputStream requestWithStream(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
+		checkWrite(request, handler);
+		// TODO
+		
+		return null;
+	}
+
+	private void checkWrite(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
 		if (wrap.writing.compareAndSet(null, handler)) {
 			handler.connection = this;
+			this.request = request;
 		} else {
 			throw new WritePendingException();
 		}

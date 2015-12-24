@@ -21,7 +21,10 @@ public class HTTP1ClientDecoder extends DecoderChain {
 			next.decode(buf, session);
 			break;
 		case HTTP_1_1:
-			// TODO http1 parser
+			HTTP1ClientConnection http1Connection = (HTTP1ClientConnection) session.getAttachment();
+			while(buf.hasRemaining()) {
+				http1Connection.getParser().parseNext(buf);
+			}
 			break;
 		default:
 			throw new IllegalStateException("client does not support the http version " + connection.getHttpVersion());

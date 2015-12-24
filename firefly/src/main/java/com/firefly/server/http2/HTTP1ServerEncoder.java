@@ -23,7 +23,8 @@ public class HTTP1ServerEncoder extends EncoderChain {
 			if (connection.isEncrypted()) {
 				next.encode(message, session);
 			} else {
-
+				HTTP1ServerConnection http1Connection = (HTTP1ServerConnection) session.getAttachment();
+				
 			}
 			break;
 		default:

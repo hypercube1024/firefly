@@ -17,7 +17,7 @@ public class HTTP2Configuration {
 	private int initialSessionRecvWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
 	private int maxConcurrentStreams = -1;
 	private int maxHeaderBlockFragment = 0;
-	private int maxRequestHeadLength = 16 * 1024;
+	private int maxRequestHeadLength = 4 * 1024;
 
 	public int getTcpIdleTimeout() {
 		return tcpIdleTimeout;
