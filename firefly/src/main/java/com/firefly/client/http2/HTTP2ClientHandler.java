@@ -97,7 +97,11 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 	private void initializeHTTP1ClientConnection(final Session session, final HTTP2ClientContext context,
 			final SSLSession sslSession) {
 		try {
-			session.attachObject(new HTTP1ClientConnection(config, session, sslSession));
+			HTTP1ClientConnection http1ClientConnection = new HTTP1ClientConnection(config, session, sslSession);
+			session.attachObject(http1ClientConnection);
+			context.promise.succeeded(http1ClientConnection);
+		} catch (Throwable t) {
+			context.promise.failed(t);
 		} finally {
 			http2ClientContext.remove(session.getSessionId());
 		}

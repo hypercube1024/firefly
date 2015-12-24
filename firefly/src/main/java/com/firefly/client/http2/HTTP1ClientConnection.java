@@ -15,7 +15,7 @@ import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
@@ -36,7 +36,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	private volatile HTTPClientRequest request;
 	private volatile HttpGenerator.Result generatorResult;
 
-	private static class ResponseHandlerWrap extends HTTP1ClientResponseHandler {
+	private static class ResponseHandlerWrap implements ResponseHandler {
 
 		private final AtomicReference<HTTP1ClientResponseHandler> writing = new AtomicReference<>();
 
@@ -46,23 +46,38 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		}
 
 		@Override
-		public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
-			return writing.get().content(item, response, connection);
+		public boolean content(ByteBuffer item) {
+			return writing.get().content(item);
 		}
 
 		@Override
-		public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
-			return writing.get().headerComplete(response, connection);
+		public boolean headerComplete() {
+			return writing.get().headerComplete();
 		}
 
 		@Override
-		public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
-			return writing.getAndSet(null).messageComplete(response, connection);
+		public boolean messageComplete() {
+			return writing.getAndSet(null).messageComplete();
 		}
 
 		@Override
-		public void badMessage(int status, String reason, HTTPClientResponse response, HTTP1ClientConnection connection) {
-			writing.get().badMessage(status, reason, response, connection);
+		public void parsedHeader(HttpField field) {
+			writing.get().parsedHeader(field);
+		}
+
+		@Override
+		public void badMessage(int status, String reason) {
+			writing.get().badMessage(status, reason);
+		}
+
+		@Override
+		public int getHeaderCacheSize() {
+			return 1024;
+		}
+
+		@Override
+		public boolean startResponse(HttpVersion version, int status, String reason) {
+			return writing.get().startResponse(version, status, reason);
 		}
 
 	}
@@ -94,7 +109,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	SSLSession getSSLSession() {
 		return sslSession;
 	}
-	
+
 	public HTTPClientRequest getRequest() {
 		return request;
 	}
@@ -106,54 +121,22 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		parser.reset();
 	}
 
+	void initializeHTTP2ClientConnection(final Promise<HTTPConnection> promise, final Listener listener) {
+		// initialize http2 client connection;
+		final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(config, tcpSession, null, listener);
+		tcpSession.attachObject(http2Connection);
+		http2Connection.initialize(config, promise, listener);
+	}
+
 	public void upgradeHTTP2WithCleartext(HTTPClientRequest request, SettingsFrame settings,
 			final Promise<HTTPConnection> promise, final Listener listener, final HTTP1ClientResponseHandler handler) {
 		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}
 
-		HTTP1ClientResponseHandler httpResponseHandlerWrap = new HTTP1ClientResponseHandler() {
+		handler.promise = promise;
+		handler.listener = listener;
 
-			@Override
-			public void earlyEOF() {
-				handler.earlyEOF();
-			}
-
-			@Override
-			public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
-				return handler.content(item, response, connection);
-			}
-
-			@Override
-			public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
-				return handler.headerComplete(response, connection);
-			}
-
-			@Override
-			public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
-				String connectionValue = response.getFields().get(HttpHeader.CONNECTION);
-				String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
-				if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101
-						&& "Upgrade".equalsIgnoreCase(connectionValue) && "h2c".equalsIgnoreCase(upgradeValue)) {
-					
-					// initialize http2 client connection;
-					final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(config, tcpSession,
-							sslSession, listener);
-					tcpSession.attachObject(http2Connection);
-					http2Connection.initialize(config, promise, listener);
-
-					return handler.messageComplete(response, connection);
-				} else {
-					return handler.messageComplete(response, connection);
-				}
-			}
-
-			@Override
-			public void badMessage(int status, String reason, HTTPClientResponse response, HTTP1ClientConnection connection) {
-				handler.badMessage(status, reason);
-			}
-		};
-		
 		// generate http2 upgrading headers
 		request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
 		request.getFields().add(new HttpField(HttpHeader.UPGRADE, "h2c"));
@@ -176,7 +159,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, " "));
 		}
 
-		request(request, httpResponseHandlerWrap);
+		request(request, handler);
 	}
 
 	public void request(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
@@ -185,14 +168,17 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	public void requestWithData(HTTPClientRequest request, ByteBuffer data, HTTP1ClientResponseHandler handler) {
 		checkWrite(request, handler);
-		ByteBuffer header = ByteBuffer.allocate(config.getMaxRequestHeadLength());
+		ByteBuffer header = BufferUtils.allocate(config.getMaxRequestHeadLength());
 		try {
 			generatorResult = generator.generateRequest(request, header, null, data, true);
-			if(generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMPLETING) {
+			if (generatorResult == HttpGenerator.Result.FLUSH
+					&& generator.getState() == HttpGenerator.State.COMPLETING) {
 				tcpSession.encode(header);
-				tcpSession.encode(data);
+				if (data != null) {
+					tcpSession.encode(data);
+				}
 				generatorResult = generator.generateRequest(null, null, null, null, true);
-				if(generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
+				if (generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
 					log.debug("client session {} generates the HTTP message completely", tcpSession.getSessionId());
 				} else {
 					generator.reset();
@@ -208,31 +194,34 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		}
 	}
 
-	public void requestWithByteBufferArray(HTTPClientRequest request, ByteBuffer[] dataArray, HTTP1ClientResponseHandler handler) {
-		if(dataArray == null || dataArray.length == 0) {
+	public void requestWithByteBufferArray(HTTPClientRequest request, ByteBuffer[] dataArray,
+			HTTP1ClientResponseHandler handler) {
+		if (dataArray == null || dataArray.length == 0) {
 			request(request, handler);
-		} else if(dataArray.length == 1) {
+		} else if (dataArray.length == 1) {
 			requestWithData(request, dataArray[0], handler);
 		} else {
 			checkWrite(request, handler);
-			ByteBuffer header = ByteBuffer.allocate(config.getMaxRequestHeadLength());
+			ByteBuffer header = BufferUtils.allocate(config.getMaxRequestHeadLength());
 			try {
 				generatorResult = generator.generateRequest(request, header, null, dataArray[0], false);
-				if(generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
+				if (generatorResult == HttpGenerator.Result.FLUSH
+						&& generator.getState() == HttpGenerator.State.COMMITTED) {
 					tcpSession.encode(header);
 					tcpSession.encode(dataArray[0]);
 				} else {
 					generator.reset();
 					throw new IllegalStateException("Client generates http message exception.");
 				}
-				
+
 				for (int i = 1; i < dataArray.length; i++) {
 					ByteBuffer data = dataArray[i];
-					if(generator.isChunking()) {
+					if (generator.isChunking()) {
 						// TODO
 					} else {
 						generatorResult = generator.generateRequest(request, header, null, data, false);
-						if(generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
+						if (generatorResult == HttpGenerator.Result.FLUSH
+								&& generator.getState() == HttpGenerator.State.COMMITTED) {
 							tcpSession.encode(header);
 							tcpSession.encode(data);
 						} else {
@@ -241,15 +230,17 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 						}
 					}
 				}
-				
-				if(generator.isChunking()) {
+
+				if (generator.isChunking()) {
 					// TODO
 				} else {
 					generatorResult = generator.generateRequest(null, null, null, null, true);
-					if(generatorResult == HttpGenerator.Result.CONTINUE && generator.getState() == HttpGenerator.State.COMPLETING) {
+					if (generatorResult == HttpGenerator.Result.CONTINUE
+							&& generator.getState() == HttpGenerator.State.COMPLETING) {
 						generatorResult = generator.generateRequest(null, null, null, null, true);
-						if(generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
-							
+						if (generatorResult == HttpGenerator.Result.DONE
+								&& generator.getState() == HttpGenerator.State.END) {
+
 						}
 					}
 				}
@@ -258,17 +249,23 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 				log.error("client generates the HTTP header exception", e);
 			}
 		}
-		
+
 	}
 
 	public OutputStream requestWithStream(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
 		checkWrite(request, handler);
 		// TODO
-		
+
 		return null;
 	}
 
 	private void checkWrite(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
+		if (request == null)
+			throw new IllegalArgumentException("the http client request is null");
+
+		if (handler == null)
+			throw new IllegalArgumentException("the http1 client response handler is null");
+
 		if (wrap.writing.compareAndSet(null, handler)) {
 			handler.connection = this;
 			this.request = request;

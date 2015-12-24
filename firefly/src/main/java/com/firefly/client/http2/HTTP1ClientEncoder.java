@@ -1,8 +1,11 @@
 package com.firefly.client.http2;
 
+import java.nio.ByteBuffer;
+
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.EncoderChain;
 import com.firefly.net.Session;
+import com.firefly.utils.concurrent.Callback;
 
 public class HTTP1ClientEncoder extends EncoderChain {
 
@@ -19,15 +22,18 @@ public class HTTP1ClientEncoder extends EncoderChain {
 			next.encode(message, session);
 			break;
 		case HTTP_1_1:
-			// TODO http1 generator
 			if (connection.isEncrypted()) {
 				next.encode(message, session);
 			} else {
-
+				if (message instanceof ByteBuffer) {
+					session.write((ByteBuffer) message, Callback.NOOP);
+				} else {
+					throw new IllegalArgumentException("the http1 encoder must receive the ByteBuffer, but this message type is " + message.getClass());
+				}
 			}
 			break;
 		default:
-			throw new IllegalStateException("client does not support the http version " + connection.getHttpVersion());
+			throw new IllegalArgumentException("client does not support the http version " + connection.getHttpVersion());
 		}
 	}
 

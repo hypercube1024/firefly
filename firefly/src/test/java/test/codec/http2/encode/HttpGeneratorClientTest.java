@@ -57,6 +57,7 @@ public class HttpGeneratorClientTest {
 		request.getFields().add("User-Agent", "test");
 		
 		HttpGenerator.Result result = gen.generateRequest(request, header, null, null, true);
+		System.out.println(header.remaining());
 		Assert.assertThat(header.remaining(), greaterThan(0));
 		Assert.assertThat(gen.isChunking(), is(false));
 		Assert.assertThat(result, is(HttpGenerator.Result.FLUSH));

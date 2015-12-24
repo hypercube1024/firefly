@@ -25,6 +25,10 @@ public class HTTP2ServerEncoder extends EncoderChain {
 				session.write((ByteBufferArrayOutputEntry) message);
 			} else if (message instanceof ByteBufferOutputEntry) {
 				session.write((ByteBufferOutputEntry) message);
+			} else {
+				throw new IllegalArgumentException(
+						"the http2 encoder must receive the ByteBufferOutputEntry and ByteBufferArrayOutputEntry, but this message type is "
+								+ message.getClass());
 			}
 		}
 	}

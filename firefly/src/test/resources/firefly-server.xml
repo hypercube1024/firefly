@@ -11,7 +11,7 @@
 		<property name="serverHome" value="target/test-classes/page"></property>
 		<property name="host" value="localhost"></property>
 		<property name="port" value="6655"></property>
-		<property name="secure" value="true"></property>
+<!-- 		<property name="secure" value="true"></property> -->
 		<property name="maxConnectionTimeout" value="5000"></property>
 		<property name="errorPage">
 			<map>
