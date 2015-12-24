@@ -5,5 +5,5 @@ import com.firefly.net.tcp.ssl.SSLSession;
 
 public class HTTP2ServerSSLHandshakeContext {
 	public volatile SSLSession sslSession;
-	public volatile HttpVersion httpVersion;
+	public volatile HttpVersion httpVersion = HttpVersion.HTTP_1_1;
 }

@@ -39,15 +39,21 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 					if (session.getAttachment() instanceof HTTP2ServerSSLHandshakeContext) {
 						HTTP2ServerSSLHandshakeContext context = (HTTP2ServerSSLHandshakeContext) session
 								.getAttachment();
-						HttpVersion httpVersion = context.httpVersion;
-						log.debug("server current HTTP version is {}", httpVersion);
+						log.debug("server current HTTP version is {}", context.httpVersion);
 
-						if (httpVersion == HttpVersion.HTTP_2) {
+						switch (context.httpVersion) {
+						case HTTP_2:
 							session.attachObject(new HTTP2ServerConnection(config, session, sslSession, listener));
-						} else {
+							break;
+						case HTTP_1_1:
 							session.attachObject(
 									new HTTP1ServerConnection(config, session, sslSession, requestHandler));
+							break;
+						default:
+							throw new IllegalStateException(
+									"server does not support the http version " + context.httpVersion);
 						}
+
 					} else {
 						log.error("HTTP2 server can not get the HTTP version of session {}", session.getSessionId());
 						session.closeNow();
@@ -78,8 +84,6 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 								}
 							}
 						}
-
-						handshakeContext.httpVersion = HttpVersion.HTTP_1_1;
 						return "http/1.1";
 					} finally {
 						ALPN.remove(sslEngine);

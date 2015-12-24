@@ -45,10 +45,16 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 				@Override
 				public void handshakeFinished(SSLSession sslSession) {
 					log.debug("client session {} SSL handshake finished", session.getSessionId());
-					if (context.httpVersion == HttpVersion.HTTP_1_1) {
+					switch (context.httpVersion) {
+					case HTTP_1_1:
 						initializeHTTP1ClientConnection(session, context, (SSLSession) session.getAttachment());
-					} else {
+						break;
+					case HTTP_2:
 						initializeHTTP2ClientConnection(session, context, (SSLSession) session.getAttachment());
+						break;
+					default:
+						throw new IllegalStateException(
+								"client does not support the http version " + context.httpVersion);
 					}
 				}
 			}, new ALPN.ClientProvider() {
