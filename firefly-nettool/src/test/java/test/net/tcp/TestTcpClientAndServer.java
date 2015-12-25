@@ -34,7 +34,7 @@ public class TestTcpClientAndServer {
 		config.setHandler(new SendFileHandler());
 		server.setConfig(config);
 		server.start("localhost", 9900);
-
+		Thread.sleep(1000);
 		
 		final int LOOP = 50;
 		final CountDownLatch requestLatch = new CountDownLatch(LOOP);
