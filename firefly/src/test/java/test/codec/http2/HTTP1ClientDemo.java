@@ -26,44 +26,6 @@ import com.firefly.utils.io.BufferUtils;
 
 public class HTTP1ClientDemo {
 
-	public static void main2(String[] args) {
-		final Phaser phaser = new Phaser(1);
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(1000L);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				System.out.println("run task 0");
-				int currentPhaseNumber = phaser.arrive();
-				System.out.println("current phase number: " + currentPhaseNumber);
-			}
-		}).start();
-
-		phaser.awaitAdvance(0);
-		System.out.println(phaser.getArrivedParties() + "|" + phaser.getPhase());
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(1000L);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				System.out.println("run task 2");
-				int currentPhaseNumber = phaser.arrive();
-				System.out.println("current phase number: " + currentPhaseNumber);
-			}
-		}).start();
-
-		phaser.awaitAdvance(1);
-		System.out.println("finished " + phaser.getArrivedParties() + "|" + phaser.getPhase());
-	}
-
 	public static void main(String[] args) throws InterruptedException, ExecutionException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
@@ -148,7 +110,7 @@ public class HTTP1ClientDemo {
 
 			ByteBuffer[] dataArray = new ByteBuffer[] { data, data2 };
 
-			http1ClientConnection.requestWithByteBufferArray(post, dataArray, new HTTP1ClientResponseHandler.Adapter() {
+			http1ClientConnection.request(post, dataArray, new HTTP1ClientResponseHandler.Adapter() {
 
 				@Override
 				public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
@@ -167,6 +129,36 @@ public class HTTP1ClientDemo {
 			});
 
 			phaser.awaitAdvance(2);
+			// post single data
+			HTTPClientRequest postSingleData = new HTTPClientRequest("POST", "/add");
+			postSingleData.getFields().add(new HttpField(HttpHeader.CONTENT_TYPE, "application/x-www-form-urlencoded"));
+
+			for (Cookie cookie : currentCookies) {
+				if(cookie.getName().equals("jsessionid")) {
+					postSingleData.getFields().add(new HttpField(HttpHeader.COOKIE, CookieGenerator.generateCookie(cookie)));
+				}
+			}
+
+			ByteBuffer data1 = ByteBuffer.wrap("content=test_post_single_data".getBytes(StandardCharsets.UTF_8));
+			http1ClientConnection.request(post, data1, new HTTP1ClientResponseHandler.Adapter() {
+
+				@Override
+				public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
+					System.out.println(BufferUtils.toString(item, StandardCharsets.UTF_8));
+					return false;
+				}
+
+				@Override
+				public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
+					System.out.println(response);
+					System.out.println(response.getFields());
+					int currentPhaseNumber = phaser.arrive();
+					System.out.println("current phase number: " + currentPhaseNumber);
+					return true;
+				}
+			});
+			
+			phaser.awaitAdvance(3);
 			System.out.println("request finished");
 		} else {
 

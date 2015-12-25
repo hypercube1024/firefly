@@ -63,6 +63,42 @@ public class HttpGeneratorClientTest {
 		Assert.assertThat(result, is(HttpGenerator.Result.FLUSH));
 		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMPLETING));
 	}
+	
+	@Test
+	public void testGETRequestNoContent3() throws Exception {
+		HttpGenerator gen = new HttpGenerator();
+		ByteBuffer header = BufferUtils.allocate(8 * 1024);
+		
+		HTTPClientRequest request = new HTTPClientRequest("GET", "/index.html");
+		request.getFields().add("Host", "something");
+		request.getFields().add("User-Agent", "test");
+		
+		HttpGenerator.Result result = gen.generateRequest(request, header, null, null, false);
+		System.out.println(header.remaining());
+		Assert.assertThat(header.remaining(), greaterThan(0));
+		Assert.assertThat(gen.isChunking(), is(true));
+		System.out.println(result + "|" + gen.getState() + "|" + gen.isChunking());
+		Assert.assertThat(result, is(HttpGenerator.Result.FLUSH));
+		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMMITTED));
+		String out = BufferUtils.toString(header);
+		BufferUtils.clear(header);
+		
+		ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
+		result =  gen.generateRequest(null, null, chunk, null, true);
+		Assert.assertThat(result, is(HttpGenerator.Result.CONTINUE));
+		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMPLETING));
+		
+		result = gen.generateRequest(null, null, chunk, null, true);
+		Assert.assertThat(result, is(HttpGenerator.Result.FLUSH));
+		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMPLETING));
+		out += BufferUtils.toString(chunk);
+		BufferUtils.clear(chunk);
+		
+		result = gen.generateRequest(null, null, null, null, true);
+		Assert.assertThat(result, is(HttpGenerator.Result.DONE));
+		Assert.assertThat(gen.getState(), is(HttpGenerator.State.END));
+		System.out.println(out);
+	}
 
 	@Test
 	public void testGETRequestNoContent() throws Exception {
