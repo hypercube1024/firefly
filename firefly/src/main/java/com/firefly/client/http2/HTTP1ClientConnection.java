@@ -179,14 +179,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 				}
 				generatorResult = generator.generateRequest(null, null, null, null, true);
 				if (generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
-					log.debug("client session {} generates the HTTP message completely", tcpSession.getSessionId());
+					clientGeneratesHTTPMessageSuccessfully();
 				} else {
-					generator.reset();
-					throw new IllegalStateException("Client generates http message exception.");
+					clientGeneratesHTTPMessageExceptionally();
 				}
 			} else {
-				generator.reset();
-				throw new IllegalStateException("Client generates http message exception.");
+				clientGeneratesHTTPMessageExceptionally();
 			}
 		} catch (IOException e) {
 			generator.reset();
@@ -202,6 +200,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			requestWithData(request, dataArray[0], handler);
 		} else {
 			checkWrite(request, handler);
+			log.debug("client is sending data array");
 			ByteBuffer header = BufferUtils.allocate(config.getMaxRequestHeadLength());
 			try {
 				generatorResult = generator.generateRequest(request, header, null, dataArray[0], false);
@@ -210,29 +209,57 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 					tcpSession.encode(header);
 					tcpSession.encode(dataArray[0]);
 				} else {
-					generator.reset();
-					throw new IllegalStateException("Client generates http message exception.");
+					clientGeneratesHTTPMessageExceptionally();
 				}
 
 				for (int i = 1; i < dataArray.length; i++) {
 					ByteBuffer data = dataArray[i];
 					if (generator.isChunking()) {
-						// TODO
-					} else {
-						generatorResult = generator.generateRequest(request, header, null, data, false);
+						log.debug("client is generating chunk");
+						ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
+						generatorResult = generator.generateRequest(null, null, chunk, data, false);
 						if (generatorResult == HttpGenerator.Result.FLUSH
 								&& generator.getState() == HttpGenerator.State.COMMITTED) {
-							tcpSession.encode(header);
+							tcpSession.encode(chunk);
 							tcpSession.encode(data);
 						} else {
-							generator.reset();
-							throw new IllegalStateException("Client generates http message exception.");
+							clientGeneratesHTTPMessageExceptionally();
+						}
+					} else {
+						generatorResult = generator.generateRequest(null, null, null, data, false);
+						if (generatorResult == HttpGenerator.Result.FLUSH
+								&& generator.getState() == HttpGenerator.State.COMMITTED) {
+							tcpSession.encode(data);
+						} else {
+							clientGeneratesHTTPMessageExceptionally();
 						}
 					}
 				}
 
 				if (generator.isChunking()) {
-					// TODO
+					log.debug("client is generating chunk");
+					ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
+					generatorResult = generator.generateRequest(null, null, chunk, null, true);
+					if (generatorResult == HttpGenerator.Result.CONTINUE
+							&& generator.getState() == HttpGenerator.State.COMPLETING) {
+						generatorResult = generator.generateRequest(null, null, chunk, null, true);
+						if (generatorResult == HttpGenerator.Result.FLUSH
+								&& generator.getState() == HttpGenerator.State.COMPLETING) {
+							tcpSession.encode(chunk);
+
+							generatorResult = generator.generateRequest(null, null, null, null, true);
+							if (generatorResult == HttpGenerator.Result.DONE
+									&& generator.getState() == HttpGenerator.State.END) {
+								clientGeneratesHTTPMessageSuccessfully();
+							} else {
+								clientGeneratesHTTPMessageExceptionally();
+							}
+						} else {
+							clientGeneratesHTTPMessageExceptionally();
+						}
+					} else {
+						clientGeneratesHTTPMessageExceptionally();
+					}
 				} else {
 					generatorResult = generator.generateRequest(null, null, null, null, true);
 					if (generatorResult == HttpGenerator.Result.CONTINUE
@@ -240,8 +267,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 						generatorResult = generator.generateRequest(null, null, null, null, true);
 						if (generatorResult == HttpGenerator.Result.DONE
 								&& generator.getState() == HttpGenerator.State.END) {
-
+							clientGeneratesHTTPMessageSuccessfully();
+						} else {
+							clientGeneratesHTTPMessageExceptionally();
 						}
+					} else {
+						clientGeneratesHTTPMessageExceptionally();
 					}
 				}
 			} catch (IOException e) {
@@ -249,7 +280,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 				log.error("client generates the HTTP header exception", e);
 			}
 		}
-
 	}
 
 	public OutputStream requestWithStream(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
@@ -257,6 +287,15 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		// TODO
 
 		return null;
+	}
+
+	private void clientGeneratesHTTPMessageSuccessfully() {
+		log.debug("client session {} generates the HTTP message completely", tcpSession.getSessionId());
+	}
+
+	private void clientGeneratesHTTPMessageExceptionally() {
+		generator.reset();
+		throw new IllegalStateException("Client generates http message exception.");
 	}
 
 	private void checkWrite(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {

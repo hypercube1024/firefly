@@ -123,4 +123,32 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 	abstract public void badMessage(int status, String reason, HTTPClientResponse response,
 			HTTP1ClientConnection connection);
 
+	public static class Adapter extends HTTP1ClientResponseHandler {
+
+		@Override
+		public void earlyEOF() {
+		}
+
+		@Override
+		public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
+			return false;
+		}
+
+		@Override
+		public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
+			return false;
+		}
+
+		@Override
+		public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
+			return true;
+		}
+
+		@Override
+		public void badMessage(int status, String reason, HTTPClientResponse response,
+				HTTP1ClientConnection connection) {
+		}
+
+	}
+
 }

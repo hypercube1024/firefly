@@ -201,13 +201,11 @@ public class HttpGeneratorClientTest {
 		Assert.assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
 		Assert.assertTrue(gen.isChunking());
 		out = BufferUtils.toString(header);
-		System.out.println(out);
-		System.out.println("----------------------------------------------------------");
 		BufferUtils.clear(header);
 		out += BufferUtils.toString(content0);
+		BufferUtils.clear(content0);
 		System.out.println(out);
 		System.out.println("----------------------------------------------------------");
-		BufferUtils.clear(content0);
 
 		result = gen.generateRequest(null, header, null, content1, false);
 		Assert.assertEquals(HttpGenerator.Result.NEED_CHUNK, result);
@@ -235,11 +233,10 @@ public class HttpGeneratorClientTest {
 		Assert.assertEquals(HttpGenerator.Result.FLUSH, result);
 		Assert.assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
 		out += BufferUtils.toString(chunk);
-		System.out.println(out);
 		BufferUtils.clear(chunk);
 		Assert.assertTrue(!gen.isChunking());
 
-		result = gen.generateResponse(null, null, chunk, null, true);
+		result = gen.generateResponse(null, null, null, null, true);
 		Assert.assertEquals(HttpGenerator.Result.DONE, result);
 		Assert.assertEquals(HttpGenerator.State.END, gen.getState());
 
