@@ -40,7 +40,7 @@ public class HTTP1ClientDemo {
 		if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
 			HTTP1ClientConnection http1ClientConnection = (HTTP1ClientConnection) connection;
 
-			final Phaser phaser = new Phaser(1);
+			final Phaser phaser = new Phaser(2);
 
 			// request index.html
 			HTTPClientRequest request = new HTTPClientRequest("GET", "/index.html");
@@ -61,9 +61,9 @@ public class HTTP1ClientDemo {
 					return true;
 				}
 			});
+			phaser.arriveAndAwaitAdvance();
 
-			phaser.awaitAdvance(0);
-
+			
 			final List<Cookie> currentCookies = new CopyOnWriteArrayList<>();
 			// login
 			HTTPClientRequest loginRequest = new HTTPClientRequest("GET", "/login");
@@ -90,8 +90,9 @@ public class HTTP1ClientDemo {
 					return true;
 				}
 			});
-
-			phaser.awaitAdvance(1);
+			phaser.arriveAndAwaitAdvance();
+			
+			
 			System.out.println("current cookies : " + currentCookies);
 			// post data
 			HTTPClientRequest post = new HTTPClientRequest("POST", "/add");
@@ -127,8 +128,9 @@ public class HTTP1ClientDemo {
 					return true;
 				}
 			});
-
-			phaser.awaitAdvance(2);
+			phaser.arriveAndAwaitAdvance();
+			
+			
 			// post single data
 			HTTPClientRequest postSingleData = new HTTPClientRequest("POST", "/add");
 			postSingleData.getFields().add(new HttpField(HttpHeader.CONTENT_TYPE, "application/x-www-form-urlencoded"));
@@ -157,8 +159,9 @@ public class HTTP1ClientDemo {
 					return true;
 				}
 			});
+			phaser.arriveAndAwaitAdvance();
 			
-			phaser.awaitAdvance(3);
+			
 			System.out.println("request finished");
 		} else {
 
