@@ -136,9 +136,7 @@ public class HTTP2Flusher extends IteratingCallback {
 			// Check if the frame fits in the flow control windows.
 			int remaining = entry.dataRemaining();
 			if (remaining > 0) {
-				FlowControlStrategy flowControl = session.getFlowControlStrategy();
 				if (sessionWindow <= 0) {
-					flowControl.onSessionStalled(session);
 					++index;
 					// There may be *non* flow controlled frames to send.
 					continue;
@@ -156,7 +154,6 @@ public class HTTP2Flusher extends IteratingCallback {
 					// Is it a frame belonging to an already stalled stream
 					// ?
 					if (streamWindow <= 0) {
-						flowControl.onStreamStalled(stream);
 						++index;
 						// There may be *non* flow controlled frames to
 						// send.

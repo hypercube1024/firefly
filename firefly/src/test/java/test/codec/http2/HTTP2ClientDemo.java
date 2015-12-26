@@ -84,6 +84,12 @@ public class HTTP2ClientDemo {
 			public void onFailure(Session session, Throwable failure) {
 				log.error("client failure, {}", failure, session);
 			}
+
+			@Override
+			public boolean onIdleTimeout(Session session) {
+				// TODO Auto-generated method stub
+				return false;
+			}
 		});
 
 		HTTPConnection connection = promise.get();

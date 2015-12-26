@@ -249,6 +249,17 @@ public interface Session {
 
 		/**
 		 * <p>
+		 * Callback method invoked when the idle timeout expired.
+		 * </p>
+		 * 
+		 * @param session
+		 *            the session
+		 * @return whether the session should be closed
+		 */
+		public boolean onIdleTimeout(Session session);
+
+		/**
+		 * <p>
 		 * Callback method invoked when a failure has been detected for this
 		 * session.
 		 * </p>
@@ -290,6 +301,11 @@ public interface Session {
 
 			@Override
 			public void onClose(Session session, GoAwayFrame frame) {
+			}
+
+			@Override
+			public boolean onIdleTimeout(Session session) {
+				return true;
 			}
 
 			@Override

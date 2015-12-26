@@ -704,25 +704,24 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	 * example, queue was stuck because of TCP congestion), therefore we
 	 * terminate. See {@link #onGoAway(GoAwayFrame)}.
 	 *
+	 * @return true if the session should be closed, false otherwise
 	 * @see #onGoAway(GoAwayFrame)
 	 * @see #close(int, String, Callback)
 	 * @see #onShutdown()
 	 */
 	@Override
-	public void onIdleTimeout() {
+	public boolean onIdleTimeout() {
 		switch (closed.get()) {
 		case NOT_CLOSED: {
-			// Real idle timeout, just close.
-			close(ErrorCode.NO_ERROR.code, "idle_timeout", Callback.NOOP);
-			break;
+			return notifyIdleTimeout(this);
 		}
 		case LOCALLY_CLOSED:
 		case REMOTELY_CLOSED: {
 			abort(new TimeoutException());
-			break;
+			return false;
 		}
 		default: {
-			break;
+			return false;
 		}
 		}
 	}
@@ -813,6 +812,15 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			listener.onClose(session, frame);
 		} catch (Throwable x) {
 			log.info("Failure while notifying listener " + listener, x);
+		}
+	}
+
+	protected boolean notifyIdleTimeout(Session session) {
+		try {
+			return listener.onIdleTimeout(session);
+		} catch (Throwable x) {
+			log.info("Failure while notifying listener " + listener, x);
+			return true;
 		}
 	}
 

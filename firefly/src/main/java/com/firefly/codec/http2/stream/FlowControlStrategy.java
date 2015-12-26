@@ -22,8 +22,4 @@ public interface FlowControlStrategy {
 	public void onDataSending(StreamSPI stream, int length);
 
 	public void onDataSent(StreamSPI stream, int length);
-
-	public void onSessionStalled(SessionSPI session);
-
-	public void onStreamStalled(StreamSPI stream);
 }

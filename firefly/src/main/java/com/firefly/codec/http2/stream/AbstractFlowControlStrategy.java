@@ -1,5 +1,7 @@
 package com.firefly.codec.http2.stream;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -7,6 +9,7 @@ import com.firefly.utils.log.LogFactory;
 public abstract class AbstractFlowControlStrategy implements FlowControlStrategy {
 	protected static Log log = LogFactory.getInstance().getLog("firefly-system");
 
+	private final AtomicLong sessionStalls = new AtomicLong();
 	private int initialStreamSendWindow;
 	private int initialStreamRecvWindow;
 
@@ -68,11 +71,15 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 				int oldSize = stream.updateSendWindow(delta);
 				if (log.isDebugEnabled())
 					log.debug("Updated stream send window {} -> {} for {}", oldSize, oldSize + delta, stream);
+				if (oldSize <= 0)
+					onStreamUnstalled(stream);
 			}
 		} else {
 			int oldSize = session.updateSendWindow(delta);
 			if (log.isDebugEnabled())
 				log.debug("Updated session send window {} -> {} for {}", oldSize, oldSize + delta, session);
+			if (oldSize <= 0)
+				onSessionUnstalled(session);
 		}
 	}
 
@@ -100,28 +107,52 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 			return;
 
 		SessionSPI session = stream.getSession();
-		int oldSize = session.updateSendWindow(-length);
+		int oldSessionWindow = session.updateSendWindow(-length);
+		int newSessionWindow = oldSessionWindow - length;
 		if (log.isDebugEnabled())
-			log.debug("Updated session send window {} -> {} for {}", oldSize, oldSize - length, session);
+			log.debug("Sending, session send window {} -> {} for {}", oldSessionWindow, newSessionWindow, session);
+		if (newSessionWindow <= 0)
+			onSessionStalled(session);
 
-		oldSize = stream.updateSendWindow(-length);
+		int oldStreamWindow = stream.updateSendWindow(-length);
+		int newStreamWindow = oldStreamWindow - length;
 		if (log.isDebugEnabled())
-			log.debug("Updated stream send window {} -> {} for {}", oldSize, oldSize - length, stream);
+			log.debug("Sending, stream send window {} -> {} for {}", oldStreamWindow, newStreamWindow, stream);
+		if (newStreamWindow <= 0)
+			onStreamStalled(stream);
 	}
 
 	@Override
 	public void onDataSent(StreamSPI stream, int length) {
 	}
 
-	@Override
-	public void onSessionStalled(SessionSPI session) {
+	protected void onSessionStalled(SessionSPI session) {
 		if (log.isDebugEnabled())
 			log.debug("Session stalled {}", session);
+
+		sessionStalls.incrementAndGet();
 	}
 
-	@Override
-	public void onStreamStalled(StreamSPI stream) {
+	protected void onStreamStalled(StreamSPI stream) {
 		if (log.isDebugEnabled())
 			log.debug("Stream stalled {}", stream);
+	}
+
+	protected void onSessionUnstalled(SessionSPI session) {
+		if (log.isDebugEnabled())
+			log.debug("Session unstalled {}", session);
+	}
+
+	protected void onStreamUnstalled(StreamSPI stream) {
+		if (log.isDebugEnabled())
+			log.debug("Stream unstalled {}", stream);
+	}
+
+	public long getSessionStallCount() {
+		return sessionStalls.get();
+	}
+
+	public void reset() {
+		sessionStalls.set(0);
 	}
 }

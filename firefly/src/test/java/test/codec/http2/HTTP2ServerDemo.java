@@ -109,6 +109,12 @@ public class HTTP2ServerDemo {
 			@Override
 			public void onAccept(Session session) {
 			}
+
+			@Override
+			public boolean onIdleTimeout(Session session) {
+				// TODO Auto-generated method stub
+				return false;
+			}
 		}, new RequestHandler(){
 
 			@Override

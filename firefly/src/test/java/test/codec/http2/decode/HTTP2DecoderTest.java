@@ -144,6 +144,12 @@ public class HTTP2DecoderTest {
 
 					@Override
 					public void onAccept(Session session) {
+					}
+
+					@Override
+					public boolean onIdleTimeout(Session session) {
+						// TODO Auto-generated method stub
+						return false;
 					}});
 		session.attachObject(http2ServerConnection);
 		
@@ -259,6 +265,12 @@ public class HTTP2DecoderTest {
 
 					@Override
 					public void onAccept(Session session) {
+					}
+
+					@Override
+					public boolean onIdleTimeout(Session session) {
+						// TODO Auto-generated method stub
+						return false;
 					}});
 		session.attachObject(http2ServerConnection);
 		

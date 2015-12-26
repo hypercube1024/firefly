@@ -139,8 +139,9 @@ public interface SessionSPI extends Session {
 	 *
 	 * @see #onShutdown()
 	 * @see #close(int, String, Callback)
+	 *  @return whether the session should be closed
 	 */
-	public void onIdleTimeout();
+	public boolean onIdleTimeout();
 
 	/**
 	 * <p>
