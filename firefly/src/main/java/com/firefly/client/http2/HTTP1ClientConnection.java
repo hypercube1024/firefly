@@ -35,6 +35,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	private final ResponseHandlerWrap wrap;
 	private volatile HTTPClientRequest request;
 	private volatile HttpGenerator.Result generatorResult;
+	volatile boolean  upgradeHTTP2Successfully = false;
 
 	private static class ResponseHandlerWrap implements ResponseHandler {
 
@@ -392,6 +393,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 		if (handler == null)
 			throw new IllegalArgumentException("the http1 client response handler is null");
+		
+		if(!isOpen())
+			throw new IllegalStateException("current client session " + tcpSession.getSessionId() + " has been closed");
+		
+		if(upgradeHTTP2Successfully)
+			throw new IllegalStateException("current client session " + tcpSession.getSessionId() + " has upgraded HTTP2");
 
 		if (wrap.writing.compareAndSet(null, handler)) {
 			handler.connection = this;

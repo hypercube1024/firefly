@@ -99,6 +99,7 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		if (promise != null && listener != null) {
 			String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
 			if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
+				connection.upgradeHTTP2Successfully = true;
 				connection.initializeHTTP2ClientConnection(promise, listener);
 				return http1MessageComplete();
 			} else {
