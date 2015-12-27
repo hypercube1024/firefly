@@ -11,8 +11,9 @@ import com.firefly.net.tcp.ssl.SSLSession;
 
 public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 	public HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
-			RequestHandler requestHandler) {
+			HTTP1ServerRequestHandler requestHandler) {
 		super(config, sslSession, tcpSession, requestHandler, null);
+		requestHandler.connection = this;
 	}
 
 	@Override

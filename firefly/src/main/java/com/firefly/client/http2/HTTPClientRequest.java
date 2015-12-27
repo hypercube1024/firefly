@@ -8,7 +8,7 @@ import com.firefly.codec.http2.model.MetaData;
 public class HTTPClientRequest extends MetaData.Request {
 
 	public HTTPClientRequest(String method, String uri) {
-		super(method, new HttpURI(uri), HttpVersion.HTTP_1_1, new HttpFields(), -1);
+		super(method, new HttpURI(uri), HttpVersion.HTTP_1_1, new HttpFields());
 	}
 
 	public HTTPClientRequest(String method, String uri, int contentLength) {

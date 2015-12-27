@@ -34,8 +34,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	private final ResponseHandlerWrap wrap;
 	private volatile HTTPClientRequest request;
-	private volatile HttpGenerator.Result generatorResult;
-	volatile boolean  upgradeHTTP2Successfully = false;
+	volatile boolean upgradeHTTP2Successfully = false;
 
 	private static class ResponseHandlerWrap implements ResponseHandler {
 
@@ -117,7 +116,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	void reset() {
 		request = null;
-		generatorResult = null;
 		generator.reset();
 		parser.reset();
 	}
@@ -235,18 +233,19 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			try {
 				final HttpGenerator generator = connection.generator;
 				final Session tcpSession = connection.tcpSession;
+				HttpGenerator.Result generatorResult;
 
 				ByteBuffer header = BufferUtils.allocate(connection.config.getMaxRequestHeadLength());
 
-				connection.generatorResult = generator.generateRequest(request, header, null, data, true);
-				if (connection.generatorResult == HttpGenerator.Result.FLUSH
+				generatorResult = generator.generateRequest(request, header, null, data, true);
+				if (generatorResult == HttpGenerator.Result.FLUSH
 						&& generator.getState() == HttpGenerator.State.COMPLETING) {
 					tcpSession.encode(header);
 					if (data != null) {
 						tcpSession.encode(data);
 					}
-					connection.generatorResult = generator.generateRequest(null, null, null, null, true);
-					if (connection.generatorResult == HttpGenerator.Result.DONE
+					generatorResult = generator.generateRequest(null, null, null, null, true);
+					if (generatorResult == HttpGenerator.Result.DONE
 							&& generator.getState() == HttpGenerator.State.END) {
 						clientGeneratesHTTPMessageSuccessfully();
 					} else {
@@ -267,12 +266,13 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 			final HttpGenerator generator = connection.generator;
 			final Session tcpSession = connection.tcpSession;
+			HttpGenerator.Result generatorResult;
 
 			if (!commited) {
 				ByteBuffer header = BufferUtils.allocate(connection.config.getMaxRequestHeadLength());
 
-				connection.generatorResult = generator.generateRequest(request, header, null, data, false);
-				if (connection.generatorResult == HttpGenerator.Result.FLUSH
+				generatorResult = generator.generateRequest(request, header, null, data, false);
+				if (generatorResult == HttpGenerator.Result.FLUSH
 						&& generator.getState() == HttpGenerator.State.COMMITTED) {
 					tcpSession.encode(header);
 					tcpSession.encode(data);
@@ -284,8 +284,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 				if (generator.isChunking()) {
 					ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
 
-					connection.generatorResult = generator.generateRequest(null, null, chunk, data, false);
-					if (connection.generatorResult == HttpGenerator.Result.FLUSH
+					generatorResult = generator.generateRequest(null, null, chunk, data, false);
+					if (generatorResult == HttpGenerator.Result.FLUSH
 							&& generator.getState() == HttpGenerator.State.COMMITTED) {
 						tcpSession.encode(chunk);
 						tcpSession.encode(data);
@@ -293,8 +293,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 						clientGeneratesHTTPMessageExceptionally();
 					}
 				} else {
-					connection.generatorResult = generator.generateRequest(null, null, null, data, false);
-					if (connection.generatorResult == HttpGenerator.Result.FLUSH
+					generatorResult = generator.generateRequest(null, null, null, data, false);
+					if (generatorResult == HttpGenerator.Result.FLUSH
 							&& generator.getState() == HttpGenerator.State.COMMITTED) {
 						tcpSession.encode(data);
 					} else {
@@ -313,15 +313,16 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 				log.debug("client request output stream is closing");
 				final HttpGenerator generator = connection.generator;
 				final Session tcpSession = connection.tcpSession;
+				HttpGenerator.Result generatorResult;
 
 				if (!commited) {
 					ByteBuffer header = BufferUtils.allocate(connection.config.getMaxRequestHeadLength());
-					connection.generatorResult = generator.generateRequest(request, header, null, null, true);
-					if (connection.generatorResult == HttpGenerator.Result.FLUSH
+					generatorResult = generator.generateRequest(request, header, null, null, true);
+					if (generatorResult == HttpGenerator.Result.FLUSH
 							&& generator.getState() == HttpGenerator.State.COMPLETING) {
 						tcpSession.encode(header);
-						connection.generatorResult = generator.generateRequest(null, null, null, null, true);
-						if (connection.generatorResult == HttpGenerator.Result.DONE
+						generatorResult = generator.generateRequest(null, null, null, null, true);
+						if (generatorResult == HttpGenerator.Result.DONE
 								&& generator.getState() == HttpGenerator.State.END) {
 							clientGeneratesHTTPMessageSuccessfully();
 						} else {
@@ -335,16 +336,16 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 					if (generator.isChunking()) {
 						log.debug("client is generating chunk");
 						ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
-						connection.generatorResult = generator.generateRequest(null, null, chunk, null, true);
-						if (connection.generatorResult == HttpGenerator.Result.CONTINUE
+						generatorResult = generator.generateRequest(null, null, chunk, null, true);
+						if (generatorResult == HttpGenerator.Result.CONTINUE
 								&& generator.getState() == HttpGenerator.State.COMPLETING) {
-							connection.generatorResult = generator.generateRequest(null, null, chunk, null, true);
-							if (connection.generatorResult == HttpGenerator.Result.FLUSH
+							generatorResult = generator.generateRequest(null, null, chunk, null, true);
+							if (generatorResult == HttpGenerator.Result.FLUSH
 									&& generator.getState() == HttpGenerator.State.COMPLETING) {
 								tcpSession.encode(chunk);
 
-								connection.generatorResult = generator.generateRequest(null, null, null, null, true);
-								if (connection.generatorResult == HttpGenerator.Result.DONE
+								generatorResult = generator.generateRequest(null, null, null, null, true);
+								if (generatorResult == HttpGenerator.Result.DONE
 										&& generator.getState() == HttpGenerator.State.END) {
 									clientGeneratesHTTPMessageSuccessfully();
 								} else {
@@ -357,11 +358,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 							clientGeneratesHTTPMessageExceptionally();
 						}
 					} else {
-						connection.generatorResult = generator.generateRequest(null, null, null, null, true);
-						if (connection.generatorResult == HttpGenerator.Result.CONTINUE
+						generatorResult = generator.generateRequest(null, null, null, null, true);
+						if (generatorResult == HttpGenerator.Result.CONTINUE
 								&& generator.getState() == HttpGenerator.State.COMPLETING) {
-							connection.generatorResult = generator.generateRequest(null, null, null, null, true);
-							if (connection.generatorResult == HttpGenerator.Result.DONE
+							generatorResult = generator.generateRequest(null, null, null, null, true);
+							if (generatorResult == HttpGenerator.Result.DONE
 									&& generator.getState() == HttpGenerator.State.END) {
 								clientGeneratesHTTPMessageSuccessfully();
 							} else {
@@ -393,12 +394,13 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 		if (handler == null)
 			throw new IllegalArgumentException("the http1 client response handler is null");
-		
-		if(!isOpen())
+
+		if (!isOpen())
 			throw new IllegalStateException("current client session " + tcpSession.getSessionId() + " has been closed");
-		
-		if(upgradeHTTP2Successfully)
-			throw new IllegalStateException("current client session " + tcpSession.getSessionId() + " has upgraded HTTP2");
+
+		if (upgradeHTTP2Successfully)
+			throw new IllegalStateException(
+					"current client session " + tcpSession.getSessionId() + " has upgraded HTTP2");
 
 		if (wrap.writing.compareAndSet(null, handler)) {
 			handler.connection = this;

@@ -6,7 +6,6 @@ import javax.net.ssl.SSLEngine;
 
 import org.eclipse.jetty.alpn.ALPN;
 
-import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -17,13 +16,13 @@ import com.firefly.net.tcp.ssl.SSLSession;
 public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
 	private final ServerSessionListener listener;
-	private final RequestHandler requestHandler;
+	private final HTTP1ServerConnectionListener http1ServerConnectionListener;
 
 	public HTTP2ServerHandler(HTTP2Configuration config, ServerSessionListener listener,
-			RequestHandler requestHandler) {
+			HTTP1ServerConnectionListener http1ServerConnectionListener) {
 		super(config);
 		this.listener = listener;
-		this.requestHandler = requestHandler;
+		this.http1ServerConnectionListener = http1ServerConnectionListener;
 	}
 
 	@Override
@@ -47,7 +46,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 							break;
 						case HTTP_1_1:
 							session.attachObject(
-									new HTTP1ServerConnection(config, session, sslSession, requestHandler));
+									new HTTP1ServerConnection(config, session, sslSession, http1ServerConnectionListener.onNewConnectionIsCreating()));
 							break;
 						default:
 							throw new IllegalStateException(
@@ -99,7 +98,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
 			session.attachObject(handshakeContext);
 		} else {
-			session.attachObject(new HTTP1ServerConnection(config, session, null, requestHandler));
+			session.attachObject(new HTTP1ServerConnection(config, session, null, http1ServerConnectionListener.onNewConnectionIsCreating()));
 		}
 	}
 
