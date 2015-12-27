@@ -63,7 +63,13 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
 				@Override
 				public void unsupported() {
-					ALPN.remove(sslEngine);
+					try {
+						HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext) session
+								.getAttachment();
+						handshakeContext.httpVersion = HttpVersion.HTTP_1_1;
+					} finally {
+						ALPN.remove(sslEngine);
+					}
 				}
 
 				@Override

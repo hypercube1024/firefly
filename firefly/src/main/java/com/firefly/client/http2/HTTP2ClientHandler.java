@@ -66,6 +66,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 
 				@Override
 				public void unsupported() {
+					context.httpVersion = HttpVersion.HTTP_1_1;
 					ALPN.remove(sslEngine);
 				}
 
