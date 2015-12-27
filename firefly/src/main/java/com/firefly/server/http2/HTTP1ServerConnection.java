@@ -10,6 +10,7 @@ import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class HTTP1ServerConnection extends AbstractHTTP1Connection {
+	
 	public HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
 			HTTP1ServerRequestHandler requestHandler) {
 		super(config, sslSession, tcpSession, requestHandler, null);
@@ -32,5 +33,9 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 	
 	SSLSession getSSLSession() {
 		return sslSession;
+	}
+	
+	Session getTcpSession() {
+		return tcpSession;
 	}
 }

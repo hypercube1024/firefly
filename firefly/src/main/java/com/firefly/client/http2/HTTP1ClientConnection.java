@@ -203,7 +203,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	public static class HTTP1ClientRequestOutputStream extends OutputStream {
 
-		private HTTPClientRequest request;
+		private final HTTPClientRequest request;
 		private final HTTP1ClientConnection connection;
 		private boolean closed;
 		private boolean commited;

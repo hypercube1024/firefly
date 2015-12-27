@@ -15,7 +15,7 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 	@Override
 	public boolean startRequest(String method, String uri, HttpVersion version) {
 		request = new HTTPServerRequest(method, uri, version);
-		response = new HTTPServerResponse();
+		response = new HTTPServerResponse(connection);
 		return false;
 	}
 
@@ -26,18 +26,18 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 
 	@Override
 	public boolean headerComplete() {
-		return headerComplete(request, response, connection);
+		return headerComplete(request, response);
 	}
 
 	@Override
 	public boolean content(ByteBuffer item) {
-		return content(item, request, response, connection);
+		return content(item, request, response);
 	}
 
 	@Override
 	public boolean messageComplete() {
 		try {
-			return messageComplete(request, response, connection);
+			return messageComplete(request, response);
 		} finally {
 			connection.getParser().reset();
 		}
@@ -45,7 +45,12 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 
 	@Override
 	public void badMessage(int status, String reason) {
-		badMessage(status, reason, request, response, connection);
+		badMessage(status, reason, request, response);
+	}
+
+	@Override
+	public void earlyEOF() {
+		earlyEOF(request, response);
 	}
 
 	@Override
@@ -53,45 +58,39 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 		return 1024;
 	}
 
-	abstract public boolean content(ByteBuffer item, HTTPServerRequest request, HTTPServerResponse response,
-			HTTP1ServerConnection connection);
+	abstract public boolean content(ByteBuffer item, HTTPServerRequest request, HTTPServerResponse response);
 
-	abstract public boolean headerComplete(HTTPServerRequest request, HTTPServerResponse response,
-			HTTP1ServerConnection connection);
+	abstract public boolean headerComplete(HTTPServerRequest request, HTTPServerResponse response);
 
-	abstract public boolean messageComplete(HTTPServerRequest request, HTTPServerResponse response,
-			HTTP1ServerConnection connection);
+	abstract public boolean messageComplete(HTTPServerRequest request, HTTPServerResponse response);
 
-	abstract public void badMessage(int status, String reason, HTTPServerRequest request, HTTPServerResponse response,
-			HTTP1ServerConnection connection);
+	abstract public void badMessage(int status, String reason, HTTPServerRequest request, HTTPServerResponse response);
+
+	abstract public void earlyEOF(HTTPServerRequest request, HTTPServerResponse response);
 
 	public static class Adapter extends HTTP1ServerRequestHandler {
 
 		@Override
-		public void earlyEOF() {
+		public void earlyEOF(HTTPServerRequest request, HTTPServerResponse response) {
 		}
 
 		@Override
-		public boolean content(ByteBuffer item, HTTPServerRequest request, HTTPServerResponse response,
-				HTTP1ServerConnection connection) {
+		public boolean content(ByteBuffer item, HTTPServerRequest request, HTTPServerResponse response) {
 			return false;
 		}
 
 		@Override
-		public boolean headerComplete(HTTPServerRequest request, HTTPServerResponse response,
-				HTTP1ServerConnection connection) {
+		public boolean headerComplete(HTTPServerRequest request, HTTPServerResponse response) {
 			return false;
 		}
 
 		@Override
-		public boolean messageComplete(HTTPServerRequest request, HTTPServerResponse response,
-				HTTP1ServerConnection connection) {
+		public boolean messageComplete(HTTPServerRequest request, HTTPServerResponse response) {
 			return true;
 		}
 
 		@Override
-		public void badMessage(int status, String reason, HTTPServerRequest request, HTTPServerResponse response,
-				HTTP1ServerConnection connection) {
+		public void badMessage(int status, String reason, HTTPServerRequest request, HTTPServerResponse response) {
 		}
 
 	}
