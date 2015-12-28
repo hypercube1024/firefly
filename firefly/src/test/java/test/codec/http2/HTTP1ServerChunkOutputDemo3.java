@@ -18,7 +18,7 @@ import com.firefly.server.http2.HTTPServerResponse.HTTP1ServerResponseOutputStre
 import com.firefly.server.http2.ServerSessionListener;
 import com.firefly.utils.io.BufferUtils;
 
-public class HTTP1ServerDemo3 {
+public class HTTP1ServerChunkOutputDemo3 {
 
 	public static void main(String[] args) {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
@@ -67,7 +67,9 @@ public class HTTP1ServerDemo3 {
 								list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
 
 								try (HTTP1ServerResponseOutputStream output = response.getOutputStream()) {
-									output.writeAndClose(list.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
+									for (ByteBuffer buffer : list) {
+										output.write(buffer);
+									}
 								} catch (IOException e) {
 									e.printStackTrace();
 								}

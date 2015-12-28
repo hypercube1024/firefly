@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 import com.firefly.codec.http2.encode.HttpGenerator;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.net.Session;
 import com.firefly.utils.io.BufferUtils;
@@ -42,6 +43,28 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 	public void write(byte[] array, int offset, int length) throws IOException {
 		write(ByteBuffer.wrap(array, offset, length));
 	}
+	
+	public synchronized void writeAndClose(ByteBuffer[] data) throws IOException {
+		if (closed)
+			return;
+
+		if (commited)
+			return;
+		
+		try {
+			long contentLength = 0;
+			for(ByteBuffer buf : data) {
+				contentLength += buf.remaining();
+			}
+			info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
+			for(ByteBuffer buf : data) {
+				write(buf);
+			}
+			commited = true;
+		} finally {
+			closed = true;
+		}
+	}
 
 	public synchronized void writeAndClose(ByteBuffer data) throws IOException {
 		if (closed)
@@ -51,28 +74,8 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 			return;
 
 		try {
-			final HttpGenerator generator = getHttpGenerator();
-			final Session tcpSession = getSession();
-			HttpGenerator.Result generatorResult;
-
-			ByteBuffer header = getHeaderByteBuffer();
-
-			generatorResult = generate(info, header, null, data, true);
-			if (generatorResult == HttpGenerator.Result.FLUSH
-					&& generator.getState() == HttpGenerator.State.COMPLETING) {
-				tcpSession.encode(header);
-				if (data != null) {
-					tcpSession.encode(data);
-				}
-				generatorResult = generator.generateRequest(null, null, null, null, true);
-				if (generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
-					generateHTTPMessageSuccessfully();
-				} else {
-					generateHTTPMessageExceptionally();
-				}
-			} else {
-				generateHTTPMessageExceptionally();
-			}
+			info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
+			write(data);
 			commited = true;
 		} finally {
 			closed = true;

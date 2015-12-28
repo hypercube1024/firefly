@@ -106,9 +106,6 @@ public class HTTP1ClientDemo {
 
 			ByteBuffer data = ByteBuffer.wrap("content=hello_world".getBytes(StandardCharsets.UTF_8));
 			ByteBuffer data2 = ByteBuffer.wrap("_data2test".getBytes(StandardCharsets.UTF_8));
-			post.getFields().add(
-					new HttpField(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining() + data2.remaining())));
-
 			ByteBuffer[] dataArray = new ByteBuffer[] { data, data2 };
 
 			http1ClientConnection.request(post, dataArray, new HTTP1ClientResponseHandler.Adapter() {

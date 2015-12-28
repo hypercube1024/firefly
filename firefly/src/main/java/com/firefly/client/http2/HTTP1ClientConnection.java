@@ -197,9 +197,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	public void request(HTTPClientRequest request, ByteBuffer[] dataArray, HTTP1ClientResponseHandler handler) {
 		try (HTTP1ClientRequestOutputStream output = requestWithStream(request, handler)) {
 			if (dataArray != null) {
-				for (ByteBuffer data : dataArray) {
-					output.write(data);
-				}
+				output.writeAndClose(dataArray);
 			}
 		} catch (IOException e) {
 			generator.reset();
