@@ -44,6 +44,8 @@ public class AsynchronousTcpSession implements Session {
 	private long writtenBytes = 0;
 	private volatile int state;
 	private final AsynchronousSocketChannel socketChannel;
+	private volatile InetSocketAddress localAddress;
+	private volatile InetSocketAddress remoteAddress;
 
 	private final Config config;
 	private final EventManager eventManager;
@@ -402,21 +404,31 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public InetSocketAddress getLocalAddress() {
-		try {
-			return (InetSocketAddress) socketChannel.getLocalAddress();
-		} catch (IOException e) {
-			log.error("the session {} gets local address error", e, sessionId);
-			return null;
+		if(localAddress != null) {
+			return localAddress;
+		} else {
+			try {
+				localAddress = (InetSocketAddress) socketChannel.getLocalAddress();
+				return localAddress;
+			} catch (IOException e) {
+				log.error("the session {} gets local address error", e, sessionId);
+				return null;
+			}
 		}
 	}
 
 	@Override
 	public InetSocketAddress getRemoteAddress() {
-		try {
-			return (InetSocketAddress) socketChannel.getRemoteAddress();
-		} catch (Throwable t) {
-			log.error("the session {} gets remote address error", t, sessionId);
-			return null;
+		if(remoteAddress != null) {
+			return remoteAddress;
+		} else {
+			try {
+				remoteAddress = (InetSocketAddress) socketChannel.getRemoteAddress();
+				return remoteAddress;
+			} catch (Throwable t) {
+				log.error("the session {} gets remote address error", t, sessionId);
+				return null;
+			}
 		}
 	}
 
