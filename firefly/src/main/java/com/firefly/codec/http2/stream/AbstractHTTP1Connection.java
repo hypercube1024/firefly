@@ -22,11 +22,13 @@ abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
 
 		this.config = config;
 		parser = initHttpParser(config, requestHandler, responseHandler);
-		generator = new HttpGenerator();
+		generator = initHttpGenerator();
 		http2Generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());
 	}
 
 	abstract protected HttpParser initHttpParser(HTTP2Configuration config, RequestHandler requestHandler,
 			ResponseHandler responseHandler);
+	
+	abstract protected HttpGenerator initHttpGenerator();
 
 }

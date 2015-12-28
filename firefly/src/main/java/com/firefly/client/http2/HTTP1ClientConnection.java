@@ -2,7 +2,6 @@ package com.firefly.client.http2;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritePendingException;
 import java.util.List;
@@ -17,6 +16,7 @@ import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
+import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session.Listener;
@@ -30,7 +30,7 @@ import com.firefly.utils.log.LogFactory;
 
 public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final ResponseHandlerWrap wrap;
 	private volatile HTTPClientRequest request;
@@ -98,6 +98,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		return new HttpParser(responseHandler, config.getMaxRequestHeadLength());
 	}
 
+	@Override
+	protected HttpGenerator initHttpGenerator() {
+		return new HttpGenerator();
+	}
+
 	HttpParser getParser() {
 		return parser;
 	}
@@ -108,6 +113,14 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	SSLSession getSSLSession() {
 		return sslSession;
+	}
+
+	HTTP2Configuration getHTTP2Configuration() {
+		return config;
+	}
+	
+	Session getTcpSession() {
+		return tcpSession;
 	}
 
 	public HTTPClientRequest getRequest() {
@@ -201,190 +214,39 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		return outputStream;
 	}
 
-	public static class HTTP1ClientRequestOutputStream extends OutputStream {
+	public static class HTTP1ClientRequestOutputStream extends AbstractHTTP1OutputStream {
 
-		private final HTTPClientRequest request;
 		private final HTTP1ClientConnection connection;
-		private boolean closed;
-		private boolean commited;
 
 		private HTTP1ClientRequestOutputStream(HTTP1ClientConnection connection, HTTPClientRequest request) {
-			this.request = request;
+			super(request, true);
 			this.connection = connection;
 		}
 
 		@Override
-		public void write(int b) throws IOException {
-			write(new byte[] { (byte) b });
-		}
-
-		@Override
-		public void write(byte[] array, int offset, int length) throws IOException {
-			write(ByteBuffer.wrap(array, offset, length));
-		}
-
-		public synchronized void writeAndClose(ByteBuffer data) throws IOException {
-			if (closed)
-				return;
-
-			if (commited)
-				return;
-
-			try {
-				final HttpGenerator generator = connection.generator;
-				final Session tcpSession = connection.tcpSession;
-				HttpGenerator.Result generatorResult;
-
-				ByteBuffer header = BufferUtils.allocate(connection.config.getMaxRequestHeadLength());
-
-				generatorResult = generator.generateRequest(request, header, null, data, true);
-				if (generatorResult == HttpGenerator.Result.FLUSH
-						&& generator.getState() == HttpGenerator.State.COMPLETING) {
-					tcpSession.encode(header);
-					if (data != null) {
-						tcpSession.encode(data);
-					}
-					generatorResult = generator.generateRequest(null, null, null, null, true);
-					if (generatorResult == HttpGenerator.Result.DONE
-							&& generator.getState() == HttpGenerator.State.END) {
-						clientGeneratesHTTPMessageSuccessfully();
-					} else {
-						clientGeneratesHTTPMessageExceptionally();
-					}
-				} else {
-					clientGeneratesHTTPMessageExceptionally();
-				}
-				commited = true;
-			} finally {
-				closed = true;
-			}
-		}
-
-		public synchronized void write(ByteBuffer data) throws IOException {
-			if (closed)
-				return;
-
-			final HttpGenerator generator = connection.generator;
-			final Session tcpSession = connection.tcpSession;
-			HttpGenerator.Result generatorResult;
-
-			if (!commited) {
-				ByteBuffer header = BufferUtils.allocate(connection.config.getMaxRequestHeadLength());
-
-				generatorResult = generator.generateRequest(request, header, null, data, false);
-				if (generatorResult == HttpGenerator.Result.FLUSH
-						&& generator.getState() == HttpGenerator.State.COMMITTED) {
-					tcpSession.encode(header);
-					tcpSession.encode(data);
-				} else {
-					clientGeneratesHTTPMessageExceptionally();
-				}
-				commited = true;
-			} else {
-				if (generator.isChunking()) {
-					ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
-
-					generatorResult = generator.generateRequest(null, null, chunk, data, false);
-					if (generatorResult == HttpGenerator.Result.FLUSH
-							&& generator.getState() == HttpGenerator.State.COMMITTED) {
-						tcpSession.encode(chunk);
-						tcpSession.encode(data);
-					} else {
-						clientGeneratesHTTPMessageExceptionally();
-					}
-				} else {
-					generatorResult = generator.generateRequest(null, null, null, data, false);
-					if (generatorResult == HttpGenerator.Result.FLUSH
-							&& generator.getState() == HttpGenerator.State.COMMITTED) {
-						tcpSession.encode(data);
-					} else {
-						clientGeneratesHTTPMessageExceptionally();
-					}
-				}
-			}
-		}
-
-		@Override
-		public synchronized void close() throws IOException {
-			if (closed)
-				return;
-
-			try {
-				log.debug("client request output stream is closing");
-				final HttpGenerator generator = connection.generator;
-				final Session tcpSession = connection.tcpSession;
-				HttpGenerator.Result generatorResult;
-
-				if (!commited) {
-					ByteBuffer header = BufferUtils.allocate(connection.config.getMaxRequestHeadLength());
-					generatorResult = generator.generateRequest(request, header, null, null, true);
-					if (generatorResult == HttpGenerator.Result.FLUSH
-							&& generator.getState() == HttpGenerator.State.COMPLETING) {
-						tcpSession.encode(header);
-						generatorResult = generator.generateRequest(null, null, null, null, true);
-						if (generatorResult == HttpGenerator.Result.DONE
-								&& generator.getState() == HttpGenerator.State.END) {
-							clientGeneratesHTTPMessageSuccessfully();
-						} else {
-							clientGeneratesHTTPMessageExceptionally();
-						}
-					} else {
-						clientGeneratesHTTPMessageExceptionally();
-					}
-					commited = true;
-				} else {
-					if (generator.isChunking()) {
-						log.debug("client is generating chunk");
-						ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
-						generatorResult = generator.generateRequest(null, null, chunk, null, true);
-						if (generatorResult == HttpGenerator.Result.CONTINUE
-								&& generator.getState() == HttpGenerator.State.COMPLETING) {
-							generatorResult = generator.generateRequest(null, null, chunk, null, true);
-							if (generatorResult == HttpGenerator.Result.FLUSH
-									&& generator.getState() == HttpGenerator.State.COMPLETING) {
-								tcpSession.encode(chunk);
-
-								generatorResult = generator.generateRequest(null, null, null, null, true);
-								if (generatorResult == HttpGenerator.Result.DONE
-										&& generator.getState() == HttpGenerator.State.END) {
-									clientGeneratesHTTPMessageSuccessfully();
-								} else {
-									clientGeneratesHTTPMessageExceptionally();
-								}
-							} else {
-								clientGeneratesHTTPMessageExceptionally();
-							}
-						} else {
-							clientGeneratesHTTPMessageExceptionally();
-						}
-					} else {
-						generatorResult = generator.generateRequest(null, null, null, null, true);
-						if (generatorResult == HttpGenerator.Result.CONTINUE
-								&& generator.getState() == HttpGenerator.State.COMPLETING) {
-							generatorResult = generator.generateRequest(null, null, null, null, true);
-							if (generatorResult == HttpGenerator.Result.DONE
-									&& generator.getState() == HttpGenerator.State.END) {
-								clientGeneratesHTTPMessageSuccessfully();
-							} else {
-								clientGeneratesHTTPMessageExceptionally();
-							}
-						} else {
-							clientGeneratesHTTPMessageExceptionally();
-						}
-					}
-				}
-			} finally {
-				closed = true;
-			}
-		}
-
-		private void clientGeneratesHTTPMessageSuccessfully() {
+		protected void generateHTTPMessageSuccessfully() {
 			log.debug("client session {} generates the HTTP message completely", connection.tcpSession.getSessionId());
 		}
 
-		private void clientGeneratesHTTPMessageExceptionally() {
-			connection.generator.reset();
-			throw new IllegalStateException("Client generates http message exception.");
+		@Override
+		protected void generateHTTPMessageExceptionally() {
+			connection.getGenerator().reset();
+			throw new IllegalStateException("client generates http message exception.");
+		}
+
+		@Override
+		protected ByteBuffer getHeaderByteBuffer() {
+			return BufferUtils.allocate(connection.getHTTP2Configuration().getMaxRequestHeadLength());
+		}
+
+		@Override
+		protected Session getSession() {
+			return connection.getTcpSession();
+		}
+
+		@Override
+		protected HttpGenerator getHttpGenerator() {
+			return connection.getGenerator();
 		}
 	}
 

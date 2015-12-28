@@ -15,7 +15,7 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 	@Override
 	public boolean startRequest(String method, String uri, HttpVersion version) {
 		request = new HTTPServerRequest(method, uri, version);
-		response = new HTTPServerResponse(connection);
+		response = new HTTPServerResponse(request, connection);
 		return false;
 	}
 
