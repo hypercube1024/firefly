@@ -44,6 +44,13 @@ public class HTTPServerResponse extends MetaData.Response {
 		}
 
 		@Override
+		public synchronized void writeAndClose(ByteBuffer data) throws IOException {
+			final HTTPServerResponse response = (HTTPServerResponse) info;
+			response.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
+			super.writeAndClose(data);
+		}
+
+		@Override
 		protected void generateHTTPMessageSuccessfully() {
 			log.debug("server session {} generates the HTTP message completely", connection.getSessionId());
 
