@@ -35,7 +35,7 @@ public class HTTP1ClientDemo3 {
 			final Phaser phaser = new Phaser(1);
 
 			// request index.html
-			HTTPClientRequest request = new HTTPClientRequest("GET", "/index");
+			HTTPClientRequest request = new HTTPClientRequest("GET", "/index?version=1&test=ok");
 			http1ClientConnection.request(request, new HTTP1ClientResponseHandler.Adapter() {
 
 				@Override

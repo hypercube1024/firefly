@@ -56,6 +56,7 @@ public class HTTP1ServerDemo3 {
 									HTTP1ServerConnection connection) {
 								HttpURI uri = request.getURI();
 								System.out.println("current path is " + uri.getPath());
+								System.out.println("current parameter string is " + uri.getQuery());
 								System.out.println("current http headers are " + request.getFields());
 								response.setStatus(200);
 
