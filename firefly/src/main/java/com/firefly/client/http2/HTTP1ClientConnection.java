@@ -210,6 +210,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	public HTTP1ClientRequestOutputStream requestWithStream(HTTPClientRequest request,
 			HTTP1ClientResponseHandler handler) {
 		checkWrite(request, handler);
+		request.getFields().add(HttpHeader.HOST, tcpSession.getRemoteAddress().getHostString());
 		HTTP1ClientRequestOutputStream outputStream = new HTTP1ClientRequestOutputStream(this, request);
 		return outputStream;
 	}
