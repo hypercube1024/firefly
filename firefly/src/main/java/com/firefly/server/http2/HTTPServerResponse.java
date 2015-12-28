@@ -45,8 +45,7 @@ public class HTTPServerResponse extends MetaData.Response {
 
 		@Override
 		protected void generateHTTPMessageSuccessfully() {
-			log.debug("server session {} generates the HTTP message completely",
-					connection.getTcpSession().getSessionId());
+			log.debug("server session {} generates the HTTP message completely", connection.getSessionId());
 
 			final HTTPServerResponse response = (HTTPServerResponse) info;
 			final HTTPServerRequest request = response.request;
@@ -58,7 +57,8 @@ public class HTTPServerResponse extends MetaData.Response {
 			case HTTP_1_0:
 				if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
 						&& "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
-					log.debug("the server {} connection is persistent", response.getVersion());
+					log.debug("the server {} connection {} is persistent", response.getVersion(),
+							connection.getSessionId());
 					connection.getGenerator().reset();
 				} else {
 					connection.getGenerator().reset();
@@ -72,7 +72,6 @@ public class HTTPServerResponse extends MetaData.Response {
 			case HTTP_1_1: // the persistent connection is default in HTTP 1.1
 				if ("close".equalsIgnoreCase(requestConnectionValue)
 						|| "close".equalsIgnoreCase(responseConnectionValue)) {
-					log.debug("the server {} connection is persistent", response.getVersion());
 					connection.getGenerator().reset();
 					try {
 						connection.close();
@@ -80,6 +79,8 @@ public class HTTPServerResponse extends MetaData.Response {
 						log.error("server closes connection exception", e);
 					}
 				} else {
+					log.debug("the server {} connection {} is persistent", response.getVersion(),
+							connection.getSessionId());
 					connection.getGenerator().reset();
 				}
 				break;
