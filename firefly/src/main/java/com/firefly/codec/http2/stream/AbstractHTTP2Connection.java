@@ -9,7 +9,7 @@ import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.codec.http2.stream.Session.Listener;;
 
-public abstract class AbstractHTTP2Connection extends AbstractHTTPConnection {
+abstract public class AbstractHTTP2Connection extends AbstractHTTPConnection {
 
 	protected final HTTP2Session http2Session;
 	protected final Parser parser;

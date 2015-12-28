@@ -57,7 +57,6 @@ public class HTTP1ClientDemo3 {
 			phaser.awaitAdvance(0);
 			System.out.println("demo2 request finished");
 		}
-
 	}
 
 }

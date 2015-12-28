@@ -22,7 +22,7 @@ public class HTTP1ServerDecoder extends DecoderChain {
 			break;
 		case HTTP_1_1:
 			HTTP1ServerConnection http1Connection = (HTTP1ServerConnection) session.getAttachment();
-			while(buf.hasRemaining()) {
+			while (buf.hasRemaining()) {
 				http1Connection.getParser().parseNext(buf);
 			}
 			break;

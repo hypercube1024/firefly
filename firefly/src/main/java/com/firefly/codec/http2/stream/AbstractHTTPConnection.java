@@ -1,12 +1,13 @@
 package com.firefly.codec.http2.stream;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 
-public class AbstractHTTPConnection implements HTTPConnection {
+abstract public class AbstractHTTPConnection implements HTTPConnection {
 	
 	protected volatile Object attachment;
 	protected final SSLSession sslSession;
@@ -53,6 +54,21 @@ public class AbstractHTTPConnection implements HTTPConnection {
 	@Override
 	public boolean isEncrypted() {
 		return sslSession != null;
+	}
+
+	@Override
+	public int getSessionId() {
+		return tcpSession.getSessionId();
+	}
+
+	@Override
+	public InetSocketAddress getLocalAddress() {
+		return tcpSession.getLocalAddress();
+	}
+
+	@Override
+	public InetSocketAddress getRemoteAddress() {
+		return tcpSession.getRemoteAddress();
 	}
 
 }

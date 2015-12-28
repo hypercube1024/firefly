@@ -24,9 +24,9 @@ public class HTTPServerResponse extends MetaData.Response {
 	}
 
 	public HTTP1ServerResponseOutputStream getOutputStream() {
-		if(getStatus() <= 0)
+		if (getStatus() <= 0)
 			throw new IllegalStateException("the server must set a response status before it outputs data");
-			
+
 		return outputStream;
 	}
 
@@ -37,6 +37,10 @@ public class HTTPServerResponse extends MetaData.Response {
 		public HTTP1ServerResponseOutputStream(HTTPServerResponse response, HTTP1ServerConnection connection) {
 			super(response, false);
 			this.connection = connection;
+		}
+
+		HTTP1ServerConnection getHTTP1ServerConnection() {
+			return connection;
 		}
 
 		@Override
