@@ -70,6 +70,12 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 
 	boolean upgradeProtocolToHTTP2(HTTPServerRequest request, HTTPServerResponse response) {
 		if (HttpMethod.PRI.is(request.getMethod())) {
+			// TODO need to test
+			HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config, tcpSession, sslSession,
+					serverSessionListener);
+			tcpSession.attachObject(http2ServerConnection);
+			http2ServerConnection.getParser().directUpgrade();
+
 			upgradeHTTP2Successfully = true;
 			return true;
 		} else {
@@ -86,46 +92,48 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 							response.setStatus(101);
 							response.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
 							response.getFields().put(HttpHeader.UPGRADE, "h2c");
-							
+
 							final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
-							if(log.isDebugEnabled()) {
+							if (log.isDebugEnabled()) {
 								log.debug("the server received settings {}", TypeUtils.toHexString(settings));
 							}
-							
+
 							SettingsFrame settingsFrame = SettingsBodyParser.parseBody(BufferUtils.toBuffer(settings));
 							if (settingsFrame == null) {
 								throw new BadMessageException("settings frame parsing error");
 							} else {
 								response.responseH2c();
-								
-								HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config, tcpSession, sslSession, serverSessionListener);
+
+								HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
+										tcpSession, sslSession, serverSessionListener);
 								tcpSession.attachObject(http2ServerConnection);
-								
-								http2ServerConnection.getParser().standardUpgrade();
-								
+
 								// TODO need to test
+								http2ServerConnection.getParser().standardUpgrade();
+
 								serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
-								((HTTP2ServerSession)http2ServerConnection.getHttp2Session()).onFrame(new PrefaceFrame());
-								((HTTP2ServerSession)http2ServerConnection.getHttp2Session()).onFrame(settingsFrame);
-								((HTTP2ServerSession)http2ServerConnection.getHttp2Session()).onFrame(new HeadersFrame(1, request, null, true));
+								((HTTP2ServerSession) http2ServerConnection.getHttp2Session())
+										.onFrame(new PrefaceFrame());
+								((HTTP2ServerSession) http2ServerConnection.getHttp2Session()).onFrame(settingsFrame);
+								((HTTP2ServerSession) http2ServerConnection.getHttp2Session())
+										.onFrame(new HeadersFrame(1, request, null, true));
 							}
-							
+
 							upgradeHTTP2Successfully = true;
 							return true;
 						} else {
-
+							throw new IllegalStateException("upgrade HTTP2 unsuccessfully");
 						}
 					} else {
-
+						return false;
 					}
 				} else {
-
+					return false;
 				}
 			} else {
-
+				return false;
 			}
 		}
-		return false;
 	}
 
 }

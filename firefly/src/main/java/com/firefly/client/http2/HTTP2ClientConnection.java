@@ -67,6 +67,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection {
 		super(config, tcpSession, sslSession, listener);
 	}
 
+	@Override
 	protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
 			Listener listener) {
 		HTTP2ClientSession http2ClientSession = new HTTP2ClientSession(scheduler, this.tcpSession, this.generator,
@@ -74,6 +75,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection {
 		return http2ClientSession;
 	}
 
+	@Override
 	protected Parser initParser(HTTP2Configuration config) {
 		return new Parser((HTTP2ClientSession) http2Session, config.getMaxDynamicTableSize(),
 				config.getMaxRequestHeadLength());

@@ -8,6 +8,7 @@ import com.firefly.codec.http2.stream.HTTP2Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.StreamSPI;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -18,6 +19,19 @@ public class HTTP2ClientSession extends HTTP2Session {
 	public HTTP2ClientSession(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
 			Listener listener, FlowControlStrategy flowControl, int streamIdleTimeout) {
 		super(scheduler, endPoint, generator, listener, flowControl, 1, streamIdleTimeout);
+	}
+	
+	public static HTTP2ClientSession initSessionForUpgradingHTTP2(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
+			Listener listener, FlowControlStrategy flowControl, int initialStreamId, int streamIdleTimeout, final Promise<Stream> initStream, final Stream.Listener initStreamListener) {
+		HTTP2ClientSession session = new HTTP2ClientSession(scheduler, endPoint, generator, listener, flowControl, initialStreamId, streamIdleTimeout);
+		final StreamSPI stream = session.createLocalStream(1, initStream);
+		stream.setListener(initStreamListener);
+		return session;
+	}
+
+	private HTTP2ClientSession(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
+			Listener listener, FlowControlStrategy flowControl, int initialStreamId, int streamIdleTimeout) {
+		super(scheduler, endPoint, generator, listener, flowControl, initialStreamId, streamIdleTimeout);
 	}
 
 	@Override

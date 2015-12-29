@@ -9,7 +9,11 @@ import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.codec.http2.stream.FlowControlStrategy;
+import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.HTTP2Session;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.log.Log;
@@ -24,6 +28,9 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 	protected HTTPClientRequest request;
 	protected Promise<HTTPConnection> promise;
 	protected Listener listener;
+	protected Promise<Stream> initStream;
+	protected Stream.Listener initStreamListener;
+
 	HTTP1ClientRequestOutputStream continueOutput;
 
 	@Override
@@ -31,12 +38,13 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		if (log.isDebugEnabled()) {
 			log.debug("client received the response line, {}, {}, {}", version, status, reason);
 		}
-		
+
 		if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
 			try {
 				continueToSendData(continueOutput, connection);
-				if(log.isDebugEnabled()) {
-					log.debug("client received 100 continue, current parser state is {}", connection.getParser().getState());
+				if (log.isDebugEnabled()) {
+					log.debug("client received 100 continue, current parser state is {}",
+							connection.getParser().getState());
 				}
 				return true;
 			} finally {
@@ -77,11 +85,12 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		try {
 			return messageComplete(response, connection);
 		} finally {
-//			if(connection.upgradeHTTP2Successfully) {
-//				log.debug("the client connection {} has upgraded HTTP2", connection.getSessionId());
-//				return true;
-//			}
-			
+			// if(connection.upgradeHTTP2Successfully) {
+			// log.debug("the client connection {} has upgraded HTTP2",
+			// connection.getSessionId());
+			// return true;
+			// }
+
 			String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
 
@@ -126,7 +135,20 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 			String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
 			if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
 				connection.upgradeHTTP2Successfully = true;
-				connection.initializeHTTP2ClientConnection(promise, listener);
+
+				// initialize http2 client connection;
+				final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(
+						connection.getHTTP2Configuration(), connection.getTcpSession(), null, listener) {
+					@Override
+					protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
+							Listener listener) {
+						return HTTP2ClientSession.initSessionForUpgradingHTTP2(scheduler, this.tcpSession, generator,
+								listener, flowControl, 3, config.getStreamIdleTimeout(), initStream,
+								initStreamListener);
+					}
+				};
+				connection.getTcpSession().attachObject(http2Connection);
+				http2Connection.initialize(connection.getHTTP2Configuration(), promise, listener);
 				return http1MessageComplete();
 			} else {
 				return http1MessageComplete();

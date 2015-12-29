@@ -21,6 +21,7 @@ import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.http2.stream.Stream;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.codec.Base64Utils;
@@ -135,21 +136,16 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		return tcpSession;
 	}
 
-	void initializeHTTP2ClientConnection(final Promise<HTTPConnection> promise, final Listener listener) {
-		// initialize http2 client connection;
-		final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(config, tcpSession, null, listener);
-		tcpSession.attachObject(http2Connection);
-		http2Connection.initialize(config, promise, listener);
-	}
-
 	public void upgradeHTTP2WithCleartext(HTTPClientRequest request, SettingsFrame settings,
-			final Promise<HTTPConnection> promise, final Listener listener, final HTTP1ClientResponseHandler handler) {
+			final Promise<HTTPConnection> promise, final Promise<Stream> initStream, final Stream.Listener initStreamListener, final Listener listener, final HTTP1ClientResponseHandler handler) {
 		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}
 
 		handler.promise = promise;
 		handler.listener = listener;
+		handler.initStream = initStream;
+		handler.initStreamListener = initStreamListener;
 
 		// generate http2 upgrading headers
 		request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
@@ -161,8 +157,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 					for (ByteBuffer buffer : byteBuffers) {
 						out.write(BufferUtils.toArray(buffer));
 					}
+					byte[] settingsFrame = out.toByteArray();
+					byte[] settingsPayload = new byte[settingsFrame.length - 9];
+					System.arraycopy(settingsFrame, 9, settingsPayload, 0, settingsPayload.length);
+
 					request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS,
-							Base64Utils.encodeToUrlSafeString(out.toByteArray())));
+							Base64Utils.encodeToUrlSafeString(settingsPayload)));
 				} catch (IOException e) {
 					log.error("generate http2 upgrading settings exception", e);
 				}
