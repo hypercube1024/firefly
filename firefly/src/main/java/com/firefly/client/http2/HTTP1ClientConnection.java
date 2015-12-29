@@ -67,7 +67,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			} else {
 				return writing.getAndSet(null).messageComplete();
 			}
-			// return writing.getAndSet(null).messageComplete();
 		}
 
 		@Override
@@ -168,10 +167,10 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 					log.error("generate http2 upgrading settings exception", e);
 				}
 			} else {
-				request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, " "));
+				request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, ""));
 			}
 		} else {
-			request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, " "));
+			request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, ""));
 		}
 
 		request(request, handler);
