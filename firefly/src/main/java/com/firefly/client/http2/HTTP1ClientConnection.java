@@ -137,7 +137,9 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	}
 
 	public void upgradeHTTP2WithCleartext(HTTPClientRequest request, SettingsFrame settings,
-			final Promise<HTTPConnection> promise, final Promise<Stream> initStream, final Stream.Listener initStreamListener, final Listener listener, final HTTP1ClientResponseHandler handler) {
+			final Promise<HTTPConnection> promise, final Promise<Stream> initStream,
+			final Stream.Listener initStreamListener, final Listener listener,
+			final HTTP1ClientResponseHandler handler) {
 		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}

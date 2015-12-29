@@ -108,7 +108,6 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 										tcpSession, sslSession, serverSessionListener);
 								tcpSession.attachObject(http2ServerConnection);
 
-								// TODO need to test
 								http2ServerConnection.getParser().standardUpgrade();
 
 								serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());

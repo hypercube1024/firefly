@@ -20,12 +20,15 @@ public class HTTP2ClientSession extends HTTP2Session {
 			Listener listener, FlowControlStrategy flowControl, int streamIdleTimeout) {
 		super(scheduler, endPoint, generator, listener, flowControl, 1, streamIdleTimeout);
 	}
-	
-	public static HTTP2ClientSession initSessionForUpgradingHTTP2(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
-			Listener listener, FlowControlStrategy flowControl, int initialStreamId, int streamIdleTimeout, final Promise<Stream> initStream, final Stream.Listener initStreamListener) {
-		HTTP2ClientSession session = new HTTP2ClientSession(scheduler, endPoint, generator, listener, flowControl, initialStreamId, streamIdleTimeout);
+
+	public static HTTP2ClientSession initSessionForUpgradingHTTP2(Scheduler scheduler, com.firefly.net.Session endPoint,
+			Generator generator, Listener listener, FlowControlStrategy flowControl, int initialStreamId,
+			int streamIdleTimeout, final Promise<Stream> initStream, final Stream.Listener initStreamListener) {
+		HTTP2ClientSession session = new HTTP2ClientSession(scheduler, endPoint, generator, listener, flowControl,
+				initialStreamId, streamIdleTimeout);
 		final StreamSPI stream = session.createLocalStream(1, initStream);
 		stream.setListener(initStreamListener);
+		stream.updateClose(true, true);
 		return session;
 	}
 
