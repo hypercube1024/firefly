@@ -33,8 +33,8 @@ public class HTTP2ServerConnection extends AbstractHTTP2Connection {
 				config.getMaxRequestHeadLength());
 	}
 
-	Parser getParser() {
-		return parser;
+	ServerParser getParser() {
+		return (ServerParser) parser;
 	}
 
 	Generator getGenerator() {

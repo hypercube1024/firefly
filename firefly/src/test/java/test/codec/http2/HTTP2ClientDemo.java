@@ -87,7 +87,6 @@ public class HTTP2ClientDemo {
 
 			@Override
 			public boolean onIdleTimeout(Session session) {
-				// TODO Auto-generated method stub
 				return false;
 			}
 		});

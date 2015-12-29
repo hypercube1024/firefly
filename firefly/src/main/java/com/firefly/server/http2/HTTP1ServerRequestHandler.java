@@ -38,14 +38,18 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 		if ("100-continue".equalsIgnoreCase(expectedValue)) {
 			boolean skipNext = accept100Continue(request, response, connection);
 			if (skipNext) {
-				headerComplete(request, response, connection);
 				return true;
 			} else {
 				response.response100Continue();
 				return headerComplete(request, response, connection);
 			}
 		} else {
-			return headerComplete(request, response, connection);
+			boolean success = connection.upgradeProtocolToHTTP2(request, response);
+			if(success) {
+				return true;
+			} else {
+				return headerComplete(request, response, connection);
+			}
 		}
 	}
 

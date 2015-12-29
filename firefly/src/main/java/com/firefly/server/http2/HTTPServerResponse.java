@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
@@ -41,9 +42,23 @@ public class HTTPServerResponse extends MetaData.Response {
 			log.error("the server session {} sends 100 continue unsuccessfully", e);
 		}
 	}
+	
+	public void responseH2c() {
+		try {
+			outputStream.responseH2c();
+		} catch (IOException e) {
+			log.error("the server session {} sends 101 switching protocols unsuccessfully", e);
+		}
+	}
 
 	public static class HTTP1ServerResponseOutputStream extends AbstractHTTP1OutputStream {
 
+		private static final MetaData.Response H2C_RESPONSE = new MetaData.Response(HttpVersion.HTTP_1_1, 101, new HttpFields());
+		static {
+			H2C_RESPONSE.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
+			H2C_RESPONSE.getFields().put(HttpHeader.UPGRADE, "h2c");
+		}
+		
 		private final HTTP1ServerConnection connection;
 
 		public HTTP1ServerResponseOutputStream(HTTPServerResponse response, HTTP1ServerConnection connection) {
@@ -53,6 +68,23 @@ public class HTTPServerResponse extends MetaData.Response {
 
 		HTTP1ServerConnection getHTTP1ServerConnection() {
 			return connection;
+		}
+		
+		void responseH2c() throws IOException {
+			ByteBuffer header = getHeaderByteBuffer();
+			HttpGenerator gen = getHttpGenerator();
+			HttpGenerator.Result result = gen.generateResponse(H2C_RESPONSE, header, null, null, true);
+			if(result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING) {
+				getSession().encode(header);
+				result = gen.generateResponse(null, null, null, null, true);
+				if(result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.END) {
+					log.debug("the server session {} sends 101 switching protocols successfully", getSession().getSessionId());
+				} else {
+					generateHTTPMessageExceptionally(result, gen.getState());
+				}
+			} else {
+				generateHTTPMessageExceptionally(result, gen.getState());
+			}
 		}
 
 		void response100Continue() throws IOException {
@@ -77,6 +109,10 @@ public class HTTPServerResponse extends MetaData.Response {
 		@Override
 		protected void generateHTTPMessageSuccessfully() {
 			log.debug("server session {} generates the HTTP message completely", connection.getSessionId());
+//			if(connection.upgradeHTTP2Successfully) {
+//				log.debug("the client connection {} has upgraded HTTP2", connection.getSessionId());
+//				return;
+//			}
 
 			final HTTPServerResponse response = (HTTPServerResponse) info;
 			final HTTPServerRequest request = response.request;

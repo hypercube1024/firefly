@@ -31,6 +31,10 @@ public class TestHttpField {
 		assertFalse(field.contains("v"));
 		assertFalse(field.contains(""));
 		assertFalse(field.contains(null));
+		
+		field = new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings");
+		assertTrue(field.contains("Upgrade"));
+		assertTrue(field.contains("HTTP2-Settings"));
 	}
 
 	@Test

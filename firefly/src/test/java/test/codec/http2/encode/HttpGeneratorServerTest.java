@@ -348,6 +348,26 @@ public class HttpGeneratorServerTest {
 		assertThat(out, containsString("Content-Length: 59"));
 		assertThat(out, containsString("\r\n\r\nHello World! The quick brown fox jumped over the lazy dog. "));
 	}
+	
+	@Test
+	public void test101SwitchingProtocolsResponse() throws Exception {
+		MetaData.Response switchingProtocolsResponse = new MetaData.Response(HttpVersion.HTTP_1_1, 101, new HttpFields());
+		switchingProtocolsResponse.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
+		switchingProtocolsResponse.getFields().put(HttpHeader.UPGRADE, "h2c");
+		
+		ByteBuffer header = BufferUtils.allocate(4096);
+		HttpGenerator gen = new HttpGenerator();
+		HttpGenerator.Result result = gen.generateResponse(switchingProtocolsResponse, header, null, null, true);
+		System.out.println(result + "|" + gen.getState());
+		assertEquals(HttpGenerator.Result.FLUSH, result);
+		assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+		
+		result = gen.generateResponse(null, null, null, null, true);
+		System.out.println(result + "|" + gen.getState());
+		assertEquals(HttpGenerator.Result.DONE, result);
+		assertEquals(HttpGenerator.State.END, gen.getState());
+		System.out.println(BufferUtils.toString(header));
+	}
 
 	@Test
 	public void test100ThenResponseWithContent() throws Exception {
