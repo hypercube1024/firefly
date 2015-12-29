@@ -1,5 +1,6 @@
 package test.codec.http2;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -26,7 +27,7 @@ import com.firefly.utils.io.BufferUtils;
 
 public class HTTP1ClientDemo {
 
-	public static void main(String[] args) throws InterruptedException, ExecutionException {
+	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
@@ -160,6 +161,7 @@ public class HTTP1ClientDemo {
 			
 			
 			System.out.println("request finished");
+			http1ClientConnection.close();
 		} else {
 
 		}

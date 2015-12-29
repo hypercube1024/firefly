@@ -129,7 +129,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 	void reset() {
 		request = null;
-		generator.reset();
 		parser.reset();
 	}
 
@@ -237,6 +236,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		@Override
 		protected void generateHTTPMessageSuccessfully() {
 			log.debug("client session {} generates the HTTP message completely", connection.tcpSession.getSessionId());
+			connection.generator.reset();
 		}
 
 		@Override
