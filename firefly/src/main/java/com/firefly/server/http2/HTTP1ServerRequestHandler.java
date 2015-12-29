@@ -6,8 +6,12 @@ import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 abstract public class HTTP1ServerRequestHandler implements RequestHandler {
+
+	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	protected HTTPServerRequest request;
 	protected HTTPServerResponse response;
@@ -15,6 +19,9 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 
 	@Override
 	public boolean startRequest(String method, String uri, HttpVersion version) {
+		if (log.isDebugEnabled()) {
+			log.debug("server received the request line, {}, {}, {}", method, uri, version);
+		}
 		request = new HTTPServerRequest(method, uri, version);
 		response = new HTTPServerResponse(request, connection);
 		return false;
@@ -29,12 +36,13 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 	public boolean headerComplete() {
 		String expectedValue = request.getFields().get(HttpHeader.EXPECT);
 		if ("100-continue".equalsIgnoreCase(expectedValue)) {
-			if(accept100Continue(request, response, connection)) {
-				response.response100Continue();
-				return headerComplete(request, response, connection);
-			} else {
+			boolean skipNext = accept100Continue(request, response, connection);
+			if (skipNext) {
 				headerComplete(request, response, connection);
 				return true;
+			} else {
+				response.response100Continue();
+				return headerComplete(request, response, connection);
 			}
 		} else {
 			return headerComplete(request, response, connection);
@@ -122,7 +130,7 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 		@Override
 		public boolean accept100Continue(HTTPServerRequest request, HTTPServerResponse response,
 				HTTP1ServerConnection connection) {
-			return true;
+			return false;
 		}
 
 	}

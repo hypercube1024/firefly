@@ -17,7 +17,7 @@ import com.firefly.utils.log.LogFactory;
 
 public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	protected HTTP1ClientConnection connection;
 	protected HTTPClientResponse response;
@@ -28,9 +28,17 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 
 	@Override
 	public final boolean startResponse(HttpVersion version, int status, String reason) {
-		if(status == 100 && "Continue".equalsIgnoreCase(reason)) {
+		if (log.isDebugEnabled()) {
+			log.debug("client received the response line, {}, {}, {}", version, status, reason);
+		}
+		
+		if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
 			try {
-				return continueToSendData(continueOutput, connection);
+				continueToSendData(continueOutput, connection);
+				if(log.isDebugEnabled()) {
+					log.debug("client received 100 continue, current parser state is {}", connection.getParser().getState());
+				}
+				return true;
 			} finally {
 				try {
 					continueOutput.close();
@@ -73,7 +81,7 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
 
 			connection.getParser().reset();
-			
+
 			switch (response.getVersion()) {
 			case HTTP_1_0:
 				if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
@@ -103,7 +111,7 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 				throw new IllegalStateException(
 						"client response does not support the http version " + connection.getHttpVersion());
 			}
-			
+
 		}
 	}
 
@@ -128,8 +136,8 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		badMessage(status, reason, response, connection);
 	}
 
-	abstract public boolean continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection);
-	
+	abstract public void continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection);
+
 	abstract public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection);
 
 	abstract public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection);
@@ -166,8 +174,7 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		}
 
 		@Override
-		public boolean continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection) {
-			return true;
+		public void continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection) {
 		}
 
 	}

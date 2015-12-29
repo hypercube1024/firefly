@@ -24,8 +24,8 @@ public class HTTP1ServerDemo3 {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setTcpIdleTimeout(10 * 60 * 1000);
 
-		HTTP2Server server = new HTTP2Server("localhost", 6678, http2Configuration,
-				new ServerSessionListener.Adapter(), new HTTP1ServerConnectionListener() {
+		HTTP2Server server = new HTTP2Server("localhost", 6678, http2Configuration, new ServerSessionListener.Adapter(),
+				new HTTP1ServerConnectionListener() {
 
 					@Override
 					public HTTP1ServerRequestHandler onNewConnectionIsCreating() {
@@ -50,6 +50,21 @@ public class HTTP1ServerDemo3 {
 								}
 
 							}
+							
+							@Override
+							public boolean content(ByteBuffer item, HTTPServerRequest request, HTTPServerResponse response,
+									HTTP1ServerConnection connection) {
+								System.out.println("server received data: " + BufferUtils.toString(item, StandardCharsets.UTF_8));
+								return false;
+							}
+
+							@Override
+							public boolean accept100Continue(HTTPServerRequest request, HTTPServerResponse response,
+									HTTP1ServerConnection connection) {
+								System.out.println("the server received a 100 continue header, the path is "
+										+ request.getURI().getPath());
+								return false;
+							}
 
 							@Override
 							public boolean messageComplete(HTTPServerRequest request, HTTPServerResponse response,
@@ -58,20 +73,29 @@ public class HTTP1ServerDemo3 {
 								System.out.println("current path is " + uri.getPath());
 								System.out.println("current parameter string is " + uri.getQuery());
 								System.out.println("current http headers are " + request.getFields());
-								
-								response.setStatus(200);
 
-								List<ByteBuffer> list = new ArrayList<>();
-								list.add(BufferUtils.toBuffer("hello the server demo ", StandardCharsets.UTF_8));
-								list.add(BufferUtils.toBuffer("test chunk 1 ", StandardCharsets.UTF_8));
-								list.add(BufferUtils.toBuffer("test chunk 2 ", StandardCharsets.UTF_8));
-								list.add(BufferUtils.toBuffer("中文的内容，哈哈 ", StandardCharsets.UTF_8));
-								list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
-
-								try (HTTP1ServerResponseOutputStream output = response.getOutputStream()) {
-									output.writeWithContentLength(list.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
-								} catch (IOException e) {
-									e.printStackTrace();
+								if(uri.getPath().equals("/index")) {
+									response.setStatus(200);
+	
+									List<ByteBuffer> list = new ArrayList<>();
+									list.add(BufferUtils.toBuffer("hello the server demo ", StandardCharsets.UTF_8));
+									list.add(BufferUtils.toBuffer("test chunk 1 ", StandardCharsets.UTF_8));
+									list.add(BufferUtils.toBuffer("test chunk 2 ", StandardCharsets.UTF_8));
+									list.add(BufferUtils.toBuffer("中文的内容，哈哈 ", StandardCharsets.UTF_8));
+									list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
+	
+									try (HTTP1ServerResponseOutputStream output = response.getOutputStream()) {
+										output.writeWithContentLength(list.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+								} else if (uri.getPath().equals("/testContinue")) {
+									response.setStatus(200); 
+									try (HTTP1ServerResponseOutputStream output = response.getOutputStream()) {
+										output.writeWithContentLength(BufferUtils.toBuffer("receive Continue-100 successfully ", StandardCharsets.UTF_8));
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
 								}
 								return true;
 							}

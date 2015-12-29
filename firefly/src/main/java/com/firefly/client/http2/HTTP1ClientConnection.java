@@ -14,6 +14,7 @@ import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
 import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
@@ -38,6 +39,9 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	private static class ResponseHandlerWrap implements ResponseHandler {
 
 		private final AtomicReference<HTTP1ClientResponseHandler> writing = new AtomicReference<>();
+		private int status;
+		private String reason;
+		private HTTP1ClientConnection connection;
 
 		@Override
 		public void earlyEOF() {
@@ -56,7 +60,14 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 		@Override
 		public boolean messageComplete() {
-			return writing.getAndSet(null).messageComplete();
+			if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
+				log.debug("client received the 100 Continue response");
+				connection.getParser().reset();
+				return true;
+			} else {
+				return writing.getAndSet(null).messageComplete();
+			}
+			// return writing.getAndSet(null).messageComplete();
 		}
 
 		@Override
@@ -76,6 +87,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 		@Override
 		public boolean startResponse(HttpVersion version, int status, String reason) {
+			this.status = status;
+			this.reason = reason;
 			return writing.get().startResponse(version, status, reason);
 		}
 
@@ -89,6 +102,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 			ResponseHandler responseHandler) {
 		super(config, sslSession, tcpSession, null, responseHandler);
 		wrap = (ResponseHandlerWrap) responseHandler;
+		wrap.connection = this;
 	}
 
 	@Override
@@ -163,16 +177,17 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		request(request, handler);
 	}
 
-	public void requestWith100Continue(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
-		checkWrite(request, handler);
-		request.getFields().put(HttpHeader.HOST, tcpSession.getRemoteAddress().getHostString());
-		handler.continueOutput = new HTTP1ClientRequestOutputStream(this, request);
+	public HTTP1ClientRequestOutputStream requestWith100Continue(HTTPClientRequest request,
+			HTTP1ClientResponseHandler handler) {
+		request.getFields().put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE);
+		handler.continueOutput = requestWithStream(request, handler);
 		try {
 			handler.continueOutput.commit();
 		} catch (IOException e) {
 			generator.reset();
 			log.error("client generates the HTTP message exception", e);
 		}
+		return handler.continueOutput;
 	}
 
 	public void request(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
