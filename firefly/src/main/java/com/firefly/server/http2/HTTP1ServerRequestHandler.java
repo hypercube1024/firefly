@@ -29,9 +29,16 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 	public boolean headerComplete() {
 		String expectedValue = request.getFields().get(HttpHeader.EXPECT);
 		if ("100-continue".equalsIgnoreCase(expectedValue)) {
-			response.response100Continue();
+			if(accept100Continue(request, response, connection)) {
+				response.response100Continue();
+				return headerComplete(request, response, connection);
+			} else {
+				headerComplete(request, response, connection);
+				return true;
+			}
+		} else {
+			return headerComplete(request, response, connection);
 		}
-		return headerComplete(request, response, connection);
 	}
 
 	@Override

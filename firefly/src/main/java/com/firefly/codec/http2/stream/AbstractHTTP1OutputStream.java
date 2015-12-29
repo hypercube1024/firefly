@@ -44,40 +44,20 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 		write(ByteBuffer.wrap(array, offset, length));
 	}
 	
-	public synchronized void writeAndClose(ByteBuffer[] data) throws IOException {
-		if (closed)
-			return;
-
-		if (commited)
-			return;
-		
-		try {
-			long contentLength = 0;
-			for(ByteBuffer buf : data) {
-				contentLength += buf.remaining();
-			}
-			info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
-			for(ByteBuffer buf : data) {
-				write(buf);
-			}
-		} finally {
-			close();
+	public synchronized void writeWithContentLength(ByteBuffer[] data) throws IOException {
+		long contentLength = 0;
+		for(ByteBuffer buf : data) {
+			contentLength += buf.remaining();
+		}
+		info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
+		for(ByteBuffer buf : data) {
+			write(buf);
 		}
 	}
 
-	public synchronized void writeAndClose(ByteBuffer data) throws IOException {
-		if (closed)
-			return;
-
-		if (commited)
-			return;
-
-		try {
-			info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
-			write(data);
-		} finally {
-			close();
-		}
+	public synchronized void writeWithContentLength(ByteBuffer data) throws IOException {
+		info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
+		write(data);
 	}
 	
 	public void commit() throws IOException {
@@ -105,10 +85,7 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 			}
 			commited = true;
 		} else {
-			if(log.isDebugEnabled()) {
-				log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-			}
-			generateHTTPMessageExceptionally();
+			generateHTTPMessageExceptionally(generatorResult, generator.getState());
 		}
 	}
 
@@ -132,10 +109,7 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 					tcpSession.encode(chunk);
 					tcpSession.encode(data);
 				} else {
-					if(log.isDebugEnabled()) {
-						log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-					}
-					generateHTTPMessageExceptionally();
+					generateHTTPMessageExceptionally(generatorResult, generator.getState());
 				}
 			} else {
 				generatorResult = generate(null, null, null, data, false);
@@ -143,10 +117,7 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 						&& generator.getState() == HttpGenerator.State.COMMITTED) {
 					tcpSession.encode(data);
 				} else {
-					if(log.isDebugEnabled()) {
-						log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-					}
-					generateHTTPMessageExceptionally();
+					generateHTTPMessageExceptionally(generatorResult, generator.getState());
 				}
 			}
 		}
@@ -174,16 +145,10 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 							&& generator.getState() == HttpGenerator.State.END) {
 						generateHTTPMessageSuccessfully();
 					} else {
-						if(log.isDebugEnabled()) {
-							log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-						}
-						generateHTTPMessageExceptionally();
+						generateHTTPMessageExceptionally(generatorResult, generator.getState());
 					}
 				} else {
-					if(log.isDebugEnabled()) {
-						log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-					}
-					generateHTTPMessageExceptionally();
+					generateHTTPMessageExceptionally(generatorResult, generator.getState());
 				}
 				commited = true;
 			} else {
@@ -203,22 +168,13 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 									&& generator.getState() == HttpGenerator.State.END) {
 								generateHTTPMessageSuccessfully();
 							} else {
-								if(log.isDebugEnabled()) {
-									log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-								}
-								generateHTTPMessageExceptionally();
+								generateHTTPMessageExceptionally(generatorResult, generator.getState());
 							}
 						} else {
-							if(log.isDebugEnabled()) {
-								log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-							}
-							generateHTTPMessageExceptionally();
+							generateHTTPMessageExceptionally(generatorResult, generator.getState());
 						}
 					} else {
-						if(log.isDebugEnabled()) {
-							log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-						}
-						generateHTTPMessageExceptionally();
+						generateHTTPMessageExceptionally(generatorResult, generator.getState());
 					}
 				} else {
 					generatorResult = generate(null, null, null, null, true);
@@ -229,16 +185,10 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 								&& generator.getState() == HttpGenerator.State.END) {
 							generateHTTPMessageSuccessfully();
 						} else {
-							if(log.isDebugEnabled()) {
-								log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-							}
-							generateHTTPMessageExceptionally();
+							generateHTTPMessageExceptionally(generatorResult, generator.getState());
 						}
 					} else {
-						if(log.isDebugEnabled()) {
-							log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
-						}
-						generateHTTPMessageExceptionally();
+						generateHTTPMessageExceptionally(generatorResult, generator.getState());
 					}
 				}
 			}
@@ -265,6 +215,6 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 
 	abstract protected void generateHTTPMessageSuccessfully();
 
-	abstract protected void generateHTTPMessageExceptionally();
+	abstract protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult, HttpGenerator.State generatorState);
 
 }

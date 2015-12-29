@@ -33,7 +33,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	private static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final ResponseHandlerWrap wrap;
-	private volatile HTTPClientRequest request;
 	volatile boolean upgradeHTTP2Successfully = false;
 
 	private static class ResponseHandlerWrap implements ResponseHandler {
@@ -118,18 +117,9 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	HTTP2Configuration getHTTP2Configuration() {
 		return config;
 	}
-	
+
 	Session getTcpSession() {
 		return tcpSession;
-	}
-
-	public HTTPClientRequest getRequest() {
-		return request;
-	}
-
-	void reset() {
-		request = null;
-		parser.reset();
 	}
 
 	void initializeHTTP2ClientConnection(final Promise<HTTPConnection> promise, final Listener listener) {
@@ -172,7 +162,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 		request(request, handler);
 	}
-	
+
 	public void requestWith100Continue(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
 		checkWrite(request, handler);
 		request.getFields().put(HttpHeader.HOST, tcpSession.getRemoteAddress().getHostString());
@@ -197,7 +187,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	public void request(HTTPClientRequest request, ByteBuffer data, HTTP1ClientResponseHandler handler) {
 		try (HTTP1ClientRequestOutputStream output = requestWithStream(request, handler)) {
 			if (data != null) {
-				output.writeAndClose(data);
+				output.writeWithContentLength(data);
 			}
 		} catch (IOException e) {
 			generator.reset();
@@ -208,7 +198,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 	public void request(HTTPClientRequest request, ByteBuffer[] dataArray, HTTP1ClientResponseHandler handler) {
 		try (HTTP1ClientRequestOutputStream output = requestWithStream(request, handler)) {
 			if (dataArray != null) {
-				output.writeAndClose(dataArray);
+				output.writeWithContentLength(dataArray);
 			}
 		} catch (IOException e) {
 			generator.reset();
@@ -240,7 +230,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 		}
 
 		@Override
-		protected void generateHTTPMessageExceptionally() {
+		protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult,
+				HttpGenerator.State generatorState) {
+			if (log.isDebugEnabled()) {
+				log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult,
+						generatorState);
+			}
 			connection.getGenerator().reset();
 			throw new IllegalStateException("client generates http message exception.");
 		}
@@ -277,7 +272,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 		if (wrap.writing.compareAndSet(null, handler)) {
 			handler.connection = this;
-			this.request = request;
+			handler.request = request;
 		} else {
 			throw new WritePendingException();
 		}

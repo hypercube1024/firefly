@@ -2,6 +2,7 @@ package com.firefly.server.http2;
 
 import java.nio.ByteBuffer;
 
+import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.DecoderChain;
 import com.firefly.net.Session;
@@ -21,9 +22,10 @@ public class HTTP1ServerDecoder extends DecoderChain {
 			next.decode(buf, session);
 			break;
 		case HTTP_1_1:
-			HTTP1ServerConnection http1Connection = (HTTP1ServerConnection) session.getAttachment();
+			final HTTP1ServerConnection http1Connection = (HTTP1ServerConnection) connection;
+			final HttpParser parser = http1Connection.getParser();
 			while (buf.hasRemaining()) {
-				http1Connection.getParser().parseNext(buf);
+				parser.parseNext(buf);
 			}
 			break;
 		default:

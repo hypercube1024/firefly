@@ -58,6 +58,7 @@ public class HTTP1ServerDemo3 {
 								System.out.println("current path is " + uri.getPath());
 								System.out.println("current parameter string is " + uri.getQuery());
 								System.out.println("current http headers are " + request.getFields());
+								
 								response.setStatus(200);
 
 								List<ByteBuffer> list = new ArrayList<>();
@@ -68,7 +69,7 @@ public class HTTP1ServerDemo3 {
 								list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
 
 								try (HTTP1ServerResponseOutputStream output = response.getOutputStream()) {
-									output.writeAndClose(list.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
+									output.writeWithContentLength(list.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
 								} catch (IOException e) {
 									e.printStackTrace();
 								}

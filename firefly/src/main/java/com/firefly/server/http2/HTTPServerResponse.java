@@ -66,10 +66,10 @@ public class HTTPServerResponse extends MetaData.Response {
 				if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.START) {
 					log.debug("the server session {} sends 100 continue successfully", getSession().getSessionId());
 				} else {
-					generateHTTPMessageExceptionally();
+					generateHTTPMessageExceptionally(result, gen.getState());
 				}
 			} else {
-				generateHTTPMessageExceptionally();
+				generateHTTPMessageExceptionally(result, gen.getState());
 			}
 
 		}
@@ -84,15 +84,15 @@ public class HTTPServerResponse extends MetaData.Response {
 			String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
 
+			connection.getGenerator().reset();
+
 			switch (request.getVersion()) {
 			case HTTP_1_0:
 				if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
 						&& "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
 					log.debug("the server {} connection {} is persistent", response.getVersion(),
 							connection.getSessionId());
-					connection.getGenerator().reset();
 				} else {
-					connection.getGenerator().reset();
 					try {
 						connection.close();
 					} catch (IOException e) {
@@ -103,7 +103,6 @@ public class HTTPServerResponse extends MetaData.Response {
 			case HTTP_1_1: // the persistent connection is default in HTTP 1.1
 				if ("close".equalsIgnoreCase(requestConnectionValue)
 						|| "close".equalsIgnoreCase(responseConnectionValue)) {
-					connection.getGenerator().reset();
 					try {
 						connection.close();
 					} catch (IOException e) {
@@ -112,17 +111,22 @@ public class HTTPServerResponse extends MetaData.Response {
 				} else {
 					log.debug("the server {} connection {} is persistent", response.getVersion(),
 							connection.getSessionId());
-					connection.getGenerator().reset();
 				}
 				break;
 			default:
 				throw new IllegalStateException(
 						"server response does not support the http version " + connection.getHttpVersion());
 			}
+
 		}
 
 		@Override
-		protected void generateHTTPMessageExceptionally() {
+		protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult,
+				HttpGenerator.State generatorState) {
+			if (log.isDebugEnabled()) {
+				log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult,
+						generatorState);
+			}
 			connection.getGenerator().reset();
 			throw new IllegalStateException("server generates http message exception.");
 		}

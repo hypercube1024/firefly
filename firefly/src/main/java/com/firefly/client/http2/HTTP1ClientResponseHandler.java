@@ -21,6 +21,7 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 
 	protected HTTP1ClientConnection connection;
 	protected HTTPClientResponse response;
+	protected HTTPClientRequest request;
 	protected Promise<HTTPConnection> promise;
 	protected Listener listener;
 	HTTP1ClientRequestOutputStream continueOutput;
@@ -68,19 +69,17 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		try {
 			return messageComplete(response, connection);
 		} finally {
-			HTTPClientRequest request = connection.getRequest();
-
 			String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
 
+			connection.getParser().reset();
+			
 			switch (response.getVersion()) {
 			case HTTP_1_0:
 				if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
 						&& "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
 					log.debug("the client {} connection is persistent", response.getVersion());
-					connection.reset();
 				} else {
-					connection.reset();
 					try {
 						connection.close();
 					} catch (IOException e) {
@@ -91,21 +90,20 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 			case HTTP_1_1: // the persistent connection is default in HTTP 1.1
 				if ("close".equalsIgnoreCase(requestConnectionValue)
 						|| "close".equalsIgnoreCase(responseConnectionValue)) {
-					log.debug("the client {} connection is persistent", response.getVersion());
-					connection.reset();
 					try {
 						connection.close();
 					} catch (IOException e) {
 						log.error("client closes connection exception", e);
 					}
 				} else {
-					connection.reset();
+					log.debug("the client {} connection is persistent", response.getVersion());
 				}
 				break;
 			default:
 				throw new IllegalStateException(
 						"client response does not support the http version " + connection.getHttpVersion());
 			}
+			
 		}
 	}
 
