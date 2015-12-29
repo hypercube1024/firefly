@@ -173,11 +173,6 @@ public class HttpFields implements Iterable<HttpField> {
 		return false;
 	}
 
-	@Deprecated
-	public String getStringField(HttpHeader header) {
-		return get(header);
-	}
-
 	public String get(HttpHeader header) {
 		for (int i = 0; i < size; i++) {
 			HttpField f = fields[i];
@@ -185,11 +180,6 @@ public class HttpFields implements Iterable<HttpField> {
 				return f.getValue();
 		}
 		return null;
-	}
-
-	@Deprecated
-	public String getStringField(String name) {
-		return get(name);
 	}
 
 	public String get(String header) {

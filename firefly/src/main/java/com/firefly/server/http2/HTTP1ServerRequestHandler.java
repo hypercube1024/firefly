@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.model.HttpField;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
 
 abstract public class HTTP1ServerRequestHandler implements RequestHandler {
@@ -26,6 +27,10 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 
 	@Override
 	public boolean headerComplete() {
+		String expectedValue = request.getFields().get(HttpHeader.EXPECT);
+		if ("100-continue".equalsIgnoreCase(expectedValue)) {
+			response.response100Continue();
+		}
 		return headerComplete(request, response, connection);
 	}
 
@@ -57,6 +62,9 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 	public int getHeaderCacheSize() {
 		return 1024;
 	}
+
+	abstract public boolean accept100Continue(HTTPServerRequest request, HTTPServerResponse response,
+			HTTP1ServerConnection connection);
 
 	abstract public boolean content(ByteBuffer item, HTTPServerRequest request, HTTPServerResponse response,
 			HTTP1ServerConnection connection);
@@ -102,6 +110,12 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 		@Override
 		public void earlyEOF(HTTPServerRequest request, HTTPServerResponse response, HTTP1ServerConnection connection) {
 
+		}
+
+		@Override
+		public boolean accept100Continue(HTTPServerRequest request, HTTPServerResponse response,
+				HTTP1ServerConnection connection) {
+			return true;
 		}
 
 	}

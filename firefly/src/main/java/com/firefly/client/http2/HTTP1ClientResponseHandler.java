@@ -3,6 +3,7 @@ package com.firefly.client.http2;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.firefly.client.http2.HTTP1ClientConnection.HTTP1ClientRequestOutputStream;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
@@ -22,11 +23,25 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 	protected HTTPClientResponse response;
 	protected Promise<HTTPConnection> promise;
 	protected Listener listener;
+	HTTP1ClientRequestOutputStream continueOutput;
 
 	@Override
 	public final boolean startResponse(HttpVersion version, int status, String reason) {
-		response = new HTTPClientResponse(version, status, reason);
-		return false;
+		if(status == 100 && "Continue".equalsIgnoreCase(reason)) {
+			try {
+				return continueToSendData(continueOutput, connection);
+			} finally {
+				try {
+					continueOutput.close();
+				} catch (IOException e) {
+					log.error("client generates the HTTP message exception", e);
+				}
+				continueOutput = null;
+			}
+		} else {
+			response = new HTTPClientResponse(version, status, reason);
+			return false;
+		}
 	}
 
 	@Override
@@ -115,6 +130,8 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		badMessage(status, reason, response, connection);
 	}
 
+	abstract public boolean continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection);
+	
 	abstract public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection);
 
 	abstract public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection);
@@ -148,6 +165,11 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		@Override
 		public void badMessage(int status, String reason, HTTPClientResponse response,
 				HTTP1ClientConnection connection) {
+		}
+
+		@Override
+		public boolean continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection) {
+			return true;
 		}
 
 	}

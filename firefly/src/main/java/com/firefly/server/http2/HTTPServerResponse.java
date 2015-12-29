@@ -11,8 +11,12 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.net.Session;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class HTTPServerResponse extends MetaData.Response {
+
+	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	protected final HTTP1ServerResponseOutputStream outputStream;
 	protected final HTTPServerRequest request;
@@ -30,6 +34,14 @@ public class HTTPServerResponse extends MetaData.Response {
 		return outputStream;
 	}
 
+	public void response100Continue() {
+		try {
+			outputStream.response100Continue();
+		} catch (IOException e) {
+			log.error("the server session {} sends 100 continue unsuccessfully", e);
+		}
+	}
+
 	public static class HTTP1ServerResponseOutputStream extends AbstractHTTP1OutputStream {
 
 		private final HTTP1ServerConnection connection;
@@ -41,6 +53,25 @@ public class HTTPServerResponse extends MetaData.Response {
 
 		HTTP1ServerConnection getHTTP1ServerConnection() {
 			return connection;
+		}
+
+		void response100Continue() throws IOException {
+			ByteBuffer header = getHeaderByteBuffer();
+			HttpGenerator gen = getHttpGenerator();
+			HttpGenerator.Result result = gen.generateResponse(HttpGenerator.CONTINUE_100_INFO, header, null, null,
+					false);
+			if (result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING_1XX) {
+				getSession().encode(header);
+				result = gen.generateResponse(null, null, null, null, false);
+				if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.START) {
+					log.debug("the server session {} sends 100 continue successfully", getSession().getSessionId());
+				} else {
+					generateHTTPMessageExceptionally();
+				}
+			} else {
+				generateHTTPMessageExceptionally();
+			}
+
 		}
 
 		@Override

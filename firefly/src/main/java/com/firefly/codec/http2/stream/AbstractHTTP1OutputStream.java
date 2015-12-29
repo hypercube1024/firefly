@@ -60,9 +60,8 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 			for(ByteBuffer buf : data) {
 				write(buf);
 			}
-			commited = true;
 		} finally {
-			closed = true;
+			close();
 		}
 	}
 
@@ -76,9 +75,40 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 		try {
 			info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
 			write(data);
-			commited = true;
 		} finally {
-			closed = true;
+			close();
+		}
+	}
+	
+	public void commit() throws IOException {
+		commit(null);
+	}
+	
+	protected synchronized void commit(ByteBuffer data) throws IOException {
+		if (closed)
+			return;
+
+		if (commited)
+			return;
+		
+		final HttpGenerator generator = getHttpGenerator();
+		final Session tcpSession = getSession();
+		HttpGenerator.Result generatorResult;
+		ByteBuffer header = getHeaderByteBuffer();
+
+		generatorResult = generate(info, header, null, data, false);
+		if (generatorResult == HttpGenerator.Result.FLUSH
+				&& generator.getState() == HttpGenerator.State.COMMITTED) {
+			tcpSession.encode(header);
+			if(data != null) {
+				tcpSession.encode(data);
+			}
+			commited = true;
+		} else {
+			if(log.isDebugEnabled()) {
+				log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+			}
+			generateHTTPMessageExceptionally();
 		}
 	}
 
@@ -91,17 +121,7 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 		HttpGenerator.Result generatorResult;
 
 		if (!commited) {
-			ByteBuffer header = getHeaderByteBuffer();
-
-			generatorResult = generate(info, header, null, data, false);
-			if (generatorResult == HttpGenerator.Result.FLUSH
-					&& generator.getState() == HttpGenerator.State.COMMITTED) {
-				tcpSession.encode(header);
-				tcpSession.encode(data);
-			} else {
-				generateHTTPMessageExceptionally();
-			}
-			commited = true;
+			commit(data);
 		} else {
 			if (generator.isChunking()) {
 				ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
@@ -112,6 +132,9 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 					tcpSession.encode(chunk);
 					tcpSession.encode(data);
 				} else {
+					if(log.isDebugEnabled()) {
+						log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+					}
 					generateHTTPMessageExceptionally();
 				}
 			} else {
@@ -120,6 +143,9 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 						&& generator.getState() == HttpGenerator.State.COMMITTED) {
 					tcpSession.encode(data);
 				} else {
+					if(log.isDebugEnabled()) {
+						log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+					}
 					generateHTTPMessageExceptionally();
 				}
 			}
@@ -148,9 +174,15 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 							&& generator.getState() == HttpGenerator.State.END) {
 						generateHTTPMessageSuccessfully();
 					} else {
+						if(log.isDebugEnabled()) {
+							log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+						}
 						generateHTTPMessageExceptionally();
 					}
 				} else {
+					if(log.isDebugEnabled()) {
+						log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+					}
 					generateHTTPMessageExceptionally();
 				}
 				commited = true;
@@ -171,12 +203,21 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 									&& generator.getState() == HttpGenerator.State.END) {
 								generateHTTPMessageSuccessfully();
 							} else {
+								if(log.isDebugEnabled()) {
+									log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+								}
 								generateHTTPMessageExceptionally();
 							}
 						} else {
+							if(log.isDebugEnabled()) {
+								log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+							}
 							generateHTTPMessageExceptionally();
 						}
 					} else {
+						if(log.isDebugEnabled()) {
+							log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+						}
 						generateHTTPMessageExceptionally();
 					}
 				} else {
@@ -188,9 +229,15 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 								&& generator.getState() == HttpGenerator.State.END) {
 							generateHTTPMessageSuccessfully();
 						} else {
+							if(log.isDebugEnabled()) {
+								log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+							}
 							generateHTTPMessageExceptionally();
 						}
 					} else {
+						if(log.isDebugEnabled()) {
+							log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult, generator.getState());
+						}
 						generateHTTPMessageExceptionally();
 					}
 				}

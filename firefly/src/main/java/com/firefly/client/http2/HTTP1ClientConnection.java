@@ -173,6 +173,18 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection {
 
 		request(request, handler);
 	}
+	
+	public void requestWith100Continue(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
+		checkWrite(request, handler);
+		request.getFields().put(HttpHeader.HOST, tcpSession.getRemoteAddress().getHostString());
+		handler.continueOutput = new HTTP1ClientRequestOutputStream(this, request);
+		try {
+			handler.continueOutput.commit();
+		} catch (IOException e) {
+			generator.reset();
+			log.error("client generates the HTTP message exception", e);
+		}
+	}
 
 	public void request(HTTPClientRequest request, HTTP1ClientResponseHandler handler) {
 		try (HTTP1ClientRequestOutputStream output = requestWithStream(request, handler)) {
