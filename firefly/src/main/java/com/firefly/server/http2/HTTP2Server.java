@@ -15,7 +15,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 	private final int port;
 
 	public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration, ServerSessionListener listener,
-			HTTP1ServerConnectionListener http1ServerConnectionListener) {
+			ServerHTTPHandlerFactory serverHTTPHandlerFactory) {
 		if (http2Configuration == null)
 			throw new IllegalArgumentException("the http2 configuration is null");
 
@@ -37,7 +37,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 		}
 
 		this.server = new AsynchronousTcpServer(decoder, encoder,
-				new HTTP2ServerHandler(http2Configuration, listener, http1ServerConnectionListener),
+				new HTTP2ServerHandler(http2Configuration, listener, serverHTTPHandlerFactory),
 				http2Configuration.getTcpIdleTimeout());
 	}
 

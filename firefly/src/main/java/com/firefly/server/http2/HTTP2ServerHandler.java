@@ -16,13 +16,13 @@ import com.firefly.net.tcp.ssl.SSLSession;
 public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
 	private final ServerSessionListener listener;
-	private final HTTP1ServerConnectionListener http1ServerConnectionListener;
+	private final ServerHTTPHandlerFactory serverHTTPHandlerFactory;
 
 	public HTTP2ServerHandler(HTTP2Configuration config, ServerSessionListener listener,
-			HTTP1ServerConnectionListener http1ServerConnectionListener) {
+			ServerHTTPHandlerFactory serverHTTPHandlerFactory) {
 		super(config);
 		this.listener = listener;
-		this.http1ServerConnectionListener = http1ServerConnectionListener;
+		this.serverHTTPHandlerFactory = serverHTTPHandlerFactory;
 	}
 
 	@Override
@@ -46,7 +46,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 							break;
 						case HTTP_1_1:
 							session.attachObject(new HTTP1ServerConnection(config, session, sslSession,
-									new HTTP1ServerRequestHandler(http1ServerConnectionListener.onCreate()), listener));
+									new HTTP1ServerRequestHandler(serverHTTPHandlerFactory.create()), listener));
 							break;
 						default:
 							throw new IllegalStateException(
@@ -99,7 +99,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 			session.attachObject(handshakeContext);
 		} else {
 			session.attachObject(new HTTP1ServerConnection(config, session, null,
-					new HTTP1ServerRequestHandler(http1ServerConnectionListener.onCreate()), listener));
+					new HTTP1ServerRequestHandler(serverHTTPHandlerFactory.create()), listener));
 		}
 	}
 

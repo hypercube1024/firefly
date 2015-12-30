@@ -11,7 +11,7 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.server.http2.HTTP1ServerConnectionListener;
+import com.firefly.server.http2.ServerHTTPHandlerFactory;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
@@ -24,10 +24,10 @@ public class HTTP1ServerChunkOutputDemo3 {
 		http2Configuration.setTcpIdleTimeout(10 * 60 * 1000);
 
 		HTTP2Server server = new HTTP2Server("localhost", 6678, http2Configuration, new ServerSessionListener.Adapter(),
-				new HTTP1ServerConnectionListener() {
+				new ServerHTTPHandlerFactory() {
 
 					@Override
-					public ServerHTTPHandler onCreate() {
+					public ServerHTTPHandler create() {
 						return new ServerHTTPHandler.Adapter() {
 
 							@Override

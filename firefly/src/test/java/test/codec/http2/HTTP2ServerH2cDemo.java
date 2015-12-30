@@ -15,7 +15,7 @@ import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
-import com.firefly.server.http2.HTTP1ServerConnectionListener;
+import com.firefly.server.http2.ServerHTTPHandlerFactory;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
@@ -94,10 +94,10 @@ public class HTTP2ServerH2cDemo {
 						System.out.println("accept a new session " + session);
 
 					}
-				}, new HTTP1ServerConnectionListener() {
+				}, new ServerHTTPHandlerFactory() {
 
 					@Override
-					public ServerHTTPHandler onCreate() {
+					public ServerHTTPHandler create() {
 						return new ServerHTTPHandler.Adapter();
 					}
 				});
