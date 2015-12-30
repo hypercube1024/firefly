@@ -26,14 +26,14 @@ public class HTTP1ServerDemo3 {
 				new ServerHTTPHandler.Adapter() {
 
 					@Override
-					public void earlyEOF(MetaData.Request request, MetaData.Response response,
+					public void earlyEOF(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
 							HTTPConnection connection) {
 						System.out.println("the server connection " + connection.getSessionId() + " is early EOF");
 					}
 
 					@Override
 					public void badMessage(int status, String reason, MetaData.Request request,
-							MetaData.Response response, HTTPConnection connection) {
+							MetaData.Response response, HTTPOutputStream output, HTTPConnection connection) {
 						System.out.println("the server received a bad message, " + status + "|" + reason);
 
 						try {
@@ -46,7 +46,7 @@ public class HTTP1ServerDemo3 {
 
 					@Override
 					public boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response,
-							HTTPConnection connection) {
+							HTTPOutputStream output, HTTPConnection connection) {
 						System.out
 								.println("server received data: " + BufferUtils.toString(item, StandardCharsets.UTF_8));
 						return false;
@@ -54,7 +54,7 @@ public class HTTP1ServerDemo3 {
 
 					@Override
 					public boolean accept100Continue(MetaData.Request request, MetaData.Response response,
-							HTTPConnection connection) {
+							HTTPOutputStream output, HTTPConnection connection) {
 						System.out.println(
 								"the server received a 100 continue header, the path is " + request.getURI().getPath());
 						return false;
@@ -62,7 +62,7 @@ public class HTTP1ServerDemo3 {
 
 					@Override
 					public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-							HTTPConnection connection) {
+							HTTPOutputStream outputStream, HTTPConnection connection) {
 						HttpURI uri = request.getURI();
 						System.out.println("current path is " + uri.getPath());
 						System.out.println("current parameter string is " + uri.getQuery());
@@ -78,14 +78,14 @@ public class HTTP1ServerDemo3 {
 							list.add(BufferUtils.toBuffer("中文的内容，哈哈 ", StandardCharsets.UTF_8));
 							list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
 
-							try (HTTPOutputStream output = connection.getOutputStream()) {
+							try (HTTPOutputStream output = outputStream) {
 								output.writeWithContentLength(list.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
 						} else if (uri.getPath().equals("/testContinue")) {
 							response.setStatus(200);
-							try (HTTPOutputStream output = connection.getOutputStream()) {
+							try (HTTPOutputStream output = outputStream) {
 								output.writeWithContentLength(BufferUtils.toBuffer("receive Continue-100 successfully ",
 										StandardCharsets.UTF_8));
 							} catch (IOException e) {

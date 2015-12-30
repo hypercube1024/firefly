@@ -66,17 +66,17 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 
 	@Override
 	public final boolean content(ByteBuffer item) {
-		return clientHTTPHandler.content(item, request, response, connection);
+		return clientHTTPHandler.content(item, request, response, outputStream, connection);
 	}
 
 	@Override
 	public final boolean headerComplete() {
-		return clientHTTPHandler.headerComplete(request, response, connection);
+		return clientHTTPHandler.headerComplete(request, response, outputStream, connection);
 	}
 
 	protected boolean http1MessageComplete() {
 		try {
-			return clientHTTPHandler.messageComplete(request, response, connection);
+			return clientHTTPHandler.messageComplete(request, response, outputStream, connection);
 		} finally {
 			String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
@@ -128,12 +128,12 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 
 	@Override
 	public final void badMessage(int status, String reason) {
-		clientHTTPHandler.badMessage(status, reason, request, response, connection);
+		clientHTTPHandler.badMessage(status, reason, request, response, outputStream, connection);
 	}
 
 	@Override
 	public void earlyEOF() {
-		clientHTTPHandler.earlyEOF(request, response, connection);
+		clientHTTPHandler.earlyEOF(request, response, outputStream, connection);
 	}
 
 }

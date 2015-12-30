@@ -14,6 +14,7 @@ import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
 
@@ -40,13 +41,15 @@ public class HTTP1ClientDemo2 {
 			http1ClientConnection.request(request, new ClientHTTPHandler.Adapter() {
 
 				@Override
-				public boolean content(ByteBuffer item, Request request, Response response, HTTPConnection connection) {
+				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
+						HTTPConnection connection) {
 					System.out.println(BufferUtils.toString(item, StandardCharsets.UTF_8));
 					return false;
 				}
 
 				@Override
-				public boolean messageComplete(Request request, Response response, HTTPConnection connection) {
+				public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
+						HTTPConnection connection) {
 					System.out.println(response);
 					System.out.println(response.getFields());
 					int currentPhaseNumber = phaser.arrive();

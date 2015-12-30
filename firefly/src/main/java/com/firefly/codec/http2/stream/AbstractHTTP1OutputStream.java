@@ -14,47 +14,54 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 	public AbstractHTTP1OutputStream(MetaData info, boolean clientMode) {
 		super(info, clientMode);
 	}
-	
+
 	@Override
 	public synchronized void writeWithContentLength(ByteBuffer[] data) throws IOException {
-		long contentLength = 0;
-		for(ByteBuffer buf : data) {
-			contentLength += buf.remaining();
-		}
-		info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
-		for(ByteBuffer buf : data) {
-			write(buf);
+		try {
+			long contentLength = 0;
+			for (ByteBuffer buf : data) {
+				contentLength += buf.remaining();
+			}
+			info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
+			for (ByteBuffer buf : data) {
+				write(buf);
+			}
+		} finally {
+			close();
 		}
 	}
 
 	@Override
 	public synchronized void writeWithContentLength(ByteBuffer data) throws IOException {
-		info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
-		write(data);
+		try {
+			info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
+			write(data);
+		} finally {
+			close();
+		}
 	}
-	
+
 	@Override
 	public void commit() throws IOException {
 		commit(null);
 	}
-	
+
 	protected synchronized void commit(ByteBuffer data) throws IOException {
 		if (closed)
 			return;
 
 		if (commited)
 			return;
-		
+
 		final HttpGenerator generator = getHttpGenerator();
 		final Session tcpSession = getSession();
 		HttpGenerator.Result generatorResult;
 		ByteBuffer header = getHeaderByteBuffer();
 
 		generatorResult = generate(info, header, null, data, false);
-		if (generatorResult == HttpGenerator.Result.FLUSH
-				&& generator.getState() == HttpGenerator.State.COMMITTED) {
+		if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
 			tcpSession.encode(header);
-			if(data != null) {
+			if (data != null) {
 				tcpSession.encode(data);
 			}
 			commited = true;
@@ -190,6 +197,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 
 	abstract protected void generateHTTPMessageSuccessfully();
 
-	abstract protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult, HttpGenerator.State generatorState);
+	abstract protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult,
+			HttpGenerator.State generatorState);
 
 }

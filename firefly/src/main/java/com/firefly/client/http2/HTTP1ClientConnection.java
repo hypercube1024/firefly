@@ -174,7 +174,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements Cl
 		}
 	}
 
-	@Override
 	public void upgradeHTTP2WithCleartext(MetaData.Request request, SettingsFrame settings,
 			final Promise<HTTPConnection> promise, final Promise<Stream> initStream,
 			final Stream.Listener initStreamListener, final Listener listener, final ClientHTTPHandler handler) {
@@ -333,11 +332,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements Cl
 		} else {
 			throw new WritePendingException();
 		}
-	}
-
-	@Override
-	public HTTPOutputStream getOutputStream() {
-		return wrap.writing.get().outputStream;
 	}
 
 }

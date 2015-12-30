@@ -17,27 +17,30 @@ public interface ClientHTTPHandler extends HTTPHandler {
 	public static class Adapter implements ClientHTTPHandler {
 
 		@Override
-		public boolean content(ByteBuffer item, Request request, Response response, HTTPConnection connection) {
+		public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
+				HTTPConnection connection) {
 			return false;
 		}
 
 		@Override
-		public boolean headerComplete(Request request, Response response, HTTPConnection connection) {
+		public boolean headerComplete(Request request, Response response, HTTPOutputStream output,
+				HTTPConnection connection) {
 			return false;
 		}
 
 		@Override
-		public boolean messageComplete(Request request, Response response, HTTPConnection connection) {
+		public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
+				HTTPConnection connection) {
 			return true;
 		}
 
 		@Override
-		public void badMessage(int status, String reason, Request request, Response response,
+		public void badMessage(int status, String reason, Request request, Response response, HTTPOutputStream output,
 				HTTPConnection connection) {
 		}
 
 		@Override
-		public void earlyEOF(Request request, Response response, HTTPConnection connection) {
+		public void earlyEOF(Request request, Response response, HTTPOutputStream output, HTTPConnection connection) {
 		}
 
 		@Override

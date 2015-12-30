@@ -22,7 +22,5 @@ public interface HTTPConnection extends Closeable {
 	public InetSocketAddress getLocalAddress();
 
 	public InetSocketAddress getRemoteAddress();
-	
-	public HTTPOutputStream getOutputStream();
 
 }

@@ -22,7 +22,6 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
 import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -79,25 +78,14 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements Se
 		return config;
 	}
 
-	@Override
 	public MetaData.Request getRequest() {
 		return serverRequestHandler.request;
 	}
 
-	@Override
 	public MetaData.Response getResponse() {
 		return serverRequestHandler.response;
 	}
 
-	@Override
-	public HTTPOutputStream getOutputStream() {
-		if (serverRequestHandler.response.getStatus() <= 0)
-			throw new IllegalStateException("the server must set a response status before it outputs data");
-
-		return serverRequestHandler.outputStream;
-	}
-
-	@Override
 	public void response100Continue() {
 		try {
 			serverRequestHandler.outputStream.response100Continue();

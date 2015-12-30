@@ -45,32 +45,32 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 	public boolean headerComplete() {
 		String expectedValue = request.getFields().get(HttpHeader.EXPECT);
 		if ("100-continue".equalsIgnoreCase(expectedValue)) {
-			boolean skipNext = serverHTTPHandler.accept100Continue(request, response, connection);
+			boolean skipNext = serverHTTPHandler.accept100Continue(request, response, outputStream, connection);
 			if (skipNext) {
 				return true;
 			} else {
 				connection.response100Continue();
-				return serverHTTPHandler.headerComplete(request, response, connection);
+				return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
 			}
 		} else {
 			boolean success = connection.upgradeProtocolToHTTP2(request, response);
 			if(success) {
 				return true;
 			} else {
-				return serverHTTPHandler.headerComplete(request, response, connection);
+				return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
 			}
 		}
 	}
 
 	@Override
 	public boolean content(ByteBuffer item) {
-		return serverHTTPHandler.content(item, request, response, connection);
+		return serverHTTPHandler.content(item, request, response, outputStream, connection);
 	}
 
 	@Override
 	public boolean messageComplete() {
 		try {
-			return serverHTTPHandler.messageComplete(request, response, connection);
+			return serverHTTPHandler.messageComplete(request, response, outputStream, connection);
 		} finally {
 			connection.getParser().reset();
 		}
@@ -78,12 +78,12 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 
 	@Override
 	public void badMessage(int status, String reason) {
-		serverHTTPHandler.badMessage(status, reason, request, response, connection);
+		serverHTTPHandler.badMessage(status, reason, request, response, outputStream, connection);
 	}
 
 	@Override
 	public void earlyEOF() {
-		serverHTTPHandler.earlyEOF(request, response, connection);
+		serverHTTPHandler.earlyEOF(request, response, outputStream, connection);
 	}
 
 	@Override

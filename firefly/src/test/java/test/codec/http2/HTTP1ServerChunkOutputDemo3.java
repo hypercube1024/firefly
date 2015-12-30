@@ -26,14 +26,14 @@ public class HTTP1ServerChunkOutputDemo3 {
 				new ServerHTTPHandler.Adapter() {
 
 					@Override
-					public void earlyEOF(MetaData.Request request, MetaData.Response response,
+					public void earlyEOF(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
 							HTTPConnection connection) {
 						System.out.println("the server connection " + connection.getSessionId() + " is early EOF");
 					}
 
 					@Override
 					public void badMessage(int status, String reason, MetaData.Request request,
-							MetaData.Response response, HTTPConnection connection) {
+							MetaData.Response response, HTTPOutputStream output, HTTPConnection connection) {
 						System.out.println("the server received a bad message, " + status + "|" + reason);
 
 						try {
@@ -46,7 +46,7 @@ public class HTTP1ServerChunkOutputDemo3 {
 
 					@Override
 					public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-							HTTPConnection connection) {
+							HTTPOutputStream outputStream, HTTPConnection connection) {
 						HttpURI uri = request.getURI();
 						System.out.println("current path is " + uri.getPath());
 						System.out.println("current http headers are " + request.getFields());
@@ -59,7 +59,7 @@ public class HTTP1ServerChunkOutputDemo3 {
 						list.add(BufferUtils.toBuffer("中文的内容，哈哈 ", StandardCharsets.UTF_8));
 						list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
 
-						try (HTTPOutputStream output = connection.getOutputStream()) {
+						try (HTTPOutputStream output = outputStream) {
 							for (ByteBuffer buffer : list) {
 								output.write(buffer);
 							}
