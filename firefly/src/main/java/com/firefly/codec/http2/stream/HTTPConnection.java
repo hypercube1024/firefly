@@ -7,20 +7,22 @@ import com.firefly.codec.http2.model.HttpVersion;
 
 public interface HTTPConnection extends Closeable {
 
-	HttpVersion getHttpVersion();
+	public HttpVersion getHttpVersion();
 
-	Object getAttachment();
+	public Object getAttachment();
 
-	void setAttachment(Object attachment);
+	public void setAttachment(Object attachment);
 
-	boolean isOpen();
+	public boolean isOpen();
 	
-	boolean isEncrypted();
+	public boolean isEncrypted();
 	
-	int getSessionId();
+	public int getSessionId();
 	
-	InetSocketAddress getLocalAddress();
+	public InetSocketAddress getLocalAddress();
 
-	InetSocketAddress getRemoteAddress();
+	public InetSocketAddress getRemoteAddress();
+	
+	public HTTPOutputStream getOutputStream();
 
 }

@@ -15,8 +15,8 @@ import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.server.http2.HTTP1ServerConnectionListener;
-import com.firefly.server.http2.HTTP1ServerRequestHandler;
 import com.firefly.server.http2.HTTP2Server;
+import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
@@ -115,8 +115,8 @@ public class HTTP2ServerDemo {
 		}, new HTTP1ServerConnectionListener(){
 
 			@Override
-			public HTTP1ServerRequestHandler onNewConnectionIsCreating() {
-				return new HTTP1ServerRequestHandler.Adapter();
+			public ServerHTTPHandler onCreate() {
+				return new ServerHTTPHandler.Adapter();
 			}});
 		
 		server.start();

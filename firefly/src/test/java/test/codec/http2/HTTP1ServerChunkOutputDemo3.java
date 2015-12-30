@@ -7,14 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.firefly.codec.http2.model.HttpURI;
+import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.server.http2.HTTP1ServerConnection;
-import com.firefly.server.http2.HTTP1ServerConnection.HTTP1ServerResponseOutputStream;
+import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP1ServerConnectionListener;
-import com.firefly.server.http2.HTTP1ServerRequestHandler;
 import com.firefly.server.http2.HTTP2Server;
-import com.firefly.server.http2.HTTPServerRequest;
-import com.firefly.server.http2.HTTPServerResponse;
+import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
 import com.firefly.utils.io.BufferUtils;
 
@@ -24,23 +23,23 @@ public class HTTP1ServerChunkOutputDemo3 {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setTcpIdleTimeout(10 * 60 * 1000);
 
-		HTTP2Server server = new HTTP2Server("localhost", 6678, http2Configuration,
-				new ServerSessionListener.Adapter(), new HTTP1ServerConnectionListener() {
+		HTTP2Server server = new HTTP2Server("localhost", 6678, http2Configuration, new ServerSessionListener.Adapter(),
+				new HTTP1ServerConnectionListener() {
 
 					@Override
-					public HTTP1ServerRequestHandler onNewConnectionIsCreating() {
-						return new HTTP1ServerRequestHandler.Adapter() {
+					public ServerHTTPHandler onCreate() {
+						return new ServerHTTPHandler.Adapter() {
 
 							@Override
-							public void earlyEOF(HTTPServerRequest request, HTTPServerResponse response,
-									HTTP1ServerConnection connection) {
+							public void earlyEOF(MetaData.Request request, MetaData.Response response,
+									HTTPConnection connection) {
 								System.out.println(
 										"the server connection " + connection.getSessionId() + " is early EOF");
 							}
 
 							@Override
-							public void badMessage(int status, String reason, HTTPServerRequest request,
-									HTTPServerResponse response, HTTP1ServerConnection connection) {
+							public void badMessage(int status, String reason, MetaData.Request request,
+									MetaData.Response response, HTTPConnection connection) {
 								System.out.println("the server received a bad message, " + status + "|" + reason);
 
 								try {
@@ -52,8 +51,8 @@ public class HTTP1ServerChunkOutputDemo3 {
 							}
 
 							@Override
-							public boolean messageComplete(HTTPServerRequest request, HTTPServerResponse response,
-									HTTP1ServerConnection connection) {
+							public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+									HTTPConnection connection) {
 								HttpURI uri = request.getURI();
 								System.out.println("current path is " + uri.getPath());
 								System.out.println("current http headers are " + request.getFields());
@@ -66,7 +65,7 @@ public class HTTP1ServerChunkOutputDemo3 {
 								list.add(BufferUtils.toBuffer("中文的内容，哈哈 ", StandardCharsets.UTF_8));
 								list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
 
-								try (HTTP1ServerResponseOutputStream output = connection.getOutputStream()) {
+								try (HTTPOutputStream output = connection.getOutputStream()) {
 									for (ByteBuffer buffer : list) {
 										output.write(buffer);
 									}

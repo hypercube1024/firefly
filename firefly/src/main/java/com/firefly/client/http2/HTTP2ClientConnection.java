@@ -14,6 +14,7 @@ import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTP2Session;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.net.Session;
@@ -95,6 +96,12 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection {
 
 	SessionSPI getSessionSPI() {
 		return http2Session;
+	}
+
+	@Override
+	public HTTPOutputStream getOutputStream() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

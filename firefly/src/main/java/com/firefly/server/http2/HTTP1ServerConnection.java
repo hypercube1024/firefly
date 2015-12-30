@@ -22,6 +22,7 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
 import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -31,7 +32,7 @@ import com.firefly.utils.lang.TypeUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class HTTP1ServerConnection extends AbstractHTTP1Connection {
+public class HTTP1ServerConnection extends AbstractHTTP1Connection implements ServerHTTPConnection {
 
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
@@ -77,22 +78,26 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 	HTTP2Configuration getHTTP2Configuration() {
 		return config;
 	}
-	
-	public HTTPServerRequest getHTTPServerRequest() {
+
+	@Override
+	public MetaData.Request getRequest() {
 		return serverRequestHandler.request;
 	}
-	
-	public HTTPServerResponse getHTTPServerResponse() {
+
+	@Override
+	public MetaData.Response getResponse() {
 		return serverRequestHandler.response;
 	}
-	
-	public HTTP1ServerResponseOutputStream getOutputStream() {
+
+	@Override
+	public HTTPOutputStream getOutputStream() {
 		if (serverRequestHandler.response.getStatus() <= 0)
 			throw new IllegalStateException("the server must set a response status before it outputs data");
 
 		return serverRequestHandler.outputStream;
 	}
-	
+
+	@Override
 	public void response100Continue() {
 		try {
 			serverRequestHandler.outputStream.response100Continue();
@@ -100,7 +105,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 			log.error("the server session {} sends 100 continue unsuccessfully", e);
 		}
 	}
-	
+
 	void responseH2c() {
 		try {
 			serverRequestHandler.outputStream.responseH2c();
@@ -108,18 +113,20 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 			log.error("the server session {} sends 101 switching protocols unsuccessfully", e);
 		}
 	}
-	
+
 	public static class HTTP1ServerResponseOutputStream extends AbstractHTTP1OutputStream {
 
-		private static final MetaData.Response H2C_RESPONSE = new MetaData.Response(HttpVersion.HTTP_1_1, 101, new HttpFields());
+		private static final MetaData.Response H2C_RESPONSE = new MetaData.Response(HttpVersion.HTTP_1_1, 101,
+				new HttpFields());
+
 		static {
 			H2C_RESPONSE.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
 			H2C_RESPONSE.getFields().put(HttpHeader.UPGRADE, "h2c");
 		}
-		
+
 		private final HTTP1ServerConnection connection;
 
-		public HTTP1ServerResponseOutputStream(HTTPServerResponse response, HTTP1ServerConnection connection) {
+		public HTTP1ServerResponseOutputStream(MetaData.Response response, HTTP1ServerConnection connection) {
 			super(response, false);
 			this.connection = connection;
 		}
@@ -127,16 +134,17 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 		HTTP1ServerConnection getHTTP1ServerConnection() {
 			return connection;
 		}
-		
+
 		void responseH2c() throws IOException {
 			ByteBuffer header = getHeaderByteBuffer();
 			HttpGenerator gen = getHttpGenerator();
 			HttpGenerator.Result result = gen.generateResponse(H2C_RESPONSE, header, null, null, true);
-			if(result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING) {
+			if (result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING) {
 				getSession().encode(header);
 				result = gen.generateResponse(null, null, null, null, true);
-				if(result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.END) {
-					log.debug("the server session {} sends 101 switching protocols successfully", getSession().getSessionId());
+				if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.END) {
+					log.debug("the server session {} sends 101 switching protocols successfully",
+							getSession().getSessionId());
 				} else {
 					generateHTTPMessageExceptionally(result, gen.getState());
 				}
@@ -168,8 +176,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 		protected void generateHTTPMessageSuccessfully() {
 			log.debug("server session {} generates the HTTP message completely", connection.getSessionId());
 
-			final HTTPServerResponse response = connection.getHTTPServerResponse();
-			final HTTPServerRequest request = connection.getHTTPServerRequest();
+			final MetaData.Response response = connection.getResponse();
+			final MetaData.Request request = connection.getRequest();
 
 			String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
@@ -238,7 +246,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection {
 
 	}
 
-	boolean upgradeProtocolToHTTP2(HTTPServerRequest request, HTTPServerResponse response) {
+	boolean upgradeProtocolToHTTP2(MetaData.Request request, MetaData.Response response) {
 		if (HttpMethod.PRI.is(request.getMethod())) {
 			// TODO need to test
 			HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config, tcpSession, sslSession,

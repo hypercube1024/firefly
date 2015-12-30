@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import com.firefly.client.http2.ClientHTTPHandler;
 import com.firefly.client.http2.HTTP1ClientConnection;
-import com.firefly.client.http2.HTTP1ClientResponseHandler;
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTP2ClientConnection;
 import com.firefly.client.http2.HTTPClientRequest;
@@ -80,7 +80,7 @@ public class HTTP2ClientH2cDemo {
 						public void onFailure(Session session, Throwable failure) {
 							log.error("client failure, {}", failure, session);
 						}
-					}, new HTTP1ClientResponseHandler.Adapter());
+					}, new ClientHTTPHandler.Adapter());
 
 			HTTPConnection connection2 = http2promise.get();
 			if (connection2.getHttpVersion() == HttpVersion.HTTP_2) {

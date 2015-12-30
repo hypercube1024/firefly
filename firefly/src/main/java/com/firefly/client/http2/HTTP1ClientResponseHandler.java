@@ -3,35 +3,28 @@ package com.firefly.client.http2;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import com.firefly.client.http2.HTTP1ClientConnection.HTTP1ClientRequestOutputStream;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.stream.FlowControlStrategy;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.HTTPConnection;
-import com.firefly.codec.http2.stream.Stream;
-import com.firefly.codec.http2.stream.Session.Listener;
-import com.firefly.utils.concurrent.Promise;
+import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
+public class HTTP1ClientResponseHandler implements ResponseHandler {
 
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	protected HTTP1ClientConnection connection;
-	protected HTTPClientResponse response;
-	protected HTTPClientRequest request;
-	protected Promise<HTTPConnection> promise;
-	protected Listener listener;
-	protected Promise<Stream> initStream;
-	protected Stream.Listener initStreamListener;
+	protected MetaData.Response response;
+	protected MetaData.Request request;
+	protected HTTPOutputStream outputStream;
+	protected final ClientHTTPHandler clientHTTPHandler;
 
-	HTTP1ClientRequestOutputStream continueOutput;
+	HTTP1ClientResponseHandler(ClientHTTPHandler clientHTTPHandler) {
+		this.clientHTTPHandler = clientHTTPHandler;
+	}
 
 	@Override
 	public final boolean startResponse(HttpVersion version, int status, String reason) {
@@ -41,7 +34,7 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 
 		if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
 			try {
-				continueToSendData(continueOutput, connection);
+				clientHTTPHandler.continueToSendData(request, response, outputStream, connection);
 				if (log.isDebugEnabled()) {
 					log.debug("client received 100 continue, current parser state is {}",
 							connection.getParser().getState());
@@ -49,11 +42,11 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 				return true;
 			} finally {
 				try {
-					continueOutput.close();
+					outputStream.close();
 				} catch (IOException e) {
 					log.error("client generates the HTTP message exception", e);
 				}
-				continueOutput = null;
+				outputStream = null;
 			}
 		} else {
 			response = new HTTPClientResponse(version, status, reason);
@@ -73,17 +66,17 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 
 	@Override
 	public final boolean content(ByteBuffer item) {
-		return content(item, response, connection);
+		return clientHTTPHandler.content(item, request, response, connection);
 	}
 
 	@Override
 	public final boolean headerComplete() {
-		return headerComplete(response, connection);
+		return clientHTTPHandler.headerComplete(request, response, connection);
 	}
 
 	protected boolean http1MessageComplete() {
 		try {
-			return messageComplete(response, connection);
+			return clientHTTPHandler.messageComplete(request, response, connection);
 		} finally {
 			String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
@@ -125,79 +118,22 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 
 	@Override
 	public final boolean messageComplete() {
-		if (promise != null && listener != null) {
-			String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
-			if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
-				connection.upgradeHTTP2Successfully = true;
-
-				// initialize http2 client connection;
-				final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(
-						connection.getHTTP2Configuration(), connection.getTcpSession(), null, listener) {
-					@Override
-					protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
-							Listener listener) {
-						return HTTP2ClientSession.initSessionForUpgradingHTTP2(scheduler, this.tcpSession, generator,
-								listener, flowControl, 3, config.getStreamIdleTimeout(), initStream,
-								initStreamListener);
-					}
-				};
-				connection.getTcpSession().attachObject(http2Connection);
-				http2Connection.initialize(connection.getHTTP2Configuration(), promise, listener);
-				return http1MessageComplete();
-			} else {
-				return http1MessageComplete();
-			}
-		} else {
-			return http1MessageComplete();
+		boolean success = connection.upgradeProtocolToHTTP2(request, response);
+		if (success) {
+			log.debug("client upgraded http2 successfully");
 		}
+
+		return http1MessageComplete();
 	}
 
 	@Override
 	public final void badMessage(int status, String reason) {
-		badMessage(status, reason, response, connection);
+		clientHTTPHandler.badMessage(status, reason, request, response, connection);
 	}
 
-	abstract public void continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection);
-
-	abstract public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection);
-
-	abstract public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection);
-
-	abstract public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection);
-
-	abstract public void badMessage(int status, String reason, HTTPClientResponse response,
-			HTTP1ClientConnection connection);
-
-	public static class Adapter extends HTTP1ClientResponseHandler {
-
-		@Override
-		public void earlyEOF() {
-		}
-
-		@Override
-		public boolean content(ByteBuffer item, HTTPClientResponse response, HTTP1ClientConnection connection) {
-			return false;
-		}
-
-		@Override
-		public boolean headerComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
-			return false;
-		}
-
-		@Override
-		public boolean messageComplete(HTTPClientResponse response, HTTP1ClientConnection connection) {
-			return true;
-		}
-
-		@Override
-		public void badMessage(int status, String reason, HTTPClientResponse response,
-				HTTP1ClientConnection connection) {
-		}
-
-		@Override
-		public void continueToSendData(HTTP1ClientRequestOutputStream output, HTTP1ClientConnection connection) {
-		}
-
+	@Override
+	public void earlyEOF() {
+		clientHTTPHandler.earlyEOF(request, response, connection);
 	}
 
 }
