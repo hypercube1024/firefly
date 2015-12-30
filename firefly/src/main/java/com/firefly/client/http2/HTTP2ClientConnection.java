@@ -198,6 +198,9 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
 			@Override
 			public void succeeded(final Stream stream) {
+				if(log.isDebugEnabled()) {
+					log.debug("create a new stream {}", stream.getId());
+				}
 				final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(request, false) {
 
 					@Override

@@ -77,7 +77,9 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 
 		final Stream stream = getStream();
 		final HeadersFrame frame = new HeadersFrame(stream.getId(), info, null, endStream);
-
+		if(log.isDebugEnabled()) {
+			log.debug("stream {} commits the header frame {}", stream.getId(), frame);
+		}
 		isWriting = true;
 		stream.headers(frame, callback);
 
