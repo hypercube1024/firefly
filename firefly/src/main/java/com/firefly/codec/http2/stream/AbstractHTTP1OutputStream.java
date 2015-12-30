@@ -1,7 +1,6 @@
 package com.firefly.codec.http2.stream;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 import com.firefly.codec.http2.encode.HttpGenerator;
@@ -9,41 +8,14 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.net.Session;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 
-abstract public class AbstractHTTP1OutputStream extends OutputStream {
-
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
-
-	protected final boolean clientMode;
-	protected final MetaData info;
-	protected boolean closed;
-	protected boolean commited;
+abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 
 	public AbstractHTTP1OutputStream(MetaData info, boolean clientMode) {
-		this.info = info;
-		this.clientMode = clientMode;
-	}
-
-	public synchronized boolean isClosed() {
-		return closed;
-	}
-
-	public synchronized boolean isCommited() {
-		return commited;
-	}
-
-	@Override
-	public void write(int b) throws IOException {
-		write(new byte[] { (byte) b });
-	}
-
-	@Override
-	public void write(byte[] array, int offset, int length) throws IOException {
-		write(ByteBuffer.wrap(array, offset, length));
+		super(info, clientMode);
 	}
 	
+	@Override
 	public synchronized void writeWithContentLength(ByteBuffer[] data) throws IOException {
 		long contentLength = 0;
 		for(ByteBuffer buf : data) {
@@ -55,11 +27,13 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 		}
 	}
 
+	@Override
 	public synchronized void writeWithContentLength(ByteBuffer data) throws IOException {
 		info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
 		write(data);
 	}
 	
+	@Override
 	public void commit() throws IOException {
 		commit(null);
 	}
@@ -89,6 +63,7 @@ abstract public class AbstractHTTP1OutputStream extends OutputStream {
 		}
 	}
 
+	@Override
 	public synchronized void write(ByteBuffer data) throws IOException {
 		if (closed)
 			return;

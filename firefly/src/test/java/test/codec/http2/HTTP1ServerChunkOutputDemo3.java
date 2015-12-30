@@ -9,12 +9,12 @@ import java.util.List;
 import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.server.http2.HTTP1ServerConnection;
+import com.firefly.server.http2.HTTP1ServerConnection.HTTP1ServerResponseOutputStream;
 import com.firefly.server.http2.HTTP1ServerConnectionListener;
 import com.firefly.server.http2.HTTP1ServerRequestHandler;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.HTTPServerRequest;
 import com.firefly.server.http2.HTTPServerResponse;
-import com.firefly.server.http2.HTTPServerResponse.HTTP1ServerResponseOutputStream;
 import com.firefly.server.http2.ServerSessionListener;
 import com.firefly.utils.io.BufferUtils;
 
@@ -66,7 +66,7 @@ public class HTTP1ServerChunkOutputDemo3 {
 								list.add(BufferUtils.toBuffer("中文的内容，哈哈 ", StandardCharsets.UTF_8));
 								list.add(BufferUtils.toBuffer("靠！！！ ", StandardCharsets.UTF_8));
 
-								try (HTTP1ServerResponseOutputStream output = response.getOutputStream()) {
+								try (HTTP1ServerResponseOutputStream output = connection.getOutputStream()) {
 									for (ByteBuffer buffer : list) {
 										output.write(buffer);
 									}

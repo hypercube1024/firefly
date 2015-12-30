@@ -85,12 +85,6 @@ public abstract class HTTP1ClientResponseHandler implements ResponseHandler {
 		try {
 			return messageComplete(response, connection);
 		} finally {
-			// if(connection.upgradeHTTP2Successfully) {
-			// log.debug("the client connection {} has upgraded HTTP2",
-			// connection.getSessionId());
-			// return true;
-			// }
-
 			String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
 			String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
 

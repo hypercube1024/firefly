@@ -6,6 +6,7 @@ import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.server.http2.HTTP1ServerConnection.HTTP1ServerResponseOutputStream;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -16,6 +17,7 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 	protected HTTPServerRequest request;
 	protected HTTPServerResponse response;
 	protected HTTP1ServerConnection connection;
+	protected HTTP1ServerResponseOutputStream outputStream;
 
 	@Override
 	public boolean startRequest(String method, String uri, HttpVersion version) {
@@ -23,7 +25,8 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 			log.debug("server received the request line, {}, {}, {}", method, uri, version);
 		}
 		request = new HTTPServerRequest(method, uri, version);
-		response = new HTTPServerResponse(request, connection);
+		response = new HTTPServerResponse();
+		outputStream = new HTTP1ServerResponseOutputStream(response, connection);
 		return false;
 	}
 
@@ -40,7 +43,7 @@ abstract public class HTTP1ServerRequestHandler implements RequestHandler {
 			if (skipNext) {
 				return true;
 			} else {
-				response.response100Continue();
+				connection.response100Continue();
 				return headerComplete(request, response, connection);
 			}
 		} else {
