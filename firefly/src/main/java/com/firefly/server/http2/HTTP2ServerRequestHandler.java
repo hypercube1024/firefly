@@ -1,21 +1,21 @@
 package com.firefly.server.http2;
 
-import java.util.Map;
-
 import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.GoAwayFrame;
+import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PingFrame;
-import com.firefly.codec.http2.frame.PushPromiseFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.stream.Session;
+import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
-public class HTTP2ServerRequestHandler implements ServerSessionListener {
-	
+public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
+
+	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+
 	private final ServerHTTPHandler serverHTTPHandler;
 	HTTP2ServerConnection connection;
 
@@ -24,87 +24,52 @@ public class HTTP2ServerRequestHandler implements ServerSessionListener {
 	}
 
 	@Override
-	public Map<Integer, Integer> onPreface(Session session) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public Listener onNewStream(final Stream stream, HeadersFrame headersFrame) {
+		if (!headersFrame.getMetaData().isRequest()) {
+			throw new IllegalArgumentException(
+					"the stream " + stream.getId() + " received meta data that is not request type");
+		}
 
-	@Override
-	public Listener onNewStream(Stream stream, HeadersFrame frame) {
-		// TODO Auto-generated method stub
-		
-		return new Listener(){
+		final MetaData.Request request = (MetaData.Request) headersFrame.getMetaData();
+		final MetaData.Response response = new HTTPServerResponse();
+		final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(response, false) {
 
 			@Override
-			public void onHeaders(Stream stream, HeadersFrame frame) {
-				// TODO Auto-generated method stub
-				
+			protected Stream getStream() {
+				return stream;
 			}
+		};
+		stream.setAttribute("outputStream", output);
+		serverHTTPHandler.headerComplete(request, response, output, connection);
+
+		if (headersFrame.isEndStream()) {
+			serverHTTPHandler.messageComplete(request, response, output, connection);
+		}
+
+		return new Listener.Adapter() {
 
 			@Override
-			public Listener onPush(Stream stream, PushPromiseFrame frame) {
-				// TODO Auto-generated method stub
-				return null;
-			}
+			public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
+				try {
+					serverHTTPHandler.content(dataFrame.getData(), request, response, output, connection);
+					callback.succeeded();
+				} catch (Throwable t) {
+					callback.failed(t);
+				}
 
-			@Override
-			public void onData(Stream stream, DataFrame frame, Callback callback) {
-				// TODO Auto-generated method stub
+				if (dataFrame.isEndStream()) {
+					serverHTTPHandler.messageComplete(request, response, output, connection);
+				}
 			}
 
 			@Override
 			public void onReset(Stream stream, ResetFrame frame) {
-				// TODO Auto-generated method stub
-				
+				ErrorCode errorCode = ErrorCode.from(frame.getError());
+				String reason = errorCode == null ? "error=" + frame.getError() : errorCode.name().toLowerCase();
+				serverHTTPHandler.badMessage(frame.getError(), reason, request, response, output, connection);
 			}
 
-			@Override
-			public void onTimeout(Stream stream, Throwable x) {
-				// TODO Auto-generated method stub
-				
-			}};
-	}
-
-	@Override
-	public void onSettings(Session session, SettingsFrame frame) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onPing(Session session, PingFrame frame) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onReset(Session session, ResetFrame frame) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onClose(Session session, GoAwayFrame frame) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public boolean onIdleTimeout(Session session) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void onFailure(Session session, Throwable failure) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onAccept(Session session) {
-		// TODO Auto-generated method stub
-		
+		};
 	}
 
 }

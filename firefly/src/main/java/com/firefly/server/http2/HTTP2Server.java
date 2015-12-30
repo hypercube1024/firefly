@@ -14,6 +14,11 @@ public class HTTP2Server extends AbstractLifeCycle {
 	private final String host;
 	private final int port;
 
+	public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
+			ServerHTTPHandler serverHTTPHandler) {
+		this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler);
+	}
+
 	public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration, ServerSessionListener listener,
 			ServerHTTPHandler serverHTTPHandler) {
 		if (http2Configuration == null)

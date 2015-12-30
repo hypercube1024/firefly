@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.concurrent.Promise;
 
 public interface ClientHTTPConnection extends HTTPConnection {
 
@@ -15,4 +16,6 @@ public interface ClientHTTPConnection extends HTTPConnection {
 	public void request(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler);
 
 	public HTTPOutputStream requestWithStream(MetaData.Request request, ClientHTTPHandler handler);
+	
+	public void requestWithStream(MetaData.Request request, Promise<HTTPOutputStream> promise, ClientHTTPHandler handler);
 }

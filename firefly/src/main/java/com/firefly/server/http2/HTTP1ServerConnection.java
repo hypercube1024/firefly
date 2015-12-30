@@ -102,7 +102,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements Se
 		}
 	}
 
-	public static class HTTP1ServerResponseOutputStream extends AbstractHTTP1OutputStream {
+	static class HTTP1ServerResponseOutputStream extends AbstractHTTP1OutputStream {
 
 		private static final MetaData.Response H2C_RESPONSE = new MetaData.Response(HttpVersion.HTTP_1_1, 101,
 				new HttpFields());

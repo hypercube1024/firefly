@@ -18,6 +18,7 @@ import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
 import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
@@ -269,7 +270,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements Cl
 		return http1ClientResponseHandler.outputStream;
 	}
 
-	public static class HTTP1ClientRequestOutputStream extends AbstractHTTP1OutputStream {
+	@Override
+	public void requestWithStream(Request request, Promise<HTTPOutputStream> promise, ClientHTTPHandler handler) {
+		promise.succeeded(requestWithStream(request, handler));
+	}
+
+	static class HTTP1ClientRequestOutputStream extends AbstractHTTP1OutputStream {
 
 		private final HTTP1ClientConnection connection;
 
