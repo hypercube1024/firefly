@@ -83,6 +83,23 @@ public class HTTP2ServerH2cDemo {
 							public void onData(Stream stream, DataFrame frame, Callback callback) {
 								System.out.println("session on data, " + frame + "|"
 										+ BufferUtils.toString(frame.getData(), StandardCharsets.UTF_8));
+								if(frame.isEndStream()) {
+									MetaData.Response response = new MetaData.Response(HttpVersion.HTTP_2, 200,
+											new HttpFields());
+									HeadersFrame responseFrame = new HeadersFrame(stream.getId(), response, null, true);
+									stream.headers(responseFrame, new Callback() {
+
+										@Override
+										public void succeeded() {
+											System.out.println("response data success");
+										}
+
+										@Override
+										public void failed(Throwable x) {
+											x.printStackTrace();
+										}
+									});
+								}
 								callback.succeeded();
 							}
 						};

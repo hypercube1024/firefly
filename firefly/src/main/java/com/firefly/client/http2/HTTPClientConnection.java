@@ -7,7 +7,7 @@ import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.concurrent.Promise;
 
-public interface ClientHTTPConnection extends HTTPConnection {
+public interface HTTPClientConnection extends HTTPConnection {
 
 	public void request(MetaData.Request request, ClientHTTPHandler handler);
 

@@ -34,7 +34,7 @@ import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class HTTP2ClientConnection extends AbstractHTTP2Connection implements ClientHTTPConnection {
+public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HTTPClientConnection {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 

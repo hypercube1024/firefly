@@ -12,7 +12,7 @@ import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 
-public class HTTP2ServerConnection extends AbstractHTTP2Connection implements ServerHTTPConnection {
+public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HTTPServerConnection {
 
 	public HTTP2ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
 			ServerSessionListener serverSessionListener) {

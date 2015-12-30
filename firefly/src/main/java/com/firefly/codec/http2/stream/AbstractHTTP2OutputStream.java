@@ -56,6 +56,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 
 	@Override
 	public synchronized void close() throws IOException {
+		// TODO
 		if (closed)
 			return;
 

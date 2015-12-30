@@ -36,7 +36,7 @@ import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class HTTP1ClientConnection extends AbstractHTTP1Connection implements ClientHTTPConnection {
+public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HTTPClientConnection {
 
 	private static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
