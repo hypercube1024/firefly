@@ -557,6 +557,9 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				log.debug("Created remote {}", stream);
 			return stream;
 		} else {
+			if(log.isDebugEnabled()) {
+				log.debug("create duplicate remote stream {}", streamId);
+			}
 			close(ErrorCode.PROTOCOL_ERROR.code, "duplicate_stream", Callback.NOOP);
 			return null;
 		}

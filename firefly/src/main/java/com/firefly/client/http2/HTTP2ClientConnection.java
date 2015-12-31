@@ -14,6 +14,8 @@ import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
@@ -133,6 +135,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
 	@Override
 	public void request(Request request, final ByteBuffer buffer, ClientHTTPHandler handler) {
+		request.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(buffer.remaining()));
+		
 		Promise<HTTPOutputStream> promise = new Promise<HTTPOutputStream>() {
 
 			@Override
@@ -157,6 +161,12 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
 	@Override
 	public void request(Request request, final ByteBuffer[] buffers, ClientHTTPHandler handler) {
+		long contentLength = 0;
+		for (ByteBuffer buf : buffers) {
+			contentLength += buf.remaining();
+		}
+		request.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
+		
 		Promise<HTTPOutputStream> promise = new Promise<HTTPOutputStream>() {
 
 			@Override
@@ -193,7 +203,13 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 	@Override
 	public void requestWithStream(final Request request, final Promise<HTTPOutputStream> promise,
 			final ClientHTTPHandler handler) {
+		if (!request.getFields().contains(HttpHeader.CONTENT_LENGTH)) {
+			request.getFields().put(HttpHeader.TRAILER, AbstractHTTP2OutputStream.TRAILER_NAME);
+			request.getFields().put(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED);
+		}
+		
 		final HeadersFrame headersFrame = new HeadersFrame(request, null, false);
+		
 		http2Session.newStream(headersFrame, new Promise<Stream>() {
 
 			@Override
@@ -201,7 +217,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 				if(log.isDebugEnabled()) {
 					log.debug("create a new stream {}", stream.getId());
 				}
-				final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(request, false) {
+				final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(request, true) {
 
 					@Override
 					protected Stream getStream() {
