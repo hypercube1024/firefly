@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
@@ -58,9 +59,19 @@ public class HTTP2ServerTLSDemo {
 					}
 				} else if (uri.getPath().equals("/data")) {
 					response.setStatus(200);
+					response.getFields().put(HttpHeader.TRAILER, "foo");
+					response.getFields().put("Trailer-Value", "mytest");
 					try (HTTPOutputStream output = outputStream) {
-						output.write(BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8));
-						output.write(BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8));
+//						output.writeWithContentLength(new ByteBuffer[]{BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8), BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8)});
+						output.write(BufferUtils.toBuffer("receive data stream successful\r\n", StandardCharsets.UTF_8));
+						output.write(BufferUtils.toBuffer("thank you\r\n", StandardCharsets.UTF_8));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				} else if (uri.getPath().equals("/favicon.ico")) {
+					response.setStatus(404);
+					try (HTTPOutputStream output = outputStream) {
+						output.writeWithContentLength(BufferUtils.toBuffer(uri.getPath() + " not found", StandardCharsets.UTF_8));
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
