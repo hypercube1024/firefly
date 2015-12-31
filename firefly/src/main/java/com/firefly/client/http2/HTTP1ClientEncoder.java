@@ -28,12 +28,15 @@ public class HTTP1ClientEncoder extends EncoderChain {
 				if (message instanceof ByteBuffer) {
 					session.write((ByteBuffer) message, Callback.NOOP);
 				} else {
-					throw new IllegalArgumentException("the http1 encoder must receive the ByteBuffer, but this message type is " + message.getClass());
+					throw new IllegalArgumentException(
+							"the http1 encoder must receive the ByteBuffer, but this message type is "
+									+ message.getClass());
 				}
 			}
 			break;
 		default:
-			throw new IllegalArgumentException("client does not support the http version " + connection.getHttpVersion());
+			throw new IllegalArgumentException(
+					"client does not support the http version " + connection.getHttpVersion());
 		}
 	}
 

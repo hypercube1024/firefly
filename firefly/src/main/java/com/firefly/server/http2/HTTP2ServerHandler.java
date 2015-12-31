@@ -94,8 +94,9 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 			try {
 				HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext) session
 						.getAttachment();
-				for (String clientProtocol : clientProtocols) {
-					for (String serverProtocol : protocols) {
+
+				for (String serverProtocol : protocols) {
+					for (String clientProtocol : clientProtocols) {
 						if (serverProtocol.equals(clientProtocol)) {
 							log.debug("HTTP2 server selected protocol {}", clientProtocol);
 

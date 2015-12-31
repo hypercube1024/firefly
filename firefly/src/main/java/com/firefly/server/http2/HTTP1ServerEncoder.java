@@ -6,8 +6,12 @@ import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.EncoderChain;
 import com.firefly.net.Session;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class HTTP1ServerEncoder extends EncoderChain {
+
+	protected static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	public HTTP1ServerEncoder(EncoderChain next) {
 		super(next);
