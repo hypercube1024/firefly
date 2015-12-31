@@ -30,6 +30,8 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 		if (config.isSecure()) {
 			final SSLEngine sslEngine = sslContext.createSSLEngine();
 			HTTP2ServerSSLHandshakeContext handshakeContext = new HTTP2ServerSSLHandshakeContext();
+			session.attachObject(handshakeContext);
+
 			handshakeContext.sslSession = new SSLSession(sslContext, sslEngine, session, false, new SSLEventHandler() {
 
 				@Override
@@ -58,48 +60,58 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 						session.closeNow();
 					}
 				}
-			}, new ALPN.ServerProvider() {
+			}, new ServerALPN(sslEngine, session));
 
-				@Override
-				public void unsupported() {
-					try {
-						HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext) session
-								.getAttachment();
-						handshakeContext.httpVersion = HttpVersion.HTTP_1_1;
-					} finally {
-						ALPN.remove(sslEngine);
-					}
-				}
-
-				@Override
-				public String select(List<String> clientProtocols) {
-					try {
-						HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext) session
-								.getAttachment();
-						for (String clientProtocol : clientProtocols) {
-							for (String serverProtocol : protocols) {
-								if (serverProtocol.equals(clientProtocol)) {
-									log.debug("HTTP2 server selected protocol {}", clientProtocol);
-									if (serverProtocol.equals("http/1.1")) {
-										handshakeContext.httpVersion = HttpVersion.HTTP_1_1;
-									} else {
-										handshakeContext.httpVersion = HttpVersion.HTTP_2;
-									}
-									return clientProtocol;
-								}
-							}
-						}
-						return "http/1.1";
-					} finally {
-						ALPN.remove(sslEngine);
-					}
-				}
-			});
-
-			session.attachObject(handshakeContext);
 		} else {
 			session.attachObject(new HTTP1ServerConnection(config, session, null,
 					new HTTP1ServerRequestHandler(serverHTTPHandler), listener));
+		}
+	}
+
+	public class ServerALPN implements ALPN.ServerProvider {
+		private final SSLEngine sslEngine;
+		private final Session session;
+
+		public ServerALPN(SSLEngine sslEngine, Session session) {
+			super();
+			this.sslEngine = sslEngine;
+			this.session = session;
+		}
+
+		@Override
+		public void unsupported() {
+			try {
+				HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext) session
+						.getAttachment();
+				handshakeContext.httpVersion = HttpVersion.HTTP_1_1;
+			} finally {
+				ALPN.remove(sslEngine);
+			}
+		}
+
+		@Override
+		public String select(List<String> clientProtocols) {
+			try {
+				HTTP2ServerSSLHandshakeContext handshakeContext = (HTTP2ServerSSLHandshakeContext) session
+						.getAttachment();
+				for (String clientProtocol : clientProtocols) {
+					for (String serverProtocol : protocols) {
+						if (serverProtocol.equals(clientProtocol)) {
+							log.debug("HTTP2 server selected protocol {}", clientProtocol);
+
+							if (serverProtocol.equals("http/1.1")) {
+								handshakeContext.httpVersion = HttpVersion.HTTP_1_1;
+							} else {
+								handshakeContext.httpVersion = HttpVersion.HTTP_2;
+							}
+							return clientProtocol;
+						}
+					}
+				}
+				return "http/1.1";
+			} finally {
+				ALPN.remove(sslEngine);
+			}
 		}
 	}
 

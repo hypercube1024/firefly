@@ -73,18 +73,19 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 				@Override
 				public void selected(String protocol) {
 					try {
-						if (protocols.contains(protocol)) {
-							log.debug("HTTP2 client selected protocol {}", protocol);
-							if ("http/1.1".equalsIgnoreCase(protocol)) {
-								context.httpVersion = HttpVersion.HTTP_1_1;
-							} else {
-								context.httpVersion = HttpVersion.HTTP_2;
+						for (String clientProtocol : protocols) {
+							if (clientProtocol.equals(protocol)) {
+								log.debug("HTTP2 client selected protocol {}", protocol);
+								if ("http/1.1".equalsIgnoreCase(protocol)) {
+									context.httpVersion = HttpVersion.HTTP_1_1;
+								} else {
+									context.httpVersion = HttpVersion.HTTP_2;
+								}
+								return;
 							}
-						} else {
-							log.info("The client can not negotiate protocol. server [{}] - client {}", protocol,
-									protocols);
-							session.close();
 						}
+						log.info("The client can not negotiate protocol. server [{}] - client {}", protocol, protocols);
+						session.close();
 					} finally {
 						ALPN.remove(sslEngine);
 					}

@@ -36,7 +36,7 @@ public abstract class SSLContextFactory {
 	    TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 	    tmf.init(ks);
 
-	    sslContext = SSLContext.getInstance("TLSv1.2");
+	    sslContext = SSLContext.getInstance("TLSv1.2"); //TLSv1  TLSv1.2
 	    sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 	    
 	    _handle_BUG_JDK_8022063(sslContext);

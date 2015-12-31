@@ -58,9 +58,11 @@ public abstract class AbstractHTTPHandler implements Handler {
 	public void sessionClosed(Session session) throws Throwable {
 		log.info("session {} closed", session.getSessionId());
 		try {
-			HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();
-			if (httpConnection != null && httpConnection.isOpen()) {
-				httpConnection.close();
+			if(session.getAttachment() instanceof HTTPConnection) {
+				HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();
+				if (httpConnection != null && httpConnection.isOpen()) {
+					httpConnection.close();
+				}
 			}
 		} catch (Throwable t) {
 			log.error("http2 conection close exception", t);
