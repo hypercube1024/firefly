@@ -30,6 +30,7 @@ import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
@@ -136,7 +137,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 	@Override
 	public void request(Request request, final ByteBuffer buffer, ClientHTTPHandler handler) {
 		request.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(buffer.remaining()));
-		
+
 		Promise<HTTPOutputStream> promise = new Promise<HTTPOutputStream>() {
 
 			@Override
@@ -166,7 +167,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 			contentLength += buf.remaining();
 		}
 		request.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
-		
+
 		Promise<HTTPOutputStream> promise = new Promise<HTTPOutputStream>() {
 
 			@Override
@@ -200,6 +201,119 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 		}
 	}
 
+	public static class ClientStreamPromise implements Promise<Stream> {
+
+		private final Request request;
+		private final Promise<HTTPOutputStream> promise;
+
+		public ClientStreamPromise(Request request, Promise<HTTPOutputStream> promise) {
+			this.request = request;
+			this.promise = promise;
+		}
+
+		@Override
+		public void succeeded(final Stream stream) {
+			if (log.isDebugEnabled()) {
+				log.debug("create a new stream {}", stream.getId());
+			}
+			final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(request, true) {
+
+				@Override
+				protected Stream getStream() {
+					return stream;
+				}
+			};
+			stream.setAttribute("outputStream", output);
+			promise.succeeded(output);
+		}
+
+		@Override
+		public void failed(Throwable x) {
+			promise.failed(x);
+			log.error("client creates stream unsuccessfully", x);
+		}
+
+	}
+
+	public static class ClientStreamListener extends Stream.Listener.Adapter {
+
+		private final Request request;
+		private final ClientHTTPHandler handler;
+		private final HTTPClientConnection connection;
+
+		public ClientStreamListener(Request request, ClientHTTPHandler handler, HTTPClientConnection connection) {
+			this.request = request;
+			this.handler = handler;
+			this.connection = connection;
+		}
+
+		@Override
+		public void onHeaders(final Stream stream, final HeadersFrame headersFrame) {
+			if (headersFrame.getMetaData() == null) {
+				throw new IllegalArgumentException("the stream " + stream.getId() + " received a null meta data");
+			}
+
+			if (headersFrame.getMetaData().isResponse()) {
+				final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
+				final MetaData.Response response = (MetaData.Response) headersFrame.getMetaData();
+				stream.setAttribute("response", response);
+
+				handler.headerComplete(request, response, output, connection);
+
+				if (headersFrame.isEndStream()) {
+					handler.messageComplete(request, response, output, connection);
+				}
+			} else {
+				if (headersFrame.isEndStream()) {
+					final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
+					final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
+
+					String trailerName = response.getFields().get(HttpHeader.TRAILER);
+					if (VerifyUtils.isNotEmpty(trailerName)) {
+						if (headersFrame.getMetaData().getFields().containsKey(trailerName)) {
+							handler.messageComplete(request, response, output, connection);
+						} else {
+							throw new IllegalArgumentException(
+									"the stream " + stream.getId() + " received illegal meta data");
+						}
+					} else {
+						handler.messageComplete(request, response, output, connection);
+					}
+				} else {
+					throw new IllegalArgumentException("the stream " + stream.getId() + " received illegal meta data");
+				}
+			}
+
+		}
+
+		@Override
+		public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
+			final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
+			final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
+
+			try {
+				handler.content(dataFrame.getData(), request, response, output, connection);
+				callback.succeeded();
+			} catch (Throwable t) {
+				callback.failed(t);
+			}
+
+			if (dataFrame.isEndStream()) {
+				handler.messageComplete(request, response, output, connection);
+			}
+		}
+
+		@Override
+		public void onReset(Stream stream, ResetFrame frame) {
+			final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
+			final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
+
+			ErrorCode errorCode = ErrorCode.from(frame.getError());
+			String reason = errorCode == null ? "error=" + frame.getError() : errorCode.name().toLowerCase();
+			handler.badMessage(frame.getError(), reason, request, response, output, connection);
+		}
+	}
+
 	@Override
 	public void requestWithStream(final Request request, final Promise<HTTPOutputStream> promise,
 			final ClientHTTPHandler handler) {
@@ -207,78 +321,9 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 			request.getFields().put(HttpHeader.TRAILER, AbstractHTTP2OutputStream.TRAILER_NAME);
 			request.getFields().put(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED);
 		}
-		
-		final HeadersFrame headersFrame = new HeadersFrame(request, null, false);
-		
-		http2Session.newStream(headersFrame, new Promise<Stream>() {
 
-			@Override
-			public void succeeded(final Stream stream) {
-				if(log.isDebugEnabled()) {
-					log.debug("create a new stream {}", stream.getId());
-				}
-				final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(request, true) {
-
-					@Override
-					protected Stream getStream() {
-						return stream;
-					}
-				};
-				stream.setAttribute("outputStream", output);
-				promise.succeeded(output);
-			}
-
-			@Override
-			public void failed(Throwable x) {
-				log.error("client creates stream unsuccessfully", x);
-			}
-		}, new Stream.Listener.Adapter() {
-			@Override
-			public void onHeaders(Stream stream, HeadersFrame headersFrame) {
-				if (!headersFrame.getMetaData().isResponse()) {
-					throw new IllegalArgumentException(
-							"the stream " + stream.getId() + " received meta data that is not response type");
-				}
-
-				final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-				final MetaData.Response response = (MetaData.Response) headersFrame.getMetaData();
-				stream.setAttribute("response", response);
-
-				handler.headerComplete(request, response, output, HTTP2ClientConnection.this);
-
-				if (headersFrame.isEndStream()) {
-					handler.messageComplete(request, response, output, HTTP2ClientConnection.this);
-				}
-			}
-
-			@Override
-			public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
-				final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-				final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
-
-				try {
-					handler.content(dataFrame.getData(), request, response, output, HTTP2ClientConnection.this);
-					callback.succeeded();
-				} catch (Throwable t) {
-					callback.failed(t);
-				}
-
-				if (dataFrame.isEndStream()) {
-					handler.messageComplete(request, response, output, HTTP2ClientConnection.this);
-				}
-			}
-
-			@Override
-			public void onReset(Stream stream, ResetFrame frame) {
-				final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-				final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
-
-				ErrorCode errorCode = ErrorCode.from(frame.getError());
-				String reason = errorCode == null ? "error=" + frame.getError() : errorCode.name().toLowerCase();
-				handler.badMessage(frame.getError(), reason, request, response, output, HTTP2ClientConnection.this);
-			}
-
-		});
+		http2Session.newStream(new HeadersFrame(request, null, false), new ClientStreamPromise(request, promise),
+				new ClientStreamListener(request, handler, this));
 	}
 
 }

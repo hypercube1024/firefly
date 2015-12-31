@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritePendingException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.firefly.client.http2.HTTP2ClientConnection.ClientStreamListener;
+import com.firefly.client.http2.HTTP2ClientConnection.ClientStreamPromise;
 import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
@@ -40,8 +43,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
 	private static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private Promise<HTTPConnection> promise;
-	private Listener listener;
+	private Promise<HTTPConnection> http2ConnectionPromise;
+	private Listener http2Sessionlistener;
 	private Promise<Stream> initStream;
 	private Stream.Listener initStreamListener;
 	private volatile boolean upgradeHTTP2Successfully = false;
@@ -148,14 +151,14 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	boolean upgradeProtocolToHTTP2(MetaData.Request request, MetaData.Response response) {
-		if (promise != null && listener != null) {
+		if (http2ConnectionPromise != null && http2Sessionlistener != null) {
 			String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
 			if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
 				upgradeHTTP2Successfully = true;
 
 				// initialize http2 client connection;
 				final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
-						getTcpSession(), null, listener) {
+						getTcpSession(), null, http2Sessionlistener) {
 					@Override
 					protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
 							Listener listener) {
@@ -165,7 +168,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 					}
 				};
 				getTcpSession().attachObject(http2Connection);
-				http2Connection.initialize(getHTTP2Configuration(), promise, listener);
+				http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2Sessionlistener);
 				return true;
 			} else {
 				return false;
@@ -175,6 +178,25 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 		}
 	}
 
+	public void upgradeHTTP2WithCleartext(final MetaData.Request request, final SettingsFrame settings,
+			final Promise<HTTPConnection> promise, final ClientHTTPHandler handler) {
+		upgradeHTTP2WithCleartext(request, settings, promise,
+				new ClientStreamPromise(request, new Promise.Adapter<HTTPOutputStream>()),
+				new ClientStreamListener(request, handler, this), new Listener.Adapter() {
+
+					@Override
+					public Map<Integer, Integer> onPreface(com.firefly.codec.http2.stream.Session session) {
+						return settings.getSettings();
+					}
+
+					@Override
+					public void onFailure(com.firefly.codec.http2.stream.Session session, Throwable failure) {
+						log.error("client failure, {}", failure, session);
+					}
+
+				}, handler);
+	}
+
 	public void upgradeHTTP2WithCleartext(MetaData.Request request, SettingsFrame settings,
 			final Promise<HTTPConnection> promise, final Promise<Stream> initStream,
 			final Stream.Listener initStreamListener, final Listener listener, final ClientHTTPHandler handler) {
@@ -182,8 +204,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
 		}
 
-		this.promise = promise;
-		this.listener = listener;
+		this.http2ConnectionPromise = promise;
+		this.http2Sessionlistener = listener;
 		this.initStream = initStream;
 		this.initStreamListener = initStreamListener;
 

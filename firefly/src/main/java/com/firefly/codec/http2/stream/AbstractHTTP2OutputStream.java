@@ -20,6 +20,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	public static final String TRAILER_NAME = "Firefly-Trailer";
+	public static final String TRAILER_VALUE = "end";
 
 	private boolean isChunked;
 	private boolean isWriting;
@@ -81,11 +82,21 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 		} else {
 			if (frame instanceof DataFrame) {
 				DataFrame dataFrame = (DataFrame) frame;
+				
+				if(log.isDebugEnabled()) {
+					log.debug("the stream {} writes a frame {}", dataFrame.getStreamId(), dataFrame);
+				}
+				
 				isWriting = true;
 				getStream().data(dataFrame, frameCallback);
 				closed = dataFrame.isEndStream();
 			} else if (frame instanceof HeadersFrame) {
 				HeadersFrame headersFrame = (HeadersFrame) frame;
+				
+				if(log.isDebugEnabled()) {
+					log.debug("the stream {} writes a frame {}", headersFrame.getStreamId(), headersFrame);
+				}
+				
 				isWriting = true;
 				getStream().headers(headersFrame, frameCallback);
 				closed = headersFrame.isEndStream();
@@ -108,8 +119,8 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 				final Stream stream = getStream();
 
 				MetaData trailer = new MetaData(null, new HttpFields());
-				trailer.getFields().add(TRAILER_NAME, "end");
-				final HeadersFrame chunkedTrailerFrame = new HeadersFrame(stream.getId(), info, null, true);
+				trailer.getFields().add(TRAILER_NAME, TRAILER_VALUE);
+				final HeadersFrame chunkedTrailerFrame = new HeadersFrame(stream.getId(), trailer, null, true);
 				writeFrame(chunkedTrailerFrame);
 			} else {
 				closed = true;

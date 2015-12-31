@@ -29,6 +29,7 @@ public class HTTP2ClientSession extends HTTP2Session {
 		final StreamSPI stream = session.createLocalStream(1, initStream);
 		stream.setListener(initStreamListener);
 		stream.updateClose(true, true);
+		initStream.succeeded(stream);
 		return session;
 	}
 

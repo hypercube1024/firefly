@@ -70,7 +70,11 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 	@Override
 	public boolean messageComplete() {
 		try {
-			return serverHTTPHandler.messageComplete(request, response, outputStream, connection);
+			if(connection.upgradeHTTP2Successfully) {
+				return true;
+			} else {
+				return serverHTTPHandler.messageComplete(request, response, outputStream, connection);
+			}
 		} finally {
 			connection.getParser().reset();
 		}

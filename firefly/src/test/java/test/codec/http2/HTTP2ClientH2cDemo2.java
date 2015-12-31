@@ -11,7 +11,6 @@ import com.firefly.client.http2.HTTP1ClientConnection;
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTPClientConnection;
 import com.firefly.client.http2.HTTPClientRequest;
-import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.HostPortHttpField;
 import com.firefly.codec.http2.model.HttpFields;
@@ -24,9 +23,6 @@ import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.codec.http2.stream.Session;
-import com.firefly.codec.http2.stream.Session.Listener;
-import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
@@ -56,34 +52,35 @@ public class HTTP2ClientH2cDemo2 {
 			settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
 			SettingsFrame settingsFrame = new SettingsFrame(settings, false);
 
-			FuturePromise<HTTPConnection> http2promise = new FuturePromise<>();
-			FuturePromise<Stream> initStream = new FuturePromise<>();
-			httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2promise, initStream,
-					new Stream.Listener.Adapter() {
-						@Override
-						public void onHeaders(Stream stream, HeadersFrame frame) {
-							log.info("client stream {} received response headers: {}", stream.getId(), frame.getMetaData());
-						}
+			FuturePromise<HTTPConnection> http2Promise = new FuturePromise<>();
 
-					}, new Listener.Adapter() {
+			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter() {
 
-						@Override
-						public Map<Integer, Integer> onPreface(Session session) {
-							log.info("client preface: {}", session);
-							Map<Integer, Integer> settings = new HashMap<>();
-							settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
-							settings.put(SettingsFrame.INITIAL_WINDOW_SIZE,
-									http2Configuration.getInitialStreamSendWindow());
-							return settings;
-						}
+				@Override
+				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
+						HTTPConnection connection) {
+					log.info("client received data: {}", BufferUtils.toUTF8String(item));
+					return false;
+				}
 
-						@Override
-						public void onFailure(Session session, Throwable failure) {
-							log.error("client failure, {}", failure, session);
-						}
-					}, new ClientHTTPHandler.Adapter());
+				@Override
+				public boolean headerComplete(Request request, Response response, HTTPOutputStream output,
+						HTTPConnection connection) {
+					log.info("client received headers: {}", response);
+					return false;
+				}
 
-			HTTPConnection connection2 = http2promise.get();
+				@Override
+				public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
+						HTTPConnection connection) {
+					log.info("client end frame: {}", response);
+					return true;
+				}
+			};
+
+			httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2Promise, handler);
+
+			HTTPConnection connection2 = http2Promise.get();
 			if (connection2.getHttpVersion() == HttpVersion.HTTP_2) {
 
 				HTTPClientConnection clientConnection = (HTTPClientConnection) connection2;
@@ -97,29 +94,7 @@ public class HTTP2ClientH2cDemo2 {
 
 				ByteBuffer[] buffers = new ByteBuffer[] { ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
 						ByteBuffer.wrap("big hello world!".getBytes("UTF-8")) };
-				clientConnection.request(post, buffers, new ClientHTTPHandler.Adapter() {
-
-					@Override
-					public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
-							HTTPConnection connection) {
-						log.info("client received data: {}", BufferUtils.toUTF8String(item));
-						return false;
-					}
-
-					@Override
-					public boolean headerComplete(Request request, Response response, HTTPOutputStream output,
-							HTTPConnection connection) {
-						log.info("client received headers: {}", response);
-						return false;
-					}
-
-					@Override
-					public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
-							HTTPConnection connection) {
-						log.info("client end frame: {}", response);
-						return true;
-					}
-				});
+				clientConnection.request(post, buffers, handler);
 
 			}
 		}

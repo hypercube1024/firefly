@@ -19,8 +19,42 @@ import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 
 public class HeadersGenerateParseTest {
+	
+	@Test
+	public void testChunkedTrialer() {
+		HeadersGenerator generator = new HeadersGenerator(new HeaderGenerator(), new HpackEncoder());
+		
+		final List<HeadersFrame> frames = new ArrayList<>();
+		Parser parser = new Parser(new Parser.Listener.Adapter() {
+			@Override
+			public void onHeaders(HeadersFrame frame) {
+				frames.add(frame);
+			}
+		}, 4096, 8192);
+		
+		
+		MetaData trailer = new MetaData(null, new HttpFields());
+		trailer.getFields().add(AbstractHTTP2OutputStream.TRAILER_NAME, AbstractHTTP2OutputStream.TRAILER_VALUE);
+		System.out.println(trailer.isRequest());
+		final HeadersFrame chunkedTrailerFrame = new HeadersFrame(2, trailer, null, true);
+		
+		List<ByteBuffer> list = generator.generate(chunkedTrailerFrame);
+		for (ByteBuffer buffer : list) {
+			while (buffer.hasRemaining()) {
+				parser.parse(buffer);
+			}
+		}
+		
+		Assert.assertEquals(1, frames.size());
+		HeadersFrame frame = frames.get(0);
+		Assert.assertEquals(2, frame.getStreamId());
+		Assert.assertTrue(frame.isEndStream());
+		System.out.println(frame.getMetaData());
+		Assert.assertEquals(AbstractHTTP2OutputStream.TRAILER_VALUE, frame.getMetaData().getFields().get(AbstractHTTP2OutputStream.TRAILER_NAME));
+	}
 
 	@Test
 	public void testGenerateParse() throws Exception {

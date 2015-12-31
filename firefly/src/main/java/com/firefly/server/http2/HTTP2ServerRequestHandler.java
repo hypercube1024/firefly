@@ -4,10 +4,12 @@ import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -29,6 +31,10 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 			throw new IllegalArgumentException(
 					"the stream " + stream.getId() + " received meta data that is not request type");
 		}
+		
+		if(log.isDebugEnabled()) {
+			log.debug("the remote stream {} is created, the header is {}", stream.getId(), headersFrame.getMetaData());
+		}
 
 		final MetaData.Request request = (MetaData.Request) headersFrame.getMetaData();
 		final MetaData.Response response = new HTTPServerResponse();
@@ -39,7 +45,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 				return stream;
 			}
 		};
-		stream.setAttribute("outputStream", output);
+		// stream.setAttribute("outputStream", output);
 		serverHTTPHandler.headerComplete(request, response, output, connection);
 
 		if (headersFrame.isEndStream()) {
@@ -47,6 +53,25 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 		}
 
 		return new Listener.Adapter() {
+
+			@Override
+			public void onHeaders(Stream stream, HeadersFrame endHeaderframe) {
+				if (endHeaderframe.isEndStream()) {
+					String trailerName = response.getFields().get(HttpHeader.TRAILER);
+					if (VerifyUtils.isNotEmpty(trailerName)) {
+						if (endHeaderframe.getMetaData().getFields().containsKey(trailerName)) {
+							serverHTTPHandler.messageComplete(request, response, output, connection);
+						} else {
+							throw new IllegalArgumentException(
+									"the stream " + stream.getId() + " received illegal meta data");
+						}
+					} else {
+						serverHTTPHandler.messageComplete(request, response, output, connection);
+					}
+				} else {
+					throw new IllegalArgumentException("the stream " + stream.getId() + " received illegal meta data");
+				}
+			}
 
 			@Override
 			public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
@@ -63,10 +88,10 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 			}
 
 			@Override
-			public void onReset(Stream stream, ResetFrame frame) {
-				ErrorCode errorCode = ErrorCode.from(frame.getError());
-				String reason = errorCode == null ? "error=" + frame.getError() : errorCode.name().toLowerCase();
-				serverHTTPHandler.badMessage(frame.getError(), reason, request, response, output, connection);
+			public void onReset(Stream stream, ResetFrame resetFrame) {
+				ErrorCode errorCode = ErrorCode.from(resetFrame.getError());
+				String reason = errorCode == null ? "error=" + resetFrame.getError() : errorCode.name().toLowerCase();
+				serverHTTPHandler.badMessage(resetFrame.getError(), reason, request, response, output, connection);
 			}
 
 		};

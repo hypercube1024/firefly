@@ -241,7 +241,6 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 					serverSessionListener);
 			tcpSession.attachObject(http2ServerConnection);
 			http2ServerConnection.getParser().directUpgrade();
-
 			upgradeHTTP2Successfully = true;
 			return true;
 		} else {
