@@ -19,7 +19,6 @@ import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
-import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 
 public class HeadersGenerateParseTest {
 	
@@ -37,7 +36,7 @@ public class HeadersGenerateParseTest {
 		
 		
 		MetaData trailer = new MetaData(null, new HttpFields());
-		trailer.getFields().add(AbstractHTTP2OutputStream.TRAILER_NAME, AbstractHTTP2OutputStream.TRAILER_VALUE);
+		trailer.getFields().add("firefly-trailer", "end");
 		System.out.println(trailer.isRequest());
 		final HeadersFrame chunkedTrailerFrame = new HeadersFrame(2, trailer, null, true);
 		
@@ -52,8 +51,9 @@ public class HeadersGenerateParseTest {
 		HeadersFrame frame = frames.get(0);
 		Assert.assertEquals(2, frame.getStreamId());
 		Assert.assertTrue(frame.isEndStream());
+		Assert.assertEquals(false, frame.getMetaData().isRequest());
 		System.out.println(frame.getMetaData());
-		Assert.assertEquals(AbstractHTTP2OutputStream.TRAILER_VALUE, frame.getMetaData().getFields().get(AbstractHTTP2OutputStream.TRAILER_NAME));
+		Assert.assertEquals("end", frame.getMetaData().getFields().get("firefly-trailer"));
 	}
 
 	@Test

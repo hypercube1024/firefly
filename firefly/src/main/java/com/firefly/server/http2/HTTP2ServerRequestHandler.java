@@ -57,7 +57,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 			@Override
 			public void onHeaders(Stream stream, HeadersFrame endHeaderframe) {
 				if (endHeaderframe.isEndStream()) {
-					String trailerName = response.getFields().get(HttpHeader.TRAILER);
+					String trailerName = request.getFields().get(HttpHeader.TRAILER);
 					if (VerifyUtils.isNotEmpty(trailerName)) {
 						if (endHeaderframe.getMetaData().getFields().containsKey(trailerName)) {
 							serverHTTPHandler.messageComplete(request, response, output, connection);

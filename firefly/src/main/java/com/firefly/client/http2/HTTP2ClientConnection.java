@@ -15,7 +15,6 @@ import com.firefly.codec.http2.frame.ResetFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
@@ -317,11 +316,6 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 	@Override
 	public void requestWithStream(final Request request, final Promise<HTTPOutputStream> promise,
 			final ClientHTTPHandler handler) {
-		if (!request.getFields().contains(HttpHeader.CONTENT_LENGTH)) {
-			request.getFields().put(HttpHeader.TRAILER, AbstractHTTP2OutputStream.TRAILER_NAME);
-			request.getFields().put(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED);
-		}
-
 		http2Session.newStream(new HeadersFrame(request, null, false), new ClientStreamPromise(request, promise),
 				new ClientStreamListener(request, handler, this));
 	}
