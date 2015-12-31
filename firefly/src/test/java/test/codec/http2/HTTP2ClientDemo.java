@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTP2ClientConnection;
+import com.firefly.client.http2.HTTPClientConnection;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.GoAwayFrame;
 import com.firefly.codec.http2.frame.HeadersFrame;
@@ -44,7 +45,7 @@ public class HTTP2ClientDemo {
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
-		FuturePromise<HTTPConnection> promise = new FuturePromise<>();
+		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
 		client.connect("127.0.0.1", 6677, promise, new Listener() {
 
 			@Override

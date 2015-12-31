@@ -16,8 +16,12 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class HTTP2ServerH2cDemo2 {
+
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	public static void main(String[] args) {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
@@ -32,13 +36,14 @@ public class HTTP2ServerH2cDemo2 {
 			@Override
 			public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
 					HTTPConnection connection) {
-				System.out.println("session on data, " + BufferUtils.toString(item, StandardCharsets.UTF_8));
+				log.info("received data, {}", BufferUtils.toString(item, StandardCharsets.UTF_8));
 				return false;
 			}
 
 			@Override
 			public boolean messageComplete(Request request, Response response, HTTPOutputStream outputStream,
 					HTTPConnection connection) {
+				log.info("received end frame, {}", request.getFields());
 				HttpURI uri = request.getURI();
 				if (uri.getPath().equals("/index")) {
 					response.setStatus(200);

@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import com.firefly.client.http2.ClientHTTPHandler;
-import com.firefly.client.http2.HTTP1ClientConnection;
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTPClientConnection;
 import com.firefly.client.http2.HTTPClientRequest;
@@ -39,51 +38,48 @@ public class HTTP2ClientH2cDemo2 {
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
-		FuturePromise<HTTPConnection> promise = new FuturePromise<>();
+		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
 		client.connect("127.0.0.1", 6677, promise);
 
-		HTTPConnection connection = promise.get();
-		if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
-			final HTTP1ClientConnection httpConnection = (HTTP1ClientConnection) connection;
-			HTTPClientRequest request = new HTTPClientRequest("GET", "/index");
+		final HTTPClientConnection httpConnection = promise.get();
+		HTTPClientRequest request = new HTTPClientRequest("GET", "/index");
 
-			Map<Integer, Integer> settings = new HashMap<>();
-			settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
-			settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
-			SettingsFrame settingsFrame = new SettingsFrame(settings, false);
+		Map<Integer, Integer> settings = new HashMap<>();
+		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
+		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
+		SettingsFrame settingsFrame = new SettingsFrame(settings, false);
 
-			FuturePromise<HTTPConnection> http2Promise = new FuturePromise<>();
+		FuturePromise<HTTPClientConnection> http2Promise = new FuturePromise<>();
 
-			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter() {
+		ClientHTTPHandler handler = new ClientHTTPHandler.Adapter() {
 
-				@Override
-				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
-						HTTPConnection connection) {
-					log.info("client received data: {}", BufferUtils.toUTF8String(item));
-					return false;
-				}
+			@Override
+			public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
+					HTTPConnection connection) {
+				log.info("client received data: {}", BufferUtils.toUTF8String(item));
+				return false;
+			}
 
-				@Override
-				public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
-						HTTPConnection connection) {
-					log.info("client end frame: {}", response.getFields());
-					return true;
-				}
-			};
+			@Override
+			public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
+					HTTPConnection connection) {
+				log.info("client received frame: {}", response.getFields());
+				return true;
+			}
+		};
 
-			httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2Promise, handler);
+		httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2Promise, handler);
 
-			HTTPClientConnection clientConnection = (HTTPClientConnection) http2Promise.get();
-			HttpFields fields = new HttpFields();
-			fields.put(HttpHeader.ACCEPT, "text/html");
-			fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
-			MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP,
-					new HostPortHttpField("127.0.0.1:6677"), "/data", HttpVersion.HTTP_2, fields);
+		HTTPClientConnection clientConnection = http2Promise.get();
+		HttpFields fields = new HttpFields();
+		fields.put(HttpHeader.ACCEPT, "text/html");
+		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
+		MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
+				"/data", HttpVersion.HTTP_2, fields);
 
-			ByteBuffer[] buffers = new ByteBuffer[] { ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
-					ByteBuffer.wrap("big hello world!".getBytes("UTF-8")) };
-			clientConnection.request(post, buffers, handler);
-		}
+		ByteBuffer[] buffers = new ByteBuffer[] { ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
+				ByteBuffer.wrap("big hello world!".getBytes("UTF-8")) };
+		clientConnection.request(post, buffers, handler);
 	}
 
 }

@@ -23,7 +23,6 @@ import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.codec.http2.stream.SessionSPI;
@@ -41,7 +40,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	public void initialize(HTTP2Configuration config, final Promise<HTTPConnection> promise, final Listener listener) {
+	public void initialize(HTTP2Configuration config, final Promise<HTTPClientConnection> promise,
+			final Listener listener) {
 		Map<Integer, Integer> settings = listener.onPreface(getHttp2Session());
 		if (settings == null) {
 			settings = Collections.emptyMap();
@@ -324,6 +324,12 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
 		http2Session.newStream(new HeadersFrame(request, null, false), new ClientStreamPromise(request, promise),
 				new ClientStreamListener(request, handler, this));
+	}
+
+	@Override
+	public void upgradeHTTP2WithCleartext(Request request, SettingsFrame settings, Promise<HTTPClientConnection> promise,
+			ClientHTTPHandler handler) {
+		new RuntimeException("current connection version is http2, it does not need to upgrading");
 	}
 
 }

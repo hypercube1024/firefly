@@ -5,7 +5,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.core.AbstractLifeCycle;
 import com.firefly.net.Client;
@@ -40,11 +39,11 @@ public class HTTP2Client extends AbstractLifeCycle {
 				new HTTP2ClientHandler(http2Configuration, http2ClientContext), http2Configuration.getTcpIdleTimeout());
 	}
 	
-	public void connect(String host, int port, Promise<HTTPConnection> promise) {
+	public void connect(String host, int port, Promise<HTTPClientConnection> promise) {
 		connect(host, port, promise, new Listener.Adapter());
 	}
 
-	public void connect(String host, int port, Promise<HTTPConnection> promise, Listener listener) {
+	public void connect(String host, int port, Promise<HTTPClientConnection> promise, Listener listener) {
 		start();
 		HTTP2ClientContext context = new HTTP2ClientContext();
 		context.promise = promise;

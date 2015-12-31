@@ -9,6 +9,7 @@ import java.util.concurrent.Phaser;
 import com.firefly.client.http2.ClientHTTPHandler;
 import com.firefly.client.http2.HTTP1ClientConnection;
 import com.firefly.client.http2.HTTP2Client;
+import com.firefly.client.http2.HTTPClientConnection;
 import com.firefly.client.http2.HTTPClientRequest;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
@@ -27,7 +28,7 @@ public class HTTP1ClientDemo3 {
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
-		FuturePromise<HTTPConnection> promise = new FuturePromise<>();
+		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
 		client.connect("localhost", 6678, promise);
 
 		HTTPConnection connection = promise.get();

@@ -27,7 +27,6 @@ import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.codec.http2.stream.Stream;
@@ -43,7 +42,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
 	private static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private Promise<HTTPConnection> http2ConnectionPromise;
+	private Promise<HTTPClientConnection> http2ConnectionPromise;
 	private Listener http2Sessionlistener;
 	private Promise<Stream> initStream;
 	private Stream.Listener initStreamListener;
@@ -178,8 +177,9 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 		}
 	}
 
+	@Override
 	public void upgradeHTTP2WithCleartext(final MetaData.Request request, final SettingsFrame settings,
-			final Promise<HTTPConnection> promise, final ClientHTTPHandler handler) {
+			final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler) {
 		upgradeHTTP2WithCleartext(request, settings, promise,
 				new ClientStreamPromise(request, new Promise.Adapter<HTTPOutputStream>()),
 				new ClientStreamListener(request, handler, this), new Listener.Adapter() {
@@ -198,7 +198,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	public void upgradeHTTP2WithCleartext(MetaData.Request request, SettingsFrame settings,
-			final Promise<HTTPConnection> promise, final Promise<Stream> initStream,
+			final Promise<HTTPClientConnection> promise, final Promise<Stream> initStream,
 			final Stream.Listener initStreamListener, final Listener listener, final ClientHTTPHandler handler) {
 		if (isEncrypted()) {
 			throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");

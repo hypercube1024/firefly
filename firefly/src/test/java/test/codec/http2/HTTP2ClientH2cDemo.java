@@ -10,6 +10,7 @@ import com.firefly.client.http2.ClientHTTPHandler;
 import com.firefly.client.http2.HTTP1ClientConnection;
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTP2ClientConnection;
+import com.firefly.client.http2.HTTPClientConnection;
 import com.firefly.client.http2.HTTPClientRequest;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.HeadersFrame;
@@ -42,7 +43,7 @@ public class HTTP2ClientH2cDemo {
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
-		FuturePromise<HTTPConnection> promise = new FuturePromise<>();
+		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
 		client.connect("127.0.0.1", 6677, promise);
 
 		HTTPConnection connection = promise.get();
@@ -55,7 +56,7 @@ public class HTTP2ClientH2cDemo {
 			settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
 			SettingsFrame settingsFrame = new SettingsFrame(settings, false);
 
-			FuturePromise<HTTPConnection> http2promise = new FuturePromise<>();
+			FuturePromise<HTTPClientConnection> http2promise = new FuturePromise<>();
 			FuturePromise<Stream> initStream = new FuturePromise<>();
 			httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2promise, initStream,
 					new Stream.Listener.Adapter() {
