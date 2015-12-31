@@ -51,8 +51,8 @@ public class HTTP2ServerH2cDemo2 {
 				} else if (uri.getPath().equals("/data")) {
 					response.setStatus(200);
 					try (HTTPOutputStream output = outputStream) {
-						output.writeWithContentLength(
-								BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8));
+						output.write(BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8));
+						output.write(BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8));
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

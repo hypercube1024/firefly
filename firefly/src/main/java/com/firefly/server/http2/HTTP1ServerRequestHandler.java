@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.server.http2.HTTP1ServerConnection.HTTP1ServerResponseOutputStream;
@@ -30,10 +31,16 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 		if (log.isDebugEnabled()) {
 			log.debug("server received the request line, {}, {}, {}", method, uri, version);
 		}
+		
 		request = new HTTPServerRequest(method, uri, version);
 		response = new HTTPServerResponse();
 		outputStream = new HTTP1ServerResponseOutputStream(response, connection);
-		return false;
+		
+		if(HttpMethod.PRI.is(method)) {
+			return connection.upgradeProtocolToHTTP2(request, response);
+		} else {
+			return false;
+		}
 	}
 
 	@Override

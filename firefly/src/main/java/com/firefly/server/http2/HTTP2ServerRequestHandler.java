@@ -45,7 +45,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 				return stream;
 			}
 		};
-		// stream.setAttribute("outputStream", output);
+		
 		serverHTTPHandler.headerComplete(request, response, output, connection);
 
 		if (headersFrame.isEndStream()) {

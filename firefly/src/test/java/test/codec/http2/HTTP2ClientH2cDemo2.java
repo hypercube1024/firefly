@@ -64,39 +64,25 @@ public class HTTP2ClientH2cDemo2 {
 				}
 
 				@Override
-				public boolean headerComplete(Request request, Response response, HTTPOutputStream output,
-						HTTPConnection connection) {
-					log.info("client received headers: {}", response);
-					return false;
-				}
-
-				@Override
 				public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
 						HTTPConnection connection) {
-					log.info("client end frame: {}", response);
+					log.info("client end frame: {}", response.getFields());
 					return true;
 				}
 			};
 
 			httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2Promise, handler);
 
-			HTTPConnection connection2 = http2Promise.get();
-			if (connection2.getHttpVersion() == HttpVersion.HTTP_2) {
+			HTTPClientConnection clientConnection = (HTTPClientConnection) http2Promise.get();
+			HttpFields fields = new HttpFields();
+			fields.put(HttpHeader.ACCEPT, "text/html");
+			fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
+			MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP,
+					new HostPortHttpField("127.0.0.1:6677"), "/data", HttpVersion.HTTP_2, fields);
 
-				HTTPClientConnection clientConnection = (HTTPClientConnection) connection2;
-
-				HttpFields fields = new HttpFields();
-				fields.put(HttpHeader.ACCEPT, "text/html");
-				fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
-				fields.put(HttpHeader.CONTENT_LENGTH, "28");
-				MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP,
-						new HostPortHttpField("127.0.0.1:6677"), "/data", HttpVersion.HTTP_2, fields);
-
-				ByteBuffer[] buffers = new ByteBuffer[] { ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
-						ByteBuffer.wrap("big hello world!".getBytes("UTF-8")) };
-				clientConnection.request(post, buffers, handler);
-
-			}
+			ByteBuffer[] buffers = new ByteBuffer[] { ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
+					ByteBuffer.wrap("big hello world!".getBytes("UTF-8")) };
+			clientConnection.request(post, buffers, handler);
 		}
 	}
 
