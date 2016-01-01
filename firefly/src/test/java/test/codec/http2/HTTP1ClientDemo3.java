@@ -41,7 +41,7 @@ public class HTTP1ClientDemo3 {
 
 			// request index.html
 			HTTPClientRequest request = new HTTPClientRequest("GET", "/index?version=1&test=ok");
-			http1ClientConnection.request(request, new ClientHTTPHandler.Adapter() {
+			http1ClientConnection.send(request, new ClientHTTPHandler.Adapter() {
 
 				@Override
 				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
@@ -67,7 +67,7 @@ public class HTTP1ClientDemo3 {
 			final ByteBuffer data = BufferUtils.toBuffer("client test continue 100 ", StandardCharsets.UTF_8);
 			post.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
 
-			http1ClientConnection.requestWithContinuation(post, new ClientHTTPHandler.Adapter() {
+			http1ClientConnection.sendRequestWithContinuation(post, new ClientHTTPHandler.Adapter() {
 				@Override
 				public void continueToSendData(Request request, Response response, HTTPOutputStream outputStream,
 						HTTPConnection connection) {

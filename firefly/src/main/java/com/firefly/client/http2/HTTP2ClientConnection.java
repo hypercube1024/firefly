@@ -106,7 +106,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 	}
 
 	@Override
-	public void request(Request request, ClientHTTPHandler handler) {
+	public void send(Request request, ClientHTTPHandler handler) {
 		Promise<HTTPOutputStream> promise = new Promise<HTTPOutputStream>() {
 
 			@Override
@@ -125,11 +125,11 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 			}
 		};
 
-		requestWithStream(request, true, promise, handler);
+		request(request, true, promise, handler);
 	}
 
 	@Override
-	public void request(Request request, final ByteBuffer buffer, ClientHTTPHandler handler) {
+	public void send(Request request, final ByteBuffer buffer, ClientHTTPHandler handler) {
 		request.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(buffer.remaining()));
 
 		Promise<HTTPOutputStream> promise = new Promise<HTTPOutputStream>() {
@@ -150,12 +150,11 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 			}
 		};
 
-		requestWithStream(request, promise, handler);
-
+		send(request, promise, handler);
 	}
 
 	@Override
-	public void request(Request request, final ByteBuffer[] buffers, ClientHTTPHandler handler) {
+	public void send(Request request, final ByteBuffer[] buffers, ClientHTTPHandler handler) {
 		long contentLength = 0;
 		for (ByteBuffer buf : buffers) {
 			contentLength += buf.remaining();
@@ -180,19 +179,19 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 			}
 		};
 
-		requestWithStream(request, promise, handler);
-	}
-	
-	@Override
-	public HTTPOutputStream requestWithContinuation(MetaData.Request request, ClientHTTPHandler handler) {
-		request.getFields().put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE);
-		return requestWithStream(request, handler);
+		send(request, promise, handler);
 	}
 
 	@Override
-	public HTTPOutputStream requestWithStream(final Request request, final ClientHTTPHandler handler) {
+	public HTTPOutputStream sendRequestWithContinuation(MetaData.Request request, ClientHTTPHandler handler) {
+		request.getFields().put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE);
+		return getHTTPOutputStream(request, handler);
+	}
+
+	@Override
+	public HTTPOutputStream getHTTPOutputStream(final Request request, final ClientHTTPHandler handler) {
 		FuturePromise<HTTPOutputStream> promise = new FuturePromise<>();
-		requestWithStream(request, promise, handler);
+		send(request, promise, handler);
 		try {
 			return promise.get();
 		} catch (Throwable e) {
@@ -202,12 +201,11 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 	}
 
 	@Override
-	public void requestWithStream(final Request request, final Promise<HTTPOutputStream> promise,
-			final ClientHTTPHandler handler) {
-		requestWithStream(request, false, promise, handler);
+	public void send(final Request request, final Promise<HTTPOutputStream> promise, final ClientHTTPHandler handler) {
+		request(request, false, promise, handler);
 	}
-	
-	public void requestWithStream(final Request request, boolean endStream, final Promise<HTTPOutputStream> promise,
+
+	public void request(final Request request, boolean endStream, final Promise<HTTPOutputStream> promise,
 			final ClientHTTPHandler handler) {
 		http2Session.newStream(new HeadersFrame(request, null, endStream),
 				new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise, endStream),
@@ -215,8 +213,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 	}
 
 	@Override
-	public void upgradeHTTP2WithCleartext(Request request, SettingsFrame settings,
-			Promise<HTTPClientConnection> promise, ClientHTTPHandler handler) {
+	public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTPClientConnection> promise,
+			ClientHTTPHandler handler) {
 		new RuntimeException("current connection version is http2, it does not need to upgrading");
 	}
 

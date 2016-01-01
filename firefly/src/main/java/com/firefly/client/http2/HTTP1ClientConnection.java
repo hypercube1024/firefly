@@ -176,7 +176,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	@Override
-	public void upgradeHTTP2WithCleartext(final MetaData.Request request, final SettingsFrame settings,
+	public void upgradeHTTP2(final MetaData.Request request, final SettingsFrame settings,
 			final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler) {
 		upgradeHTTP2WithCleartext(request, settings,
 				promise, new HTTP2ClientResponseHandler.ClientStreamPromise(request,
@@ -234,13 +234,13 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 			request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, ""));
 		}
 
-		request(request, handler);
+		send(request, handler);
 	}
 
 	@Override
-	public HTTPOutputStream requestWithContinuation(MetaData.Request request, ClientHTTPHandler handler) {
+	public HTTPOutputStream sendRequestWithContinuation(MetaData.Request request, ClientHTTPHandler handler) {
 		request.getFields().put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE);
-		HTTPOutputStream outputStream = requestWithStream(request, handler);
+		HTTPOutputStream outputStream = getHTTPOutputStream(request, handler);
 		try {
 			outputStream.commit();
 		} catch (IOException e) {
@@ -251,8 +251,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	@Override
-	public void request(MetaData.Request request, ClientHTTPHandler handler) {
-		try (HTTPOutputStream output = requestWithStream(request, handler)) {
+	public void send(MetaData.Request request, ClientHTTPHandler handler) {
+		try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
 			log.debug("client request and does not send data");
 		} catch (IOException e) {
 			generator.reset();
@@ -261,8 +261,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	@Override
-	public void request(MetaData.Request request, ByteBuffer buffer, ClientHTTPHandler handler) {
-		try (HTTPOutputStream output = requestWithStream(request, handler)) {
+	public void send(MetaData.Request request, ByteBuffer buffer, ClientHTTPHandler handler) {
+		try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
 			if (buffer != null) {
 				output.writeWithContentLength(buffer);
 			}
@@ -273,8 +273,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	@Override
-	public void request(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler) {
-		try (HTTPOutputStream output = requestWithStream(request, handler)) {
+	public void send(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler) {
+		try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
 			if (buffers != null) {
 				output.writeWithContentLength(buffers);
 			}
@@ -285,7 +285,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	@Override
-	public HTTPOutputStream requestWithStream(MetaData.Request request, ClientHTTPHandler handler) {
+	public HTTPOutputStream getHTTPOutputStream(MetaData.Request request, ClientHTTPHandler handler) {
 		HTTP1ClientResponseHandler http1ClientResponseHandler = new HTTP1ClientResponseHandler(handler);
 		checkWrite(request, http1ClientResponseHandler);
 		http1ClientResponseHandler.outputStream = new HTTP1ClientRequestOutputStream(this, wrap.writing.get().request);
@@ -293,8 +293,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	@Override
-	public void requestWithStream(Request request, Promise<HTTPOutputStream> promise, ClientHTTPHandler handler) {
-		promise.succeeded(requestWithStream(request, handler));
+	public void send(Request request, Promise<HTTPOutputStream> promise, ClientHTTPHandler handler) {
+		promise.succeeded(getHTTPOutputStream(request, handler));
 	}
 
 	static class HTTP1ClientRequestOutputStream extends AbstractHTTP1OutputStream {

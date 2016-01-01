@@ -48,7 +48,7 @@ public class HTTP1ClientDemo {
 
 			// request index.html
 			HTTPClientRequest request = new HTTPClientRequest("GET", "/index.html");
-			http1ClientConnection.request(request, new ClientHTTPHandler.Adapter() {
+			http1ClientConnection.send(request, new ClientHTTPHandler.Adapter() {
 
 				@Override
 				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
@@ -73,7 +73,7 @@ public class HTTP1ClientDemo {
 			final List<Cookie> currentCookies = new CopyOnWriteArrayList<>();
 			// login
 			HTTPClientRequest loginRequest = new HTTPClientRequest("GET", "/login");
-			http1ClientConnection.request(loginRequest, new ClientHTTPHandler.Adapter() {
+			http1ClientConnection.send(loginRequest, new ClientHTTPHandler.Adapter() {
 
 				@Override
 				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
@@ -115,7 +115,7 @@ public class HTTP1ClientDemo {
 			ByteBuffer data2 = ByteBuffer.wrap("_data2test".getBytes(StandardCharsets.UTF_8));
 			ByteBuffer[] dataArray = new ByteBuffer[] { data, data2 };
 
-			http1ClientConnection.request(post, dataArray, new ClientHTTPHandler.Adapter() {
+			http1ClientConnection.send(post, dataArray, new ClientHTTPHandler.Adapter() {
 
 				@Override
 				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
@@ -148,7 +148,7 @@ public class HTTP1ClientDemo {
 			}
 
 			ByteBuffer data1 = ByteBuffer.wrap("content=test_post_single_data".getBytes(StandardCharsets.UTF_8));
-			http1ClientConnection.request(post, data1, new ClientHTTPHandler.Adapter() {
+			http1ClientConnection.send(post, data1, new ClientHTTPHandler.Adapter() {
 
 				@Override
 				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,

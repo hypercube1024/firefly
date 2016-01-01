@@ -10,19 +10,18 @@ import com.firefly.utils.concurrent.Promise;
 
 public interface HTTPClientConnection extends HTTPConnection {
 
-	public void request(MetaData.Request request, ClientHTTPHandler handler);
+	public void send(MetaData.Request request, Promise<HTTPOutputStream> promise, ClientHTTPHandler handler);
 
-	public void request(MetaData.Request request, ByteBuffer buffer, ClientHTTPHandler handler);
+	public void send(MetaData.Request request, ClientHTTPHandler handler);
 
-	public void request(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler);
-	
-	public HTTPOutputStream requestWithContinuation(MetaData.Request request, ClientHTTPHandler handler);
+	public void send(MetaData.Request request, ByteBuffer buffer, ClientHTTPHandler handler);
 
-	public HTTPOutputStream requestWithStream(MetaData.Request request, ClientHTTPHandler handler);
+	public void send(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler);
 
-	public void requestWithStream(MetaData.Request request, Promise<HTTPOutputStream> promise,
-			ClientHTTPHandler handler);
+	public HTTPOutputStream sendRequestWithContinuation(MetaData.Request request, ClientHTTPHandler handler);
 
-	public void upgradeHTTP2WithCleartext(final MetaData.Request request, final SettingsFrame settings,
+	public HTTPOutputStream getHTTPOutputStream(MetaData.Request request, ClientHTTPHandler handler);
+
+	public void upgradeHTTP2(final MetaData.Request request, final SettingsFrame settings,
 			final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler);
 }
