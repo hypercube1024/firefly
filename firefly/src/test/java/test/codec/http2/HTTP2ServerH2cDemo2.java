@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
@@ -33,6 +34,14 @@ public class HTTP2ServerH2cDemo2 {
 		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
 
 		HTTP2Server server = new HTTP2Server("127.0.0.1", 6677, http2Configuration, new ServerHTTPHandler.Adapter() {
+
+			@Override
+			public boolean accept100Continue(Request request, Response response, HTTPOutputStream output,
+					HTTPConnection connection) {
+				log.info("received expect continue ");
+				return false;
+			}
+
 			@Override
 			public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
 					HTTPConnection connection) {
@@ -43,10 +52,11 @@ public class HTTP2ServerH2cDemo2 {
 			@Override
 			public boolean messageComplete(Request request, Response response, HTTPOutputStream outputStream,
 					HTTPConnection connection) {
-				log.info("received end frame, {}", request.getFields());
+				log.info("received end frame, {}, {}", request.getURI(), request.getFields());
 				HttpURI uri = request.getURI();
 				if (uri.getPath().equals("/index")) {
-					response.setStatus(200);
+					response.setStatus(HttpStatus.Code.OK.getCode());
+					response.setReason(HttpStatus.Code.OK.getMessage());
 					try (HTTPOutputStream output = outputStream) {
 						output.writeWithContentLength(
 								BufferUtils.toBuffer("receive initial stream successful", StandardCharsets.UTF_8));
@@ -54,10 +64,20 @@ public class HTTP2ServerH2cDemo2 {
 						e.printStackTrace();
 					}
 				} else if (uri.getPath().equals("/data")) {
-					response.setStatus(200);
+					response.setStatus(HttpStatus.Code.OK.getCode());
+					response.setReason(HttpStatus.Code.OK.getMessage());
 					try (HTTPOutputStream output = outputStream) {
 						output.write(BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8));
 						output.write(BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				} else {
+					response.setStatus(HttpStatus.Code.NOT_FOUND.getCode());
+					response.setReason(HttpStatus.Code.NOT_FOUND.getMessage());
+					try (HTTPOutputStream output = outputStream) {
+						output.writeWithContentLength(
+								BufferUtils.toBuffer(uri.getPath() + " not found", StandardCharsets.UTF_8));
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

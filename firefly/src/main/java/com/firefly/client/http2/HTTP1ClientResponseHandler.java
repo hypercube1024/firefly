@@ -33,21 +33,12 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 		}
 
 		if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
-			try {
-				clientHTTPHandler.continueToSendData(request, response, outputStream, connection);
-				if (log.isDebugEnabled()) {
-					log.debug("client received 100 continue, current parser state is {}",
-							connection.getParser().getState());
-				}
-				return true;
-			} finally {
-				try {
-					outputStream.close();
-				} catch (IOException e) {
-					log.error("client generates the HTTP message exception", e);
-				}
-				outputStream = null;
+			clientHTTPHandler.continueToSendData(request, response, outputStream, connection);
+			if (log.isDebugEnabled()) {
+				log.debug("client received 100 continue, current parser state is {}",
+						connection.getParser().getState());
 			}
+			return true;
 		} else {
 			response = new HTTPClientResponse(version, status, reason);
 			return false;

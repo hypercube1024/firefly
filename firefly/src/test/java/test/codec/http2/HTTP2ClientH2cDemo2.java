@@ -1,5 +1,6 @@
 package test.codec.http2;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -49,9 +50,22 @@ public class HTTP2ClientH2cDemo2 {
 		settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
 		SettingsFrame settingsFrame = new SettingsFrame(settings, false);
 
+		final ByteBuffer[] buffers = new ByteBuffer[] { ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
+				ByteBuffer.wrap("big hello world!".getBytes("UTF-8")) };
 		FuturePromise<HTTPClientConnection> http2Promise = new FuturePromise<>();
-
 		ClientHTTPHandler handler = new ClientHTTPHandler.Adapter() {
+			@Override
+			public void continueToSendData(Request request, Response response, HTTPOutputStream output,
+					HTTPConnection connection) {
+				log.info("client received 100 continue");
+				try (HTTPOutputStream out = output) {
+					for (ByteBuffer buf : buffers) {
+						out.write(buf);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 
 			@Override
 			public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
@@ -63,7 +77,8 @@ public class HTTP2ClientH2cDemo2 {
 			@Override
 			public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
 					HTTPConnection connection) {
-				log.info("client received frame: {}", response.getFields());
+				log.info("client received frame: {}, {}, {}", response.getStatus(), response.getReason(),
+						response.getFields());
 				return true;
 			}
 		};
@@ -71,15 +86,17 @@ public class HTTP2ClientH2cDemo2 {
 		httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2Promise, handler);
 
 		HTTPClientConnection clientConnection = http2Promise.get();
+
 		HttpFields fields = new HttpFields();
 		fields.put(HttpHeader.ACCEPT, "text/html");
 		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
 		MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
-				"/data", HttpVersion.HTTP_2, fields);
-
-		ByteBuffer[] buffers = new ByteBuffer[] { ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
-				ByteBuffer.wrap("big hello world!".getBytes("UTF-8")) };
-		clientConnection.request(post, buffers, handler);
+				"/data", HttpVersion.HTTP_1_1, fields);
+		clientConnection.requestWithContinuation(post, handler);
+		
+		MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
+				"/test2", HttpVersion.HTTP_1_1, new HttpFields());
+		clientConnection.request(get, handler);
 	}
 
 }

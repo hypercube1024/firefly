@@ -19,10 +19,10 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private boolean isChunked;
+	protected boolean isChunked;
+	
 	private boolean isWriting;
 	private LinkedList<Frame> frames = new LinkedList<>();
-
 	private FrameCallback frameCallback = new FrameCallback();
 
 	public AbstractHTTP2OutputStream(MetaData info, boolean clientMode) {

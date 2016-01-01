@@ -29,7 +29,6 @@ public class HTTP2ServerTLSDemo {
 
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setSecure(true);
-		// http2Configuration.setFlowControlStrategy("simple");
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 
 		final Map<Integer, Integer> settings = new HashMap<>();

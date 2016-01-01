@@ -67,11 +67,11 @@ public class HTTP1ClientDemo3 {
 			final ByteBuffer data = BufferUtils.toBuffer("client test continue 100 ", StandardCharsets.UTF_8);
 			post.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
 
-			http1ClientConnection.requestWith100Continue(post, new ClientHTTPHandler.Adapter() {
+			http1ClientConnection.requestWithContinuation(post, new ClientHTTPHandler.Adapter() {
 				@Override
-				public void continueToSendData(Request request, Response response, HTTPOutputStream output,
+				public void continueToSendData(Request request, Response response, HTTPOutputStream outputStream,
 						HTTPConnection connection) {
-					try {
+					try (HTTPOutputStream output = outputStream) {
 						output.write(data);
 					} catch (IOException e) {
 						e.printStackTrace();

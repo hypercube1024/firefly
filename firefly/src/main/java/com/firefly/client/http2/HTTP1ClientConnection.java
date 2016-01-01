@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.firefly.client.http2.HTTP2ClientConnection.ClientStreamListener;
-import com.firefly.client.http2.HTTP2ClientConnection.ClientStreamPromise;
 import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
@@ -180,9 +178,10 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	@Override
 	public void upgradeHTTP2WithCleartext(final MetaData.Request request, final SettingsFrame settings,
 			final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler) {
-		upgradeHTTP2WithCleartext(request, settings, promise,
-				new ClientStreamPromise(request, new Promise.Adapter<HTTPOutputStream>()),
-				new ClientStreamListener(request, handler, this), new Listener.Adapter() {
+		upgradeHTTP2WithCleartext(request, settings,
+				promise, new HTTP2ClientResponseHandler.ClientStreamPromise(request,
+						new Promise.Adapter<HTTPOutputStream>(), true),
+				new HTTP2ClientResponseHandler(request, handler, this), new Listener.Adapter() {
 
 					@Override
 					public Map<Integer, Integer> onPreface(com.firefly.codec.http2.stream.Session session) {
@@ -238,7 +237,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 		request(request, handler);
 	}
 
-	public HTTPOutputStream requestWith100Continue(MetaData.Request request, ClientHTTPHandler handler) {
+	@Override
+	public HTTPOutputStream requestWithContinuation(MetaData.Request request, ClientHTTPHandler handler) {
 		request.getFields().put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE);
 		HTTPOutputStream outputStream = requestWithStream(request, handler);
 		try {

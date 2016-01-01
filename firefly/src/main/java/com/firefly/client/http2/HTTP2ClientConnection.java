@@ -7,28 +7,23 @@ import java.util.Map;
 
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.Generator;
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PrefaceFrame;
-import com.firefly.codec.http2.frame.ResetFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
-import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTP2Session;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.codec.http2.stream.SessionSPI;
-import com.firefly.codec.http2.stream.Stream;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
@@ -130,7 +125,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 			}
 		};
 
-		requestWithStream(request, promise, handler);
+		requestWithStream(request, true, promise, handler);
 	}
 
 	@Override
@@ -187,6 +182,12 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
 		requestWithStream(request, promise, handler);
 	}
+	
+	@Override
+	public HTTPOutputStream requestWithContinuation(MetaData.Request request, ClientHTTPHandler handler) {
+		request.getFields().put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE);
+		return requestWithStream(request, handler);
+	}
 
 	@Override
 	public HTTPOutputStream requestWithStream(final Request request, final ClientHTTPHandler handler) {
@@ -200,129 +201,22 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 		}
 	}
 
-	public static class ClientStreamPromise implements Promise<Stream> {
-
-		private final Request request;
-		private final Promise<HTTPOutputStream> promise;
-
-		public ClientStreamPromise(Request request, Promise<HTTPOutputStream> promise) {
-			this.request = request;
-			this.promise = promise;
-		}
-
-		@Override
-		public void succeeded(final Stream stream) {
-			if (log.isDebugEnabled()) {
-				log.debug("create a new stream {}", stream.getId());
-			}
-			final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(request, true) {
-
-				@Override
-				protected Stream getStream() {
-					return stream;
-				}
-			};
-			stream.setAttribute("outputStream", output);
-			promise.succeeded(output);
-		}
-
-		@Override
-		public void failed(Throwable x) {
-			promise.failed(x);
-			log.error("client creates stream unsuccessfully", x);
-		}
-
-	}
-
-	public static class ClientStreamListener extends Stream.Listener.Adapter {
-
-		private final Request request;
-		private final ClientHTTPHandler handler;
-		private final HTTPClientConnection connection;
-
-		public ClientStreamListener(Request request, ClientHTTPHandler handler, HTTPClientConnection connection) {
-			this.request = request;
-			this.handler = handler;
-			this.connection = connection;
-		}
-
-		@Override
-		public void onHeaders(final Stream stream, final HeadersFrame headersFrame) {
-			if (headersFrame.getMetaData() == null) {
-				throw new IllegalArgumentException("the stream " + stream.getId() + " received a null meta data");
-			}
-
-			if (headersFrame.getMetaData().isResponse()) {
-				final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-				final MetaData.Response response = (MetaData.Response) headersFrame.getMetaData();
-				stream.setAttribute("response", response);
-
-				handler.headerComplete(request, response, output, connection);
-
-				if (headersFrame.isEndStream()) {
-					handler.messageComplete(request, response, output, connection);
-				}
-			} else {
-				if (headersFrame.isEndStream()) {
-					final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-					final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
-
-					String trailerName = response.getFields().get(HttpHeader.TRAILER);
-					if (VerifyUtils.isNotEmpty(trailerName)) {
-						if (headersFrame.getMetaData().getFields().containsKey(trailerName)) {
-							handler.messageComplete(request, response, output, connection);
-						} else {
-							throw new IllegalArgumentException(
-									"the stream " + stream.getId() + " received illegal meta data");
-						}
-					} else {
-						handler.messageComplete(request, response, output, connection);
-					}
-				} else {
-					throw new IllegalArgumentException("the stream " + stream.getId() + " received illegal meta data");
-				}
-			}
-
-		}
-
-		@Override
-		public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
-			final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-			final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
-
-			try {
-				handler.content(dataFrame.getData(), request, response, output, connection);
-				callback.succeeded();
-			} catch (Throwable t) {
-				callback.failed(t);
-			}
-
-			if (dataFrame.isEndStream()) {
-				handler.messageComplete(request, response, output, connection);
-			}
-		}
-
-		@Override
-		public void onReset(Stream stream, ResetFrame frame) {
-			final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-			final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
-
-			ErrorCode errorCode = ErrorCode.from(frame.getError());
-			String reason = errorCode == null ? "error=" + frame.getError() : errorCode.name().toLowerCase();
-			handler.badMessage(frame.getError(), reason, request, response, output, connection);
-		}
-	}
-
 	@Override
 	public void requestWithStream(final Request request, final Promise<HTTPOutputStream> promise,
 			final ClientHTTPHandler handler) {
-		http2Session.newStream(new HeadersFrame(request, null, false), new ClientStreamPromise(request, promise),
-				new ClientStreamListener(request, handler, this));
+		requestWithStream(request, false, promise, handler);
+	}
+	
+	public void requestWithStream(final Request request, boolean endStream, final Promise<HTTPOutputStream> promise,
+			final ClientHTTPHandler handler) {
+		http2Session.newStream(new HeadersFrame(request, null, endStream),
+				new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise, endStream),
+				new HTTP2ClientResponseHandler(request, handler, this));
 	}
 
 	@Override
-	public void upgradeHTTP2WithCleartext(Request request, SettingsFrame settings, Promise<HTTPClientConnection> promise,
-			ClientHTTPHandler handler) {
+	public void upgradeHTTP2WithCleartext(Request request, SettingsFrame settings,
+			Promise<HTTPClientConnection> promise, ClientHTTPHandler handler) {
 		new RuntimeException("current connection version is http2, it does not need to upgrading");
 	}
 

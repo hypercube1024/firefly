@@ -15,6 +15,8 @@ public interface HTTPClientConnection extends HTTPConnection {
 	public void request(MetaData.Request request, ByteBuffer buffer, ClientHTTPHandler handler);
 
 	public void request(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler);
+	
+	public HTTPOutputStream requestWithContinuation(MetaData.Request request, ClientHTTPHandler handler);
 
 	public HTTPOutputStream requestWithStream(MetaData.Request request, ClientHTTPHandler handler);
 
