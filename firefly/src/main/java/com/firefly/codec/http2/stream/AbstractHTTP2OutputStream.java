@@ -73,7 +73,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 		write(data, false);
 	}
 
-	private synchronized void writeFrame(Frame frame) {
+	public synchronized void writeFrame(Frame frame) {
 		if (isWriting) {
 			frames.offer(frame);
 		} else {

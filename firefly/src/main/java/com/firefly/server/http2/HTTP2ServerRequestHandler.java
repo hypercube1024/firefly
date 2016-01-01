@@ -54,19 +54,8 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 			if (!skipNext) {
 				MetaData.Response continue100 = new MetaData.Response(HttpVersion.HTTP_1_1, 100, "Continue",
 						new HttpFields(), Long.MIN_VALUE);
-				stream.headers(new HeadersFrame(stream.getId(), continue100, null, false), new Callback() {
-
-					@Override
-					public void succeeded() {
-						log.debug("response 100 continue successfully");
-						serverHTTPHandler.headerComplete(request, response, output, connection);
-					}
-
-					@Override
-					public void failed(Throwable x) {
-						log.error("response 100 continue unsuccessfully", x);
-					}
-				});
+				output.writeFrame(new HeadersFrame(stream.getId(), continue100, null, false));
+				serverHTTPHandler.headerComplete(request, response, output, connection);
 			}
 		} else {
 			serverHTTPHandler.headerComplete(request, response, output, connection);

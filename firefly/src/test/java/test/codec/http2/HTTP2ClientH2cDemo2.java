@@ -88,7 +88,6 @@ public class HTTP2ClientH2cDemo2 {
 		HTTPClientConnection clientConnection = http2Promise.get();
 
 		HttpFields fields = new HttpFields();
-		fields.put(HttpHeader.ACCEPT, "text/html");
 		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
 		MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
 				"/data", HttpVersion.HTTP_1_1, fields);
@@ -97,6 +96,11 @@ public class HTTP2ClientH2cDemo2 {
 		MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
 				"/test2", HttpVersion.HTTP_1_1, new HttpFields());
 		clientConnection.request(get, handler);
+		
+		MetaData.Request post2 = new MetaData.Request("POST", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
+				"/data", HttpVersion.HTTP_1_1, fields);
+		clientConnection.request(post2, new ByteBuffer[] { ByteBuffer.wrap("test data 2".getBytes("UTF-8")),
+				ByteBuffer.wrap("finished test data 2".getBytes("UTF-8")) }, handler);
 	}
 
 }
