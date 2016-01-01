@@ -25,11 +25,11 @@ public class HTTP2ServerTLSDemo {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	public static void main(String[] args) {
-//		System.setProperty("javax.net.debug", "all");
-			
+		// System.setProperty("javax.net.debug", "all");
+
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setSecure(true);
-		http2Configuration.setFlowControlStrategy("simple");
+		// http2Configuration.setFlowControlStrategy("simple");
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 
 		final Map<Integer, Integer> settings = new HashMap<>();
@@ -62,16 +62,17 @@ public class HTTP2ServerTLSDemo {
 					response.getFields().put(HttpHeader.TRAILER, "foo");
 					response.getFields().put("Trailer-Value", "mytest");
 					try (HTTPOutputStream output = outputStream) {
-//						output.writeWithContentLength(new ByteBuffer[]{BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8), BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8)});
-						output.write(BufferUtils.toBuffer("receive data stream successful\r\n", StandardCharsets.UTF_8));
+						output.write(
+								BufferUtils.toBuffer("receive data stream successful\r\n", StandardCharsets.UTF_8));
 						output.write(BufferUtils.toBuffer("thank you\r\n", StandardCharsets.UTF_8));
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-				} else if (uri.getPath().equals("/favicon.ico")) {
+				} else {
 					response.setStatus(404);
 					try (HTTPOutputStream output = outputStream) {
-						output.writeWithContentLength(BufferUtils.toBuffer(uri.getPath() + " not found", StandardCharsets.UTF_8));
+						output.writeWithContentLength(
+								BufferUtils.toBuffer(uri.getPath() + " not found", StandardCharsets.UTF_8));
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
