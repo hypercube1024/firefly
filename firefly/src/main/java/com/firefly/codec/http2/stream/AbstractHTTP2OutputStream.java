@@ -12,6 +12,7 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -20,7 +21,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	protected boolean isChunked;
-	
+
 	private boolean isWriting;
 	private LinkedList<Frame> frames = new LinkedList<>();
 	private FrameCallback frameCallback = new FrameCallback();
@@ -74,32 +75,38 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 	}
 
 	public synchronized void writeFrame(Frame frame) {
-		if (isWriting) {
-			frames.offer(frame);
-		} else {
-			if (frame instanceof DataFrame) {
-				DataFrame dataFrame = (DataFrame) frame;
+		if (frame instanceof DataFrame) {
+			DataFrame dataFrame = (DataFrame) frame;
+			closed = dataFrame.isEndStream();
 
+			if (isWriting) {
+				frames.offer(dataFrame);
+			} else {
 				if (log.isDebugEnabled()) {
 					log.debug("the stream {} writes a frame {}", dataFrame.getStreamId(), dataFrame);
 				}
 
 				isWriting = true;
 				getStream().data(dataFrame, frameCallback);
-				closed = dataFrame.isEndStream();
-			} else if (frame instanceof HeadersFrame) {
-				HeadersFrame headersFrame = (HeadersFrame) frame;
+			}
 
+		} else if (frame instanceof HeadersFrame) {
+			HeadersFrame headersFrame = (HeadersFrame) frame;
+			closed = headersFrame.isEndStream();
+
+			if (isWriting) {
+				frames.offer(headersFrame);
+			} else {
 				if (log.isDebugEnabled()) {
 					log.debug("the stream {} writes a frame {}", headersFrame.getStreamId(), headersFrame);
 				}
 
 				isWriting = true;
 				getStream().headers(headersFrame, frameCallback);
-				closed = headersFrame.isEndStream();
-			} else {
-				throw new IllegalArgumentException("the frame type is error, " + frame.getClass());
 			}
+
+		} else {
+			throw new IllegalArgumentException("the frame type is error, " + frame.getClass());
 		}
 	}
 
@@ -115,7 +122,6 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 			if (isChunked) {
 				String trailerName = info.getFields().get(HttpHeader.TRAILER);
 				if (VerifyUtils.isNotEmpty(trailerName)) {
-
 					final Stream stream = getStream();
 					MetaData trailer = new MetaData(null, new HttpFields());
 
@@ -133,7 +139,11 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 					final HeadersFrame chunkedTrailerFrame = new HeadersFrame(stream.getId(), trailer, null, true);
 					writeFrame(chunkedTrailerFrame);
 				} else {
-					write(ByteBuffer.allocate(0), true);
+					// TODO how to avoid to output an empty data frame 
+					if (log.isDebugEnabled()) {
+						log.debug("output a empty data frame to end stream");
+					}
+					write(BufferUtils.EMPTY_BUFFER, true);
 				}
 			} else {
 				closed = true;
@@ -209,6 +219,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 		}
 	}
 
+	@Override
 	public synchronized void write(ByteBuffer data, boolean endStream) throws IOException {
 		if (closed)
 			return;
@@ -227,10 +238,6 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 		@Override
 		public void succeeded() {
 			synchronized (AbstractHTTP2OutputStream.this) {
-				if (log.isDebugEnabled()) {
-					log.debug("the stream {} outputs http2 frame successfully", getStream().getId());
-				}
-
 				isWriting = false;
 				final Frame frame = frames.poll();
 				if (frame != null) {
@@ -238,15 +245,18 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 				} else {
 					isWriting = false;
 				}
+
+				if (log.isDebugEnabled()) {
+					log.debug("the stream {} outputs http2 frame successfully, and the queue size is {}",
+							getStream().getId(), frames.size());
+				}
 			}
 		}
 
 		@Override
 		public void failed(Throwable x) {
 			synchronized (AbstractHTTP2OutputStream.this) {
-				if (log.isDebugEnabled()) {
-					log.error("the stream {} outputs http2 frame unsuccessfully ", x, getStream().getId());
-				}
+				log.error("the stream {} outputs http2 frame unsuccessfully ", x, getStream().getId());
 				isWriting = false;
 			}
 		}

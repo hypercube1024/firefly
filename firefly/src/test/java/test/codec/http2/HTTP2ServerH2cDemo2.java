@@ -68,7 +68,7 @@ public class HTTP2ServerH2cDemo2 {
 					response.setReason(HttpStatus.Code.OK.getMessage());
 					try (HTTPOutputStream output = outputStream) {
 						output.write(BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8));
-						output.write(BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8));
+						output.write(BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8), true);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

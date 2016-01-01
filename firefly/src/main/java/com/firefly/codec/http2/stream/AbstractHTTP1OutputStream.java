@@ -69,6 +69,11 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 			generateHTTPMessageExceptionally(generatorResult, generator.getState());
 		}
 	}
+	
+	@Override
+	public void write(ByteBuffer data, boolean endStream) throws IOException {
+		write(data);
+	}
 
 	@Override
 	public synchronized void write(ByteBuffer data) throws IOException {

@@ -67,6 +67,15 @@ public class HTTP2ServerTLSDemo {
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
+				} else if (uri.getPath().equals("/data2")) {
+					response.setStatus(200);
+					try (HTTPOutputStream output = outputStream) {
+						output.write(
+								BufferUtils.toBuffer("receive data 2 stream successful\r\n", StandardCharsets.UTF_8));
+						output.write(BufferUtils.toBuffer("thank you 2 \r\n", StandardCharsets.UTF_8), true);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				} else {
 					response.setStatus(404);
 					try (HTTPOutputStream output = outputStream) {
