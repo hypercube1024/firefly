@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.model.MetaData.Request;
@@ -66,9 +67,11 @@ public class HTTP2ServerH2cDemo2 {
 				} else if (uri.getPath().equals("/data")) {
 					response.setStatus(HttpStatus.Code.OK.getCode());
 					response.setReason(HttpStatus.Code.OK.getMessage());
+					response.getFields().put(HttpHeader.TRAILER, "bar");
+					response.getFields().put("Trailer-Value", "bar test");
 					try (HTTPOutputStream output = outputStream) {
 						output.write(BufferUtils.toBuffer("receive data stream successful", StandardCharsets.UTF_8));
-						output.write(BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8), true);
+						output.write(BufferUtils.toBuffer("thank you", StandardCharsets.UTF_8));
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
