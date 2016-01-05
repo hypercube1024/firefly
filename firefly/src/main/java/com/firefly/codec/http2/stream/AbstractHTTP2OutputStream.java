@@ -5,14 +5,12 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
 import com.firefly.codec.http2.frame.DataFrame;
+import com.firefly.codec.http2.frame.DisconnectFrame;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -25,10 +23,10 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 	private boolean isWriting;
 	private LinkedList<Frame> frames = new LinkedList<>();
 	private FrameCallback frameCallback = new FrameCallback();
+	private DataFrame currentDataFrame;
 
 	public AbstractHTTP2OutputStream(MetaData info, boolean clientMode) {
 		super(info, clientMode);
-		commited = clientMode;
 	}
 
 	@Override
@@ -75,38 +73,87 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 	}
 
 	public synchronized void writeFrame(Frame frame) {
-		if (frame instanceof DataFrame) {
+		switch (frame.getType()) {
+		case DATA:
+			if (!commited)
+				throw new IllegalStateException("the output stream is not commited");
+
 			DataFrame dataFrame = (DataFrame) frame;
-			closed = dataFrame.isEndStream();
-
-			if (isWriting) {
-				frames.offer(dataFrame);
-			} else {
-				if (log.isDebugEnabled()) {
-					log.debug("the stream {} writes a frame {}", dataFrame.getStreamId(), dataFrame);
+			if (isChunked) {
+				if (dataFrame.isEndStream()) {
+					if (currentDataFrame == null) {
+						writeDataFrame(dataFrame);
+					} else {
+						writeDataFrame(currentDataFrame);
+						writeDataFrame(dataFrame);
+					}
+				} else {
+					if (currentDataFrame == null) {
+						currentDataFrame = dataFrame;
+					} else {
+						writeDataFrame(currentDataFrame);
+						currentDataFrame = dataFrame;
+					}
 				}
-
-				isWriting = true;
-				getStream().data(dataFrame, frameCallback);
-			}
-
-		} else if (frame instanceof HeadersFrame) {
-			HeadersFrame headersFrame = (HeadersFrame) frame;
-			closed = headersFrame.isEndStream();
-
-			if (isWriting) {
-				frames.offer(headersFrame);
 			} else {
-				if (log.isDebugEnabled()) {
-					log.debug("the stream {} writes a frame {}", headersFrame.getStreamId(), headersFrame);
-				}
-
-				isWriting = true;
-				getStream().headers(headersFrame, frameCallback);
+				writeDataFrame(dataFrame);
 			}
+			break;
+		case HEADERS:
+			writeHeadersFrame((HeadersFrame) frame);
+			break;
+		case DISCONNECT:
+			if (isChunked) {
+				if (currentDataFrame != null) {
+					if (!currentDataFrame.isEndStream()) {
+						DataFrame theLastDataFrame = new DataFrame(currentDataFrame.getStreamId(),
+								currentDataFrame.getData(), true);
+						writeDataFrame(theLastDataFrame);
+						currentDataFrame = null;
+					} else {
+						throw new IllegalStateException("the end data stream is cached");
+					}
+				} else {
+					throw new IllegalStateException("the cached data stream is null");
+				}
+			} else {
+				throw new IllegalArgumentException(
+						"the frame type is error, only the chunked encoding can accept disconnect frame, current frame type is "
+								+ frame.getType());
+			}
+			break;
+		default:
+			throw new IllegalArgumentException("the frame type is error, the type is " + frame.getType());
+		}
+	}
 
+	protected synchronized void writeDataFrame(DataFrame dataFrame) {
+		closed = dataFrame.isEndStream();
+
+		if (isWriting) {
+			frames.offer(dataFrame);
 		} else {
-			throw new IllegalArgumentException("the frame type is error, " + frame.getClass());
+			if (log.isDebugEnabled()) {
+				log.debug("the stream {} writes a frame {}", dataFrame.getStreamId(), dataFrame);
+			}
+
+			isWriting = true;
+			getStream().data(dataFrame, frameCallback);
+		}
+	}
+
+	protected synchronized void writeHeadersFrame(HeadersFrame headersFrame) {
+		closed = headersFrame.isEndStream();
+
+		if (isWriting) {
+			frames.offer(headersFrame);
+		} else {
+			if (log.isDebugEnabled()) {
+				log.debug("the stream {} writes a frame {}", headersFrame.getStreamId(), headersFrame);
+			}
+
+			isWriting = true;
+			getStream().headers(headersFrame, frameCallback);
 		}
 	}
 
@@ -120,31 +167,10 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 			commit(null, true);
 		} else {
 			if (isChunked) {
-				String trailerName = info.getFields().get(HttpHeader.TRAILER);
-				if (VerifyUtils.isNotEmpty(trailerName)) {
-					final Stream stream = getStream();
-					MetaData trailer = new MetaData(null, new HttpFields());
-
-					String trailerValue = info.getFields().get("Trailer-Value");
-					if (VerifyUtils.isNotEmpty(trailerValue)) {
-						trailer.getFields().add(trailerName, trailerValue);
-					} else {
-						trailer.getFields().add(trailerName, "end");
-					}
-
-					if (log.isDebugEnabled()) {
-						log.debug("the stream {} will write trailer {}", getStream().getId(), trailer);
-					}
-
-					final HeadersFrame chunkedTrailerFrame = new HeadersFrame(stream.getId(), trailer, null, true);
-					writeFrame(chunkedTrailerFrame);
-				} else {
-					// TODO how to avoid to output an empty data frame 
-					if (log.isDebugEnabled()) {
-						log.debug("output a empty data frame to end stream");
-					}
-					write(BufferUtils.EMPTY_BUFFER, true);
+				if (log.isDebugEnabled()) {
+					log.debug("output the last data frame to end stream");
 				}
+				writeFrame(new DisconnectFrame());
 			} else {
 				closed = true;
 			}
@@ -241,7 +267,16 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 				isWriting = false;
 				final Frame frame = frames.poll();
 				if (frame != null) {
-					writeFrame(frame);
+					switch (frame.getType()) {
+					case DATA:
+						writeDataFrame((DataFrame) frame);
+						break;
+					case HEADERS:
+						writeHeadersFrame((HeadersFrame) frame);
+						break;
+					default:
+						throw new IllegalArgumentException("the frame type is error, the type is " + frame.getType());
+					}
 				} else {
 					isWriting = false;
 				}

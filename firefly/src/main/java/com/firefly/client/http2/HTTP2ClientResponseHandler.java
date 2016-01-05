@@ -104,25 +104,24 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
 		private final Stream stream;
 
-		public ClientHttp2OutputStream(MetaData info, boolean clientMode, boolean endStream, Stream stream) {
-			super(info, clientMode);
+		public ClientHttp2OutputStream(MetaData info, boolean endStream, Stream stream) {
+			super(info, true);
+			commited = true;
 			this.stream = stream;
-			if (clientMode) {
-				if (endStream) {
+			if (endStream) {
+				isChunked = false;
+			} else {
+				if (info.getFields().contains(HttpHeader.CONTENT_LENGTH)) {
+					if (log.isDebugEnabled()) {
+						log.debug("stream {} commits header that contains content length {}", getStream().getId(),
+								info.getFields().get(HttpHeader.CONTENT_LENGTH));
+					}
 					isChunked = false;
 				} else {
-					if (info.getFields().contains(HttpHeader.CONTENT_LENGTH)) {
-						if (log.isDebugEnabled()) {
-							log.debug("stream {} commits header that contains content length {}", getStream().getId(),
-									info.getFields().get(HttpHeader.CONTENT_LENGTH));
-						}
-						isChunked = false;
-					} else {
-						if (log.isDebugEnabled()) {
-							log.debug("stream {} commits header using chunked encoding", getStream().getId());
-						}
-						isChunked = true;
+					if (log.isDebugEnabled()) {
+						log.debug("stream {} commits header using chunked encoding", getStream().getId());
 					}
+					isChunked = true;
 				}
 			}
 		}
@@ -150,7 +149,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 			if (log.isDebugEnabled()) {
 				log.debug("create a new stream {}", stream.getId());
 			}
-			final AbstractHTTP2OutputStream output = new ClientHttp2OutputStream(request, true, endStream, stream);
+			final AbstractHTTP2OutputStream output = new ClientHttp2OutputStream(request, endStream, stream);
 			stream.setAttribute("outputStream", output);
 			promise.succeeded(output);
 		}

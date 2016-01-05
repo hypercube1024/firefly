@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
@@ -58,8 +57,8 @@ public class HTTP2ServerTLSDemo {
 					}
 				} else if (uri.getPath().equals("/data")) {
 					response.setStatus(200);
-					response.getFields().put(HttpHeader.TRAILER, "foo");
-					response.getFields().put("Trailer-Value", "mytest");
+//					response.getFields().put(HttpHeader.TRAILER, "foo");
+//					response.getFields().put("Trailer-Value", "mytest");
 					try (HTTPOutputStream output = outputStream) {
 						output.write(
 								BufferUtils.toBuffer("receive data stream successful\r\n", StandardCharsets.UTF_8));
