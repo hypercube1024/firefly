@@ -167,9 +167,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 			commit(null, true);
 		} else {
 			if (isChunked) {
-				if (log.isDebugEnabled()) {
-					log.debug("output the last data frame to end stream");
-				}
+				log.debug("output the last data frame to end stream");
 				writeFrame(new DisconnectFrame());
 			} else {
 				closed = true;
