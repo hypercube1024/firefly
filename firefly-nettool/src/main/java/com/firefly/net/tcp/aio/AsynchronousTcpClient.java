@@ -74,6 +74,10 @@ public class AsynchronousTcpClient implements Client {
 								return new Thread(r, "firefly asynchronous server thread");
 							}
 						}));
+				log.info("create asychronous I/O thread pool. core pool size: {}, max pool size: {}, pool keep alive time: {}ms", 
+						config.getAsynchronousCorePoolSize(),
+						config.getAsynchronousMaximumPoolSize(),
+						config.getAsynchronousPoolKeepAliveTime());
 				EventManager eventManager = new DefaultEventManager(config);
 				worker = new AsynchronousTcpWorker(config, eventManager);
 			} catch (IOException e) {

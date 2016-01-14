@@ -78,6 +78,10 @@ public class AsynchronousTcpServer implements Server {
 								return new Thread(r, "firefly asynchronous server thread");
 							}
 						}));
+				log.info("create asychronous I/O thread pool. core pool size: {}, max pool size: {}, pool keep alive time: {}ms", 
+						config.getAsynchronousCorePoolSize(),
+						config.getAsynchronousMaximumPoolSize(),
+						config.getAsynchronousPoolKeepAliveTime());
 				EventManager eventManager = new DefaultEventManager(config);
 				worker = new AsynchronousTcpWorker(config, eventManager);
 			} catch (IOException e) {
@@ -98,15 +102,12 @@ public class AsynchronousTcpServer implements Server {
 			throw new NetException("server config is null");
 		init();
 		listen(bind(host, port));
+		log.info("server start. host: {}, port: {}", host, port);
 	}
 	
 	private AsynchronousServerSocketChannel bind(String host, int port) {
 		AsynchronousServerSocketChannel serverSocketChannel = null;
 		try {
-			log.info("asychronous I/O thread pool [{}], [{}], [{}]", 
-					config.getAsynchronousCorePoolSize(),
-					config.getAsynchronousMaximumPoolSize(),
-					config.getAsynchronousPoolKeepAliveTime());
 			serverSocketChannel = AsynchronousServerSocketChannel.open(group);
 			serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 			serverSocketChannel.bind(new InetSocketAddress(host, port), BACKLOG);
