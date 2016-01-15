@@ -3,10 +3,13 @@ package com.firefly.net.tcp.ssl;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import com.firefly.utils.log.Log;
@@ -21,6 +24,16 @@ public abstract class SSLContextFactory {
 	
 	public static SSLContext getSSLContext() throws Throwable {
 		return getSSLContext(new ByteArrayInputStream(DEFAULT_CREDENTIAL), "ptmima1234", "ptmima4321");
+	}
+	
+	public static SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random) throws Throwable {
+		long start = Millisecond100Clock.currentTimeMillis();
+		final SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+		sslContext.init(km, tm, random);
+		_handle_BUG_JDK_8022063(sslContext);
+		long end = Millisecond100Clock.currentTimeMillis();
+	    log.info("creating SSL context spends {} ms", (end - start));
+	    return sslContext;
 	}
 	
 	public static SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword) throws Throwable {

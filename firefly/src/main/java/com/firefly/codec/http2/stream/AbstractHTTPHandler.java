@@ -17,7 +17,7 @@ import com.firefly.utils.log.LogFactory;
 public abstract class AbstractHTTPHandler implements Handler {
 
 	protected static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
+
 	protected final HTTP2Configuration config;
 	protected final List<String> protocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1");
 	protected SSLContext sslContext;
@@ -32,6 +32,8 @@ public abstract class AbstractHTTPHandler implements Handler {
 					FileInputStream in = new FileInputStream(new File(config.getCredentialPath()));
 					sslContext = SSLContextFactory.getSSLContext(in, config.getKeystorePassword(),
 							config.getKeyPassword());
+				} else if (config.isNullKeyManagerAndTrustManager()) {
+					sslContext = SSLContextFactory.getSSLContextWithManager(null, null, null);
 				} else {
 					sslContext = SSLContextFactory.getSSLContext();
 				}
@@ -53,12 +55,12 @@ public abstract class AbstractHTTPHandler implements Handler {
 			httpConnection.close();
 		}
 	}
-	
+
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
 		log.info("session {} closed", session.getSessionId());
 		try {
-			if(session.getAttachment() instanceof HTTPConnection) {
+			if (session.getAttachment() instanceof HTTPConnection) {
 				HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();
 				if (httpConnection != null && httpConnection.isOpen()) {
 					httpConnection.close();

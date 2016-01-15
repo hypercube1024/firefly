@@ -71,7 +71,7 @@ public class AsynchronousTcpClient implements Client {
 	
 							@Override
 							public Thread newThread(Runnable r) {
-								return new Thread(r, "firefly asynchronous server thread");
+								return new Thread(r, "firefly asynchronous client thread");
 							}
 						}));
 				log.info("create asychronous I/O thread pool. core pool size: {}, max pool size: {}, pool keep alive time: {}ms", 
@@ -81,7 +81,7 @@ public class AsynchronousTcpClient implements Client {
 				EventManager eventManager = new DefaultEventManager(config);
 				worker = new AsynchronousTcpWorker(config, eventManager);
 			} catch (IOException e) {
-				log.error("initialization server channel group error", e);
+				log.error("initialization client channel group error", e);
 			}
 			isInitialized = true;
 		}

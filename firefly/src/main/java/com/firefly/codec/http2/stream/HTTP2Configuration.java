@@ -7,6 +7,7 @@ public class HTTP2Configuration {
 
 	// SSL/TLS settings
 	private boolean secure;
+	private boolean nullKeyManagerAndTrustManager;
 	private String credentialPath, keystorePassword, keyPassword;
 
 	// HTTP2 settings
@@ -132,6 +133,14 @@ public class HTTP2Configuration {
 
 	public void setKeyPassword(String keyPassword) {
 		this.keyPassword = keyPassword;
+	}
+
+	public boolean isNullKeyManagerAndTrustManager() {
+		return nullKeyManagerAndTrustManager;
+	}
+
+	public void setNullKeyManagerAndTrustManager(boolean nullKeyManagerAndTrustManager) {
+		this.nullKeyManagerAndTrustManager = nullKeyManagerAndTrustManager;
 	}
 
 }
