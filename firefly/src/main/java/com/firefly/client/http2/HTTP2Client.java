@@ -27,7 +27,7 @@ public class HTTP2Client extends AbstractLifeCycle {
 		DecoderChain decoder;
 		EncoderChain encoder;
 
-		if (http2Configuration.isSecure()) {
+		if (http2Configuration.isSecureConnectionEnabled()) {
 			decoder = new ClientSecureDecoder(new HTTP1ClientDecoder(new HTTP2ClientDecoder()));
 			encoder = new HTTP1ClientEncoder(new HTTP2ClientEncoder(new ClientSecureEncoder()));
 		} else {

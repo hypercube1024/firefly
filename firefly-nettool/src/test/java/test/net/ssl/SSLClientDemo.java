@@ -10,20 +10,23 @@ import org.eclipse.jetty.alpn.ALPN;
 
 import com.firefly.net.Client;
 import com.firefly.net.Handler;
+import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
-import com.firefly.net.tcp.ssl.SSLContextFactory;
-import com.firefly.net.tcp.ssl.SSLEventHandler;
+import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class SSLClientDemo {
+	
+	private static SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
 
 	public static void main(String[] args) throws Throwable {
 		Client client = new AsynchronousTcpClient(
 		new SSLDecoder(), 
 		new SSLEncoder(),
 		new Handler(){
-			private SSLContext sslContext = SSLContextFactory.getSSLContext();
+			private SSLContext sslContext = sslContextFactory.getSSLContext();
 			
 			@Override
 			public void sessionOpened(final Session session) throws Throwable {

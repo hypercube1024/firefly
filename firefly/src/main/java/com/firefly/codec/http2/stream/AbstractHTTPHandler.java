@@ -1,7 +1,5 @@
 package com.firefly.codec.http2.stream;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.List;
 
@@ -9,8 +7,6 @@ import javax.net.ssl.SSLContext;
 
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLContextFactory;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -24,22 +20,8 @@ public abstract class AbstractHTTPHandler implements Handler {
 
 	public AbstractHTTPHandler(HTTP2Configuration config) {
 		this.config = config;
-		try {
-			if (config.isSecure()) {
-				if (VerifyUtils.isNotEmpty(config.getCredentialPath())
-						&& VerifyUtils.isNotEmpty(config.getKeyPassword())
-						&& VerifyUtils.isNotEmpty(config.getKeystorePassword())) {
-					FileInputStream in = new FileInputStream(new File(config.getCredentialPath()));
-					sslContext = SSLContextFactory.getSSLContext(in, config.getKeystorePassword(),
-							config.getKeyPassword());
-				} else if (config.isNullKeyManagerAndTrustManager()) {
-					sslContext = SSLContextFactory.getSSLContextWithManager(null, null, null);
-				} else {
-					sslContext = SSLContextFactory.getSSLContext();
-				}
-			}
-		} catch (Throwable t) {
-			log.error("create ssl context error", t);
+		if (config.isSecureConnectionEnabled()) {
+			sslContext = config.getSslContextFactory().getSSLContext();
 		}
 	}
 

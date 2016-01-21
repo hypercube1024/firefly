@@ -33,7 +33,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 		DecoderChain decoder;
 		EncoderChain encoder;
 
-		if (http2Configuration.isSecure()) {
+		if (http2Configuration.isSecureConnectionEnabled()) {
 			decoder = new ServerSecureDecoder(new HTTP1ServerDecoder(new HTTP2ServerDecoder()));
 			encoder = new HTTP1ServerEncoder(new HTTP2ServerEncoder(new ServerSecureEncoder()));
 		} else {

@@ -1,14 +1,16 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.net.SSLContextFactory;
+import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
+
 public class HTTP2Configuration {
 
 	// TCP settings
 	private int tcpIdleTimeout = 10 * 1000;
 
 	// SSL/TLS settings
-	private boolean secure;
-	private boolean nullKeyManagerAndTrustManager;
-	private String credentialPath, keystorePassword, keyPassword;
+	private boolean isSecureConnectionEnabled;
+	private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
 
 	// HTTP2 settings
 	private int maxDynamicTableSize = 4096;
@@ -103,44 +105,20 @@ public class HTTP2Configuration {
 		this.maxResponseHeadLength = maxResponseHeadLength;
 	}
 
-	public boolean isSecure() {
-		return secure;
+	public boolean isSecureConnectionEnabled() {
+		return isSecureConnectionEnabled;
 	}
 
-	public void setSecure(boolean secure) {
-		this.secure = secure;
+	public void setSecureConnectionEnabled(boolean isSecureConnectionEnabled) {
+		this.isSecureConnectionEnabled = isSecureConnectionEnabled;
 	}
 
-	public String getCredentialPath() {
-		return credentialPath;
+	public SSLContextFactory getSslContextFactory() {
+		return sslContextFactory;
 	}
 
-	public void setCredentialPath(String credentialPath) {
-		this.credentialPath = credentialPath;
-	}
-
-	public String getKeystorePassword() {
-		return keystorePassword;
-	}
-
-	public void setKeystorePassword(String keystorePassword) {
-		this.keystorePassword = keystorePassword;
-	}
-
-	public String getKeyPassword() {
-		return keyPassword;
-	}
-
-	public void setKeyPassword(String keyPassword) {
-		this.keyPassword = keyPassword;
-	}
-
-	public boolean isNullKeyManagerAndTrustManager() {
-		return nullKeyManagerAndTrustManager;
-	}
-
-	public void setNullKeyManagerAndTrustManager(boolean nullKeyManagerAndTrustManager) {
-		this.nullKeyManagerAndTrustManager = nullKeyManagerAndTrustManager;
+	public void setSslContextFactory(SSLContextFactory sslContextFactory) {
+		this.sslContextFactory = sslContextFactory;
 	}
 
 }

@@ -10,19 +10,22 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
-import test.net.tcp.SendFileHandler;
-
 import com.firefly.net.Handler;
+import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLContextFactory;
-import com.firefly.net.tcp.ssl.SSLEventHandler;
+import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 import com.firefly.net.tcp.ssl.SSLSession;
 
+import test.net.tcp.SendFileHandler;
+
 public class DumpHandler implements Handler {
+	
+	private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
 	private SSLContext sslContext;
 	
 	public DumpHandler() throws Throwable {
-		sslContext = SSLContextFactory.getSSLContext();
+		sslContext = sslContextFactory.getSSLContext();
 	}
 
 	@Override
@@ -58,6 +61,7 @@ public class DumpHandler implements Handler {
 		File file = new File(SendFileHandler.class.getResource("/index.html").toURI());
 		SessionInfo info = (SessionInfo)session.getAttachment();
 		info.length = file.length();
+		@SuppressWarnings("resource")
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
 		session.encode(raf.getChannel());
 	}

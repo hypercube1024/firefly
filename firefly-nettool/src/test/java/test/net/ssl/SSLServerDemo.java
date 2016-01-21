@@ -10,14 +10,18 @@ import javax.net.ssl.SSLEngine;
 import org.eclipse.jetty.alpn.ALPN;
 
 import com.firefly.net.Handler;
+import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Server;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
-import com.firefly.net.tcp.ssl.SSLContextFactory;
-import com.firefly.net.tcp.ssl.SSLEventHandler;
+import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class SSLServerDemo {
+	
+	private static SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
+	
 	public static void main2(String[] args) {
 		for(Provider provider : Security.getProviders())
 			System.out.println(provider);
@@ -29,7 +33,7 @@ public class SSLServerDemo {
 		new SSLEncoder(), 
 		new Handler(){
 
-			private SSLContext sslContext = SSLContextFactory.getSSLContext();
+			private SSLContext sslContext = sslContextFactory.getSSLContext();
 			
 			@Override
 			public void sessionOpened(Session session) throws Throwable {

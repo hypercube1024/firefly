@@ -10,8 +10,8 @@ import org.eclipse.jetty.alpn.ALPN;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLEventHandler;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class HTTP2ClientHandler extends AbstractHTTPHandler {
@@ -33,7 +33,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 			return;
 		}
 
-		if (config.isSecure()) {
+		if (config.isSecureConnectionEnabled()) {
 			if (sslContext == null) {
 				context.promise.failed(new IllegalStateException("the ssl context is null"));
 				return;

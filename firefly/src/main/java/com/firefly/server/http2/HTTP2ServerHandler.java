@@ -9,8 +9,8 @@ import org.eclipse.jetty.alpn.ALPN;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLEventHandler;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 public class HTTP2ServerHandler extends AbstractHTTPHandler {
@@ -27,7 +27,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
 	@Override
 	public void sessionOpened(final Session session) throws Throwable {
-		if (config.isSecure()) {
+		if (config.isSecureConnectionEnabled()) {
 			final SSLEngine sslEngine = sslContext.createSSLEngine();
 			HTTP2ServerSSLHandshakeContext handshakeContext = new HTTP2ServerSSLHandshakeContext();
 			session.attachObject(handshakeContext);

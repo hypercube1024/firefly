@@ -28,7 +28,7 @@ public class HTTP2ServerDemo {
 
 	public static void main(String[] args) {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-		http2Configuration.setSecure(true);
+		http2Configuration.setSecureConnectionEnabled(true);
 		http2Configuration.setFlowControlStrategy("simple");
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 

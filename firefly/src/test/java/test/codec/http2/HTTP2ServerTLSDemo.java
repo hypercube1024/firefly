@@ -27,7 +27,7 @@ public class HTTP2ServerTLSDemo {
 		// System.setProperty("javax.net.debug", "all");
 
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-		http2Configuration.setSecure(true);
+		http2Configuration.setSecureConnectionEnabled(true);
 		http2Configuration.setTcpIdleTimeout(60 * 1000);
 
 		final Map<Integer, Integer> settings = new HashMap<>();

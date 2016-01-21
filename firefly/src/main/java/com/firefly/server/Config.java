@@ -10,7 +10,9 @@ import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
+import com.firefly.net.SSLContextFactory;
 import com.firefly.net.Session;
+import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 import com.firefly.server.http.FileAccessFilter;
 import com.firefly.server.http.HttpConnectionListener;
 import com.firefly.server.session.HttpSessionManager;
@@ -51,7 +53,7 @@ public class Config {
 	
 	// SSL/TLS settings
 	private boolean secure = false;
-	private String credentialPath, keystorePassword, keyPassword;
+	private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
 	
 	// session settings
 	private String sessionIdName = "jsessionid";
@@ -314,28 +316,12 @@ public class Config {
 		this.secure = secure;
 	}
 
-	public String getCredentialPath() {
-		return credentialPath;
+	public SSLContextFactory getSslContextFactory() {
+		return sslContextFactory;
 	}
 
-	public void setCredentialPath(String credentialPath) {
-		this.credentialPath = credentialPath;
-	}
-
-	public String getKeystorePassword() {
-		return keystorePassword;
-	}
-
-	public void setKeystorePassword(String keystorePassword) {
-		this.keystorePassword = keystorePassword;
-	}
-
-	public String getKeyPassword() {
-		return keyPassword;
-	}
-
-	public void setKeyPassword(String keyPassword) {
-		this.keyPassword = keyPassword;
+	public void setSslContextFactory(SSLContextFactory sslContextFactory) {
+		this.sslContextFactory = sslContextFactory;
 	}
 
 	public String getTempdir() {
