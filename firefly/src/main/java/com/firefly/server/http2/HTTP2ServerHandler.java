@@ -9,6 +9,7 @@ import org.eclipse.jetty.alpn.ALPN;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -42,19 +43,21 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 								.getAttachment();
 						log.debug("server current HTTP version is {}", context.httpVersion);
 
+						HTTPConnection httpConnection;
 						switch (context.httpVersion) {
 						case HTTP_2:
-							session.attachObject(new HTTP2ServerConnection(config, session, sslSession, listener));
+							httpConnection = new HTTP2ServerConnection(config, session, sslSession, listener);
 							break;
 						case HTTP_1_1:
-							session.attachObject(new HTTP1ServerConnection(config, session, sslSession,
-									new HTTP1ServerRequestHandler(serverHTTPHandler), listener));
+							httpConnection = new HTTP1ServerConnection(config, session, sslSession,
+									new HTTP1ServerRequestHandler(serverHTTPHandler), listener);
 							break;
 						default:
 							throw new IllegalStateException(
 									"server does not support the http version " + context.httpVersion);
 						}
-
+						session.attachObject(httpConnection);
+						serverHTTPHandler.acceptConnection(httpConnection);
 					} else {
 						log.error("HTTP2 server can not get the HTTP version of session {}", session.getSessionId());
 						session.closeNow();
@@ -63,8 +66,10 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 			}, new ServerALPN(sslEngine, session));
 
 		} else {
-			session.attachObject(new HTTP1ServerConnection(config, session, null,
-					new HTTP1ServerRequestHandler(serverHTTPHandler), listener));
+			HTTPConnection httpConnection = new HTTP1ServerConnection(config, session, null,
+					new HTTP1ServerRequestHandler(serverHTTPHandler), listener);
+			session.attachObject(httpConnection);
+			serverHTTPHandler.acceptConnection(httpConnection);
 		}
 	}
 
