@@ -210,6 +210,11 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	public String getScheme() {
 		return request.getURI().getScheme();
 	}
+	
+	@Override
+	public String getQueryString() {
+		return request.getURI().getQuery();
+	}
 
 	@Override
 	public int getContentLength() {
@@ -506,12 +511,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public String getContextPath() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getQueryString() {
 		// TODO Auto-generated method stub
 		return null;
 	}
