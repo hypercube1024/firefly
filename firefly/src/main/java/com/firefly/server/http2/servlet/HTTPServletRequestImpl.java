@@ -5,12 +5,14 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -31,6 +33,7 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.utils.lang.StringParser;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -38,9 +41,15 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	protected final Request request;
 	protected final HTTPConnection connection;
-	protected Cookie[] cookies;
+	protected final Request request;
+
+	private Cookie[] cookies;
+
+	private boolean localeParsed;
+	private StringParser parser = new StringParser();
+	private static Locale DEFAULT_LOCALE = Locale.getDefault();
+	private ArrayList<Locale> locales = new ArrayList<Locale>();
 
 	protected final HTTP2Configuration http2Configuration;
 	protected Charset encoding;
@@ -81,7 +90,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	}
 
 	// set and get request attribute
-	
+
 	@Override
 	public void setAttribute(String name, Object o) {
 		attributeMap.put(name, o);
@@ -101,8 +110,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	public Enumeration<String> getAttributeNames() {
 		return new IteratorWrap<String>(attributeMap.keySet().iterator());
 	}
-	
-	
+
 	// get the connection attributes
 
 	@Override
@@ -115,12 +123,12 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		this.encoding = Charset.forName(env);
 		this.characterEncoding = env;
 	}
-	
+
 	@Override
 	public boolean isSecure() {
 		return http2Configuration.isSecureConnectionEnabled();
 	}
-	
+
 	@Override
 	public String getServerName() {
 		return connection.getLocalAddress().getHostName();
@@ -130,7 +138,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	public int getServerPort() {
 		return connection.getLocalAddress().getPort();
 	}
-	
+
 	@Override
 	public String getRemoteAddr() {
 		return connection.getRemoteAddress().getAddress().getHostAddress();
@@ -140,7 +148,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	public String getRemoteHost() {
 		return connection.getRemoteAddress().getHostName();
 	}
-	
+
 	@Override
 	public int getRemotePort() {
 		return connection.getRemoteAddress().getPort();
@@ -161,9 +169,8 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		return connection.getLocalAddress().getPort();
 	}
 
-	
 	// get HTTP heads and parameters
-	
+
 	@Override
 	public long getDateHeader(String name) {
 		return request.getFields().getDateField(name);
@@ -220,6 +227,169 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	}
 
 	@Override
+	public Locale getLocale() {
+		if (!localeParsed)
+			parseLocales();
+
+		if (locales.size() > 0) {
+			return locales.get(0);
+		} else {
+			return DEFAULT_LOCALE;
+		}
+	}
+
+	@Override
+	public Enumeration<Locale> getLocales() {
+		if (!localeParsed)
+			parseLocales();
+
+		if (locales.size() == 0)
+			locales.add(DEFAULT_LOCALE);
+
+		return new IteratorWrap<Locale>(locales.iterator());
+	}
+
+	protected void parseLocales() {
+		localeParsed = true;
+		Enumeration<String> values = getHeaders("accept-language");
+		while (values.hasMoreElements()) {
+			String value = values.nextElement().toString();
+			parseLocalesHeader(value);
+		}
+	}
+
+	/**
+	 * Parse accept-language header value.
+	 * 
+	 * @param value
+	 *            The head string
+	 */
+	protected void parseLocalesHeader(String value) {
+
+		// Store the accumulated languages that have been requested in
+		// a local collection, sorted by the quality value (so we can
+		// add Locales in descending order). The values will be ArrayLists
+		// containing the corresponding Locales to be added
+		TreeMap<Double, ArrayList<Locale>> locales = new TreeMap<Double, ArrayList<Locale>>();
+
+		// Preprocess the value to remove all whitespace
+		int white = value.indexOf(' ');
+		if (white < 0)
+			white = value.indexOf('\t');
+		if (white >= 0) {
+			StringBuilder sb = new StringBuilder();
+			int len = value.length();
+			for (int i = 0; i < len; i++) {
+				char ch = value.charAt(i);
+				if ((ch != ' ') && (ch != '\t'))
+					sb.append(ch);
+			}
+			value = sb.toString();
+		}
+
+		// Process each comma-delimited language specification
+		parser.setString(value); // ASSERT: parser is available to us
+		int length = parser.getLength();
+		while (true) {
+
+			// Extract the next comma-delimited entry
+			int start = parser.getIndex();
+			if (start >= length)
+				break;
+			int end = parser.findChar(',');
+			String entry = parser.extract(start, end).trim();
+			parser.advance(); // For the following entry
+
+			// Extract the quality factor for this entry
+			double quality = 1.0;
+			int semi = entry.indexOf(";q=");
+			if (semi >= 0) {
+				try {
+					String strQuality = entry.substring(semi + 3);
+					if (strQuality.length() <= 5) {
+						quality = Double.parseDouble(strQuality);
+					} else {
+						quality = 0.0;
+					}
+				} catch (NumberFormatException e) {
+					quality = 0.0;
+				}
+				entry = entry.substring(0, semi);
+			}
+
+			// Skip entries we are not going to keep track of
+			if (quality < 0.00005)
+				continue; // Zero (or effectively zero) quality factors
+			if ("*".equals(entry))
+				continue; // FIXME - "*" entries are not handled
+
+			// Extract the language and country for this entry
+			String language = null;
+			String country = null;
+			String variant = null;
+			int dash = entry.indexOf('-');
+			if (dash < 0) {
+				language = entry;
+				country = "";
+				variant = "";
+			} else {
+				language = entry.substring(0, dash);
+				country = entry.substring(dash + 1);
+				int vDash = country.indexOf('-');
+				if (vDash > 0) {
+					String cTemp = country.substring(0, vDash);
+					variant = country.substring(vDash + 1);
+					country = cTemp;
+				} else {
+					variant = "";
+				}
+			}
+			if (!isAlpha(language) || !isAlpha(country) || !isAlpha(variant)) {
+				continue;
+			}
+
+			// Add a new Locale to the list of Locales for this quality level
+			Locale locale = new Locale(language, country, variant);
+			Double key = new Double(-quality); // Reverse the order
+			ArrayList<Locale> values = locales.get(key);
+			if (values == null) {
+				values = new ArrayList<Locale>();
+				locales.put(key, values);
+			}
+			values.add(locale);
+
+		}
+
+		// Process the quality values in highest->lowest order (due to
+		// negating the Double value when creating the key)
+		Iterator<Double> keys = locales.keySet().iterator();
+		while (keys.hasNext()) {
+			Double key = keys.next();
+			ArrayList<Locale> list = locales.get(key);
+			Iterator<Locale> values = list.iterator();
+			while (values.hasNext()) {
+				Locale locale = values.next();
+				addLocale(locale);
+			}
+		}
+
+	}
+
+	protected static final boolean isAlpha(String value) {
+		for (int i = 0; i < value.length(); i++) {
+			char c = value.charAt(i);
+			if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected void addLocale(Locale locale) {
+		locales.add(locale);
+	}
+
+	@Override
 	public Cookie[] getCookies() {
 		// TODO Auto-generated method stub
 		return null;
@@ -260,20 +430,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	@Override
-	public Locale getLocale() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Enumeration<Locale> getLocales() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
 
 	@Override
 	public RequestDispatcher getRequestDispatcher(String path) {
