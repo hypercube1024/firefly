@@ -24,6 +24,7 @@ public class HTTP2Configuration {
 	// common settings
 	private int maxRequestHeadLength = 4 * 1024;
 	private int maxResponseHeadLength = 4 * 1024;
+	private String characterEncoding = "UTF-8";
 
 	public int getTcpIdleTimeout() {
 		return tcpIdleTimeout;
@@ -103,6 +104,14 @@ public class HTTP2Configuration {
 
 	public void setMaxResponseHeadLength(int maxResponseHeadLength) {
 		this.maxResponseHeadLength = maxResponseHeadLength;
+	}
+
+	public String getCharacterEncoding() {
+		return characterEncoding;
+	}
+
+	public void setCharacterEncoding(String characterEncoding) {
+		this.characterEncoding = characterEncoding;
 	}
 
 	public boolean isSecureConnectionEnabled() {

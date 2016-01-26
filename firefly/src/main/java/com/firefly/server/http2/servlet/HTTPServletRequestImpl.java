@@ -3,9 +3,12 @@ package com.firefly.server.http2.servlet;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -24,46 +27,200 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.MetaData.Request;
+import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
+
 public class HTTPServletRequestImpl implements HttpServletRequest {
+
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+
+	protected final Request request;
+	protected final HTTPConnection connection;
+	protected Cookie[] cookies;
+
+	protected final HTTP2Configuration http2Configuration;
+	protected Charset encoding;
+	protected String characterEncoding;
+	protected Map<String, Object> attributeMap = new HashMap<String, Object>();
+
+	HTTPServletResponseImpl response = new HTTPServletResponseImpl();
+
+	public HTTPServletRequestImpl(HTTP2Configuration http2Configuration, Request request, HTTPConnection connection) {
+		this.request = request;
+		this.connection = connection;
+		this.http2Configuration = http2Configuration;
+		try {
+			this.setCharacterEncoding(http2Configuration.getCharacterEncoding());
+		} catch (UnsupportedEncodingException e) {
+			log.error("set character encoding error", e);
+		}
+	}
+
+	private static class IteratorWrap<T> implements Enumeration<T> {
+
+		private final Iterator<T> iterator;
+
+		public IteratorWrap(Iterator<T> iterator) {
+			this.iterator = iterator;
+		}
+
+		@Override
+		public boolean hasMoreElements() {
+			return iterator.hasNext();
+		}
+
+		@Override
+		public T nextElement() {
+			return iterator.next();
+		}
+
+	}
+
+	// set and get request attribute
+	
+	@Override
+	public void setAttribute(String name, Object o) {
+		attributeMap.put(name, o);
+	}
+
+	@Override
+	public void removeAttribute(String name) {
+		attributeMap.remove(name);
+	}
 
 	@Override
 	public Object getAttribute(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return attributeMap.get(name);
 	}
 
 	@Override
 	public Enumeration<String> getAttributeNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return new IteratorWrap<String>(attributeMap.keySet().iterator());
 	}
+	
+	
+	// get the connection attributes
 
 	@Override
 	public String getCharacterEncoding() {
-		// TODO Auto-generated method stub
-		return null;
+		return characterEncoding;
 	}
 
 	@Override
 	public void setCharacterEncoding(String env) throws UnsupportedEncodingException {
-		// TODO Auto-generated method stub
+		this.encoding = Charset.forName(env);
+		this.characterEncoding = env;
+	}
+	
+	@Override
+	public boolean isSecure() {
+		return http2Configuration.isSecureConnectionEnabled();
+	}
+	
+	@Override
+	public String getServerName() {
+		return connection.getLocalAddress().getHostName();
+	}
 
+	@Override
+	public int getServerPort() {
+		return connection.getLocalAddress().getPort();
+	}
+	
+	@Override
+	public String getRemoteAddr() {
+		return connection.getRemoteAddress().getAddress().getHostAddress();
+	}
+
+	@Override
+	public String getRemoteHost() {
+		return connection.getRemoteAddress().getHostName();
+	}
+	
+	@Override
+	public int getRemotePort() {
+		return connection.getRemoteAddress().getPort();
+	}
+
+	@Override
+	public String getLocalName() {
+		return connection.getLocalAddress().getHostName();
+	}
+
+	@Override
+	public String getLocalAddr() {
+		return connection.getLocalAddress().getAddress().getHostAddress();
+	}
+
+	@Override
+	public int getLocalPort() {
+		return connection.getLocalAddress().getPort();
+	}
+
+	
+	// get HTTP heads and parameters
+	
+	@Override
+	public long getDateHeader(String name) {
+		return request.getFields().getDateField(name);
+	}
+
+	@Override
+	public String getHeader(String name) {
+		return request.getFields().get(name);
+	}
+
+	@Override
+	public Enumeration<String> getHeaders(String name) {
+		return request.getFields().getValues(name);
+	}
+
+	@Override
+	public Enumeration<String> getHeaderNames() {
+		return request.getFields().getFieldNames();
+	}
+
+	@Override
+	public int getIntHeader(String name) {
+		return (int) request.getFields().getLongField(name);
+	}
+
+	@Override
+	public String getMethod() {
+		return request.getMethod();
+	}
+
+	@Override
+	public String getProtocol() {
+		return request.getVersion().asString();
+	}
+
+	@Override
+	public String getScheme() {
+		return request.getURI().getScheme();
 	}
 
 	@Override
 	public int getContentLength() {
-		// TODO Auto-generated method stub
-		return 0;
+		return (int) request.getContentLength();
 	}
 
 	@Override
 	public long getContentLengthLong() {
-		// TODO Auto-generated method stub
-		return 0;
+		return request.getContentLength();
 	}
 
 	@Override
 	public String getContentType() {
+		return request.getFields().get(HttpHeader.CONTENT_TYPE);
+	}
+
+	@Override
+	public Cookie[] getCookies() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -99,57 +256,9 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	}
 
 	@Override
-	public String getProtocol() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getScheme() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getServerName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int getServerPort() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
 	public BufferedReader getReader() throws IOException {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public String getRemoteAddr() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getRemoteHost() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setAttribute(String name, Object o) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void removeAttribute(String name) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -164,11 +273,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		return null;
 	}
 
-	@Override
-	public boolean isSecure() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+	
 
 	@Override
 	public RequestDispatcher getRequestDispatcher(String path) {
@@ -180,30 +285,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	public String getRealPath(String path) {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public int getRemotePort() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public String getLocalName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getLocalAddr() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int getLocalPort() {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 	@Override
@@ -251,48 +332,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public String getAuthType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Cookie[] getCookies() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public long getDateHeader(String name) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public String getHeader(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Enumeration<String> getHeaders(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Enumeration<String> getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int getIntHeader(String name) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public String getMethod() {
 		// TODO Auto-generated method stub
 		return null;
 	}

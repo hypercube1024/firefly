@@ -14,6 +14,7 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
+import com.firefly.utils.collection.MultiMap;
 import com.firefly.utils.io.BufferUtils;
 
 public class HTTP1ServerDemo3 {
@@ -67,6 +68,9 @@ public class HTTP1ServerDemo3 {
 						System.out.println("current path is " + uri.getPath());
 						System.out.println("current parameter string is " + uri.getQuery());
 						System.out.println("current http headers are " + request.getFields());
+						MultiMap<String> parameterMap = new MultiMap<String>();
+						uri.decodeQueryTo(parameterMap);
+						System.out.println("current parameters are " + parameterMap);
 
 						if (uri.getPath().equals("/index")) {
 							response.setStatus(200);
