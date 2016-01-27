@@ -32,7 +32,7 @@ public class HTTP1ClientDemo {
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-		http2Configuration.setTcpIdleTimeout(60 * 1000);
+		http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
 		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();

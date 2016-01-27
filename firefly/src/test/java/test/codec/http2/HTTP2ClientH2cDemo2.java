@@ -36,7 +36,7 @@ public class HTTP2ClientH2cDemo2 {
 			throws InterruptedException, ExecutionException, UnsupportedEncodingException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setFlowControlStrategy("simple");
-		http2Configuration.setTcpIdleTimeout(60 * 1000);
+		http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
 		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();

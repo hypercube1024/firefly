@@ -35,10 +35,13 @@ public class HTTP2Client extends AbstractLifeCycle {
 			encoder = new HTTP1ClientEncoder(new HTTP2ClientEncoder());
 		}
 
-		this.client = new AsynchronousTcpClient(decoder, encoder,
-				new HTTP2ClientHandler(http2Configuration, http2ClientContext), http2Configuration.getTcpIdleTimeout());
+		http2Configuration.getTcpConfiguration().setDecoder(decoder);
+		http2Configuration.getTcpConfiguration().setEncoder(encoder);
+		http2Configuration.getTcpConfiguration()
+				.setHandler(new HTTP2ClientHandler(http2Configuration, http2ClientContext));
+		this.client = new AsynchronousTcpClient(http2Configuration.getTcpConfiguration());
 	}
-	
+
 	public void connect(String host, int port, Promise<HTTPClientConnection> promise) {
 		connect(host, port, promise, new Listener.Adapter());
 	}

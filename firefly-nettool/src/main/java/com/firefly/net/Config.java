@@ -114,4 +114,10 @@ public class Config {
 		this.asynchronousPoolKeepAliveTime = asynchronousPoolKeepAliveTime;
 	}
 
+	@Override
+	public String toString() {
+		return "Asynchronous TCP configuration [timeout=" + timeout + ", workerThreads=" + workerThreads + ", asynchronousCorePoolSize="
+				+ asynchronousCorePoolSize + ", asynchronousMaximumPoolSize=" + asynchronousMaximumPoolSize
+				+ ", asynchronousPoolKeepAliveTime=" + asynchronousPoolKeepAliveTime + "]";
+	}
 }

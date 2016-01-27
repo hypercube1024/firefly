@@ -20,7 +20,7 @@ public class HTTP1ServerChunkOutputDemo3 {
 
 	public static void main(String[] args) {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-		http2Configuration.setTcpIdleTimeout(10 * 60 * 1000);
+		http2Configuration.getTcpConfiguration().setTimeout(10 * 60 * 1000);
 
 		HTTP2Server server = new HTTP2Server("localhost", 6678, http2Configuration, new ServerSessionListener.Adapter(),
 				new ServerHTTPHandler.Adapter() {

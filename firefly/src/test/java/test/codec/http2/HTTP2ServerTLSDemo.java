@@ -28,7 +28,7 @@ public class HTTP2ServerTLSDemo {
 
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setSecureConnectionEnabled(true);
-		http2Configuration.setTcpIdleTimeout(60 * 1000);
+		http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
 
 		final Map<Integer, Integer> settings = new HashMap<>();
 		settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());

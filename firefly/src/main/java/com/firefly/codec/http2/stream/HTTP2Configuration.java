@@ -8,7 +8,7 @@ import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 public class HTTP2Configuration {
 
 	// TCP settings
-	private int tcpIdleTimeout = 10 * 1000;
+	private com.firefly.net.Config tcpConfiguration = new com.firefly.net.Config();
 
 	// SSL/TLS settings
 	private boolean isSecureConnectionEnabled;
@@ -30,12 +30,12 @@ public class HTTP2Configuration {
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private String temporaryDirectory = new File(System.getProperty("user.dir"), "temp").getAbsolutePath();
 
-	public int getTcpIdleTimeout() {
-		return tcpIdleTimeout;
+	public com.firefly.net.Config getTcpConfiguration() {
+		return tcpConfiguration;
 	}
 
-	public void setTcpIdleTimeout(int tcpIdleTimeout) {
-		this.tcpIdleTimeout = tcpIdleTimeout;
+	public void setTcpConfiguration(com.firefly.net.Config tcpConfiguration) {
+		this.tcpConfiguration = tcpConfiguration;
 	}
 
 	public int getMaxDynamicTableSize() {
