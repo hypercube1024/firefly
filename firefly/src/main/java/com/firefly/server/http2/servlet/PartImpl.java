@@ -73,11 +73,13 @@ public class PartImpl implements Part {
 					continue;
 				} else {
 					String[] arr2 = StringUtils.split(s, '=');
+					String key = arr2[0];
+					String value = arr2[1];
 					if (arr2 != null && arr2.length > 1) {
-						if ("name".equalsIgnoreCase(arr2[0])) {
-							name = arr2[1];
-						} else if ("filename".equalsIgnoreCase(arr2[0])) {
-							fileName = arr2[1];
+						if ("name".equalsIgnoreCase(key)) {
+							name = value;
+						} else if ("filename".equalsIgnoreCase(key)) {
+							fileName = value;
 						}
 					}
 				}
