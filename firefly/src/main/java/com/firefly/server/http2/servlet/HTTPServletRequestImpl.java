@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,6 +34,8 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.lang.StringParser;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -44,12 +47,12 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	protected final HTTPConnection connection;
 	protected final Request request;
 
+	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
 	private Cookie[] cookies;
 
-	private boolean localeParsed;
-	private StringParser parser = new StringParser();
-	private static Locale DEFAULT_LOCALE = Locale.getDefault();
-	private ArrayList<Locale> locales = new ArrayList<Locale>();
+//	private boolean localeParsed;
+//	private static Locale DEFAULT_LOCALE = Locale.getDefault();
+	private List<Locale> localeList;
 
 	protected final HTTP2Configuration http2Configuration;
 	protected Charset encoding;
@@ -210,7 +213,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	public String getScheme() {
 		return request.getURI().getScheme();
 	}
-	
+
 	@Override
 	public String getQueryString() {
 		return request.getURI().getQuery();
@@ -233,33 +236,27 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public Locale getLocale() {
-		if (!localeParsed)
-			parseLocales();
-
-		if (locales.size() > 0) {
-			return locales.get(0);
-		} else {
-			return DEFAULT_LOCALE;
-		}
+		parseLocales();
+		return localeList.get(0);
 	}
 
 	@Override
 	public Enumeration<Locale> getLocales() {
-		if (!localeParsed)
-			parseLocales();
-
-		if (locales.size() == 0)
-			locales.add(DEFAULT_LOCALE);
-
-		return new IteratorWrap<Locale>(locales.iterator());
+		parseLocales();
+		return new IteratorWrap<Locale>(localeList.iterator());
 	}
 
 	protected void parseLocales() {
-		localeParsed = true;
-		Enumeration<String> values = getHeaders("accept-language");
-		while (values.hasMoreElements()) {
-			String value = values.nextElement().toString();
-			parseLocalesHeader(value);
+		if(localeList == null) {
+			localeList = new ArrayList<>();
+			Enumeration<String> values = getHeaders("accept-language");
+			while (values.hasMoreElements()) {
+				String value = values.nextElement().toString();
+				parseLocalesHeader(value);
+			}
+			if (localeList.size() == 0) {
+				localeList.add(Locale.getDefault());
+			}
 		}
 	}
 
@@ -270,7 +267,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	 *            The head string
 	 */
 	protected void parseLocalesHeader(String value) {
-
+		StringParser parser = new StringParser();
 		// Store the accumulated languages that have been requested in
 		// a local collection, sorted by the quality value (so we can
 		// add Locales in descending order). The values will be ArrayLists
@@ -349,7 +346,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 					variant = "";
 				}
 			}
-			if (!isAlpha(language) || !isAlpha(country) || !isAlpha(variant)) {
+			if (!StringUtils.isAlpha(language) || !StringUtils.isAlpha(country) || !StringUtils.isAlpha(variant)) {
 				continue;
 			}
 
@@ -362,7 +359,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 				locales.put(key, values);
 			}
 			values.add(locale);
-
 		}
 
 		// Process the quality values in highest->lowest order (due to
@@ -371,33 +367,43 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		while (keys.hasNext()) {
 			Double key = keys.next();
 			ArrayList<Locale> list = locales.get(key);
-			Iterator<Locale> values = list.iterator();
-			while (values.hasNext()) {
-				Locale locale = values.next();
-				addLocale(locale);
+			if(list != null && list.size() > 0) {
+				localeList.addAll(list);
 			}
 		}
-
-	}
-
-	protected static final boolean isAlpha(String value) {
-		for (int i = 0; i < value.length(); i++) {
-			char c = value.charAt(i);
-			if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	protected void addLocale(Locale locale) {
-		locales.add(locale);
 	}
 
 	@Override
 	public Cookie[] getCookies() {
-		// TODO Auto-generated method stub
-		return null;
+		if (cookies == null) {
+			List<Cookie> list = new ArrayList<Cookie>();
+			String cookieStr = getHeader("Cookie");
+			if (VerifyUtils.isEmpty(cookieStr)) {
+				cookies = EMPTY_COOKIE_ARR;
+			} else {
+				String[] c = StringUtils.split(cookieStr, ';');
+				for (String t : c) {
+					int j = 0;
+					for (int i = 0; i < t.length(); i++) {
+						if (t.charAt(i) == '=') {
+							j = i;
+							break;
+						}
+					}
+					if (j > 1) {
+						String name = t.substring(0, j).trim();
+						String value = t.substring(j + 1).trim();
+						Cookie cookie = new Cookie(name, value);
+						list.add(cookie);
+					} else
+						continue;
+				}
+				cookies = list.toArray(EMPTY_COOKIE_ARR);
+			}
+			return cookies;
+		} else {
+			return cookies;
+		}
 	}
 
 	@Override

@@ -36,5 +36,10 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 			HTTPConnection connection) {
 		return true;
 	}
+	
+	@Override
+	public void badMessage(int status, String reason, Request request, Response response, HTTPOutputStream output,
+			HTTPConnection connection) {
+	}
 
 }
