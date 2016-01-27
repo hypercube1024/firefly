@@ -63,6 +63,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	private MultiMap<String> parameterMap;
 	private Map<String, String[]> _parameterMap;
 	private List<Locale> localeList;
+	private Collection<Part> parts;
 
 	private final HTTP2Configuration http2Configuration;
 	private Charset encoding;
@@ -577,21 +578,30 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public Map<String, String[]> getParameterMap() {
-		if(_parameterMap == null) {
+		if (_parameterMap == null) {
 			_parameterMap = getParameters().toStringArrayMap();
 		}
 		return _parameterMap;
 	}
-	
+
 	@Override
 	public Collection<Part> getParts() throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
+		if (parts == null) {
+			try (ServletInputStream input = getInputStream()) {
+				parts = MultipartFormDataParser.parse(http2Configuration, input, getContentType(), encoding);
+			}
+			return parts;
+		} else {
+			return parts;
+		}
 	}
 
 	@Override
 	public Part getPart(String name) throws IOException, ServletException {
-		// TODO Auto-generated method stub
+		for (Part part : getParts()) {
+			if (part.getName().equals(name))
+				return part;
+		}
 		return null;
 	}
 
