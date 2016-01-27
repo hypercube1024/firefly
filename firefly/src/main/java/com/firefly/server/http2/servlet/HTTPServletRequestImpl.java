@@ -8,12 +8,14 @@ import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.servlet.AsyncContext;
@@ -32,14 +34,17 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.collection.MultiMap;
 import com.firefly.utils.io.ByteArrayPipedStream;
 import com.firefly.utils.io.FilePipedStream;
+import com.firefly.utils.io.IO;
 import com.firefly.utils.io.PipedStream;
 import com.firefly.utils.lang.StringParser;
 import com.firefly.utils.log.Log;
@@ -55,6 +60,8 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
 	private Cookie[] cookies;
 
+	private MultiMap<String> parameterMap;
+	private Map<String, String[]> _parameterMap;
 	private List<Locale> localeList;
 
 	private final HTTP2Configuration http2Configuration;
@@ -513,26 +520,77 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		}
 	}
 
+	protected MultiMap<String> getParameters() {
+		if (parameterMap == null) {
+			parameterMap = new MultiMap<String>();
+			try {
+				request.getURI().decodeQueryTo(parameterMap, encoding);
+			} catch (UnsupportedEncodingException e) {
+				log.error("parse parameters exception", e);
+			}
+
+			String contentType = getContentType();
+			if (hasData() && "POST".equals(request.getMethod()) && contentType != null
+					&& contentType.startsWith("application/x-www-form-urlencoded")) {
+				try (BufferedReader in = getReader()) {
+					String urlencodedForm = IO.toString(in);
+					UrlEncoded.decodeTo(urlencodedForm, parameterMap, encoding);
+				} catch (IOException e) {
+					log.error("parse urlencoded form exception", e);
+				}
+			}
+			return parameterMap;
+		} else {
+			return parameterMap;
+		}
+	}
+
 	@Override
 	public String getParameter(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		List<String> values = getParameters().get(name);
+		if (values != null && values.size() > 0) {
+			return values.get(0);
+		} else {
+			return null;
+		}
 	}
 
 	@Override
 	public Enumeration<String> getParameterNames() {
-		// TODO Auto-generated method stub
-		return null;
+		Set<String> names = getParameters().keySet();
+		if (names != null && names.size() > 0) {
+			return new IteratorWrap<>(names.iterator());
+		} else {
+			return Collections.emptyEnumeration();
+		}
 	}
 
 	@Override
 	public String[] getParameterValues(String name) {
+		List<String> values = getParameters().getValues(name);
+		if (values != null) {
+			return values.toArray(StringUtils.EMPTY_STRING_ARRAY);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public Map<String, String[]> getParameterMap() {
+		if(_parameterMap == null) {
+			_parameterMap = getParameters().toStringArrayMap();
+		}
+		return _parameterMap;
+	}
+	
+	@Override
+	public Collection<Part> getParts() throws IOException, ServletException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Map<String, String[]> getParameterMap() {
+	public Part getPart(String name) throws IOException, ServletException {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -716,18 +774,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	public void logout() throws ServletException {
 		// TODO Auto-generated method stub
 
-	}
-
-	@Override
-	public Collection<Part> getParts() throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Part getPart(String name) throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
