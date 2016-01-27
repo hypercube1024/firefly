@@ -1,5 +1,7 @@
 package com.firefly.codec.http2.stream;
 
+import java.io.File;
+
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 
@@ -25,6 +27,8 @@ public class HTTP2Configuration {
 	private int maxRequestHeadLength = 4 * 1024;
 	private int maxResponseHeadLength = 4 * 1024;
 	private String characterEncoding = "UTF-8";
+	private int httpBodyThreshold = 4 * 1024 * 1024;
+	private String temporaryDirectory = new File(System.getProperty("user.dir"), "temp").getAbsolutePath();
 
 	public int getTcpIdleTimeout() {
 		return tcpIdleTimeout;
@@ -112,6 +116,22 @@ public class HTTP2Configuration {
 
 	public void setCharacterEncoding(String characterEncoding) {
 		this.characterEncoding = characterEncoding;
+	}
+
+	public String getTemporaryDirectory() {
+		return temporaryDirectory;
+	}
+
+	public void setTemporaryDirectory(String temporaryDirectory) {
+		this.temporaryDirectory = temporaryDirectory;
+	}
+
+	public int getHttpBodyThreshold() {
+		return httpBodyThreshold;
+	}
+
+	public void setHttpBodyThreshold(int httpBodyThreshold) {
+		this.httpBodyThreshold = httpBodyThreshold;
 	}
 
 	public boolean isSecureConnectionEnabled() {

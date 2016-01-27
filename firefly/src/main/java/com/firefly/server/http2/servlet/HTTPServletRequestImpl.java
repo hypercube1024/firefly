@@ -2,6 +2,7 @@ package com.firefly.server.http2.servlet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.Principal;
@@ -17,6 +18,7 @@ import java.util.TreeMap;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -36,6 +38,9 @@ import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.io.ByteArrayPipedStream;
+import com.firefly.utils.io.FilePipedStream;
+import com.firefly.utils.io.PipedStream;
 import com.firefly.utils.lang.StringParser;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -44,22 +49,23 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	protected final HTTPConnection connection;
-	protected final Request request;
+	private final HTTPConnection connection;
+	private final Request request;
 
 	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
 	private Cookie[] cookies;
 
-//	private boolean localeParsed;
-//	private static Locale DEFAULT_LOCALE = Locale.getDefault();
 	private List<Locale> localeList;
 
-	protected final HTTP2Configuration http2Configuration;
-	protected Charset encoding;
-	protected String characterEncoding;
-	protected Map<String, Object> attributeMap = new HashMap<String, Object>();
+	private final HTTP2Configuration http2Configuration;
+	private Charset encoding;
+	private String characterEncoding;
+	private Map<String, Object> attributeMap = new HashMap<String, Object>();
 
 	HTTPServletResponseImpl response = new HTTPServletResponseImpl();
+	private PipedStream bodyPipedStream;
+	private ServletInputStream servletInputStream;
+	private BufferedReader bufferedReader;
 
 	public HTTPServletRequestImpl(HTTP2Configuration http2Configuration, Request request, HTTPConnection connection) {
 		this.request = request;
@@ -247,12 +253,11 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	}
 
 	protected void parseLocales() {
-		if(localeList == null) {
+		if (localeList == null) {
 			localeList = new ArrayList<>();
 			Enumeration<String> values = getHeaders("accept-language");
 			while (values.hasMoreElements()) {
-				String value = values.nextElement().toString();
-				parseLocalesHeader(value);
+				parseLocalesHeader(values.nextElement());
 			}
 			if (localeList.size() == 0) {
 				localeList.add(Locale.getDefault());
@@ -367,7 +372,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		while (keys.hasNext()) {
 			Double key = keys.next();
 			ArrayList<Locale> list = locales.get(key);
-			if(list != null && list.size() > 0) {
+			if (list != null && list.size() > 0) {
 				localeList.addAll(list);
 			}
 		}
@@ -406,10 +411,106 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 		}
 	}
 
+	PipedStream getBodyPipedStream() {
+		if (bodyPipedStream == null) {
+			long contentLength = request.getContentLength();
+			if (contentLength > 0) {
+				if (contentLength > http2Configuration.getHttpBodyThreshold()) {
+					bodyPipedStream = new FilePipedStream(http2Configuration.getTemporaryDirectory());
+				} else {
+					bodyPipedStream = new ByteArrayPipedStream((int) contentLength);
+				}
+			} else {
+				bodyPipedStream = new FilePipedStream(http2Configuration.getTemporaryDirectory());
+			}
+			return bodyPipedStream;
+		} else {
+			return bodyPipedStream;
+		}
+	}
+
+	boolean hasData() {
+		return bodyPipedStream != null;
+	}
+
+	private class HttpServletInputStream extends ServletInputStream {
+
+		@Override
+		public int available() throws IOException {
+			if (hasData()) {
+				return getBodyPipedStream().getInputStream().available();
+			} else {
+				return 0;
+			}
+		}
+
+		@Override
+		public void close() throws IOException {
+			if (hasData()) {
+				getBodyPipedStream().getInputStream().close();
+			}
+		}
+
+		@Override
+		public boolean isFinished() {
+			return hasData();
+		}
+
+		@Override
+		public boolean isReady() {
+			return hasData();
+		}
+
+		@Override
+		public void setReadListener(ReadListener readListener) {
+			if (hasData()) {
+				try {
+					readListener.onDataAvailable();
+					readListener.onAllDataRead();
+				} catch (IOException e) {
+					readListener.onError(e);
+				}
+			}
+		}
+
+		@Override
+		public int read() throws IOException {
+			if (hasData()) {
+				return getBodyPipedStream().getInputStream().read();
+			} else {
+				return -1;
+			}
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			if (hasData()) {
+				return getBodyPipedStream().getInputStream().read(b, off, len);
+			} else {
+				return -1;
+			}
+		}
+
+	}
+
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		if (servletInputStream == null) {
+			servletInputStream = new HttpServletInputStream();
+			return servletInputStream;
+		} else {
+			return servletInputStream;
+		}
+	}
+
+	@Override
+	public BufferedReader getReader() throws IOException {
+		if (bufferedReader == null) {
+			bufferedReader = new BufferedReader(new InputStreamReader(getInputStream(), encoding));
+			return bufferedReader;
+		} else {
+			return bufferedReader;
+		}
 	}
 
 	@Override
@@ -432,12 +533,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public Map<String, String[]> getParameterMap() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public BufferedReader getReader() throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}
