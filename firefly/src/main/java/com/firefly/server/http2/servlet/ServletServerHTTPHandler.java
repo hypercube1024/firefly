@@ -16,7 +16,7 @@ import com.firefly.utils.log.LogFactory;
 public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
+
 	private final HTTP2Configuration http2Configuration;
 
 	public ServletServerHTTPHandler(HTTP2Configuration http2Configuration) {
@@ -46,18 +46,13 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	@Override
 	public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
-		HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment();
-		if(servletRequest.hasData()) {
-			try {
-				servletRequest.getBodyPipedStream().getOutputStream().close();
-			} catch (IOException e) {
-				log.error("close http piped stream exception", e);
-			}
+		try (HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment()) {
+			servletRequest.completeDataReceiving();
+			// TODO invoke controller
 		}
-		// TODO
 		return true;
 	}
-	
+
 	@Override
 	public void badMessage(int status, String reason, Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {

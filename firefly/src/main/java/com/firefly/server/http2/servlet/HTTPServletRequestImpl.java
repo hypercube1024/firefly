@@ -1,6 +1,7 @@
 package com.firefly.server.http2.servlet;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -50,7 +51,7 @@ import com.firefly.utils.lang.StringParser;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class HTTPServletRequestImpl implements HttpServletRequest {
+public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
@@ -216,6 +217,30 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 	@Override
 	public String getMethod() {
 		return request.getMethod();
+	}
+
+	@Override
+	public String getRequestURI() {
+		return request.getURI().getPath();
+	}
+
+	@Override
+	public StringBuffer getRequestURL() {
+		StringBuffer url = new StringBuffer();
+		String scheme = getScheme();
+		int port = getServerPort();
+		if (port < 0)
+			port = 80; // Work around java.net.URL bug
+
+		url.append(scheme);
+		url.append("://");
+		url.append(getServerName());
+		if ((scheme.equals("http") && (port != 80)) || (scheme.equals("https") && (port != 443))) {
+			url.append(':');
+			url.append(port);
+		}
+		url.append(getRequestURI());
+		return url;
 	}
 
 	@Override
@@ -439,6 +464,37 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	boolean hasData() {
 		return bodyPipedStream != null;
+	}
+
+	void completeDataReceiving() {
+		if (hasData()) {
+			try {
+				getBodyPipedStream().getOutputStream().close();
+			} catch (IOException e) {
+				log.error("close http body piped output stream exception", e);
+			}
+		}
+	}
+
+	@Override
+	public void close() {
+		if (hasData()) {
+			try {
+				getBodyPipedStream().close();
+			} catch (IOException e) {
+				log.error("close http body piped stream exception", e);
+			}
+
+			if (parts != null) {
+				for (Part part : parts) {
+					try {
+						part.delete();
+					} catch (IOException e) {
+						log.error("delete temporary file exception", e);
+					}
+				}
+			}
+		}
 	}
 
 	private class HttpServletInputStream extends ServletInputStream {
@@ -704,18 +760,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest {
 
 	@Override
 	public String getRequestedSessionId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getRequestURI() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public StringBuffer getRequestURL() {
 		// TODO Auto-generated method stub
 		return null;
 	}
