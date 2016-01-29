@@ -81,6 +81,8 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	private ServletInputStream servletInputStream;
 	private BufferedReader bufferedReader;
 
+	private AsyncContextImpl asyncContext;
+
 	public HTTPServletRequestImpl(HTTP2Configuration http2Configuration, Request request, HTTPConnection connection) {
 		this.request = request;
 		this.connection = connection;
@@ -778,37 +780,44 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		return isRequestedSessionIdFromURL();
 	}
 
+	// asynchronous servlet
 	@Override
 	public AsyncContext startAsync() throws IllegalStateException {
-		// TODO Auto-generated method stub
-		return null;
+		return startAsync(this, response);
 	}
-
-	// asynchronous servlet
 
 	@Override
 	public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse)
 			throws IllegalStateException {
-		// TODO Auto-generated method stub
-		return null;
+		if (asyncContext == null) {
+			asyncContext = new AsyncContextImpl();
+		}
+
+		asyncContext.startAsync(servletRequest, servletResponse,
+				(servletRequest == this && servletResponse == response),
+				http2Configuration.getAsynchronousContextTimeout());
+		return asyncContext;
 	}
 
 	@Override
 	public boolean isAsyncStarted() {
-		// TODO Auto-generated method stub
-		return false;
+		if (asyncContext == null)
+			return false;
+
+		return asyncContext.isStartAsync();
 	}
 
 	@Override
 	public boolean isAsyncSupported() {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
 	public AsyncContext getAsyncContext() {
-		// TODO Auto-generated method stub
-		return null;
+		if (!isAsyncStarted())
+			throw new IllegalStateException("asynchronous servlet doesn't start!");
+
+		return asyncContext;
 	}
 
 	@Override

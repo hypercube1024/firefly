@@ -21,6 +21,7 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 
 	public ServletServerHTTPHandler(HTTP2Configuration http2Configuration) {
 		this.http2Configuration = http2Configuration;
+		AsyncContextImpl.init(http2Configuration);
 	}
 
 	@Override

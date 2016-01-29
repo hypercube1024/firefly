@@ -31,10 +31,16 @@ public class HTTP2Configuration {
 	private String characterEncoding = "UTF-8";
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private String temporaryDirectory = new File(System.getProperty("user.dir"), "temp").getAbsolutePath();
-	
-	// HTTP servlet session 
+
+	// HTTP servlet session
 	private String sessionIdName = "jsessionid";
 	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager();
+
+	// asynchronous context pool settings
+	private int asynchronousContextCorePoolSize = Runtime.getRuntime().availableProcessors();
+	private int asynchronousContextMaximumPoolSize = 64;
+	private int asynchronousContextCorePoolKeepAliveTime = 15 * 1000;
+	private int asynchronousContextTimeout = 6 * 1000;
 
 	public com.firefly.net.Config getTcpConfiguration() {
 		return tcpConfiguration;
@@ -170,6 +176,38 @@ public class HTTP2Configuration {
 
 	public void setHttpSessionManager(HttpSessionManager httpSessionManager) {
 		this.httpSessionManager = httpSessionManager;
+	}
+
+	public int getAsynchronousContextCorePoolSize() {
+		return asynchronousContextCorePoolSize;
+	}
+
+	public void setAsynchronousContextCorePoolSize(int asynchronousContextCorePoolSize) {
+		this.asynchronousContextCorePoolSize = asynchronousContextCorePoolSize;
+	}
+
+	public int getAsynchronousContextMaximumPoolSize() {
+		return asynchronousContextMaximumPoolSize;
+	}
+
+	public void setAsynchronousContextMaximumPoolSize(int asynchronousContextMaximumPoolSize) {
+		this.asynchronousContextMaximumPoolSize = asynchronousContextMaximumPoolSize;
+	}
+
+	public int getAsynchronousContextCorePoolKeepAliveTime() {
+		return asynchronousContextCorePoolKeepAliveTime;
+	}
+
+	public void setAsynchronousContextCorePoolKeepAliveTime(int asynchronousContextCorePoolKeepAliveTime) {
+		this.asynchronousContextCorePoolKeepAliveTime = asynchronousContextCorePoolKeepAliveTime;
+	}
+
+	public int getAsynchronousContextTimeout() {
+		return asynchronousContextTimeout;
+	}
+
+	public void setAsynchronousContextTimeout(int asynchronousContextTimeout) {
+		this.asynchronousContextTimeout = asynchronousContextTimeout;
 	}
 
 }
