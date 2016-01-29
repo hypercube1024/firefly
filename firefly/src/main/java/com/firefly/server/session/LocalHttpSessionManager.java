@@ -4,24 +4,29 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 
-import com.firefly.server.Config;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.HashTimeWheel;
 import com.firefly.utils.time.Millisecond100Clock;
 
 public class LocalHttpSessionManager implements HttpSessionManager {
 
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+
 	private ConcurrentHashMap<String, HttpSessionImpl> map = new ConcurrentHashMap<String, HttpSessionImpl>();
-	private Config config;
-	
+
+	private int maxSessionInactiveInterval = 10 * 60;
+	private HttpSessionAttributeListener httpSessionAttributeListener = new HttpSessionAttributeListenerAdapter();
+	private HttpSessionListener httpSessionListener = new HttpSessionListenerAdapter();
+
 	private static final HashTimeWheel timeWheel = new HashTimeWheel();
+
 	static {
 		timeWheel.start();
-	}
-
-	public LocalHttpSessionManager(Config config) {
-		this.config = config;
 	}
 
 	@Override
@@ -33,7 +38,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 	public HttpSession remove(String id) {
 		HttpSession session = map.remove(id);
 		if (session != null)
-			config.getHttpSessionListener().sessionDestroyed(new HttpSessionEvent(session));
+			httpSessionListener.sessionDestroyed(new HttpSessionEvent(session));
 
 		return session;
 	}
@@ -46,13 +51,12 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 	@Override
 	public HttpSession create() {
 		String id = UUID.randomUUID().toString().replace("-", "");
-		long timeout = config.getMaxSessionInactiveInterval() * 1000;
-		HttpSessionImpl session = new HttpSessionImpl(this, id,
-				Millisecond100Clock.currentTimeMillis(),
-				config.getMaxSessionInactiveInterval());
+		long timeout = maxSessionInactiveInterval * 1000;
+		HttpSessionImpl session = new HttpSessionImpl(this, id, Millisecond100Clock.currentTimeMillis(),
+				maxSessionInactiveInterval);
 		timeWheel.add(timeout, new TimeoutTask(session));
 		map.put(id, session);
-		config.getHttpSessionListener().sessionCreated(new HttpSessionEvent(session));
+		httpSessionListener.sessionCreated(new HttpSessionEvent(session));
 		return session;
 	}
 
@@ -70,15 +74,15 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 
 		@Override
 		public void run() {
-			long t = Millisecond100Clock.currentTimeMillis() - session.getLastAccessedTime();
+			long timeDifference = Millisecond100Clock.currentTimeMillis() - session.getLastAccessedTime();
 			long timeout = session.getMaxInactiveInterval() * 1000;
-			// System.out.println(timeout + "|" + t);
-			if (t > timeout) {
-				// System.out.println("removie session id: " + session.getId());
+			log.debug("the local session timeout is {}, the time difference is {}", timeout, timeDifference);
+			if (timeDifference > timeout) {
+				log.debug("removes local session {}", session.getId());
 				remove(session.getId());
 			} else {
 				if (timeout > 0) {
-					long nextCheckTime = timeout - t;
+					long nextCheckTime = timeout - timeDifference;
 					timeWheel.add(nextCheckTime, TimeoutTask.this);
 				} else if (timeout == 0) {
 					remove(session.getId());
@@ -89,8 +93,33 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 	}
 
 	@Override
-	public Config getConfig() {
-		return config;
+	public int getMaxSessionInactiveInterval() {
+		return maxSessionInactiveInterval;
+	}
+
+	@Override
+	public void setMaxSessionInactiveInterval(int maxSessionInactiveInterval) {
+		this.maxSessionInactiveInterval = maxSessionInactiveInterval;
+	}
+
+	@Override
+	public HttpSessionAttributeListener getHttpSessionAttributeListener() {
+		return httpSessionAttributeListener;
+	}
+
+	@Override
+	public void setHttpSessionAttributeListener(HttpSessionAttributeListener httpSessionAttributeListener) {
+		this.httpSessionAttributeListener = httpSessionAttributeListener;
+	}
+
+	@Override
+	public HttpSessionListener getHttpSessionListener() {
+		return httpSessionListener;
+	}
+
+	@Override
+	public void setHttpSessionListener(HttpSessionListener httpSessionListener) {
+		this.httpSessionListener = httpSessionListener;
 	}
 
 }

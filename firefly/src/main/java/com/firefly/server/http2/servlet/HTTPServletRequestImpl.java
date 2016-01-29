@@ -36,6 +36,7 @@ import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -70,6 +71,10 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	private Charset encoding;
 	private String characterEncoding;
 	private Map<String, Object> attributeMap = new HashMap<String, Object>();
+	private boolean requestedSessionIdFromCookie;
+	private boolean requestedSessionIdFromURL;
+	private String requestedSessionId;
+	private HttpSession httpSession;
 
 	HTTPServletResponseImpl response = new HTTPServletResponseImpl();
 	private PipedStream bodyPipedStream;
@@ -187,7 +192,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		return connection.getLocalAddress().getPort();
 	}
 
-	// get HTTP heads and parameters
+	// get HTTP heads
 
 	@Override
 	public long getDateHeader(String name) {
@@ -213,6 +218,23 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	public int getIntHeader(String name) {
 		return (int) request.getFields().getLongField(name);
 	}
+
+	@Override
+	public int getContentLength() {
+		return (int) request.getContentLength();
+	}
+
+	@Override
+	public long getContentLengthLong() {
+		return request.getContentLength();
+	}
+
+	@Override
+	public String getContentType() {
+		return request.getFields().get(HttpHeader.CONTENT_TYPE);
+	}
+
+	// get HTTP request line
 
 	@Override
 	public String getMethod() {
@@ -258,20 +280,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		return request.getURI().getQuery();
 	}
 
-	@Override
-	public int getContentLength() {
-		return (int) request.getContentLength();
-	}
-
-	@Override
-	public long getContentLengthLong() {
-		return request.getContentLength();
-	}
-
-	@Override
-	public String getContentType() {
-		return request.getFields().get(HttpHeader.CONTENT_TYPE);
-	}
+	// get locale
 
 	@Override
 	public Locale getLocale() {
@@ -285,7 +294,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		return new IteratorWrap<Locale>(localeList.iterator());
 	}
 
-	protected void parseLocales() {
+	private void parseLocales() {
 		if (localeList == null) {
 			localeList = new ArrayList<>();
 			Enumeration<String> values = getHeaders("accept-language");
@@ -304,7 +313,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	 * @param value
 	 *            The head string
 	 */
-	protected void parseLocalesHeader(String value) {
+	private void parseLocalesHeader(String value) {
 		StringParser parser = new StringParser();
 		// Store the accumulated languages that have been requested in
 		// a local collection, sorted by the quality value (so we can
@@ -414,28 +423,11 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	@Override
 	public Cookie[] getCookies() {
 		if (cookies == null) {
-			List<Cookie> list = new ArrayList<Cookie>();
 			String cookieStr = getHeader("Cookie");
 			if (VerifyUtils.isEmpty(cookieStr)) {
 				cookies = EMPTY_COOKIE_ARR;
 			} else {
-				String[] c = StringUtils.split(cookieStr, ';');
-				for (String t : c) {
-					int j = 0;
-					for (int i = 0; i < t.length(); i++) {
-						if (t.charAt(i) == '=') {
-							j = i;
-							break;
-						}
-					}
-					if (j > 1) {
-						String name = t.substring(0, j).trim();
-						String value = t.substring(j + 1).trim();
-						Cookie cookie = new Cookie(name, value);
-						list.add(cookie);
-					} else
-						continue;
-				}
+				List<Cookie> list = CookieParser.parserServletCookie(cookieStr);
 				cookies = list.toArray(EMPTY_COOKIE_ARR);
 			}
 			return cookies;
@@ -443,6 +435,8 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 			return cookies;
 		}
 	}
+
+	// get HTTP body
 
 	PipedStream getBodyPipedStream() {
 		if (bodyPipedStream == null) {
@@ -577,7 +571,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		}
 	}
 
-	protected MultiMap<String> getParameters() {
+	private MultiMap<String> getParameters() {
 		if (parameterMap == null) {
 			parameterMap = new MultiMap<String>();
 			try {
@@ -661,22 +655,127 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		return null;
 	}
 
-	@Override
-	public RequestDispatcher getRequestDispatcher(String path) {
-		// TODO Auto-generated method stub
-		return null;
+	// get session
+
+	public static String getSessionId(String uri, String sessionIdName) {
+		String sessionId = null;
+		int i = uri.indexOf(';');
+		int j = uri.indexOf('#');
+		if (i > 0) {
+			String tmp = j > i ? uri.substring(i + 1, j) : uri.substring(i + 1);
+			int m = 0;
+			for (int k = 0; k < tmp.length(); k++) {
+				if (tmp.charAt(k) == '=') {
+					m = k;
+					break;
+				}
+			}
+			if (m > 0) {
+				String name = tmp.substring(0, m);
+				String value = tmp.substring(m + 1);
+				if (name.equals(sessionIdName)) {
+					sessionId = value;
+				}
+			}
+		}
+		return sessionId;
 	}
 
 	@Override
-	public String getRealPath(String path) {
-		// TODO Auto-generated method stub
-		return null;
+	public String getRequestedSessionId() {
+		if (requestedSessionId != null) {
+			return requestedSessionId;
+		} else if (isRequestedSessionIdFromCookie()) {
+			return requestedSessionId;
+		} else if (isRequestedSessionIdFromURL()) {
+			return requestedSessionId;
+		} else {
+			return null;
+		}
+	}
+
+	private HttpSession _getSession() {
+		if (httpSession == null) {
+			String sid = getRequestedSessionId();
+			httpSession = sid != null ? http2Configuration.getHttpSessionManager().get(sid) : null;
+			return httpSession;
+		} else {
+			return httpSession;
+		}
 	}
 
 	@Override
-	public ServletContext getServletContext() {
-		// TODO Auto-generated method stub
-		return null;
+	public HttpSession getSession(boolean create) {
+		if (create) {
+			httpSession = http2Configuration.getHttpSessionManager().create();
+			requestedSessionId = httpSession.getId();
+			response.addCookie(new Cookie(http2Configuration.getSessionIdName(), httpSession.getId()));
+			return httpSession;
+		} else {
+			return _getSession();
+		}
+	}
+
+	@Override
+	public HttpSession getSession() {
+		httpSession = _getSession();
+		if (httpSession == null) {
+			return getSession(true);
+		} else {
+			return httpSession;
+		}
+	}
+
+	@Override
+	public String changeSessionId() {
+		getSession(true);
+		return requestedSessionId;
+	}
+
+	@Override
+	public boolean isRequestedSessionIdValid() {
+		String sid = getRequestedSessionId();
+		if (sid == null) {
+			return false;
+		} else {
+			return http2Configuration.getHttpSessionManager().containsKey(sid);
+		}
+	}
+
+	@Override
+	public boolean isRequestedSessionIdFromCookie() {
+		if (requestedSessionId != null)
+			return requestedSessionIdFromCookie;
+
+		for (Cookie cookie : getCookies()) {
+			if (cookie.getName().equals(http2Configuration.getSessionIdName())) {
+				requestedSessionId = cookie.getValue();
+				requestedSessionIdFromCookie = true;
+				requestedSessionIdFromURL = false;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean isRequestedSessionIdFromURL() {
+		if (requestedSessionId != null)
+			return requestedSessionIdFromURL;
+
+		String sessionId = getSessionId(getRequestURI(), http2Configuration.getSessionIdName());
+		if (VerifyUtils.isNotEmpty(sessionId)) {
+			requestedSessionId = sessionId;
+			requestedSessionIdFromURL = true;
+			requestedSessionIdFromCookie = false;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean isRequestedSessionIdFromUrl() {
+		return isRequestedSessionIdFromURL();
 	}
 
 	@Override
@@ -684,6 +783,8 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	// asynchronous servlet
 
 	@Override
 	public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse)
@@ -706,6 +807,24 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 
 	@Override
 	public AsyncContext getAsyncContext() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RequestDispatcher getRequestDispatcher(String path) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getRealPath(String path) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ServletContext getServletContext() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -759,57 +878,9 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	}
 
 	@Override
-	public String getRequestedSessionId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String getServletPath() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public HttpSession getSession(boolean create) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public HttpSession getSession() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String changeSessionId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean isRequestedSessionIdValid() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean isRequestedSessionIdFromCookie() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean isRequestedSessionIdFromURL() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean isRequestedSessionIdFromUrl() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override

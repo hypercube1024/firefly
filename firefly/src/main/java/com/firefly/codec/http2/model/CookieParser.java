@@ -8,40 +8,22 @@ import com.firefly.utils.VerifyUtils;
 
 abstract public class CookieParser {
 
-	public static Cookie parseSetCookie(String cookieStr) {
+	public interface CookieParserCallback {
+		public void cookie(String name, String value);
+	}
+
+	public static void parseCookies(String cookieStr, CookieParserCallback callback) {
 		if (VerifyUtils.isEmpty(cookieStr)) {
 			throw new IllegalArgumentException("the cookie string is empty");
 		} else {
-			Cookie cookie = new Cookie();
 			String[] cookieKeyValues = StringUtils.split(cookieStr, ';');
-
 			for (String cookieKeyValue : cookieKeyValues) {
 				String[] kv = StringUtils.split(cookieKeyValue, "=", 2);
 				if (kv != null) {
 					if (kv.length == 2) {
-						String name = kv[0];
-						String value = kv[1];
-						if ("Comment".equalsIgnoreCase(name)) {
-							cookie.setComment(value);
-						} else if ("Domain".equalsIgnoreCase(name)) {
-							cookie.setDomain(value);
-						} else if ("Max-Age".equalsIgnoreCase(name)) {
-							cookie.setMaxAge(Integer.parseInt(value));
-						} else if ("Path".equalsIgnoreCase(name)) {
-							cookie.setPath(value);
-						} else if ("Secure".equalsIgnoreCase(name)) {
-							cookie.setSecure(true);
-						} else if ("Version".equalsIgnoreCase(name)) {
-							cookie.setVersion(Integer.parseInt(value));
-						} else {
-							cookie.setName(name);
-							cookie.setValue(value);
-						}
+						callback.cookie(kv[0], kv[1]);
 					} else if (kv.length == 1) {
-						String name = kv[0];
-						if ("Secure".equalsIgnoreCase(name)) {
-							cookie.setSecure(true);
-						}
+						callback.cookie(kv[0], "");
 					} else {
 						throw new IllegalStateException("the cookie string format error");
 					}
@@ -49,31 +31,58 @@ abstract public class CookieParser {
 					throw new IllegalStateException("the cookie string format error");
 				}
 			}
-			return cookie;
 		}
 	}
 
-	public static List<Cookie> parseCookie(String cookieStr) {
-		if (VerifyUtils.isEmpty(cookieStr)) {
-			throw new IllegalArgumentException("the cookie string is empty");
-		} else {
-			List<Cookie> list = new ArrayList<Cookie>();
-			String[] cookieKeyValues = StringUtils.split(cookieStr, ';');
-			for (String cookieKeyValue : cookieKeyValues) {
-				String[] kv = StringUtils.split(cookieKeyValue, "=", 2);
-				if (kv != null) {
-					if (kv.length == 2) {
-						list.add(new Cookie(kv[0], kv[1]));
-					} else if (kv.length == 1) {
-						list.add(new Cookie(kv[0], ""));
-					} else {
-						throw new IllegalStateException("the cookie string format error");
-					}
+	public static Cookie parseSetCookie(String cookieStr) {
+		final Cookie cookie = new Cookie();
+		parseCookies(cookieStr, new CookieParserCallback() {
+
+			@Override
+			public void cookie(String name, String value) {
+				if ("Comment".equalsIgnoreCase(name)) {
+					cookie.setComment(value);
+				} else if ("Domain".equalsIgnoreCase(name)) {
+					cookie.setDomain(value);
+				} else if ("Max-Age".equalsIgnoreCase(name)) {
+					cookie.setMaxAge(Integer.parseInt(value));
+				} else if ("Path".equalsIgnoreCase(name)) {
+					cookie.setPath(value);
+				} else if ("Secure".equalsIgnoreCase(name)) {
+					cookie.setSecure(true);
+				} else if ("Version".equalsIgnoreCase(name)) {
+					cookie.setVersion(Integer.parseInt(value));
 				} else {
-					throw new IllegalStateException("the cookie string format error");
+					cookie.setName(name);
+					cookie.setValue(value);
 				}
+
 			}
-			return list;
-		}
+		});
+		return cookie;
+	}
+
+	public static List<Cookie> parseCookie(String cookieStr) {
+		final List<Cookie> list = new ArrayList<>();
+		parseCookies(cookieStr, new CookieParserCallback() {
+
+			@Override
+			public void cookie(String name, String value) {
+				list.add(new Cookie(name, value));
+			}
+		});
+		return list;
+	}
+
+	public static List<javax.servlet.http.Cookie> parserServletCookie(String cookieStr) {
+		final List<javax.servlet.http.Cookie> list = new ArrayList<>();
+		parseCookies(cookieStr, new CookieParserCallback() {
+
+			@Override
+			public void cookie(String name, String value) {
+				list.add(new javax.servlet.http.Cookie(name, value));
+			}
+		});
+		return list;
 	}
 }

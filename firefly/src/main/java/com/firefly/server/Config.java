@@ -4,10 +4,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSessionAttributeListener;
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionListener;
 
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.SSLContextFactory;
@@ -57,31 +53,7 @@ public class Config {
 	
 	// session settings
 	private String sessionIdName = "jsessionid";
-	private int maxSessionInactiveInterval = 10 * 60;
-	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager(this);
-	private HttpSessionAttributeListener httpSessionAttributeListener = new HttpSessionAttributeListener() {
-		@Override
-		public void attributeAdded(HttpSessionBindingEvent se) {
-		}
-
-		@Override
-		public void attributeRemoved(HttpSessionBindingEvent se) {
-		}
-
-		@Override
-		public void attributeReplaced(HttpSessionBindingEvent se) {
-		}
-	};
-	private HttpSessionListener httpSessionListener = new HttpSessionListener() {
-
-		@Override
-		public void sessionCreated(HttpSessionEvent se) {
-		}
-
-		@Override
-		public void sessionDestroyed(HttpSessionEvent se) {
-		}
-	};
+	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager();
 
 	private HttpConnectionListener httpConnectionListener = new HttpConnectionListener() {
 
@@ -127,31 +99,6 @@ public class Config {
 
 	public void setConfigFileName(String configFileName) {
 		this.configFileName = configFileName;
-	}
-
-	public HttpSessionAttributeListener getHttpSessionAttributeListener() {
-		return httpSessionAttributeListener;
-	}
-
-	public void setHttpSessionAttributeListener(
-			HttpSessionAttributeListener httpSessionAttributeListener) {
-		this.httpSessionAttributeListener = httpSessionAttributeListener;
-	}
-
-	public HttpSessionListener getHttpSessionListener() {
-		return httpSessionListener;
-	}
-
-	public void setHttpSessionListener(HttpSessionListener httpSessionListener) {
-		this.httpSessionListener = httpSessionListener;
-	}
-
-	public int getMaxSessionInactiveInterval() {
-		return maxSessionInactiveInterval;
-	}
-
-	public void setMaxSessionInactiveInterval(int maxSessionInactiveInterval) {
-		this.maxSessionInactiveInterval = maxSessionInactiveInterval;
 	}
 
 	public String getSessionIdName() {

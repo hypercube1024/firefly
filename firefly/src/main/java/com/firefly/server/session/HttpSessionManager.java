@@ -1,19 +1,61 @@
 package com.firefly.server.session;
 
 import javax.servlet.http.HttpSession;
-
-import com.firefly.server.Config;
+import javax.servlet.http.HttpSessionAttributeListener;
+import javax.servlet.http.HttpSessionBindingEvent;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 
 public interface HttpSessionManager {
-	boolean containsKey(String id);
 
-	HttpSession remove(String id);
+	public boolean containsKey(String id);
 
-	HttpSession get(String id);
+	public HttpSession remove(String id);
 
-	HttpSession create();
+	public HttpSession get(String id);
 
-	int size();
+	public HttpSession create();
 
-	Config getConfig();
+	public int size();
+	
+	public int getMaxSessionInactiveInterval();
+	
+	public void setMaxSessionInactiveInterval(int maxSessionInactiveInterval);
+	
+	public HttpSessionAttributeListener getHttpSessionAttributeListener();
+	
+	public void setHttpSessionAttributeListener(HttpSessionAttributeListener httpSessionAttributeListener);
+	
+	public HttpSessionListener getHttpSessionListener();
+	
+	public void setHttpSessionListener(HttpSessionListener httpSessionListener);
+	
+	
+	public static class HttpSessionAttributeListenerAdapter implements HttpSessionAttributeListener {
+
+		@Override
+		public void attributeAdded(HttpSessionBindingEvent event) {
+		}
+
+		@Override
+		public void attributeRemoved(HttpSessionBindingEvent event) {
+		}
+
+		@Override
+		public void attributeReplaced(HttpSessionBindingEvent event) {
+		}
+		
+	}
+	
+	public static class HttpSessionListenerAdapter implements HttpSessionListener {
+
+		@Override
+		public void sessionCreated(HttpSessionEvent se) {
+		}
+
+		@Override
+		public void sessionDestroyed(HttpSessionEvent se) {
+		}
+		
+	}
 }

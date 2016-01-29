@@ -4,6 +4,8 @@ import java.io.File;
 
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
+import com.firefly.server.session.HttpSessionManager;
+import com.firefly.server.session.LocalHttpSessionManager;
 
 public class HTTP2Configuration {
 
@@ -29,6 +31,10 @@ public class HTTP2Configuration {
 	private String characterEncoding = "UTF-8";
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private String temporaryDirectory = new File(System.getProperty("user.dir"), "temp").getAbsolutePath();
+	
+	// HTTP servlet session 
+	private String sessionIdName = "jsessionid";
+	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager();
 
 	public com.firefly.net.Config getTcpConfiguration() {
 		return tcpConfiguration;
@@ -148,6 +154,22 @@ public class HTTP2Configuration {
 
 	public void setSslContextFactory(SSLContextFactory sslContextFactory) {
 		this.sslContextFactory = sslContextFactory;
+	}
+
+	public String getSessionIdName() {
+		return sessionIdName;
+	}
+
+	public void setSessionIdName(String sessionIdName) {
+		this.sessionIdName = sessionIdName;
+	}
+
+	public HttpSessionManager getHttpSessionManager() {
+		return httpSessionManager;
+	}
+
+	public void setHttpSessionManager(HttpSessionManager httpSessionManager) {
+		this.httpSessionManager = httpSessionManager;
 	}
 
 }
