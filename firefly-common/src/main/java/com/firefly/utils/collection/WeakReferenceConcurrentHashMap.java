@@ -3,7 +3,7 @@ package com.firefly.utils.collection;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
-public class WeakReferenceConcurrentHashMap<K, V> extends AbstractReferenceConcurrentHashMap<K, V> {
+public class WeakReferenceConcurrentHashMap<K, V> extends AbstractConcurrentAutomaticClearMap<K, V> {
 
 	private class ValueWeakReference extends WeakReference<V> {
 

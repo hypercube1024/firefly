@@ -5,14 +5,14 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.utils.collection.AbstractReferenceConcurrentHashMap;
+import com.firefly.utils.collection.ConcurrentAutomaticClearMap;
 import com.firefly.utils.collection.WeakReferenceConcurrentHashMap;
 
 public class TestWeakReferenceConcurrentHashMap {
 
 	@Test
 	public void test() {
-		AbstractReferenceConcurrentHashMap<String, String> map = new WeakReferenceConcurrentHashMap<>();
+		ConcurrentAutomaticClearMap<String, String> map = new WeakReferenceConcurrentHashMap<>();
 
 		long i = 0;
 		while (true) {

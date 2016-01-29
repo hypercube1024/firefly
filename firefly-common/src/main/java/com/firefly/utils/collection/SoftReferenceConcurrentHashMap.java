@@ -3,7 +3,7 @@ package com.firefly.utils.collection;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 
-public class SoftReferenceConcurrentHashMap<K, V> extends AbstractReferenceConcurrentHashMap<K, V> {
+public class SoftReferenceConcurrentHashMap<K, V> extends AbstractConcurrentAutomaticClearMap<K, V> {
 
 	private class ValueSoftReference extends SoftReference<V> {
 

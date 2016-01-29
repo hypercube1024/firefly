@@ -10,12 +10,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-abstract public class AbstractReferenceConcurrentHashMap<K, V> implements Map<K, V>, ConcurrentMap<K, V> {
+abstract public class AbstractConcurrentAutomaticClearMap<K, V> implements ConcurrentAutomaticClearMap<K, V>, ConcurrentMap<K, V> {
 
 	protected Map<K, Reference<V>> map = new ConcurrentHashMap<>();
 	protected ReferenceQueue<V> refQueue = new ReferenceQueue<>();
 
-	private void clearAllInvalidEntry() {
+	public void clearAllInvalidEntry() {
 		Reference<? extends V> ref;
 		while ((ref = refQueue.poll()) != null) {
 			clearInvalidEntry(ref);
