@@ -1,19 +1,11 @@
 package com.firefly.net;
 
 public class Config {
-	
+
 	private int timeout = 10 * 1000;
-	private int workerThreads;
-	{
-		int workers = Runtime.getRuntime().availableProcessors();
-		if (workers > 4)
-			workerThreads = workers * 2;
-		else
-			workerThreads = workers + 1;
-	}
-	
+
 	// asynchronous I/O thread pool settings
-	private int asynchronousCorePoolSize = workerThreads;
+	private int asynchronousCorePoolSize = Runtime.getRuntime().availableProcessors() * 2;
 	private int asynchronousMaximumPoolSize = 64;
 	private int asynchronousPoolKeepAliveTime = 15 * 1000;
 
@@ -34,20 +26,14 @@ public class Config {
 	}
 
 	/**
-	 * The I/O timeout, if the last I/O timestamp before  present over timeout value, the session will close. 
+	 * The I/O timeout, if the last I/O timestamp before present over timeout
+	 * value, the session will close.
 	 * 
-	 * @param timeout the max I/O idle time，the unit is MS.
+	 * @param timeout
+	 *            the max I/O idle time，the unit is MS.
 	 */
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
-	}
-
-	public int getWorkerThreads() {
-		return workerThreads;
-	}
-
-	public void setWorkerThreads(int workerThreads) {
-		this.workerThreads = workerThreads;
 	}
 
 	public String getServerName() {
@@ -116,7 +102,7 @@ public class Config {
 
 	@Override
 	public String toString() {
-		return "Asynchronous TCP configuration [timeout=" + timeout + ", workerThreads=" + workerThreads + ", asynchronousCorePoolSize="
+		return "Asynchronous TCP configuration [timeout=" + timeout + ", asynchronousCorePoolSize="
 				+ asynchronousCorePoolSize + ", asynchronousMaximumPoolSize=" + asynchronousMaximumPoolSize
 				+ ", asynchronousPoolKeepAliveTime=" + asynchronousPoolKeepAliveTime + "]";
 	}

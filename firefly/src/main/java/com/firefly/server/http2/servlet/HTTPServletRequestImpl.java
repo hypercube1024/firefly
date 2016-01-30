@@ -39,8 +39,11 @@ import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
+import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.server.exception.HttpServerException;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.collection.MultiMap;
@@ -58,6 +61,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 
 	private final HTTPConnection connection;
 	private final Request request;
+	private final HTTPServletResponseImpl response;
 
 	private static final Cookie[] EMPTY_COOKIE_ARR = new Cookie[0];
 	private Cookie[] cookies;
@@ -67,7 +71,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	private List<Locale> localeList;
 	private Collection<Part> parts;
 
-	private final HTTP2Configuration http2Configuration;
+	final HTTP2Configuration http2Configuration;
 	private Charset encoding;
 	private String characterEncoding;
 	private Map<String, Object> attributeMap = new HashMap<String, Object>();
@@ -76,14 +80,15 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	private String requestedSessionId;
 	private HttpSession httpSession;
 
-	HTTPServletResponseImpl response = new HTTPServletResponseImpl();
 	private PipedStream bodyPipedStream;
 	private ServletInputStream servletInputStream;
 	private BufferedReader bufferedReader;
 
 	private AsyncContextImpl asyncContext;
+	private RequestDispatcherImpl requestDispatcher;
 
-	public HTTPServletRequestImpl(HTTP2Configuration http2Configuration, Request request, HTTPConnection connection) {
+	public HTTPServletRequestImpl(HTTP2Configuration http2Configuration, Request request, Response response,
+			HTTPOutputStream output, HTTPConnection connection) {
 		this.request = request;
 		this.connection = connection;
 		this.http2Configuration = http2Configuration;
@@ -92,6 +97,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		} catch (UnsupportedEncodingException e) {
 			log.error("set character encoding error", e);
 		}
+		this.response = new HTTPServletResponseImpl(response, output, this);
 	}
 
 	private static class IteratorWrap<T> implements Enumeration<T> {
@@ -493,7 +499,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 		}
 	}
 
-	private class HttpServletInputStream extends ServletInputStream {
+	private class HTTPServletInputStream extends ServletInputStream {
 
 		@Override
 		public int available() throws IOException {
@@ -556,7 +562,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	@Override
 	public ServletInputStream getInputStream() throws IOException {
 		if (servletInputStream == null) {
-			servletInputStream = new HttpServletInputStream();
+			servletInputStream = new HTTPServletInputStream();
 			return servletInputStream;
 		} else {
 			return servletInputStream;
@@ -781,6 +787,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	}
 
 	// asynchronous servlet
+
 	@Override
 	public AsyncContext startAsync() throws IllegalStateException {
 		return startAsync(this, response);
@@ -822,98 +829,86 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 
 	@Override
 	public RequestDispatcher getRequestDispatcher(String path) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getRealPath(String path) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ServletContext getServletContext() {
-		// TODO Auto-generated method stub
-		return null;
+		if (requestDispatcher == null) {
+			requestDispatcher = new RequestDispatcherImpl();
+		}
+		requestDispatcher.path = path;
+		return requestDispatcher;
 	}
 
 	@Override
 	public DispatcherType getDispatcherType() {
-		// TODO Auto-generated method stub
-		return null;
+		return DispatcherType.REQUEST;
+	}
+
+	@Override
+	public String getRealPath(String path) {
+		throw new HttpServerException("not implement this method!");
+	}
+
+	@Override
+	public ServletContext getServletContext() {
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public String getAuthType() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public String getPathInfo() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public String getPathTranslated() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public String getContextPath() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public String getRemoteUser() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public boolean isUserInRole(String role) {
-		// TODO Auto-generated method stub
-		return false;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public Principal getUserPrincipal() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public String getServletPath() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return false;
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public void login(String username, String password) throws ServletException {
-		// TODO Auto-generated method stub
-
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public void logout() throws ServletException {
-		// TODO Auto-generated method stub
-
+		throw new HttpServerException("not implement this method!");
 	}
 
 	@Override
 	public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new HttpServerException("not implement this method!");
 	}
 
 }

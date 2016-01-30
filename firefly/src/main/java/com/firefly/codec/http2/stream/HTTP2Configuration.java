@@ -31,6 +31,7 @@ public class HTTP2Configuration {
 	private String characterEncoding = "UTF-8";
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private String temporaryDirectory = new File(System.getProperty("user.dir"), "temp").getAbsolutePath();
+	private int servletResponseBufferSize = 8 * 1024;
 
 	// HTTP servlet session
 	private String sessionIdName = "jsessionid";
@@ -39,7 +40,7 @@ public class HTTP2Configuration {
 	// asynchronous context pool settings
 	private int asynchronousContextCorePoolSize = Runtime.getRuntime().availableProcessors();
 	private int asynchronousContextMaximumPoolSize = 64;
-	private int asynchronousContextCorePoolKeepAliveTime = 15 * 1000;
+	private int asynchronousContextCorePoolKeepAliveTime = 10 * 1000;
 	private int asynchronousContextTimeout = 6 * 1000;
 
 	public com.firefly.net.Config getTcpConfiguration() {
@@ -208,6 +209,14 @@ public class HTTP2Configuration {
 
 	public void setAsynchronousContextTimeout(int asynchronousContextTimeout) {
 		this.asynchronousContextTimeout = asynchronousContextTimeout;
+	}
+
+	public int getServletResponseBufferSize() {
+		return servletResponseBufferSize;
+	}
+
+	public void setServletResponseBufferSize(int servletResponseBufferSize) {
+		this.servletResponseBufferSize = servletResponseBufferSize;
 	}
 
 }

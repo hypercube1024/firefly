@@ -27,7 +27,8 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	@Override
 	public boolean headerComplete(Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
-		HTTPServletRequestImpl servletRequest = new HTTPServletRequestImpl(http2Configuration, request, connection);
+		HTTPServletRequestImpl servletRequest = new HTTPServletRequestImpl(http2Configuration, request, response,
+				output, connection);
 		request.setAttachment(servletRequest);
 		return false;
 	}
