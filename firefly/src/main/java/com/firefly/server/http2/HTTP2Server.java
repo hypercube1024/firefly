@@ -11,8 +11,7 @@ import com.firefly.utils.log.LogFactory;
 public class HTTP2Server extends AbstractLifeCycle {
 
 	private final Server server;
-	private final String host;
-	private final int port;
+	private final HTTP2Configuration http2Configuration;
 
 	public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
 			ServerHTTPHandler serverHTTPHandler) {
@@ -27,8 +26,8 @@ public class HTTP2Server extends AbstractLifeCycle {
 		if (host == null)
 			throw new IllegalArgumentException("the http2 server host is empty");
 
-		this.host = host;
-		this.port = port;
+		http2Configuration.setHost(host);
+		http2Configuration.setPort(port);
 
 		DecoderChain decoder;
 		EncoderChain encoder;
@@ -46,11 +45,12 @@ public class HTTP2Server extends AbstractLifeCycle {
 		http2Configuration.getTcpConfiguration()
 				.setHandler(new HTTP2ServerHandler(http2Configuration, listener, serverHTTPHandler));
 		this.server = new AsynchronousTcpServer(http2Configuration.getTcpConfiguration());
+		this.http2Configuration = http2Configuration;
 	}
 
 	@Override
 	protected void init() {
-		server.start(host, port);
+		server.start(http2Configuration.getHost(), http2Configuration.getPort());
 	}
 
 	@Override

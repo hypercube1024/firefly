@@ -5,6 +5,7 @@ import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
@@ -97,7 +98,16 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
 		ErrorCode errorCode = ErrorCode.from(frame.getError());
 		String reason = errorCode == null ? "error=" + frame.getError() : errorCode.name().toLowerCase();
-		handler.badMessage(frame.getError(), reason, request, response, output, connection);
+		int status = HttpStatus.INTERNAL_SERVER_ERROR_500;
+		switch (errorCode) {
+		case PROTOCOL_ERROR:
+			status = HttpStatus.BAD_REQUEST_400;
+			break;
+		default:
+			status = HttpStatus.INTERNAL_SERVER_ERROR_500;
+			break;
+		}
+		handler.badMessage(status, reason, request, response, output, connection);
 	}
 
 	public static class ClientHttp2OutputStream extends AbstractHTTP2OutputStream {

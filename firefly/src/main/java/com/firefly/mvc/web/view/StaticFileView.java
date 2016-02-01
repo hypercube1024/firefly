@@ -14,9 +14,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
-import com.firefly.server.Config;
 import com.firefly.server.exception.HttpServerException;
 import com.firefly.server.http.Constants;
+import com.firefly.server.http.FileAccessFilter;
 import com.firefly.server.http.HttpServletResponseImpl;
 import com.firefly.server.http.io.StaticFileOutputStream;
 import com.firefly.utils.RandomUtils;
@@ -26,88 +26,98 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public class StaticFileView implements View {
-	
+
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	public static final String CRLF = "\r\n";
 	private static Set<String> ALLOW_METHODS = new HashSet<String>(Arrays.asList("GET", "POST", "HEAD"));
 	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(416,
-		"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
-	private static Config CONFIG;
+			"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
+	// private static Config CONFIG;
+	private static int MAX_RANGE_NUM;
+	private static String SERVER_HOME;
+	private static String CHARACTER_ENCODING = "UTF-8";
 	private static String TEMPLATE_PATH;
+	private static FileAccessFilter FILE_ACCESS_FILTER = new FileAccessFilter() {
+		@Override
+		public String doFilter(HttpServletRequest request, HttpServletResponse response, String path) {
+			return path;
+		}
+	};
 	private final String inputPath;
-	
+
 	public StaticFileView(String path) {
 		this.inputPath = path;
 	}
-	
-	public static void init(Config serverConfig, String tempPath) {
-		if(CONFIG == null && serverConfig != null)
-			CONFIG = serverConfig;
-		
-		if(TEMPLATE_PATH == null && tempPath != null)
+
+	public static void init(String characterEncoding, FileAccessFilter fileAccessFilter, String serverHome,
+			int maxRangeNum, String tempPath) {
+		CHARACTER_ENCODING = characterEncoding;
+		FILE_ACCESS_FILTER = fileAccessFilter;
+		SERVER_HOME = serverHome;
+		MAX_RANGE_NUM = maxRangeNum;
+		if (TEMPLATE_PATH == null && tempPath != null)
 			TEMPLATE_PATH = tempPath;
 	}
-	
+
 	/**
-	 * It checks input path, if this method returns true, the path is legal. 
-	 * The client can only visit all the subdirectories of server root directory. 
-	 * @param path The file path
-	 * @return Return true, if the path is legal, else return false. 
+	 * It checks input path, if this method returns true, the path is legal. The
+	 * client can only visit all the subdirectories of server root directory.
+	 * 
+	 * @param path
+	 *            The file path
+	 * @return Return true, if the path is legal, else return false.
 	 */
 	public static boolean checkPath(String path) {
-		if(path.length() < 3)
+		if (path.length() < 3)
 			return true;
 
-		if(path.charAt(0) == '/') {
+		if (path.charAt(0) == '/') {
 			for (int i = 1; i < path.length(); i++) {
 				char ch = path.charAt(i);
-			    if(ch == '/')
-			    	continue;
-			    
-			    if(ch != '.')
-			    	continue;
-			   
-			    if(i + 1 < path.length()) {
-			    	char next = path.charAt(i + 1);
-				    if(ch == '.' && next == '/') {
-				    	 return false;
-				    }
-			     
-			    	if(i + 2 < path.length()) {
-			    		if(ch == '.' && next == '.' && path.charAt(i + 2) == '/')
-			    			return false;
-			    	}
-			    }
+				if (ch == '/')
+					continue;
+
+				if (ch != '.')
+					continue;
+
+				if (i + 1 < path.length()) {
+					char next = path.charAt(i + 1);
+					if (ch == '.' && next == '/') {
+						return false;
+					}
+
+					if (i + 2 < path.length()) {
+						if (ch == '.' && next == '.' && path.charAt(i + 2) == '/')
+							return false;
+					}
+				}
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public void render(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		if(!checkPath(inputPath) || inputPath.startsWith(TEMPLATE_PATH)) {
-			SystemHtmlPage.responseSystemPage(request, response,
-					CONFIG.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
+	public void render(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		if (!checkPath(inputPath) || inputPath.startsWith(TEMPLATE_PATH)) {
+			SystemHtmlPage.responseSystemPage(request, response, CHARACTER_ENCODING, HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
 			return;
 		}
-		
-		if(!ALLOW_METHODS.contains(request.getMethod())) {
+
+		if (!ALLOW_METHODS.contains(request.getMethod())) {
 			response.setHeader("Allow", "GET,POST,HEAD");
-			SystemHtmlPage.responseSystemPage(request, response, CONFIG.getEncoding(), 
+			SystemHtmlPage.responseSystemPage(request, response, CHARACTER_ENCODING,
 					HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Only support GET, POST or HEAD method");
 			return;
 		}
-		
-		String path = CONFIG.getFileAccessFilter().doFilter(request, response, inputPath);
+
+		String path = FILE_ACCESS_FILTER.doFilter(request, response, inputPath);
 		if (VerifyUtils.isEmpty(path))
 			return;
-		
-		File file = new File(CONFIG.getServerHome(), path);
+
+		File file = new File(SERVER_HOME, path);
 		if (!file.exists() || file.isDirectory()) {
-			SystemHtmlPage.responseSystemPage(request, response,
-					CONFIG.getEncoding(), HttpServletResponse.SC_NOT_FOUND,
+			SystemHtmlPage.responseSystemPage(request, response, CHARACTER_ENCODING, HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
 			return;
 		}
@@ -116,23 +126,20 @@ public class StaticFileView implements View {
 		String contentType = Constants.MIME.get(fileSuffix);
 		if (contentType == null) {
 			response.setContentType("application/octet-stream");
-			response.setHeader("Content-Disposition", "attachment; filename="
-					+ file.getName());
+			response.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
 		} else {
 			String[] type = StringUtils.split(contentType, '/');
 			if ("application".equals(type[0])) {
-				response.setHeader("Content-Disposition",
-						"attachment; filename=" + file.getName());
+				response.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
 			} else if ("text".equals(type[0])) {
-				contentType += "; charset=" + CONFIG.getEncoding();
+				contentType += "; charset=" + CHARACTER_ENCODING;
 			}
 			response.setContentType(contentType);
 		}
 
 		StaticFileOutputStream out = null;
 		try {
-			out = ((HttpServletResponseImpl) response)
-					.getStaticFileOutputStream();
+			out = ((HttpServletResponseImpl) response).getStaticFileOutputStream();
 			long fileLen = file.length();
 			String range = request.getHeader("Range");
 			if (range == null) {
@@ -141,25 +148,22 @@ public class StaticFileView implements View {
 				String[] rangesSpecifier = StringUtils.split(range, '=');
 				if (rangesSpecifier.length != 2) {
 					response.setStatus(416);
-					out.write(RANGE_ERROR_HTML.getBytes(CONFIG.getEncoding()));
+					out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 					return;
 				}
 
 				String byteRangeSet = rangesSpecifier[1].trim();
 				String[] byteRangeSets = StringUtils.split(byteRangeSet, ',');
 				if (byteRangeSets.length > 1) { // multipart/byteranges
-					String boundary = "ff10" + RandomUtils.randomString(13); 
-					if (byteRangeSets.length > CONFIG.getMaxRangeNum()) {
-						log.error("multipart range more than {}",
-								CONFIG.getMaxRangeNum());
+					String boundary = "ff10" + RandomUtils.randomString(13);
+					if (byteRangeSets.length > MAX_RANGE_NUM) {
+						log.error("multipart range more than {}", MAX_RANGE_NUM);
 						response.setStatus(416);
-						out.write(RANGE_ERROR_HTML.getBytes(CONFIG
-								.getEncoding()));
+						out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 						return;
 					}
 					// multipart output
-					List<MultipartByteranges> tmpByteRangeSets = new ArrayList<MultipartByteranges>(
-							CONFIG.getMaxRangeNum());
+					List<MultipartByteranges> tmpByteRangeSets = new ArrayList<MultipartByteranges>(MAX_RANGE_NUM);
 					// long otherLen = 0;
 					for (String t : byteRangeSets) {
 						String tmp = t.trim();
@@ -174,9 +178,8 @@ public class StaticFileView implements View {
 								if (firstBytePos > lastBytePos)
 									continue;
 
-								MultipartByteranges multipartByteranges = getMultipartByteranges(
-										contentType, firstBytePos, lastBytePos,
-										fileLen, boundary);
+								MultipartByteranges multipartByteranges = getMultipartByteranges(contentType,
+										firstBytePos, lastBytePos, fileLen, boundary);
 								tmpByteRangeSets.add(multipartByteranges);
 							} else if (tmp.charAt(tmp.length() - 1) == '-') {
 								long firstBytePos = pos;
@@ -184,23 +187,18 @@ public class StaticFileView implements View {
 								if (firstBytePos > lastBytePos)
 									continue;
 
-								MultipartByteranges multipartByteranges = getMultipartByteranges(
-										contentType, firstBytePos, lastBytePos,
-										fileLen, boundary);
+								MultipartByteranges multipartByteranges = getMultipartByteranges(contentType,
+										firstBytePos, lastBytePos, fileLen, boundary);
 								tmpByteRangeSets.add(multipartByteranges);
 							}
 						} else {
-							long firstBytePos = Long.parseLong(byteRange[0]
-									.trim());
-							long lastBytePos = Long.parseLong(byteRange[1]
-									.trim());
-							if (firstBytePos > fileLen
-									|| firstBytePos >= lastBytePos)
+							long firstBytePos = Long.parseLong(byteRange[0].trim());
+							long lastBytePos = Long.parseLong(byteRange[1].trim());
+							if (firstBytePos > fileLen || firstBytePos >= lastBytePos)
 								continue;
 
-							MultipartByteranges multipartByteranges = getMultipartByteranges(
-									contentType, firstBytePos, lastBytePos,
-									fileLen, boundary);
+							MultipartByteranges multipartByteranges = getMultipartByteranges(contentType, firstBytePos,
+									lastBytePos, fileLen, boundary);
 							tmpByteRangeSets.add(multipartByteranges);
 						}
 					}
@@ -208,22 +206,19 @@ public class StaticFileView implements View {
 					if (tmpByteRangeSets.size() > 0) {
 						response.setStatus(206);
 						response.setHeader("Accept-Ranges", "bytes");
-						response.setHeader("Content-Type",
-								"multipart/byteranges; boundary=" + boundary);
+						response.setHeader("Content-Type", "multipart/byteranges; boundary=" + boundary);
 
 						for (MultipartByteranges m : tmpByteRangeSets) {
 							long length = m.lastBytePos - m.firstBytePos + 1;
-							out.write(m.head.getBytes(CONFIG.getEncoding()));
+							out.write(m.head.getBytes(CHARACTER_ENCODING));
 							out.write(file, m.firstBytePos, length);
 						}
 
-						out.write((CRLF + "--" + boundary + "--" + CRLF)
-								.getBytes(CONFIG.getEncoding()));
+						out.write((CRLF + "--" + boundary + "--" + CRLF).getBytes(CHARACTER_ENCODING));
 						log.debug("multipart download|{}", range);
 					} else {
 						response.setStatus(416);
-						out.write(RANGE_ERROR_HTML.getBytes(CONFIG
-								.getEncoding()));
+						out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 						return;
 					}
 				} else {
@@ -233,41 +228,34 @@ public class StaticFileView implements View {
 						long pos = Long.parseLong(byteRange[0].trim());
 						if (pos == 0) {
 							response.setStatus(416);
-							out.write(RANGE_ERROR_HTML.getBytes(CONFIG
-									.getEncoding()));
+							out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 							return;
 						}
 
 						if (tmp.charAt(0) == '-') {
 							long lastBytePos = fileLen - 1;
 							long firstBytePos = lastBytePos - pos + 1;
-							writePartialFile(request, response, out, file,
-									firstBytePos, lastBytePos, fileLen);
+							writePartialFile(request, response, out, file, firstBytePos, lastBytePos, fileLen);
 						} else if (tmp.charAt(tmp.length() - 1) == '-') {
-							writePartialFile(request, response, out, file, pos,
-									fileLen - 1, fileLen);
+							writePartialFile(request, response, out, file, pos, fileLen - 1, fileLen);
 						} else {
 							response.setStatus(416);
-							out.write(RANGE_ERROR_HTML.getBytes(CONFIG
-									.getEncoding()));
+							out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 							return;
 						}
 					} else {
 						long firstBytePos = Long.parseLong(byteRange[0].trim());
 						long lastBytePos = Long.parseLong(byteRange[1].trim());
-						if (firstBytePos > fileLen
-								|| firstBytePos >= lastBytePos) {
+						if (firstBytePos > fileLen || firstBytePos >= lastBytePos) {
 							response.setStatus(416);
-							out.write(RANGE_ERROR_HTML.getBytes(CONFIG
-									.getEncoding()));
+							out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 							return;
 						}
 
 						if (lastBytePos >= fileLen)
 							lastBytePos = fileLen - 1;
 
-						writePartialFile(request, response, out, file,
-								firstBytePos, lastBytePos, fileLen);
+						writePartialFile(request, response, out, file, firstBytePos, lastBytePos, fileLen);
 					}
 					log.debug("single range download|{}", range);
 				}
@@ -280,28 +268,24 @@ public class StaticFileView implements View {
 					// System.out.println("close~~");
 					out.close();
 				} catch (IOException e) {
-					throw new HttpServerException(
-							"static file output stream close error");
+					throw new HttpServerException("static file output stream close error");
 				}
 		}
 
 	}
-	
-	private void writePartialFile(HttpServletRequest request,
-			HttpServletResponse response, StaticFileOutputStream out,
-			File file, long firstBytePos, long lastBytePos, long fileLen)
-			throws Throwable {
+
+	private void writePartialFile(HttpServletRequest request, HttpServletResponse response, StaticFileOutputStream out,
+			File file, long firstBytePos, long lastBytePos, long fileLen) throws Throwable {
 
 		long length = lastBytePos - firstBytePos + 1;
 		if (length <= 0) {
 			response.setStatus(416);
-			out.write(RANGE_ERROR_HTML.getBytes(CONFIG.getEncoding()));
+			out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 			return;
 		}
 		response.setStatus(206);
 		response.setHeader("Accept-Ranges", "bytes");
-		response.setHeader("Content-Range", "bytes " + firstBytePos + "-"
-				+ lastBytePos + "/" + fileLen);
+		response.setHeader("Content-Range", "bytes " + firstBytePos + "-" + lastBytePos + "/" + fileLen);
 		out.write(file, firstBytePos, length);
 	}
 
@@ -322,14 +306,13 @@ public class StaticFileView implements View {
 		public long firstBytePos, lastBytePos;
 	}
 
-	private MultipartByteranges getMultipartByteranges(String contentType,
-			long firstBytePos, long lastBytePos, long fileLen, String boundary) {
+	private MultipartByteranges getMultipartByteranges(String contentType, long firstBytePos, long lastBytePos,
+			long fileLen, String boundary) {
 		MultipartByteranges ret = new MultipartByteranges();
 		ret.firstBytePos = firstBytePos;
 		ret.lastBytePos = lastBytePos;
-		ret.head = CRLF + "--" + boundary + CRLF + "Content-Type: "
-				+ contentType + CRLF + "Content-range: bytes " + firstBytePos
-				+ "-" + lastBytePos + "/" + fileLen + CRLF + CRLF;
+		ret.head = CRLF + "--" + boundary + CRLF + "Content-Type: " + contentType + CRLF + "Content-range: bytes "
+				+ firstBytePos + "-" + lastBytePos + "/" + fileLen + CRLF + CRLF;
 		return ret;
 	}
 

@@ -20,6 +20,7 @@ import com.firefly.codec.http2.model.CookieGenerator;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.server.exception.HttpServerException;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
@@ -64,15 +65,19 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 	}
 
 	@Override
-	public void sendError(int sc, String msg) throws IOException {
-		// TODO Auto-generated method stub
-
+	public void sendError(int status, String reason) throws IOException {
+		setStatus(status, reason);
+		try (PrintWriter writer = getWriter()) {
+			writer.print(SystemHtmlPage.systemPageTemplate(status, ""));
+		}
 	}
 
 	@Override
-	public void sendError(int sc) throws IOException {
-		// TODO Auto-generated method stub
-
+	public void sendError(int status) throws IOException {
+		setStatus(status);
+		try (PrintWriter writer = getWriter()) {
+			writer.print(SystemHtmlPage.systemPageTemplate(status, ""));
+		}
 	}
 
 	@Override

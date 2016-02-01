@@ -120,6 +120,10 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 
 	}
 
+	HTTPServletResponseImpl getResponse() {
+		return response;
+	}
+
 	// set and get request attribute
 
 	@Override
@@ -840,6 +844,16 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	public DispatcherType getDispatcherType() {
 		return DispatcherType.REQUEST;
 	}
+	
+	@Override
+	public String getContextPath() {
+		return "";
+	}
+	
+	@Override
+	public String getServletPath() {
+		return "";
+	}
 
 	@Override
 	public String getRealPath(String path) {
@@ -867,11 +881,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	}
 
 	@Override
-	public String getContextPath() {
-		throw new HttpServerException("not implement this method!");
-	}
-
-	@Override
 	public String getRemoteUser() {
 		throw new HttpServerException("not implement this method!");
 	}
@@ -883,11 +892,6 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 
 	@Override
 	public Principal getUserPrincipal() {
-		throw new HttpServerException("not implement this method!");
-	}
-
-	@Override
-	public String getServletPath() {
 		throw new HttpServerException("not implement this method!");
 	}
 

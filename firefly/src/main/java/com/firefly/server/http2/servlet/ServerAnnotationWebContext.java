@@ -1,10 +1,11 @@
-package com.firefly.server;
+package com.firefly.server.http2.servlet;
 
 import java.io.File;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebHandler;
@@ -16,33 +17,27 @@ import com.firefly.utils.log.LogFactory;
 public class ServerAnnotationWebContext extends AnnotationWebContext {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private Config serverConfig;
+	private HTTP2Configuration http2Configuration;
 
 	public ServerAnnotationWebContext(String file) {
 		super(file);
-		serverConfig = getBean(Config.class);
-		serverConfig.setConfigFileName(file);
+		http2Configuration = getBean(HTTP2Configuration.class);
+		http2Configuration.setConfigFileName(file);
 		viewInit();
 	}
 
-	public ServerAnnotationWebContext(Config serverConfig) {
-		super(serverConfig.getConfigFileName());
-		this.serverConfig = getBean(Config.class);
-		if (this.serverConfig == null) {
-			this.serverConfig = serverConfig;
-		}
+	public ServerAnnotationWebContext(HTTP2Configuration http2Configuration) {
+		super(http2Configuration.getConfigFileName());
+		this.http2Configuration = http2Configuration;
 		viewInit();
 	}
 
 	private void viewInit() {
-		log.info("server config file [{}]", serverConfig.getConfigFileName());
-		log.info("server home [{}]", serverConfig.getServerHome());
-		log.info("context path [{}]", serverConfig.getContextPath());
-		log.info("servlet path [{}]", serverConfig.getServletPath());
-		log.info("host [{}:{}]", serverConfig.getHost(), serverConfig.getPort());
-		TemplateView.init(new File(serverConfig.getServerHome(), getViewPath()).getAbsolutePath(), getEncoding());
-		StaticFileView.init(serverConfig.getEncoding(), serverConfig.getFileAccessFilter(),
-				serverConfig.getServerHome(), serverConfig.getMaxRangeNum(), getViewPath());
+		log.info("server config file [{}]", http2Configuration.getConfigFileName());
+		log.info("server home [{}]", http2Configuration.getServerHome());
+		TemplateView.init(new File(http2Configuration.getServerHome(), getViewPath()).getAbsolutePath(), getEncoding());
+		StaticFileView.init(http2Configuration.getCharacterEncoding(), http2Configuration.getFileAccessFilter(),
+				http2Configuration.getServerHome(), http2Configuration.getMaxRangeNum(), getViewPath());
 	}
 
 	@Override
@@ -57,7 +52,7 @@ public class ServerAnnotationWebContext extends AnnotationWebContext {
 		}
 
 		final String path = uri.equals("/") ? "/index.html" : uri;
-		File file = new File(serverConfig.getServerHome(), path);
+		File file = new File(http2Configuration.getServerHome(), path);
 		if (!file.exists() || file.isDirectory())
 			return;
 

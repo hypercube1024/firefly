@@ -8,6 +8,7 @@ import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
@@ -18,9 +19,11 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final HTTP2Configuration http2Configuration;
+	private final HttpServletDispatcherController controller;
 
-	public ServletServerHTTPHandler(HTTP2Configuration http2Configuration) {
+	public ServletServerHTTPHandler(HTTP2Configuration http2Configuration, HttpServletDispatcherController controller) {
 		this.http2Configuration = http2Configuration;
+		this.controller = controller;
 		AsyncContextImpl.init(http2Configuration);
 	}
 
@@ -48,9 +51,12 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	@Override
 	public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
+//		HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment();
+//		servletRequest.completeDataReceiving();
+//		controller.dispatch(servletRequest, servletRequest.getResponse());
 		try (HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment()) {
 			servletRequest.completeDataReceiving();
-			// TODO invoke controller
+			controller.dispatch(servletRequest, servletRequest.getResponse());
 		}
 		return true;
 	}
@@ -58,6 +64,12 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	@Override
 	public void badMessage(int status, String reason, Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
+		HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment();
+		try {
+			servletRequest.getResponse().sendError(status, reason);
+		} catch (IOException e) {
+			log.error("response bad message exception", e);
+		}
 	}
 
 }

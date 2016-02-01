@@ -1,9 +1,12 @@
 package com.firefly.codec.http2.stream;
 
 import java.io.File;
+import java.util.Map;
 
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
+import com.firefly.server.http.FileAccessFilter;
 import com.firefly.server.session.HttpSessionManager;
 import com.firefly.server.session.LocalHttpSessionManager;
 
@@ -32,6 +35,13 @@ public class HTTP2Configuration {
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private String temporaryDirectory = new File(System.getProperty("user.dir"), "temp").getAbsolutePath();
 	private int servletResponseBufferSize = 8 * 1024;
+	private String configFileName = "firefly.xml";
+	private String serverHome;
+	private String host;
+	private int port;
+	private FileAccessFilter fileAccessFilter;
+	private int maxRangeNum = 8;
+	private Map<Integer, String> errorPage;
 
 	// HTTP servlet session
 	private String sessionIdName = "jsessionid";
@@ -217,6 +227,63 @@ public class HTTP2Configuration {
 
 	public void setServletResponseBufferSize(int servletResponseBufferSize) {
 		this.servletResponseBufferSize = servletResponseBufferSize;
+	}
+
+	public String getServerHome() {
+		return serverHome;
+	}
+
+	public void setServerHome(String serverHome) {
+		this.serverHome = serverHome;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public String getConfigFileName() {
+		return configFileName;
+	}
+
+	public void setConfigFileName(String configFileName) {
+		this.configFileName = configFileName;
+	}
+
+	public FileAccessFilter getFileAccessFilter() {
+		return fileAccessFilter;
+	}
+
+	public void setFileAccessFilter(FileAccessFilter fileAccessFilter) {
+		this.fileAccessFilter = fileAccessFilter;
+	}
+
+	public int getMaxRangeNum() {
+		return maxRangeNum;
+	}
+
+	public void setMaxRangeNum(int maxRangeNum) {
+		this.maxRangeNum = maxRangeNum;
+	}
+
+	public Map<Integer, String> getErrorPage() {
+		return errorPage;
+	}
+
+	public void setErrorPage(Map<Integer, String> errorPage) {
+		this.errorPage = errorPage;
+		SystemHtmlPage.addErrorPageMap(errorPage);
 	}
 
 }
