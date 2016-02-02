@@ -69,12 +69,15 @@ public class PartImpl implements Part {
 				throw new HttpServerException("the Content-Disposition format exception");
 
 			for (String s : arr) {
-				if ("form-data".equalsIgnoreCase(s)) {
+				if ("form-data".equalsIgnoreCase(s.trim())) {
 					continue;
 				} else {
 					String[] arr2 = StringUtils.split(s, '=');
-					String key = arr2[0];
-					String value = arr2[1];
+					String key = arr2[0].trim();
+					String value = arr2[1].trim();
+					if (value.length() > 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
+						value = value.substring(1, value.length() - 1);
+					}
 					if (arr2 != null && arr2.length > 1) {
 						if ("name".equalsIgnoreCase(key)) {
 							name = value;

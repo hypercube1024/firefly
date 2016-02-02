@@ -21,7 +21,6 @@ import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.view.RedirectView;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
-import com.firefly.server.http.PartImpl;
 import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.io.LineReaderHandler;
 
@@ -39,19 +38,19 @@ public class IndexController {
 		response.addCookie(cookie);
 		return new TemplateView("/index.html");
 	}
-	
+
 	@RequestMapping(value = "/index-close")
 	public View indexShort(HttpServletRequest request, HttpServletResponse response) {
 		response.setHeader("Connection", "close");
 		return new TemplateView("/index.html");
 	}
-	
+
 	@RequestMapping(value = "/add", method = HttpMethod.POST)
 	public View add(HttpServletRequest request, HttpServletResponse response) {
 		System.out.println("into /add");
 		return new TextView(request.getParameter("content"));
 	}
-	
+
 	@RequestMapping(value = "/add2", method = HttpMethod.POST)
 	public View add2(HttpServletRequest request, HttpServletResponse response) {
 		System.out.println("into /add2");
@@ -62,8 +61,8 @@ public class IndexController {
 	public View test(HttpServletRequest request, HttpServletResponse response) {
 		HttpSession session = request.getSession();
 		session.setMaxInactiveInterval(15);
-		String name = (String)session.getAttribute("name");
-		if(name == null) {
+		String name = (String) session.getAttribute("name");
+		if (name == null) {
 			System.out.println("name is null");
 			name = "Qiu Pengtao";
 			session.setAttribute("name", name);
@@ -71,7 +70,7 @@ public class IndexController {
 		request.setAttribute("name", name);
 		return new TemplateView("/test.html");
 	}
-	
+
 	@RequestMapping(value = "/exit")
 	public View exit(HttpServletRequest request, HttpServletResponse response) {
 		request.getSession().invalidate();
@@ -80,20 +79,17 @@ public class IndexController {
 	}
 
 	@RequestMapping(value = "/index2")
-	public View index2(HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
+	public View index2(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.sendRedirect("index");
 		return null;
 	}
 
 	@RequestMapping(value = "/index3")
-	public View index3(HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
-		response.sendRedirect(request.getContextPath()
-				+ request.getServletPath() + "/index");
+	public View index3(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.sendRedirect(request.getContextPath() + request.getServletPath() + "/index");
 		return null;
 	}
-	
+
 	@RequestMapping(value = "/testc")
 	public View testOutContentLength(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String msg = "<html><body>test Content-Length output</body></html>";
@@ -110,35 +106,35 @@ public class IndexController {
 	}
 
 	@RequestMapping(value = "/index4")
-	public View index4(HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
+	public View index4(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		return new RedirectView("/index");
 	}
-	
+
 	@RequestMapping(value = "/document/?/?")
 	public View document(HttpServletRequest request, @PathVariable String[] args) {
 		System.out.println(Arrays.toString(args));
 		request.setAttribute("info", args);
 		return new TemplateView("/index.html");
 	}
-	
+
 	@RequestMapping(value = "/param")
 	public View testParam(HttpServletRequest request) {
 		Map<String, String[]> map = request.getParameterMap();
 		return new TextView(Arrays.toString(map.get("b")));
 	}
-	
+
 	@RequestMapping(value = "/big")
 	public View testBigData(HttpServletRequest request) throws InterruptedException {
 		final StringBuilder json = new StringBuilder();
 		try {
-			FileUtils.read(new File("/Users/qiupengtao/develop/jsontest.txt"), new LineReaderHandler(){
+			FileUtils.read(new File("/Users/qiupengtao/develop/jsontest.txt"), new LineReaderHandler() {
 
 				@Override
 				public void readline(String text, int num) {
 					json.append(text);
-					
-				}}, "UTF-8");
+
+				}
+			}, "UTF-8");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -146,29 +142,29 @@ public class IndexController {
 		Thread.sleep(5000);
 		return new TextView(ret);
 	}
-	
+
 	@RequestMapping(value = "/error")
 	public View testError(HttpServletRequest request) throws InterruptedException {
 		System.out.println("test error");
-		
+
 		throw new RuntimeException("test error");
 	}
-	
-	@RequestMapping(value = "/upload", method=HttpMethod.POST)
+
+	@RequestMapping(value = "/upload", method = HttpMethod.POST)
 	public View upload(HttpServletRequest request) throws IOException, ServletException {
 		System.out.println(">>>>>>>>> upload start");
-		for(Part part : request.getParts()) {
+		for (Part part : request.getParts()) {
 			System.out.println(part.getName() + "|" + part.getSize());
-			if(part.getName().startsWith("content")) {
-				part.write( "/Users/qiupengtao/fireflyTest/" + ((PartImpl)part).getFileName() );
+			if (part.getName().startsWith("content")) {
+				part.write("/Users/qiupengtao/fireflyTest/" + part.getSubmittedFileName());
 			} else {
-				part.write( "/Users/qiupengtao/fireflyTest/" + part.getName() + ".txt" );
+				part.write("/Users/qiupengtao/fireflyTest/" + part.getName() + ".txt");
 			}
 		}
-//		throw new RuntimeException("upload error");
+		// throw new RuntimeException("upload error");
 		return new TextView("upload ok!");
 	}
-	
+
 	@RequestMapping(value = "/testTimeout")
 	public View testTimeout() throws InterruptedException {
 		Thread.sleep(8000L);
