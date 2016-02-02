@@ -13,10 +13,12 @@ import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Log accessLog = LogFactory.getInstance().getLog("firefly-access");
 
 	private final HTTP2Configuration http2Configuration;
 	private final HttpServletDispatcherController controller;
@@ -51,10 +53,14 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	@Override
 	public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
+		long start = Millisecond100Clock.currentTimeMillis();
 		try (HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment()) {
 			servletRequest.completeDataReceiving();
 			controller.dispatch(servletRequest, servletRequest.getResponse());
 		}
+		long timeDifference = Millisecond100Clock.currentTimeMillis() - start;
+		accessLog.info("{}|{}|{}|{}", connection.getRemoteAddress(), request.getMethod(), request.getURI(),
+				timeDifference);
 		return true;
 	}
 

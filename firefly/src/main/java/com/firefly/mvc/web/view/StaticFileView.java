@@ -150,6 +150,7 @@ public class StaticFileView implements View {
 			long fileLen = file.length();
 			String range = request.getHeader("Range");
 			if (range == null) {
+				response.setStatus(200);
 				out.write(file, 0, fileLen);
 			} else {
 				String[] rangesSpecifier = StringUtils.split(range, '=');

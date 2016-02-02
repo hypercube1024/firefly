@@ -5,10 +5,15 @@ import com.firefly.core.AbstractLifeCycle;
 import com.firefly.mvc.web.WebContext;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.server.http2.HTTP2Server;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class ServerBootstrap extends AbstractLifeCycle {
 
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+
 	private final HTTP2Server http2Server;
+	private final long createTime = System.currentTimeMillis();
 
 	public ServerBootstrap(HTTP2Configuration http2Configuration) {
 		WebContext context = new ServerAnnotationWebContext(http2Configuration);
@@ -39,6 +44,7 @@ public class ServerBootstrap extends AbstractLifeCycle {
 	@Override
 	protected void init() {
 		http2Server.start();
+		log.info("the server start spends time in {}ms", System.currentTimeMillis() - createTime);
 	}
 
 	@Override

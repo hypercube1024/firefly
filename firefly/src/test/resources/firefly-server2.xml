@@ -10,6 +10,7 @@
 		<property name="serverHome" value="target/test-classes/page"></property>
 		<property name="host" value="localhost"></property>
 		<property name="port" value="6655"></property>
+		<property name="secureConnectionEnabled" value="true"></property>
 		<property name="errorPage">
 			<map>
 				<entry key="404" value="/error/err404.html"></entry>
