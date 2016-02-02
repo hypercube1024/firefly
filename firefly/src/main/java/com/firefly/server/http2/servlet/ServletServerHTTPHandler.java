@@ -51,9 +51,6 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	@Override
 	public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
-//		HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment();
-//		servletRequest.completeDataReceiving();
-//		controller.dispatch(servletRequest, servletRequest.getResponse());
 		try (HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment()) {
 			servletRequest.completeDataReceiving();
 			controller.dispatch(servletRequest, servletRequest.getResponse());

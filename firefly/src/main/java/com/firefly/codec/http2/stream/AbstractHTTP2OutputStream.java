@@ -248,6 +248,9 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 		if (closed)
 			return;
 
+		if (!data.hasRemaining())
+			return;
+
 		if (!commited) {
 			commit(data, endStream);
 		} else {

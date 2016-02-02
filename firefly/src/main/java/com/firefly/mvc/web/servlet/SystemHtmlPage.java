@@ -37,18 +37,11 @@ public class SystemHtmlPage {
 		response.setStatus(status);
 		response.setCharacterEncoding(charset);
 		response.setHeader("Content-Type", "text/html; charset=" + charset);
-		PrintWriter writer = null;
-		try {
-			try {
-				writer = response.getWriter();
-			} catch (Throwable t) {
-				log.error("responseSystemPage error", t);
-			}
+		try (PrintWriter writer = response.getWriter()) {
 			writer.print(systemPageTemplate(status, content));
-		} finally {
-			if (writer != null)
-				writer.close();
-		}
+		} catch (IOException e) {
+			log.error("response system page exception", e);
+		} 
 	}
 
 	public static String systemPageTemplate(int status, String content) {

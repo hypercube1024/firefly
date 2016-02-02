@@ -3,10 +3,13 @@ package com.firefly.codec.http2.stream;
 import java.io.File;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.firefly.mvc.web.FileAccessFilter;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
-import com.firefly.server.http.FileAccessFilter;
 import com.firefly.server.session.HttpSessionManager;
 import com.firefly.server.session.LocalHttpSessionManager;
 
@@ -39,9 +42,14 @@ public class HTTP2Configuration {
 	private String serverHome;
 	private String host;
 	private int port;
-	private FileAccessFilter fileAccessFilter;
 	private int maxRangeNum = 8;
 	private Map<Integer, String> errorPage;
+	private FileAccessFilter fileAccessFilter = new FileAccessFilter() {
+		@Override
+		public String doFilter(HttpServletRequest request, HttpServletResponse response, String path) {
+			return path;
+		}
+	};
 
 	// HTTP servlet session
 	private String sessionIdName = "jsessionid";

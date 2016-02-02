@@ -69,7 +69,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 			generateHTTPMessageExceptionally(generatorResult, generator.getState());
 		}
 	}
-	
+
 	@Override
 	public void write(ByteBuffer data, boolean endStream) throws IOException {
 		write(data);
@@ -78,6 +78,9 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 	@Override
 	public synchronized void write(ByteBuffer data) throws IOException {
 		if (closed)
+			return;
+
+		if (!data.hasRemaining())
 			return;
 
 		final HttpGenerator generator = getHttpGenerator();

@@ -245,16 +245,6 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 		return bufferSize;
 	}
 
-	public byte[] stringToByte(String str) {
-		byte[] ret = null;
-		try {
-			ret = str.getBytes(characterEncoding);
-		} catch (UnsupportedEncodingException e) {
-			log.error("string to bytes", e);
-		}
-		return ret;
-	}
-
 	@Override
 	public String encodeURL(String url) {
 		if (VerifyUtils.isEmpty(url))
@@ -344,11 +334,10 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 
 		@Override
 		public void print(String s) throws IOException {
-			if (VerifyUtils.isNotEmpty(s)) {
-				output.write(stringToByte(s));
-			} else {
-				throw new IllegalArgumentException("the string is empty");
-			}
+			if (VerifyUtils.isEmpty(s))
+				s = "null";
+
+			output.write(stringToByte(s));
 		}
 
 		@Override
@@ -361,12 +350,22 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 			output.close();
 		}
 
+		public byte[] stringToByte(String str) {
+			byte[] ret = null;
+			try {
+				ret = str.getBytes(characterEncoding);
+			} catch (UnsupportedEncodingException e) {
+				log.error("string to bytes", e);
+			}
+			return ret;
+		}
+
 	}
 
 	@Override
 	public ServletOutputStream getOutputStream() throws IOException {
 		if (printWriter != null) {
-			throw new IllegalStateException("the response has used PrintWriter");
+			throw new IOException("the response has used PrintWriter");
 		}
 
 		if (servletOutputStream == null) {
@@ -380,7 +379,7 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 	@Override
 	public PrintWriter getWriter() throws IOException {
 		if (servletOutputStream != null) {
-			throw new IllegalStateException("the response has used ServletOutputStream");
+			throw new IOException("the response has used ServletOutputStream");
 		}
 
 		if (printWriter == null) {

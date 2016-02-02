@@ -20,6 +20,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
+import com.firefly.mvc.web.Constants;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.Session;
 import com.firefly.server.exception.HttpServerException;

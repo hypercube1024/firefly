@@ -2,26 +2,32 @@ package com.firefly.mvc.web.view;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.firefly.mvc.web.Constants;
+import com.firefly.mvc.web.FileAccessFilter;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.server.exception.HttpServerException;
-import com.firefly.server.http.Constants;
-import com.firefly.server.http.FileAccessFilter;
-import com.firefly.server.http.HttpServletResponseImpl;
-import com.firefly.server.http.io.StaticFileOutputStream;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -32,7 +38,6 @@ public class StaticFileView implements View {
 	private static Set<String> ALLOW_METHODS = new HashSet<String>(Arrays.asList("GET", "POST", "HEAD"));
 	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(416,
 			"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
-	// private static Config CONFIG;
 	private static int MAX_RANGE_NUM;
 	private static String SERVER_HOME;
 	private static String CHARACTER_ENCODING = "UTF-8";
@@ -51,8 +56,12 @@ public class StaticFileView implements View {
 
 	public static void init(String characterEncoding, FileAccessFilter fileAccessFilter, String serverHome,
 			int maxRangeNum, String tempPath) {
-		CHARACTER_ENCODING = characterEncoding;
-		FILE_ACCESS_FILTER = fileAccessFilter;
+		if (VerifyUtils.isNotEmpty(characterEncoding)) {
+			CHARACTER_ENCODING = characterEncoding;
+		}
+		if (fileAccessFilter != null) {
+			FILE_ACCESS_FILTER = fileAccessFilter;
+		}
 		SERVER_HOME = serverHome;
 		MAX_RANGE_NUM = maxRangeNum;
 		if (TEMPLATE_PATH == null && tempPath != null)
@@ -137,13 +146,11 @@ public class StaticFileView implements View {
 			response.setContentType(contentType);
 		}
 
-		StaticFileOutputStream out = null;
-		try {
-			out = ((HttpServletResponseImpl) response).getStaticFileOutputStream();
+		try (FileServletOutputStream out = new FileServletOutputStream(request, response, response.getOutputStream())) {
 			long fileLen = file.length();
 			String range = request.getHeader("Range");
 			if (range == null) {
-				out.write(file);
+				out.write(file, 0, fileLen);
 			} else {
 				String[] rangesSpecifier = StringUtils.split(range, '=');
 				if (rangesSpecifier.length != 2) {
@@ -261,20 +268,13 @@ public class StaticFileView implements View {
 				}
 			}
 		} catch (Throwable e) {
+			log.error("static file output exception", e);
 			throw new HttpServerException("get static file output stream error");
-		} finally {
-			if (out != null)
-				try {
-					// System.out.println("close~~");
-					out.close();
-				} catch (IOException e) {
-					throw new HttpServerException("static file output stream close error");
-				}
 		}
 
 	}
 
-	private void writePartialFile(HttpServletRequest request, HttpServletResponse response, StaticFileOutputStream out,
+	private void writePartialFile(HttpServletRequest request, HttpServletResponse response, FileServletOutputStream out,
 			File file, long firstBytePos, long lastBytePos, long fileLen) throws Throwable {
 
 		long length = lastBytePos - firstBytePos + 1;
@@ -314,6 +314,161 @@ public class StaticFileView implements View {
 		ret.head = CRLF + "--" + boundary + CRLF + "Content-Type: " + contentType + CRLF + "Content-range: bytes "
 				+ firstBytePos + "-" + lastBytePos + "/" + fileLen + CRLF + CRLF;
 		return ret;
+	}
+
+	private class FileServletOutputStream extends ServletOutputStream {
+
+		private final HttpServletRequest request;
+		private final HttpServletResponse response;
+		private final ServletOutputStream out;
+		private final Queue<ChunkedData> queue = new LinkedList<ChunkedData>();
+		private long size;
+
+		public FileServletOutputStream(HttpServletRequest request, HttpServletResponse response,
+				ServletOutputStream out) {
+			this.request = request;
+			this.response = response;
+			this.out = out;
+		}
+
+		@Override
+		public boolean isReady() {
+			return out.isReady();
+		}
+
+		@Override
+		public void setWriteListener(WriteListener writeListener) {
+			out.setWriteListener(writeListener);
+		}
+
+		@Override
+		public void write(int b) throws IOException {
+			queue.offer(new ByteChunkedData((byte) b));
+			size++;
+		}
+
+		@Override
+		public void write(byte[] array, int offset, int length) throws IOException {
+			ChunkedData c = new ByteArrayChunkedData(array, offset, length);
+			queue.offer(c);
+			size += length;
+		}
+
+		public void write(File file, long off, long len) throws IOException {
+			queue.offer(new FileChunkedData(file, off, len));
+			size += len;
+		}
+
+		@Override
+		public void print(String string) throws IOException {
+			write(string.getBytes(response.getCharacterEncoding()));
+		}
+
+		@Override
+		public void flush() throws IOException {
+			out.flush();
+		}
+
+		@Override
+		public void close() throws IOException {
+			if (!response.isCommitted()) {
+				response.setHeader("Content-Length", String.valueOf(size));
+			}
+
+			if (size > 0) {
+				if (request.getMethod().equals("HEAD"))
+					queue.clear();
+				else {
+					for (ChunkedData d = null; (d = queue.poll()) != null;)
+						d.write();
+				}
+
+				size = 0;
+			}
+
+			out.close();
+		}
+
+		private class FileChunkedData extends ChunkedData {
+
+			private final long len;
+			private final long off;
+			private final File file;
+
+			public FileChunkedData(File file, long off, long len) {
+				this.off = off;
+				this.len = len;
+				this.file = file;
+			}
+
+			@Override
+			public void write() throws IOException {
+				try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+					try (FileChannel fc = raf.getChannel()) {
+						transferTo(fc, off, len);
+					}
+				}
+			}
+
+			private long transferTo(FileChannel fc, long pos, long len) throws IOException {
+				long ret = 0;
+				long bufferSize = 1024 * 8;
+
+				ByteBuffer buf = ByteBuffer.allocate((int) bufferSize);
+				int i = 0;
+				while ((i = fc.read(buf, pos)) != -1) {
+					if (i > 0) {
+						ret += i;
+						pos += i;
+						buf.flip();
+						out.write(BufferUtils.toArray(buf));
+						buf = ByteBuffer.allocate((int) bufferSize);
+					}
+					if (log.isDebugEnabled()) {
+						log.debug("write file ret {} | len {}", ret, len);
+					}
+					if (ret >= len)
+						break;
+				}
+				return ret;
+			}
+
+		}
+
+		private class ByteChunkedData extends ChunkedData {
+			private final byte b;
+
+			public ByteChunkedData(byte b) {
+				this.b = b;
+			}
+
+			@Override
+			public void write() throws IOException {
+				out.write(b);
+			}
+		}
+
+		private class ByteArrayChunkedData extends ChunkedData {
+			private final byte[] b;
+			private final int len;
+			private final int off;
+
+			public ByteArrayChunkedData(byte[] b, int off, int len) {
+				this.b = b;
+				this.off = off;
+				this.len = len;
+			}
+
+			@Override
+			public void write() throws IOException {
+				out.write(b, off, len);
+			}
+		}
+
+		abstract private class ChunkedData {
+			abstract public void write() throws IOException;
+		}
+
 	}
 
 }

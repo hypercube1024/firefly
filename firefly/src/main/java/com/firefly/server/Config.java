@@ -5,11 +5,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.firefly.mvc.web.FileAccessFilter;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
-import com.firefly.server.http.FileAccessFilter;
 import com.firefly.server.http.HttpConnectionListener;
 import com.firefly.server.session.HttpSessionManager;
 import com.firefly.server.session.LocalHttpSessionManager;

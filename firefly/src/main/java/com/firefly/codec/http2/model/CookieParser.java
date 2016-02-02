@@ -21,9 +21,9 @@ abstract public class CookieParser {
 				String[] kv = StringUtils.split(cookieKeyValue, "=", 2);
 				if (kv != null) {
 					if (kv.length == 2) {
-						callback.cookie(kv[0], kv[1]);
+						callback.cookie(kv[0].trim(), kv[1].trim());
 					} else if (kv.length == 1) {
-						callback.cookie(kv[0], "");
+						callback.cookie(kv[0].trim(), "");
 					} else {
 						throw new IllegalStateException("the cookie string format error");
 					}
