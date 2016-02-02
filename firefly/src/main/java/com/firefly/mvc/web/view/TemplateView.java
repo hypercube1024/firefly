@@ -68,6 +68,7 @@ public class TemplateView implements View {
 			return;
 		}
 		
+		response.setStatus(HttpServletResponse.SC_OK);
 		response.setCharacterEncoding(templateFactory.getConfig().getCharset());
 		response.setHeader("Content-Type", "text/html; charset=" + templateFactory.getConfig().getCharset());
 		ServletOutputStream out = response.getOutputStream();

@@ -36,7 +36,8 @@ public class StaticFileView implements View {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	public static final String CRLF = "\r\n";
 	private static Set<String> ALLOW_METHODS = new HashSet<String>(Arrays.asList("GET", "POST", "HEAD"));
-	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(416,
+	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(
+			HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
 			"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
 	private static int MAX_RANGE_NUM;
 	private static String SERVER_HOME;
@@ -150,12 +151,12 @@ public class StaticFileView implements View {
 			long fileLen = file.length();
 			String range = request.getHeader("Range");
 			if (range == null) {
-				response.setStatus(200);
+				response.setStatus(HttpServletResponse.SC_OK);
 				out.write(file, 0, fileLen);
 			} else {
 				String[] rangesSpecifier = StringUtils.split(range, '=');
 				if (rangesSpecifier.length != 2) {
-					response.setStatus(416);
+					response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 					out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 					return;
 				}
@@ -166,7 +167,7 @@ public class StaticFileView implements View {
 					String boundary = "ff10" + RandomUtils.randomString(13);
 					if (byteRangeSets.length > MAX_RANGE_NUM) {
 						log.error("multipart range more than {}", MAX_RANGE_NUM);
-						response.setStatus(416);
+						response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 						out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 						return;
 					}
@@ -212,7 +213,7 @@ public class StaticFileView implements View {
 					}
 
 					if (tmpByteRangeSets.size() > 0) {
-						response.setStatus(206);
+						response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
 						response.setHeader("Accept-Ranges", "bytes");
 						response.setHeader("Content-Type", "multipart/byteranges; boundary=" + boundary);
 
@@ -225,7 +226,7 @@ public class StaticFileView implements View {
 						out.write((CRLF + "--" + boundary + "--" + CRLF).getBytes(CHARACTER_ENCODING));
 						log.debug("multipart download|{}", range);
 					} else {
-						response.setStatus(416);
+						response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 						out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 						return;
 					}
@@ -235,7 +236,7 @@ public class StaticFileView implements View {
 					if (byteRange.length == 1) {
 						long pos = Long.parseLong(byteRange[0].trim());
 						if (pos == 0) {
-							response.setStatus(416);
+							response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 							out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 							return;
 						}
@@ -247,7 +248,7 @@ public class StaticFileView implements View {
 						} else if (tmp.charAt(tmp.length() - 1) == '-') {
 							writePartialFile(request, response, out, file, pos, fileLen - 1, fileLen);
 						} else {
-							response.setStatus(416);
+							response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 							out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 							return;
 						}
@@ -255,7 +256,7 @@ public class StaticFileView implements View {
 						long firstBytePos = Long.parseLong(byteRange[0].trim());
 						long lastBytePos = Long.parseLong(byteRange[1].trim());
 						if (firstBytePos > fileLen || firstBytePos >= lastBytePos) {
-							response.setStatus(416);
+							response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 							out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 							return;
 						}
@@ -280,11 +281,11 @@ public class StaticFileView implements View {
 
 		long length = lastBytePos - firstBytePos + 1;
 		if (length <= 0) {
-			response.setStatus(416);
+			response.setStatus(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 			out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 			return;
 		}
-		response.setStatus(206);
+		response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
 		response.setHeader("Accept-Ranges", "bytes");
 		response.setHeader("Content-Range", "bytes " + firstBytePos + "-" + lastBytePos + "/" + fileLen);
 		out.write(file, firstBytePos, length);
