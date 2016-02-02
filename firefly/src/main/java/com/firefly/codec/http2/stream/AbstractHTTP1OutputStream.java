@@ -71,11 +71,6 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 	}
 
 	@Override
-	public void write(ByteBuffer data, boolean endStream) throws IOException {
-		write(data);
-	}
-
-	@Override
 	public synchronized void write(ByteBuffer data) throws IOException {
 		if (closed)
 			return;

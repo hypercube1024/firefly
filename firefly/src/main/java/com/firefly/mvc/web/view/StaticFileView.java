@@ -413,9 +413,9 @@ public class StaticFileView implements View {
 
 			private long transferTo(FileChannel fc, long pos, long len) throws IOException {
 				long ret = 0;
-				long bufferSize = 1024 * 8;
+				int bufferSize = 1024 * 8;
 
-				ByteBuffer buf = ByteBuffer.allocate((int) bufferSize);
+				ByteBuffer buf = ByteBuffer.allocate(bufferSize);
 				int i = 0;
 				while ((i = fc.read(buf, pos)) != -1) {
 					if (i > 0) {
@@ -423,7 +423,7 @@ public class StaticFileView implements View {
 						pos += i;
 						buf.flip();
 						out.write(BufferUtils.toArray(buf));
-						buf = ByteBuffer.allocate((int) bufferSize);
+						buf = ByteBuffer.allocate(bufferSize);
 					}
 					if (log.isDebugEnabled()) {
 						log.debug("write file ret {} | len {}", ret, len);

@@ -57,8 +57,6 @@ public class HTTP2ServerTLSDemo {
 					}
 				} else if (uri.getPath().equals("/data")) {
 					response.setStatus(200);
-//					response.getFields().put(HttpHeader.TRAILER, "foo");
-//					response.getFields().put("Trailer-Value", "mytest");
 					try (HTTPOutputStream output = outputStream) {
 						output.write(
 								BufferUtils.toBuffer("receive data stream successful\r\n", StandardCharsets.UTF_8));
@@ -69,9 +67,10 @@ public class HTTP2ServerTLSDemo {
 				} else if (uri.getPath().equals("/data2")) {
 					response.setStatus(200);
 					try (HTTPOutputStream output = outputStream) {
-						output.write(
-								BufferUtils.toBuffer("receive data 2 stream successful\r\n", StandardCharsets.UTF_8));
-						output.write(BufferUtils.toBuffer("thank you 2 \r\n", StandardCharsets.UTF_8), true);
+						ByteBuffer[] data = new ByteBuffer[] {
+								BufferUtils.toBuffer("receive data 2 stream successful\r\n", StandardCharsets.UTF_8),
+								BufferUtils.toBuffer("thank you 2 \r\n", StandardCharsets.UTF_8) };
+						output.writeWithContentLength(data);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

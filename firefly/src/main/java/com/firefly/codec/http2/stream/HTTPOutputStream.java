@@ -47,6 +47,4 @@ public abstract class HTTPOutputStream extends OutputStream {
 	abstract public void commit() throws IOException;
 	
 	abstract public void write(ByteBuffer data) throws IOException;
-	
-	abstract public void write(ByteBuffer data, boolean endStream) throws IOException;
 }
