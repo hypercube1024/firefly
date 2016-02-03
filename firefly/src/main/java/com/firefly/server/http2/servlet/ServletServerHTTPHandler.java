@@ -3,6 +3,7 @@ package com.firefly.server.http2.servlet;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -10,6 +11,7 @@ import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.server.http2.ServerHTTPHandler;
+import com.firefly.server.http2.servlet.utils.ClientIPUtils;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -59,8 +61,8 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 			controller.dispatch(servletRequest, servletRequest.getResponse());
 		}
 		long timeDifference = Millisecond100Clock.currentTimeMillis() - start;
-		accessLog.info("sid[{}], remoteAddr[{}], method:[{}], uri:[{}], timeDiff:[{}]", connection.getSessionId(),
-				connection.getRemoteAddress(), request.getMethod(), request.getURI(), timeDifference);
+		accessLog.info("sid:[{}], remoteAddr:[{}], method:[{}], uri:[{}], timeDiff:[{}]", connection.getSessionId(),
+				getRemoteAddr(request, connection), request.getMethod(), request.getURI(), timeDifference);
 		return true;
 	}
 
@@ -72,6 +74,19 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 			servletRequest.getResponse().sendError(status, reason);
 		} catch (IOException e) {
 			log.error("response bad message exception", e);
+		}
+	}
+
+	private Object getRemoteAddr(Request request, HTTPConnection connection) {
+		String remoteAddr = ClientIPUtils.parseRemoteAddr(request.getFields().get(HttpHeader.X_FORWARDED_FOR));
+		if (remoteAddr != null) {
+			return remoteAddr;
+		} else {
+			if (connection.isOpen()) {
+				return connection.getRemoteAddress();
+			} else {
+				return "null";
+			}
 		}
 	}
 
