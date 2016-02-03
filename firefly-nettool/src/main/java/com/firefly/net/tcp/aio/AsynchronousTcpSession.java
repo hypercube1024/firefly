@@ -112,7 +112,7 @@ public class AsynchronousTcpSession implements Session {
 					public void failed(Throwable t, AsynchronousTcpSession session) {
 						if (t instanceof InterruptedByTimeoutException) {
 							if (log.isDebugEnabled()) {
-								log.debug("the session {} reading data is timout.", getSessionId());
+								log.debug("the session {} reading data is timeout.", getSessionId());
 							}
 						} else {
 							log.error("the session {} read data is failed", t, session.getSessionId());
@@ -126,7 +126,7 @@ public class AsynchronousTcpSession implements Session {
 	private void writingFailedCallback(Callback callback, Throwable t) {
 		if (t instanceof InterruptedByTimeoutException) {
 			if (log.isDebugEnabled()) {
-				log.debug("the session {} writing data is timout.", getSessionId());
+				log.debug("the session {} writing data is timeout.", getSessionId());
 			}
 		} else {
 			log.error("the session {} writes data is failed", t, getSessionId());
