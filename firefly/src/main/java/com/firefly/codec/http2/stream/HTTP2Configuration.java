@@ -9,8 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 import com.firefly.mvc.web.FileAccessFilter;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
-import com.firefly.server.session.HttpSessionManager;
-import com.firefly.server.session.LocalHttpSessionManager;
+import com.firefly.server.http2.servlet.session.HttpSessionManager;
+import com.firefly.server.http2.servlet.session.LocalHttpSessionManager;
 
 public class HTTP2Configuration {
 	
