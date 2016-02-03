@@ -1,6 +1,7 @@
 package com.firefly.mvc.web.view;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -27,7 +28,11 @@ import com.firefly.server.exception.HttpServerException;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -148,11 +153,10 @@ public class StaticFileView implements View {
 		}
 
 		try (FileServletOutputStream out = new FileServletOutputStream(request, response, response.getOutputStream())) {
-			long fileLen = file.length();
 			String range = request.getHeader("Range");
 			if (range == null) {
 				response.setStatus(HttpServletResponse.SC_OK);
-				out.write(file, 0, fileLen);
+				out.write(file);
 			} else {
 				String[] rangesSpecifier = StringUtils.split(range, '=');
 				if (rangesSpecifier.length != 2) {
@@ -160,6 +164,8 @@ public class StaticFileView implements View {
 					out.write(RANGE_ERROR_HTML.getBytes(CHARACTER_ENCODING));
 					return;
 				}
+
+				long fileLen = file.length();
 
 				String byteRangeSet = rangesSpecifier[1].trim();
 				String[] byteRangeSets = StringUtils.split(byteRangeSet, ',');
@@ -356,8 +362,15 @@ public class StaticFileView implements View {
 			size += length;
 		}
 
+		public void write(File file) throws IOException {
+			long len = file.length();
+			SequenceAccessFileChunkedData data = new SequenceAccessFileChunkedData(file, len);
+			queue.offer(data);
+			size += data.getLength();
+		}
+
 		public void write(File file, long off, long len) throws IOException {
-			queue.offer(new FileChunkedData(file, off, len));
+			queue.offer(new RandomAccessFileChunkedData(file, off, len));
 			size += len;
 		}
 
@@ -387,17 +400,57 @@ public class StaticFileView implements View {
 
 				size = 0;
 			}
-
 			out.close();
 		}
 
-		private class FileChunkedData extends ChunkedData {
+		private class FileBufferReaderHandler implements BufferReaderHandler {
+
+			private final long len;
+
+			public FileBufferReaderHandler(long len) {
+				this.len = len;
+			}
+
+			@Override
+			public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count) throws IOException {
+				log.debug("write file,  count: {} , lenth: {}", count, len);
+				out.write(BufferUtils.toArray(buf));
+			}
+
+		}
+
+		private class SequenceAccessFileChunkedData extends ChunkedData {
+
+			private final File file;
+			private final long len;
+
+			public SequenceAccessFileChunkedData(File file, long len) {
+				this.file = file;
+				this.len = len;
+			}
+
+			public long getLength() {
+				return len;
+			}
+
+			@Override
+			public void write() throws IOException {
+				try (FileInputStream input = new FileInputStream(file)) {
+					try (FileChannel fc = input.getChannel()) {
+						FileUtils.transferTo(fc, len, Callback.NOOP, new FileBufferReaderHandler(len));
+					}
+				}
+			}
+
+		}
+
+		private class RandomAccessFileChunkedData extends ChunkedData {
 
 			private final long len;
 			private final long off;
 			private final File file;
 
-			public FileChunkedData(File file, long off, long len) {
+			public RandomAccessFileChunkedData(File file, long off, long len) {
 				this.off = off;
 				this.len = len;
 				this.file = file;
@@ -407,32 +460,9 @@ public class StaticFileView implements View {
 			public void write() throws IOException {
 				try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
 					try (FileChannel fc = raf.getChannel()) {
-						transferTo(fc, off, len);
+						FileUtils.transferTo(fc, off, len, Callback.NOOP, new FileBufferReaderHandler(len));
 					}
 				}
-			}
-
-			private long transferTo(FileChannel fc, long pos, long len) throws IOException {
-				long ret = 0;
-				int bufferSize = 1024 * 8;
-
-				ByteBuffer buf = ByteBuffer.allocate(bufferSize);
-				int i = 0;
-				while ((i = fc.read(buf, pos)) != -1) {
-					if (i > 0) {
-						ret += i;
-						pos += i;
-						buf.flip();
-						out.write(BufferUtils.toArray(buf));
-						buf = ByteBuffer.allocate(bufferSize);
-					}
-					if (log.isDebugEnabled()) {
-						log.debug("write file ret {} | len {}", ret, len);
-					}
-					if (ret >= len)
-						break;
-				}
-				return ret;
 			}
 
 		}

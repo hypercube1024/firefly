@@ -319,6 +319,14 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 
 		@Override
 		public synchronized void write(byte[] array, int offset, int length) throws IOException {
+			if (array == null || array.length == 0 || length <= 0) {
+				return;
+			}
+
+			if (offset < 0) {
+				throw new IllegalArgumentException("the offset is less than 0");
+			}
+
 			if (length >= buf.length) {
 				flush();
 				output.write(array, offset, length);
@@ -350,6 +358,7 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 
 		@Override
 		public synchronized void close() throws IOException {
+			flush();
 			output.close();
 		}
 
@@ -364,7 +373,7 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 		}
 		return ret;
 	}
-	
+
 	@Override
 	public boolean isCommitted() {
 		return output.isCommited();

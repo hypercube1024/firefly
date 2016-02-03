@@ -7,7 +7,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
-import java.nio.channels.FileChannel;
 import java.nio.channels.InterruptedByTimeoutException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -16,18 +15,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.firefly.net.BufferSizePredictor;
 import com.firefly.net.ByteBufferArrayOutputEntry;
 import com.firefly.net.ByteBufferOutputEntry;
 import com.firefly.net.Config;
 import com.firefly.net.EventManager;
 import com.firefly.net.OutputEntry;
-import com.firefly.net.BufferSizePredictor;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -272,43 +273,35 @@ public class AsynchronousTcpSession implements Session {
 		write(new ByteBufferArrayOutputEntry(callback, buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY)));
 	}
 
-	@Override
-	public void write(FileRegion file, Callback callback) {
-		try {
-			transferTo(file.getFile(), file.getPosition(), file.getCount(), callback);
-		} catch (Throwable t) {
-			log.error("transfer file error", t);
-		} finally {
-			file.releaseExternalResources();
+	private class FileBufferReaderHandler implements BufferReaderHandler {
+
+		private final long len;
+
+		public FileBufferReaderHandler(long len) {
+			this.len = len;
 		}
+
+		@Override
+		public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count) {
+			log.debug("write file,  count: {} , lenth: {}", count, len);
+			write(buf, countingCallback);
+		}
+
 	}
 
-	public long transferTo(FileChannel fc, long pos, long len, Callback callback) throws Throwable {
-		long ret = 0;
-		long bufferSize = 1024 * 8;
-		long bufferCount = (len + bufferSize - 1) / bufferSize;
-		CountingCallback countingCallback = new CountingCallback(callback, (int) bufferCount);
-		try {
-			ByteBuffer buf = ByteBuffer.allocate((int) bufferSize);
-			int i = 0;
-			while ((i = fc.read(buf, pos)) != -1) {
-				if (i > 0) {
-					ret += i;
-					pos += i;
-					buf.flip();
-					write(buf, countingCallback);
-					buf = ByteBuffer.allocate((int) bufferSize);
-				}
-				if (log.isDebugEnabled()) {
-					log.debug("write file ret {} | len {}", ret, len);
-				}
-				if (ret >= len)
-					break;
+	@Override
+	public void write(FileRegion file, Callback callback) {
+		try (FileRegion fileRegion = file) {
+			if (fileRegion.isRandomAccess()) {
+				FileUtils.transferTo(fileRegion.getFileChannel(), fileRegion.getPosition(), fileRegion.getLength(),
+						callback, new FileBufferReaderHandler(fileRegion.getLength()));
+			} else {
+				FileUtils.transferTo(fileRegion.getFileChannel(), fileRegion.getLength(), callback,
+						new FileBufferReaderHandler(fileRegion.getLength()));
 			}
-		} finally {
-			fc.close();
+		} catch (Throwable t) {
+			log.error("transfer file error", t);
 		}
-		return ret;
 	}
 
 	@Override
@@ -329,7 +322,7 @@ public class AsynchronousTcpSession implements Session {
 		state = CLOSE;
 		eventManager.executeCloseTask(this);
 	}
-	
+
 	@Override
 	public void shutdownOutput() {
 		try {
@@ -340,7 +333,7 @@ public class AsynchronousTcpSession implements Session {
 			log.error("the session {} shutdown output error", e, sessionId);
 		}
 	}
-	
+
 	@Override
 	public void shutdownInput() {
 		try {
@@ -404,7 +397,7 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public InetSocketAddress getLocalAddress() {
-		if(localAddress != null) {
+		if (localAddress != null) {
 			return localAddress;
 		} else {
 			try {
@@ -419,7 +412,7 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public InetSocketAddress getRemoteAddress() {
-		if(remoteAddress != null) {
+		if (remoteAddress != null) {
 			return remoteAddress;
 		} else {
 			try {

@@ -1,10 +1,7 @@
 package test.net.tcp;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.net.URISyntaxException;
 
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
@@ -37,26 +34,12 @@ public class SendFileHandler implements Handler {
 			session.encode("bye!");
 			session.close();
 		} else if (str.equals("getfile")) {
-			RandomAccessFile raf = null;
-			File file = null;
-			try {
-				file = new File(SendFileHandler.class.getResource("/testFile.txt").toURI());
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
-			}
-			try {
-				raf = new RandomAccessFile(file, "r");
-			} catch (FileNotFoundException fnfe) {
-				fnfe.printStackTrace();
-			}
-			FileRegion fileRegion = null;
-			try {
-				assert raf != null;
-				fileRegion = new FileRegion(raf, 0, raf.length());
+			try (FileRegion fileRegion = new FileRegion(
+					new File(SendFileHandler.class.getResource("/testFile.txt").toURI()))) {
+				session.write(fileRegion, Callback.NOOP);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			session.write(fileRegion, Callback.NOOP);
 		} else {
 			log.debug("recive: " + str);
 			session.encode(message);

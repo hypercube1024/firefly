@@ -3,7 +3,6 @@ package com.firefly.net.tcp.ssl;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -17,12 +16,15 @@ import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.io.BufferReaderHandler;
+import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public class SSLSession implements Closeable {
 	
 	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	
 	private static final boolean debugMode = Boolean.getBoolean("debugMode");
 	
 	protected final Session session;
@@ -394,62 +396,34 @@ public class SSLSession implements Closeable {
     	return ret;
     }
     
-    /**
-     * Perform a FileChannel.TransferTo on the socket channel.
-     * <P>
-     * We have to copy the data into an intermediary app ByteBuffer
-     * first, then send it through the SSLEngine.
-     * <P>
-     * We return the number of bytes actually read out of the
-     * filechannel.  However, the data may actually be stuck
-     * in the fileChannelBB or the outNetBB.  The caller
-     * is responsible for making sure to call dataFlush()
-     * before shutting down.
-     * 
-     * @param fc 
-     * 			to transfer FileChannel
-     * @param pos 
-     * 			start position
-     * @param len 
-     * 			length
-     * @return written length
-     * @throws Throwable
-     * 			A runtime exception
-     */
-    public long transferTo(FileChannel fc, long pos, long len, Callback callback) throws Throwable {
-    	if (!initialHSComplete)
-            throw new IllegalStateException();
+    private class FileBufferReaderHandler implements BufferReaderHandler {
 
-    	long ret = 0;
-    	int bufferSize = 1024 * 8;
-    	long bufferCount = (len + bufferSize - 1) / bufferSize;
-		CountingCallback countingCallback = new CountingCallback(callback, (int)bufferCount);
-    	try {
-	    	ByteBuffer buf = ByteBuffer.allocate(bufferSize);
-	    	int i = 0;
-	    	while((i = fc.read(buf, pos)) != -1) {
-	    		if(i > 0) {
-	    			ret += i;
-	    			pos += i;
-	    			buf.flip();
-	    			write(buf, countingCallback);
-	    			buf = ByteBuffer.allocate(bufferSize);
-	    		}
-	    		if(ret >= len)
-	    			break;
-	    	}
-    	} finally {
-    		fc.close();
-    	}
-    	return ret;
-    }
+		private final long len;
+
+		public FileBufferReaderHandler(long len) {
+			this.len = len;
+		}
+
+		@Override
+		public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count) {
+			log.debug("write file,  count: {} , lenth: {}", count, len);
+			try {
+				write(buf, countingCallback);
+			} catch (Throwable e) {
+				log.error("ssl session writing error", e);
+			}
+		}
+
+	}
     
 	public long transferFileRegion(FileRegion file, Callback callback) throws Throwable {
     	long ret = 0;
-    	try {
-    		ret = transferTo(file.getFile(), file.getPosition(), file.getCount(), callback);
-    	} finally {
-    		file.releaseExternalResources();
+    	try(FileRegion fileRegion = file) {
+    		if (fileRegion.isRandomAccess()) {
+    			ret = FileUtils.transferTo(fileRegion.getFileChannel(), file.getPosition(), file.getLength(), callback, new FileBufferReaderHandler(file.getLength()));
+    		} else {
+    			ret = FileUtils.transferTo(fileRegion.getFileChannel(), file.getLength(), callback, new FileBufferReaderHandler(file.getLength()));
+    		}
     	}
     	return ret;
     }
