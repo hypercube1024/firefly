@@ -27,7 +27,7 @@ public class TemplateView implements View {
 	
 	public static void init(String viewPath, String encoding) {
 		if (!init) {
-			log.info("template path {}", viewPath);
+			log.info("the template path is {}", viewPath);
 			_viewPath = viewPath;
 			com.firefly.template.Config config = new com.firefly.template.Config();
 			config.setViewPath(viewPath);

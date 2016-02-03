@@ -14,11 +14,15 @@ public interface HTTPConnection extends Closeable {
 	public void setAttachment(Object attachment);
 
 	public boolean isOpen();
-	
+
 	public boolean isEncrypted();
-	
+
 	public int getSessionId();
-	
+
+	public long getReadBytes();
+
+	public long getWrittenBytes();
+
 	public InetSocketAddress getLocalAddress();
 
 	public InetSocketAddress getRemoteAddress();

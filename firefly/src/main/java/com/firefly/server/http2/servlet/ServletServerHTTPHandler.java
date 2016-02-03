@@ -59,8 +59,8 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 			controller.dispatch(servletRequest, servletRequest.getResponse());
 		}
 		long timeDifference = Millisecond100Clock.currentTimeMillis() - start;
-		accessLog.info("{}|{}|{}|{}", connection.getRemoteAddress(), request.getMethod(), request.getURI(),
-				timeDifference);
+		accessLog.info("sid[{}], remoteAddr[{}], method:[{}], uri:[{}], timeDiff:[{}]", connection.getSessionId(),
+				connection.getRemoteAddress(), request.getMethod(), request.getURI(), timeDifference);
 		return true;
 	}
 

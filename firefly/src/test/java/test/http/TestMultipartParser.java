@@ -28,7 +28,7 @@ public class TestMultipartParser {
 		File file = new File(ServerBootstrap.class.getResource("/page/template/").toURI());
 		File tempdir = new File(file, "_firefly_tmpdir");
 		if(!tempdir.exists())
-			tempdir.mkdir();
+			tempdir.mkdirs();
 
 		HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.setTemporaryDirectory(tempdir.getAbsolutePath());

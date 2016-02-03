@@ -19,6 +19,7 @@ public class HTTP2Client extends AbstractLifeCycle {
 	private final Client client;
 	private final Map<Integer, HTTP2ClientContext> http2ClientContext = new ConcurrentHashMap<>();
 	private final AtomicInteger sessionId = new AtomicInteger(0);
+	private final HTTP2Configuration http2Configuration;
 
 	public HTTP2Client(HTTP2Configuration http2Configuration) {
 		if (http2Configuration == null)
@@ -40,6 +41,7 @@ public class HTTP2Client extends AbstractLifeCycle {
 		http2Configuration.getTcpConfiguration()
 				.setHandler(new HTTP2ClientHandler(http2Configuration, http2ClientContext));
 		this.client = new AsynchronousTcpClient(http2Configuration.getTcpConfiguration());
+		this.http2Configuration = http2Configuration;
 	}
 
 	public void connect(String host, int port, Promise<HTTPClientConnection> promise) {
@@ -54,6 +56,10 @@ public class HTTP2Client extends AbstractLifeCycle {
 		int id = sessionId.getAndIncrement();
 		http2ClientContext.put(id, context);
 		client.connect(host, port, id);
+	}
+
+	public HTTP2Configuration getHttp2Configuration() {
+		return http2Configuration;
 	}
 
 	@Override

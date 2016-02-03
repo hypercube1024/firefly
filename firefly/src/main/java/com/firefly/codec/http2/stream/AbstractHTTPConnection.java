@@ -8,7 +8,7 @@ import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 
 abstract public class AbstractHTTPConnection implements HTTPConnection {
-	
+
 	protected final SSLSession sslSession;
 	protected final Session tcpSession;
 	protected final HttpVersion httpVersion;
@@ -19,7 +19,7 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
 		this.tcpSession = tcpSession;
 		this.httpVersion = httpVersion;
 	}
-	
+
 	@Override
 	public Object getAttachment() {
 		return attachment;
@@ -29,7 +29,7 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
 	public void setAttachment(Object attachment) {
 		this.attachment = attachment;
 	}
-	
+
 	@Override
 	public HttpVersion getHttpVersion() {
 		return httpVersion;
@@ -39,13 +39,13 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
 	public boolean isOpen() {
 		return tcpSession.isOpen();
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		if (sslSession != null && sslSession.isOpen()) {
 			sslSession.close();
 		}
-		if(tcpSession != null && tcpSession.isOpen()) {
+		if (tcpSession != null && tcpSession.isOpen()) {
 			tcpSession.close();
 		}
 		attachment = null;
@@ -59,6 +59,16 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
 	@Override
 	public int getSessionId() {
 		return tcpSession.getSessionId();
+	}
+
+	@Override
+	public long getReadBytes() {
+		return tcpSession.getReadBytes();
+	}
+
+	@Override
+	public long getWrittenBytes() {
+		return tcpSession.getWrittenBytes();
 	}
 
 	@Override

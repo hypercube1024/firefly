@@ -44,7 +44,7 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 
 	private void scan(String packageName) {
 		String packageDirName = packageName.replace('.', '/');
-		log.debug("package directory name -> {} " + packageDirName);
+		log.debug("package directory name -> {} ", packageDirName);
 		URL url = AnnotationBeanReader.class.getClassLoader().getResource(packageDirName);
 		if (url == null) {
 			error(packageName + " can not be found");

@@ -78,7 +78,7 @@ public class TemplateFactory {
 			}
 		}
 		long end = System.currentTimeMillis();
-		Config.LOG.info("firefly-template init in {} ms", (end - start));
+		Config.LOG.info("template initialization spends time in {} ms", (end - start));
 		return this;
 	}
 	

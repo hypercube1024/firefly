@@ -156,9 +156,9 @@ public class IndexController {
 		for (Part part : request.getParts()) {
 			System.out.println(part.getName() + "|" + part.getSize());
 			if (part.getName().startsWith("content")) {
-				part.write("/Users/qiupengtao/fireflyTest/" + part.getSubmittedFileName());
+				part.write("target/test-classes/page/" + part.getSubmittedFileName());
 			} else {
-				part.write("/Users/qiupengtao/fireflyTest/" + part.getName() + ".txt");
+				part.write("target/test-classes/page/" + part.getName() + ".txt");
 			}
 		}
 		// throw new RuntimeException("upload error");

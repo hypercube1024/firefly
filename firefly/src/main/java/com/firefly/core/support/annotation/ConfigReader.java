@@ -14,7 +14,7 @@ import com.firefly.utils.log.LogFactory;
 
 public class ConfigReader {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
+
 	public static final String DEFAULT_CONFIG_FILE = "firefly.xml";
 	public static final String SCAN_ELEMENT = "component-scan";
 	public static final String MVC_ELEMENT = "mvc";
@@ -40,8 +40,7 @@ public class ConfigReader {
 	public Config load(String file) {
 		Dom dom = new DefaultDom();
 		// 获得Xml文档对象
-		Document doc = dom.getDocument(file == null ? DEFAULT_CONFIG_FILE
-				: file);
+		Document doc = dom.getDocument(file == null ? DEFAULT_CONFIG_FILE : file);
 		// 得到根节点
 		Element root = dom.getRoot(doc);
 		load(root, dom);
@@ -57,7 +56,7 @@ public class ConfigReader {
 			for (int i = 0; i < scanList.size(); i++) {
 				Element ele = scanList.get(i);
 				String path = ele.getAttribute(PACKAGE_ATTRIBUTE);
-				if(!VerifyUtils.isEmpty(path))
+				if (!VerifyUtils.isEmpty(path))
 					paths.add(path);
 			}
 			config.setPaths(paths.toArray(new String[0]));
@@ -69,11 +68,11 @@ public class ConfigReader {
 		if (mvc != null) {
 			String viewPath = mvc.getAttribute(VIEW_PATH_ATTRIBUTE);
 			String encoding = mvc.getAttribute(VIEW_ENCODING_ATTRIBUTE);
-			log.debug("mvc viewPath [{}] encoding [{}]", viewPath, encoding);
-			
-			if(VerifyUtils.isNotEmpty(viewPath))
+			log.info("the MVC view path is {}, the encoding is {}", viewPath, encoding);
+
+			if (VerifyUtils.isNotEmpty(viewPath))
 				config.setViewPath(viewPath);
-			if(VerifyUtils.isNotEmpty(encoding))
+			if (VerifyUtils.isNotEmpty(encoding))
 				config.setEncoding(encoding);
 		}
 		return config;

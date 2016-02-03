@@ -7,13 +7,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.mvc.web.FileAccessFilter;
-import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 import com.firefly.server.session.HttpSessionManager;
 import com.firefly.server.session.LocalHttpSessionManager;
 
 public class HTTP2Configuration {
+	
+	public static final String DEFAULT_CONFIG_FILE_NAME = "firefly.xml";
 
 	// TCP settings
 	private com.firefly.net.Config tcpConfiguration = new com.firefly.net.Config();
@@ -22,7 +23,7 @@ public class HTTP2Configuration {
 	private boolean isSecureConnectionEnabled;
 	private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
 
-	// HTTP2 settings
+	// HTTP settings
 	private int maxDynamicTableSize = 4096;
 	private int streamIdleTimeout = 10 * 1000;
 	private String flowControlStrategy = "buffer";
@@ -30,15 +31,15 @@ public class HTTP2Configuration {
 	private int initialSessionRecvWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
 	private int maxConcurrentStreams = -1;
 	private int maxHeaderBlockFragment = 0;
-
-	// common settings
 	private int maxRequestHeadLength = 4 * 1024;
 	private int maxResponseHeadLength = 4 * 1024;
 	private String characterEncoding = "UTF-8";
+
+	// servlet server settings
 	private int httpBodyThreshold = 4 * 1024 * 1024;
 	private String temporaryDirectory = new File(System.getProperty("user.dir"), "temp").getAbsolutePath();
 	private int servletResponseBufferSize = 8 * 1024;
-	private String configFileName = "firefly.xml";
+	private String configFileName = DEFAULT_CONFIG_FILE_NAME;
 	private String serverHome;
 	private String host;
 	private int port;
@@ -51,7 +52,7 @@ public class HTTP2Configuration {
 		}
 	};
 
-	// HTTP servlet session
+	// servlet session settings
 	private String sessionIdName = "jsessionid";
 	private HttpSessionManager httpSessionManager = new LocalHttpSessionManager();
 
@@ -291,7 +292,27 @@ public class HTTP2Configuration {
 
 	public void setErrorPage(Map<Integer, String> errorPage) {
 		this.errorPage = errorPage;
-		SystemHtmlPage.addErrorPageMap(errorPage);
+	}
+
+	@Override
+	public String toString() {
+		return "HTTP2Configuration [tcpConfiguration=" + tcpConfiguration + ", isSecureConnectionEnabled="
+				+ isSecureConnectionEnabled + ", sslContextFactory=" + sslContextFactory + ", maxDynamicTableSize="
+				+ maxDynamicTableSize + ", streamIdleTimeout=" + streamIdleTimeout + ", flowControlStrategy="
+				+ flowControlStrategy + ", initialStreamSendWindow=" + initialStreamSendWindow
+				+ ", initialSessionRecvWindow=" + initialSessionRecvWindow + ", maxConcurrentStreams="
+				+ maxConcurrentStreams + ", maxHeaderBlockFragment=" + maxHeaderBlockFragment
+				+ ", maxRequestHeadLength=" + maxRequestHeadLength + ", maxResponseHeadLength=" + maxResponseHeadLength
+				+ ", characterEncoding=" + characterEncoding + ", httpBodyThreshold=" + httpBodyThreshold
+				+ ", temporaryDirectory=" + temporaryDirectory + ", servletResponseBufferSize="
+				+ servletResponseBufferSize + ", configFileName=" + configFileName + ", serverHome=" + serverHome
+				+ ", host=" + host + ", port=" + port + ", maxRangeNum=" + maxRangeNum + ", errorPage=" + errorPage
+				+ ", fileAccessFilter=" + fileAccessFilter + ", sessionIdName=" + sessionIdName
+				+ ", httpSessionManager=" + httpSessionManager + ", asynchronousContextCorePoolSize="
+				+ asynchronousContextCorePoolSize + ", asynchronousContextMaximumPoolSize="
+				+ asynchronousContextMaximumPoolSize + ", asynchronousContextCorePoolKeepAliveTime="
+				+ asynchronousContextCorePoolKeepAliveTime + ", asynchronousContextTimeout="
+				+ asynchronousContextTimeout + "]";
 	}
 
 }
