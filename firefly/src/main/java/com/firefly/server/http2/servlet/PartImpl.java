@@ -100,6 +100,10 @@ public class PartImpl implements Part {
 	public void write(String fileName) throws IOException {
 		if (size <= 0)
 			return;
+		
+		if(fileName.contains("../")) {
+			throw new IOException("the file name is illegal, it must not contain ../");
+		}
 
 		if (temp != null) {
 			FileUtils.copy(temp, new File(fileName));

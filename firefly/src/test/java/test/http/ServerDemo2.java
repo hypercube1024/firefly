@@ -7,11 +7,10 @@ public class ServerDemo2 {
 	public static void main(String[] args) throws Throwable {
 		start();
 	}
-	
+
 	public static void start() {
 		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
 		bootstrap.start();
 	}
-	
 
 }
