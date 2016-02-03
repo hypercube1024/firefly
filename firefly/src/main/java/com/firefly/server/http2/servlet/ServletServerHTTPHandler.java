@@ -70,10 +70,14 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	public void badMessage(int status, String reason, Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
 		HTTPServletRequestImpl servletRequest = (HTTPServletRequestImpl) request.getAttachment();
-		try {
-			servletRequest.getResponse().sendError(status, reason);
-		} catch (IOException e) {
-			log.error("response bad message exception", e);
+		if (servletRequest.getResponse().isCommitted()) {
+			log.error("receive the bad message, status: {}, reason: {}", status, reason);
+		} else {
+			try {
+				servletRequest.getResponse().sendError(status, reason);
+			} catch (IOException e) {
+				log.error("response bad message exception", e);
+			}
 		}
 	}
 

@@ -1,6 +1,5 @@
 package com.firefly.server.http2.servlet;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -37,7 +36,7 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 	private String characterEncoding;
 	private Locale locale;
 	private int bufferSize;
-	private HTTPServletOutputStream servletOutputStream;
+	private ServletOutputStream servletOutputStream;
 	private PrintWriter printWriter;
 
 	public HTTPServletResponseImpl(Response response, HTTPOutputStream output, HTTPServletRequestImpl request) {
@@ -231,21 +230,6 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 	}
 
 	@Override
-	public boolean isCommitted() {
-		return output.isCommited();
-	}
-
-	@Override
-	public void setBufferSize(int bufferSize) {
-		this.bufferSize = bufferSize;
-	}
-
-	@Override
-	public int getBufferSize() {
-		return bufferSize;
-	}
-
-	@Override
 	public String encodeURL(String url) {
 		if (VerifyUtils.isEmpty(url))
 			return null;
@@ -308,6 +292,9 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 
 	private class HTTPServletOutputStream extends ServletOutputStream {
 
+		private byte[] buf = new byte[bufferSize];
+		private int count;
+
 		@Override
 		public boolean isReady() {
 			return true;
@@ -323,43 +310,74 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 		}
 
 		@Override
-		public void write(int b) throws IOException {
-			output.write(b);
+		public synchronized void write(int b) throws IOException {
+			if (count >= buf.length) {
+				flush();
+			}
+			buf[count++] = (byte) b;
 		}
 
 		@Override
-		public void write(byte[] array, int offset, int length) throws IOException {
-			output.write(array, offset, length);
+		public synchronized void write(byte[] array, int offset, int length) throws IOException {
+			if (length >= buf.length) {
+				flush();
+				output.write(array, offset, length);
+				return;
+			}
+			if (length > buf.length - count) {
+				flush();
+			}
+			System.arraycopy(array, offset, buf, count, length);
+			count += length;
 		}
 
 		@Override
-		public void print(String s) throws IOException {
+		public synchronized void print(String s) throws IOException {
 			if (VerifyUtils.isEmpty(s))
 				s = "null";
 
-			output.write(stringToByte(s));
+			write(stringToByte(s));
 		}
 
 		@Override
-		public void flush() throws IOException {
-			output.flush();
+		public synchronized void flush() throws IOException {
+			if (count > 0) {
+				output.write(buf, 0, count);
+				count = 0;
+				buf = new byte[bufferSize];
+			}
 		}
 
 		@Override
-		public void close() throws IOException {
+		public synchronized void close() throws IOException {
 			output.close();
 		}
 
-		public byte[] stringToByte(String str) {
-			byte[] ret = null;
-			try {
-				ret = str.getBytes(characterEncoding);
-			} catch (UnsupportedEncodingException e) {
-				log.error("string to bytes", e);
-			}
-			return ret;
-		}
+	}
 
+	public byte[] stringToByte(String str) {
+		byte[] ret = null;
+		try {
+			ret = str.getBytes(characterEncoding);
+		} catch (UnsupportedEncodingException e) {
+			log.error("string to bytes", e);
+		}
+		return ret;
+	}
+	
+	@Override
+	public boolean isCommitted() {
+		return output.isCommited();
+	}
+
+	@Override
+	public void setBufferSize(int bufferSize) {
+		this.bufferSize = bufferSize;
+	}
+
+	@Override
+	public int getBufferSize() {
+		return bufferSize;
 	}
 
 	@Override
@@ -383,8 +401,7 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 		}
 
 		if (printWriter == null) {
-			printWriter = new PrintWriter(new BufferedWriter(
-					new OutputStreamWriter(new HTTPServletOutputStream(), characterEncoding), bufferSize));
+			printWriter = new PrintWriter(new OutputStreamWriter(new HTTPServletOutputStream(), characterEncoding));
 			return printWriter;
 		} else {
 			return printWriter;
@@ -393,10 +410,15 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 
 	@Override
 	public void flushBuffer() throws IOException {
-		if (printWriter == null) {
-			throw new IllegalStateException("the PrintWriter is not created");
+		if (printWriter != null) {
+			printWriter.flush();
+			return;
 		}
-		printWriter.flush();
+
+		if (servletOutputStream != null) {
+			servletOutputStream.flush();
+			return;
+		}
 	}
 
 	@Override

@@ -164,6 +164,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("the stream {} writes a frame {}", dataFrame.getStreamId(), dataFrame);
+//				log.debug("the data content:\r\n {}", BufferUtils.toString(dataFrame.getData(), StandardCharsets.UTF_8));
 			}
 
 			isWriting = true;
