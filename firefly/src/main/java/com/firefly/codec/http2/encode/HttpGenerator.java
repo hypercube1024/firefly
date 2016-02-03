@@ -756,9 +756,9 @@ public class HttpGenerator {
 	private static final byte[] CRLF = StringUtils.getBytes("\015\012");
 	private static final byte[] TRANSFER_ENCODING_CHUNKED = StringUtils.getBytes("Transfer-Encoding: chunked\015\012");
 	private static final byte[][] SEND = new byte[][] { new byte[0],
-			StringUtils.getBytes("Server: Firefly 3.0\015\012"),
-			StringUtils.getBytes("X-Powered-By: Firefly 3.0\015\012"),
-			StringUtils.getBytes("Server: Firefly 3.0\015\012X-Powered-By: Firefly 3.0\015\012") };
+			StringUtils.getBytes("Server: Firefly 4.0\015\012"),
+			StringUtils.getBytes("X-Powered-By: Firefly 4.0\015\012"),
+			StringUtils.getBytes("Server: Firefly 4.0\015\012X-Powered-By: Firefly 4.0\015\012") };
 
 	// Build cache of response lines for status
 	private static class PreparedResponse {

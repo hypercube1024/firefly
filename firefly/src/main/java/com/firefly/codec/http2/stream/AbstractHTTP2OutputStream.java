@@ -225,7 +225,10 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 		if (log.isDebugEnabled()) {
 			log.debug("is stream {} using chunked encoding ? {}", getStream().getId(), isChunked);
 		}
-
+		
+		info.getFields().put(HttpHeader.X_POWERED_BY, "Firefly 4.0");
+		info.getFields().put(HttpHeader.SERVER, "Firefly 4.0");
+		
 		final Stream stream = getStream();
 		final HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, endStream);
 		if (log.isDebugEnabled()) {
