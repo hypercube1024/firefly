@@ -16,6 +16,11 @@
 				<entry key="500" value="/error/err500.html"></entry>
 			</map>
 		</property>
+		<property name="tcpConfiguration" ref="tcpConfiguration"></property>
+	</bean>
+	
+	<bean id="tcpConfiguration" class="com.firefly.net.Config">
+		<property name="timeout" value="600000"></property>
 	</bean>
 
 </beans>

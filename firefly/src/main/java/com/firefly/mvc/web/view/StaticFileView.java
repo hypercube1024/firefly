@@ -1,11 +1,11 @@
 package com.firefly.mvc.web.view;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -435,10 +435,8 @@ public class StaticFileView implements View {
 
 			@Override
 			public void write() throws IOException {
-				try (FileInputStream input = new FileInputStream(file)) {
-					try (FileChannel fc = input.getChannel()) {
-						FileUtils.transferTo(fc, len, Callback.NOOP, new FileBufferReaderHandler(len));
-					}
+				try (FileChannel fc = FileChannel.open(Paths.get(file.toURI()), StandardOpenOption.READ)) {
+					FileUtils.transferTo(fc, len, Callback.NOOP, new FileBufferReaderHandler(len));
 				}
 			}
 
@@ -458,10 +456,8 @@ public class StaticFileView implements View {
 
 			@Override
 			public void write() throws IOException {
-				try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-					try (FileChannel fc = raf.getChannel()) {
-						FileUtils.transferTo(fc, off, len, Callback.NOOP, new FileBufferReaderHandler(len));
-					}
+				try (FileChannel fc = FileChannel.open(Paths.get(file.toURI()), StandardOpenOption.READ)) {
+					FileUtils.transferTo(fc, off, len, Callback.NOOP, new FileBufferReaderHandler(len));
 				}
 			}
 

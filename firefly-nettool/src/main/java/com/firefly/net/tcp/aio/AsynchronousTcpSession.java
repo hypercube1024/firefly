@@ -28,7 +28,6 @@ import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -292,13 +291,7 @@ public class AsynchronousTcpSession implements Session {
 	@Override
 	public void write(FileRegion file, Callback callback) {
 		try (FileRegion fileRegion = file) {
-			if (fileRegion.isRandomAccess()) {
-				FileUtils.transferTo(fileRegion.getFileChannel(), fileRegion.getPosition(), fileRegion.getLength(),
-						callback, new FileBufferReaderHandler(fileRegion.getLength()));
-			} else {
-				FileUtils.transferTo(fileRegion.getFileChannel(), fileRegion.getLength(), callback,
-						new FileBufferReaderHandler(fileRegion.getLength()));
-			}
+			fileRegion.transferTo(callback, new FileBufferReaderHandler(fileRegion.getLength()));
 		} catch (Throwable t) {
 			log.error("transfer file error", t);
 		}

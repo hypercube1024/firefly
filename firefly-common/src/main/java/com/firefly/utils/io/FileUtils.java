@@ -7,10 +7,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
-import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
@@ -67,76 +68,70 @@ abstract public class FileUtils {
 	}
 
 	public static long transferTo(File file, Callback callback, BufferReaderHandler handler) throws IOException {
-		try (FileInputStream input = new FileInputStream(file)) {
-			try (FileChannel fc = input.getChannel()) {
-				return transferTo(fc, file.length(), callback, handler);
-			}
+		try (FileChannel fc = FileChannel.open(Paths.get(file.toURI()), StandardOpenOption.READ)) {
+			return transferTo(fc, file.length(), callback, handler);
 		}
 	}
 
 	public static long transferTo(File file, long pos, long len, Callback callback, BufferReaderHandler handler)
 			throws IOException {
-		try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-			try (FileChannel fc = raf.getChannel()) {
-				return transferTo(fc, pos, len, callback, handler);
-			}
+		try (FileChannel fc = FileChannel.open(Paths.get(file.toURI()), StandardOpenOption.READ)) {
+			return transferTo(fc, pos, len, callback, handler);
 		}
 	}
 
-	public static long transferTo(FileChannel fc, long len, Callback callback, BufferReaderHandler handler)
+	public static long transferTo(FileChannel fileChannel, long len, Callback callback, BufferReaderHandler handler)
 			throws IOException {
 		long bufferSize = Math.min(FILE_READER_BUFFER_SIZE, len);
-		long ret = 0;
+		long count = 0;
 		long bufferCount = (len + bufferSize - 1) / bufferSize;
 		CountingCallback countingCallback = new CountingCallback(callback, (int) bufferCount);
-		try {
+
+		try (FileChannel fc = fileChannel) {
 			ByteBuffer buf = ByteBuffer.allocate((int) bufferSize);
 			int i = 0;
 			while ((i = fc.read(buf)) != -1) {
 				if (i > 0) {
-					ret += i;
+					count += i;
 					buf.flip();
-					handler.readBuffer(buf, countingCallback, ret);
+					handler.readBuffer(buf, countingCallback, count);
 				}
 
-				if (ret >= len) {
+				if (count >= len) {
 					break;
 				} else {
 					buf = ByteBuffer.allocate((int) bufferSize);
 				}
 			}
-		} finally {
-			fc.close();
 		}
-		return ret;
+		return count;
 	}
 
-	public static long transferTo(FileChannel fc, long pos, long len, Callback callback, BufferReaderHandler handler)
-			throws IOException {
+	public static long transferTo(FileChannel fileChannel, long pos, long len, Callback callback,
+			BufferReaderHandler handler) throws IOException {
 		long bufferSize = Math.min(FILE_READER_BUFFER_SIZE, len);
-		long ret = 0;
+		long count = 0;
 		long bufferCount = (len + bufferSize - 1) / bufferSize;
 		CountingCallback countingCallback = new CountingCallback(callback, (int) bufferCount);
-		try {
+
+		try (FileChannel fc = fileChannel) {
 			ByteBuffer buf = ByteBuffer.allocate((int) bufferSize);
 			int i = 0;
 			while ((i = fc.read(buf, pos)) != -1) {
 				if (i > 0) {
-					ret += i;
+					count += i;
 					pos += i;
 					buf.flip();
-					handler.readBuffer(buf, countingCallback, ret);
+					handler.readBuffer(buf, countingCallback, count);
 				}
 
-				if (ret >= len) {
+				if (count >= len) {
 					break;
 				} else {
-					buf = ByteBuffer.allocate((int) Math.min(FILE_READER_BUFFER_SIZE, ret - len));
+					buf = ByteBuffer.allocate((int) Math.min(FILE_READER_BUFFER_SIZE, len - count));
 				}
 			}
-		} finally {
-			fc.close();
 		}
-		return ret;
+		return count;
 	}
 }

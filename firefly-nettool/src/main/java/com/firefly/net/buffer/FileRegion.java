@@ -2,11 +2,15 @@ package com.firefly.net.buffer;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.io.BufferReaderHandler;
+import com.firefly.utils.io.FileUtils;
 
 public class FileRegion implements Closeable {
 
@@ -14,9 +18,6 @@ public class FileRegion implements Closeable {
 	private final long position;
 	private final long length;
 	private final boolean randomAccess;
-
-	private FileInputStream inputStream;
-	private RandomAccessFile raf;
 	private FileChannel fileChannel;
 
 	public FileRegion(File file) throws FileNotFoundException {
@@ -24,19 +25,22 @@ public class FileRegion implements Closeable {
 		position = 0;
 		length = file.length();
 		randomAccess = false;
-
-		inputStream = new FileInputStream(file);
-		fileChannel = inputStream.getChannel();
 	}
 
 	public FileRegion(File file, long position, long length) throws FileNotFoundException {
+		long fileLen = file.length();
+		if (position < 0 || position >= fileLen) {
+			throw new IndexOutOfBoundsException("the position range is illegal");
+		}
+
 		this.file = file;
 		this.position = position;
 		this.length = length;
-		randomAccess = true;
-
-		raf = new RandomAccessFile(file, "r");
-		fileChannel = raf.getChannel();
+		if (position > 0) {
+			randomAccess = true;
+		} else {
+			randomAccess = (length < fileLen);
+		}
 	}
 
 	public long getPosition() {
@@ -47,8 +51,13 @@ public class FileRegion implements Closeable {
 		return length;
 	}
 
-	public FileChannel getFileChannel() {
-		return fileChannel;
+	public FileChannel getFileChannel() throws IOException {
+		if (fileChannel != null) {
+			return fileChannel;
+		} else {
+			fileChannel = FileChannel.open(Paths.get(file.toURI()), StandardOpenOption.READ);
+			return fileChannel;
+		}
 	}
 
 	public boolean isRandomAccess() {
@@ -59,16 +68,20 @@ public class FileRegion implements Closeable {
 		return file;
 	}
 
+	public long transferTo(Callback callback, BufferReaderHandler handler) throws IOException {
+		long ret;
+		if (isRandomAccess()) {
+			ret = FileUtils.transferTo(getFileChannel(), getPosition(), getLength(), callback, handler);
+		} else {
+			ret = FileUtils.transferTo(getFileChannel(), getLength(), callback, handler);
+		}
+		return ret;
+	}
+
 	@Override
 	public void close() throws IOException {
 		if (fileChannel != null)
 			fileChannel.close();
-
-		if (inputStream != null)
-			inputStream.close();
-
-		if (raf != null)
-			raf.close();
 	}
 
 }

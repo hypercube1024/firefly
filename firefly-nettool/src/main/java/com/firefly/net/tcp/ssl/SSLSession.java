@@ -17,7 +17,6 @@ import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
-import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -141,7 +140,7 @@ public class SSLSession implements Closeable {
 	            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
 	            initialHSStatus = result.getHandshakeStatus();
 	            if(log.isDebugEnabled()) {
-	            	log.debug("do hs receive initial status -> {} | {} | {}", initialHSStatus, result.getStatus(), initialHSComplete);
+	            	log.debug("session {} handshake receives data, init: {} | ret: {} | complete: {} ", session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
 	            }
 	            switch (result.getStatus()) {
 	            case OK:
@@ -195,7 +194,7 @@ public class SSLSession implements Closeable {
 		        result = sslEngine.wrap(hsBuffer, writeBuf);
 		        initialHSStatus = result.getHandshakeStatus();
 		        if(log.isDebugEnabled()) {
-		        	log.debug("do hs response initial status -> {} | {} | {}", initialHSStatus, result.getStatus(), initialHSComplete);
+		        	log.debug("session {} handshake response, init: {} | ret: {} | complete: {}", session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
 		        }
 		        switch (result.getStatus()) {
 		        case OK:
@@ -419,11 +418,7 @@ public class SSLSession implements Closeable {
 	public long transferFileRegion(FileRegion file, Callback callback) throws Throwable {
     	long ret = 0;
     	try(FileRegion fileRegion = file) {
-    		if (fileRegion.isRandomAccess()) {
-    			ret = FileUtils.transferTo(fileRegion.getFileChannel(), file.getPosition(), file.getLength(), callback, new FileBufferReaderHandler(file.getLength()));
-    		} else {
-    			ret = FileUtils.transferTo(fileRegion.getFileChannel(), file.getLength(), callback, new FileBufferReaderHandler(file.getLength()));
-    		}
+    		fileRegion.transferTo(callback, new FileBufferReaderHandler(file.getLength()));
     	}
     	return ret;
     }

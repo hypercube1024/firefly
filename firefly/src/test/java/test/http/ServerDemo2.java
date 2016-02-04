@@ -5,6 +5,7 @@ import com.firefly.server.http2.servlet.ServerBootstrap;
 public class ServerDemo2 {
 
 	public static void main(String[] args) throws Throwable {
+//		System.setProperty("javax.net.debug", "all");
 		start();
 	}
 
