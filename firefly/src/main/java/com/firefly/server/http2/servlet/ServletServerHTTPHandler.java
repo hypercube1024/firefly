@@ -12,6 +12,7 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.servlet.utils.ClientIPUtils;
+import com.firefly.server.utils.StatisticsUtils;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -20,7 +21,6 @@ import com.firefly.utils.time.Millisecond100Clock;
 public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	private static Log accessLog = LogFactory.getInstance().getLog("firefly-access");
 
 	private final HTTP2Configuration http2Configuration;
 	private final HttpServletDispatcherController controller;
@@ -61,8 +61,9 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 			controller.dispatch(servletRequest, servletRequest.getResponse());
 		}
 		long timeDifference = Millisecond100Clock.currentTimeMillis() - start;
-		accessLog.info("sid:[{}], remoteAddr:[{}], method:[{}], uri:[{}], timeDiff:[{}]", connection.getSessionId(),
-				getRemoteAddr(request, connection), request.getMethod(), request.getURI(), timeDifference);
+
+		StatisticsUtils.saveRequestInfo(connection.getSessionId(), getRemoteAddr(request, connection),
+				request.getMethod(), request.getURI(), timeDifference);
 		return true;
 	}
 

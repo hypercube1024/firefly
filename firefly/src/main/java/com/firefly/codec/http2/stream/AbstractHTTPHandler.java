@@ -7,6 +7,7 @@ import javax.net.ssl.SSLContext;
 
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
+import com.firefly.server.utils.StatisticsUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -41,6 +42,7 @@ public abstract class AbstractHTTPHandler implements Handler {
 	@Override
 	public void sessionClosed(Session session) throws Throwable {
 		log.info("session {} closed", session.getSessionId());
+		StatisticsUtils.saveConnectionInfo(session);
 		try {
 			if (session.getAttachment() instanceof HTTPConnection) {
 				HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();

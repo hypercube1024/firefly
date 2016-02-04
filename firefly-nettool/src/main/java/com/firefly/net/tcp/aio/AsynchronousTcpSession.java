@@ -418,4 +418,11 @@ public class AsynchronousTcpSession implements Session {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "[sessionId=" + sessionId + ", openTime=" + openTime + ", lastReadTime=" + lastReadTime
+				+ ", lastWrittenTime=" + lastWrittenTime + ", readBytes=" + readBytes + ", writtenBytes=" + writtenBytes
+				+ "]";
+	}
+
 }
