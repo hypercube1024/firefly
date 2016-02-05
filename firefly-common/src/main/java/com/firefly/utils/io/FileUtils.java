@@ -3,7 +3,6 @@ package com.firefly.utils.io;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
@@ -58,12 +57,11 @@ abstract public class FileUtils {
 		return copy(src, dest, 0, src.length());
 	}
 
-	public static long copy(File src, File dest, long position, long count) throws IOException {
-		try (FileInputStream in = new FileInputStream(src);
-				FileOutputStream out = new FileOutputStream(dest);
-				FileChannel inChannel = in.getChannel();
-				FileChannel outChannel = out.getChannel();) {
-			return inChannel.transferTo(position, count, outChannel);
+	public static long copy(File src, File dest, long position, long length) throws IOException {
+		try (FileChannel in = FileChannel.open(Paths.get(src.toURI()), StandardOpenOption.READ);
+				FileChannel out = FileChannel.open(Paths.get(dest.toURI()), StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE);) {
+			return in.transferTo(position, length, out);
 		}
 	}
 
