@@ -57,7 +57,7 @@ public abstract class AbstractSSLContextFactory implements SSLContextFactory {
 
 		_handle_BUG_JDK_8022063(sslContext);
 		long end = Millisecond100Clock.currentTimeMillis();
-		log.info("creating SSL context spends {} ms", (end - start));
+		log.info("creating SSL context spends time in {} ms", (end - start));
 		return sslContext;
 	}
 

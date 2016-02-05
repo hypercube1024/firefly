@@ -163,4 +163,16 @@ public class HTTP2MockSession implements Session {
 		
 	}
 
+	@Override
+	public long getCloseTime() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getDuration() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

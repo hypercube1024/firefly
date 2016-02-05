@@ -9,6 +9,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.InterruptedByTimeoutException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,7 @@ import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
+import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class AsynchronousTcpSession implements Session {
 
@@ -38,6 +40,7 @@ public class AsynchronousTcpSession implements Session {
 
 	private final int sessionId;
 	private final long openTime;
+	private long closeTime;
 	private long lastReadTime;
 	private long lastWrittenTime;
 	private long readBytes = 0;
@@ -304,6 +307,10 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public void closeNow() {
+		if (!isOpen())
+			return;
+
+		closeTime = Millisecond100Clock.currentTimeMillis();
 		try {
 			socketChannel.close();
 		} catch (AsynchronousCloseException e) {
@@ -351,6 +358,20 @@ public class AsynchronousTcpSession implements Session {
 	@Override
 	public long getOpenTime() {
 		return openTime;
+	}
+
+	@Override
+	public long getCloseTime() {
+		return closeTime;
+	}
+
+	@Override
+	public long getDuration() {
+		if (closeTime > 0) {
+			return closeTime - openTime;
+		} else {
+			return Millisecond100Clock.currentTimeMillis() - openTime;
+		}
 	}
 
 	@Override
@@ -420,9 +441,12 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public String toString() {
-		return "[sessionId=" + sessionId + ", openTime=" + openTime + ", lastReadTime=" + lastReadTime
-				+ ", lastWrittenTime=" + lastWrittenTime + ", readBytes=" + readBytes + ", writtenBytes=" + writtenBytes
-				+ "]";
+		return "[sessionId=" + sessionId + ", openTime="
+				+ SafeSimpleDateFormat.defaultDateFormat.format(new Date(openTime)) + ", closeTime="
+				+ SafeSimpleDateFormat.defaultDateFormat.format(new Date(closeTime)) + ", duration=" + getDuration()
+				+ ", lastReadTime=" + SafeSimpleDateFormat.defaultDateFormat.format(new Date(lastReadTime))
+				+ ", lastWrittenTime=" + SafeSimpleDateFormat.defaultDateFormat.format(new Date(lastWrittenTime))
+				+ ", readBytes=" + readBytes + ", writtenBytes=" + writtenBytes + "]";
 	}
 
 }
