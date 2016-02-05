@@ -45,6 +45,7 @@ public class HTTPServletResponseImpl implements HttpServletResponse {
 		this.request = request;
 		characterEncoding = request.http2Configuration.getCharacterEncoding();
 		bufferSize = request.http2Configuration.getServletResponseBufferSize();
+		response.setStatus(SC_OK);
 	}
 
 	@Override

@@ -155,7 +155,6 @@ public class StaticFileView implements View {
 		try (FileServletOutputStream out = new FileServletOutputStream(request, response, response.getOutputStream())) {
 			String range = request.getHeader("Range");
 			if (range == null) {
-				response.setStatus(HttpServletResponse.SC_OK);
 				out.write(file);
 			} else {
 				String[] rangesSpecifier = StringUtils.split(range, '=');
