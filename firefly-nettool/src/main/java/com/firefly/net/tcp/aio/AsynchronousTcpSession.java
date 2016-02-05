@@ -444,8 +444,6 @@ public class AsynchronousTcpSession implements Session {
 		return "[sessionId=" + sessionId + ", openTime="
 				+ SafeSimpleDateFormat.defaultDateFormat.format(new Date(openTime)) + ", closeTime="
 				+ SafeSimpleDateFormat.defaultDateFormat.format(new Date(closeTime)) + ", duration=" + getDuration()
-				+ ", lastReadTime=" + SafeSimpleDateFormat.defaultDateFormat.format(new Date(lastReadTime))
-				+ ", lastWrittenTime=" + SafeSimpleDateFormat.defaultDateFormat.format(new Date(lastWrittenTime))
 				+ ", readBytes=" + readBytes + ", writtenBytes=" + writtenBytes + "]";
 	}
 
