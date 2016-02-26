@@ -37,16 +37,12 @@ public class HttpGenerator {
 
 	private final static byte[] __colon_space = new byte[] { ':', ' ' };
 	private final static HttpHeaderValue[] CLOSE = { HttpHeaderValue.CLOSE };
-	public static final MetaData.Response CONTINUE_100_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 100, null,
-			null, -1);
-	public static final MetaData.Response PROGRESS_102_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 102, null,
-			null, -1);
+	public static final MetaData.Response CONTINUE_100_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 100, null, null, -1);
+	public static final MetaData.Response PROGRESS_102_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 102, null, null, -1);
 	public final static MetaData.Response RESPONSE_500_INFO = new MetaData.Response(HttpVersion.HTTP_1_1,
-			HttpStatus.INTERNAL_SERVER_ERROR_500, null, new HttpFields() {
-				{
-					put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE);
-				}
-			}, 0);
+			HttpStatus.INTERNAL_SERVER_ERROR_500, null, new HttpFields() {{
+				put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE);
+			}}, 0);
 
 	// states
 	public enum State {
@@ -601,26 +597,23 @@ public class HttpGenerator {
 			}
 		}
 
-		// Calculate how to end _content and connection, _content length and
-		// transfer encoding
-		// settings.
-		// From http://tools.ietf.org/html/rfc7230#section-3.3.3
-		// From RFC 2616 4.4:
-		// 1. No body for 1xx, 204, 304 & HEAD response
-		// 3. If Transfer-Encoding==(.*,)?chunked && HTTP/1.1 &&
-		// !HttpConnection==close then chunk
-		// 5. Content-Length without Transfer-Encoding
-		// 6. Request and none over the above, then Content-Length=0 if POST/PUT
-		// 7. close
+		// Calculate how to end _content and connection, _content length and transfer encoding
+        // settings.
+        // From http://tools.ietf.org/html/rfc7230#section-3.3.3
+        // From RFC 2616 4.4:
+        // 1. No body for 1xx, 204, 304 & HEAD response
+        // 3. If Transfer-Encoding==(.*,)?chunked && HTTP/1.1 && !HttpConnection==close then chunk
+        // 5. Content-Length without Transfer-Encoding
+        // 6. Request and none over the above, then Content-Length=0 if POST/PUT
+        // 7. close
 
 		int status = response != null ? response.getStatus() : -1;
 		switch (_endOfContent) {
 		case UNKNOWN_CONTENT:
-			// It may be that we have no _content, or perhaps _content just has
-			// not been
-			// written yet?
+			// It may be that we have no _content, or perhaps _content just has not been
+            // written yet?
 
-			// Response known not to have a body
+            // Response known not to have a body
 			if (_contentPrepared == 0 && response != null && _noContent)
 				_endOfContent = EndOfContent.NO_CONTENT;
 			else if (_info.getContentLength() > 0) {
