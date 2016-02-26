@@ -1,5 +1,12 @@
 package com.firefly.codec.http2.model;
 
+/**
+ * <p>
+ * Exception thrown to indicate a Bad HTTP Message has either been received or
+ * attempted to be generated. Typically these are handled with either 400 or 500
+ * responses.
+ * </p>
+ */
 public class BadMessageException extends RuntimeException {
 	private static final long serialVersionUID = -4907256166019479626L;
 	public final int _code;

@@ -23,6 +23,41 @@ import com.firefly.utils.io.BufferUtils;
 public class HttpGeneratorServerTest {
 
 	@Test
+	public void test_0_9() throws Exception {
+		ByteBuffer header = BufferUtils.allocate(8096);
+		ByteBuffer content = BufferUtils.toBuffer("0123456789");
+
+		HttpGenerator gen = new HttpGenerator();
+
+		HttpGenerator.Result result = gen.generateResponse(null, null, null, content, true);
+		assertEquals(HttpGenerator.Result.NEED_INFO, result);
+		assertEquals(HttpGenerator.State.START, gen.getState());
+
+		MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_0_9, 200, null, new HttpFields(), 10);
+		info.getFields().add("Content-Type", "test/data");
+		info.getFields().add("Last-Modified", DateGenerator.__01Jan1970);
+
+		result = gen.generateResponse(info, null, null, content, true);
+		assertEquals(HttpGenerator.Result.FLUSH, result);
+		assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+		String response = BufferUtils.toString(header);
+		BufferUtils.clear(header);
+		response += BufferUtils.toString(content);
+		BufferUtils.clear(content);
+
+		result = gen.generateResponse(null, null, null, content, false);
+		assertEquals(HttpGenerator.Result.SHUTDOWN_OUT, result);
+		assertEquals(HttpGenerator.State.END, gen.getState());
+
+		assertEquals(10, gen.getContentPrepared());
+
+		assertThat(response, not(containsString("200 OK")));
+		assertThat(response, not(containsString("Last-Modified: Thu, 01 Jan 1970 00:00:00 GMT")));
+		assertThat(response, not(containsString("Content-Length: 10")));
+		assertThat(response, containsString("0123456789"));
+	}
+
+	@Test
 	public void testSimple() throws Exception {
 		ByteBuffer header = BufferUtils.allocate(8096);
 		ByteBuffer content = BufferUtils.toBuffer("0123456789");
@@ -348,20 +383,21 @@ public class HttpGeneratorServerTest {
 		assertThat(out, containsString("Content-Length: 59"));
 		assertThat(out, containsString("\r\n\r\nHello World! The quick brown fox jumped over the lazy dog. "));
 	}
-	
+
 	@Test
 	public void test101SwitchingProtocolsResponse() throws Exception {
-		MetaData.Response switchingProtocolsResponse = new MetaData.Response(HttpVersion.HTTP_1_1, 101, new HttpFields());
+		MetaData.Response switchingProtocolsResponse = new MetaData.Response(HttpVersion.HTTP_1_1, 101,
+				new HttpFields());
 		switchingProtocolsResponse.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
 		switchingProtocolsResponse.getFields().put(HttpHeader.UPGRADE, "h2c");
-		
+
 		ByteBuffer header = BufferUtils.allocate(4096);
 		HttpGenerator gen = new HttpGenerator();
 		HttpGenerator.Result result = gen.generateResponse(switchingProtocolsResponse, header, null, null, true);
 		System.out.println(result + "|" + gen.getState());
 		assertEquals(HttpGenerator.Result.FLUSH, result);
 		assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-		
+
 		result = gen.generateResponse(null, null, null, null, true);
 		System.out.println(result + "|" + gen.getState());
 		assertEquals(HttpGenerator.Result.DONE, result);

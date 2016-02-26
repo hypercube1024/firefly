@@ -10,11 +10,11 @@ public abstract class StatisticsUtils {
 	private static Log connectionLog = LogFactory.getInstance().getLog("firefly-connection");
 
 	public static void saveRequestInfo(Object sid, Object remoteAddr, String method, Object uri, long timeDiff) {
-		accessLog.info("sid:[{}], remoteAddr:[{}], method:[{}], uri:[{}], timeDiff:[{}]", sid, remoteAddr, method, uri,
+		accessLog.info("request: [sessionId={}, remoteAddr={}, method={}, uri={}, timeDiff={}]", sid, remoteAddr, method, uri,
 				timeDiff);
 	}
 
 	public static void saveConnectionInfo(Session session) {
-		connectionLog.info("session info: {}", session);
+		connectionLog.info("session: {}", session);
 	}
 }

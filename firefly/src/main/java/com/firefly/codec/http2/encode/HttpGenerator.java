@@ -1,12 +1,12 @@
 package com.firefly.codec.http2.encode;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
@@ -156,7 +156,7 @@ public class HttpGenerator {
 	}
 
 	public Result generateRequest(MetaData.Request info, ByteBuffer header, ByteBuffer chunk, ByteBuffer content,
-			boolean last) throws IOException {
+			boolean last) {
 		switch (_state) {
 		case START: {
 			if (info == null)
@@ -179,7 +179,7 @@ public class HttpGenerator {
 				generateRequestLine(info, header);
 
 				if (info.getVersion() == HttpVersion.HTTP_0_9)
-					throw new IllegalArgumentException("HTTP/0.9 not supported");
+					throw new BadMessageException(500, "HTTP/0.9 not supported");
 
 				generateHeaders(info, header, content, last);
 
@@ -201,7 +201,7 @@ public class HttpGenerator {
 				return Result.FLUSH;
 			} catch (Exception e) {
 				String message = (e instanceof BufferOverflowException) ? "Request header too large" : e.getMessage();
-				throw new IOException(message, e);
+				throw new BadMessageException(500, message, e);
 			} finally {
 				BufferUtils.flipToFlush(header, pos);
 			}
@@ -265,18 +265,22 @@ public class HttpGenerator {
 	}
 
 	public Result generateResponse(MetaData.Response info, ByteBuffer header, ByteBuffer chunk, ByteBuffer content,
-			boolean last) throws IOException {
+			boolean last) {
 		return generateResponse(info, false, header, chunk, content, last);
 	}
 
 	public Result generateResponse(MetaData.Response info, boolean head, ByteBuffer header, ByteBuffer chunk,
-			ByteBuffer content, boolean last) throws IOException {
+			ByteBuffer content, boolean last) {
 		switch (_state) {
 		case START: {
 			if (info == null)
 				return Result.NEED_INFO;
 
-			switch (info.getVersion()) {
+			HttpVersion version = info.getVersion();
+			if (version == null)
+				throw new BadMessageException(500, "No version");
+
+			switch (version) {
 			case HTTP_1_0:
 				if (_persistent == null)
 					_persistent = Boolean.FALSE;
@@ -288,7 +292,13 @@ public class HttpGenerator {
 				break;
 
 			default:
-				throw new IllegalArgumentException(info.getVersion() + " not supported");
+				_persistent = false;
+				_endOfContent = EndOfContent.EOF_CONTENT;
+				if (BufferUtils.hasContent(content)) {
+					_contentPrepared += content.remaining();
+				}
+				_state = last ? State.COMPLETING : State.COMMITTED;
+				return Result.FLUSH;
 			}
 
 			// Do we need a response header
@@ -327,7 +337,7 @@ public class HttpGenerator {
 				_state = last ? State.COMPLETING : State.COMMITTED;
 			} catch (Exception e) {
 				String message = (e instanceof BufferOverflowException) ? "Response header too large" : e.getMessage();
-				throw new IOException(message, e);
+				throw new BadMessageException(500, message, e);
 			} finally {
 				BufferUtils.flipToFlush(header, pos);
 			}
@@ -631,7 +641,7 @@ public class HttpGenerator {
 				long actual_length = _contentPrepared + BufferUtils.length(content);
 
 				if (content_length >= 0 && content_length != actual_length)
-					throw new IllegalArgumentException(
+					throw new BadMessageException(500,
 							"Content-Length header(" + content_length + ") != actual(" + actual_length + ")");
 
 				// Do we need to tell the headers about it
@@ -655,7 +665,7 @@ public class HttpGenerator {
 		}
 
 		case NO_CONTENT:
-			throw new IllegalStateException();
+			throw new BadMessageException(500);
 
 		case EOF_CONTENT:
 			_persistent = request != null;
@@ -677,7 +687,7 @@ public class HttpGenerator {
 				if (c.endsWith(HttpHeaderValue.CHUNKED.toString()))
 					putTo(transfer_encoding, header);
 				else
-					throw new IllegalArgumentException("BAD TE");
+					throw new BadMessageException(500, "BAD TE");
 			} else
 				header.put(TRANSFER_ENCODING_CHUNKED);
 		}
