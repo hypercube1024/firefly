@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import com.firefly.client.http2.HTTPClientRequest;
 import com.firefly.codec.http2.encode.HttpGenerator;
+import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.model.HttpVersion;
@@ -30,32 +31,32 @@ public class HttpGeneratorClientTest {
 			super(method, new HttpURI(uri), HttpVersion.HTTP_1_1, new HttpFields(), contentLength);
 		}
 	}
-	
-	@Test(expected=IOException.class)
+
+	@Test(expected = BadMessageException.class)
 	public void testGETRequestHeaderBufferNotEnough() throws IOException {
 		HttpGenerator gen = new HttpGenerator();
 		ByteBuffer header = BufferUtils.allocate(2);
-		
+
 		HTTPClientRequest request = new HTTPClientRequest("GET", "/index.html");
 		request.getFields().add("Host", "something");
 		request.getFields().add("User-Agent", "test");
-		
+
 		HttpGenerator.Result result = gen.generateRequest(request, header, null, null, true);
 		System.out.println(gen.isChunking());
 		System.out.println(result);
 		System.out.println(gen.getState());
-		
+
 	}
-	
+
 	@Test
 	public void testGETRequestNoContent2() throws Exception {
 		HttpGenerator gen = new HttpGenerator();
 		ByteBuffer header = BufferUtils.allocate(8 * 1024);
-		
+
 		HTTPClientRequest request = new HTTPClientRequest("GET", "/index.html");
 		request.getFields().add("Host", "something");
 		request.getFields().add("User-Agent", "test");
-		
+
 		HttpGenerator.Result result = gen.generateRequest(request, header, null, null, true);
 		System.out.println(header.remaining());
 		Assert.assertThat(header.remaining(), greaterThan(0));
@@ -63,16 +64,16 @@ public class HttpGeneratorClientTest {
 		Assert.assertThat(result, is(HttpGenerator.Result.FLUSH));
 		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMPLETING));
 	}
-	
+
 	@Test
 	public void testGETRequestNoContent3() throws Exception {
 		HttpGenerator gen = new HttpGenerator();
 		ByteBuffer header = BufferUtils.allocate(8 * 1024);
-		
+
 		HTTPClientRequest request = new HTTPClientRequest("GET", "/index.html");
 		request.getFields().add("Host", "something");
 		request.getFields().add("User-Agent", "test");
-		
+
 		HttpGenerator.Result result = gen.generateRequest(request, header, null, null, false);
 		System.out.println(header.remaining());
 		Assert.assertThat(header.remaining(), greaterThan(0));
@@ -82,18 +83,18 @@ public class HttpGeneratorClientTest {
 		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMMITTED));
 		String out = BufferUtils.toString(header);
 		BufferUtils.clear(header);
-		
+
 		ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
-		result =  gen.generateRequest(null, null, chunk, null, true);
+		result = gen.generateRequest(null, null, chunk, null, true);
 		Assert.assertThat(result, is(HttpGenerator.Result.CONTINUE));
 		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMPLETING));
-		
+
 		result = gen.generateRequest(null, null, chunk, null, true);
 		Assert.assertThat(result, is(HttpGenerator.Result.FLUSH));
 		Assert.assertThat(gen.getState(), is(HttpGenerator.State.COMPLETING));
 		out += BufferUtils.toString(chunk);
 		BufferUtils.clear(chunk);
-		
+
 		result = gen.generateRequest(null, null, null, null, true);
 		Assert.assertThat(result, is(HttpGenerator.Result.DONE));
 		Assert.assertThat(gen.getState(), is(HttpGenerator.State.END));

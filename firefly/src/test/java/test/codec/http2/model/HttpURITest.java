@@ -1,8 +1,7 @@
 package test.codec.http2.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -17,6 +16,48 @@ import com.firefly.utils.collection.MultiMap;
 import com.firefly.utils.lang.Utf8Appendable;
 
 public class HttpURITest {
+	@Test
+	public void testParse() {
+		HttpURI uri = new HttpURI();
+
+		uri.parse("*");
+		assertThat(uri.getHost(), nullValue());
+		assertThat(uri.getPath(), is("*"));
+
+		uri.parse("/foo/bar");
+		assertThat(uri.getHost(), nullValue());
+		assertThat(uri.getPath(), is("/foo/bar"));
+
+		uri.parse("//foo/bar");
+		assertThat(uri.getHost(), is("foo"));
+		assertThat(uri.getPath(), is("/bar"));
+
+		uri.parse("http://foo/bar");
+		assertThat(uri.getHost(), is("foo"));
+		assertThat(uri.getPath(), is("/bar"));
+	}
+
+	@Test
+	public void testParseRequestTarget() {
+		HttpURI uri = new HttpURI();
+
+		uri.parseRequestTarget("GET", "*");
+		assertThat(uri.getHost(), nullValue());
+		assertThat(uri.getPath(), is("*"));
+
+		uri.parseRequestTarget("GET", "/foo/bar");
+		assertThat(uri.getHost(), nullValue());
+		assertThat(uri.getPath(), is("/foo/bar"));
+
+		uri.parseRequestTarget("GET", "//foo/bar");
+		assertThat(uri.getHost(), nullValue());
+		assertThat(uri.getPath(), is("//foo/bar"));
+
+		uri.parseRequestTarget("GET", "http://foo/bar");
+		assertThat(uri.getHost(), is("foo"));
+		assertThat(uri.getPath(), is("/bar"));
+	}
+
 	@Test
 	public void testInvalidAddress() throws Exception {
 		assertInvalidURI("http://[ffff::1:8080/", "Invalid URL; no closing ']' -- should throw exception");

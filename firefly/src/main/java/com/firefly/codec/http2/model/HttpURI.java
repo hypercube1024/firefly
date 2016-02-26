@@ -139,10 +139,20 @@ public class HttpURI {
 		parse(State.START, uri, 0, uri.length());
 	}
 
-	public void parseConnect(String uri) {
+	/**
+	 * Parse according to https://tools.ietf.org/html/rfc7230#section-5.3
+	 * 
+	 * @param method
+	 * @param uri
+	 */
+	public void parseRequestTarget(String method, String uri) {
 		clear();
 		this.uri = uri;
-		this.path = uri;
+
+		if (HttpMethod.CONNECT.is(method))
+			this.path = uri;
+		else
+			parse(uri.startsWith("/") ? State.PATH : State.START, uri, 0, uri.length());
 	}
 
 	public void parse(String uri, int offset, int length) {
