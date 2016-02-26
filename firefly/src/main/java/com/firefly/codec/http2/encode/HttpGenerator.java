@@ -35,8 +35,6 @@ import com.firefly.utils.log.LogFactory;
 public class HttpGenerator {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	public final static boolean __STRICT = Boolean.getBoolean("org.fireflysource.http.HttpGenerator.STRICT");
-
 	private final static byte[] __colon_space = new byte[] { ':', ' ' };
 	private final static HttpHeaderValue[] CLOSE = { HttpHeaderValue.CLOSE };
 	public static final MetaData.Response CONTINUE_100_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 100, null,

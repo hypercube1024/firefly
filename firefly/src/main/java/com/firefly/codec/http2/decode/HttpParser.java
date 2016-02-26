@@ -80,9 +80,9 @@ import com.firefly.utils.log.LogFactory;
  * @see <a href="http://tools.ietf.org/html/rfc7230">RFC 7230</a>
  */
 public class HttpParser {
+	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	@Deprecated
-	public final static String __STRICT = "com.fireflysource.http.HttpParser.STRICT";
+	
 	public final static int INITIAL_URI_LENGTH = 256;
 
 	/**
@@ -221,35 +221,20 @@ public class HttpParser {
 		CACHE.put(new HttpField(HttpHeader.COOKIE, (String) null));
 	}
 
-	private static HttpCompliance compliance() {
-		Boolean strict = Boolean.getBoolean(__STRICT);
-		return strict ? HttpCompliance.LEGACY : HttpCompliance.RFC7230;
-	}
-
 	public HttpParser(RequestHandler handler) {
-		this(handler, -1, compliance());
+		this(handler, -1, HttpCompliance.RFC7230);
 	}
 
 	public HttpParser(ResponseHandler handler) {
-		this(handler, -1, compliance());
+		this(handler, -1, HttpCompliance.RFC7230);
 	}
 
 	public HttpParser(RequestHandler handler, int maxHeaderBytes) {
-		this(handler, maxHeaderBytes, compliance());
+		this(handler, maxHeaderBytes, HttpCompliance.RFC7230);
 	}
 
 	public HttpParser(ResponseHandler handler, int maxHeaderBytes) {
-		this(handler, maxHeaderBytes, compliance());
-	}
-
-	@Deprecated
-	public HttpParser(RequestHandler handler, int maxHeaderBytes, boolean strict) {
-		this(handler, maxHeaderBytes, strict ? HttpCompliance.LEGACY : compliance());
-	}
-
-	@Deprecated
-	public HttpParser(ResponseHandler handler, int maxHeaderBytes, boolean strict) {
-		this(handler, maxHeaderBytes, strict ? HttpCompliance.LEGACY : compliance());
+		this(handler, maxHeaderBytes, HttpCompliance.RFC7230);
 	}
 
 	public HttpParser(RequestHandler handler, HttpCompliance compliance) {
@@ -261,7 +246,7 @@ public class HttpParser {
 		_requestHandler = handler;
 		_responseHandler = null;
 		_maxHeaderBytes = maxHeaderBytes;
-		_compliance = compliance == null ? compliance() : compliance;
+		_compliance = compliance == null ? HttpCompliance.RFC7230 : compliance;
 	}
 
 	public HttpParser(ResponseHandler handler, int maxHeaderBytes, HttpCompliance compliance) {
@@ -269,7 +254,7 @@ public class HttpParser {
 		_requestHandler = null;
 		_responseHandler = handler;
 		_maxHeaderBytes = maxHeaderBytes;
-		_compliance = compliance == null ? compliance() : compliance;
+		_compliance = compliance == null ? HttpCompliance.RFC7230 : compliance;
 	}
 
 	public long getContentLength() {
