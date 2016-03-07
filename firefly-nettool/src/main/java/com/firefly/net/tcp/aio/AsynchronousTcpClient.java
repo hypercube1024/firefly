@@ -21,6 +21,7 @@ import com.firefly.net.Handler;
 import com.firefly.net.event.DefaultEventManager;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class AsynchronousTcpClient implements Client {
 	
@@ -122,8 +123,11 @@ public class AsynchronousTcpClient implements Client {
 
 	@Override
 	public void shutdown() {
-		if(group != null)
+		if(group != null) {
 			group.shutdown();
+		}
+		LogFactory.getInstance().shutdown();
+		Millisecond100Clock.stop();
 	}
 
 }

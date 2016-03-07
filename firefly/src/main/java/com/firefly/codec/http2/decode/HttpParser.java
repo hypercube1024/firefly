@@ -1007,7 +1007,7 @@ public class HttpParser {
 				if (ch == HttpTokens.LINE_FEED) {
 					_value = null;
 					_string.setLength(0);
-					_valueString = null;
+					_valueString = "";
 					_length = -1;
 
 					setState(State.HEADER);

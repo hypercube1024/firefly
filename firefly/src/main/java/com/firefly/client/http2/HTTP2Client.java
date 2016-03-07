@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.core.AbstractLifeCycle;
@@ -13,6 +14,7 @@ import com.firefly.net.EncoderChain;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class HTTP2Client extends AbstractLifeCycle {
 
@@ -68,9 +70,12 @@ public class HTTP2Client extends AbstractLifeCycle {
 
 	@Override
 	protected void destroy() {
-		if (client != null)
+		if (client != null) {
 			client.shutdown();
+		}
+		AbstractHTTP2Connection.shutdown();
 		LogFactory.getInstance().shutdown();
+		Millisecond100Clock.stop();
 	}
 
 }

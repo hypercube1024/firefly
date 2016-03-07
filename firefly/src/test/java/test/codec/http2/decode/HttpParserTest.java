@@ -27,6 +27,7 @@ import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.utils.io.BufferUtils;
 
 public class HttpParserTest {
+
 	/**
 	 * Parse until {@link State#END} state. If the parser is already in the END
 	 * state, then it is {@link HttpParser#reset()} and re-parsed.
@@ -233,7 +234,7 @@ public class HttpParserTest {
 				+ "Name: value\015\012" + " extra\015\012" + "\015\012");
 
 		HttpParser.RequestHandler handler = new Handler();
-		HttpParser parser = new HttpParser(handler, 4096, HttpCompliance.RFC2616);
+		HttpParser parser = new HttpParser(handler, HttpCompliance.RFC2616);
 		parseAll(parser, buffer);
 
 		Assert.assertThat(_bad, Matchers.nullValue());
@@ -297,7 +298,7 @@ public class HttpParserTest {
 				+ "Name0: \015\012" + "Name1: \015\012" + "Connection: close\015\012" + "\015\012");
 
 		HttpParser.RequestHandler handler = new Handler();
-		HttpParser parser = new HttpParser(handler);
+		HttpParser parser = new HttpParser(handler, HttpCompliance.RFC2616);
 		parseAll(parser, buffer);
 
 		assertTrue(_headerCompleted);
@@ -308,9 +309,9 @@ public class HttpParserTest {
 		assertEquals("Host", _hdr[0]);
 		assertEquals("localhost", _val[0]);
 		assertEquals("Name0", _hdr[1]);
-		assertEquals(null, _val[1]);
+		assertEquals("", _val[1]);
 		assertEquals("Name1", _hdr[2]);
-		assertEquals(null, _val[2]);
+		assertEquals("", _val[2]);
 		assertEquals("Connection", _hdr[3]);
 		assertEquals("close", _val[3]);
 		assertEquals(3, _headers);

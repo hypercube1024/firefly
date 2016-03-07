@@ -23,10 +23,14 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 	private HttpSessionAttributeListener httpSessionAttributeListener = new HttpSessionAttributeListenerAdapter();
 	private HttpSessionListener httpSessionListener = new HttpSessionListenerAdapter();
 
-	private static final HashTimeWheel timeWheel = new HashTimeWheel();
+	private static final HashTimeWheel TIME_WHEEL = new HashTimeWheel();
 
 	static {
-		timeWheel.start();
+		TIME_WHEEL.start();
+	}
+	
+	public static void shutdown() {
+		TIME_WHEEL.stop();
 	}
 
 	@Override
@@ -54,7 +58,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 		long timeout = maxSessionInactiveInterval * 1000;
 		HttpSessionImpl session = new HttpSessionImpl(this, id, Millisecond100Clock.currentTimeMillis(),
 				maxSessionInactiveInterval);
-		timeWheel.add(timeout, new TimeoutTask(session));
+		TIME_WHEEL.add(timeout, new TimeoutTask(session));
 		map.put(id, session);
 		httpSessionListener.sessionCreated(new HttpSessionEvent(session));
 		return session;
@@ -83,7 +87,7 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 			} else {
 				if (timeout > 0) {
 					long nextCheckTime = timeout - timeDifference;
-					timeWheel.add(nextCheckTime, TimeoutTask.this);
+					TIME_WHEEL.add(nextCheckTime, TimeoutTask.this);
 				} else if (timeout == 0) {
 					remove(session.getId());
 				}

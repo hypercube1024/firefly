@@ -7,6 +7,7 @@ import com.firefly.core.AbstractLifeCycle;
 import com.firefly.mvc.web.WebContext;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.server.http2.HTTP2Server;
+import com.firefly.server.http2.servlet.session.LocalHttpSessionManager;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -73,6 +74,7 @@ public class ServerBootstrap extends AbstractLifeCycle {
 	@Override
 	protected void destroy() {
 		AsyncContextImpl.shutdown();
+		LocalHttpSessionManager.shutdown();
 		http2Server.stop();
 	}
 

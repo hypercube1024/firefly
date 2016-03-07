@@ -27,7 +27,7 @@ import com.firefly.utils.time.HashTimeWheel;
 public class AsyncContextImpl implements AsyncContext {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	public static final HashTimeWheel TIME_WHEEL = new HashTimeWheel();
+	private static final HashTimeWheel TIME_WHEEL = new HashTimeWheel();
 
 	private static ExecutorService executor;
 
@@ -48,6 +48,7 @@ public class AsyncContextImpl implements AsyncContext {
 
 	public static void shutdown() {
 		executor.shutdown();
+		TIME_WHEEL.stop();
 	}
 
 	private long timeout = -1;

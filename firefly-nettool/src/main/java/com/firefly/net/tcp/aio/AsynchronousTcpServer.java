@@ -25,6 +25,7 @@ import com.firefly.net.event.DefaultEventManager;
 import com.firefly.net.exception.NetException;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class AsynchronousTcpServer implements Server {
 	
@@ -138,8 +139,11 @@ public class AsynchronousTcpServer implements Server {
 
 	@Override
 	public void shutdown() {
-		if(group != null)
+		if(group != null) {
 			group.shutdown();
+		}
+		LogFactory.getInstance().shutdown();
+		Millisecond100Clock.stop();
 	}
 
 }

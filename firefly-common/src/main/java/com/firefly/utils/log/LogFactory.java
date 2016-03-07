@@ -12,6 +12,7 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.file.FileLog;
 import com.firefly.utils.log.file.FileLogTask;
+import com.firefly.utils.time.Millisecond100Clock;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class LogFactory {
@@ -160,6 +161,7 @@ public class LogFactory {
 
 	public void shutdown() {
 		logTask.shutdown();
+		Millisecond100Clock.stop();
 	}
 
 	public void start() {

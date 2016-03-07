@@ -16,6 +16,10 @@ abstract public class AbstractHTTP2Connection extends AbstractHTTPConnection {
 	protected final Generator generator;
 
 	protected static final Scheduler scheduler = Schedulers.createScheduler();
+	
+	public static void shutdown() {
+		scheduler.shutdown();
+	}
 
 	public AbstractHTTP2Connection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
 			Listener listener) {
