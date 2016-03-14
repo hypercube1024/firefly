@@ -6,7 +6,7 @@
 
   <groupId>com.fireflysource</groupId>
   <artifactId>firefly-framework</artifactId>
-  <version>3.0.5-SNAPSHOT</version>
+  <version>4.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
 
@@ -41,6 +41,32 @@
     <module>firefly-template</module>
     <module>firefly</module>
   </modules>
+  
+  <dependencyManagement>
+  	<dependencies>
+  		<dependency>
+  			<groupId>com.fireflysource</groupId>
+  			<artifactId>firefly-common</artifactId>
+  			<version>4.0.0-SNAPSHOT</version>
+  		</dependency>
+  		<dependency>
+  			<groupId>com.fireflysource</groupId>
+  			<artifactId>firefly-template</artifactId>
+  			<version>4.0.0-SNAPSHOT</version>
+  		</dependency>
+  		<dependency>
+  			<groupId>com.fireflysource</groupId>
+  			<artifactId>firefly-nettool</artifactId>
+  			<version>4.0.0-SNAPSHOT</version>
+  		</dependency>
+  		<dependency>
+  			<groupId>com.fireflysource</groupId>
+  			<artifactId>firefly</artifactId>
+  			<version>4.0.0-SNAPSHOT</version>
+  		</dependency>
+  	</dependencies>
+  </dependencyManagement>
+  
   <!-- junit -->
   <dependencies>
     <dependency>
@@ -68,22 +94,6 @@
       <properties>
         <log.level>INFO</log.level>
         <log.path>/Users/qiupengtao/develop/logs/</log.path>
-      </properties>
-    </profile>
-
-    <profile>
-      <id>macdebug</id>
-      <properties>
-        <log.level>DEBUG</log.level>
-        <log.path>/Users/qiupengtao/develop/logs/</log.path>
-      </properties>
-    </profile>
-
-    <profile>
-      <id>windebug</id>
-      <properties>
-        <log.level>DEBUG</log.level>
-        <log.path>D:/log/</log.path>
       </properties>
     </profile>
 
