@@ -27,7 +27,6 @@ import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.utils.io.BufferUtils;
 
 public class HttpParserTest {
-
 	/**
 	 * Parse until {@link State#END} state. If the parser is already in the END
 	 * state, then it is {@link HttpParser#reset()} and re-parsed.
@@ -1115,7 +1114,7 @@ public class HttpParserTest {
 
 		parser.parseNext(buffer);
 		assertEquals("GET", _methodOrVersion);
-		assertEquals("Bad Content-Length", _bad);
+		assertEquals("Invalid Content-Length Value", _bad);
 		assertFalse(buffer.hasRemaining());
 		assertEquals(HttpParser.State.CLOSE, parser.getState());
 		parser.atEOF();
@@ -1134,7 +1133,7 @@ public class HttpParserTest {
 
 		parser.parseNext(buffer);
 		assertEquals("GET", _methodOrVersion);
-		assertEquals("Bad Content-Length", _bad);
+		assertEquals("Invalid Content-Length Value", _bad);
 		assertFalse(buffer.hasRemaining());
 		assertEquals(HttpParser.State.CLOSE, parser.getState());
 		parser.atEOF();
@@ -1152,12 +1151,86 @@ public class HttpParserTest {
 
 		parser.parseNext(buffer);
 		assertEquals("GET", _methodOrVersion);
-		assertEquals("Bad Content-Length", _bad);
+		assertEquals("Invalid Content-Length Value", _bad);
 		assertFalse(buffer.hasRemaining());
 		assertEquals(HttpParser.State.CLOSE, parser.getState());
 		parser.atEOF();
 		parser.parseNext(BufferUtils.EMPTY_BUFFER);
 		assertEquals(HttpParser.State.CLOSED, parser.getState());
+	}
+
+	@Test
+	public void testDuplicateContentLengthWithLargerThenCorrectValue() {
+		ByteBuffer buffer = BufferUtils.toBuffer("POST / HTTP/1.1\015\012" + "Content-Length: 2\015\012"
+				+ "Content-Length: 1\015\012" + "Connection: close\015\012" + "\015\012" + "X");
+
+		HttpParser.RequestHandler handler = new Handler();
+		HttpParser parser = new HttpParser(handler);
+
+		parser.parseNext(buffer);
+		assertEquals("POST", _methodOrVersion);
+		assertEquals("Duplicate Content-Length", _bad);
+		assertFalse(buffer.hasRemaining());
+		assertEquals(HttpParser.State.CLOSE, parser.getState());
+		parser.atEOF();
+		parser.parseNext(BufferUtils.EMPTY_BUFFER);
+		assertEquals(HttpParser.State.CLOSED, parser.getState());
+	}
+
+	@Test
+	public void testDuplicateContentLengthWithCorrectThenLargerValue() {
+		ByteBuffer buffer = BufferUtils.toBuffer("POST / HTTP/1.1\015\012" + "Content-Length: 1\015\012"
+				+ "Content-Length: 2\015\012" + "Connection: close\015\012" + "\015\012" + "X");
+
+		HttpParser.RequestHandler handler = new Handler();
+		HttpParser parser = new HttpParser(handler);
+
+		parser.parseNext(buffer);
+		assertEquals("POST", _methodOrVersion);
+		assertEquals("Duplicate Content-Length", _bad);
+		assertFalse(buffer.hasRemaining());
+		assertEquals(HttpParser.State.CLOSE, parser.getState());
+		parser.atEOF();
+		parser.parseNext(BufferUtils.EMPTY_BUFFER);
+		assertEquals(HttpParser.State.CLOSED, parser.getState());
+	}
+
+	@Test
+	public void testTransferEncodingChunkedThenContentLength() {
+		ByteBuffer buffer = BufferUtils.toBuffer("POST /chunk HTTP/1.1\015\012" + "Host: localhost\015\012"
+				+ "Transfer-Encoding: chunked\015\012" + "Content-Length: 1\015\012" + "\015\012" + "1\015\012"
+				+ "X\015\012" + "0\015\012" + "\015\012");
+
+		HttpParser.RequestHandler handler = new Handler();
+		HttpParser parser = new HttpParser(handler);
+		parseAll(parser, buffer);
+
+		assertEquals("POST", _methodOrVersion);
+		assertEquals("/chunk", _uriOrStatus);
+		assertEquals("HTTP/1.1", _versionOrReason);
+		assertEquals("X", _content);
+
+		assertTrue(_headerCompleted);
+		assertTrue(_messageCompleted);
+	}
+
+	@Test
+	public void testContentLengthThenTransferEncodingChunked() {
+		ByteBuffer buffer = BufferUtils.toBuffer("POST /chunk HTTP/1.1\015\012" + "Host: localhost\015\012"
+				+ "Content-Length: 1\015\012" + "Transfer-Encoding: chunked\015\012" + "\015\012" + "1\015\012"
+				+ "X\015\012" + "0\015\012" + "\015\012");
+
+		HttpParser.RequestHandler handler = new Handler();
+		HttpParser parser = new HttpParser(handler);
+		parseAll(parser, buffer);
+
+		assertEquals("POST", _methodOrVersion);
+		assertEquals("/chunk", _uriOrStatus);
+		assertEquals("HTTP/1.1", _versionOrReason);
+		assertEquals("X", _content);
+
+		assertTrue(_headerCompleted);
+		assertTrue(_messageCompleted);
 	}
 
 	@Test
@@ -1371,7 +1444,6 @@ public class HttpParserTest {
 	private String[] _hdr;
 	private String[] _val;
 	private int _headers;
-
 	private boolean _early;
 	private boolean _headerCompleted;
 	private boolean _messageCompleted;

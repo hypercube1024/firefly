@@ -80,9 +80,8 @@ import com.firefly.utils.log.LogFactory;
  * @see <a href="http://tools.ietf.org/html/rfc7230">RFC 7230</a>
  */
 public class HttpParser {
-	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
+
 	public final static int INITIAL_URI_LENGTH = 256;
 
 	/**
@@ -135,8 +134,7 @@ public class HttpParser {
 	private final static EnumSet<State> __idleStates = EnumSet.of(State.START, State.END, State.CLOSE, State.CLOSED);
 	private final static EnumSet<State> __completeStates = EnumSet.of(State.END, State.CLOSE, State.CLOSED);
 
-	private final boolean DEBUG = log.isDebugEnabled(); // Cache debug to help
-														// branch prediction
+	private final boolean DEBUG = log.isDebugEnabled(); // Cache debug to help branch prediction
 	private final HttpHandler _handler;
 	private final RequestHandler _requestHandler;
 	private final ResponseHandler _responseHandler;
@@ -221,20 +219,24 @@ public class HttpParser {
 		CACHE.put(new HttpField(HttpHeader.COOKIE, (String) null));
 	}
 
+	private static HttpCompliance compliance() {
+		return HttpCompliance.RFC7230;
+	}
+
 	public HttpParser(RequestHandler handler) {
-		this(handler, -1, HttpCompliance.RFC7230);
+		this(handler, -1, compliance());
 	}
 
 	public HttpParser(ResponseHandler handler) {
-		this(handler, -1, HttpCompliance.RFC7230);
+		this(handler, -1, compliance());
 	}
 
 	public HttpParser(RequestHandler handler, int maxHeaderBytes) {
-		this(handler, maxHeaderBytes, HttpCompliance.RFC7230);
+		this(handler, maxHeaderBytes, compliance());
 	}
 
 	public HttpParser(ResponseHandler handler, int maxHeaderBytes) {
-		this(handler, maxHeaderBytes, HttpCompliance.RFC7230);
+		this(handler, maxHeaderBytes, compliance());
 	}
 
 	public HttpParser(RequestHandler handler, HttpCompliance compliance) {
@@ -246,7 +248,7 @@ public class HttpParser {
 		_requestHandler = handler;
 		_responseHandler = null;
 		_maxHeaderBytes = maxHeaderBytes;
-		_compliance = compliance == null ? HttpCompliance.RFC7230 : compliance;
+		_compliance = compliance == null ? compliance() : compliance;
 	}
 
 	public HttpParser(ResponseHandler handler, int maxHeaderBytes, HttpCompliance compliance) {
@@ -254,17 +256,19 @@ public class HttpParser {
 		_requestHandler = null;
 		_responseHandler = handler;
 		_maxHeaderBytes = maxHeaderBytes;
-		_compliance = compliance == null ? HttpCompliance.RFC7230 : compliance;
+		_compliance = compliance == null ? compliance() : compliance;
 	}
 
 	public long getContentLength() {
 		return _contentLength;
 	}
 
+	
 	public long getContentRead() {
 		return _contentPosition;
 	}
 
+	
 	/**
 	 * Set if a HEAD response is expected
 	 * 
@@ -299,18 +303,19 @@ public class HttpParser {
 		return isState(State.START);
 	}
 
+	
 	public boolean isClose() {
 		return isState(State.CLOSE);
 	}
-
+	
 	public boolean isClosed() {
 		return isState(State.CLOSED);
 	}
-
+	
 	public boolean isIdle() {
 		return __idleStates.contains(_state);
 	}
-
+	
 	public boolean isComplete() {
 		return __completeStates.contains(_state);
 	}
@@ -709,12 +714,10 @@ public class HttpParser {
 				boolean add_to_connection_trie = false;
 				switch (_header) {
 				case CONTENT_LENGTH:
-					if (_endOfContent != EndOfContent.CHUNKED_CONTENT) {
-						try {
-							_contentLength = Long.parseLong(_valueString);
-						} catch (NumberFormatException e) {
-							throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Bad Content-Length");
-						}
+					if (_endOfContent == EndOfContent.CONTENT_LENGTH) {
+						throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Duplicate Content-Length");
+					} else if (_endOfContent != EndOfContent.CHUNKED_CONTENT) {
+						_contentLength = convertContentLength(_valueString);
 						if (_contentLength <= 0)
 							_endOfContent = EndOfContent.NO_CONTENT;
 						else
@@ -723,14 +726,14 @@ public class HttpParser {
 					break;
 
 				case TRANSFER_ENCODING:
-					if (_value == HttpHeaderValue.CHUNKED)
+					if (_value == HttpHeaderValue.CHUNKED) {
 						_endOfContent = EndOfContent.CHUNKED_CONTENT;
-					else {
+						_contentLength = -1;
+					} else {
 						if (_valueString.endsWith(HttpHeaderValue.CHUNKED.toString()))
 							_endOfContent = EndOfContent.CHUNKED_CONTENT;
-						else if (_valueString.contains(HttpHeaderValue.CHUNKED.toString())) {
+						else if (_valueString.contains(HttpHeaderValue.CHUNKED.toString()))
 							throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Bad chunking");
-						}
 					}
 					break;
 
@@ -781,6 +784,14 @@ public class HttpParser {
 		_header = null;
 		_value = null;
 		_field = null;
+	}
+
+	private long convertContentLength(String valueString) {
+		try {
+			return Long.parseLong(valueString);
+		} catch (NumberFormatException e) {
+			throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Invalid Content-Length Value");
+		}
 	}
 
 	/*
@@ -844,8 +855,8 @@ public class HttpParser {
                             _responseStatus == 204 || // no-content response
                             _responseStatus < 200)) {// 1xx response
                     	
-                    	// ignore any other headers set
-                        _endOfContent=EndOfContent.NO_CONTENT; 
+                        _endOfContent=EndOfContent.NO_CONTENT; // ignore any other headers set
+
                     } else if (_endOfContent == EndOfContent.UNKNOWN_CONTENT) { // else if we don't know framing
                         if (_responseStatus == 0  // request
                                 || _responseStatus == 304 // not-modified response
@@ -1171,7 +1182,9 @@ public class HttpParser {
 			_handler.badMessage(e.getCode(), e.getReason());
 		} catch (NumberFormatException | IllegalStateException e) {
 			BufferUtils.clear(buffer);
-			log.warn("parse exception: {} in {} for {}", e, e.toString(), _state, _handler);
+			log.warn("parse exception: {} in {} for {}", e.toString(), _state, _handler);
+			if (DEBUG)
+				log.debug("parse exception", e);
 
 			switch (_state) {
 			case CLOSED:
@@ -1339,9 +1352,7 @@ public class HttpParser {
 		return false;
 	}
 
-	public boolean isAtEOF()
-
-	{
+	public boolean isAtEOF() {
 		return _eof;
 	}
 
@@ -1419,12 +1430,14 @@ public class HttpParser {
 		 */
 		public void parsedHeader(HttpField field);
 
+		
 		/**
 		 * Called to signal that an EOF was received unexpectedly during the
 		 * parsing of a HTTP message
 		 */
 		public void earlyEOF();
 
+		
 		/**
 		 * Called to signal that a bad HTTP message has been received.
 		 * 
@@ -1435,6 +1448,7 @@ public class HttpParser {
 		 */
 		public void badMessage(int status, String reason);
 
+		
 		/**
 		 * @return the size in bytes of the per parser header cache
 		 */
