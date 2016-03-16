@@ -53,7 +53,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	private final Scheduler scheduler;
 	private final com.firefly.net.Session endPoint;
 	private final Generator generator;
-	private final Listener listener;
+	private final Session.Listener listener;
 	private final FlowControlStrategy flowControl;
 	private final HTTP2Flusher flusher;
 	private int maxLocalStreams;
@@ -61,8 +61,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	private long streamIdleTimeout;
 	private boolean pushEnabled;
 
-	public HTTP2Session(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator, Listener listener,
-			FlowControlStrategy flowControl, int initialStreamId, int streamIdleTimeout) {
+	public HTTP2Session(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
+			Session.Listener listener, FlowControlStrategy flowControl, int initialStreamId, int streamIdleTimeout) {
 		this.scheduler = scheduler;
 		this.endPoint = endPoint;
 		this.generator = generator;
@@ -449,7 +449,12 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			switch (current) {
 			case NOT_CLOSED: {
 				if (closed.compareAndSet(current, CloseState.LOCALLY_CLOSED)) {
-					byte[] payload = reason == null ? null : reason.getBytes(StandardCharsets.UTF_8);
+					byte[] payload = null;
+					if (reason != null) {
+						// Trim the reason to avoid attack vectors.
+						reason = reason.substring(0, Math.min(reason.length(), 32));
+						payload = reason.getBytes(StandardCharsets.UTF_8);
+					}
 					GoAwayFrame frame = new GoAwayFrame(lastStreamId.get(), error, payload);
 					control(null, callback, frame);
 					return true;
@@ -501,7 +506,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 	private void frame(HTTP2Flusher.Entry entry, boolean flush) {
 		if (log.isDebugEnabled())
-			log.debug("Sending {}", entry.frame);
+			log.debug("{} {}", flush ? "Sending" : "Queueing", entry.frame);
 		// Ping frames are prepended to process them as soon as possible.
 		boolean queued = entry.frame.getType() == FrameType.PING ? flusher.prepend(entry) : flusher.append(entry);
 		if (queued && flush)
@@ -557,9 +562,6 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				log.debug("Created remote {}", stream);
 			return stream;
 		} else {
-			if(log.isDebugEnabled()) {
-				log.debug("create duplicate remote stream {}", streamId);
-			}
 			close(ErrorCode.PROTOCOL_ERROR.code, "duplicate_stream", Callback.NOOP);
 			return null;
 		}
@@ -584,7 +586,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			flowControl.onStreamDestroyed(stream);
 
 			if (log.isDebugEnabled())
-				log.debug("Removed {}, {}", local ? "local" : "remote", stream);
+				log.debug("Removed {} {}", local ? "local" : "remote", stream);
 		}
 	}
 
@@ -593,6 +595,10 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		List<Stream> result = new ArrayList<>();
 		result.addAll(streams.values());
 		return result;
+	}
+
+	public int getStreamCount() {
+		return streams.size();
 	}
 
 	@Override
@@ -748,7 +754,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			case LOCALLY_CLOSED:
 			case REMOTELY_CLOSED: {
 				if (closed.compareAndSet(current, CloseState.CLOSED)) {
-					flusher.close();
+					flusher.terminate();
 					for (StreamSPI stream : streams.values())
 						stream.close();
 					streams.clear();
@@ -848,19 +854,12 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			super(frame, stream, callback);
 		}
 
-		@Override
-		public Throwable generate(Queue<ByteBuffer> buffers) {
-			try {
-				buffers.addAll(generator.control(frame));
-				if (log.isDebugEnabled())
-					log.debug("Generated {}", frame);
-				prepare();
-				return null;
-			} catch (Throwable x) {
-				if (log.isDebugEnabled())
-					log.debug("Failure generating frame " + frame, x);
-				return x;
-			}
+		protected boolean generate(Queue<ByteBuffer> buffers) {
+			buffers.addAll(generator.control(frame));
+			if (log.isDebugEnabled())
+				log.debug("Generated {}", frame);
+			prepare();
+			return true;
 		}
 
 		/**
@@ -938,74 +937,74 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				break;
 			}
 			}
-			callback.succeeded();
+			super.succeeded();
 		}
 	}
 
 	private class DataEntry extends HTTP2Flusher.Entry {
-		private int length;
+		private int remaining;
+		private int generated;
 
 		private DataEntry(DataFrame frame, StreamSPI stream, Callback callback) {
 			super(frame, stream, callback);
-		}
-
-		@Override
-		public int dataRemaining() {
 			// We don't do any padding, so the flow control length is
 			// always the data remaining. This simplifies the handling
 			// of data frames that cannot be completely written due to
 			// the flow control window exhausting, since in that case
 			// we would have to count the padding only once.
-			return ((DataFrame) frame).remaining();
+			remaining = frame.remaining();
 		}
 
 		@Override
-		public Throwable generate(Queue<ByteBuffer> buffers) {
-			try {
-				int flowControlLength = dataRemaining();
+		public int dataRemaining() {
+			return remaining;
+		}
 
-				int sessionSendWindow = getSendWindow();
-				if (sessionSendWindow < 0)
-					throw new IllegalStateException();
+		protected boolean generate(Queue<ByteBuffer> buffers) {
+			int toWrite = dataRemaining();
 
-				int streamSendWindow = stream.updateSendWindow(0);
-				if (streamSendWindow < 0)
-					throw new IllegalStateException();
+			int sessionSendWindow = getSendWindow();
+			int streamSendWindow = stream.updateSendWindow(0);
+			int window = Math.min(streamSendWindow, sessionSendWindow);
+			if (window <= 0 && toWrite > 0)
+				return false;
 
-				int window = Math.min(streamSendWindow, sessionSendWindow);
+			int length = Math.min(toWrite, window);
 
-				int length = this.length = Math.min(flowControlLength, window);
-				if (log.isDebugEnabled())
-					log.debug("Generated {}, length/window={}/{}", frame, length, window);
-
-				buffers.addAll(generator.data((DataFrame) frame, length));
-				flowControl.onDataSending(stream, length);
-				return null;
-			} catch (Throwable x) {
-				if (log.isDebugEnabled())
-					log.debug("Failure generating frame " + frame, x);
-				return x;
+			
+			List<ByteBuffer> dataList = generator.data((DataFrame) frame, length);
+			buffers.addAll(dataList);
+			
+			int generated = 0;
+			if (log.isDebugEnabled()) {
+				if (dataList != null && dataList.size() > 0) {
+					for (ByteBuffer b : dataList) {
+						generated += b.remaining();
+					}
+				}
+				log.debug("Generated {}, length/window/data={}/{}/{}", (DataFrame) frame, generated, window, toWrite);
 			}
+
+			this.generated += generated;
+			this.remaining -= generated;
+
+			flowControl.onDataSending(stream, generated);
+
+			return true;
 		}
 
 		@Override
 		public void succeeded() {
-			flowControl.onDataSent(stream, length);
+			flowControl.onDataSent(stream, generated);
+			generated = 0;
 			// Do we have more to send ?
 			DataFrame dataFrame = (DataFrame) frame;
-			if (dataFrame.remaining() > 0) {
-				// We have written part of the frame, but there is more to
-				// write.
-				// The API will not allow to send two data frames for the same
-				// stream so we append the unfinished frame at the end to allow
-				// better interleaving with other streams.
-				flusher.append(this);
-			} else {
+			if (dataRemaining() == 0) {
 				// Only now we can update the close state
 				// and eventually remove the stream.
 				if (stream.updateClose(dataFrame.isEndStream(), true))
 					removeStream(stream);
-				callback.succeeded();
+				super.succeeded();
 			}
 		}
 	}

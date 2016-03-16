@@ -26,12 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * }
  * </pre>
  */
-public class CountingCallback implements Callback {
-	private final Callback callback;
+public class CountingCallback extends Callback.Nested {
 	private final AtomicInteger count;
 
 	public CountingCallback(Callback callback, int count) {
-		this.callback = callback;
+		super(callback);
 		this.count = new AtomicInteger(count);
 	}
 
@@ -47,7 +46,7 @@ public class CountingCallback implements Callback {
 
 			if (count.compareAndSet(current, current - 1)) {
 				if (current == 1)
-					callback.succeeded();
+					super.succeeded();
 				return;
 			}
 		}
@@ -64,7 +63,7 @@ public class CountingCallback implements Callback {
 				return;
 
 			if (count.compareAndSet(current, 0)) {
-				callback.failed(failure);
+				super.failed(failure);
 				return;
 			}
 		}

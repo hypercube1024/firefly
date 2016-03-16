@@ -1,15 +1,11 @@
 package com.firefly.codec.http2.stream;
 
-import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 
 import com.firefly.codec.http2.frame.Frame;
@@ -19,6 +15,7 @@ import com.firefly.utils.collection.ArrayQueue;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IteratingCallback;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.EofException;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -28,11 +25,12 @@ public class HTTP2Flusher extends IteratingCallback {
 	private final Queue<WindowEntry> windows = new ArrayDeque<>();
 	private final ArrayQueue<Entry> frames = new ArrayQueue<>(ArrayQueue.DEFAULT_CAPACITY, ArrayQueue.DEFAULT_GROWTH,
 			this);
-	private final Map<StreamSPI, Integer> streams = new HashMap<>();
-	private final List<Entry> resets = new ArrayList<>();
+	private final Queue<Entry> entries = new ArrayDeque<>();
 	private final List<Entry> actives = new ArrayList<>();
-	private final Queue<Entry> completes = new ArrayDeque<>();
 	private final HTTP2Session session;
+	private Entry stalled;
+	private boolean terminated;
+
 	private final Queue<ByteBuffer> buffers = new LinkedList<>();
 
 	public HTTP2Flusher(HTTP2Session session) {
@@ -40,55 +38,45 @@ public class HTTP2Flusher extends IteratingCallback {
 	}
 
 	public void window(StreamSPI stream, WindowUpdateFrame frame) {
-		boolean added = false;
+		boolean closed;
 		synchronized (this) {
-			if (!isClosed())
-				added = windows.offer(new WindowEntry(stream, frame));
+			closed = terminated;
+			if (!closed)
+				windows.offer(new WindowEntry(stream, frame));
 		}
 		// Flush stalled data.
-		if (added)
+		if (!closed)
 			iterate();
 	}
 
 	public boolean prepend(Entry entry) {
-		boolean fail = false;
+		boolean closed;
 		synchronized (this) {
-			if (isClosed()) {
-				fail = true;
-			} else {
+			closed = terminated;
+			if (!closed) {
 				frames.add(0, entry);
 				if (log.isDebugEnabled())
-					log.debug("Prepended {}, frames={}", entry, Arrays.toString(frames.toArray()));
+					log.debug("Prepended {}, frames={}", entry, frames.size());
 			}
 		}
-		if (fail)
+		if (closed)
 			closed(entry, new ClosedChannelException());
-		return !fail;
+		return !closed;
 	}
 
 	public boolean append(Entry entry) {
-		boolean fail = false;
+		boolean closed;
 		synchronized (this) {
-			if (isClosed()) {
-				fail = true;
-			} else {
+			closed = terminated;
+			if (!closed) {
 				frames.offer(entry);
 				if (log.isDebugEnabled())
-					log.debug("Appended {}, frames={}", entry, Arrays.toString(frames.toArray()));
+					log.debug("Appended {}, frames={}", entry, frames.size());
 			}
 		}
-		if (fail)
+		if (closed)
 			closed(entry, new ClosedChannelException());
-		return !fail;
-	}
-
-	private Entry remove(int index) {
-		synchronized (this) {
-			if (index == 0)
-				return frames.pollUnsafe();
-			else
-				return frames.remove(index);
-		}
+		return !closed;
 	}
 
 	public int getQueueSize() {
@@ -98,115 +86,74 @@ public class HTTP2Flusher extends IteratingCallback {
 	}
 
 	@Override
-	protected synchronized Action process() throws Exception {
+	protected Action process() throws Exception {
 		if (log.isDebugEnabled())
 			log.debug("Flushing {}", session);
 
-		// First thing, update the window sizes, so we can
-		// reason about the frames to remove from the queue.
-		while (!windows.isEmpty()) {
-			WindowEntry entry = windows.poll();
-			entry.perform();
-		}
+		synchronized (this) {
+			if (terminated)
+				throw new ClosedChannelException();
 
-		// Now the window sizes cannot change.
-		// Window updates that happen concurrently will
-		// be queued and processed on the next iteration.
-		int sessionWindow = session.getSendWindow();
-
-		int index = 0;
-		int size = frames.size();
-		if (log.isDebugEnabled()) {
-			log.debug("All frames {}, {}", frames.size(), Arrays.toString(frames.toArray()));
-		}
-		while (index < size) {
-			Entry entry = frames.get(index);
-			StreamSPI stream = entry.stream;
-
-			// If the stream has been reset, don't send the frame.
-			if (stream != null && stream.isReset() && !entry.isProtocol()) {
-				remove(index);
-				--size;
-				resets.add(entry);
-				if (log.isDebugEnabled())
-					log.debug("Gathered for reset {}", entry);
-				continue;
+			while (!windows.isEmpty()) {
+				WindowEntry entry = windows.poll();
+				entry.perform();
 			}
 
-			// Check if the frame fits in the flow control windows.
-			int remaining = entry.dataRemaining();
-			if (remaining > 0) {
-				if (sessionWindow <= 0) {
-					++index;
-					// There may be *non* flow controlled frames to send.
-					continue;
+			if (!frames.isEmpty()) {
+				for (Entry entry : frames) {
+					entries.offer(entry);
+					actives.add(entry);
 				}
-
-				if (stream != null) {
-					// The stream may have a smaller window than the
-					// session.
-					Integer streamWindow = streams.get(stream);
-					if (streamWindow == null) {
-						streamWindow = stream.updateSendWindow(0);
-						streams.put(stream, streamWindow);
-					}
-
-					// Is it a frame belonging to an already stalled stream
-					// ?
-					if (streamWindow <= 0) {
-						++index;
-						// There may be *non* flow controlled frames to
-						// send.
-						continue;
-					}
-				}
-
-				// The frame fits both flow control windows, reduce them.
-				sessionWindow -= remaining;
-				if (stream != null)
-					streams.put(stream, streams.get(stream) - remaining);
+				frames.clear();
 			}
-
-			// The frame will be written, remove it from the queue.
-			remove(index);
-			--size;
-			actives.add(entry);
-
-			if (log.isDebugEnabled())
-				log.debug("Gathered for write {}", entry);
 		}
-		streams.clear();
 
-		// Perform resets outside the sync block.
-		for (int i = 0; i < resets.size(); ++i) {
-			Entry entry = resets.get(i);
-			entry.reset();
-		}
-		resets.clear();
-
-		if (actives.isEmpty()) {
-			if (isClosed())
-				fail(new ClosedChannelException(), true);
-
+		if (entries.isEmpty()) {
 			if (log.isDebugEnabled())
 				log.debug("Flushed {}", session);
-
 			return Action.IDLE;
 		}
 
-		for (int i = 0; i < actives.size(); ++i) {
-			Entry entry = actives.get(i);
-			Throwable failure = entry.generate(buffers);
-			if (failure != null) {
+		while (!entries.isEmpty()) {
+			Entry entry = entries.poll();
+			if (log.isDebugEnabled())
+				log.debug("Processing {}, {}", entry, entry.dataRemaining());
+
+			// If the stream has been reset, don't send the frame.
+			if (entry.reset()) {
+				if (log.isDebugEnabled())
+					log.debug("Resetting {}", entry);
+				continue;
+			}
+
+			try {
+				if (entry.generate(buffers)) {
+					if(log.isDebugEnabled()) {
+						log.debug("Generated entry {}, {}", entry, entry.dataRemaining());
+					}
+					if (entry.dataRemaining() > 0)
+						entries.offer(entry);
+				} else {
+					if (stalled == null)
+						stalled = entry;
+				}
+			} catch (Throwable failure) {
 				// Failure to generate the entry is catastrophic.
+				if (log.isDebugEnabled())
+					log.debug("Failure generating frame " + entry.frame, failure);
 				failed(failure);
 				return Action.SUCCEEDED;
 			}
 		}
 
+		if (buffers.isEmpty()) {
+			complete();
+			return Action.IDLE;
+		}
+
 		if (log.isDebugEnabled())
 			log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
-					actives.size(), Arrays.toString(actives.toArray()));
+					actives.size(), actives);
 
 		ByteBufferArrayOutputEntry outputEntry = new ByteBufferArrayOutputEntry(this,
 				buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
@@ -223,24 +170,40 @@ public class HTTP2Flusher extends IteratingCallback {
 	}
 
 	@Override
-	public synchronized void succeeded() {
-		buffers.clear();
-
-		// Transfer active items to avoid reentrancy.
-		for (int i = 0; i < actives.size(); ++i)
-			completes.add(actives.get(i));
-		actives.clear();
-
+	public void succeeded() {
 		if (log.isDebugEnabled())
-			log.debug("Written {} frames for {}", completes.size(), Arrays.toString(completes.toArray()));
+			log.debug("Written {} frames for {}", actives.size(), actives);
 
-		// Drain the frames one by one to avoid reentrancy.
-		while (!completes.isEmpty()) {
-			Entry entry = completes.poll();
-			entry.succeeded();
-		}
+		complete();
 
 		super.succeeded();
+	}
+
+	private void complete() {
+		buffers.clear();
+
+		actives.forEach(Entry::complete);
+
+		if (stalled != null) {
+			// We have written part of the frame, but there is more to write.
+			// The API will not allow to send two data frames for the same
+			// stream so we append the unfinished frame at the end to allow
+			// better interleaving with other streams.
+			int index = actives.indexOf(stalled);
+			for (int i = index; i < actives.size(); ++i) {
+				Entry entry = actives.get(i);
+				if (entry.dataRemaining() > 0)
+					append(entry);
+			}
+			for (int i = 0; i < index; ++i) {
+				Entry entry = actives.get(i);
+				if (entry.dataRemaining() > 0)
+					append(entry);
+			}
+			stalled = null;
+		}
+
+		actives.clear();
 	}
 
 	@Override
@@ -249,68 +212,66 @@ public class HTTP2Flusher extends IteratingCallback {
 	}
 
 	@Override
-	protected synchronized void onCompleteFailure(Throwable x) {
-		if (log.isDebugEnabled())
-			log.debug("Failed", x);
-
+	protected void onCompleteFailure(Throwable x) {
 		buffers.clear();
 
-		// Transfer active items to avoid reentrancy.
-		for (int i = 0; i < actives.size(); ++i)
-			completes.add(actives.get(i));
-		actives.clear();
-
-		// Drain the frames one by one to avoid reentrancy.
-		while (!completes.isEmpty()) {
-			Entry entry = completes.poll();
-			entry.failed(x);
-		}
-
-		fail(x, isClosed());
-	}
-
-	private void fail(Throwable x, boolean closed) {
-		Queue<Entry> queued;
+		boolean closed;
 		synchronized (this) {
-			queued = new ArrayDeque<>(frames);
+			closed = terminated;
+			terminated = true;
+			if (log.isDebugEnabled())
+				log.debug("{}, active/queued={}/{}", closed ? "Closing" : "Failing", actives.size(), frames.size());
+			actives.addAll(frames);
 			frames.clear();
 		}
 
-		if (log.isDebugEnabled())
-			log.debug("{}, queued={}", closed ? "Closing" : "Failing", queued.size());
+		actives.forEach(entry -> entry.failed(x));
+		actives.clear();
 
-		for (Entry entry : queued)
-			entry.failed(x);
-
+		// If the failure came from within the
+		// flusher, we need to close the connection.
 		if (!closed)
 			session.abort(x);
+	}
+
+	void terminate() {
+		boolean closed;
+		synchronized (this) {
+			closed = terminated;
+			terminated = true;
+			if (log.isDebugEnabled())
+				log.debug("{}", closed ? "Terminated" : "Terminating");
+		}
+		if (!closed)
+			iterate();
 	}
 
 	private void closed(Entry entry, Throwable failure) {
 		entry.failed(failure);
 	}
 
-	public static abstract class Entry implements Callback {
+	public static abstract class Entry extends Callback.Nested {
 		protected final Frame frame;
 		protected final StreamSPI stream;
-		protected final Callback callback;
+		private boolean reset;
 
 		protected Entry(Frame frame, StreamSPI stream, Callback callback) {
+			super(callback);
 			this.frame = frame;
 			this.stream = stream;
-			this.callback = callback;
 		}
 
 		public int dataRemaining() {
 			return 0;
 		}
 
-		public Throwable generate(Queue<ByteBuffer> buffers) {
-			return null;
-		}
+		protected abstract boolean generate(Queue<ByteBuffer> buffers);
 
-		public void reset() {
-			failed(new EOFException("reset"));
+		private void complete() {
+			if (reset)
+				failed(new EofException("reset"));
+			else
+				succeeded();
 		}
 
 		@Override
@@ -319,10 +280,14 @@ public class HTTP2Flusher extends IteratingCallback {
 				stream.close();
 				stream.getSession().removeStream(stream);
 			}
-			callback.failed(x);
+			super.failed(x);
 		}
 
-		public boolean isProtocol() {
+		private boolean reset() {
+			return this.reset = stream != null && stream.isReset() && !isProtocol();
+		}
+
+		private boolean isProtocol() {
 			switch (frame.getType()) {
 			case PRIORITY:
 			case RST_STREAM:
