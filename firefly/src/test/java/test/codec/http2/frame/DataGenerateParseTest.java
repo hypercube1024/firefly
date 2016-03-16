@@ -13,6 +13,7 @@ import com.firefly.codec.http2.encode.DataGenerator;
 import com.firefly.codec.http2.encode.HeaderGenerator;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.lang.Pair;
 
 public class DataGenerateParseTest {
 	private final byte[] smallContent = new byte[128];
@@ -73,7 +74,16 @@ public class DataGenerateParseTest {
 		// Iterate a few times to be sure generator and parser are properly
 		// reset.
 		for (int i = 0; i < 2; ++i) {
-			List<ByteBuffer> list = generator.generateData(13, data.slice(), true, data.remaining());
+			ByteBuffer slice = data.slice();
+			int generated = 0;
+			List<ByteBuffer> list = new ArrayList<>();
+			while (true) {
+				Pair<Integer, List<ByteBuffer>> pair = generator.generateData(13, slice, true, slice.remaining());
+				generated += pair.first;
+				list.addAll(pair.second);
+				if (generated == data.remaining())
+					break;
+			}
 
 			frames.clear();
 			for (ByteBuffer buffer : list) {
@@ -100,7 +110,16 @@ public class DataGenerateParseTest {
 		// reset.
 		for (int i = 0; i < 2; ++i) {
 			ByteBuffer data = ByteBuffer.wrap(largeContent);
-			List<ByteBuffer> list = generator.generateData(13, data.slice(), true, data.remaining());
+			ByteBuffer slice = data.slice();
+			int generated = 0;
+			List<ByteBuffer> list = new ArrayList<>();
+			while (true) {
+				Pair<Integer, List<ByteBuffer>> pair = generator.generateData(13, slice, true, slice.remaining());
+				generated += pair.first;
+				list.addAll(pair.second);
+				if (generated == data.remaining())
+					break;
+			}
 
 			frames.clear();
 			for (ByteBuffer buffer : list) {

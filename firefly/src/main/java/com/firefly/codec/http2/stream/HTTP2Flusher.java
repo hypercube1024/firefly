@@ -153,7 +153,7 @@ public class HTTP2Flusher extends IteratingCallback {
 
 		if (log.isDebugEnabled())
 			log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
-					actives.size(), actives);
+					actives.size(), actives.toString());
 
 		ByteBufferArrayOutputEntry outputEntry = new ByteBufferArrayOutputEntry(this,
 				buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
@@ -172,7 +172,7 @@ public class HTTP2Flusher extends IteratingCallback {
 	@Override
 	public void succeeded() {
 		if (log.isDebugEnabled())
-			log.debug("Written {} frames for {}", actives.size(), actives);
+			log.debug("Written {} frames for {}", actives.size(), actives.toString());
 
 		complete();
 

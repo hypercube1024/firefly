@@ -9,6 +9,7 @@ import com.firefly.codec.http2.frame.Flags;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.lang.Pair;
 
 public class DataGenerator {
 	private final HeaderGenerator headerGenerator;
@@ -17,42 +18,34 @@ public class DataGenerator {
 		this.headerGenerator = headerGenerator;
 	}
 
-	public List<ByteBuffer> generate(DataFrame frame, int maxLength) {
+	public Pair<Integer, List<ByteBuffer>> generate(DataFrame frame, int maxLength) {
 		return generateData(frame.getStreamId(), frame.getData(), frame.isEndStream(), maxLength);
 	}
 
-	public List<ByteBuffer> generateData(int streamId, ByteBuffer data, boolean last, int maxLength) {
+	public Pair<Integer, List<ByteBuffer>> generateData(int streamId, ByteBuffer data, boolean last, int maxLength) {
 		if (streamId < 0)
 			throw new IllegalArgumentException("Invalid stream id: " + streamId);
 
 		List<ByteBuffer> list = new LinkedList<>();
+
+		if (streamId < 0)
+			throw new IllegalArgumentException("Invalid stream id: " + streamId);
+
 		int dataLength = data.remaining();
 		int maxFrameSize = headerGenerator.getMaxFrameSize();
-
-		if (dataLength <= maxLength && dataLength <= maxFrameSize) {
-			// Single frame.
+		int length = Math.min(dataLength, Math.min(maxFrameSize, maxLength));
+		if (length == dataLength) {
 			generateFrame(streamId, data, last, list);
-			return list;
-		}
-
-		// Other cases, we need to slice the original buffer into multiple
-		// frames.
-		int length = Math.min(maxLength, dataLength);
-		int frames = length / maxFrameSize;
-		if (frames * maxFrameSize != length)
-			++frames;
-
-		int begin = data.position();
-		int end = data.limit();
-		for (int i = 1; i <= frames; i++) {
-			int limit = begin + Math.min(maxFrameSize * i, length);
-			data.limit(limit);
+		} else {
+			int limit = data.limit();
+			int newLimit = data.position() + length;
+			data.limit(newLimit);
 			ByteBuffer slice = data.slice();
-			data.position(limit);
-			generateFrame(streamId, slice, i == frames && last && limit == end, list);
+			data.position(newLimit);
+			data.limit(limit);
+			generateFrame(streamId, slice, false, list);
 		}
-		data.limit(end);
-		return list;
+		return new Pair<>(length, list);
 	}
 
 	private void generateFrame(int streamId, ByteBuffer data, boolean last, List<ByteBuffer> list) {
@@ -64,9 +57,12 @@ public class DataGenerator {
 
 		ByteBuffer header = headerGenerator.generate(FrameType.DATA, Frame.HEADER_LENGTH + length, length, flags,
 				streamId);
+
 		BufferUtils.flipToFlush(header, 0);
 		list.add(header);
-		list.add(data);
+
+		if (data.remaining() > 0)
+			list.add(data);
 	}
 
 }

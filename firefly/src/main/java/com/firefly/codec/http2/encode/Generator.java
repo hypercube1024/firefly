@@ -7,6 +7,7 @@ import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
 import com.firefly.codec.http2.hpack.HpackEncoder;
+import com.firefly.utils.lang.Pair;
 
 public class Generator {
 	private final HeaderGenerator headerGenerator;
@@ -56,7 +57,7 @@ public class Generator {
 		return generators[frame.getType().getType()].generate(frame);
 	}
 
-	public List<ByteBuffer> data(DataFrame frame, int maxLength) {
+	public Pair<Integer, List<ByteBuffer>> data(DataFrame frame, int maxLength) {
 		return dataGenerator.generate(frame, maxLength);
 	}
 }

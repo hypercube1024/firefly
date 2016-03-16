@@ -36,6 +36,7 @@ import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.lang.Pair;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -971,19 +972,11 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 			int length = Math.min(toWrite, window);
 
-			
-			List<ByteBuffer> dataList = generator.data((DataFrame) frame, length);
-			buffers.addAll(dataList);
-			
-			int generated = 0;
-			if (log.isDebugEnabled()) {
-				if (dataList != null && dataList.size() > 0) {
-					for (ByteBuffer b : dataList) {
-						generated += b.remaining();
-					}
-				}
-				log.debug("Generated {}, length/window/data={}/{}/{}", (DataFrame) frame, generated, window, toWrite);
-			}
+			Pair<Integer, List<ByteBuffer>> pair = generator.data((DataFrame) frame, length);
+			buffers.addAll(pair.second);
+
+			int generated = pair.first;
+			log.debug("Generated {}, length/window/data={}/{}/{}", (DataFrame) frame, generated, window, toWrite);
 
 			this.generated += generated;
 			this.remaining -= generated;
@@ -999,7 +992,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			generated = 0;
 			// Do we have more to send ?
 			DataFrame dataFrame = (DataFrame) frame;
-			if (dataRemaining() == 0) {
+			if (dataRemaining() <= 0) {
 				// Only now we can update the close state
 				// and eventually remove the stream.
 				if (stream.updateClose(dataFrame.isEndStream(), true))

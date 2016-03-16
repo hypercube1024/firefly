@@ -173,8 +173,8 @@ public class HTTP2DecoderTest {
 		list.add(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));
 		list.add(settingsGenerator.generateSettings(settings, false));
 		list.addAll(headersGenerator.generateHeaders(streamId, metaData, null, false));
-		list.addAll(generator.data(smallDataFrame, smallContent.length));
-		list.addAll(generator.data(bigDateFrame, bigContent.length));
+		list.addAll(generator.data(smallDataFrame, smallContent.length).second);
+		list.addAll(generator.data(bigDateFrame, bigContent.length).second);
 		
 		for(ByteBuffer buffer : list) {
 			decoder.decode(buffer, session);
