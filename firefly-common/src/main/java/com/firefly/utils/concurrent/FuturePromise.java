@@ -10,6 +10,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FuturePromise<C> implements Future<C>, Promise<C> {
+
 	private static Throwable COMPLETED = new Throwable();
 	private final AtomicBoolean _done = new AtomicBoolean(false);
 	private final CountDownLatch _latch = new CountDownLatch(1);

@@ -10,6 +10,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FutureCallback implements Future<Void>, Callback {
+
 	private static Throwable COMPLETED = new Throwable();
 	private final AtomicBoolean _done = new AtomicBoolean(false);
 	private final CountDownLatch _latch = new CountDownLatch(1);
@@ -115,5 +116,5 @@ public class FutureCallback implements Future<Void>, Callback {
 	public String toString() {
 		return String.format("FutureCallback@%x{%b,%b}", hashCode(), _done.get(), _cause == COMPLETED);
 	}
-
+	
 }

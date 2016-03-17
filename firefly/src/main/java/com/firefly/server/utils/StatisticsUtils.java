@@ -6,15 +6,16 @@ import com.firefly.utils.log.LogFactory;
 
 public abstract class StatisticsUtils {
 
-	private static Log accessLog = LogFactory.getInstance().getLog("firefly-access");
-	private static Log connectionLog = LogFactory.getInstance().getLog("firefly-connection");
+	private static Log access = LogFactory.getInstance().getLog("firefly-access");
+	private static Log monitor = LogFactory.getInstance().getLog("firefly-monitor");
 
 	public static void saveRequestInfo(Object sid, Object remoteAddr, String method, Object uri, long timeDiff) {
-		accessLog.info("request: [sessionId={}, remoteAddr={}, method={}, uri={}, timeDiff={}]", sid, remoteAddr, method, uri,
+		access.info("request: [sessionId={}, remoteAddr={}, method={}, uri={}, timeDiff={}]", sid, remoteAddr, method, uri,
 				timeDiff);
 	}
 
 	public static void saveConnectionInfo(Session session) {
-		connectionLog.info("session: {}", session);
+		monitor.info("session: {}", session);
 	}
+	
 }
