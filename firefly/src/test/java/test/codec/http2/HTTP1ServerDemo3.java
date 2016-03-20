@@ -95,7 +95,15 @@ public class HTTP1ServerDemo3 {
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
+						} else {
+							response.setStatus(404);
+							try (HTTPOutputStream output = outputStream) {
+								output.writeWithContentLength(BufferUtils.toBuffer("找不到页面", StandardCharsets.UTF_8));
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
 						}
+
 						return true;
 					}
 

@@ -49,7 +49,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 		this.server = new AsynchronousTcpServer(http2Configuration.getTcpConfiguration());
 		this.http2Configuration = http2Configuration;
 	}
-	
+
 	public HTTP2Configuration getHttp2Configuration() {
 		return http2Configuration;
 	}
