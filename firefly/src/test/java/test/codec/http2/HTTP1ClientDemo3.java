@@ -97,7 +97,7 @@ public class HTTP1ClientDemo3 {
 			});
 			phaser.arriveAndAwaitAdvance();
 
-			System.out.println("demo2 request finished");
+			System.out.println("demo3 request finished");
 			http1ClientConnection.close();
 		}
 	}
