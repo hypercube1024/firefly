@@ -3,6 +3,7 @@ package test.codec.http2;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutionException;
@@ -22,6 +23,7 @@ import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.concurrent.FuturePromise;
+import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -73,9 +75,23 @@ public class HTTP2ClientTLSDemo2 {
 		HttpFields fields = new HttpFields();
 		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
 
-		MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
-				"/favicon.ico", HttpVersion.HTTP_1_1, new HttpFields());
-		httpConnection.send(get, handler);
+		if (httpConnection.getHttpVersion() == HttpVersion.HTTP_2) {
+			httpConnection.send(new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),
+					"/favicon.ico", HttpVersion.HTTP_1_1, fields), handler);
+
+			httpConnection.send(
+					new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"), "/index",
+							HttpVersion.HTTP_1_1, fields),
+					new ClientHTTPHandler.Adapter().messageComplete((req, resp, outputStream, conn) -> {
+						System.out.println("message complete: " + resp.getStatus() + "|" + resp.getReason());
+						return true;
+					}).content((buffer, req, resp, outputStream, conn) -> {
+						System.out.println(BufferUtils.toString(buffer, StandardCharsets.UTF_8));
+						return false;
+					}).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
+						System.out.println("error: " + errCode + "|" + reason);
+					}));
+		}
 	}
 
 }
