@@ -21,7 +21,7 @@ public class LogFactory {
 	public static final String DEFAULT_LOG_NAME = "firefly-system";
 	public static final String DEFAULT_LOG_LEVEL = "INFO";
 	public static final File DEFAULT_LOG_DIRECTORY = new File(System.getProperty("user.dir"), "logs");
-	
+
 	private final Map<String, Log> logMap;
 	private final LogTask logTask;
 
@@ -39,34 +39,38 @@ public class LogFactory {
 
 		try {
 			Properties properties = loadLogConfigurationFile();
-			parseProperties(properties);
+			if (properties != null) {
+				parseProperties(properties);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		if(logMap.get(DEFAULT_LOG_NAME) == null) {
+
+		if (logMap.get(DEFAULT_LOG_NAME) == null) {
 			createDefaultLog();
 		}
-		
+
 		logTask.start();
 	}
-	
-	private Properties loadLogConfigurationFile() throws IOException{
+
+	private Properties loadLogConfigurationFile() throws IOException {
 		Properties properties = new Properties();
 		try (InputStream input = LogFactory.class.getClassLoader().getResourceAsStream(CONFIGURATION_FILE_NAME)) {
+			if (input == null)
+				return null;
 			properties.load(input);
 		}
 		return properties;
 	}
-	
+
 	private boolean createLogDirectory(File file) {
-		if(file.exists() && file.isDirectory()) {
+		if (file.exists() && file.isDirectory()) {
 			return true;
 		} else {
 			return file.mkdirs();
 		}
 	}
-	
+
 	private void createDefaultLog() {
 		createLog(DEFAULT_LOG_NAME, DEFAULT_LOG_LEVEL, null, false);
 	}
@@ -75,17 +79,17 @@ public class LogFactory {
 		FileLog fileLog = new FileLog();
 		fileLog.setName(name);
 		fileLog.setLevel(LogLevel.fromName(level));
-		
+
 		boolean createLogDirectorySuccess = false;
-		if(VerifyUtils.isNotEmpty(path)) {
+		if (VerifyUtils.isNotEmpty(path)) {
 			File file = new File(path);
 			createLogDirectorySuccess = createLogDirectory(file);
-			if(createLogDirectorySuccess) {
+			if (createLogDirectorySuccess) {
 				fileLog.setPath(path);
 				fileLog.setFileOutput(true);
 			} else {
 				createLogDirectorySuccess = createLogDirectory(DEFAULT_LOG_DIRECTORY);
-				if(createLogDirectorySuccess) {
+				if (createLogDirectorySuccess) {
 					fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
 					fileLog.setFileOutput(true);
 				} else {
@@ -94,21 +98,21 @@ public class LogFactory {
 			}
 		} else {
 			createLogDirectorySuccess = createLogDirectory(DEFAULT_LOG_DIRECTORY);
-			if(createLogDirectorySuccess) {
+			if (createLogDirectorySuccess) {
 				fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
 				fileLog.setFileOutput(true);
 			} else {
 				fileLog.setFileOutput(false);
 			}
 		}
-		
-		if(createLogDirectorySuccess) {
+
+		if (createLogDirectorySuccess) {
 			fileLog.setConsoleOutput(console);
 		} else {
 			fileLog.setConsoleOutput(true);
 			System.err.println("create log directory is failure");
 		}
-		
+
 		logMap.put(name, fileLog);
 		System.out.println("initialize log " + fileLog.toString());
 	}
@@ -125,7 +129,7 @@ public class LogFactory {
 				createLog(name, strs[0], null, false);
 				break;
 			case 2:
-				if("console".equalsIgnoreCase(strs[1])) {
+				if ("console".equalsIgnoreCase(strs[1])) {
 					createLog(name, strs[0], null, true);
 				} else {
 					createLog(name, strs[0], strs[1], false);
@@ -135,7 +139,8 @@ public class LogFactory {
 				createLog(name, strs[0], strs[1], "console".equalsIgnoreCase(strs[2]));
 				break;
 			default:
-				System.err.println("The log " + name + " configuration format is illegal. It will use default log configuration");
+				System.err.println(
+						"The log " + name + " configuration format is illegal. It will use default log configuration");
 				createLog(name, DEFAULT_LOG_LEVEL, null, false);
 				break;
 			}
@@ -146,13 +151,18 @@ public class LogFactory {
 		for (Entry<String, Log> entry : logMap.entrySet()) {
 			Log log = entry.getValue();
 			if (log instanceof FileLog) {
-				((FileLog)log).flush();
+				((FileLog) log).flush();
 			}
 		}
 	}
 
 	public Log getLog(String name) {
-		return logMap.get(name);
+		Log log = logMap.get(name);
+		if (log != null) {
+			return log;
+		} else {
+			return logMap.get(DEFAULT_LOG_NAME);
+		}
 	}
 
 	public LogTask getLogTask() {
