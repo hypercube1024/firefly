@@ -1,5 +1,6 @@
 package com.firefly.db;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 
+import com.firefly.utils.function.Action2;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -77,6 +79,24 @@ public class JDBCHelper {
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
 			return null;
+		}
+	}
+
+	public void executeTransaction(Action2<Connection, QueryRunner> action) {
+		try {
+			Connection connection = dataSource.getConnection();
+			connection.setAutoCommit(false);
+			try {
+				action.call(connection, runner);
+				connection.commit();
+			} catch (Throwable t) {
+				connection.rollback();
+				log.error("the transaction exception", t);
+			} finally {
+				connection.close();
+			}
+		} catch (SQLException e) {
+			log.error("get connection exception", e);
 		}
 	}
 
