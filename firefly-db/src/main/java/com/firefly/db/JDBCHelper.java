@@ -1,11 +1,13 @@
 package com.firefly.db;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.dbutils.BasicRowProcessor;
+import org.apache.commons.dbutils.BeanProcessor;
+import org.apache.commons.dbutils.GenerousBeanProcessor;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
@@ -18,26 +20,33 @@ public class JDBCHelper {
 
 	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private DataSource dataSource;
-	private final QueryRunner runner = new QueryRunner();
-
-	public JDBCHelper() {
-	}
+	private final DataSource dataSource;
+	private final QueryRunner runner;
+	private BeanProcessor defaultBeanProcessor = new GenerousBeanProcessor();
 
 	public JDBCHelper(DataSource dataSource) {
 		this.dataSource = dataSource;
+		this.runner = new QueryRunner(dataSource);
 	}
 
 	public DataSource getDataSource() {
 		return dataSource;
 	}
 
-	public void setDataSource(DataSource dataSource) {
-		this.dataSource = dataSource;
+	public QueryRunner getRunner() {
+		return runner;
+	}
+
+	public BeanProcessor getDefaultBeanProcessor() {
+		return defaultBeanProcessor;
+	}
+
+	public void setDefaultBeanProcessor(BeanProcessor defaultBeanProcessor) {
+		this.defaultBeanProcessor = defaultBeanProcessor;
 	}
 
 	public <T> T querySingleColumn(String sql, Object... params) {
-		try (Connection connection = dataSource.getConnection()) {
+		try {
 			return runner.query(sql, new ScalarHandler<T>(), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
@@ -46,8 +55,12 @@ public class JDBCHelper {
 	}
 
 	public <T> T query(String sql, Class<T> t, Object... params) {
-		try (Connection connection = dataSource.getConnection()) {
-			return runner.query(sql, new BeanHandler<T>(t), params);
+		return this.query(sql, t, defaultBeanProcessor, params);
+	}
+
+	public <T> T query(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+		try {
+			return runner.query(sql, new BeanHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
 			return null;
@@ -55,8 +68,12 @@ public class JDBCHelper {
 	}
 
 	public <T> List<T> queryForList(String sql, Class<T> t, Object... params) {
-		try (Connection connection = dataSource.getConnection()) {
-			return runner.query(sql, new BeanListHandler<T>(t), params);
+		return this.queryForList(sql, t, defaultBeanProcessor, params);
+	}
+
+	public <T> List<T> queryForList(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+		try {
+			return runner.query(sql, new BeanListHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
 			return null;
