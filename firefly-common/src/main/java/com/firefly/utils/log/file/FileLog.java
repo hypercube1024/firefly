@@ -118,6 +118,7 @@ public class FileLog implements Log, Closeable {
 		this.path = path;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}

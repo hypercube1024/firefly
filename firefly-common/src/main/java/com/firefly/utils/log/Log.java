@@ -4,6 +4,8 @@ public interface Log {
 
 	String CL = "\r\n";
 	
+	String getName();
+	
 	boolean isTraceEnabled();
 
 	void trace(String str);
