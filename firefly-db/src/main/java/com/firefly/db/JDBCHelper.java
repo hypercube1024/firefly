@@ -14,7 +14,7 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 
-import com.firefly.utils.function.Action2;
+import com.firefly.utils.function.Func2;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -82,13 +82,14 @@ public class JDBCHelper {
 		}
 	}
 
-	public void executeTransaction(Action2<Connection, QueryRunner> action) {
+	public <T> T executeTransaction(Func2<Connection, QueryRunner, T> func) {
 		try {
 			Connection connection = dataSource.getConnection();
 			connection.setAutoCommit(false);
 			try {
-				action.call(connection, runner);
+				T ret = func.call(connection, runner);
 				connection.commit();
+				return ret;
 			} catch (Throwable t) {
 				connection.rollback();
 				log.error("the transaction exception", t);
@@ -98,6 +99,7 @@ public class JDBCHelper {
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
 		}
+		return null;
 	}
 
 }
