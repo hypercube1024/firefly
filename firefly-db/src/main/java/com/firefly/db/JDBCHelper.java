@@ -2,18 +2,19 @@ package com.firefly.db;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.apache.commons.dbutils.BasicRowProcessor;
 import org.apache.commons.dbutils.BeanProcessor;
-import org.apache.commons.dbutils.GenerousBeanProcessor;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 
+import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -23,12 +24,44 @@ public class JDBCHelper {
 	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final DataSource dataSource;
-	private final QueryRunner runner;
-	private BeanProcessor defaultBeanProcessor = new GenerousBeanProcessor();
+	private QueryRunner runner;
+	private BeanProcessor defaultBeanProcessor = new DefaultBeanProcessor();
 
 	public JDBCHelper(DataSource dataSource) {
 		this.dataSource = dataSource;
-		this.runner = new QueryRunner(dataSource);
+		if (log.isDebugEnabled()) {
+			QueryRunner queryRunner = new QueryRunner(dataSource);
+			try {
+				this.runner = (QueryRunner) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(queryRunner,
+						(handler, originalInstance, args) -> {
+
+							if (args != null && args.length > 0) {
+								String sql = null;
+								String params = null;
+								for (int i = 0; i < args.length; i++) {
+									Object arg = args[i];
+									if (arg instanceof String) {
+										sql = (String) arg;
+									}
+
+									if (arg instanceof Object[]) {
+										params = Arrays.toString((Object[]) arg);
+									}
+								}
+								log.debug("the method {} will execute SQL [ {} | {} ]", handler.method().getName(), sql,
+										params);
+							}
+
+							Object ret = handler.invoke(originalInstance, args);
+							return ret;
+						}, null);
+			} catch (Throwable t) {
+				this.runner = new QueryRunner(dataSource);
+				log.error("create QueryRunner proxy exception", t);
+			}
+		} else {
+			this.runner = new QueryRunner(dataSource);
+		}
 	}
 
 	public DataSource getDataSource() {
