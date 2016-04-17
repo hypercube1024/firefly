@@ -26,6 +26,13 @@ import com.firefly.utils.io.LineReaderHandler;
 
 @Controller
 public class IndexController {
+	
+	@RequestMapping(value = "/index_1")
+	public View index_1(HttpServletRequest request, HttpServletResponse response) {
+		response.setContentLength(2480);
+		response.setHeader("Connection", "keep-alive");
+		return new TemplateView("/index_1.html");
+	}
 
 	@RequestMapping(value = "/index")
 	public View index(HttpServletRequest request, HttpServletResponse response) {
