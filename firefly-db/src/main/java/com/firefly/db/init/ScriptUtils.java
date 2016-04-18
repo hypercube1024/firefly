@@ -260,7 +260,7 @@ public abstract class ScriptUtils {
 	 * @throws IOException
 	 *             in case of I/O errors
 	 */
-	static String readScript(EncodedResource resource) throws IOException {
+	public static String readScript(EncodedResource resource) throws IOException {
 		return readScript(resource, DEFAULT_COMMENT_PREFIX, DEFAULT_STATEMENT_SEPARATOR);
 	}
 

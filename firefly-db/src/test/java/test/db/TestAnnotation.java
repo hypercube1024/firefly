@@ -56,7 +56,7 @@ public class TestAnnotation {
 	@Test
 	public void test() {
 		for (int i = 1; i <= size; i++) {
-			User user = jdbcHelper.query("select * from user where id = ?", User.class, i);
+			User user = jdbcHelper.queryForObject("select * from user where id = ?", User.class, i);
 			System.out.println(user);
 			Assert.assertThat(user.getName(), is("test" + i));
 			Assert.assertThat(user.getPassword(), is("test_pwd" + i));

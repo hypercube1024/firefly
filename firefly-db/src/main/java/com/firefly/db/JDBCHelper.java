@@ -80,16 +80,16 @@ public class JDBCHelper {
 		this.defaultBeanProcessor = defaultBeanProcessor;
 	}
 
-	public <T> T querySingleColumn(String sql, Object... params) {
+	public <T> T queryForSingleColumn(String sql, Object... params) {
 		try (Connection connection = dataSource.getConnection()) {
-			return this.querySingleColumn(connection, sql, params);
+			return this.queryForSingleColumn(connection, sql, params);
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
 			return null;
 		}
 	}
 
-	public <T> T querySingleColumn(Connection connection, String sql, Object... params) {
+	public <T> T queryForSingleColumn(Connection connection, String sql, Object... params) {
 		try {
 			return runner.query(connection, sql, new ScalarHandler<T>(), params);
 		} catch (SQLException e) {
@@ -98,20 +98,20 @@ public class JDBCHelper {
 		}
 	}
 
-	public <T> T query(String sql, Class<T> t, Object... params) {
-		return this.query(sql, t, defaultBeanProcessor, params);
+	public <T> T queryForObject(String sql, Class<T> t, Object... params) {
+		return this.queryForObject(sql, t, defaultBeanProcessor, params);
 	}
 
-	public <T> T query(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+	public <T> T queryForObject(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
 		try (Connection connection = dataSource.getConnection()) {
-			return this.query(connection, sql, t, beanProcessor, params);
+			return this.queryForObject(connection, sql, t, beanProcessor, params);
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
 			return null;
 		}
 	}
 
-	public <T> T query(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+	public <T> T queryForObject(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
 		try {
 			return runner.query(connection, sql, new BeanHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
 		} catch (SQLException e) {
