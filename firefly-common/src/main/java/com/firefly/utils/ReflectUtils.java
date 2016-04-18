@@ -7,17 +7,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.firefly.utils.classproxy.ArrayProxyFactoryUsingJavassist;
 import com.firefly.utils.classproxy.FieldProxyFactoryUsingJavassist;
 import com.firefly.utils.classproxy.MethodProxyFactoryUsingJavassist;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 
 public abstract class ReflectUtils {
 	
-	private static final Map<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
-	private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<Class<?>, Map<String,Method>>();
-	private static final Map<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<Class<?>, Map<String, Field>>();
+	private static final Map<Class<?>, Map<String, Method>> getterCache = new ConcurrentReferenceHashMap<>(256);
+	private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentReferenceHashMap<>(256);
+	private static final Map<Class<?>, Map<String, Field>> propertyCache = new ConcurrentReferenceHashMap<>(256);
 	
 	public static ProxyFactory defaultArrayProxy = ArrayProxyFactoryUsingJavassist.INSTANCE;
 	public static ProxyFactory defaultFieldProxy = FieldProxyFactoryUsingJavassist.INSTANCE;

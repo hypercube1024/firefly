@@ -3,15 +3,15 @@ package com.firefly.utils.classproxy;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.firefly.utils.CompilerUtils;
 import com.firefly.utils.ReflectUtils.FieldProxy;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.StringUtils;
 
 public class FieldProxyFactoryUsingJavaCompiler extends AbstractFieldProxyFactory {
 
-	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
+	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentReferenceHashMap<>(256);
 	public static final FieldProxyFactoryUsingJavaCompiler INSTANCE = new FieldProxyFactoryUsingJavaCompiler();
 	
 	private FieldProxyFactoryUsingJavaCompiler() {

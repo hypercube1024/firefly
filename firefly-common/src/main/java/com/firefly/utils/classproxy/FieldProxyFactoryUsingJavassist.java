@@ -3,7 +3,6 @@ package com.firefly.utils.classproxy;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -13,11 +12,12 @@ import javassist.CtField;
 import javassist.CtMethod;
 
 import com.firefly.utils.ReflectUtils.FieldProxy;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.StringUtils;
 
 public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
 	
-	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<Field, FieldProxy>();
+	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentReferenceHashMap<>(256);
 	public static final FieldProxyFactoryUsingJavassist INSTANCE = new FieldProxyFactoryUsingJavassist();
 
 	private FieldProxyFactoryUsingJavassist() {}

@@ -4,7 +4,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -14,11 +13,12 @@ import javassist.CtField;
 import javassist.CtMethod;
 
 import com.firefly.utils.ReflectUtils.MethodProxy;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.StringUtils;
 
 public class MethodProxyFactoryUsingJavassist extends AbstractMethodProxyFactory {
 	
-	private static final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<Method, MethodProxy>();
+	private static final Map<Method, MethodProxy> methodCache = new ConcurrentReferenceHashMap<>(256);
 	public static final MethodProxyFactoryUsingJavassist INSTANCE = new MethodProxyFactoryUsingJavassist();
 
 	private MethodProxyFactoryUsingJavassist() {}

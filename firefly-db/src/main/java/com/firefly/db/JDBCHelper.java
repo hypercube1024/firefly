@@ -54,7 +54,7 @@ public class JDBCHelper {
 
 							Object ret = handler.invoke(originalInstance, args);
 							return ret;
-						}, null);
+						} , null);
 			} catch (Throwable t) {
 				this.runner = new QueryRunner(dataSource);
 				log.error("create QueryRunner proxy exception", t);
@@ -81,8 +81,17 @@ public class JDBCHelper {
 	}
 
 	public <T> T querySingleColumn(String sql, Object... params) {
+		try (Connection connection = dataSource.getConnection()) {
+			return this.querySingleColumn(connection, sql, params);
+		} catch (SQLException e) {
+			log.error("get connection exception", e);
+			return null;
+		}
+	}
+
+	public <T> T querySingleColumn(Connection connection, String sql, Object... params) {
 		try {
-			return runner.query(sql, new ScalarHandler<T>(), params);
+			return runner.query(connection, sql, new ScalarHandler<T>(), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
 			return null;
@@ -94,8 +103,17 @@ public class JDBCHelper {
 	}
 
 	public <T> T query(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+		try (Connection connection = dataSource.getConnection()) {
+			return this.query(connection, sql, t, beanProcessor, params);
+		} catch (SQLException e) {
+			log.error("get connection exception", e);
+			return null;
+		}
+	}
+
+	public <T> T query(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
 		try {
-			return runner.query(sql, new BeanHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
+			return runner.query(connection, sql, new BeanHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
 			return null;
@@ -107,20 +125,31 @@ public class JDBCHelper {
 	}
 
 	public <T> List<T> queryForList(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+		try (Connection connection = dataSource.getConnection()) {
+			return this.queryForList(connection, sql, t, beanProcessor, params);
+		} catch (SQLException e) {
+			log.error("get connection exception", e);
+			return null;
+		}
+	}
+
+	public <T> List<T> queryForList(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor,
+			Object... params) {
 		try {
-			return runner.query(sql, new BeanListHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
+			return runner.query(connection, sql, new BeanListHandler<T>(t, new BasicRowProcessor(beanProcessor)),
+					params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
 			return null;
 		}
 	}
 
-	public <T> T executeTransaction(Func2<Connection, QueryRunner, T> func) {
+	public <T> T executeTransaction(Func2<Connection, JDBCHelper, T> func) {
 		try {
 			Connection connection = dataSource.getConnection();
 			connection.setAutoCommit(false);
 			try {
-				T ret = func.call(connection, runner);
+				T ret = func.call(connection, this);
 				connection.commit();
 				return ret;
 			} catch (Throwable t) {

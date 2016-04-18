@@ -2,7 +2,6 @@ package com.firefly.utils.classproxy;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -10,11 +9,12 @@ import javassist.CtClass;
 import javassist.CtMethod;
 
 import com.firefly.utils.ReflectUtils.ArrayProxy;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.StringUtils;
 
 public class ArrayProxyFactoryUsingJavassist extends AbstractArrayProxyFactory {
 
-	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<Class<?>, ArrayProxy>();
+	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentReferenceHashMap<>(256);
 	public static final ArrayProxyFactoryUsingJavassist INSTANCE = new ArrayProxyFactoryUsingJavassist();
 	
 	private ArrayProxyFactoryUsingJavassist() {}

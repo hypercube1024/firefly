@@ -35,7 +35,7 @@ public class TestAnnotation {
 			for (int i = 1; i <= size; i++) {
 				Long id = jdbcHelper.getRunner().insert("insert into user(pt_name, pt_password) values(?,?)", (rs) -> {
 					return rs.next() ? rs.getLong(1) : -1;
-				}, "test" + i, "test_pwd" + i);
+				} , "test" + i, "test_pwd" + i);
 				System.out.println("id:" + id);
 			}
 
