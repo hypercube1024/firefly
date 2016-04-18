@@ -1,9 +1,13 @@
 package com.firefly.db;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.sql.DataSource;
 
@@ -14,7 +18,12 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 
+import com.firefly.db.annotation.Id;
+import com.firefly.utils.Assert;
+import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -22,6 +31,8 @@ import com.firefly.utils.log.LogFactory;
 public class JDBCHelper {
 
 	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
+
+	protected final ConcurrentMap<Class<?>, String> idColumnNameCache = new ConcurrentReferenceHashMap<>(128);
 
 	private final DataSource dataSource;
 	private QueryRunner runner;
@@ -54,7 +65,7 @@ public class JDBCHelper {
 
 							Object ret = handler.invoke(originalInstance, args);
 							return ret;
-						} , null);
+						}, null);
 			} catch (Throwable t) {
 				this.runner = new QueryRunner(dataSource);
 				log.error("create QueryRunner proxy exception", t);
@@ -111,9 +122,90 @@ public class JDBCHelper {
 		}
 	}
 
-	public <T> T queryForObject(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+	public <T> T queryForObject(Connection connection, String sql, Class<T> t, Object... params) {
+		return this.queryForObject(connection, sql, t, defaultBeanProcessor, params);
+	}
+
+	public <T> T queryForObject(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor,
+			Object... params) {
 		try {
 			return runner.query(connection, sql, new BeanHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
+		} catch (SQLException e) {
+			log.error("query exception, sql: {}", e, sql);
+			return null;
+		}
+	}
+
+	public String getIdColumnName(Class<?> t) {
+		String name = idColumnNameCache.get(t);
+		if (name != null) {
+			return name;
+		} else {
+			String newName = _getIdColumnName(t);
+			if (newName == null) {
+				return null;
+			} else {
+				String oldName = idColumnNameCache.putIfAbsent(t, newName);
+				return oldName == null ? newName : oldName;
+			}
+		}
+	}
+
+	protected String _getIdColumnName(Class<?> t) {
+		Field[] fields = t.getDeclaredFields();
+		for (Field field : fields) {
+			Id id = field.getAnnotation(Id.class);
+			if (id != null) {
+				if (StringUtils.hasText(id.value())) {
+					return id.value();
+				} else {
+					return field.getName();
+				}
+			}
+		}
+
+		Method[] methods = t.getMethods();
+		for (Method method : methods) {
+			Id id = method.getAnnotation(Id.class);
+			if (id != null) {
+				if (StringUtils.hasText(id.value())) {
+					return id.value();
+				} else {
+					return ReflectUtils.getPropertyName(method);
+				}
+			}
+		}
+
+		return null;
+	}
+
+	public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, Object... params) {
+		return this.queryForBeanMap(sql, t, defaultBeanProcessor, params);
+	}
+
+	public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, BeanProcessor beanProcessor, Object... params) {
+		String columnName = getIdColumnName(t);
+		Assert.notNull(columnName);
+
+		try (Connection connection = dataSource.getConnection()) {
+			return this.queryForBeanMap(connection, sql, t, columnName, beanProcessor, params);
+		} catch (SQLException e) {
+			log.error("get connection exception", e);
+			return null;
+		}
+	}
+
+	public <K, V> Map<K, V> queryForBeanMap(Connection connection, String sql, Class<V> t, Object... params) {
+		String columnName = getIdColumnName(t);
+		Assert.notNull(columnName);
+		return this.queryForBeanMap(connection, sql, t, columnName, defaultBeanProcessor, params);
+	}
+
+	public <K, V> Map<K, V> queryForBeanMap(Connection connection, String sql, Class<V> t, String columnName,
+			BeanProcessor beanProcessor, Object... params) {
+		try {
+			return runner.query(connection, sql,
+					new DefaultBeanMapHandler<K, V>(t, new BasicRowProcessor(beanProcessor), 0, columnName), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
 			return null;
@@ -131,6 +223,10 @@ public class JDBCHelper {
 			log.error("get connection exception", e);
 			return null;
 		}
+	}
+
+	public <T> List<T> queryForList(Connection connection, String sql, Class<T> t, Object... params) {
+		return this.queryForList(connection, sql, t, defaultBeanProcessor, params);
 	}
 
 	public <T> List<T> queryForList(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor,

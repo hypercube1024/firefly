@@ -1,8 +1,9 @@
 package test.db;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -35,7 +36,7 @@ public class TestAnnotation {
 			for (int i = 1; i <= size; i++) {
 				Long id = jdbcHelper.getRunner().insert("insert into user(pt_name, pt_password) values(?,?)", (rs) -> {
 					return rs.next() ? rs.getLong(1) : -1;
-				} , "test" + i, "test_pwd" + i);
+				}, "test" + i, "test_pwd" + i);
 				System.out.println("id:" + id);
 			}
 
@@ -55,13 +56,24 @@ public class TestAnnotation {
 
 	@Test
 	public void test() {
-		for (int i = 1; i <= size; i++) {
+		for (long i = 1; i <= size; i++) {
 			User user = jdbcHelper.queryForObject("select * from user where id = ?", User.class, i);
-			System.out.println(user);
+			Assert.assertThat(user.getId(), is(i));
 			Assert.assertThat(user.getName(), is("test" + i));
 			Assert.assertThat(user.getPassword(), is("test_pwd" + i));
 		}
 
+		Map<Long, User> map = jdbcHelper.queryForBeanMap("select * from user", User.class);
+		Assert.assertThat(map.size(), is(size));
+
+		for (long i = 1; i <= size; i++) {
+			User user = map.get(i);
+			Assert.assertThat(user.getId(), is(i));
+			Assert.assertThat(user.getName(), is("test" + i));
+			Assert.assertThat(user.getPassword(), is("test_pwd" + i));
+		}
+		
+		Assert.assertThat(jdbcHelper.getIdColumnName(User.class), is("id"));
 	}
 
 }
