@@ -26,6 +26,12 @@ public class TestReflectUtils {
 		
 		Assert.assertThat(ReflectUtils.getSetterMethod(Foo.class, "name").getName(), is("setName"));
 		Assert.assertThat(ReflectUtils.getSetterMethod(Foo.class, "failure").getName(), is("setFailure"));
+		
+		Assert.assertThat(ReflectUtils.getSetterMethod(Foo.class, "iPad").getName(), is("setiPad"));
+		Assert.assertThat(ReflectUtils.getSetterMethod(Foo.class, "iPhone").getName(), is("setiPhone"));
+		
+		Assert.assertThat(ReflectUtils.getGetterMethod(Foo.class, "iPad").getName(), is("isiPad"));
+		Assert.assertThat(ReflectUtils.getGetterMethod(Foo.class, "iPhone").getName(), is("getiPhone"));
 	}
 	
 	@Test
@@ -378,6 +384,25 @@ public class TestReflectUtils {
 		
 		public int num2;
 		public String info;
+		
+		private String iPhone;
+		private boolean iPad;
+
+		public String getiPhone() {
+			return iPhone;
+		}
+
+		public void setiPhone(String iPhone) {
+			this.iPhone = iPhone;
+		}
+
+		public boolean isiPad() {
+			return iPad;
+		}
+
+		public void setiPad(boolean iPad) {
+			this.iPad = iPad;
+		}
 
 		public int getNumber() {
 			return number;
