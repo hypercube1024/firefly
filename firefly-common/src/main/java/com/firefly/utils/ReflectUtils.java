@@ -159,7 +159,7 @@ public abstract class ReflectUtils {
 		int index = (methodName.charAt(0) == 'i' ? 2 : 3);
 		char c = methodName.charAt(index);
 		if (Character.isLowerCase(c)) {
-			return methodName.charAt(index) + methodName.substring(index + 1);
+			return methodName.substring(index);
 		} else {
 			return Character.toLowerCase(methodName.charAt(index)) + methodName.substring(index + 1);
 		}
