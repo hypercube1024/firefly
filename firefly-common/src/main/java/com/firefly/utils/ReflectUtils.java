@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 import com.firefly.utils.classproxy.ArrayProxyFactoryUsingJavassist;
 import com.firefly.utils.classproxy.FieldProxyFactoryUsingJavassist;
@@ -16,9 +15,9 @@ import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 
 public abstract class ReflectUtils {
 
-	private static final ConcurrentMap<Class<?>, Map<String, Method>> getterCache = new ConcurrentReferenceHashMap<>(256);
-	private static final ConcurrentMap<Class<?>, Map<String, Method>> setterCache = new ConcurrentReferenceHashMap<>(256);
-	private static final ConcurrentMap<Class<?>, Map<String, Field>> propertyCache = new ConcurrentReferenceHashMap<>(256);
+	private static final ConcurrentReferenceHashMap<Class<?>, Map<String, Method>> getterCache = new ConcurrentReferenceHashMap<>(256);
+	private static final ConcurrentReferenceHashMap<Class<?>, Map<String, Method>> setterCache = new ConcurrentReferenceHashMap<>(256);
+	private static final ConcurrentReferenceHashMap<Class<?>, Map<String, Field>> propertyCache = new ConcurrentReferenceHashMap<>(256);
 
 	public static ProxyFactory defaultArrayProxy = ArrayProxyFactoryUsingJavassist.INSTANCE;
 	public static ProxyFactory defaultFieldProxy = FieldProxyFactoryUsingJavassist.INSTANCE;
@@ -171,14 +170,7 @@ public abstract class ReflectUtils {
 	}
 
 	public static Map<String, Method> getSetterMethods(Class<?> clazz) {
-		Map<String, Method> ret = setterCache.get(clazz);
-		if (ret != null) {
-			return ret;
-		} else {
-			Map<String, Method> newInstance = getSetterMethods(clazz, null);
-			Map<String, Method> oldInstance = setterCache.putIfAbsent(clazz, newInstance);
-			return oldInstance == null ? newInstance : oldInstance;
-		}
+		return setterCache.get(clazz, (key) -> { return getSetterMethods(key, null);});
 	}
 
 	public static Map<String, Method> getSetterMethods(Class<?> clazz, BeanMethodFilter filter) {
@@ -206,14 +198,7 @@ public abstract class ReflectUtils {
 	}
 
 	public static Map<String, Method> getGetterMethods(Class<?> clazz) {
-		Map<String, Method> ret = getterCache.get(clazz);
-		if (ret != null) {
-			return ret;
-		} else {
-			Map<String, Method> newInstance = getGetterMethods(clazz, null);
-			Map<String, Method> oldInstance = getterCache.putIfAbsent(clazz, newInstance);
-			return oldInstance == null ? newInstance : oldInstance;
-		}
+		return getterCache.get(clazz, (key) -> { return getGetterMethods(key, null);});
 	}
 
 	public static Map<String, Method> getGetterMethods(Class<?> clazz, BeanMethodFilter filter) {
@@ -249,14 +234,7 @@ public abstract class ReflectUtils {
 	}
 
 	public static Map<String, Field> getFields(Class<?> clazz) {
-		Map<String, Field> ret = propertyCache.get(clazz);
-		if (ret != null) {
-			return ret;
-		} else {
-			Map<String, Field> newInstance = getFields(clazz, null);
-			Map<String, Field> oldInstance = propertyCache.putIfAbsent(clazz, newInstance);
-			return oldInstance == null ? newInstance : oldInstance;
-		}
+		return propertyCache.get(clazz, (key) -> { return getFields(key, null);});
 	}
 
 	public static Map<String, Field> getFields(Class<?> clazz, BeanFieldFilter filter) {

@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 import javax.sql.DataSource;
 
@@ -32,7 +31,8 @@ public class JDBCHelper {
 
 	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	protected final ConcurrentMap<Class<?>, String> idColumnNameCache = new ConcurrentReferenceHashMap<>(128);
+	protected final ConcurrentReferenceHashMap<Class<?>, String> idColumnNameCache = new ConcurrentReferenceHashMap<>(
+			128);
 
 	private final DataSource dataSource;
 	private QueryRunner runner;
@@ -65,7 +65,7 @@ public class JDBCHelper {
 
 							Object ret = handler.invoke(originalInstance, args);
 							return ret;
-						}, null);
+						} , null);
 			} catch (Throwable t) {
 				this.runner = new QueryRunner(dataSource);
 				log.error("create QueryRunner proxy exception", t);
@@ -137,18 +137,9 @@ public class JDBCHelper {
 	}
 
 	public String getIdColumnName(Class<?> t) {
-		String name = idColumnNameCache.get(t);
-		if (name != null) {
-			return name;
-		} else {
-			String newName = _getIdColumnName(t);
-			if (newName == null) {
-				return null;
-			} else {
-				String oldName = idColumnNameCache.putIfAbsent(t, newName);
-				return oldName == null ? newName : oldName;
-			}
-		}
+		return idColumnNameCache.get(t, (key) -> {
+			return _getIdColumnName(key);
+		});
 	}
 
 	protected String _getIdColumnName(Class<?> t) {
