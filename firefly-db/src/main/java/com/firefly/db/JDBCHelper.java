@@ -231,6 +231,24 @@ public class JDBCHelper {
 		}
 	}
 
+	public <T> T insert(String sql, Object... params) {
+		try (Connection connection = dataSource.getConnection()) {
+			return this.insert(connection, sql, params);
+		} catch (SQLException e) {
+			log.error("insert exception, sql: {}", e, sql);
+			return null;
+		}
+	}
+
+	public <T> T insert(Connection connection, String sql, Object... params) {
+		try {
+			return runner.insert(connection, sql, new ScalarHandler<T>(), params);
+		} catch (SQLException e) {
+			log.error("insert exception, sql: {}", e, sql);
+			return null;
+		}
+	}
+
 	public <T> T executeTransaction(Func2<Connection, JDBCHelper, T> func) {
 		try {
 			Connection connection = dataSource.getConnection();

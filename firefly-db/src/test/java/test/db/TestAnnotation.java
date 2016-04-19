@@ -34,9 +34,8 @@ public class TestAnnotation {
 					"CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255))");
 
 			for (int i = 1; i <= size; i++) {
-				Long id = jdbcHelper.getRunner().insert("insert into user(pt_name, pt_password) values(?,?)", (rs) -> {
-					return rs.next() ? rs.getLong(1) : -1;
-				}, "test" + i, "test_pwd" + i);
+				Long id = jdbcHelper.insert("insert into user(pt_name, pt_password) values(?,?)", "test" + i,
+						"test_pwd" + i);
 				System.out.println("id:" + id);
 			}
 
@@ -72,7 +71,7 @@ public class TestAnnotation {
 			Assert.assertThat(user.getName(), is("test" + i));
 			Assert.assertThat(user.getPassword(), is("test_pwd" + i));
 		}
-		
+
 		Assert.assertThat(jdbcHelper.getIdColumnName(User.class), is("id"));
 	}
 
