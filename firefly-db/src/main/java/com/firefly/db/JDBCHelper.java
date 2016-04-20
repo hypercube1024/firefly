@@ -232,12 +232,9 @@ public class JDBCHelper {
 	}
 
 	public <T> T insert(String sql, Object... params) {
-		try (Connection connection = dataSource.getConnection()) {
-			return this.insert(connection, sql, params);
-		} catch (SQLException e) {
-			log.error("insert exception, sql: {}", e, sql);
-			return null;
-		}
+		return executeTransaction((connection, jdbcHelper) -> {
+			return insert(connection, sql, params);
+		});
 	}
 
 	public <T> T insert(Connection connection, String sql, Object... params) {
@@ -250,21 +247,37 @@ public class JDBCHelper {
 	}
 
 	public <T> T executeTransaction(Func2<Connection, JDBCHelper, T> func) {
+		Connection connection;
 		try {
-			Connection connection = dataSource.getConnection();
+			connection = dataSource.getConnection();
 			connection.setAutoCommit(false);
-			try {
-				T ret = func.call(connection, this);
-				connection.commit();
-				return ret;
-			} catch (Throwable t) {
-				connection.rollback();
-				log.error("the transaction exception", t);
-			} finally {
-				connection.close();
-			}
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
+			return null;
+		}
+
+		try {
+			T ret = func.call(connection, this);
+			connection.commit();
+			return ret;
+		} catch (Throwable t) {
+			try {
+				connection.rollback();
+			} catch (SQLException e) {
+				log.error("transaction rollback exception", t);
+			}
+			log.error("the transaction exception", t);
+		} finally {
+			try {
+				connection.setAutoCommit(true);
+			} catch (SQLException e) {
+				log.error("the connection sets auto commit exception", e);
+			}
+			try {
+				connection.close();
+			} catch (SQLException e) {
+				log.error("close connection exception", e);
+			}
 		}
 		return null;
 	}
