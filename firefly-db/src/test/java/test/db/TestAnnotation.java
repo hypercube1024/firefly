@@ -2,7 +2,6 @@ package test.db;
 
 import static org.hamcrest.Matchers.is;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 import org.junit.After;
@@ -29,28 +28,18 @@ public class TestAnnotation {
 
 	@Before
 	public void before() {
-		try {
-			jdbcHelper.getRunner().update(
-					"CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255))");
+		jdbcHelper.update("CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255))");
 
-			for (int i = 1; i <= size; i++) {
-				Long id = jdbcHelper.insert("insert into user(pt_name, pt_password) values(?,?)", "test" + i,
-						"test_pwd" + i);
-				System.out.println("id:" + id);
-			}
-
-		} catch (SQLException e) {
-			e.printStackTrace();
+		for (int i = 1; i <= size; i++) {
+			Long id = jdbcHelper.insert("insert into user(pt_name, pt_password) values(?,?)", "test" + i,
+					"test_pwd" + i);
+			System.out.println("id:" + id);
 		}
 	}
 
 	@After
 	public void after() {
-		try {
-			jdbcHelper.getRunner().update("DROP TABLE IF EXISTS user");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		jdbcHelper.update("DROP TABLE IF EXISTS user");
 	}
 
 	@Test

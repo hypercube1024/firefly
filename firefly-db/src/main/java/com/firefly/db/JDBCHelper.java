@@ -96,7 +96,7 @@ public class JDBCHelper {
 			return this.queryForSingleColumn(connection, sql, params);
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
@@ -105,7 +105,7 @@ public class JDBCHelper {
 			return runner.query(connection, sql, new ScalarHandler<T>(), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
@@ -118,7 +118,7 @@ public class JDBCHelper {
 			return this.queryForObject(connection, sql, t, beanProcessor, params);
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
@@ -132,7 +132,7 @@ public class JDBCHelper {
 			return runner.query(connection, sql, new BeanHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
@@ -182,7 +182,7 @@ public class JDBCHelper {
 			return this.queryForBeanMap(connection, sql, t, columnName, beanProcessor, params);
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
@@ -199,7 +199,7 @@ public class JDBCHelper {
 					new DefaultBeanMapHandler<K, V>(t, new BasicRowProcessor(beanProcessor), 0, columnName), params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
@@ -212,7 +212,7 @@ public class JDBCHelper {
 			return this.queryForList(connection, sql, t, beanProcessor, params);
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
@@ -227,7 +227,25 @@ public class JDBCHelper {
 					params);
 		} catch (SQLException e) {
 			log.error("query exception, sql: {}", e, sql);
-			return null;
+			throw new DBException(e);
+		}
+	}
+
+	public int update(String sql, Object... params) {
+		try {
+			return runner.update(sql, params);
+		} catch (SQLException e) {
+			log.error("update exception, sql: {}", e, sql);
+			throw new DBException(e);
+		}
+	}
+
+	public int update(Connection connection, String sql, Object... params) {
+		try {
+			return runner.update(connection, sql, params);
+		} catch (SQLException e) {
+			log.error("update exception, sql: {}", e, sql);
+			throw new DBException(e);
 		}
 	}
 
@@ -242,7 +260,7 @@ public class JDBCHelper {
 			return runner.insert(connection, sql, new ScalarHandler<T>(), params);
 		} catch (SQLException e) {
 			log.error("insert exception, sql: {}", e, sql);
-			return null;
+			throw new DBException(e);
 		}
 	}
 
