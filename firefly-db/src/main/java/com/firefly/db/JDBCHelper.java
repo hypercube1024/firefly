@@ -65,7 +65,7 @@ public class JDBCHelper {
 
 							Object ret = handler.invoke(originalInstance, args);
 							return ret;
-						} , null);
+						}, null);
 			} catch (Throwable t) {
 				this.runner = new QueryRunner(dataSource);
 				log.error("create QueryRunner proxy exception", t);
@@ -232,8 +232,8 @@ public class JDBCHelper {
 	}
 
 	public int update(String sql, Object... params) {
-		try {
-			return runner.update(sql, params);
+		try (Connection connection = dataSource.getConnection()) {
+			return this.update(connection, sql, params);
 		} catch (SQLException e) {
 			log.error("update exception, sql: {}", e, sql);
 			throw new DBException(e);
@@ -250,7 +250,7 @@ public class JDBCHelper {
 	}
 
 	public <T> T insert(String sql, Object... params) {
-		try(Connection connection = dataSource.getConnection()) {
+		try (Connection connection = dataSource.getConnection()) {
 			return this.insert(connection, sql, params);
 		} catch (SQLException e) {
 			log.error("insert exception, sql: {}", e, sql);
@@ -267,38 +267,62 @@ public class JDBCHelper {
 		}
 	}
 
-	public <T> T executeTransaction(Func2<Connection, JDBCHelper, T> func) {
-		Connection connection;
+	public Connection getConnection() {
 		try {
-			connection = dataSource.getConnection();
-			connection.setAutoCommit(false);
+			return dataSource.getConnection();
 		} catch (SQLException e) {
 			log.error("get connection exception", e);
-			return null;
+			throw new DBException(e);
 		}
+	}
+
+	public void rollback(Connection connection) {
+		try {
+			connection.rollback();
+		} catch (SQLException e) {
+			log.error("transaction rollback exception", e);
+			throw new DBException(e);
+		}
+	}
+
+	public void setAutoCommit(Connection connection, boolean autoCommit) {
+		try {
+			connection.setAutoCommit(autoCommit);
+		} catch (SQLException e) {
+			log.error("set auto commit exception", e);
+		}
+	}
+
+	public void commit(Connection connection) {
+		try {
+			connection.commit();
+		} catch (SQLException e) {
+			log.error("commit exception", e);
+		}
+	}
+
+	public void close(Connection connection) {
+		try {
+			connection.close();
+		} catch (SQLException e) {
+			log.error("close connection exception", e);
+		}
+	}
+
+	public <T> T executeTransaction(Func2<Connection, JDBCHelper, T> func) {
+		Connection connection = getConnection();
+		setAutoCommit(connection, false);
 
 		try {
 			T ret = func.call(connection, this);
-			connection.commit();
+			commit(connection);
 			return ret;
 		} catch (Throwable t) {
-			try {
-				connection.rollback();
-			} catch (SQLException e) {
-				log.error("transaction rollback exception", t);
-			}
+			rollback(connection);
 			log.error("the transaction exception", t);
 		} finally {
-			try {
-				connection.setAutoCommit(true);
-			} catch (SQLException e) {
-				log.error("the connection sets auto commit exception", e);
-			}
-			try {
-				connection.close();
-			} catch (SQLException e) {
-				log.error("close connection exception", e);
-			}
+			setAutoCommit(connection, true);
+			close(connection);
 		}
 		return null;
 	}
