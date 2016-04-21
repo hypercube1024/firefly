@@ -31,8 +31,7 @@ public class TestAnnotation {
 		jdbcHelper.update("CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255))");
 
 		for (int i = 1; i <= size; i++) {
-			Long id = jdbcHelper.insert("insert into user(pt_name, pt_password) values(?,?)", "test" + i,
-					"test_pwd" + i);
+			Long id = jdbcHelper.insert("insert into user(pt_name, pt_password) values(?,?)", "test" + i, "test_pwd" + i);
 			System.out.println("id:" + id);
 		}
 	}

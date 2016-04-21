@@ -250,9 +250,12 @@ public class JDBCHelper {
 	}
 
 	public <T> T insert(String sql, Object... params) {
-		return executeTransaction((connection, jdbcHelper) -> {
-			return insert(connection, sql, params);
-		});
+		try(Connection connection = dataSource.getConnection()) {
+			return this.insert(connection, sql, params);
+		} catch (SQLException e) {
+			log.error("insert exception, sql: {}", e, sql);
+			throw new DBException(e);
+		}
 	}
 
 	public <T> T insert(Connection connection, String sql, Object... params) {
