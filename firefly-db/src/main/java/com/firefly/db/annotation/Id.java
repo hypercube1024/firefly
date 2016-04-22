@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Id {
-	String value() default "";
+	String value();
 
 	boolean autoIncrement() default true;
 }

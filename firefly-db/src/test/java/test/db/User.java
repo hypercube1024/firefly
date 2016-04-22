@@ -2,9 +2,11 @@ package test.db;
 
 import com.firefly.db.annotation.Column;
 import com.firefly.db.annotation.Id;
+import com.firefly.db.annotation.Table;
 
+@Table("user")
 public class User {
-	@Id
+	@Id("id")
 	private Long id;
 	@Column("pt_name")
 	private String name;

@@ -14,20 +14,27 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.dbutils.BeanProcessor;
 
 import com.firefly.db.annotation.Column;
 import com.firefly.db.annotation.Id;
+import com.firefly.db.annotation.Table;
+import com.firefly.utils.Assert;
+import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 
 public class DefaultBeanProcessor extends BeanProcessor {
 
-	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected final ConcurrentReferenceHashMap<Class<?>, Map<String, Mapper>> mapperCache = new ConcurrentReferenceHashMap<>(
+			128);
+	protected final ConcurrentReferenceHashMap<Class<?>, SQLMapper> insertCache = new ConcurrentReferenceHashMap<>(128);
+	protected final ConcurrentReferenceHashMap<Class<?>, SQLMapper> queryCache = new ConcurrentReferenceHashMap<>(128);
 
 	/**
 	 * Set a bean's primitive properties to these defaults when SQL NULL is
@@ -35,6 +42,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 	 * return in the event of a NULL column.
 	 */
 	private static final Map<Class<?>, Object> primitiveDefaults = new HashMap<Class<?>, Object>();
+
 	static {
 		primitiveDefaults.put(Integer.TYPE, Integer.valueOf(0));
 		primitiveDefaults.put(Short.TYPE, Short.valueOf((short) 0));
@@ -73,50 +81,278 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		return results;
 	}
 
-	protected String getPropertyName(Method method) {
-		String propertyName = null;
-		if (method != null) {
-			method.setAccessible(true);
-			Column column = method.getAnnotation(Column.class);
-			if (column != null) {
-				if (StringUtils.hasText(column.value())) {
-					propertyName = column.value();
-				}
-			}
-
-			if (propertyName == null) {
-				Id id = method.getAnnotation(Id.class);
-				if (id != null) {
-					if (StringUtils.hasText(id.value())) {
-						propertyName = id.value();
-					}
-				}
-			}
-		}
-		return propertyName;
+	public SQLMapper generateQuerySQL(Class<?> t) {
+		return queryCache.get(t, (key) -> {
+			return _generateQuerySQL(key);
+		});
 	}
 
-	protected String getProptertyName(Field field) {
-		String propertyName = null;
-		if (field != null) {
-			field.setAccessible(true);
-			Column column = field.getAnnotation(Column.class);
-			if (column != null) {
-				if (StringUtils.hasText(column.value())) {
-					propertyName = column.value();
+	protected SQLMapper _generateQuerySQL(Class<?> t) {
+		SQLMapper sqlMapper = new SQLMapper();
+		StringBuilder sql = new StringBuilder();
+
+		sql.append("select");
+		Map<String, Mapper> m = getMapper(t);
+		m.forEach((property, mapper) -> {
+			sql.append(" ").append(mapper.columnName).append(",");
+		});
+		sql.deleteCharAt(sql.length() - 1);
+
+		String tableName = getTableName(t);
+		String idColumnName = getIdColumnName(t);
+		sql.append(" from ").append(tableName).append(" where ").append(idColumnName).append(" = ?");
+
+		sqlMapper.sql = sql.toString();
+		return sqlMapper;
+	}
+
+	public SQLMapper generateUpdateSQL(Class<?> t, Object object) {
+		SQLMapper sqlMapper = new SQLMapper();
+		StringBuilder sql = new StringBuilder();
+		Map<String, Mapper> m = getMapper(t);
+		List<Mapper> mapperList = new ArrayList<>();
+		m.forEach((property, mapper) -> {
+			if (!mapper.autoIncrement) {
+				try {
+					Object value = ReflectUtils.get(object, mapper.propertyName);
+					if (value != null) {
+						mapperList.add(mapper);
+					}
+				} catch (Throwable e) {
 				}
 			}
+		});
 
-			if (propertyName == null) {
+		Map<String, Integer> propertyMap = new HashMap<>();
+		String tableName = getTableName(t);
+		Mapper idMapper = getIdMapper(t);
+		Assert.notNull(idMapper, "id column must not be null");
+		String idColumnName = idMapper.columnName;
+		
+		sql.append("update ").append(tableName).append(" set ");
+		for (int i = 0; i < mapperList.size(); i++) {
+			Mapper mapper = mapperList.get(i);
+			if (i == 0) {
+				sql.append(mapper.columnName).append(" = ?");
+			} else {
+				sql.append(", ").append(mapper.columnName).append(" = ?");
+			}
+			propertyMap.put(mapper.propertyName, i);
+		}
+		sql.append(" where ").append(idColumnName).append(" = ?");
+		propertyMap.put(idMapper.propertyName, mapperList.size());
+		
+		sqlMapper.sql = sql.toString();
+		sqlMapper.propertyMap = propertyMap;
+		return sqlMapper;
+	}
+
+	public SQLMapper generateInsertSQL(Class<?> t) {
+		return insertCache.get(t, (key) -> {
+			return _generateInsertSQL(key);
+		});
+	}
+
+	protected SQLMapper _generateInsertSQL(Class<?> t) {
+		SQLMapper sqlMapper = new SQLMapper();
+		StringBuilder sql = new StringBuilder();
+		Map<String, Mapper> m = getMapper(t);
+		List<Mapper> mapperList = new ArrayList<>();
+		m.forEach((property, mapper) -> {
+			if (!mapper.autoIncrement) {
+				mapperList.add(mapper);
+			}
+		});
+
+		Map<String, Integer> propertyMap = new HashMap<>();
+		String tableName = getTableName(t);
+		sql.append("insert into ").append(tableName).append(" (");
+		for (int i = 0; i < mapperList.size(); i++) {
+			Mapper mapper = mapperList.get(i);
+			if (i == 0) {
+				sql.append(mapper.columnName);
+			} else {
+				sql.append(", ").append(mapper.columnName);
+			}
+			propertyMap.put(mapper.propertyName, i);
+		}
+		sql.append(") values (");
+		for (int i = 0; i < mapperList.size(); i++) {
+			if (i == 0) {
+				sql.append("?");
+			} else {
+				sql.append(", ?");
+			}
+		}
+		sql.append(")");
+		sqlMapper.sql = sql.toString();
+		sqlMapper.propertyMap = propertyMap;
+		return sqlMapper;
+	}
+
+	public static class SQLMapper {
+		public String sql;
+		public Map<String, Integer> propertyMap;
+
+		@Override
+		public String toString() {
+			return "SQLMapper [sql=" + sql + ", propertyMap=" + propertyMap + "]";
+		}
+
+	}
+
+	public String getTableName(Class<?> t) {
+		Table table = t.getAnnotation(Table.class);
+		if (table != null) {
+			return table.value();
+		} else {
+			return t.getSimpleName();
+		}
+	}
+
+	public String getIdColumnName(Class<?> t) {
+		Mapper mapper = getIdMapper(t);
+		if (mapper == null) {
+			return null;
+		} else {
+			return mapper.columnName;
+		}
+	}
+
+	public Mapper getIdMapper(Class<?> t) {
+		Map<String, Mapper> map = getMapper(t);
+		for (Map.Entry<String, Mapper> entry : map.entrySet()) {
+			if (entry.getValue().idColumn) {
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
+
+	public Map<String, Mapper> getMapper(Class<?> t) {
+		return mapperCache.get(t, (clazz) -> {
+			return _getMapper(clazz);
+		});
+	}
+
+	protected Map<String, Mapper> _getMapper(Class<?> t) {
+		Map<String, Mapper> ret = new HashMap<>();
+		Map<String, Method> getterMethodMap = ReflectUtils.getGetterMethods(t);
+		Map<String, Method> setterMethodMap = ReflectUtils.getSetterMethods(t);
+		Set<String> properties = new HashSet<>();
+
+		getterMethodMap.forEach((property, method) -> {
+			properties.add(property);
+		});
+		setterMethodMap.forEach((property, method) -> {
+			properties.add(property);
+		});
+
+		properties.forEach((property) -> {
+			Mapper mapper = new Mapper();
+			mapper.propertyName = property;
+
+			Field field = null;
+			try {
+				field = t.getDeclaredField(property);
+			} catch (Exception e) {
+			}
+			if (field != null) {
+				field.setAccessible(true);
 				Id id = field.getAnnotation(Id.class);
 				if (id != null) {
 					if (StringUtils.hasText(id.value())) {
-						propertyName = id.value();
+						mapper.columnName = id.value();
+					}
+					mapper.idColumn = true;
+					mapper.autoIncrement = id.autoIncrement();
+				}
+
+				if (mapper.columnName == null) {
+					Column column = field.getAnnotation(Column.class);
+					if (column != null) {
+						if (StringUtils.hasText(column.value())) {
+							mapper.columnName = column.value();
+						}
 					}
 				}
 			}
+
+			if (mapper.columnName == null) {
+				Method getterMethod = getterMethodMap.get(property);
+				if (getterMethod != null) {
+					getterMethod.setAccessible(true);
+
+					Id id = getterMethod.getAnnotation(Id.class);
+					if (id != null) {
+						if (StringUtils.hasText(id.value())) {
+							mapper.columnName = id.value();
+						}
+						mapper.idColumn = true;
+						mapper.autoIncrement = id.autoIncrement();
+					}
+
+					if (mapper.columnName == null) {
+						Column column = getterMethod.getAnnotation(Column.class);
+						if (column != null) {
+							if (StringUtils.hasText(column.value())) {
+								mapper.columnName = column.value();
+							}
+						}
+					}
+				}
+			}
+
+			if (mapper.columnName == null) {
+				Method setterMethod = setterMethodMap.get(property);
+				if (setterMethod != null) {
+					setterMethod.setAccessible(true);
+
+					Id id = setterMethod.getAnnotation(Id.class);
+					if (id != null) {
+						if (StringUtils.hasText(id.value())) {
+							mapper.columnName = id.value();
+						}
+						mapper.idColumn = true;
+						mapper.autoIncrement = id.autoIncrement();
+					}
+
+					if (mapper.columnName == null) {
+						Column column = setterMethod.getAnnotation(Column.class);
+						if (column != null) {
+							if (StringUtils.hasText(column.value())) {
+								mapper.columnName = column.value();
+							}
+						}
+					}
+				}
+			}
+
+			if (mapper.columnName == null) {
+				mapper.columnName = property;
+			} else {
+				mapper.annotated = true;
+			}
+
+			ret.put(property, mapper);
+		});
+
+		return ret;
+	}
+
+	public static class Mapper {
+		public String propertyName;
+		public String columnName;
+		public boolean idColumn;
+		public boolean autoIncrement;
+		public boolean annotated;
+
+		@Override
+		public String toString() {
+			return "Mapper [propertyName=" + propertyName + ", columnName=" + columnName + ", idColumn=" + idColumn
+					+ ", autoIncrement=" + autoIncrement + ", annotated=" + annotated + "]";
 		}
-		return propertyName;
+
 	}
 
 	protected int[] mapColumnsToProperties(ResultSetMetaData rsmd, PropertyDescriptor[] props, Class<?> type)
@@ -124,6 +360,8 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		int cols = rsmd.getColumnCount();
 		int[] columnToProperty = new int[cols + 1];
 		Arrays.fill(columnToProperty, PROPERTY_NOT_FOUND);
+
+		Map<String, Mapper> map = getMapper(type);
 
 		for (int col = 1; col <= cols; col++) {
 			String columnName = rsmd.getColumnLabel(col);
@@ -136,36 +374,17 @@ public class DefaultBeanProcessor extends BeanProcessor {
 				if ("class".equals(p.getName()))
 					continue;
 
-				String propertyName = null;
-				try {
-					Field field = type.getDeclaredField(p.getName());
-					propertyName = getProptertyName(field);
-				} catch (NoSuchFieldException e) {
-
-				} catch (SecurityException e) {
-					log.error("get annotation exception", e);
-				}
-
-				if (propertyName == null) {
-					propertyName = getPropertyName(p.getReadMethod());
-				}
-
-				if (propertyName == null) {
-					propertyName = getPropertyName(p.getWriteMethod());
-				}
-
-				if (propertyName == null) {
-					propertyName = p.getName();
-
-					final String generousColumnName = columnName.replace("_", "");
-
-					if (columnName.equalsIgnoreCase(propertyName)
-							|| generousColumnName.equalsIgnoreCase(propertyName)) {
+				Mapper mapper = map.get(p.getName());
+				if (mapper.annotated) {
+					if (columnName.equalsIgnoreCase(mapper.columnName)) {
 						columnToProperty[col] = i;
 						break;
 					}
 				} else {
-					if (columnName.equalsIgnoreCase(propertyName)) {
+					final String generousColumnName = columnName.replace("_", "");
+
+					if (columnName.equalsIgnoreCase(mapper.columnName)
+							|| generousColumnName.equalsIgnoreCase(mapper.columnName)) {
 						columnToProperty[col] = i;
 						break;
 					}

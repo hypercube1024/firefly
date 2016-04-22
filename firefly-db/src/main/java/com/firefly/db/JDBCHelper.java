@@ -1,7 +1,5 @@
 package com.firefly.db;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -17,12 +15,11 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 
-import com.firefly.db.annotation.Id;
+import com.firefly.db.DefaultBeanProcessor.Mapper;
+import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.StringUtils;
 import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
-import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -31,12 +28,9 @@ public class JDBCHelper {
 
 	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	protected final ConcurrentReferenceHashMap<Class<?>, String> idColumnNameCache = new ConcurrentReferenceHashMap<>(
-			128);
-
 	private final DataSource dataSource;
 	private QueryRunner runner;
-	private BeanProcessor defaultBeanProcessor = new DefaultBeanProcessor();
+	private DefaultBeanProcessor defaultBeanProcessor = new DefaultBeanProcessor();
 
 	public JDBCHelper(DataSource dataSource) {
 		this.dataSource = dataSource;
@@ -65,7 +59,7 @@ public class JDBCHelper {
 
 							Object ret = handler.invoke(originalInstance, args);
 							return ret;
-						}, null);
+						} , null);
 			} catch (Throwable t) {
 				this.runner = new QueryRunner(dataSource);
 				log.error("create QueryRunner proxy exception", t);
@@ -83,11 +77,11 @@ public class JDBCHelper {
 		return runner;
 	}
 
-	public BeanProcessor getDefaultBeanProcessor() {
+	public DefaultBeanProcessor getDefaultBeanProcessor() {
 		return defaultBeanProcessor;
 	}
 
-	public void setDefaultBeanProcessor(BeanProcessor defaultBeanProcessor) {
+	public void setDefaultBeanProcessor(DefaultBeanProcessor defaultBeanProcessor) {
 		this.defaultBeanProcessor = defaultBeanProcessor;
 	}
 
@@ -95,7 +89,7 @@ public class JDBCHelper {
 		try (Connection connection = dataSource.getConnection()) {
 			return this.queryForSingleColumn(connection, sql, params);
 		} catch (SQLException e) {
-			log.error("get connection exception", e);
+			log.error("query exception, sql: {}", e, sql);
 			throw new DBException(e);
 		}
 	}
@@ -117,9 +111,24 @@ public class JDBCHelper {
 		try (Connection connection = dataSource.getConnection()) {
 			return this.queryForObject(connection, sql, t, beanProcessor, params);
 		} catch (SQLException e) {
-			log.error("get connection exception", e);
+			log.error("query exception, sql: {}", e, sql);
 			throw new DBException(e);
 		}
+	}
+
+	public <T> T queryById(Class<T> t, Object id) {
+		try (Connection connection = dataSource.getConnection()) {
+			return queryById(connection, t, id);
+		} catch (SQLException e) {
+			log.error("query exception", e);
+			throw new DBException(e);
+		}
+	}
+
+	public <T> T queryById(Connection connection, Class<T> t, Object id) {
+		SQLMapper sqlMapper = defaultBeanProcessor.generateQuerySQL(t);
+		Assert.notNull(sqlMapper, "sql mapper must not be null");
+		return this.queryForObject(connection, sqlMapper.sql, t, id);
 	}
 
 	public <T> T queryForObject(Connection connection, String sql, Class<T> t, Object... params) {
@@ -136,59 +145,26 @@ public class JDBCHelper {
 		}
 	}
 
-	public String getIdColumnName(Class<?> t) {
-		return idColumnNameCache.get(t, (key) -> {
-			return _getIdColumnName(key);
-		});
-	}
-
-	protected String _getIdColumnName(Class<?> t) {
-		Field[] fields = t.getDeclaredFields();
-		for (Field field : fields) {
-			Id id = field.getAnnotation(Id.class);
-			if (id != null) {
-				if (StringUtils.hasText(id.value())) {
-					return id.value();
-				} else {
-					return field.getName();
-				}
-			}
-		}
-
-		Method[] methods = t.getMethods();
-		for (Method method : methods) {
-			Id id = method.getAnnotation(Id.class);
-			if (id != null) {
-				if (StringUtils.hasText(id.value())) {
-					return id.value();
-				} else {
-					return ReflectUtils.getPropertyName(method);
-				}
-			}
-		}
-
-		return null;
-	}
-
 	public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, Object... params) {
 		return this.queryForBeanMap(sql, t, defaultBeanProcessor, params);
 	}
 
 	public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, BeanProcessor beanProcessor, Object... params) {
-		String columnName = getIdColumnName(t);
+		String columnName = defaultBeanProcessor.getIdColumnName(t);
 		Assert.notNull(columnName);
 
 		try (Connection connection = dataSource.getConnection()) {
 			return this.queryForBeanMap(connection, sql, t, columnName, beanProcessor, params);
 		} catch (SQLException e) {
-			log.error("get connection exception", e);
+			log.error("query exception, sql: {}", e, sql);
 			throw new DBException(e);
 		}
 	}
 
 	public <K, V> Map<K, V> queryForBeanMap(Connection connection, String sql, Class<V> t, Object... params) {
-		String columnName = getIdColumnName(t);
+		String columnName = defaultBeanProcessor.getIdColumnName(t);
 		Assert.notNull(columnName);
+
 		return this.queryForBeanMap(connection, sql, t, columnName, defaultBeanProcessor, params);
 	}
 
@@ -211,7 +187,7 @@ public class JDBCHelper {
 		try (Connection connection = dataSource.getConnection()) {
 			return this.queryForList(connection, sql, t, beanProcessor, params);
 		} catch (SQLException e) {
-			log.error("get connection exception", e);
+			log.error("query exception, sql: {}", e, sql);
 			throw new DBException(e);
 		}
 	}
@@ -240,6 +216,32 @@ public class JDBCHelper {
 		}
 	}
 
+	public int updateObject(Object object) {
+		try (Connection connection = dataSource.getConnection()) {
+			return this.updateObject(connection, object);
+		} catch (SQLException e) {
+			log.error("update exception", e);
+			throw new DBException(e);
+		}
+	}
+
+	public int updateObject(Connection connection, Object object) {
+		Class<?> t = object.getClass();
+		SQLMapper sqlMapper = defaultBeanProcessor.generateUpdateSQL(t, object);
+		Assert.notNull(sqlMapper, "the sql mapper must not be null");
+		Assert.notEmpty(sqlMapper.propertyMap, "the property map must not be empty");
+
+		Object[] params = new Object[sqlMapper.propertyMap.size()];
+		sqlMapper.propertyMap.forEach((property, index) -> {
+			try {
+				Object value = ReflectUtils.get(object, property);
+				params[index] = value;
+			} catch (Throwable e) {
+			}
+		});
+		return this.update(connection, sqlMapper.sql, params);
+	}
+
 	public int update(Connection connection, String sql, Object... params) {
 		try {
 			return runner.update(connection, sql, params);
@@ -256,6 +258,43 @@ public class JDBCHelper {
 			log.error("insert exception, sql: {}", e, sql);
 			throw new DBException(e);
 		}
+	}
+
+	public <T> T insertObject(Object object) {
+		try (Connection connection = dataSource.getConnection()) {
+			return this.insertObject(connection, object);
+		} catch (SQLException e) {
+			log.error("insert exception", e);
+			throw new DBException(e);
+		}
+
+	}
+
+	public <T> T insertObject(Connection connection, Object object) {
+		Class<?> t = object.getClass();
+		SQLMapper sqlMapper = defaultBeanProcessor.generateInsertSQL(t);
+		Assert.notNull(sqlMapper, "the sql mapper must not be null");
+		Assert.notEmpty(sqlMapper.propertyMap, "the property map must not be empty");
+
+		Object[] params = new Object[sqlMapper.propertyMap.size()];
+		sqlMapper.propertyMap.forEach((property, index) -> {
+			try {
+				Object value = ReflectUtils.get(object, property);
+				params[index] = value;
+			} catch (Throwable e) {
+			}
+		});
+		T ret = this.insert(connection, sqlMapper.sql, params);
+		if (ret != null) {
+			Mapper idMapper = defaultBeanProcessor.getIdMapper(t);
+			if (idMapper != null) {
+				try {
+					ReflectUtils.set(object, idMapper.propertyName, ret);
+				} catch (Throwable e) {
+				}
+			}
+		}
+		return ret;
 	}
 
 	public <T> T insert(Connection connection, String sql, Object... params) {
