@@ -81,19 +81,19 @@ public class DefaultBeanProcessor extends BeanProcessor {
 
 		return results;
 	}
-	
+
 	public SQLMapper generateDeleteSQL(Class<?> t) {
 		return deleteCache.get(t, (key) -> {
 			return _generateDeleteSQL(key);
 		});
 	}
-	
+
 	protected SQLMapper _generateDeleteSQL(Class<?> t) {
 		SQLMapper sqlMapper = new SQLMapper();
 		StringBuilder sql = new StringBuilder();
 		String tableName = getTableName(t);
 		String idColumnName = getIdColumnName(t);
-		
+
 		sql.append("delete from ").append(tableName).append(" where ").append(idColumnName).append(" = ?");
 		sqlMapper.sql = sql.toString();
 		return sqlMapper;
@@ -146,7 +146,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		Mapper idMapper = getIdMapper(t);
 		Assert.notNull(idMapper, "id column must not be null");
 		String idColumnName = idMapper.columnName;
-		
+
 		sql.append("update ").append(tableName).append(" set ");
 		for (int i = 0; i < mapperList.size(); i++) {
 			Mapper mapper = mapperList.get(i);
@@ -159,7 +159,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		}
 		sql.append(" where ").append(idColumnName).append(" = ?");
 		propertyMap.put(idMapper.propertyName, mapperList.size());
-		
+
 		sqlMapper.sql = sql.toString();
 		sqlMapper.propertyMap = propertyMap;
 		return sqlMapper;
