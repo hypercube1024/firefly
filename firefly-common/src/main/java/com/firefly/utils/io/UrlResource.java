@@ -120,7 +120,6 @@ public class UrlResource extends AbstractFileResolvingResource {
 	 * @param originalUrl the original URL
 	 * @param originalPath the original URL path
 	 * @return the cleaned URL
-	 * @see org.springframework.util.StringUtils#cleanPath
 	 */
 	private URL getCleanedUrl(URL originalUrl, String originalPath) {
 		try {
@@ -183,7 +182,6 @@ public class UrlResource extends AbstractFileResolvingResource {
 	/**
 	 * This implementation returns a File reference for the underlying URL/URI,
 	 * provided that it refers to a file in the file system.
-	 * @see org.springframework.util.ResourceUtils#getFile(java.net.URL, String)
 	 */
 	@Override
 	public File getFile() throws IOException {

@@ -4,12 +4,8 @@ import com.firefly.utils.ResourceUtils;
 
 /**
  * Strategy interface for loading resources (e.. class path or file system
- * resources). An {@link org.springframework.context.ApplicationContext}
- * is required to provide this functionality, plus extended
- * {@link org.springframework.core.io.support.ResourcePatternResolver} support.
+ * resources).
  *
- * <p>{@link DefaultResourceLoader} is a standalone implementation that is
- * usable outside an ApplicationContext, also used by {@link ResourceEditor}.
  *
  * <p>Bean properties of type Resource and Resource array can be populated
  * from Strings when running in an ApplicationContext, using the particular
@@ -38,8 +34,6 @@ public interface ResourceLoader {
 	 * @param location the resource location
 	 * @return a corresponding Resource handle
 	 * @see #CLASSPATH_URL_PREFIX
-	 * @see org.springframework.core.io.Resource#exists
-	 * @see org.springframework.core.io.Resource#getInputStream
 	 */
 	Resource getResource(String location);
 
@@ -50,7 +44,6 @@ public interface ResourceLoader {
 	 * on the thread context ClassLoader.
 	 * @return the ClassLoader (only {@code null} if even the system
 	 * ClassLoader isn't accessible)
-	 * @see org.springframework.util.ClassUtils#getDefaultClassLoader()
 	 */
 	ClassLoader getClassLoader();
 

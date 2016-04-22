@@ -399,8 +399,6 @@ public abstract class ScriptUtils {
 	 * @see #DEFAULT_COMMENT_PREFIX
 	 * @see #DEFAULT_BLOCK_COMMENT_START_DELIMITER
 	 * @see #DEFAULT_BLOCK_COMMENT_END_DELIMITER
-	 * @see org.springframework.jdbc.datasource.DataSourceUtils#getConnection
-	 * @see org.springframework.jdbc.datasource.DataSourceUtils#releaseConnection
 	 */
 	public static void executeSqlScript(Connection connection, Resource resource) throws ScriptException {
 		executeSqlScript(connection, new EncodedResource(resource));
@@ -430,8 +428,6 @@ public abstract class ScriptUtils {
 	 * @see #DEFAULT_COMMENT_PREFIX
 	 * @see #DEFAULT_BLOCK_COMMENT_START_DELIMITER
 	 * @see #DEFAULT_BLOCK_COMMENT_END_DELIMITER
-	 * @see org.springframework.jdbc.datasource.DataSourceUtils#getConnection
-	 * @see org.springframework.jdbc.datasource.DataSourceUtils#releaseConnection
 	 */
 	public static void executeSqlScript(Connection connection, EncodedResource resource) throws ScriptException {
 		executeSqlScript(connection, resource, false, false, DEFAULT_COMMENT_PREFIX, DEFAULT_STATEMENT_SEPARATOR,
@@ -480,8 +476,6 @@ public abstract class ScriptUtils {
 	 * @see #DEFAULT_STATEMENT_SEPARATOR
 	 * @see #FALLBACK_STATEMENT_SEPARATOR
 	 * @see #EOF_STATEMENT_SEPARATOR
-	 * @see org.springframework.jdbc.datasource.DataSourceUtils#getConnection
-	 * @see org.springframework.jdbc.datasource.DataSourceUtils#releaseConnection
 	 */
 	public static void executeSqlScript(Connection connection, EncodedResource resource, boolean continueOnError,
 			boolean ignoreFailedDrops, String commentPrefix, String separator, String blockCommentStartDelimiter,

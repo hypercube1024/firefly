@@ -1188,12 +1188,11 @@ public class StringUtils {
 	 * <p>A single {@code delimiter} may consist of more than one character,
 	 * but it will still be considered as a single delimiter string, rather
 	 * than as bunch of potential delimiter characters, in contrast to
-	 * {@link #tokenizeToStringArray}.
+	 * tokenizeToStringArray.
 	 * @param str the input {@code String}
 	 * @param delimiter the delimiter between elements (this is a single delimiter,
 	 * rather than a bunch individual delimiter characters)
 	 * @return an array of the tokens in the list
-	 * @see #tokenizeToStringArray
 	 */
 	public static String[] delimitedListToStringArray(String str, String delimiter) {
 		return delimitedListToStringArray(str, delimiter, null);
@@ -1205,14 +1204,13 @@ public class StringUtils {
 	 * <p>A single {@code delimiter} may consist of more than one character,
 	 * but it will still be considered as a single delimiter string, rather
 	 * than as bunch of potential delimiter characters, in contrast to
-	 * {@link #tokenizeToStringArray}.
+	 * tokenizeToStringArray.
 	 * @param str the input {@code String}
 	 * @param delimiter the delimiter between elements (this is a single delimiter,
 	 * rather than a bunch individual delimiter characters)
 	 * @param charsToDelete a set of characters to delete; useful for deleting unwanted
 	 * line breaks: e.g. "\r\n\f" will delete all new lines and line feeds in a {@code String}
 	 * @return an array of the tokens in the list
-	 * @see #tokenizeToStringArray
 	 */
 	public static String[] delimitedListToStringArray(String str, String delimiter, String charsToDelete) {
 		if (str == null) {
@@ -1310,7 +1308,7 @@ public class StringUtils {
 	
 	/**
 	 * Extract the filename extension from the given Java resource path,
-	 * e.g. "mypath/myfile.txt" -> "txt".
+	 * e.g. "mypath/myfile.txt" -&gt; "txt".
 	 * @param path the file path (may be {@code null})
 	 * @return the extracted filename extension, or {@code null} if none
 	 */
@@ -1331,7 +1329,7 @@ public class StringUtils {
 	
 	/**
 	 * Extract the filename from the given Java resource path,
-	 * e.g. {@code "mypath/myfile.txt" -> "myfile.txt"}.
+	 * e.g. {@code "mypath/myfile.txt" -&gt; "myfile.txt"}.
 	 * @param path the file path (may be {@code null})
 	 * @return the extracted filename, or {@code null} if none
 	 */

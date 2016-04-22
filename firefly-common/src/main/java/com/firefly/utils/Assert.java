@@ -28,7 +28,7 @@ import java.util.Map;
  *
  * <pre class="code">
  * Assert.notNull(clazz, "The class must not be null");
- * Assert.isTrue(i > 0, "The value must be greater than zero");
+ * Assert.isTrue(i &gt; 0, "The value must be greater than zero");
  * </pre>
  *
  * <p>

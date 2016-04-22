@@ -12,18 +12,6 @@ import java.net.URLConnection;
  * Utility methods for resolving resource locations to files in the
  * file system. Mainly for internal use within the framework.
  *
- * <p>Consider using Spring's Resource abstraction in the core package
- * for handling all kinds of file resources in a uniform manner.
- * {@link org.springframework.core.io.ResourceLoader}'s {@code getResource()}
- * method can resolve any location to a {@link org.springframework.core.io.Resource}
- * object, which in turn allows one to obtain a {@code java.io.File} in the
- * file system through its {@code getFile()} method.
- *
- * <p>The main reason for these utility methods for resource location handling
- * is to support {@link Log4jConfigurer}, which must be able to resolve
- * resource locations <i>before the logging system has been initialized</i>.
- * Spring's {@code Resource} abstraction in the core package, on the other hand,
- * already expects the logging system to be available.
  */
 public abstract class ResourceUtils {
 
