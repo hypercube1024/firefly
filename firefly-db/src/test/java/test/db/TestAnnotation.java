@@ -84,11 +84,16 @@ public class TestAnnotation {
 		user2.setName("hello 2");
 		user2.setPassword("pwed");
 		int e = jdbcHelper.updateObject(user2);
-		Assert.assertThat(e, is(e));
+		Assert.assertThat(e, is(1));
 		
 		User user3 = jdbcHelper.queryById(User.class, id);
 		Assert.assertThat(user3.getName(), is("hello 2"));
 		Assert.assertThat(user3.getPassword(), is("pwed"));
+		
+		int n = jdbcHelper.deleteById(User.class, id);
+		Assert.assertThat(n, is(1));
+		User user4 = jdbcHelper.queryById(User.class, id);
+		Assert.assertThat(user4, nullValue());
 	}
 
 	@Test

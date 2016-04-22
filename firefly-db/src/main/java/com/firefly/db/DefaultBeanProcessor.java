@@ -35,6 +35,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 			128);
 	protected final ConcurrentReferenceHashMap<Class<?>, SQLMapper> insertCache = new ConcurrentReferenceHashMap<>(128);
 	protected final ConcurrentReferenceHashMap<Class<?>, SQLMapper> queryCache = new ConcurrentReferenceHashMap<>(128);
+	protected final ConcurrentReferenceHashMap<Class<?>, SQLMapper> deleteCache = new ConcurrentReferenceHashMap<>(128);
 
 	/**
 	 * Set a bean's primitive properties to these defaults when SQL NULL is
@@ -79,6 +80,23 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		} while (rs.next());
 
 		return results;
+	}
+	
+	public SQLMapper generateDeleteSQL(Class<?> t) {
+		return deleteCache.get(t, (key) -> {
+			return _generateDeleteSQL(key);
+		});
+	}
+	
+	protected SQLMapper _generateDeleteSQL(Class<?> t) {
+		SQLMapper sqlMapper = new SQLMapper();
+		StringBuilder sql = new StringBuilder();
+		String tableName = getTableName(t);
+		String idColumnName = getIdColumnName(t);
+		
+		sql.append("delete from ").append(tableName).append(" where ").append(idColumnName).append(" = ?");
+		sqlMapper.sql = sql.toString();
+		return sqlMapper;
 	}
 
 	public SQLMapper generateQuerySQL(Class<?> t) {

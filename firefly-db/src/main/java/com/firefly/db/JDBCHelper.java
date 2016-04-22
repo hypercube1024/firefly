@@ -306,6 +306,21 @@ public class JDBCHelper {
 		}
 	}
 
+	public int deleteById(Class<?> t, Object id) {
+		try (Connection connection = dataSource.getConnection()) {
+			return this.deleteById(connection, t, id);
+		} catch (SQLException e) {
+			log.error("delete exception", e);
+			throw new DBException(e);
+		}
+	}
+
+	public int deleteById(Connection connection, Class<?> t, Object id) {
+		SQLMapper sqlMapper = defaultBeanProcessor.generateDeleteSQL(t);
+		Assert.notNull(sqlMapper, "sql mapper must not be null");
+		return this.update(connection, sqlMapper.sql, id);
+	}
+
 	public Connection getConnection() {
 		try {
 			return dataSource.getConnection();
