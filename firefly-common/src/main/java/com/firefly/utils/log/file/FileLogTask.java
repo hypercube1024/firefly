@@ -1,12 +1,11 @@
 package com.firefly.utils.log.file;
 
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.collection.Trie;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.log.LogItem;
@@ -17,17 +16,17 @@ public class FileLogTask implements LogTask {
 	private volatile boolean start;
 	private BlockingQueue<LogItem> queue = new LinkedTransferQueue<>();
 	private Thread thread = new Thread(this, "firefly log thread");
-	private final Map<String, Log> logMap;
+	private final Trie<Log> logTree;
 
-	public FileLogTask(Map<String, Log> logMap) {
+	public FileLogTask(Trie<Log> logTree) {
 		thread.setPriority(Thread.MIN_PRIORITY);
-		this.logMap = logMap;
+		this.logTree = logTree;
 	}
-	
+
 	private long flushAllPerSecond(final long lastFlushedTime) {
 		// flush all log buffer per one second
 		long timeDifference = Millisecond100Clock.currentTimeMillis() - lastFlushedTime;
-		if(timeDifference > 1000) {
+		if (timeDifference > 1000) {
 			LogFactory.getInstance().flushAll();
 			return Millisecond100Clock.currentTimeMillis();
 		} else {
@@ -47,7 +46,7 @@ public class FileLogTask implements LogTask {
 					}
 					lastFlushedTime = flushAllPerSecond(lastFlushedTime);
 				}
-				
+
 				lastFlushedTime = flushAllPerSecond(lastFlushedTime);
 			} catch (Throwable e) {
 				e.printStackTrace();
@@ -58,10 +57,10 @@ public class FileLogTask implements LogTask {
 					e1.printStackTrace();
 				}
 			}
-			
+
 			if (!start && queue.isEmpty()) {
-				for (Entry<String, Log> entry : logMap.entrySet()) {
-					Log log = entry.getValue();
+				for (String key : logTree.keySet()) {
+					Log log = logTree.get(key);
 					if (log instanceof FileLog) {
 						((FileLog) log).close();
 					}

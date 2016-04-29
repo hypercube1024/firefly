@@ -15,6 +15,9 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.log.file.FileLog;
 
+import test.utils.log.foo.Foo;
+import test.utils.log.foo.bar.Bar;
+
 public class LogTest {
 
 	private static final Log log = LogFactory.getInstance().getLog(
@@ -35,6 +38,9 @@ public class LogTest {
 			"firefly-system");
 	private static final Log illegalLog = LogFactory.getInstance().getLog(
 			"test-illegal");
+	
+	private static final Log logFoo = LogFactory.getInstance().getLog(Foo.class);
+	private static final Log logBar = LogFactory.getInstance().getLog(Bar.class);
 
 	@Before
 	public void init() {
@@ -43,6 +49,8 @@ public class LogTest {
 		deleteLog(log4);
 		deleteLog(log5);
 		deleteLog(log6);
+		deleteLog(logFoo);
+		deleteLog(logBar);
 	}
 	
 	private void deleteLog(Log log) {
@@ -100,6 +108,8 @@ public class LogTest {
 		log4.warn("warn log");
 		log4.error("error log");
 		
+		logFoo.info("testFoo");
+		logBar.info("testBar");
 		
 		try {
 			Thread.sleep(2000L);
@@ -107,6 +117,16 @@ public class LogTest {
 			e1.printStackTrace();
 		}
 		try {
+			FileUtils.read(getFile(logFoo), (text, num) -> {
+				String[] data = StringUtils.split(text, '\t');
+				Assert.assertEquals("testFoo", data[1]);
+			}, "utf-8");
+			
+			FileUtils.read(getFile(logBar), (text, num) -> {
+				String[] data = StringUtils.split(text, '\t');
+				Assert.assertEquals("testBar", data[1]);
+			}, "utf-8");
+			
 			// test trace
 			FileUtils.read(getFile(log2), new LineReaderHandler(){
 
