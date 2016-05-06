@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.fireflysource.com/loggers"
+	xmlns:logger="http://www.fireflysource.com/loggers"
+	elementFormDefault="qualified">
+	
+	<element name="logger">
+		<complexType>
+			<sequence>
+				<element name="name" type="string" minOccurs="1" maxOccurs="1"></element>
+				<element name="level" type="string" default="INFO" minOccurs="0" maxOccurs="1"></element>
+				<element name="path" type="string" minOccurs="0" maxOccurs="1"></element>
+				<element name="enable-console" type="string" minOccurs="0" maxOccurs="1" default="false"></element>
+				<element name="max-file-size" type="string" minOccurs="0" maxOccurs="1" default="209715200"></element>
+			</sequence>
+		</complexType>
+	</element>
+	
+	<!-- root element -->
+	<element name="loggers">
+		<complexType>
+			<sequence>
+				<element ref="logger:logger" minOccurs="0" maxOccurs="unbounded" ></element>
+			</sequence>
+		</complexType>
+	</element>
+</schema>
