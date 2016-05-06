@@ -5,7 +5,7 @@
 	
 	<import resource="testImport.xml"/>
 	
-	<bean id="personService" class="test.component3.PersonService">
+	<bean id="personService" class="test.component3.PersonService" init-method="init">
 		<property name="person" ref="person"/>
 		<property name="testList">
 			<list>

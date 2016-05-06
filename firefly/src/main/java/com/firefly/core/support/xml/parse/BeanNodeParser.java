@@ -2,6 +2,7 @@ package com.firefly.core.support.xml.parse;
 
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.ARGUMENT_ELEMENT;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.CLASS_ATTRIBUTE;
+import static com.firefly.core.support.xml.parse.XmlNodeConstants.INIT_METHOD_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.CONTRUCTOR_ELEMENT;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.ID_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.NAME_ATTRIBUTE;
@@ -10,6 +11,7 @@ import static com.firefly.core.support.xml.parse.XmlNodeConstants.REF_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.TYPE_ATTRIBUTE;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.VALUE_ATTRIBUTE;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,10 +37,11 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 		// gets basic attribute
 		String id = ele.getAttribute(ID_ATTRIBUTE);
 		String className = ele.getAttribute(CLASS_ATTRIBUTE);
+		String initMethod = ele.getAttribute(INIT_METHOD_ATTRIBUTE);
+		
 		XmlBeanDefinition xmlBeanDefinition = new XmlGenericBeanDefinition();
 		xmlBeanDefinition.setId(id);
 		xmlBeanDefinition.setClassName(className);
-
 		
 		Class<?> clazz = null;
 		log.info("classes [{}]", className);
@@ -46,6 +49,15 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 			clazz = XmlBeanReader.class.getClassLoader().loadClass(className);
 		} catch (Throwable e) {
 			error("loads class \"" + className + "\" error");
+		}
+		
+		if(StringUtils.hasText(initMethod)) {
+			try {
+				Method method = clazz.getMethod(initMethod);
+				xmlBeanDefinition.setInitMethod(method);
+			} catch (NoSuchMethodException | SecurityException e) {
+				error("the initial method " + initMethod + " not found");
+			}
 		}
 		
 		// gets bean's constructor

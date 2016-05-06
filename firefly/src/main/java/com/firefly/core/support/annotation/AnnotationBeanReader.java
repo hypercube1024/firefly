@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 
 import com.firefly.annotation.Component;
+import com.firefly.annotation.InitialMethod;
 import com.firefly.annotation.Inject;
 import com.firefly.core.support.AbstractBeanReader;
 import com.firefly.core.support.BeanDefinition;
@@ -142,7 +143,19 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 		annotationBeanDefinition.setInjectMethods(methods);
 
 		annotationBeanDefinition.setConstructor(getInjectConstructor(c));
+		annotationBeanDefinition.setInitMethod(getInitMethod(c));
+		
 		return annotationBeanDefinition;
+	}
+	
+	protected Method getInitMethod(Class<?> c) {
+		Method[] methods = c.getDeclaredMethods();
+		for (Method m : methods) {
+			if(m.isAnnotationPresent(InitialMethod.class)) {
+				return m;
+			}
+		}
+		return null;
 	}
 	
 	protected Constructor<?> getInjectConstructor(Class<?> c) {

@@ -4,6 +4,7 @@ public interface XmlNodeConstants {
 	public static final String BEAN_REF_ATTRIBUTE = "bean";
 	public static final String ID_ATTRIBUTE = "id";
 	public static final String CLASS_ATTRIBUTE = "class";
+	public static final String INIT_METHOD_ATTRIBUTE = "init-method";
 	public static final String NAME_ATTRIBUTE = "name";
 	public static final String REF_ATTRIBUTE = "ref";
 	public static final String VALUE_ATTRIBUTE = "value";

@@ -41,6 +41,7 @@ public class TestAnnotationIoc {
 		MethodInject2 m = applicationContext.getBean("methodInject2");
 		Assert.assertThat(m.add(5, 5), is(10));
 		Assert.assertThat(m.getNum(), is(3));
+		Assert.assertThat(true, is(m.isInitial()));
 	}
 
 	@Test

@@ -3,9 +3,10 @@ package test.component3;
 import java.util.List;
 
 public class PersonService {
+	
 	private Person person, person2;
-
 	private List<Object> testList;
+	private boolean initial;
 
 	public void setPerson(Person person) {
 		this.person = person;
@@ -34,4 +35,18 @@ public class PersonService {
 	public Person getPerson() {
 		return person;
 	}
+	
+	public void init() {
+		System.out.println("init person service");
+		initial = true;
+	}
+
+	public boolean isInitial() {
+		return initial;
+	}
+
+	public void setInitial(boolean initial) {
+		this.initial = initial;
+	}
+	
 }

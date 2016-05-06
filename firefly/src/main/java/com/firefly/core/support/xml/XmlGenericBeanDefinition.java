@@ -1,6 +1,7 @@
 package com.firefly.core.support.xml;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ public class XmlGenericBeanDefinition implements XmlBeanDefinition {
 	private String[] interfaceNames;
 	private List<XmlManagedNode> contructorParameters = new ArrayList<XmlManagedNode>();
 	private Constructor<?> constructor;
+	private Method initMethod;
 
 	@Override
 	public String getId() {
@@ -79,4 +81,15 @@ public class XmlGenericBeanDefinition implements XmlBeanDefinition {
 	public void setConstructor(Constructor<?> constructor) {
 		this.constructor = constructor;
 	}
+
+	@Override
+	public Method getInitMethod() {
+		return initMethod;
+	}
+
+	@Override
+	public void setInitMethod(Method initMethod) {
+		this.initMethod = initMethod;
+	}
+	
 }

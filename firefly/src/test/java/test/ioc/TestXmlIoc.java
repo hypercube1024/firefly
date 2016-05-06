@@ -26,8 +26,9 @@ public class TestXmlIoc {
 	public void testXmlInject() {
 		Person person = xmlApplicationContext.getBean("person");
 		Assert.assertThat(person.getName(), is("Jack"));
-		PersonService personService = xmlApplicationContext
-				.getBean("personService");
+		PersonService personService = xmlApplicationContext.getBean("personService");
+		Assert.assertThat(true, is(personService.isInitial()));
+		
 		List<Object> l = personService.getTestList();
 		Assert.assertThat(l.size(), greaterThan(0));
 		int i = 0;

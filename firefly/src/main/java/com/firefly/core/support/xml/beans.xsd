@@ -94,6 +94,7 @@
 			</sequence>
 			<attribute name="id" />
 			<attribute name="class" />
+			<attribute name="init-method" />
 		</complexType>
 	</element>
 	

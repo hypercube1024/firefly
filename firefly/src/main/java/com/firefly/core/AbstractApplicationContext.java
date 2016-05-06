@@ -1,5 +1,7 @@
 package com.firefly.core;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +27,7 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 
 	public AbstractApplicationContext(String file) {
 		beanDefinitions = getBeanDefinitions(file);
-		check(); //Conflicts check
+		check(); // Conflicts check
 		addObjectToContext();
 	}
 
@@ -48,11 +50,11 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 	}
 
 	/**
-	 * Conflicts check
-	 * 1.More than two components have the same id
-	 * 2.The one of two components that have the same class name or interface name dosen't set id.
-	 * 3.Two components have the same class name or interface name and different id, save memo. 
-	 *   When the component is injecting by type, throw a exception. 
+	 * Conflicts check 1.More than two components have the same id 2.The one of
+	 * two components that have the same class name or interface name dosen't
+	 * set id. 3.Two components have the same class name or interface name and
+	 * different id, save memo. When the component is injecting by type, throw a
+	 * exception.
 	 * 
 	 */
 	protected void check() {
@@ -62,18 +64,14 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 				BeanDefinition b1 = beanDefinitions.get(i);
 				BeanDefinition b2 = beanDefinitions.get(j);
 
-				if (VerifyUtils.isNotEmpty(b1.getId())
-						&& VerifyUtils.isNotEmpty(b2.getId())
+				if (VerifyUtils.isNotEmpty(b1.getId()) && VerifyUtils.isNotEmpty(b2.getId())
 						&& b1.getId().equals(b2.getId())) {
-					error("bean " + b1.getClassName() + " and bean "
-							+ b2.getClassName() + " have duplicate id ");
+					error("bean " + b1.getClassName() + " and bean " + b2.getClassName() + " have duplicate id ");
 				}
 
 				if (b1.getClassName().equals(b2.getClassName())) {
-					if (VerifyUtils.isEmpty(b1.getId())
-							|| VerifyUtils.isEmpty(b2.getId())) {
-						error("class " + b1.getClassName()
-								+ " duplicate definition");
+					if (VerifyUtils.isEmpty(b1.getId()) || VerifyUtils.isEmpty(b2.getId())) {
+						error("class " + b1.getClassName() + " duplicate definition");
 					} else {
 						errorMemo.add(b1.getClassName());
 					}
@@ -82,10 +80,8 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 				for (String iname1 : b1.getInterfaceNames()) {
 					for (String iname2 : b2.getInterfaceNames()) {
 						if (iname1.equals(iname2)) {
-							if (VerifyUtils.isEmpty(b1.getId())
-									|| VerifyUtils.isEmpty(b2.getId())) {
-								error("class " + b1.getClassName()
-										+ " duplicate definition");
+							if (VerifyUtils.isEmpty(b1.getId()) || VerifyUtils.isEmpty(b2.getId())) {
+								error("class " + b1.getClassName() + " duplicate definition");
 							} else {
 								errorMemo.add(iname1);
 							}
@@ -98,7 +94,7 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 	}
 
 	protected void check(String key) {
-		if(errorMemo.contains(key)) {
+		if (errorMemo.contains(key)) {
 			error(key + " auto inject failure!");
 		}
 	}
@@ -116,6 +112,16 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 		String[] keys = beanDefinition.getInterfaceNames();
 		for (String k : keys) {
 			map.put(k, object);
+		}
+
+		// invoke initial method
+		Method initMethod = beanDefinition.getInitMethod();
+		if (initMethod != null) {
+			try {
+				initMethod.invoke(object);
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				error("invoke initial method error, " + e.getMessage());
+			}
 		}
 	}
 

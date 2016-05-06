@@ -1,6 +1,7 @@
 package com.firefly.core.support;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 
 
@@ -24,8 +25,8 @@ public interface BeanDefinition {
 	Constructor<?> getConstructor();
 	
 	void setConstructor(Constructor<?> constructor);
-
-//	Object getObject();
-//
-//	void setObject(Object object);
+	
+	void setInitMethod(Method method);
+	
+	Method getInitMethod();
 }

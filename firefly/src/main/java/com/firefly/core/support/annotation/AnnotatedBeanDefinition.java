@@ -13,6 +13,7 @@ public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
 	private List<Method> methods;
 	private Constructor<?> constructor;
 	private Object injectedInstance;
+	private Method initMethod;
 
 	@Override
 	public List<Field> getInjectFields() {
@@ -82,6 +83,16 @@ public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
 	@Override
 	public void setInjectedInstance(Object injectedInstance) {
 		this.injectedInstance = injectedInstance;
+	}
+	
+	@Override
+	public Method getInitMethod() {
+		return initMethod;
+	}
+
+	@Override
+	public void setInitMethod(Method initMethod) {
+		this.initMethod = initMethod;
 	}
 
 }
