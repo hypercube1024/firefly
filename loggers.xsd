@@ -7,17 +7,7 @@
 		<complexType>
 			<sequence>
 				<element name="name" type="string" minOccurs="1" maxOccurs="1"></element>
-				<element name="level" default="INFO" minOccurs="0" maxOccurs="1">
-					<simpleType>
-						<restriction base="string">
-							<enumeration value="TRACE"></enumeration>
-							<enumeration value="DEBUG"></enumeration>
-							<enumeration value="INFO"></enumeration>
-							<enumeration value="WARN"></enumeration>
-							<enumeration value="ERROR"></enumeration>
-						</restriction>
-					</simpleType>
-				</element>
+				<element name="level" type="string" default="INFO" minOccurs="0" maxOccurs="1"></element>
 				<element name="path" type="string" minOccurs="0" maxOccurs="1"></element>
 				<element name="enable-console" type="boolean" minOccurs="0" maxOccurs="1" default="false"></element>
 				<element name="max-file-size" type="string" minOccurs="0" maxOccurs="1" default="209715200"></element>
