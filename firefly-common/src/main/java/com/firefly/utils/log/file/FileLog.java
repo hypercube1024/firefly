@@ -20,6 +20,7 @@ public class FileLog implements Log, Closeable {
 	private String name;
 	private boolean consoleOutput;
 	private boolean fileOutput;
+	private int maxFileSize;
 	private BufferedWriter bufferedWriter;
 	private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
 	private static final int bufferSize = 4 * 1024;
@@ -30,11 +31,11 @@ public class FileLog implements Log, Closeable {
 			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
 			System.out.println(logItem.toString());
 		}
-		
+
 		if (fileOutput) {
 			Date d = new Date();
 			boolean success = getBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(d));
-			if(success) {
+			if (success) {
 				logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
 				try {
 					bufferedWriter.append(logItem.toString() + CL);
@@ -67,7 +68,7 @@ public class FileLog implements Log, Closeable {
 			}
 		}
 	}
-	
+
 	private boolean createNewBufferedWriter(String newDate) {
 		File file = new File(path, name + "." + newDate + ".txt");
 		try {
@@ -85,7 +86,7 @@ public class FileLog implements Log, Closeable {
 		if (bufferedWriter == null) {
 			return createNewBufferedWriter(newDate);
 		} else {
-			if(!currentDate.equals(newDate)) {
+			if (!currentDate.equals(newDate)) {
 				close();
 				return createNewBufferedWriter(newDate);
 			} else {
@@ -125,6 +126,14 @@ public class FileLog implements Log, Closeable {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public int getMaxFileSize() {
+		return maxFileSize;
+	}
+
+	public void setMaxFileSize(int maxFileSize) {
+		this.maxFileSize = maxFileSize;
 	}
 
 	private void add(String str, String level, Throwable throwable, Object... objs) {
@@ -273,7 +282,7 @@ public class FileLog implements Log, Closeable {
 	@Override
 	public String toString() {
 		return "[level=" + level.getName() + ", name=" + name + ", path=" + path + ", consoleOutput=" + consoleOutput
-				+ ", fileOutput=" + fileOutput + "]";
+				+ ", fileOutput=" + fileOutput + ", maxFileSize=" + maxFileSize + "]";
 	}
 
 	public static StackTraceElement getStackTraceElement() {
