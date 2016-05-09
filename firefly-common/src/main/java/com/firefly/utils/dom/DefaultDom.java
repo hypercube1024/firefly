@@ -18,6 +18,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.firefly.utils.StringUtils;
+
 public class DefaultDom implements Dom {
 
 	private DocumentBuilderFactory dbf;
@@ -44,7 +46,7 @@ public class DefaultDom implements Dom {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
-			if(is != null)
+			if (is != null)
 				try {
 					is.close();
 				} catch (IOException e) {
@@ -94,19 +96,39 @@ public class DefaultDom implements Dom {
 	}
 
 	@Override
-	public String getTextValue(Element valueEle) {
-		if (valueEle != null) {
+	public String getTextValue(Element valueElement) {
+		if (valueElement != null) {
 			StringBuilder sb = new StringBuilder();
-			NodeList nl = valueEle.getChildNodes();
+			NodeList nl = valueElement.getChildNodes();
 			for (int i = 0; i < nl.getLength(); i++) {
 				Node item = nl.item(i);
-				if ((item instanceof CharacterData && !(item instanceof Comment))
-						|| item instanceof EntityReference) {
+				if ((item instanceof CharacterData && !(item instanceof Comment)) || item instanceof EntityReference) {
 					sb.append(item.getNodeValue());
 				}
 			}
 			return sb.toString().trim();
 		}
 		return null;
+	}
+
+	@Override
+	public String getTextValueByTagName(Element e, String name) {
+		Element valueElement = element(e, name);
+		if (valueElement == null) {
+			return null;
+		} else {
+			String value = getTextValue(valueElement);
+			if (StringUtils.hasText(value)) {
+				return value;
+			} else {
+				return null;
+			}
+		}
+	}
+
+	@Override
+	public String getTextValueByTagName(Element e, String name, String defaultValue) {
+		String value = getTextValueByTagName(e, name);
+		return StringUtils.hasText(value) ? value : defaultValue;
 	}
 }

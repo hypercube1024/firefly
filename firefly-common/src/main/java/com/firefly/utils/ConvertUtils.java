@@ -41,7 +41,7 @@ abstract public class ConvertUtils {
 		map.put(Integer.class, p);
 		map2.put("byte", p);
 		map2.put("java.lang.Byte", p);
-		
+
 		p = new ParseValue() {
 			@Override
 			public Object parse(String value) {
@@ -52,7 +52,7 @@ abstract public class ConvertUtils {
 		map.put(Long.class, p);
 		map2.put("long", p);
 		map2.put("java.lang.Long", p);
-		
+
 		p = new ParseValue() {
 			@Override
 			public Object parse(String value) {
@@ -63,7 +63,7 @@ abstract public class ConvertUtils {
 		map.put(Double.class, p);
 		map2.put("double", p);
 		map2.put("java.lang.Double", p);
-		
+
 		p = new ParseValue() {
 			@Override
 			public Object parse(String value) {
@@ -74,7 +74,7 @@ abstract public class ConvertUtils {
 		map.put(Float.class, p);
 		map2.put("float", p);
 		map2.put("java.lang.Float", p);
-		
+
 		p = new ParseValue() {
 			@Override
 			public Object parse(String value) {
@@ -85,7 +85,7 @@ abstract public class ConvertUtils {
 		map.put(Boolean.class, p);
 		map2.put("boolean", p);
 		map2.put("java.lang.Boolean", p);
-		
+
 		p = new ParseValue() {
 			@Override
 			public Object parse(String value) {
@@ -96,7 +96,7 @@ abstract public class ConvertUtils {
 		map.put(Short.class, p);
 		map2.put("short", p);
 		map2.put("java.lang.Short", p);
-		
+
 		p = new ParseValue() {
 			@Override
 			public Object parse(String value) {
@@ -107,7 +107,7 @@ abstract public class ConvertUtils {
 		map.put(Byte.class, p);
 		map2.put("byte", p);
 		map2.put("java.lang.Byte", p);
-		
+
 		p = new ParseValue() {
 			@Override
 			public Object parse(String value) {
@@ -121,16 +121,22 @@ abstract public class ConvertUtils {
 	interface ParseValue {
 		Object parse(String value);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static <T> T convert(String value, T defaultValue) {
-		T ret = null;
+		return convert(value, (Class<T>) defaultValue.getClass(), defaultValue);
+	}
+
+	public static <T> T convert(String value, Class<T> c, T defaultValue) {
 		try {
-			ret = convert(value, (Class<T>)defaultValue.getClass());
-		} catch(Throwable t) {
-			ret = defaultValue;
+			if (!StringUtils.hasText(value)) {
+				return defaultValue;
+			}
+			T ret = convert(value, c);
+			return ret != null ? ret : defaultValue;
+		} catch (Throwable t) {
+			return defaultValue;
 		}
-		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -178,14 +184,14 @@ abstract public class ConvertUtils {
 	}
 
 	/**
-	 * Returns an array object, this method converts a collection object to an array object 
-	 * through the specified element type of the array. 
+	 * Returns an array object, this method converts a collection object to an
+	 * array object through the specified element type of the array.
 	 * 
 	 * @param collection
-	 * 			The collection that needs be converted
+	 *            The collection that needs be converted
 	 * @param arrayType
-     *          The element type of an array
-	 * @return a array object and the element is the parameter specified type.  
+	 *            The element type of an array
+	 * @return a array object and the element is the parameter specified type.
 	 */
 	public static Object convert(Collection<?> collection, Class<?> arrayType) {
 		int size = collection.size();
@@ -220,7 +226,7 @@ abstract public class ConvertUtils {
 	 * Returns a collection object instance by class
 	 * 
 	 * @param clazz
-	 * 			The class object of a collection
+	 *            The class object of a collection
 	 * @return A collection object instance
 	 */
 	@SuppressWarnings("unchecked")
@@ -293,5 +299,5 @@ abstract public class ConvertUtils {
 			}
 		};
 	}
-	
+
 }

@@ -50,7 +50,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
 		return fileLog;
 	}
 
-	protected boolean createLogDirectory(File file) {
+	private boolean createLogDirectory(File file) {
 		if (file.exists() && file.isDirectory()) {
 			return true;
 		} else {

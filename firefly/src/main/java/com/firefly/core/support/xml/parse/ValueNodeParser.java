@@ -13,7 +13,6 @@ public class ValueNodeParser extends AbstractXmlNodeParser implements XmlNodePar
 		String value = dom.getTextValue(ele);
 		String typeName = null;
 		if (ele.hasAttribute(TYPE_ATTRIBUTE)) {
-			// 如果有type属性
 			typeName = ele.getAttribute(TYPE_ATTRIBUTE);
 			if (typeName == null) {
 				error("<value> element contains empty target attribute");

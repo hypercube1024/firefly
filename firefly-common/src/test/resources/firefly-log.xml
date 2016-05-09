@@ -47,7 +47,7 @@
 	<logger>
 		<name>test-console</name>
 		<level>INFO</level>
-		<enable-console>false</enable-console>
+		<enable-console>true</enable-console>
 	</logger>
 	
 	<logger>

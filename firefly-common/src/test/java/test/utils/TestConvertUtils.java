@@ -63,7 +63,7 @@ public class TestConvertUtils {
 	}
 
 	public static void main(String[] args) throws URISyntaxException {
-		Boolean b = ConvertUtils.convert("xxxxx", true);
+		boolean b = ConvertUtils.convert("xxxx", true);
 		System.out.println(b);
 		
 //		Map<Object,Object> map = new HashMap<Object, Object>();

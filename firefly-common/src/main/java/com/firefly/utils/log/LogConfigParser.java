@@ -13,6 +13,7 @@ public interface LogConfigParser {
 	public static final String DEFAULT_LOG_LEVEL = "INFO";
 	public static final int DEFAULT_MAX_FILE_SIZE = 209715200;
 	public static final File DEFAULT_LOG_DIRECTORY = new File(System.getProperty("user.dir"), "logs");
+	public static final boolean DEFAULT_CONSOLE_ENABLED = false;
 
 	public boolean parse(Action1<FileLog> action);
 
