@@ -36,25 +36,18 @@ public class DefaultDom implements Dom {
 
 	@Override
 	public Document getDocument(String file) {
-		Document doc = null;
-		InputStream is = null;
-		try {
-			is = DefaultDom.class.getResourceAsStream("/" + file);
-			doc = db.parse(is);
+		try (InputStream is = DefaultDom.class.getResourceAsStream("/" + file)) {
+			if (is == null) {
+				return null;
+			}
+			Document doc = db.parse(is);
+			return doc;
 		} catch (SAXException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (is != null)
-				try {
-					is.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+			System.err.println("load xml file " + file + " exception");
 		}
-
-		return doc;
+		return null;
 	}
 
 	@Override

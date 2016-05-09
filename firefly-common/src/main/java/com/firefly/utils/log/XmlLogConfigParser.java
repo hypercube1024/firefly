@@ -17,6 +17,9 @@ public class XmlLogConfigParser extends AbstractLogConfigParser {
 	public boolean parse(Action1<FileLog> action) {
 		Dom dom = new DefaultDom();
 		Document doc = dom.getDocument(DEFAULT_XML_CONFIG_FILE_NAME);
+		if (doc == null) {
+			return false;
+		}
 		Element root = dom.getRoot(doc);
 		List<Element> loggerList = dom.elements(root, "logger");
 		if (loggerList == null || loggerList.isEmpty()) {
