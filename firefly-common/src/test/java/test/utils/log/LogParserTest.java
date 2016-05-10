@@ -30,11 +30,13 @@ public class LogParserTest {
 			propertiesLogTree.put(fileLog.getName(), fileLog);
 		});
 		Assert.assertThat(success, is(true));
-		
-		for(String name : xmlLogTree.keySet()) {
+
+		for (String name : xmlLogTree.keySet()) {
 			Log xml = xmlLogTree.get(name);
 			Log p = propertiesLogTree.get(name);
-			Assert.assertThat(xml, is(p));
+			if (p != null) {
+				Assert.assertThat(xml, is(p));
+			}
 		}
 	}
 }
