@@ -33,7 +33,7 @@ public class TestAnnotation {
 	@Before
 	public void before() {
 		jdbcHelper.update(
-				"CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255))");
+				"CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))");
 
 		for (int i = 1; i <= size; i++) {
 			Long id = jdbcHelper.insert("insert into user(pt_name, pt_password) values(?,?)", "test" + i,
@@ -72,29 +72,41 @@ public class TestAnnotation {
 		User user = new User();
 		user.setName("hello");
 		user.setPassword("world");
+		user.setOtherInfo("test Other");
 		Long id = jdbcHelper.insertObject(user);
-		System.out.println(user);
 		Assert.assertThat(user.getId(), notNullValue());
 		
 		User user1 = jdbcHelper.queryById(User.class, id);
 		Assert.assertThat(user1.getName(), is("hello"));
 		Assert.assertThat(user1.getPassword(), is("world"));
+		Assert.assertThat(user1.getOtherInfo(), nullValue());
 		
 		User user2 = new User();
 		user2.setId(id);
 		user2.setName("hello 2");
 		user2.setPassword("pwed");
+		user.setOtherInfo("test Other2");
 		int e = jdbcHelper.updateObject(user2);
 		Assert.assertThat(e, is(1));
 		
 		User user3 = jdbcHelper.queryById(User.class, id);
 		Assert.assertThat(user3.getName(), is("hello 2"));
 		Assert.assertThat(user3.getPassword(), is("pwed"));
+		Assert.assertThat(user3.getOtherInfo(), nullValue());
 		
 		int n = jdbcHelper.deleteById(User.class, id);
 		Assert.assertThat(n, is(1));
 		User user4 = jdbcHelper.queryById(User.class, id);
 		Assert.assertThat(user4, nullValue());
+		
+		Long id2 = jdbcHelper.insert("insert into user(pt_name, pt_password, other_info) values(?,?,?)", "ptTest", "ptTestPwd", "testOtherInfo");
+		User otherUser = jdbcHelper.queryForObject("select * from user where id = ?", User.class, id2);
+		System.out.println(otherUser);
+		Assert.assertThat(otherUser, notNullValue());
+		Assert.assertThat(otherUser.getId(), is(id2));
+		Assert.assertThat(otherUser.getName(), is("ptTest"));
+		Assert.assertThat(otherUser.getPassword(), is("ptTestPwd"));
+		Assert.assertThat(otherUser.getOtherInfo(), is("testOtherInfo"));
 	}
 
 	@Test

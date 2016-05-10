@@ -4,6 +4,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -112,7 +113,9 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		sql.append("select");
 		Map<String, Mapper> m = getMapper(t);
 		m.forEach((property, mapper) -> {
-			sql.append(" ").append(mapper.columnName).append(",");
+			if (mapper.annotated) {
+				sql.append(" ").append(mapper.columnName).append(",");
+			}
 		});
 		sql.deleteCharAt(sql.length() - 1);
 
@@ -130,7 +133,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		Map<String, Mapper> m = getMapper(t);
 		List<Mapper> mapperList = new ArrayList<>();
 		m.forEach((property, mapper) -> {
-			if (!mapper.autoIncrement) {
+			if (!mapper.autoIncrement && mapper.annotated) {
 				try {
 					Object value = ReflectUtils.get(object, mapper.propertyName);
 					if (value != null) {
@@ -177,7 +180,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		Map<String, Mapper> m = getMapper(t);
 		List<Mapper> mapperList = new ArrayList<>();
 		m.forEach((property, mapper) -> {
-			if (!mapper.autoIncrement) {
+			if (!mapper.autoIncrement && mapper.annotated) {
 				mapperList.add(mapper);
 			}
 		});
@@ -253,6 +256,34 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		});
 	}
 
+	private void idToMapper(Id id, Mapper mapper) {
+		if (id != null) {
+			if (StringUtils.hasText(id.value())) {
+				mapper.columnName = id.value();
+			}
+			mapper.idColumn = true;
+			mapper.autoIncrement = id.autoIncrement();
+		}
+	}
+
+	private void columnToMapper(Column column, Mapper mapper) {
+		if (column != null) {
+			if (StringUtils.hasText(column.value())) {
+				mapper.columnName = column.value();
+			}
+		}
+	}
+
+	private void annotationToMapper(AnnotatedElement e, Mapper mapper) {
+		if (e != null) {
+			idToMapper(e.getAnnotation(Id.class), mapper);
+
+			if (mapper.columnName == null) {
+				columnToMapper(e.getAnnotation(Column.class), mapper);
+			}
+		}
+	}
+
 	protected Map<String, Mapper> _getMapper(Class<?> t) {
 		Map<String, Mapper> ret = new HashMap<>();
 		Map<String, Method> getterMethodMap = ReflectUtils.getGetterMethods(t);
@@ -270,80 +301,20 @@ public class DefaultBeanProcessor extends BeanProcessor {
 			Mapper mapper = new Mapper();
 			mapper.propertyName = property;
 
-			Field field = null;
 			try {
-				field = t.getDeclaredField(property);
+				Field field = t.getDeclaredField(property);
+				annotationToMapper(field, mapper);
 			} catch (Exception e) {
-			}
-			if (field != null) {
-				field.setAccessible(true);
-				Id id = field.getAnnotation(Id.class);
-				if (id != null) {
-					if (StringUtils.hasText(id.value())) {
-						mapper.columnName = id.value();
-					}
-					mapper.idColumn = true;
-					mapper.autoIncrement = id.autoIncrement();
-				}
-
-				if (mapper.columnName == null) {
-					Column column = field.getAnnotation(Column.class);
-					if (column != null) {
-						if (StringUtils.hasText(column.value())) {
-							mapper.columnName = column.value();
-						}
-					}
-				}
 			}
 
 			if (mapper.columnName == null) {
 				Method getterMethod = getterMethodMap.get(property);
-				if (getterMethod != null) {
-					getterMethod.setAccessible(true);
-
-					Id id = getterMethod.getAnnotation(Id.class);
-					if (id != null) {
-						if (StringUtils.hasText(id.value())) {
-							mapper.columnName = id.value();
-						}
-						mapper.idColumn = true;
-						mapper.autoIncrement = id.autoIncrement();
-					}
-
-					if (mapper.columnName == null) {
-						Column column = getterMethod.getAnnotation(Column.class);
-						if (column != null) {
-							if (StringUtils.hasText(column.value())) {
-								mapper.columnName = column.value();
-							}
-						}
-					}
-				}
+				annotationToMapper(getterMethod, mapper);
 			}
 
 			if (mapper.columnName == null) {
 				Method setterMethod = setterMethodMap.get(property);
-				if (setterMethod != null) {
-					setterMethod.setAccessible(true);
-
-					Id id = setterMethod.getAnnotation(Id.class);
-					if (id != null) {
-						if (StringUtils.hasText(id.value())) {
-							mapper.columnName = id.value();
-						}
-						mapper.idColumn = true;
-						mapper.autoIncrement = id.autoIncrement();
-					}
-
-					if (mapper.columnName == null) {
-						Column column = setterMethod.getAnnotation(Column.class);
-						if (column != null) {
-							if (StringUtils.hasText(column.value())) {
-								mapper.columnName = column.value();
-							}
-						}
-					}
-				}
+				annotationToMapper(setterMethod, mapper);
 			}
 
 			if (mapper.columnName == null) {
