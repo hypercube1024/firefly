@@ -25,6 +25,7 @@ public class TestAnnotation {
 		HikariConfig config = new HikariConfig();
 		config.setJdbcUrl("jdbc:h2:mem:test");
 		config.setDriverClassName("org.h2.Driver");
+		config.setAutoCommit(false);
 		HikariDataSource ds = new HikariDataSource(config);
 		jdbcHelper = new JDBCHelper(ds);
 	}
