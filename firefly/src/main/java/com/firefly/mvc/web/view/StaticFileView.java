@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ public class StaticFileView implements View {
 			"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");
 	private static int MAX_RANGE_NUM;
 	private static String SERVER_HOME;
+	private static Path SERVER_HOME_PATH;
 	private static String CHARACTER_ENCODING = "UTF-8";
 	private static String TEMPLATE_PATH;
 	private static FileAccessFilter FILE_ACCESS_FILTER = new FileAccessFilter() {
@@ -69,51 +71,15 @@ public class StaticFileView implements View {
 			FILE_ACCESS_FILTER = fileAccessFilter;
 		}
 		SERVER_HOME = serverHome;
+		SERVER_HOME_PATH = Paths.get(serverHome).normalize();
 		MAX_RANGE_NUM = maxRangeNum;
 		if (TEMPLATE_PATH == null && tempPath != null)
 			TEMPLATE_PATH = tempPath;
 	}
 
-	/**
-	 * It checks input path, if this method returns true, the path is legal. The
-	 * client can only visit all the subdirectories of server root directory.
-	 * 
-	 * @param path
-	 *            The file path
-	 * @return Return true, if the path is legal, else return false.
-	 */
-	public static boolean checkPath(String path) {
-		if (path.length() < 3)
-			return true;
-
-		if (path.charAt(0) == '/') {
-			for (int i = 1; i < path.length(); i++) {
-				char ch = path.charAt(i);
-				if (ch == '/')
-					continue;
-
-				if (ch != '.')
-					continue;
-
-				if (i + 1 < path.length()) {
-					char next = path.charAt(i + 1);
-					if (ch == '.' && next == '/') {
-						return false;
-					}
-
-					if (i + 2 < path.length()) {
-						if (ch == '.' && next == '.' && path.charAt(i + 2) == '/')
-							return false;
-					}
-				}
-			}
-		}
-		return true;
-	}
-
 	@Override
 	public void render(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		if (!checkPath(inputPath) || inputPath.startsWith(TEMPLATE_PATH)) {
+		if (inputPath.startsWith(TEMPLATE_PATH)) {
 			SystemHtmlPage.responseSystemPage(request, response, CHARACTER_ENCODING, HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
 			return;
@@ -127,16 +93,28 @@ public class StaticFileView implements View {
 		}
 
 		String path = FILE_ACCESS_FILTER.doFilter(request, response, inputPath);
-		if (VerifyUtils.isEmpty(path))
+		if (VerifyUtils.isEmpty(path)) {
 			return;
-
-		File file = new File(SERVER_HOME, path);
+		}
+		
+		// check the current path starts with server home 
+		Path currentPath = Paths.get(SERVER_HOME, path).normalize();
+		if(!currentPath.startsWith(SERVER_HOME_PATH)) {
+			if(log.isDebugEnabled()) {
+				log.debug("the current path [{}] is not start with server home [{}]", currentPath, SERVER_HOME_PATH);
+			}
+			SystemHtmlPage.responseSystemPage(request, response, CHARACTER_ENCODING, HttpServletResponse.SC_NOT_FOUND,
+					request.getRequestURI() + " not found");
+			return;
+		}
+		File file = currentPath.toFile();
 		if (!file.exists() || file.isDirectory()) {
 			SystemHtmlPage.responseSystemPage(request, response, CHARACTER_ENCODING, HttpServletResponse.SC_NOT_FOUND,
 					request.getRequestURI() + " not found");
 			return;
 		}
 
+		// get content type of file
 		String fileSuffix = getFileSuffix(file.getName()).toLowerCase();
 		String contentType = Constants.MIME.get(fileSuffix);
 		if (contentType == null) {
@@ -152,6 +130,7 @@ public class StaticFileView implements View {
 			response.setContentType(contentType);
 		}
 
+		// output file
 		try (FileServletOutputStream out = new FileServletOutputStream(request, response, response.getOutputStream())) {
 			String range = request.getHeader("Range");
 			if (range == null) {
