@@ -95,7 +95,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		String tableName = getTableName(t);
 		String idColumnName = getIdColumnName(t);
 
-		sql.append("delete from ").append(tableName).append(" where ").append(idColumnName).append(" = ?");
+		sql.append("delete from ").append(tableName).append(" where `").append(idColumnName).append("` = ?");
 		sqlMapper.sql = sql.toString();
 		return sqlMapper;
 	}
@@ -114,14 +114,14 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		Map<String, Mapper> m = getMapper(t);
 		m.forEach((property, mapper) -> {
 			if (mapper.annotated) {
-				sql.append(" ").append(mapper.columnName).append(",");
+				sql.append(" `").append(mapper.columnName).append("`,");
 			}
 		});
 		sql.deleteCharAt(sql.length() - 1);
 
 		String tableName = getTableName(t);
 		String idColumnName = getIdColumnName(t);
-		sql.append(" from ").append(tableName).append(" where ").append(idColumnName).append(" = ?");
+		sql.append(" from ").append(tableName).append(" where `").append(idColumnName).append("` = ?");
 
 		sqlMapper.sql = sql.toString();
 		return sqlMapper;
@@ -154,13 +154,13 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		for (int i = 0; i < mapperList.size(); i++) {
 			Mapper mapper = mapperList.get(i);
 			if (i == 0) {
-				sql.append(mapper.columnName).append(" = ?");
+				sql.append('`').append(mapper.columnName).append("` = ?");
 			} else {
-				sql.append(", ").append(mapper.columnName).append(" = ?");
+				sql.append(", `").append(mapper.columnName).append("` = ?");
 			}
 			propertyMap.put(mapper.propertyName, i);
 		}
-		sql.append(" where ").append(idColumnName).append(" = ?");
+		sql.append(" where `").append(idColumnName).append("` = ?");
 		propertyMap.put(idMapper.propertyName, mapperList.size());
 
 		sqlMapper.sql = sql.toString();
@@ -191,9 +191,9 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		for (int i = 0; i < mapperList.size(); i++) {
 			Mapper mapper = mapperList.get(i);
 			if (i == 0) {
-				sql.append(mapper.columnName);
+				sql.append('`').append(mapper.columnName).append('`');
 			} else {
-				sql.append(", ").append(mapper.columnName);
+				sql.append(", `").append(mapper.columnName).append('`');
 			}
 			propertyMap.put(mapper.propertyName, i);
 		}
