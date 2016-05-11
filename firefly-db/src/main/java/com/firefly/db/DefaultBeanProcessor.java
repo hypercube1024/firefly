@@ -95,7 +95,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		String tableName = getTableName(t);
 		String idColumnName = getIdColumnName(t);
 
-		sql.append("delete from ").append(tableName).append(" where `").append(idColumnName).append("` = ?");
+		sql.append("delete from `").append(tableName).append("` where `").append(idColumnName).append("` = ?");
 		sqlMapper.sql = sql.toString();
 		return sqlMapper;
 	}
@@ -121,7 +121,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 
 		String tableName = getTableName(t);
 		String idColumnName = getIdColumnName(t);
-		sql.append(" from ").append(tableName).append(" where `").append(idColumnName).append("` = ?");
+		sql.append(" from `").append(tableName).append("` where `").append(idColumnName).append("` = ?");
 
 		sqlMapper.sql = sql.toString();
 		return sqlMapper;
@@ -150,7 +150,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		Assert.notNull(idMapper, "id column must not be null");
 		String idColumnName = idMapper.columnName;
 
-		sql.append("update ").append(tableName).append(" set ");
+		sql.append("update `").append(tableName).append("` set ");
 		for (int i = 0; i < mapperList.size(); i++) {
 			Mapper mapper = mapperList.get(i);
 			if (i == 0) {
@@ -187,7 +187,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 
 		Map<String, Integer> propertyMap = new HashMap<>();
 		String tableName = getTableName(t);
-		sql.append("insert into ").append(tableName).append(" (");
+		sql.append("insert into `").append(tableName).append("` (");
 		for (int i = 0; i < mapperList.size(); i++) {
 			Mapper mapper = mapperList.get(i);
 			if (i == 0) {
