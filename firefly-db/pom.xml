@@ -43,6 +43,7 @@
 		<dependency>
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-slf4j</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 		<!-- DB -->
