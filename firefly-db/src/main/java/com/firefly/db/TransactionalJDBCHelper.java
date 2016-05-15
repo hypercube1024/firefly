@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import org.apache.commons.dbutils.BeanProcessor;
 import org.apache.commons.dbutils.ResultSetHandler;
 
@@ -20,8 +22,17 @@ public class TransactionalJDBCHelper {
 	private static final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
 	private final JDBCHelper jdbcHelper;
 
+	public TransactionalJDBCHelper(DataSource dataSource) {
+		this(new JDBCHelper(dataSource,
+				JDBCHelper.getQueryRunner(dataSource, log.isDebugEnabled() || log.isTraceEnabled())));
+	}
+
 	public TransactionalJDBCHelper(JDBCHelper jdbcHelper) {
 		this.jdbcHelper = jdbcHelper;
+	}
+
+	public JDBCHelper getJdbcHelper() {
+		return jdbcHelper;
 	}
 
 	public <T> T queryForSingleColumn(String sql, Object... params) {

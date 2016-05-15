@@ -7,7 +7,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.firefly.db.JDBCHelper;
 import com.firefly.db.TransactionalJDBCHelper;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -23,7 +22,7 @@ public class TestTransactionalJdbcHelper {
 		config.setDriverClassName("org.h2.Driver");
 		config.setAutoCommit(false);
 		HikariDataSource ds = new HikariDataSource(config);
-		jdbcHelper = new TransactionalJDBCHelper(new JDBCHelper(ds));
+		jdbcHelper = new TransactionalJDBCHelper(ds);
 	}
 
 	@Before
@@ -68,6 +67,45 @@ public class TestTransactionalJdbcHelper {
 		Assert.assertThat(r, is(0));
 		User user2 = jdbcHelper.queryById(User.class, id);
 		Assert.assertThat(user2.getName(), is("test transaction 0"));
+	}
+
+	@Test
+	public void testRollback2() {
+		int ret = jdbcHelper.executeTransaction((helper0) -> {
+			User user0 = new User();
+			user0.setId(2L);
+			user0.setName("orange");
+			int row0 = helper0.updateObject(user0);
+			Assert.assertThat(row0, is(1));
+
+			user0 = helper0.queryById(User.class, 2L);
+			System.out.println(user0);
+			Assert.assertThat(user0.getName(), is("orange"));
+
+			int r = jdbcHelper.executeTransaction((helper) -> {
+				User user1 = new User();
+				user1.setId(1L);
+				user1.setName("apple");
+				int row = helper.updateObject(user1);
+				Assert.assertThat(row, is(1));
+
+				user1 = helper.queryById(User.class, 1L);
+				System.out.println(user1);
+				Assert.assertThat(user1.getName(), is("apple"));
+				helper.rollback();
+				return 0;
+			});
+			Assert.assertThat(r, is(0));
+			return 0;
+		});
+
+		Assert.assertThat(ret, is(0));
+		
+		User user1 = jdbcHelper.queryById(User.class, 1L);
+		Assert.assertThat(user1.getName(), is("test transaction 0"));
+
+		User user2 = jdbcHelper.queryById(User.class, 2L);
+		Assert.assertThat(user2.getName(), is("test transaction 1"));
 	}
 
 	@After

@@ -29,15 +29,29 @@ public class JDBCHelper {
 	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final DataSource dataSource;
-	private QueryRunner runner;
-	private DefaultBeanProcessor defaultBeanProcessor = new DefaultBeanProcessor();
+	private final QueryRunner runner;
+	private final DefaultBeanProcessor defaultBeanProcessor;
 
 	public JDBCHelper(DataSource dataSource) {
+		this(dataSource, getQueryRunner(dataSource, log.isDebugEnabled() || log.isTraceEnabled()),
+				new DefaultBeanProcessor());
+	}
+
+	public JDBCHelper(DataSource dataSource, QueryRunner runner) {
+		this(dataSource, runner, new DefaultBeanProcessor());
+	}
+
+	public JDBCHelper(DataSource dataSource, QueryRunner runner, DefaultBeanProcessor defaultBeanProcessor) {
 		this.dataSource = dataSource;
-		if (log.isDebugEnabled()) {
-			QueryRunner queryRunner = new QueryRunner(dataSource);
+		this.runner = runner;
+		this.defaultBeanProcessor = defaultBeanProcessor;
+	}
+
+	public static QueryRunner getQueryRunner(DataSource dataSource, boolean debugMode) {
+		if (debugMode) {
 			try {
-				this.runner = (QueryRunner) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(queryRunner,
+				QueryRunner queryRunner = new QueryRunner(dataSource);
+				return (QueryRunner) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(queryRunner,
 						(handler, originalInstance, args) -> {
 
 							if (args != null && args.length > 0) {
@@ -59,13 +73,13 @@ public class JDBCHelper {
 
 							Object ret = handler.invoke(originalInstance, args);
 							return ret;
-						} , null);
+						}, null);
 			} catch (Throwable t) {
-				this.runner = new QueryRunner(dataSource);
 				log.error("create QueryRunner proxy exception", t);
+				return new QueryRunner(dataSource);
 			}
 		} else {
-			this.runner = new QueryRunner(dataSource);
+			return new QueryRunner(dataSource);
 		}
 	}
 
@@ -79,10 +93,6 @@ public class JDBCHelper {
 
 	public DefaultBeanProcessor getDefaultBeanProcessor() {
 		return defaultBeanProcessor;
-	}
-
-	public void setDefaultBeanProcessor(DefaultBeanProcessor defaultBeanProcessor) {
-		this.defaultBeanProcessor = defaultBeanProcessor;
 	}
 
 	public <T> T queryForSingleColumn(String sql, Object... params) {
