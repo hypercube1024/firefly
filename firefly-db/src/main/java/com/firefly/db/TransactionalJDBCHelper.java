@@ -176,7 +176,7 @@ public class TransactionalJDBCHelper {
 		getTransaction().beginTransaction();
 	}
 
-	private Connection getConnection() {
+	public Connection getConnection() {
 		return getTransaction().getConnection();
 	}
 
