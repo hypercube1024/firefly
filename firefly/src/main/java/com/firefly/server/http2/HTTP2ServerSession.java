@@ -10,6 +10,7 @@ import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PushPromiseFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.FlowControlStrategy;
 import com.firefly.codec.http2.stream.HTTP2Session;
@@ -35,13 +36,22 @@ public class HTTP2ServerSession extends HTTP2Session implements ServerParser.Lis
 	@Override
 	public void onPreface() {
 		// SPEC: send a SETTINGS frame upon receiving the preface.
-		Map<Integer, Integer> settings = notifyPreface(this);
-		if (settings == null)
-			settings = Collections.emptyMap();
-		SettingsFrame frame = new SettingsFrame(settings, false);
-		// TODO: consider sending a WINDOW_UPDATE to enlarge the session send
-		// window of the client.
-		frames(null, Callback.NOOP, frame, Frame.EMPTY_ARRAY);
+        Map<Integer, Integer> settings = notifyPreface(this);
+        if (settings == null)
+            settings = Collections.emptyMap();
+        SettingsFrame settingsFrame = new SettingsFrame(settings, false);
+
+        WindowUpdateFrame windowFrame = null;
+        int sessionWindow = getInitialSessionRecvWindow() - FlowControlStrategy.DEFAULT_WINDOW_SIZE;
+        if (sessionWindow > 0) {
+            updateRecvWindow(sessionWindow);
+            windowFrame = new WindowUpdateFrame(0, sessionWindow);
+        }
+
+        if (windowFrame == null)
+            frames(null, Callback.NOOP, settingsFrame, Frame.EMPTY_ARRAY);
+        else
+            frames(null, Callback.NOOP, settingsFrame, windowFrame);
 	}
 
 	@Override

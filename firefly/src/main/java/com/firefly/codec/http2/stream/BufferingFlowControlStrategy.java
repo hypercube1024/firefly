@@ -119,7 +119,7 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 							windowFrames = new Frame[] { frame };
 					} else {
 						if (log.isDebugEnabled())
-							log.debug("Data consumed, stream recv window level {}/{} for {}", level, maxLevel, session);
+							log.debug("Data consumed, stream recv window level {}/{} for {}", level, maxLevel, stream);
 					}
 				}
 			}

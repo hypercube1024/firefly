@@ -29,6 +29,7 @@ public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HT
 				(ServerSessionListener) listener, flowControl, config.getStreamIdleTimeout());
 		http2ServerSession.setMaxLocalStreams(config.getMaxConcurrentStreams());
 		http2ServerSession.setMaxRemoteStreams(config.getMaxConcurrentStreams());
+		http2ServerSession.setInitialSessionRecvWindow(config.getInitialSessionRecvWindow());
 		return http2ServerSession;
 	}
 

@@ -17,6 +17,8 @@
 			</map>
 		</property>
 		<property name="tcpConfiguration" ref="tcpConfiguration"></property>
+		<property name="initialStreamSendWindow" value="131070"></property>
+		<property name="initialSessionRecvWindow" value="131070"></property>
 	</bean>
 	
 	<bean id="tcpConfiguration" class="com.firefly.net.Config">

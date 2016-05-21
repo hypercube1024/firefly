@@ -60,6 +60,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	private int maxLocalStreams;
 	private int maxRemoteStreams;
 	private long streamIdleTimeout;
+	private int initialSessionRecvWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
 	private boolean pushEnabled;
 
 	public HTTP2Session(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
@@ -106,6 +107,14 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	public void setStreamIdleTimeout(long streamIdleTimeout) {
 		this.streamIdleTimeout = streamIdleTimeout;
 	}
+	
+	public int getInitialSessionRecvWindow() {
+        return initialSessionRecvWindow;
+    }
+
+    public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
+        this.initialSessionRecvWindow = initialSessionRecvWindow;
+    }
 
 	public com.firefly.net.Session getEndPoint() {
 		return endPoint;
