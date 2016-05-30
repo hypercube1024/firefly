@@ -1,6 +1,7 @@
 package com.firefly.server.http2.servlet;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
 
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.core.AbstractLifeCycle;
@@ -68,6 +69,15 @@ public class ServerBootstrap extends AbstractLifeCycle {
 		}
 		
 		http2Server.start();
+		
+		String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+		log.info("the jvm name is {}", jvmName);
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			log.info("the server will be stopped");
+			this.stop();
+		}));
+		
 		log.info("the server start spends time in {} ms", System.currentTimeMillis() - createTime);
 	}
 
