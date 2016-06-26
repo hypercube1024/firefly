@@ -87,13 +87,13 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 	public void onDataReceived(SessionSPI session, StreamSPI stream, int length) {
 		int oldSize = session.updateRecvWindow(-length);
 		if (log.isDebugEnabled())
-			log.debug("Data received, updated session recv window {} -> {} for {}", oldSize, oldSize - length, session);
-
+			log.debug("Data received, {} bytes, updated session recv window {} -> {} for {}", length, oldSize, oldSize - length, session);
+		
 		if (stream != null) {
 			oldSize = stream.updateRecvWindow(-length);
 			if (log.isDebugEnabled())
-				log.debug("Data received, updated stream recv window {} -> {} for {}", oldSize, oldSize - length,
-						stream);
+				log.debug("Data received, {} bytes, updated stream recv window {} -> {} for {}", length, oldSize, oldSize - length, stream);
+	         
 		}
 	}
 

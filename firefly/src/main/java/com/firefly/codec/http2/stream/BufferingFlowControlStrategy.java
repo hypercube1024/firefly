@@ -89,18 +89,21 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 			level = sessionLevel.getAndSet(0);
 			session.updateRecvWindow(level);
 			if (log.isDebugEnabled())
-				log.debug("Data consumed, updated session recv window by {}/{} for {}", level, maxLevel, session);
+				log.debug("Data consumed, {} bytes, updated session recv window by {}/{} for {}", length, level,
+						maxLevel, session);
 			windowFrame = new WindowUpdateFrame(0, level);
 		} else {
 			if (log.isDebugEnabled())
-				log.debug("Data consumed, session recv window level {}/{} for {}", level, maxLevel, session);
+				log.debug("Data consumed, {} bytes, session recv window level {}/{} for {}", length, level, maxLevel,
+						session);
 		}
 
 		Frame[] windowFrames = Frame.EMPTY_ARRAY;
 		if (stream != null) {
 			if (stream.isClosed()) {
 				if (log.isDebugEnabled())
-					log.debug("Data consumed, ignoring update stream recv window by {} for closed {}", length, stream);
+					log.debug("Data consumed, {} bytes, ignoring update stream recv window for closed {}", length,
+							stream);
 			} else {
 				AtomicInteger streamLevel = streamLevels.get(stream);
 				if (streamLevel != null) {
@@ -110,8 +113,9 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 						level = streamLevel.getAndSet(0);
 						stream.updateRecvWindow(level);
 						if (log.isDebugEnabled())
-							log.debug("Data consumed, updated stream recv window by {}/{} for {}", level, maxLevel,
-									stream);
+							log.debug("Data consumed, {} bytes, updated stream recv window by {}/{} for {}", length,
+									level, maxLevel, stream);
+
 						WindowUpdateFrame frame = new WindowUpdateFrame(stream.getId(), level);
 						if (windowFrame == null)
 							windowFrame = frame;
@@ -119,7 +123,8 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 							windowFrames = new Frame[] { frame };
 					} else {
 						if (log.isDebugEnabled())
-							log.debug("Data consumed, stream recv window level {}/{} for {}", level, maxLevel, stream);
+							log.debug("Data consumed, {} bytes, stream recv window level {}/{} for {}", length, level,
+									maxLevel, stream);
 					}
 				}
 			}
