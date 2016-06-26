@@ -102,4 +102,11 @@ public interface StreamSPI extends Stream, Closeable {
 	 * @return the previous value of the stream receive window
 	 */
 	public int updateRecvWindow(int delta);
+
+	/**
+	 * <p>
+	 * Marks this stream as not idle
+	 * </p>
+	 */
+	public void notIdle();
 }

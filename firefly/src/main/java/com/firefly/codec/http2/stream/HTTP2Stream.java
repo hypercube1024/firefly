@@ -15,6 +15,7 @@ import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PushPromiseFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
+import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IdleTimeout;
 import com.firefly.utils.concurrent.Promise;
@@ -23,6 +24,7 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
+
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final AtomicReference<ConcurrentMap<String, Object>> attributes = new AtomicReference<>();
@@ -63,13 +65,11 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 	public void headers(HeadersFrame frame, Callback callback) {
 		if (!checkWrite(callback))
 			return;
-		notIdle();
 		session.frames(this, this, frame, Frame.EMPTY_ARRAY);
 	}
 
 	@Override
 	public void push(PushPromiseFrame frame, Promise<Stream> promise, Listener listener) {
-		notIdle();
 		session.push(this, promise, frame, listener);
 	}
 
@@ -77,7 +77,6 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 	public void data(DataFrame frame, Callback callback) {
 		if (!checkWrite(callback))
 			return;
-		notIdle();
 		session.data(this, this, frame);
 	}
 
@@ -85,7 +84,6 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 	public void reset(ResetFrame frame, Callback callback) {
 		if (isReset())
 			return;
-		notIdle();
 		localReset = true;
 		session.frames(this, callback, frame, Frame.EMPTY_ARRAY);
 	}
@@ -192,6 +190,10 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 			onPush((PushPromiseFrame) frame, callback);
 			break;
 		}
+		case WINDOW_UPDATE: {
+			onWindowUpdate((WindowUpdateFrame) frame, callback);
+			break;
+		}
 		default: {
 			throw new UnsupportedOperationException();
 		}
@@ -243,6 +245,10 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 		// Pushed streams are implicitly locally closed.
 		// They are closed when receiving an end-stream DATA frame.
 		updateClose(true, true);
+		callback.succeeded();
+	}
+
+	private void onWindowUpdate(WindowUpdateFrame frame, Callback callback) {
 		callback.succeeded();
 	}
 
@@ -325,7 +331,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 		try {
 			listener.onData(stream, frame, callback);
 		} catch (Throwable x) {
-			log.error("Failure while notifying listener {}", x, listener);
+			log.info("Failure while notifying listener " + listener, x);
 		}
 	}
 
@@ -336,7 +342,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 		try {
 			listener.onReset(stream, frame);
 		} catch (Throwable x) {
-			log.error("Failure while notifying listener {}", x, listener);
+			log.info("Failure while notifying listener " + listener, x);
 		}
 	}
 
@@ -347,7 +353,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 		try {
 			listener.onTimeout(stream, failure);
 		} catch (Throwable x) {
-			log.error("Failure while notifying listener {}", x, listener);
+			log.info("Failure while notifying listener " + listener, x);
 		}
 	}
 

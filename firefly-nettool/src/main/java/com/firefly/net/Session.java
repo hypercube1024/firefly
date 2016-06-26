@@ -65,4 +65,6 @@ public interface Session {
 	InetSocketAddress getLocalAddress();
 
 	InetSocketAddress getRemoteAddress();
+	
+	long getIdleTimeout();
 }

@@ -39,6 +39,7 @@ import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.lang.Pair;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
@@ -60,8 +61,9 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	private int maxLocalStreams;
 	private int maxRemoteStreams;
 	private long streamIdleTimeout;
-	private int initialSessionRecvWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
+	private int initialSessionRecvWindow;
 	private boolean pushEnabled;
+	private long idleTime;
 
 	public HTTP2Session(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
 			Session.Listener listener, FlowControlStrategy flowControl, int initialStreamId, int streamIdleTimeout) {
@@ -78,6 +80,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		this.sendWindow.set(FlowControlStrategy.DEFAULT_WINDOW_SIZE);
 		this.recvWindow.set(FlowControlStrategy.DEFAULT_WINDOW_SIZE);
 		this.pushEnabled = true; // SPEC: by default, push is enabled.
+		this.idleTime = Millisecond100Clock.currentTimeMillis();
 	}
 
 	public FlowControlStrategy getFlowControlStrategy() {
@@ -107,14 +110,14 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	public void setStreamIdleTimeout(long streamIdleTimeout) {
 		this.streamIdleTimeout = streamIdleTimeout;
 	}
-	
-	public int getInitialSessionRecvWindow() {
-        return initialSessionRecvWindow;
-    }
 
-    public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
-        this.initialSessionRecvWindow = initialSessionRecvWindow;
-    }
+	public int getInitialSessionRecvWindow() {
+		return initialSessionRecvWindow;
+	}
+
+	public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
+		this.initialSessionRecvWindow = initialSessionRecvWindow;
+	}
 
 	public com.firefly.net.Session getEndPoint() {
 		return endPoint;
@@ -144,13 +147,19 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				stream.process(frame, new Callback() {
 					@Override
 					public void succeeded() {
-						flowControl.onDataConsumed(HTTP2Session.this, stream, flowControlLength);
+						complete();
 					}
 
 					@Override
 					public void failed(Throwable x) {
 						// Consume also in case of failures, to free the
 						// session flow control window for other streams.
+						complete();
+					}
+
+					private void complete() {
+						notIdle();
+						stream.notIdle();
 						flowControl.onDataConsumed(HTTP2Session.this, stream, flowControlLength);
 					}
 				});
@@ -243,11 +252,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			}
 			case SettingsFrame.MAX_HEADER_LIST_SIZE: {
 				// TODO implement
-				log.warn("NOT IMPLEMENTED max header list size to {}", value);
+				if (log.isDebugEnabled())
+					log.debug("NOT IMPLEMENTED max header list size to {}", value);
 				break;
 			}
 			default: {
-				log.debug("Unknown setting {}:{}", key, value);
+				if (log.isDebugEnabled())
+					log.debug("Unknown setting {}:{}", key, value);
 				break;
 			}
 			}
@@ -335,8 +346,10 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		int streamId = frame.getStreamId();
 		if (streamId > 0) {
 			StreamSPI stream = getStream(streamId);
-			if (stream != null)
+			if (stream != null) {
+				stream.process(frame, Callback.NOOP);
 				onWindowUpdate(stream, frame);
+			}
 		} else {
 			onWindowUpdate(null, frame);
 		}
@@ -519,8 +532,11 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			log.debug("{} {}", flush ? "Sending" : "Queueing", entry.frame);
 		// Ping frames are prepended to process them as soon as possible.
 		boolean queued = entry.frame.getType() == FrameType.PING ? flusher.prepend(entry) : flusher.append(entry);
-		if (queued && flush)
+		if (queued && flush) {
+			if (entry.stream != null)
+				entry.stream.notIdle();
 			flusher.iterate();
+		}
 	}
 
 	protected StreamSPI createLocalStream(int streamId, Promise<Stream> promise) {
@@ -732,17 +748,24 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	public boolean onIdleTimeout() {
 		switch (closed.get()) {
 		case NOT_CLOSED: {
+			long elapsed = Millisecond100Clock.currentTimeMillis() - idleTime;
+			if (elapsed < endPoint.getIdleTimeout())
+				return false;
 			return notifyIdleTimeout(this);
 		}
 		case LOCALLY_CLOSED:
 		case REMOTELY_CLOSED: {
-			abort(new TimeoutException());
+			abort(new TimeoutException("Idle timeout " + endPoint.getIdleTimeout() + " ms"));
 			return false;
 		}
 		default: {
 			return false;
 		}
 		}
+	}
+
+	private void notIdle() {
+		idleTime = Millisecond100Clock.currentTimeMillis();
 	}
 
 	@Override
