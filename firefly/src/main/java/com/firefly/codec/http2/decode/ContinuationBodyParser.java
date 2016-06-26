@@ -47,6 +47,7 @@ public class ContinuationBodyParser extends BodyParser {
 				if (remaining < length) {
 					headerBlockFragments.storeFragment(buffer, remaining, false);
 					length -= remaining;
+					break;
 				} else {
 					boolean last = hasFlag(Flags.END_HEADERS);
 					headerBlockFragments.storeFragment(buffer, length, last);
