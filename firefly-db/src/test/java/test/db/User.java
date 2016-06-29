@@ -4,7 +4,7 @@ import com.firefly.db.annotation.Column;
 import com.firefly.db.annotation.Id;
 import com.firefly.db.annotation.Table;
 
-@Table("user")
+@Table(value = "user", catalog = "test")
 public class User {
 	@Id("id")
 	private Long id;

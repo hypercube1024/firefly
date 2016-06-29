@@ -27,15 +27,18 @@ public class TestTransactionalJdbcHelper {
 
 	@Before
 	public void before() {
+		jdbcHelper.update("drop schema if exists test");
+		jdbcHelper.update("create schema test");
+		jdbcHelper.update("set mode MySQL");
 		jdbcHelper.update(
-				"CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))");
+				"CREATE TABLE `test`.`user`(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))");
 
 		Object[][] params = new Object[10][2];
 		for (int i = 0; i < size; i++) {
 			params[i][0] = "test transaction " + i;
 			params[i][1] = "pwd transaction " + i;
 		}
-		jdbcHelper.batch("insert into user(pt_name, pt_password) values(?,?)", params);
+		jdbcHelper.batch("insert into `test`.`user`(pt_name, pt_password) values(?,?)", params);
 	}
 
 	@Test
@@ -110,6 +113,6 @@ public class TestTransactionalJdbcHelper {
 
 	@After
 	public void after() {
-		jdbcHelper.update("DROP TABLE IF EXISTS user");
+		jdbcHelper.update("DROP TABLE IF EXISTS `test`.`user`");
 	}
 }

@@ -93,9 +93,16 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		SQLMapper sqlMapper = new SQLMapper();
 		StringBuilder sql = new StringBuilder();
 		String tableName = getTableName(t);
+		String catalog = getCatalog(t);
 		String idColumnName = getIdColumnName(t);
 
-		sql.append("delete from `").append(tableName).append("` where `").append(idColumnName).append("` = ?");
+		sql.append("delete from ");
+		if (StringUtils.hasText(catalog)) {
+			sql.append(" `").append(catalog).append("`.").append("`").append(tableName).append("` ");
+		} else {
+			sql.append(" `").append(tableName).append("` ");
+		}
+		sql.append(" where `").append(idColumnName).append("` = ?");
 		sqlMapper.sql = sql.toString();
 		return sqlMapper;
 	}
@@ -120,8 +127,15 @@ public class DefaultBeanProcessor extends BeanProcessor {
 		sql.deleteCharAt(sql.length() - 1);
 
 		String tableName = getTableName(t);
+		String catalog = getCatalog(t);
 		String idColumnName = getIdColumnName(t);
-		sql.append(" from `").append(tableName).append("` where `").append(idColumnName).append("` = ?");
+		sql.append(" from ");
+		if (StringUtils.hasText(catalog)) {
+			sql.append(" `").append(catalog).append("`.").append("`").append(tableName).append("` ");
+		} else {
+			sql.append(" `").append(tableName).append("` ");
+		}
+		sql.append(" where `").append(idColumnName).append("` = ?");
 
 		sqlMapper.sql = sql.toString();
 		return sqlMapper;
@@ -146,11 +160,18 @@ public class DefaultBeanProcessor extends BeanProcessor {
 
 		Map<String, Integer> propertyMap = new HashMap<>();
 		String tableName = getTableName(t);
+		String catalog = getCatalog(t);
 		Mapper idMapper = getIdMapper(t);
 		Assert.notNull(idMapper, "id column must not be null");
 		String idColumnName = idMapper.columnName;
 
-		sql.append("update `").append(tableName).append("` set ");
+		sql.append("update ");
+		if (StringUtils.hasText(catalog)) {
+			sql.append(" `").append(catalog).append("`.").append("`").append(tableName).append("` ");
+		} else {
+			sql.append(" `").append(tableName).append("` ");
+		}
+		sql.append(" set ");
 		for (int i = 0; i < mapperList.size(); i++) {
 			Mapper mapper = mapperList.get(i);
 			if (i == 0) {
@@ -187,7 +208,15 @@ public class DefaultBeanProcessor extends BeanProcessor {
 
 		Map<String, Integer> propertyMap = new HashMap<>();
 		String tableName = getTableName(t);
-		sql.append("insert into `").append(tableName).append("` (");
+		String catalog = getCatalog(t);
+
+		sql.append("insert into ");
+		if (StringUtils.hasText(catalog)) {
+			sql.append(" `").append(catalog).append("`.").append("`").append(tableName).append("` ");
+		} else {
+			sql.append(" `").append(tableName).append("` ");
+		}
+		sql.append(" (");
 		for (int i = 0; i < mapperList.size(); i++) {
 			Mapper mapper = mapperList.get(i);
 			if (i == 0) {
@@ -228,6 +257,15 @@ public class DefaultBeanProcessor extends BeanProcessor {
 			return table.value();
 		} else {
 			return t.getSimpleName();
+		}
+	}
+
+	public String getCatalog(Class<?> t) {
+		Table table = t.getAnnotation(Table.class);
+		if (table != null) {
+			return table.catalog();
+		} else {
+			return null;
 		}
 	}
 

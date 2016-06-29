@@ -32,11 +32,14 @@ public class TestAnnotation {
 
 	@Before
 	public void before() {
+		jdbcHelper.update("drop schema if exists test");
+		jdbcHelper.update("create schema test");
+		jdbcHelper.update("set mode MySQL");
 		jdbcHelper.update(
-				"CREATE TABLE user(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))");
+				"CREATE TABLE `test`.`user`(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))");
 
 		for (int i = 1; i <= size; i++) {
-			Long id = jdbcHelper.insert("insert into user(pt_name, pt_password) values(?,?)", "test" + i,
+			Long id = jdbcHelper.insert("insert into `test`.`user`(pt_name, pt_password) values(?,?)", "test" + i,
 					"test_pwd" + i);
 			System.out.println("id:" + id);
 		}
@@ -44,19 +47,19 @@ public class TestAnnotation {
 
 	@After
 	public void after() {
-		jdbcHelper.update("DROP TABLE IF EXISTS user");
+		jdbcHelper.update("DROP TABLE IF EXISTS `test`.`user`");
 	}
 
 	@Test
 	public void test() {
 		for (long i = 1; i <= size; i++) {
-			User user = jdbcHelper.queryForObject("select * from user where id = ?", User.class, i);
+			User user = jdbcHelper.queryForObject("select * from `test`.`user` where id = ?", User.class, i);
 			Assert.assertThat(user.getId(), is(i));
 			Assert.assertThat(user.getName(), is("test" + i));
 			Assert.assertThat(user.getPassword(), is("test_pwd" + i));
 		}
 
-		Map<Long, User> map = jdbcHelper.queryForBeanMap("select * from user", User.class);
+		Map<Long, User> map = jdbcHelper.queryForBeanMap("select * from `test`.`user`", User.class);
 		Assert.assertThat(map.size(), is(size));
 
 		for (long i = 1; i <= size; i++) {
@@ -99,8 +102,8 @@ public class TestAnnotation {
 		User user4 = jdbcHelper.queryById(User.class, id);
 		Assert.assertThat(user4, nullValue());
 		
-		Long id2 = jdbcHelper.insert("insert into user(pt_name, pt_password, other_info) values(?,?,?)", "ptTest", "ptTestPwd", "testOtherInfo");
-		User otherUser = jdbcHelper.queryForObject("select * from user where id = ?", User.class, id2);
+		Long id2 = jdbcHelper.insert("insert into `test`.`user`(pt_name, pt_password, other_info) values(?,?,?)", "ptTest", "ptTestPwd", "testOtherInfo");
+		User otherUser = jdbcHelper.queryForObject("select * from `test`.`user` where id = ?", User.class, id2);
 		System.out.println(otherUser);
 		Assert.assertThat(otherUser, notNullValue());
 		Assert.assertThat(otherUser.getId(), is(id2));
