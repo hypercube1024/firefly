@@ -390,7 +390,7 @@ public class HttpURI {
 			}
 
 			case ASTERISK: {
-				throw new IllegalArgumentException("only '*'");
+				throw new IllegalArgumentException("Bad character '*'");
 			}
 
 			case FRAGMENT: {
