@@ -4,6 +4,7 @@ import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HostPortHttpField;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpFields;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.HttpVersion;
@@ -11,16 +12,15 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.StaticTableHttpField;
 
 public class MetaDataBuilder {
-	private final int maxSize;
-	private int size;
-	private int status;
-	private String method;
-	private HttpScheme scheme;
-	private HostPortHttpField authority;
-	private String path;
-	private long contentLength = Long.MIN_VALUE;
-
-	private HttpFields fields = new HttpFields(10);
+	private final int _maxSize;
+	private int _size;
+	private int _status;
+	private String _method;
+	private HttpScheme _scheme;
+	private HostPortHttpField _authority;
+	private String _path;
+	private long _contentLength = Long.MIN_VALUE;
+	private HttpFields _fields = new HttpFields(10);
 
 	/**
 	 * @param maxHeadersSize
@@ -28,7 +28,7 @@ public class MetaDataBuilder {
 	 *            value characters.
 	 */
 	MetaDataBuilder(int maxHeadersSize) {
-		maxSize = maxHeadersSize;
+		_maxSize = maxHeadersSize;
 	}
 
 	/**
@@ -37,7 +37,7 @@ public class MetaDataBuilder {
 	 * @return the maxSize
 	 */
 	public int getMaxSize() {
-		return maxSize;
+		return _maxSize;
 	}
 
 	/**
@@ -46,99 +46,110 @@ public class MetaDataBuilder {
 	 * @return the current size in bytes
 	 */
 	public int getSize() {
-		return size;
+		return _size;
 	}
 
 	public void emit(HttpField field) {
-		int field_size = field.getName().length() + field.getValue().length();
-		size += field_size;
-		if (size > maxSize)
+		HttpHeader header = field.getHeader();
+		String name = field.getName();
+		String value = field.getValue();
+		int field_size = name.length() + (value == null ? 0 : value.length());
+		_size += field_size;
+		if (_size > _maxSize)
 			throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413,
-					"Header size " + size + ">" + maxSize);
+					"Header size " + _size + ">" + _maxSize);
 
 		if (field instanceof StaticTableHttpField) {
-			StaticTableHttpField value = (StaticTableHttpField) field;
-			switch (field.getHeader()) {
+			StaticTableHttpField staticField = (StaticTableHttpField) field;
+			switch (header) {
 			case C_STATUS:
-				status = (Integer) value.getStaticValue();
+				_status = (Integer) staticField.getStaticValue();
 				break;
 
 			case C_METHOD:
-				method = field.getValue();
+				_method = value;
 				break;
 
 			case C_SCHEME:
-				scheme = (HttpScheme) value.getStaticValue();
+				_scheme = (HttpScheme) staticField.getStaticValue();
 				break;
 
 			default:
-				throw new IllegalArgumentException(field.getName());
+				throw new IllegalArgumentException(name);
 			}
-		} else if (field.getHeader() != null) {
-			switch (field.getHeader()) {
+		} else if (header != null) {
+			switch (header) {
 			case C_STATUS:
-				status = field.getIntValue();
+				_status = field.getIntValue();
 				break;
 
 			case C_METHOD:
-				method = field.getValue();
+				_method = value;
 				break;
 
 			case C_SCHEME:
-				scheme = HttpScheme.CACHE.get(field.getValue());
+				if (value != null)
+					_scheme = HttpScheme.CACHE.get(value);
 				break;
 
 			case C_AUTHORITY:
-				authority = (field instanceof HostPortHttpField) ? ((HostPortHttpField) field)
-						: new AuthorityHttpField(field.getValue());
+				if (field instanceof HostPortHttpField)
+					_authority = (HostPortHttpField) field;
+				else if (value != null)
+					_authority = new AuthorityHttpField(value);
 				break;
 
 			case HOST:
 				// :authority fields must come first. If we have one, ignore the
 				// host header as far as authority goes.
-				if (authority == null)
-					authority = (field instanceof HostPortHttpField) ? ((HostPortHttpField) field)
-							: new AuthorityHttpField(field.getValue());
-				fields.add(field);
+				if (_authority == null) {
+					if (field instanceof HostPortHttpField)
+						_authority = (HostPortHttpField) field;
+					else if (value != null)
+						_authority = new AuthorityHttpField(value);
+				}
+				_fields.add(field);
 				break;
 
 			case C_PATH:
-				path = field.getValue();
+				_path = value;
 				break;
 
 			case CONTENT_LENGTH:
-				contentLength = field.getLongValue();
-				fields.add(field);
+				_contentLength = field.getLongValue();
+				_fields.add(field);
 				break;
 
 			default:
-				if (field.getName().charAt(0) != ':')
-					fields.add(field);
+				if (name.charAt(0) != ':')
+					_fields.add(field);
+				break;
 			}
 		} else {
-			if (field.getName().charAt(0) != ':')
-				fields.add(field);
+			if (name.charAt(0) != ':')
+				_fields.add(field);
 		}
 	}
 
 	public MetaData build() {
 		try {
-			HttpFields fields = this.fields;
-			this.fields = new HttpFields(Math.max(10, fields.size() + 5));
+			HttpFields fields = _fields;
+			_fields = new HttpFields(Math.max(10, fields.size() + 5));
 
-			if (method != null)
-				return new MetaData.Request(method, scheme, authority, path, HttpVersion.HTTP_2, fields, contentLength);
-			if (status != 0)
-				return new MetaData.Response(HttpVersion.HTTP_2, status, fields, contentLength);
-			return new MetaData(HttpVersion.HTTP_2, fields, contentLength);
+			if (_method != null)
+				return new MetaData.Request(_method, _scheme, _authority, _path, HttpVersion.HTTP_2, fields,
+						_contentLength);
+			if (_status != 0)
+				return new MetaData.Response(HttpVersion.HTTP_2, _status, fields, _contentLength);
+			return new MetaData(HttpVersion.HTTP_2, fields, _contentLength);
 		} finally {
-			status = 0;
-			method = null;
-			scheme = null;
-			authority = null;
-			path = null;
-			size = 0;
-			contentLength = Long.MIN_VALUE;
+			_status = 0;
+			_method = null;
+			_scheme = null;
+			_authority = null;
+			_path = null;
+			_size = 0;
+			_contentLength = Long.MIN_VALUE;
 		}
 	}
 
@@ -154,8 +165,8 @@ public class MetaDataBuilder {
 		// Apply a huffman fudge factor
 		if (huffman)
 			length = (length * 4) / 3;
-		if ((size + length) > maxSize)
+		if ((_size + length) > _maxSize)
 			throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413,
-					"Header size " + (size + length) + ">" + maxSize);
+					"Header size " + (_size + length) + ">" + _maxSize);
 	}
 }
