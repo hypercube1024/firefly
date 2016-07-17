@@ -64,8 +64,6 @@ public class ServerDemo1 {
 		  99%      0
 		 100%      5 (longest request)
 	 * 
-	 * @param args
-	 * @throws Throwable
 	 */
 	public static void main(String[] args) throws Throwable {
 		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server1.xml", "localhost", 6656);
