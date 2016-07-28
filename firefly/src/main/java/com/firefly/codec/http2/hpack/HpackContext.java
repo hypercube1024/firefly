@@ -12,7 +12,6 @@ import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.codec.http2.model.HttpScheme;
 import com.firefly.codec.http2.model.StaticTableHttpField;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.collection.ArrayQueue;
 import com.firefly.utils.collection.ArrayTernaryTrie;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.log.Log;
@@ -32,7 +31,6 @@ import com.firefly.utils.log.LogFactory;
 public class HpackContext {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private static final String EMPTY = "";
-	
 	public static final String[][] STATIC_TABLE =
 	    {
 	        {null,null},
@@ -103,6 +101,7 @@ public class HpackContext {
 	private static final Trie<StaticEntry> __staticNameMap = new ArrayTernaryTrie<>(true, 512);
 	private static final StaticEntry[] __staticTableByHeader = new StaticEntry[HttpHeader.UNKNOWN.ordinal()];
 	private static final StaticEntry[] __staticTable = new StaticEntry[STATIC_TABLE.length];
+	private static final int STATIC_SIZE = STATIC_TABLE.length - 1;
 	static {
 		Set<String> added = new HashSet<>();
 		for (int i = 1; i < STATIC_TABLE.length; i++) {
@@ -172,7 +171,7 @@ public class HpackContext {
 	public HpackContext(int maxDynamicTableSize) {
 		_maxDynamicTableSizeInBytes = maxDynamicTableSize;
 		int guesstimateEntries = 10 + maxDynamicTableSize / (32 + 10 + 10);
-		_dynamicTable = new DynamicTable(guesstimateEntries, guesstimateEntries + 10);
+		_dynamicTable = new DynamicTable(guesstimateEntries);
 		if (log.isDebugEnabled())
 			log.debug(String.format("HdrTbl[%x] created max=%d", hashCode(), maxDynamicTableSize));
 	}
@@ -182,9 +181,7 @@ public class HpackContext {
 			log.debug(String.format("HdrTbl[%x] resized max=%d->%d", hashCode(), _maxDynamicTableSizeInBytes,
 					newMaxDynamicTableSize));
 		_maxDynamicTableSizeInBytes = newMaxDynamicTableSize;
-		int guesstimateEntries = 10 + newMaxDynamicTableSize / (32 + 10 + 10);
-		evict();
-		_dynamicTable.resizeUnsafe(guesstimateEntries);
+		_dynamicTable.evict();
 	}
 
 	public Entry get(HttpField field) {
@@ -202,14 +199,10 @@ public class HpackContext {
 	}
 
 	public Entry get(int index) {
-		if (index < __staticTable.length)
+		if (index <= STATIC_SIZE)
 			return __staticTable[index];
 
-		int d = _dynamicTable.size() - index + __staticTable.length - 1;
-
-		if (d >= 0)
-			return _dynamicTable.getUnsafe(d);
-		return null;
+		return _dynamicTable.get(index);
 	}
 
 	public Entry get(HttpHeader header) {
@@ -224,8 +217,7 @@ public class HpackContext {
 	}
 
 	public Entry add(HttpField field) {
-		int slot = _dynamicTable.getNextSlotUnsafe();
-		Entry entry = new Entry(slot, field);
+		Entry entry = new Entry(field);
 		int size = entry.getSize();
 		if (size > _maxDynamicTableSizeInBytes) {
 			if (log.isDebugEnabled())
@@ -233,13 +225,13 @@ public class HpackContext {
 			return null;
 		}
 		_dynamicTableSizeInBytes += size;
-		_dynamicTable.addUnsafe(entry);
+		_dynamicTable.add(entry);
 		_fieldMap.put(field, entry);
 		_nameMap.put(StringUtils.asciiToLowerCase(field.getName()), entry);
 
 		if (log.isDebugEnabled())
 			log.debug(String.format("HdrTbl[%x] added %s", hashCode(), entry));
-		evict();
+		_dynamicTable.evict();
 		return entry;
 	}
 
@@ -270,7 +262,7 @@ public class HpackContext {
 		if (entry.isStatic())
 			return entry._slot;
 
-		return _dynamicTable.index(entry) + __staticTable.length - 1;
+		return _dynamicTable.index(entry);
 	}
 
 	public static int staticIndex(HttpHeader header) {
@@ -279,24 +271,7 @@ public class HpackContext {
 		Entry entry = __staticNameMap.get(header.asString());
 		if (entry == null)
 			return 0;
-		return entry.getSlot();
-	}
-
-	private void evict() {
-		while (_dynamicTableSizeInBytes > _maxDynamicTableSizeInBytes) {
-			Entry entry = _dynamicTable.pollUnsafe();
-			if (log.isDebugEnabled())
-				log.debug(String.format("HdrTbl[%x] evict %s", hashCode(), entry));
-			_dynamicTableSizeInBytes -= entry.getSize();
-			entry._slot = -1;
-			_fieldMap.remove(entry.getHttpField());
-			String lc = StringUtils.asciiToLowerCase(entry.getHttpField().getName());
-			if (entry == _nameMap.get(lc))
-				_nameMap.remove(lc);
-		}
-		if (log.isDebugEnabled())
-			log.debug(String.format("HdrTbl[%x] entries=%d, size=%d, max=%d", hashCode(), _dynamicTable.size(),
-					_dynamicTableSizeInBytes, _maxDynamicTableSizeInBytes));
+		return entry._slot;
 	}
 
 	@Override
@@ -305,50 +280,82 @@ public class HpackContext {
 				_dynamicTableSizeInBytes, _maxDynamicTableSizeInBytes);
 	}
 
-	private class DynamicTable extends ArrayQueue<HpackContext.Entry> {
-		private DynamicTable(int initCapacity, int growBy) {
-			super(initCapacity, growBy);
+	private class DynamicTable {
+		Entry[] _entries;
+		int _size;
+		int _offset;
+		int _growby;
+
+		private DynamicTable(int initCapacity) {
+			_entries = new Entry[initCapacity];
+			_growby = initCapacity;
 		}
 
-		@Override
-		protected void resizeUnsafe(int newCapacity) {
-			// Relay on super.growUnsafe to pack all entries 0 to _nextSlot
-			super.resizeUnsafe(newCapacity);
-			for (int s = 0; s < _nextSlot; s++)
-				((Entry) _elements[s])._slot = s;
+		public void add(Entry entry) {
+			if (_size == _entries.length) {
+				Entry[] entries = new Entry[_entries.length + _growby];
+				for (int i = 0; i < _size; i++) {
+					int slot = (_offset + i) % _entries.length;
+					entries[i] = _entries[slot];
+					entries[i]._slot = i;
+				}
+				_entries = entries;
+				_offset = 0;
+			}
+			int slot = (_size++ + _offset) % _entries.length;
+			_entries[slot] = entry;
+			entry._slot = slot;
 		}
 
-		@Override
-		public boolean enqueue(Entry e) {
-			return super.enqueue(e);
+		public int index(Entry entry) {
+			return STATIC_SIZE + _size - (entry._slot - _offset + _entries.length) % _entries.length;
 		}
 
-		@Override
-		public Entry dequeue() {
-			return super.dequeue();
+		public Entry get(int index) {
+			int d = index - STATIC_SIZE - 1;
+			if (d < 0 || d >= _size)
+				return null;
+			int slot = (_offset + _size - d - 1) % _entries.length;
+			return _entries[slot];
 		}
 
-		private int index(Entry entry) {
-			return entry._slot >= _nextE ? _size - entry._slot + _nextE : _nextSlot - entry._slot;
+		public int size() {
+			return _size;
 		}
+
+		private void evict() {
+			while (_dynamicTableSizeInBytes > _maxDynamicTableSizeInBytes) {
+				Entry entry = _entries[_offset];
+				_entries[_offset] = null;
+				_offset = (_offset + 1) % _entries.length;
+				_size--;
+				if (log.isDebugEnabled())
+					log.debug(String.format("HdrTbl[%x] evict %s", hashCode(), entry));
+				_dynamicTableSizeInBytes -= entry.getSize();
+				entry._slot = -1;
+				_fieldMap.remove(entry.getHttpField());
+				String lc = StringUtils.asciiToLowerCase(entry.getHttpField().getName());
+				if (entry == _nameMap.get(lc))
+					_nameMap.remove(lc);
+
+			}
+			if (log.isDebugEnabled())
+				log.debug(String.format("HdrTbl[%x] entries=%d, size=%d, max=%d", hashCode(), _dynamicTable.size(),
+						_dynamicTableSizeInBytes, _maxDynamicTableSizeInBytes));
+		}
+
 	}
 
 	public static class Entry {
 		final HttpField _field;
-		int _slot;
+		int _slot; // The index within it's array
 
 		Entry() {
-			_slot = 0;
+			_slot = -1;
 			_field = null;
 		}
 
-		Entry(int index, String name, String value) {
-			_slot = index;
-			_field = new HttpField(name, value);
-		}
-
-		Entry(int slot, HttpField field) {
-			_slot = slot;
+		Entry(HttpField field) {
 			_field = field;
 		}
 
@@ -369,10 +376,6 @@ public class HpackContext {
 			return null;
 		}
 
-		public int getSlot() {
-			return _slot;
-		}
-
 		public String toString() {
 			return String.format("{%s,%d,%s,%x}", isStatic() ? "S" : "D", _slot, _field, hashCode());
 		}
@@ -383,7 +386,8 @@ public class HpackContext {
 		private final byte _encodedField;
 
 		StaticEntry(int index, HttpField field) {
-			super(index, field);
+			super(field);
+			_slot = index;
 			String value = field.getValue();
 			if (value != null && value.length() > 0) {
 				int huffmanLen = Huffman.octetsNeeded(value);

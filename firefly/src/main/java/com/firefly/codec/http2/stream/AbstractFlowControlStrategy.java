@@ -1,5 +1,8 @@
 package com.firefly.codec.http2.stream;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
@@ -9,7 +12,10 @@ import com.firefly.utils.log.LogFactory;
 public abstract class AbstractFlowControlStrategy implements FlowControlStrategy {
 	protected static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private final AtomicLong sessionStalls = new AtomicLong();
+	private final AtomicLong sessionStall = new AtomicLong();
+	private final AtomicLong sessionStallTime = new AtomicLong();
+	private final Map<StreamSPI, Long> streamsStalls = new ConcurrentHashMap<>();
+	private final AtomicLong streamsStallTime = new AtomicLong();
 	private int initialStreamSendWindow;
 	private int initialStreamRecvWindow;
 
@@ -18,11 +24,11 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 		this.initialStreamRecvWindow = DEFAULT_WINDOW_SIZE;
 	}
 
-	protected int getInitialStreamSendWindow() {
+	public int getInitialStreamSendWindow() {
 		return initialStreamSendWindow;
 	}
 
-	protected int getInitialStreamRecvWindow() {
+	public int getInitialStreamRecvWindow() {
 		return initialStreamRecvWindow;
 	}
 
@@ -87,13 +93,14 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 	public void onDataReceived(SessionSPI session, StreamSPI stream, int length) {
 		int oldSize = session.updateRecvWindow(-length);
 		if (log.isDebugEnabled())
-			log.debug("Data received, {} bytes, updated session recv window {} -> {} for {}", length, oldSize, oldSize - length, session);
-		
+			log.debug("Data received, {} bytes, updated session recv window {} -> {} for {}", length, oldSize,
+					oldSize - length, session);
+
 		if (stream != null) {
 			oldSize = stream.updateRecvWindow(-length);
 			if (log.isDebugEnabled())
-				log.debug("Data received, {} bytes, updated stream recv window {} -> {} for {}", length, oldSize, oldSize - length, stream);
-	         
+				log.debug("Data received, {} bytes, updated stream recv window {} -> {} for {}", length, oldSize,
+						oldSize - length, stream);
 		}
 	}
 
@@ -127,32 +134,41 @@ public abstract class AbstractFlowControlStrategy implements FlowControlStrategy
 	}
 
 	protected void onSessionStalled(SessionSPI session) {
+		sessionStall.set(System.nanoTime());
 		if (log.isDebugEnabled())
 			log.debug("Session stalled {}", session);
-
-		sessionStalls.incrementAndGet();
 	}
 
 	protected void onStreamStalled(StreamSPI stream) {
+		streamsStalls.put(stream, System.nanoTime());
 		if (log.isDebugEnabled())
 			log.debug("Stream stalled {}", stream);
 	}
 
 	protected void onSessionUnstalled(SessionSPI session) {
+		sessionStallTime.addAndGet(System.nanoTime() - sessionStall.getAndSet(0));
 		if (log.isDebugEnabled())
 			log.debug("Session unstalled {}", session);
 	}
 
 	protected void onStreamUnstalled(StreamSPI stream) {
+		Long time = streamsStalls.remove(stream);
+		if (time != null)
+			streamsStallTime.addAndGet(System.nanoTime() - time);
 		if (log.isDebugEnabled())
 			log.debug("Stream unstalled {}", stream);
 	}
 
-	public long getSessionStallCount() {
-		return sessionStalls.get();
+	public long getSessionStallTime() {
+		return TimeUnit.NANOSECONDS.toMillis(sessionStallTime.get());
+	}
+
+	public long getStreamsStallTime() {
+		return TimeUnit.NANOSECONDS.toMillis(streamsStallTime.get());
 	}
 
 	public void reset() {
-		sessionStalls.set(0);
+		sessionStallTime.set(0);
+		streamsStallTime.set(0);
 	}
 }

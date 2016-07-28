@@ -65,20 +65,35 @@ public class HpackEncoder {
 	private final boolean _debug;
 	private int _remoteMaxDynamicTableSize;
 	private int _localMaxDynamicTableSize;
+	private int _maxHeaderListSize;
+	private int _size;
 
 	public HpackEncoder() {
-		this(4096, 4096);
+		this(4096, 4096, -1);
 	}
 
 	public HpackEncoder(int localMaxDynamicTableSize) {
-		this(localMaxDynamicTableSize, 4096);
+		this(localMaxDynamicTableSize, 4096, -1);
 	}
 
 	public HpackEncoder(int localMaxDynamicTableSize, int remoteMaxDynamicTableSize) {
+		this(localMaxDynamicTableSize, remoteMaxDynamicTableSize, -1);
+	}
+
+	public HpackEncoder(int localMaxDynamicTableSize, int remoteMaxDynamicTableSize, int maxHeaderListSize) {
 		_context = new HpackContext(remoteMaxDynamicTableSize);
 		_remoteMaxDynamicTableSize = remoteMaxDynamicTableSize;
 		_localMaxDynamicTableSize = localMaxDynamicTableSize;
+		_maxHeaderListSize = maxHeaderListSize;
 		_debug = log.isDebugEnabled();
+	}
+
+	public int getMaxHeaderListSize() {
+		return _maxHeaderListSize;
+	}
+
+	public void setMaxHeaderListSize(int maxHeaderListSize) {
+		_maxHeaderListSize = maxHeaderListSize;
 	}
 
 	public HpackContext getHpackContext() {
@@ -97,6 +112,7 @@ public class HpackEncoder {
 		if (log.isDebugEnabled())
 			log.debug(String.format("CtxTbl[%x] encoding", _context.hashCode()));
 
+		_size = 0;
 		int pos = buffer.position();
 
 		// Check the dynamic table sizes!
@@ -114,7 +130,6 @@ public class HpackEncoder {
 			encode(buffer, new HttpField(HttpHeader.C_METHOD, request.getMethod()));
 			encode(buffer, new HttpField(HttpHeader.C_AUTHORITY, request.getURI().getAuthority()));
 			encode(buffer, new HttpField(HttpHeader.C_PATH, request.getURI().getPathQuery()));
-
 		} else if (metadata.isResponse()) {
 			MetaData.Response response = (MetaData.Response) metadata;
 			int code = response.getStatus();
@@ -127,6 +142,13 @@ public class HpackEncoder {
 		// Add all the other fields
 		for (HttpField field : metadata)
 			encode(buffer, field);
+
+		// Check size
+		if (_maxHeaderListSize > 0 && _size > _maxHeaderListSize) {
+			log.warn("Header list size too large {} > {} for {}", _size, _maxHeaderListSize);
+			if (log.isDebugEnabled())
+				log.debug("metadata={}", metadata);
+		}
 
 		if (log.isDebugEnabled())
 			log.debug(String.format("CtxTbl[%x] encoded %d octets", _context.hashCode(), buffer.position() - pos));
@@ -143,6 +165,9 @@ public class HpackEncoder {
 	public void encode(ByteBuffer buffer, HttpField field) {
 		if (field.getValue() == null)
 			field = new HttpField(field.getHeader(), field.getName(), "");
+
+		int field_size = field.getName().length() + field.getValue().length();
+		_size += field_size + 32;
 
 		final int p = _debug ? buffer.position() : -1;
 

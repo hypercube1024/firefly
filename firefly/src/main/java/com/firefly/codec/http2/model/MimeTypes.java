@@ -1,21 +1,26 @@
 package com.firefly.codec.http2.model;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+
+import java.util.Properties;
 import java.util.Set;
 
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.lang.Loader;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
@@ -24,30 +29,30 @@ import com.firefly.utils.log.LogFactory;
  */
 public class MimeTypes {
 	public enum Type {
-		FORM_ENCODED("application/x-www-form-urlencoded"), 
-		MESSAGE_HTTP("message/http"), 
-		MULTIPART_BYTERANGES("multipart/byteranges"),
+		FORM_ENCODED("application/x-www-form-urlencoded"),
+        MESSAGE_HTTP("message/http"),
+        MULTIPART_BYTERANGES("multipart/byteranges"),
 
-		TEXT_HTML("text/html"), 
-		TEXT_PLAIN("text/plain"), 
-		TEXT_XML("text/xml"), 
-		TEXT_JSON("text/json", StandardCharsets.UTF_8), 
-		APPLICATION_JSON("application/json", StandardCharsets.UTF_8),
+        TEXT_HTML("text/html"),
+        TEXT_PLAIN("text/plain"),
+        TEXT_XML("text/xml"),
+        TEXT_JSON("text/json",StandardCharsets.UTF_8),
+        APPLICATION_JSON("application/json",StandardCharsets.UTF_8),
 
-		TEXT_HTML_8859_1("text/html;charset=iso-8859-1", TEXT_HTML), 
-		TEXT_HTML_UTF_8("text/html;charset=utf-8",TEXT_HTML),
+        TEXT_HTML_8859_1("text/html;charset=iso-8859-1",TEXT_HTML),
+        TEXT_HTML_UTF_8("text/html;charset=utf-8",TEXT_HTML),
 
-		TEXT_PLAIN_8859_1("text/plain;charset=iso-8859-1", TEXT_PLAIN), 
-		TEXT_PLAIN_UTF_8("text/plain;charset=utf-8", TEXT_PLAIN),
+        TEXT_PLAIN_8859_1("text/plain;charset=iso-8859-1",TEXT_PLAIN),
+        TEXT_PLAIN_UTF_8("text/plain;charset=utf-8",TEXT_PLAIN),
 
-		TEXT_XML_8859_1("text/xml;charset=iso-8859-1", TEXT_XML), 
-		TEXT_XML_UTF_8("text/xml;charset=utf-8", TEXT_XML),
+        TEXT_XML_8859_1("text/xml;charset=iso-8859-1",TEXT_XML),
+        TEXT_XML_UTF_8("text/xml;charset=utf-8",TEXT_XML),
 
-		TEXT_JSON_8859_1("text/json;charset=iso-8859-1", TEXT_JSON), 
-		TEXT_JSON_UTF_8("text/json;charset=utf-8", TEXT_JSON),
+        TEXT_JSON_8859_1("text/json;charset=iso-8859-1",TEXT_JSON),
+        TEXT_JSON_UTF_8("text/json;charset=utf-8",TEXT_JSON),
 
-		APPLICATION_JSON_8859_1("text/json;charset=iso-8859-1", APPLICATION_JSON), 
-		APPLICATION_JSON_UTF_8("text/json;charset=utf-8", APPLICATION_JSON);
+        APPLICATION_JSON_8859_1("text/json;charset=iso-8859-1",APPLICATION_JSON),
+        APPLICATION_JSON_UTF_8("text/json;charset=utf-8",APPLICATION_JSON);
 
 		private final String _string;
 		private final Type _base;
@@ -73,7 +78,7 @@ public class MimeTypes {
 			_base = base;
 			int i = s.indexOf(";charset=");
 			_charset = Charset.forName(s.substring(i + 9));
-			_charsetString = _charset == null ? null : _charset.toString().toLowerCase();
+			_charsetString = _charset.toString().toLowerCase(Locale.ENGLISH);
 			_assumedCharset = false;
 			_field = new PreEncodedHttpField(HttpHeader.CONTENT_TYPE, _string);
 		}
@@ -83,7 +88,7 @@ public class MimeTypes {
 			_base = this;
 			_buffer = BufferUtils.toBuffer(s);
 			_charset = cs;
-			_charsetString = _charset == null ? null : _charset.toString().toLowerCase();
+			_charsetString = _charset == null ? null : _charset.toString().toLowerCase(Locale.ENGLISH);
 			_assumedCharset = true;
 			_field = new PreEncodedHttpField(HttpHeader.CONTENT_TYPE, _string);
 		}
@@ -146,28 +151,57 @@ public class MimeTypes {
 		}
 
 		try {
-			ResourceBundle mime = ResourceBundle.getBundle("com/firefly/http/mime");
-			Enumeration<String> i = mime.getKeys();
-			while (i.hasMoreElements()) {
-				String ext = i.nextElement();
-				String m = mime.getString(ext);
-				__dftMimeMap.put(StringUtils.asciiToLowerCase(ext), normalizeMimeType(m));
+			String resourceName = "com/firefly/codec/http2/model/mime.properties";
+			URL mimeTypesUrl = Loader.getResource(resourceName);
+			if (mimeTypesUrl == null) {
+				log.warn("Missing mime-type resource: {}", resourceName);
+			} else {
+				try (InputStream in = mimeTypesUrl.openStream();
+						InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+					Properties mime = new Properties();
+					mime.load(reader);
+					mime.stringPropertyNames().stream().filter(x -> x != null).forEach(x -> __dftMimeMap
+							.put(StringUtils.asciiToLowerCase(x), normalizeMimeType(mime.getProperty(x))));
+
+					if (__dftMimeMap.size() < mime.size()) {
+						log.warn("Encountered duplicate or null mime-type extension in resource: {}", mimeTypesUrl);
+					}
+				}
+				if (__dftMimeMap.size() == 0) {
+					log.warn("Empty mime types declaration at {}", mimeTypesUrl);
+				}
 			}
-		} catch (MissingResourceException e) {
+		} catch (IOException e) {
 			log.warn(e.toString());
-			log.debug("missing resource error", e);
+			log.debug("load mime exception", e);
 		}
 
 		try {
-			ResourceBundle encoding = ResourceBundle.getBundle("com/firefly/http/encoding");
-			Enumeration<String> i = encoding.getKeys();
-			while (i.hasMoreElements()) {
-				String type = i.nextElement();
-				__encodings.put(type, encoding.getString(type));
+			String resourceName = "com/firefly/codec/http2/model/encoding.properties";
+			URL mimeTypesUrl = Loader.getResource(resourceName);
+			if (mimeTypesUrl == null) {
+				log.warn("Missing mime-type resource: {}", resourceName);
+			} else {
+				try (InputStream in = mimeTypesUrl.openStream();
+						InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+					Properties encoding = new Properties();
+					encoding.load(reader);
+
+					encoding.stringPropertyNames().stream().filter(t -> t != null)
+							.forEach(t -> __encodings.put(t, encoding.getProperty(t)));
+
+					if (__encodings.size() < encoding.size()) {
+						log.warn("Encountered null or duplicate encoding type in resource: {}", mimeTypesUrl);
+					}
+				}
+
+				if (__encodings.size() == 0) {
+					log.warn("Empty mime types declaration at {}", mimeTypesUrl);
+				}
 			}
-		} catch (MissingResourceException e) {
+		} catch (IOException e) {
 			log.warn(e.toString());
-			log.debug("missing resource error", e);
+			log.debug("load mime exception", e);
 		}
 	}
 

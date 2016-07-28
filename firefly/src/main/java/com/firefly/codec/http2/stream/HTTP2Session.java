@@ -251,10 +251,10 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				break;
 			}
 			case SettingsFrame.MAX_HEADER_LIST_SIZE: {
-				// TODO implement
 				if (log.isDebugEnabled())
-					log.debug("NOT IMPLEMENTED max header list size to {}", value);
-				break;
+                    log.debug("Update max header list size to {}", value);
+                generator.setMaxHeaderListSize(value);
+                break;
 			}
 			default: {
 				if (log.isDebugEnabled())

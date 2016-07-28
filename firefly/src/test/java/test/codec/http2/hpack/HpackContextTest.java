@@ -1,6 +1,5 @@
 package test.codec.http2.hpack;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -18,13 +17,13 @@ import com.firefly.codec.http2.hpack.Huffman;
 import com.firefly.codec.http2.hpack.NBitInteger;
 import com.firefly.codec.http2.model.HttpField;
 
-public class TestHpackContext {
+public class HpackContextTest {
 
 	@Test
 	public void testStaticName() {
 		HpackContext ctx = new HpackContext(4096);
 		Entry entry = ctx.get(":method");
-		Assert.assertThat(entry.getHttpField().getName(), is(":method"));
+		assertEquals(":method", entry.getHttpField().getName());
 		Assert.assertTrue(entry.isStatic());
 		Assert.assertThat(entry.toString(), Matchers.startsWith("{S,2,:method: "));
 	}
@@ -33,14 +32,14 @@ public class TestHpackContext {
 	public void testEmptyAdd() {
 		HpackContext ctx = new HpackContext(0);
 		HttpField field = new HttpField("foo", "bar");
-		assertNull(ctx.add(field));
+		Assert.assertNull(ctx.add(field));
 	}
 
 	@Test
 	public void testTooBigAdd() {
 		HpackContext ctx = new HpackContext(37);
 		HttpField field = new HttpField("foo", "bar");
-		assertNull(ctx.add(field));
+		Assert.assertNull(ctx.add(field));
 	}
 
 	@Test
@@ -67,13 +66,13 @@ public class TestHpackContext {
 		assertNull(ctx.get("foo"));
 		assertEquals(field1, ctx.get(field1).getHttpField());
 		assertEquals(field1, ctx.get("xxx").getHttpField());
+
 	}
 
 	@Test
 	public void testEvictNames() {
 		HpackContext ctx = new HpackContext(38 * 2);
-		HttpField[] field = { 
-				new HttpField("name", "v0"), new HttpField("name", "v1"), new HttpField("name", "v2"),
+		HttpField[] field = { new HttpField("name", "v0"), new HttpField("name", "v1"), new HttpField("name", "v2"),
 				new HttpField("name", "v3"), new HttpField("name", "v4"), new HttpField("name", "v5"), };
 
 		Entry[] entry = new Entry[field.length];
@@ -148,19 +147,10 @@ public class TestHpackContext {
 		HpackContext ctx = new HpackContext(38 * 5);
 
 		HttpField methodPost = new HttpField(":method", "POST");
-		HttpField[] field = { 
-			new HttpField("fo0", "b0r"),
-			new HttpField("fo1", "b1r"), 
-			new HttpField("fo2", "b2r"),
-			new HttpField("fo3", "b3r"), 
-			new HttpField("fo4", "b4r"), 
-			new HttpField("fo5", "b5r"),
-			new HttpField("fo6", "b6r"), 
-			new HttpField("fo7", "b7r"), 
-			new HttpField("fo8", "b8r"),
-			new HttpField("fo9", "b9r"), 
-			new HttpField("foA", "bAr")
-		};
+		HttpField[] field = { new HttpField("fo0", "b0r"), new HttpField("fo1", "b1r"), new HttpField("fo2", "b2r"),
+				new HttpField("fo3", "b3r"), new HttpField("fo4", "b4r"), new HttpField("fo5", "b5r"),
+				new HttpField("fo6", "b6r"), new HttpField("fo7", "b7r"), new HttpField("fo8", "b8r"),
+				new HttpField("fo9", "b9r"), new HttpField("foA", "bAr"), };
 
 		Entry[] entry = new Entry[100];
 
@@ -180,7 +170,7 @@ public class TestHpackContext {
 		assertEquals(62, ctx.index(entry[0]));
 		assertEquals(entry[0], ctx.get(62));
 
-		// and statics have moved up 0
+		// and statics still OK
 		assertEquals(":authority", ctx.get(1).getHttpField().getName());
 		assertEquals(3, ctx.index(ctx.get(methodPost)));
 		assertEquals(methodPost, ctx.get(3).getHttpField());
@@ -200,7 +190,7 @@ public class TestHpackContext {
 			index--;
 		}
 
-		// and statics have moved up 0
+		// and statics still OK
 		assertEquals(":authority", ctx.get(1).getHttpField().getName());
 		assertEquals(3, ctx.index(ctx.get(methodPost)));
 		assertEquals(methodPost, ctx.get(3).getHttpField());
@@ -221,7 +211,7 @@ public class TestHpackContext {
 		assertNull(ctx.get(field[0]));
 		assertEquals(0, ctx.index(entry[0]));
 
-		// and statics have moved up 0
+		// and statics still OK
 		assertEquals(":authority", ctx.get(1).getHttpField().getName());
 		assertEquals(3, ctx.index(ctx.get(methodPost)));
 		assertEquals(methodPost, ctx.get(3).getHttpField());
@@ -261,21 +251,11 @@ public class TestHpackContext {
 	public void testResize() {
 		// Only enough space for 5 entries
 		HpackContext ctx = new HpackContext(38 * 5);
-		HttpField methodPost = new HttpField(":method", "POST");
 
-		HttpField[] field = { 
-			new HttpField("fo0", "b0r"), 
-			new HttpField("fo1", "b1r"),
-			new HttpField("fo2", "b2r"),
-			new HttpField("fo3", "b3r"), 
-			new HttpField("fo4", "b4r"), 
-			new HttpField("fo5", "b5r"),
-			new HttpField("fo6", "b6r"),
-			new HttpField("fo7", "b7r"), 
-			new HttpField("fo8", "b8r"),
-			new HttpField("fo9", "b9r"), 
-			new HttpField("foA", "bAr")
-		};
+		HttpField[] field = { new HttpField("fo0", "b0r"), new HttpField("fo1", "b1r"), new HttpField("fo2", "b2r"),
+				new HttpField("fo3", "b3r"), new HttpField("fo4", "b4r"), new HttpField("fo5", "b5r"),
+				new HttpField("fo6", "b6r"), new HttpField("fo7", "b7r"), new HttpField("fo8", "b8r"),
+				new HttpField("fo9", "b9r"), new HttpField("foA", "bAr"), };
 		Entry[] entry = new Entry[field.length];
 
 		// Add 5 entries
@@ -292,13 +272,6 @@ public class TestHpackContext {
 			index--;
 		}
 
-		// and statics have moved up 0
-		assertEquals(":authority", ctx.get(1 + 0).getHttpField().getName());
-		assertEquals(3 + 0, ctx.index(ctx.get(methodPost)));
-		assertEquals(methodPost, ctx.get(3 + 0).getHttpField());
-		assertEquals("www-authenticate", ctx.get(61 + 0).getHttpField().getName());
-		assertEquals(null, ctx.get(62 + ctx.size()));
-
 		// resize so that only 2 entries may be held
 		ctx.resize(38 * 2);
 		assertEquals(2, ctx.size());
@@ -311,13 +284,6 @@ public class TestHpackContext {
 			index--;
 		}
 
-		// and statics have moved up 0
-		assertEquals(":authority", ctx.get(1).getHttpField().getName());
-		assertEquals(3, ctx.index(ctx.get(methodPost)));
-		assertEquals(methodPost, ctx.get(3).getHttpField());
-		assertEquals("www-authenticate", ctx.get(61).getHttpField().getName());
-		assertEquals(null, ctx.get(62 + ctx.size()));
-
 		// resize so that 6.5 entries may be held
 		ctx.resize(38 * 6 + 19);
 		assertEquals(2, ctx.size());
@@ -329,13 +295,6 @@ public class TestHpackContext {
 			assertEquals(entry[i], ctx.get(index));
 			index--;
 		}
-
-		// and statics have moved up 0
-		assertEquals(":authority", ctx.get(1).getHttpField().getName());
-		assertEquals(3, ctx.index(ctx.get(methodPost)));
-		assertEquals(methodPost, ctx.get(3).getHttpField());
-		assertEquals("www-authenticate", ctx.get(61).getHttpField().getName());
-		assertEquals(null, ctx.get(62 + ctx.size()));
 
 		// Add 5 entries
 		for (int i = 5; i <= 9; i++)
@@ -351,12 +310,29 @@ public class TestHpackContext {
 			index--;
 		}
 
-		// and statics have moved up 0
-		assertEquals(":authority", ctx.get(1).getHttpField().getName());
-		assertEquals(3, ctx.index(ctx.get(methodPost)));
-		assertEquals(methodPost, ctx.get(3).getHttpField());
-		assertEquals("www-authenticate", ctx.get(61).getHttpField().getName());
-		assertEquals(null, ctx.get(62 + ctx.size()));
+		// resize so that only 100 entries may be held
+		ctx.resize(38 * 100);
+		assertEquals(6, ctx.size());
+		// check indexes
+		index = 67;
+		for (int i = 4; i <= 9; i++) {
+			assertEquals(index, ctx.index(entry[i]));
+			assertEquals(entry[i], ctx.get(index));
+			index--;
+		}
+
+		// add 50 fields
+		for (int i = 0; i < 50; i++)
+			ctx.add(new HttpField("n" + i, "v" + i));
+
+		// check indexes
+		index = 67 + 50;
+		for (int i = 4; i <= 9; i++) {
+			assertEquals(index, ctx.index(entry[i]));
+			assertEquals(entry[i], ctx.get(index));
+			index--;
+		}
+
 	}
 
 	@Test
@@ -376,6 +352,7 @@ public class TestHpackContext {
 			String value = Huffman.decode(buffer);
 
 			assertEquals(entry.getHttpField().getValue(), value);
+
 		}
 	}
 
@@ -390,5 +367,6 @@ public class TestHpackContext {
 		ctx.add(new HttpField("Wibble", "Wobble"));
 		assertEquals("Wibble", ctx.get("wibble").getHttpField().getName());
 		assertEquals("Wibble", ctx.get("Wibble").getHttpField().getName());
+
 	}
 }

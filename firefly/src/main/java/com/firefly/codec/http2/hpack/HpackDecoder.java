@@ -33,7 +33,7 @@ public class HpackDecoder {
 	 *            table.
 	 * @param maxHeaderSize
 	 *            The maximum allowed size of a headers block, expressed as
-	 *            total of all name and value characters.
+	 *            total of all name and value characters, plus 32 per field
 	 */
 	public HpackDecoder(int localMaxDynamicTableSize, int maxHeaderSize) {
 		_context = new HpackContext(localMaxDynamicTableSize);
@@ -55,7 +55,7 @@ public class HpackDecoder {
 
 		// If the buffer is big, don't even think about decoding it
 		if (buffer.remaining() > _builder.getMaxSize())
-			throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413,
+			throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431,
 					"Header frame size " + buffer.remaining() + ">" + _builder.getMaxSize());
 
 		while (buffer.hasRemaining()) {
