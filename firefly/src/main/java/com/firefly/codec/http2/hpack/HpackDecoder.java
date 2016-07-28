@@ -15,16 +15,17 @@ import com.firefly.utils.log.LogFactory;
 /**
  * Hpack Decoder
  * <p>
- * This is not thread safe and may only be called by 1 thread at a time
+ * This is not thread safe and may only be called by 1 thread at a time.
+ * </p>
  */
 public class HpackDecoder {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 = new HttpField.LongValueHttpField(
 			HttpHeader.CONTENT_LENGTH, 0L);
 
-	private final HpackContext context;
-	private final MetaDataBuilder builder;
-	private int localMaxDynamicTableSize;
+	private final HpackContext _context;
+	private final MetaDataBuilder _builder;
+	private int _localMaxDynamicTableSize;
 
 	/**
 	 * @param localMaxDynamicTableSize
@@ -32,52 +33,51 @@ public class HpackDecoder {
 	 *            table.
 	 * @param maxHeaderSize
 	 *            The maximum allowed size of a headers block, expressed as
-	 *            total of all name and value characters.
+	 *            total of all name and value characters, plus 32 per field
 	 */
 	public HpackDecoder(int localMaxDynamicTableSize, int maxHeaderSize) {
-		context = new HpackContext(localMaxDynamicTableSize);
-		this.localMaxDynamicTableSize = localMaxDynamicTableSize;
-		builder = new MetaDataBuilder(maxHeaderSize);
+		_context = new HpackContext(localMaxDynamicTableSize);
+		_localMaxDynamicTableSize = localMaxDynamicTableSize;
+		_builder = new MetaDataBuilder(maxHeaderSize);
 	}
 
 	public HpackContext getHpackContext() {
-		return context;
+		return _context;
 	}
 
 	public void setLocalMaxDynamicTableSize(int localMaxdynamciTableSize) {
-		this.localMaxDynamicTableSize = localMaxdynamciTableSize;
+		_localMaxDynamicTableSize = localMaxdynamciTableSize;
 	}
 
 	public MetaData decode(ByteBuffer buffer) {
 		if (log.isDebugEnabled())
-			log.debug(String.format("CtxTbl[%x] decoding %d octets", context.hashCode(), buffer.remaining()));
+			log.debug(String.format("CtxTbl[%x] decoding %d octets", _context.hashCode(), buffer.remaining()));
 
 		// If the buffer is big, don't even think about decoding it
-		if (buffer.remaining() > builder.getMaxSize())
-			throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413,
-					"Header frame size " + buffer.remaining() + ">" + builder.getMaxSize());
+		if (buffer.remaining() > _builder.getMaxSize())
+			throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431,
+					"Header frame size " + buffer.remaining() + ">" + _builder.getMaxSize());
 
 		while (buffer.hasRemaining()) {
-			if (log.isDebugEnabled()) {
-				int l = Math.min(buffer.remaining(), 16);
-				// TODO: not guaranteed the buffer has a backing array !
-				log.debug(
-						"decode  " + TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + buffer.position(), l)
-								+ (l < buffer.remaining() ? "..." : ""));
+			if (log.isDebugEnabled() && buffer.hasArray()) {
+				int l = Math.min(buffer.remaining(), 32);
+				log.debug("decode {}{}",
+						TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + buffer.position(), l),
+						l < buffer.remaining() ? "..." : "");
 			}
 
 			byte b = buffer.get();
 			if (b < 0) {
 				// 7.1 indexed if the high bit is set
 				int index = NBitInteger.decode(buffer, 7);
-				Entry entry = context.get(index);
+				Entry entry = _context.get(index);
 				if (entry == null) {
 					throw new BadMessageException("Unknown index " + index);
 				} else if (entry.isStatic()) {
 					if (log.isDebugEnabled())
 						log.debug("decode IdxStatic {}", entry);
 					// emit field
-					builder.emit(entry.getHttpField());
+					_builder.emit(entry.getHttpField());
 
 					// TODO copy and add to reference set if there is room
 					// _context.add(entry.getHttpField());
@@ -85,7 +85,7 @@ public class HpackDecoder {
 					if (log.isDebugEnabled())
 						log.debug("decode Idx {}", entry);
 					// emit
-					builder.emit(entry.getHttpField());
+					_builder.emit(entry.getHttpField());
 				}
 			} else {
 				// look at the first nibble in detail
@@ -104,9 +104,9 @@ public class HpackDecoder {
 					int size = NBitInteger.decode(buffer, 5);
 					if (log.isDebugEnabled())
 						log.debug("decode resize=" + size);
-					if (size > localMaxDynamicTableSize)
+					if (size > _localMaxDynamicTableSize)
 						throw new IllegalArgumentException();
-					context.resize(size);
+					_context.resize(size);
 					continue;
 
 				case 0: // 7.2.2
@@ -131,13 +131,13 @@ public class HpackDecoder {
 
 				// decode the name
 				if (name_index > 0) {
-					Entry name_entry = context.get(name_index);
+					Entry name_entry = _context.get(name_index);
 					name = name_entry.getHttpField().getName();
 					header = name_entry.getHttpField().getHeader();
 				} else {
 					huffmanName = (buffer.get() & 0x80) == 0x80;
 					int length = NBitInteger.decode(buffer, 7);
-					builder.checkSize(length, huffmanName);
+					_builder.checkSize(length, huffmanName);
 					if (huffmanName)
 						name = Huffman.decode(buffer, length);
 					else
@@ -154,7 +154,7 @@ public class HpackDecoder {
 				// decode the value
 				boolean huffmanValue = (buffer.get() & 0x80) == 0x80;
 				int length = NBitInteger.decode(buffer, 7);
-				builder.checkSize(length, huffmanValue);
+				_builder.checkSize(length, huffmanValue);
 				if (huffmanValue)
 					value = Huffman.decode(buffer, length);
 				else
@@ -194,31 +194,33 @@ public class HpackDecoder {
 					}
 				}
 
-				if (log.isDebugEnabled())
-					log.debug("decoded '" + field + "' by Lit"
-							+ (name_index > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"))
-							+ (huffmanValue ? "HuffVal" : "LitVal") + (indexed ? "Idx" : ""));
+				if (log.isDebugEnabled()) {
+					log.debug("decoded '{}' by {}/{}/{}", field,
+							name_index > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"),
+							huffmanValue ? "HuffVal" : "LitVal", indexed ? "Idx" : "");
+				}
 
 				// emit the field
-				builder.emit(field);
+				_builder.emit(field);
 
 				// if indexed
 				if (indexed) {
 					// add to dynamic table
-					context.add(field);
+					_context.add(field);
 				}
 
 			}
 		}
 
-		return builder.build();
+		return _builder.build();
 	}
 
 	public static String toASCIIString(ByteBuffer buffer, int length) {
 		StringBuilder builder = new StringBuilder(length);
-		int start = buffer.arrayOffset() + buffer.position();
+		int position = buffer.position();
+		int start = buffer.arrayOffset() + position;
 		int end = start + length;
-		buffer.position(end);
+		buffer.position(position + length);
 		byte[] array = buffer.array();
 		for (int i = start; i < end; i++)
 			builder.append((char) (0x7f & array[i]));
@@ -227,6 +229,6 @@ public class HpackDecoder {
 
 	@Override
 	public String toString() {
-		return String.format("HpackDecoder@%x{%s}", hashCode(), context);
+		return String.format("HpackDecoder@%x{%s}", hashCode(), _context);
 	}
 }

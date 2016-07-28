@@ -72,9 +72,7 @@ public class HTTP2ClientTLSDemo {
 			}
 		};
 
-//		HTTPClientRequest request = new HTTPClientRequest("GET", "/index");
-//		httpConnection.send(request, handler);
-
+		// test
 		HttpFields fields = new HttpFields();
 		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
 		MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6677"),

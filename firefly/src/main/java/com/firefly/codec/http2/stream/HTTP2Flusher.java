@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -11,7 +12,6 @@ import java.util.Queue;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.net.ByteBufferArrayOutputEntry;
-import com.firefly.utils.collection.ArrayQueue;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IteratingCallback;
 import com.firefly.utils.io.BufferUtils;
@@ -23,15 +23,13 @@ public class HTTP2Flusher extends IteratingCallback {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	private final Queue<WindowEntry> windows = new ArrayDeque<>();
-	private final ArrayQueue<Entry> frames = new ArrayQueue<>(ArrayQueue.DEFAULT_CAPACITY, ArrayQueue.DEFAULT_GROWTH,
-			this);
+	private final Deque<Entry> frames = new ArrayDeque<>();
 	private final Queue<Entry> entries = new ArrayDeque<>();
 	private final List<Entry> actives = new ArrayList<>();
 	private final HTTP2Session session;
+	private final Queue<ByteBuffer> buffers = new LinkedList<>();
 	private Entry stalled;
 	private boolean terminated;
-
-	private final Queue<ByteBuffer> buffers = new LinkedList<>();
 
 	public HTTP2Flusher(HTTP2Session session) {
 		this.session = session;
@@ -54,7 +52,7 @@ public class HTTP2Flusher extends IteratingCallback {
 		synchronized (this) {
 			closed = terminated;
 			if (!closed) {
-				frames.add(0, entry);
+				frames.offerFirst(entry);
 				if (log.isDebugEnabled())
 					log.debug("Prepended {}, frames={}", entry, frames.size());
 			}
@@ -117,7 +115,7 @@ public class HTTP2Flusher extends IteratingCallback {
 		while (!entries.isEmpty()) {
 			Entry entry = entries.poll();
 			if (log.isDebugEnabled())
-				log.debug("Processing {}, {}", entry, entry.dataRemaining());
+				log.debug("Processing {}", entry);
 
 			// If the stream has been reset, don't send the frame.
 			if (entry.reset()) {
@@ -128,9 +126,6 @@ public class HTTP2Flusher extends IteratingCallback {
 
 			try {
 				if (entry.generate(buffers)) {
-					if(log.isDebugEnabled()) {
-						log.debug("Generated entry {}, {}", entry, entry.dataRemaining());
-					}
 					if (entry.dataRemaining() > 0)
 						entries.offer(entry);
 				} else {
@@ -172,7 +167,7 @@ public class HTTP2Flusher extends IteratingCallback {
 	@Override
 	public void succeeded() {
 		if (log.isDebugEnabled())
-			log.debug("Written {} frames for {}", actives.size(), actives.toString());
+			log.debug("Written {} frames for {}", actives.size(), actives);
 
 		complete();
 

@@ -1,5 +1,8 @@
 package test.codec.http2.decode;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -12,7 +15,6 @@ import org.junit.Test;
 
 import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.State;
-import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HostPortHttpField;
 import com.firefly.codec.http2.model.HttpCompliance;
 import com.firefly.codec.http2.model.HttpField;
@@ -110,6 +112,7 @@ public class HttpParserTest
         Assert.assertEquals("/999", _uriOrStatus);
         Assert.assertEquals("HTTP/0.9", _versionOrReason);
         Assert.assertEquals(-1, _headers);
+        assertThat(_complianceViolation,containsString("0.9"));
     }
 
     @Test
@@ -121,6 +124,7 @@ public class HttpParserTest
         HttpParser parser = new HttpParser(handler);
         parseAll(parser, buffer);
         Assert.assertEquals("HTTP/0.9 not supported", _bad);
+        Assert.assertNull(_complianceViolation);
     }
 
     @Test
@@ -137,6 +141,7 @@ public class HttpParserTest
         Assert.assertEquals("/222", _uriOrStatus);
         Assert.assertEquals("HTTP/0.9", _versionOrReason);
         Assert.assertEquals(-1, _headers);
+        assertThat(_complianceViolation,containsString("0.9"));
     }
 
     @Test
@@ -149,6 +154,7 @@ public class HttpParserTest
         HttpParser parser = new HttpParser(handler);
         parseAll(parser, buffer);
         Assert.assertEquals("HTTP/0.9 not supported", _bad);
+        Assert.assertNull(_complianceViolation);
     }
 
     @Test
@@ -232,7 +238,7 @@ public class HttpParserTest
     }
 
     @Test
-    public void test2616Continuations() throws Exception
+    public void testFoldedField2616() throws Exception
     {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "GET / HTTP/1.0\r\n" +
@@ -251,10 +257,11 @@ public class HttpParserTest
         Assert.assertEquals("Name", _hdr[1]);
         Assert.assertEquals("value extra", _val[1]);
         Assert.assertEquals(1, _headers);
+        assertThat(_complianceViolation,containsString("folding"));
     }
 
     @Test
-    public void test7230NoContinuations() throws Exception
+    public void testFoldedField7230() throws Exception
     {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "GET / HTTP/1.0\r\n" +
@@ -268,52 +275,44 @@ public class HttpParserTest
         parseAll(parser, buffer);
 
         Assert.assertThat(_bad, Matchers.notNullValue());
-        Assert.assertThat(_bad, Matchers.containsString("Bad Continuation"));
+        Assert.assertThat(_bad, Matchers.containsString("Header Folding"));
+        Assert.assertNull(_complianceViolation);
     }
-
+    
     @Test
-    public void test7230NoWhiteSpaceInName() throws Exception
+    public void testWhiteSpaceInName() throws Exception
     {
         ByteBuffer buffer = BufferUtils.toBuffer(
-                "GET / HTTP/1.0\r\n" +
-                        "Host: localhost\r\n" +
-                        " Name: value\r\n" +
-                        "\r\n");
-
-        HttpParser.RequestHandler handler = new Handler();
-        HttpParser parser = new HttpParser(handler, HttpCompliance.RFC7230);
-        parseAll(parser, buffer);
-
-        Assert.assertThat(_bad, Matchers.notNullValue());
-        Assert.assertThat(_bad, Matchers.containsString("Bad"));
-
-        init();
-        buffer = BufferUtils.toBuffer(
                 "GET / HTTP/1.0\r\n" +
                         "Host: localhost\r\n" +
                         "N ame: value\r\n" +
                         "\r\n");
 
-        handler = new Handler();
-        parser = new HttpParser(handler);
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler, 4096, HttpCompliance.RFC7230);
         parseAll(parser, buffer);
 
+        Assert.assertThat(_bad, Matchers.notNullValue());
         Assert.assertThat(_bad, Matchers.containsString("Illegal character"));
-
-        init();
-        buffer = BufferUtils.toBuffer(
+    }
+    
+    @Test
+    public void testWhiteSpaceAfterName() throws Exception
+    {
+        ByteBuffer buffer = BufferUtils.toBuffer(
                 "GET / HTTP/1.0\r\n" +
                         "Host: localhost\r\n" +
                         "Name : value\r\n" +
                         "\r\n");
 
-        handler = new Handler();
-        parser = new HttpParser(handler);
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler, 4096, HttpCompliance.RFC7230);
         parseAll(parser, buffer);
 
+        Assert.assertThat(_bad, Matchers.notNullValue());
         Assert.assertThat(_bad, Matchers.containsString("Illegal character"));
     }
-
+    
     @Test
     public void testNoValue() throws Exception
     {
@@ -321,12 +320,11 @@ public class HttpParserTest
                 "GET / HTTP/1.0\r\n" +
                         "Host: localhost\r\n" +
                         "Name0: \r\n" +
-                        "Name1: \r\n" +
-                        "Connection: close\r\n" +
+                        "Name1:\r\n" +
                         "\r\n");
 
         HttpParser.RequestHandler handler = new Handler();
-        HttpParser parser = new HttpParser(handler, HttpCompliance.RFC2616);
+        HttpParser parser = new HttpParser(handler);
         parseAll(parser, buffer);
 
         Assert.assertTrue(_headerCompleted);
@@ -340,10 +338,54 @@ public class HttpParserTest
         Assert.assertEquals("", _val[1]);
         Assert.assertEquals("Name1", _hdr[2]);
         Assert.assertEquals("", _val[2]);
-        Assert.assertEquals("Connection", _hdr[3]);
-        Assert.assertEquals("close", _val[3]);
-        Assert.assertEquals(3, _headers);
+        Assert.assertEquals(2, _headers);
     }
+
+    @Test
+    public void testNoColon2616() throws Exception
+    {
+        ByteBuffer buffer = BufferUtils.toBuffer(
+                "GET / HTTP/1.0\r\n" +
+                        "Host: localhost\r\n" +
+                        "Name\r\n" +
+                        "Other: value\r\n" +
+                        "\r\n");
+
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler,HttpCompliance.RFC2616);
+        parseAll(parser, buffer);
+
+        Assert.assertTrue(_headerCompleted);
+        Assert.assertTrue(_messageCompleted);
+        Assert.assertEquals("GET", _methodOrVersion);
+        Assert.assertEquals("/", _uriOrStatus);
+        Assert.assertEquals("HTTP/1.0", _versionOrReason);
+        Assert.assertEquals("Host", _hdr[0]);
+        Assert.assertEquals("localhost", _val[0]);
+        Assert.assertEquals("Name", _hdr[1]);
+        Assert.assertEquals("", _val[1]);
+        Assert.assertEquals("Other", _hdr[2]);
+        Assert.assertEquals("value", _val[2]);
+        Assert.assertEquals(2, _headers);
+        assertThat(_complianceViolation,containsString("name only"));
+    }
+    
+    @Test
+    public void testNoColon7230() throws Exception
+    {
+        ByteBuffer buffer = BufferUtils.toBuffer(
+                "GET / HTTP/1.0\r\n" +
+                        "Host: localhost\r\n" +
+                        "Name\r\n" +
+                        "\r\n");
+
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler,HttpCompliance.RFC7230);
+        parseAll(parser, buffer);
+        Assert.assertThat(_bad, Matchers.containsString("Illegal character"));
+        Assert.assertNull(_complianceViolation);
+    }
+    
 
     @Test
     public void testHeaderParseDirect() throws Exception
@@ -598,7 +640,7 @@ public class HttpParserTest
     }
 
     @Test
-    public void testNonStrict() throws Exception
+    public void testCaseInsensitive() throws Exception
     {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "get / http/1.0\r\n" +
@@ -617,10 +659,11 @@ public class HttpParserTest
         Assert.assertEquals("Connection", _hdr[1]);
         Assert.assertEquals("close", _val[1]);
         Assert.assertEquals(1, _headers);
+        Assert.assertNull(_complianceViolation);
     }
 
     @Test
-    public void testStrict() throws Exception
+    public void testCaseSensitiveLegacy() throws Exception
     {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "gEt / http/1.0\r\n" +
@@ -639,6 +682,7 @@ public class HttpParserTest
         Assert.assertEquals("cOnNeCtIoN", _hdr[1]);
         Assert.assertEquals("ClOsE", _val[1]);
         Assert.assertEquals(1, _headers);
+        assertThat(_complianceViolation,containsString("case sensitive"));
     }
 
     @Test
@@ -1654,6 +1698,21 @@ public class HttpParserTest
     }
 
     @Test
+    public void testEmptyHostPort() throws Exception
+    {
+        ByteBuffer buffer = BufferUtils.toBuffer(
+                "GET / HTTP/1.1\r\n"
+                        + "Host:\r\n"
+                        + "Connection: close\r\n"
+                        + "\r\n");
+
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        parser.parseNext(buffer);
+        Assert.assertEquals(null, _host);
+        Assert.assertEquals(null, _bad);
+    }
+    @Test
     public void testCachedField() throws Exception
     {
         ByteBuffer buffer = BufferUtils.toBuffer(
@@ -1723,44 +1782,6 @@ public class HttpParserTest
         Assert.assertEquals(null, _bad);
     }
 
-    @Test(expected = BadMessageException.class)
-    public void test7230HeaderValueWithNewLine() throws Exception
-    {
-        testHeaderValueWithNewLine(HttpCompliance.RFC7230);
-    }
-
-    @Test
-    public void test2616HeaderValueWithNewLine() throws Exception
-    {
-        testHeaderValueWithNewLine(HttpCompliance.RFC2616);
-    }
-
-    private void testHeaderValueWithNewLine(HttpCompliance compliance) throws Exception
-    {
-        ByteBuffer buffer= BufferUtils.toBuffer(
-                "GET / HTTP/1.1\r\n" +
-                        "Host: localhost\r\n" +
-                        "Header: va\r\n\tlue\r\n"+
-                        "\r\n");
-
-        HttpParser.RequestHandler handler  = new Handler();
-        HttpParser parser= new HttpParser(handler,compliance);
-        parseAll(parser,buffer);
-
-        if (_bad != null)
-            throw new BadMessageException(_bad);
-
-        Assert.assertTrue(_headerCompleted);
-        Assert.assertTrue(_messageCompleted);
-        Assert.assertEquals("GET", _methodOrVersion);
-        Assert.assertEquals("/", _uriOrStatus);
-        Assert.assertEquals("HTTP/1.1", _versionOrReason);
-        Assert.assertEquals("Host",_hdr[0]);
-        Assert.assertEquals("localhost",_val[0]);
-        Assert.assertEquals("Header",_hdr[1]);
-        Assert.assertEquals("va lue",_val[1]);
-    }
-
     @Before
     public void init()
     {
@@ -1774,6 +1795,7 @@ public class HttpParserTest
         _headers = 0;
         _headerCompleted = false;
         _messageCompleted = false;
+        _complianceViolation = null;
     }
 
     private String _host;
@@ -1790,8 +1812,9 @@ public class HttpParserTest
     private boolean _early;
     private boolean _headerCompleted;
     private boolean _messageCompleted;
+    private String _complianceViolation;
 
-    private class Handler implements HttpParser.RequestHandler, HttpParser.ResponseHandler
+    private class Handler implements HttpParser.RequestHandler, HttpParser.ResponseHandler, HttpParser.ComplianceHandler
     {
         private HttpFields fields;
 
@@ -1894,6 +1917,12 @@ public class HttpParserTest
         public int getHeaderCacheSize()
         {
             return 512;
+        }
+
+        @Override
+        public void onComplianceViolation(HttpCompliance compliance, HttpCompliance required, String reason)
+        {
+            _complianceViolation=reason;
         }
     }
 }

@@ -60,4 +60,8 @@ public class Generator {
 	public Pair<Integer, List<ByteBuffer>> data(DataFrame frame, int maxLength) {
 		return dataGenerator.generate(frame, maxLength);
 	}
+	
+	public void setMaxHeaderListSize(int value) {
+        hpackEncoder.setMaxHeaderListSize(value);
+    }
 }

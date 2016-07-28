@@ -16,7 +16,7 @@ public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 
 	@Override
 	public byte[] getEncodedField(HttpHeader header, String name, String value) {
-		boolean not_indexed = HpackEncoder.DO_NOT_INDEX.contains(header);
+		boolean not_indexed = HpackEncoder.__DO_NOT_INDEX.contains(header);
 
 		ByteBuffer buffer = BufferUtils.allocate(name.length() + value.length() + 10);
 		BufferUtils.clearToFill(buffer);
@@ -25,8 +25,8 @@ public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 
 		if (not_indexed) {
 			// Non indexed field
-			boolean never_index = HpackEncoder.NEVER_INDEX.contains(header);
-			huffman = !HpackEncoder.DO_NOT_HUFFMAN.contains(header);
+			boolean never_index = HpackEncoder.__NEVER_INDEX.contains(header);
+			huffman = !HpackEncoder.__DO_NOT_HUFFMAN.contains(header);
 			buffer.put(never_index ? (byte) 0x10 : (byte) 0x00);
 			bits = 4;
 		} else if (header == HttpHeader.CONTENT_LENGTH && value.length() > 1) {
@@ -37,7 +37,7 @@ public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 		} else {
 			// indexed
 			buffer.put((byte) 0x40);
-			huffman = !HpackEncoder.DO_NOT_HUFFMAN.contains(header);
+			huffman = !HpackEncoder.__DO_NOT_HUFFMAN.contains(header);
 			bits = 6;
 		}
 

@@ -54,7 +54,7 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 	private final AtomicInteger maxSessionRecvWindow = new AtomicInteger(DEFAULT_WINDOW_SIZE);
 	private final AtomicInteger sessionLevel = new AtomicInteger();
 	private final Map<StreamSPI, AtomicInteger> streamLevels = new ConcurrentHashMap<>();
-	private final float bufferRatio;
+	private float bufferRatio;
 
 	public BufferingFlowControlStrategy(float bufferRatio) {
 		this(DEFAULT_WINDOW_SIZE, bufferRatio);
@@ -62,6 +62,14 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 
 	public BufferingFlowControlStrategy(int initialStreamSendWindow, float bufferRatio) {
 		super(initialStreamSendWindow);
+		this.bufferRatio = bufferRatio;
+	}
+
+	public float getBufferRatio() {
+		return bufferRatio;
+	}
+
+	public void setBufferRatio(float bufferRatio) {
 		this.bufferRatio = bufferRatio;
 	}
 
@@ -82,36 +90,46 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 		if (length <= 0)
 			return;
 
+		float ratio = bufferRatio;
+
 		WindowUpdateFrame windowFrame = null;
 		int level = sessionLevel.addAndGet(length);
-		int maxLevel = (int) (maxSessionRecvWindow.get() * bufferRatio);
+		int maxLevel = (int) (maxSessionRecvWindow.get() * ratio);
 		if (level > maxLevel) {
-			level = sessionLevel.getAndSet(0);
-			session.updateRecvWindow(level);
-			if (log.isDebugEnabled())
-				log.debug("Data consumed, updated session recv window by {}/{} for {}", level, maxLevel, session);
-			windowFrame = new WindowUpdateFrame(0, level);
+			if (sessionLevel.compareAndSet(level, 0)) {
+				session.updateRecvWindow(level);
+				if (log.isDebugEnabled())
+					log.debug("Data consumed, {} bytes, updated session recv window by {}/{} for {}", length, level,
+							maxLevel, session);
+				windowFrame = new WindowUpdateFrame(0, level);
+			} else {
+				if (log.isDebugEnabled())
+					log.debug("Data consumed, {} bytes, concurrent session recv window level {}/{} for {}", length,
+							sessionLevel, maxLevel, session);
+			}
 		} else {
 			if (log.isDebugEnabled())
-				log.debug("Data consumed, session recv window level {}/{} for {}", level, maxLevel, session);
+				log.debug("Data consumed, {} bytes, session recv window level {}/{} for {}", length, level, maxLevel,
+						session);
 		}
 
 		Frame[] windowFrames = Frame.EMPTY_ARRAY;
 		if (stream != null) {
 			if (stream.isClosed()) {
 				if (log.isDebugEnabled())
-					log.debug("Data consumed, ignoring update stream recv window by {} for closed {}", length, stream);
+					log.debug("Data consumed, {} bytes, ignoring update stream recv window for closed {}", length,
+							stream);
 			} else {
 				AtomicInteger streamLevel = streamLevels.get(stream);
 				if (streamLevel != null) {
 					level = streamLevel.addAndGet(length);
-					maxLevel = (int) (getInitialStreamRecvWindow() * bufferRatio);
+					maxLevel = (int) (getInitialStreamRecvWindow() * ratio);
 					if (level > maxLevel) {
 						level = streamLevel.getAndSet(0);
 						stream.updateRecvWindow(level);
 						if (log.isDebugEnabled())
-							log.debug("Data consumed, updated stream recv window by {}/{} for {}", level, maxLevel,
-									stream);
+							log.debug("Data consumed, {} bytes, updated stream recv window by {}/{} for {}", length,
+									level, maxLevel, stream);
 						WindowUpdateFrame frame = new WindowUpdateFrame(stream.getId(), level);
 						if (windowFrame == null)
 							windowFrame = frame;
@@ -119,7 +137,8 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 							windowFrames = new Frame[] { frame };
 					} else {
 						if (log.isDebugEnabled())
-							log.debug("Data consumed, stream recv window level {}/{} for {}", level, maxLevel, session);
+							log.debug("Data consumed, {} bytes, stream recv window level {}/{} for {}", length, level,
+									maxLevel, stream);
 					}
 				}
 			}
@@ -164,5 +183,12 @@ public class BufferingFlowControlStrategy extends AbstractFlowControlStrategy {
 			int sessionWindow = session.updateRecvWindow(0);
 			Atomics.updateMax(maxSessionRecvWindow, sessionWindow);
 		}
+	}
+
+	@Override
+	public String toString() {
+		return String.format("%s@%x[ratio=%.2f,sessionLevel=%s,sessionStallTime=%dms,streamsStallTime=%dms]",
+				getClass().getSimpleName(), hashCode(), bufferRatio, sessionLevel, getSessionStallTime(),
+				getStreamsStallTime());
 	}
 }

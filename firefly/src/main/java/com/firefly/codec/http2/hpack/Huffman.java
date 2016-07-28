@@ -3,7 +3,7 @@ package com.firefly.codec.http2.hpack;
 import java.nio.ByteBuffer;
 
 public class Huffman {
-	
+
 	// Appendix C: Huffman Codes
     // http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-12#appendix-C
     static final int[][] CODES =
@@ -332,9 +332,10 @@ public class Huffman {
 		int bits = 0;
 
 		byte[] array = buffer.array();
-		int start = buffer.arrayOffset() + buffer.position();
+		int position = buffer.position();
+		int start = buffer.arrayOffset() + position;
 		int end = start + length;
-		buffer.position(end);
+		buffer.position(position + length);
 
 		for (int i = start; i < end; i++) {
 			int b = array[i] & 0xFF;

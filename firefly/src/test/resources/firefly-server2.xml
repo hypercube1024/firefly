@@ -17,10 +17,12 @@
 			</map>
 		</property>
 		<property name="tcpConfiguration" ref="tcpConfiguration"></property>
+		<property name="initialStreamSendWindow" value="131070"></property>
+		<property name="initialSessionRecvWindow" value="131070"></property>
 	</bean>
 	
 	<bean id="tcpConfiguration" class="com.firefly.net.Config">
-		<property name="timeout" value="8000"></property>
+		<property name="timeout" value="80000"></property>
 	</bean>
 
 </beans>

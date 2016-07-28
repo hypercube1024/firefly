@@ -1,15 +1,13 @@
 package com.firefly.codec.http2.decode;
 
-import static com.firefly.codec.http2.model.HttpTokens.CARRIAGE_RETURN;
-import static com.firefly.codec.http2.model.HttpTokens.LINE_FEED;
-import static com.firefly.codec.http2.model.HttpTokens.SPACE;
-import static com.firefly.codec.http2.model.HttpTokens.TAB;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
+
+import static com.firefly.codec.http2.model.HttpTokens.*;
+import static com.firefly.codec.http2.model.HttpCompliance.*;
 
 import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HostPortHttpField;
@@ -58,9 +56,9 @@ import com.firefly.utils.log.LogFactory;
  * {@link Trie#getBest(ByteBuffer, int, int)} method to look ahead in a single
  * pass for both the structure ( : and CRLF ) and semantic (which header and
  * value) of a header. Specifically the static {@link HttpHeader#CACHE} is used
- * to lookup common combinations of headers and values (eg. "Connection: close"
- * ), or just header names (eg. "Connection:" ). For headers who's value is not
- * known statically (eg. Host, COOKIE) then a per parser dynamic Trie of
+ * to lookup common combinations of headers and values (eg. "Connection:
+ * close"), or just header names (eg. "Connection:" ). For headers who's value
+ * is not known statically (eg. Host, COOKIE) then a per parser dynamic Trie of
  * {@link HttpFields} from previous parsed messages is used to help the parsing
  * of subsequent messages.
  * </p>
@@ -81,7 +79,8 @@ import com.firefly.utils.log.LogFactory;
  */
 public class HttpParser {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-
+	@Deprecated
+	public final static String __STRICT = "org.eclipse.jetty.http.HttpParser.STRICT";
 	public final static int INITIAL_URI_LENGTH = 256;
 
 	/**
@@ -103,9 +102,8 @@ public class HttpParser {
 	public final static Trie<HttpField> CACHE = new ArrayTrie<>(2048);
 
 	// States
-    public enum State
-    {
-        START,
+	public enum State {
+		START,
         METHOD,
         RESPONSE_VERSION,
         SPACE1,
@@ -129,15 +127,17 @@ public class HttpParser {
         END,
         CLOSE,  // The associated stream/endpoint should be closed
         CLOSED  // The associated stream/endpoint is at EOF
-    }
+	}
 
 	private final static EnumSet<State> __idleStates = EnumSet.of(State.START, State.END, State.CLOSE, State.CLOSED);
 	private final static EnumSet<State> __completeStates = EnumSet.of(State.END, State.CLOSE, State.CLOSED);
 
-	private final boolean DEBUG = log.isDebugEnabled(); // Cache debug to help branch prediction
+	private final boolean DEBUG = log.isDebugEnabled(); // Cache debug to help
+														// branch prediction
 	private final HttpHandler _handler;
 	private final RequestHandler _requestHandler;
 	private final ResponseHandler _responseHandler;
+	private final ComplianceHandler _complianceHandler;
 	private final int _maxHeaderBytes;
 	private final HttpCompliance _compliance;
 	private HttpField _field;
@@ -220,7 +220,8 @@ public class HttpParser {
 	}
 
 	private static HttpCompliance compliance() {
-		return HttpCompliance.RFC7230;
+		Boolean strict = Boolean.getBoolean(__STRICT);
+		return strict ? HttpCompliance.LEGACY : HttpCompliance.RFC7230;
 	}
 
 	public HttpParser(RequestHandler handler) {
@@ -239,6 +240,16 @@ public class HttpParser {
 		this(handler, maxHeaderBytes, compliance());
 	}
 
+	@Deprecated
+	public HttpParser(RequestHandler handler, int maxHeaderBytes, boolean strict) {
+		this(handler, maxHeaderBytes, strict ? HttpCompliance.LEGACY : compliance());
+	}
+
+	@Deprecated
+	public HttpParser(ResponseHandler handler, int maxHeaderBytes, boolean strict) {
+		this(handler, maxHeaderBytes, strict ? HttpCompliance.LEGACY : compliance());
+	}
+
 	public HttpParser(RequestHandler handler, HttpCompliance compliance) {
 		this(handler, -1, compliance);
 	}
@@ -249,6 +260,7 @@ public class HttpParser {
 		_responseHandler = null;
 		_maxHeaderBytes = maxHeaderBytes;
 		_compliance = compliance == null ? compliance() : compliance;
+		_complianceHandler = (ComplianceHandler) (handler instanceof ComplianceHandler ? handler : null);
 	}
 
 	public HttpParser(ResponseHandler handler, int maxHeaderBytes, HttpCompliance compliance) {
@@ -257,18 +269,46 @@ public class HttpParser {
 		_responseHandler = handler;
 		_maxHeaderBytes = maxHeaderBytes;
 		_compliance = compliance == null ? compliance() : compliance;
+		_complianceHandler = (ComplianceHandler) (handler instanceof ComplianceHandler ? handler : null);
+	}
+
+	public HttpHandler getHandler() {
+		return _handler;
+	}
+
+	/**
+	 * Check RFC compliance violation
+	 * 
+	 * @param compliance
+	 *            The compliance level violated
+	 * @param reason
+	 *            The reason for the violation
+	 * @return True if the current compliance level is set so as to Not allow
+	 *         this violation
+	 */
+	protected boolean complianceViolation(HttpCompliance compliance, String reason) {
+		if (_complianceHandler == null)
+			return _compliance.ordinal() >= compliance.ordinal();
+		if (_compliance.ordinal() < compliance.ordinal()) {
+			_complianceHandler.onComplianceViolation(_compliance, compliance, reason);
+			return false;
+		}
+		return true;
+	}
+
+	protected String legacyString(String orig, String cached) {
+		return (_compliance != LEGACY || orig.equals(cached) || complianceViolation(RFC2616, "case sensitive")) ? cached
+				: orig;
 	}
 
 	public long getContentLength() {
 		return _contentLength;
 	}
 
-	
 	public long getContentRead() {
 		return _contentPosition;
 	}
 
-	
 	/**
 	 * Set if a HEAD response is expected
 	 * 
@@ -303,19 +343,18 @@ public class HttpParser {
 		return isState(State.START);
 	}
 
-	
 	public boolean isClose() {
 		return isState(State.CLOSE);
 	}
-	
+
 	public boolean isClosed() {
 		return isState(State.CLOSED);
 	}
-	
+
 	public boolean isIdle() {
 		return __idleStates.contains(_state);
 	}
-	
+
 	public boolean isComplete() {
 		return __completeStates.contains(_state);
 	}
@@ -329,7 +368,6 @@ public class HttpParser {
 	}
 
 	private final static CharState[] __charState;
-
 	static {
 		// token          = 1*tchar
         // tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
@@ -453,7 +491,7 @@ public class HttpParser {
 
 			// count this white space as a header byte to avoid DOS
 			if (_maxHeaderBytes > 0 && ++_headerBytes > _maxHeaderBytes) {
-				log.warn("padding is too large > {}", _maxHeaderBytes);
+				log.warn("padding is too large >" + _maxHeaderBytes);
 				throw new BadMessageException(HttpStatus.BAD_REQUEST_400);
 			}
 		}
@@ -489,14 +527,14 @@ public class HttpParser {
 
 			if (_maxHeaderBytes > 0 && ++_headerBytes > _maxHeaderBytes) {
 				if (_state == State.URI) {
-					log.warn("URI is too large > {}", _maxHeaderBytes);
-					throw new BadMessageException(HttpStatus.REQUEST_URI_TOO_LONG_414);
+					log.warn("URI is too large >" + _maxHeaderBytes);
+					throw new BadMessageException(HttpStatus.URI_TOO_LONG_414);
 				} else {
 					if (_requestHandler != null)
-						log.warn("request is too large > {}", _maxHeaderBytes);
+						log.warn("request is too large >" + _maxHeaderBytes);
 					else
-						log.warn("response is too large > {}", _maxHeaderBytes);
-					throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413);
+						log.warn("response is too large >" + _maxHeaderBytes);
+					throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431);
 				}
 			}
 
@@ -506,8 +544,8 @@ public class HttpParser {
 					_length = _string.length();
 					_methodString = takeString();
 					HttpMethod method = HttpMethod.CACHE.get(_methodString);
-					if (method != null && _compliance != HttpCompliance.LEGACY)
-						_methodString = method.asString();
+					if (method != null)
+						_methodString = legacyString(_methodString, method.asString());
 					setState(State.SPACE1);
 				} else if (ch < SPACE) {
 					if (ch == LINE_FEED)
@@ -553,8 +591,8 @@ public class HttpParser {
 							_headerBytes += len;
 
 							if (_maxHeaderBytes > 0 && ++_headerBytes > _maxHeaderBytes) {
-								log.warn("URI is too large > {}", _maxHeaderBytes);
-								throw new BadMessageException(HttpStatus.REQUEST_URI_TOO_LONG_414);
+								log.warn("URI is too large >" + _maxHeaderBytes);
+								throw new BadMessageException(HttpStatus.URI_TOO_LONG_414);
 							}
 							_uri.append(array, p - 1, len + 1);
 							buffer.position(i - buffer.arrayOffset());
@@ -585,9 +623,8 @@ public class HttpParser {
 					setState(State.SPACE2);
 				} else if (ch < HttpTokens.SPACE && ch >= 0) {
 					// HTTP/0.9
-					if (_compliance.ordinal() >= HttpCompliance.RFC7230.ordinal())
+					if (complianceViolation(RFC7230, "HTTP/0.9"))
 						throw new BadMessageException("HTTP/0.9 not supported");
-
 					handle = _requestHandler.startRequest(_methodString, _uri.toString(), HttpVersion.HTTP_0_9);
 					setState(State.END);
 					BufferUtils.clear(buffer);
@@ -641,7 +678,7 @@ public class HttpParser {
 						handle = _responseHandler.startResponse(_version, _responseStatus, null) || handle;
 					} else {
 						// HTTP/0.9
-						if (_compliance.ordinal() >= HttpCompliance.RFC7230.ordinal())
+						if (complianceViolation(RFC7230, "HTTP/0.9"))
 							throw new BadMessageException("HTTP/0.9 not supported");
 
 						handle = _requestHandler.startRequest(_methodString, _uri.toString(), HttpVersion.HTTP_0_9);
@@ -739,9 +776,8 @@ public class HttpParser {
 
 				case HOST:
 					_host = true;
-					if (!(_field instanceof HostPortHttpField)) {
-						_field = new HostPortHttpField(_header,
-								_compliance == HttpCompliance.LEGACY ? _headerString : _header.asString(),
+					if (!(_field instanceof HostPortHttpField) && _valueString != null && !_valueString.isEmpty()) {
+						_field = new HostPortHttpField(_header, legacyString(_headerString, _header.asString()),
 								_valueString);
 						add_to_connection_trie = _connectionFields != null;
 					}
@@ -771,9 +807,7 @@ public class HttpParser {
 
 				if (add_to_connection_trie && !_connectionFields.isFull() && _header != null && _valueString != null) {
 					if (_field == null)
-						_field = new HttpField(_header,
-								_compliance == HttpCompliance.LEGACY ? _headerString : _header.asString(),
-								_valueString);
+						_field = new HttpField(_header, legacyString(_headerString, _header.asString()), _valueString);
 					_connectionFields.put(_field);
 				}
 			}
@@ -790,6 +824,7 @@ public class HttpParser {
 		try {
 			return Long.parseLong(valueString);
 		} catch (NumberFormatException e) {
+			log.debug("parse long exception", e);
 			throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Invalid Content-Length Value");
 		}
 	}
@@ -809,8 +844,8 @@ public class HttpParser {
 				break;
 
 			if (_maxHeaderBytes > 0 && ++_headerBytes > _maxHeaderBytes) {
-				log.warn("Header is too large > {}", _maxHeaderBytes);
-				throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413);
+				log.warn("Header is too large >" + _maxHeaderBytes);
+				throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431);
 			}
 
 			switch (_state) {
@@ -819,8 +854,8 @@ public class HttpParser {
 				case HttpTokens.COLON:
 				case HttpTokens.SPACE:
 				case HttpTokens.TAB: {
-					if (_compliance.ordinal() >= HttpCompliance.RFC7230.ordinal())
-						throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Bad Continuation");
+					if (complianceViolation(RFC7230, "header folding"))
+						throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Header Folding");
 
 					// header value without name - continuation?
 					if (_valueString == null) {
@@ -853,11 +888,11 @@ public class HttpParser {
                     if (_responseHandler !=null  && // response
                             (_responseStatus == 304  || // not-modified response
                             _responseStatus == 204 || // no-content response
-                            _responseStatus < 200)) {// 1xx response
-                    	
+                            _responseStatus < 200)) // 1xx response
                         _endOfContent=EndOfContent.NO_CONTENT; // ignore any other headers set
 
-                    } else if (_endOfContent == EndOfContent.UNKNOWN_CONTENT) { // else if we don't know framing
+                    // else if we don't know framing
+                    else if (_endOfContent == EndOfContent.UNKNOWN_CONTENT) {
                         if (_responseStatus == 0  // request
                                 || _responseStatus == 304 // not-modified response
                                 || _responseStatus == 204 // no-content response
@@ -912,18 +947,18 @@ public class HttpParser {
 							final String n;
 							final String v;
 
-							if (_compliance == HttpCompliance.LEGACY) {
+							if (_compliance == LEGACY) {
 								// Have to get the fields exactly from the
 								// buffer to match case
 								String fn = field.getName();
+								n = legacyString(BufferUtils.toString(buffer, buffer.position() - 1, fn.length(),
+										StandardCharsets.US_ASCII), fn);
 								String fv = field.getValue();
-								n = BufferUtils.toString(buffer, buffer.position() - 1, fn.length(),
-										StandardCharsets.US_ASCII);
 								if (fv == null)
 									v = null;
 								else {
-									v = BufferUtils.toString(buffer, buffer.position() + fn.length() + 1, fv.length(),
-											StandardCharsets.ISO_8859_1);
+									v = legacyString(BufferUtils.toString(buffer, buffer.position() + fn.length() + 1,
+											fv.length(), StandardCharsets.ISO_8859_1), fv);
 									field = new HttpField(field.getHeader(), n, v);
 								}
 							} else {
@@ -999,6 +1034,20 @@ public class HttpParser {
 					_string.append((char) ch);
 					if (ch > HttpTokens.SPACE)
 						_length = _string.length();
+					break;
+				}
+
+				if (ch == HttpTokens.LINE_FEED && !complianceViolation(RFC7230, "name only header")) {
+					if (_headerString == null) {
+						_headerString = takeString();
+						_header = HttpHeader.CACHE.get(_headerString);
+					}
+					_value = null;
+					_string.setLength(0);
+					_valueString = "";
+					_length = -1;
+
+					setState(State.HEADER);
 					break;
 				}
 
@@ -1184,7 +1233,7 @@ public class HttpParser {
 			BufferUtils.clear(buffer);
 			log.warn("parse exception: {} in {} for {}", e.toString(), _state, _handler);
 			if (DEBUG)
-				log.debug("parse exception", e);
+				log.debug("parsing error", e);
 
 			switch (_state) {
 			case CLOSED:
@@ -1194,7 +1243,7 @@ public class HttpParser {
 				break;
 			default:
 				setState(State.CLOSE);
-				_handler.badMessage(400, null);
+				_handler.badMessage(400, "Bad Message " + e.toString());
 			}
 		} catch (Exception | Error e) {
 			BufferUtils.clear(buffer);
@@ -1352,7 +1401,9 @@ public class HttpParser {
 		return false;
 	}
 
-	public boolean isAtEOF() {
+	public boolean isAtEOF()
+
+	{
 		return _eof;
 	}
 
@@ -1402,6 +1453,20 @@ public class HttpParser {
 		return _connectionFields;
 	}
 
+//	private String getProxyField(ByteBuffer buffer) {
+//		_string.setLength(0);
+//		_length = 0;
+//
+//		while (buffer.hasRemaining()) {
+//			// process each character
+//			byte ch = next(buffer);
+//			if (ch <= ' ')
+//				return _string.toString();
+//			_string.append((char) ch);
+//		}
+//		throw new BadMessageException();
+//	}
+
 	@Override
 	public String toString() {
 		return String.format("%s{s=%s,%d of %d}", getClass().getSimpleName(), _state, _contentPosition, _contentLength);
@@ -1430,14 +1495,12 @@ public class HttpParser {
 		 */
 		public void parsedHeader(HttpField field);
 
-		
 		/**
 		 * Called to signal that an EOF was received unexpectedly during the
 		 * parsing of a HTTP message
 		 */
 		public void earlyEOF();
 
-		
 		/**
 		 * Called to signal that a bad HTTP message has been received.
 		 * 
@@ -1448,7 +1511,6 @@ public class HttpParser {
 		 */
 		public void badMessage(int status, String reason);
 
-		
 		/**
 		 * @return the size in bytes of the per parser header cache
 		 */
@@ -1488,6 +1550,10 @@ public class HttpParser {
 		 * @return true if handling parsing should return
 		 */
 		public boolean startResponse(HttpVersion version, int status, String reason);
+	}
+
+	public interface ComplianceHandler extends HttpHandler {
+		public void onComplianceViolation(HttpCompliance compliance, HttpCompliance required, String reason);
 	}
 
 	@SuppressWarnings("serial")

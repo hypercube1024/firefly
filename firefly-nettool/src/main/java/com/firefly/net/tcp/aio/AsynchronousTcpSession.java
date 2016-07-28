@@ -447,4 +447,9 @@ public class AsynchronousTcpSession implements Session {
 				+ ", readBytes=" + readBytes + ", writtenBytes=" + writtenBytes + "]";
 	}
 
+	@Override
+	public long getIdleTimeout() {
+		return config.getTimeout();
+	}
+
 }

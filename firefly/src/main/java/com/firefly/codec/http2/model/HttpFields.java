@@ -14,9 +14,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import com.firefly.utils.collection.ArrayTernaryTrie;
-import com.firefly.utils.collection.LazyList;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.lang.QuotedStringTokenizer;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 /**
  * HTTP Fields. A collection of HTTP header and or Trailer fields.
@@ -31,16 +32,19 @@ import com.firefly.utils.lang.QuotedStringTokenizer;
  *
  */
 public class HttpFields implements Iterable<HttpField> {
+	@Deprecated
 	public static final String __separators = ", \t";
 
-	private HttpField[] fields;
-	private int size;
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+
+	private HttpField[] _fields;
+	private int _size;
 
 	/**
 	 * Initialize an empty HttpFields.
 	 */
 	public HttpFields() {
-		fields = new HttpField[20];
+		_fields = new HttpField[20];
 	}
 
 	/**
@@ -50,7 +54,7 @@ public class HttpFields implements Iterable<HttpField> {
 	 *            the capacity of the http fields
 	 */
 	public HttpFields(int capacity) {
-		fields = new HttpField[capacity];
+		_fields = new HttpField[capacity];
 	}
 
 	/**
@@ -60,12 +64,12 @@ public class HttpFields implements Iterable<HttpField> {
 	 *            the fields to copy data from
 	 */
 	public HttpFields(HttpFields fields) {
-		this.fields = Arrays.copyOf(fields.fields, fields.fields.length + 10);
-		size = fields.size;
+		_fields = Arrays.copyOf(fields._fields, fields._fields.length + 10);
+		_size = fields._size;
 	}
 
 	public int size() {
-		return size;
+		return _size;
 	}
 
 	@Override
@@ -79,7 +83,7 @@ public class HttpFields implements Iterable<HttpField> {
 	 * @return the unique set of field names.
 	 */
 	public Set<String> getFieldNamesCollection() {
-		final Set<String> set = new HashSet<>(size);
+		final Set<String> set = new HashSet<>(_size);
 		for (HttpField f : this) {
 			if (f != null)
 				set.add(f.getName());
@@ -105,14 +109,14 @@ public class HttpFields implements Iterable<HttpField> {
 	 * @return A Field value or null if the Field value has not been set
 	 */
 	public HttpField getField(int index) {
-		if (index >= size)
+		if (index >= _size)
 			throw new NoSuchElementException();
-		return fields[index];
+		return _fields[index];
 	}
 
 	public HttpField getField(HttpHeader header) {
-		for (int i = 0; i < size; i++) {
-			HttpField f = fields[i];
+		for (int i = 0; i < _size; i++) {
+			HttpField f = _fields[i];
 			if (f.getHeader() == header)
 				return f;
 		}
@@ -120,8 +124,8 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	public HttpField getField(String name) {
-		for (int i = 0; i < size; i++) {
-			HttpField f = fields[i];
+		for (int i = 0; i < _size; i++) {
+			HttpField f = _fields[i];
 			if (f.getName().equalsIgnoreCase(name))
 				return f;
 		}
@@ -129,17 +133,17 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	public boolean contains(HttpField field) {
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
-			if (f.isSameName(field) && f.contains(field.getValue()))
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
+			if (f.isSameName(field) && (f.equals(field) || f.contains(field.getValue())))
 				return true;
 		}
 		return false;
 	}
 
 	public boolean contains(HttpHeader header, String value) {
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
 			if (f.getHeader() == header && f.contains(value))
 				return true;
 		}
@@ -147,8 +151,8 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	public boolean contains(String name, String value) {
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
 			if (f.getName().equalsIgnoreCase(name) && f.contains(value))
 				return true;
 		}
@@ -156,8 +160,8 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	public boolean contains(HttpHeader header) {
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
 			if (f.getHeader() == header)
 				return true;
 		}
@@ -165,26 +169,36 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	public boolean containsKey(String name) {
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
 			if (f.getName().equalsIgnoreCase(name))
 				return true;
 		}
 		return false;
 	}
 
+	@Deprecated
+	public String getStringField(HttpHeader header) {
+		return get(header);
+	}
+
 	public String get(HttpHeader header) {
-		for (int i = 0; i < size; i++) {
-			HttpField f = fields[i];
+		for (int i = 0; i < _size; i++) {
+			HttpField f = _fields[i];
 			if (f.getHeader() == header)
 				return f.getValue();
 		}
 		return null;
 	}
 
+	@Deprecated
+	public String getStringField(String name) {
+		return get(name);
+	}
+
 	public String get(String header) {
-		for (int i = 0; i < size; i++) {
-			HttpField f = fields[i];
+		for (int i = 0; i < _size; i++) {
+			HttpField f = _fields[i];
 			if (f.getName().equalsIgnoreCase(header))
 				return f.getValue();
 		}
@@ -192,9 +206,24 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	/**
-	 * Get multi headers
+	 * Get multiple header of the same name
 	 *
 	 * @return List the values
+	 * @param header
+	 *            the header
+	 */
+	public List<String> getValuesList(HttpHeader header) {
+		final List<String> list = new ArrayList<>();
+		for (HttpField f : this)
+			if (f.getHeader() == header)
+				list.add(f.getValue());
+		return list;
+	}
+
+	/**
+	 * Get multiple header of the same name
+	 * 
+	 * @return List the header values
 	 * @param name
 	 *            the case-insensitive field name
 	 */
@@ -207,6 +236,74 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	/**
+	 * Get multiple field values of the same name, split as a {@link QuotedCSV}
+	 *
+	 * @return List the values with OWS stripped
+	 * @param header
+	 *            The header
+	 * @param keepQuotes
+	 *            True if the fields are kept quoted
+	 */
+	public List<String> getCSV(HttpHeader header, boolean keepQuotes) {
+		QuotedCSV values = new QuotedCSV(keepQuotes);
+		for (HttpField f : this)
+			if (f.getHeader() == header)
+				values.addValue(f.getValue());
+		return values.getValues();
+	}
+
+	/**
+	 * Get multiple field values of the same name as a {@link QuotedCSV}
+	 *
+	 * @return List the values with OWS stripped
+	 * @param name
+	 *            the case-insensitive field name
+	 * @param keepQuotes
+	 *            True if the fields are kept quoted
+	 */
+	public List<String> getCSV(String name, boolean keepQuotes) {
+		QuotedCSV values = new QuotedCSV(keepQuotes);
+		for (HttpField f : this)
+			if (f.getName().equalsIgnoreCase(name))
+				values.addValue(f.getValue());
+		return values.getValues();
+	}
+
+	/**
+	 * Get multiple field values of the same name, split and sorted as a
+	 * {@link QuotedQualityCSV}
+	 *
+	 * @return List the values in quality order with the q param and OWS
+	 *         stripped
+	 * @param header
+	 *            The header
+	 */
+	public List<String> getQualityCSV(HttpHeader header) {
+		QuotedQualityCSV values = new QuotedQualityCSV();
+		for (HttpField f : this)
+			if (f.getHeader() == header)
+				values.addValue(f.getValue());
+		return values.getValues();
+	}
+
+	/**
+	 * Get multiple field values of the same name, split and sorted as a
+	 * {@link QuotedQualityCSV}
+	 *
+	 * @return List the values in quality order with the q param and OWS
+	 *         stripped
+	 * @param name
+	 *            the case-insensitive field name
+	 */
+	public List<String> getQualityCSV(String name) {
+		QuotedQualityCSV values = new QuotedQualityCSV();
+		for (HttpField f : this)
+			if (f.getName().equalsIgnoreCase(name))
+				values.addValue(f.getValue());
+		return values.getValues();
+	}
+
+	/**
 	 * Get multi headers
 	 *
 	 * @return Enumeration of the values
@@ -214,8 +311,8 @@ public class HttpFields implements Iterable<HttpField> {
 	 *            the case-insensitive field name
 	 */
 	public Enumeration<String> getValues(final String name) {
-		for (int i = 0; i < size; i++) {
-			final HttpField f = fields[i];
+		for (int i = 0; i < _size; i++) {
+			final HttpField f = _fields[i];
 
 			if (f.getName().equalsIgnoreCase(name) && f.getValue() != null) {
 				final int first = i;
@@ -226,8 +323,8 @@ public class HttpFields implements Iterable<HttpField> {
 					@Override
 					public boolean hasMoreElements() {
 						if (field == null) {
-							while (i < size) {
-								field = fields[i++];
+							while (i < _size) {
+								field = _fields[i++];
 								if (field.getName().equalsIgnoreCase(name) && field.getValue() != null)
 									return true;
 							}
@@ -266,6 +363,7 @@ public class HttpFields implements Iterable<HttpField> {
 	 *            String of separators.
 	 * @return Enumeration of the values, or null if no such header.
 	 */
+	@Deprecated
 	public Enumeration<String> getValues(String name, final String separators) {
 		final Enumeration<String> e = getValues(name);
 		if (e == null)
@@ -303,13 +401,13 @@ public class HttpFields implements Iterable<HttpField> {
 
 	public void put(HttpField field) {
 		boolean put = false;
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
 			if (f.isSameName(field)) {
 				if (put) {
-					System.arraycopy(fields, i + 1, fields, i, --size - i);
+					System.arraycopy(_fields, i + 1, _fields, i, --_size - i);
 				} else {
-					fields[i] = field;
+					_fields[i] = field;
 					put = true;
 				}
 			}
@@ -414,11 +512,11 @@ public class HttpFields implements Iterable<HttpField> {
 	 */
 	public HttpField remove(HttpHeader name) {
 		HttpField removed = null;
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
 			if (f.getHeader() == name) {
 				removed = f;
-				System.arraycopy(fields, i + 1, fields, i, --size - i);
+				System.arraycopy(_fields, i + 1, _fields, i, --_size - i);
 			}
 		}
 		return removed;
@@ -433,11 +531,11 @@ public class HttpFields implements Iterable<HttpField> {
 	 */
 	public HttpField remove(String name) {
 		HttpField removed = null;
-		for (int i = size; i-- > 0;) {
-			HttpField f = fields[i];
+		for (int i = _size; i-- > 0;) {
+			HttpField f = _fields[i];
 			if (f.getName().equalsIgnoreCase(name)) {
 				removed = f;
-				System.arraycopy(fields, i + 1, fields, i, --size - i);
+				System.arraycopy(_fields, i + 1, _fields, i, --_size - i);
 			}
 		}
 		return removed;
@@ -550,7 +648,7 @@ public class HttpFields implements Iterable<HttpField> {
 	@Override
 	public int hashCode() {
 		int hash = 0;
-		for (HttpField field : fields)
+		for (HttpField field : _fields)
 			hash += field.hashCode();
 		return hash;
 	}
@@ -597,25 +695,26 @@ public class HttpFields implements Iterable<HttpField> {
 			buffer.append("\r\n");
 			return buffer.toString();
 		} catch (Exception e) {
+			log.warn("http fields to string error", e);
 			return e.toString();
 		}
 	}
 
 	public void clear() {
-		size = 0;
+		_size = 0;
 	}
 
 	public void add(HttpField field) {
 		if (field != null) {
-			if (size == fields.length)
-				fields = Arrays.copyOf(fields, size * 2);
-			fields[size++] = field;
+			if (_size == _fields.length)
+				_fields = Arrays.copyOf(_fields, _size * 2);
+			_fields[_size++] = field;
 		}
 	}
 
 	public void addAll(HttpFields fields) {
-		for (int i = 0; i < fields.size; i++)
-			add(fields.fields[i]);
+		for (int i = 0; i < fields._size; i++)
+			add(fields._fields[i]);
 	}
 
 	/**
@@ -639,6 +738,31 @@ public class HttpFields implements Iterable<HttpField> {
 	}
 
 	/**
+	 * Get field value without parameters. Some field values can have
+	 * parameters. This method separates the value from the parameters and
+	 * optionally populates a map with the parameters. For example:
+	 *
+	 * <PRE>
+	 *
+	 * FieldName : Value ; param1=val1 ; param2=val2
+	 *
+	 * </PRE>
+	 *
+	 * @param value
+	 *            The Field value, possibly with parameters.
+	 * @return The value.
+	 */
+	public static String stripParameters(String value) {
+		if (value == null)
+			return null;
+
+		int i = value.indexOf(';');
+		if (i < 0)
+			return value;
+		return value.substring(0, i).trim();
+	}
+
+	/**
 	 * Get field value parameters. Some field values can have parameters. This
 	 * method separates the value from the parameters and optionally populates a
 	 * map with the parameters. For example:
@@ -650,7 +774,7 @@ public class HttpFields implements Iterable<HttpField> {
 	 * </PRE>
 	 *
 	 * @param value
-	 *            The Field value, possibly with parameteres.
+	 *            The Field value, possibly with parameters.
 	 * @param parameters
 	 *            A map to populate with the parameters, or null
 	 * @return The value.
@@ -681,10 +805,12 @@ public class HttpFields implements Iterable<HttpField> {
 		return value.substring(0, i).trim();
 	}
 
+	@Deprecated
 	private static final Float __one = new Float("1.0");
+	@Deprecated
 	private static final Float __zero = new Float("0.0");
+	@Deprecated
 	private static final Trie<Float> __qualities = new ArrayTernaryTrie<>();
-
 	static {
 		__qualities.put("*", __one);
 		__qualities.put("1.0", __one);
@@ -704,6 +830,7 @@ public class HttpFields implements Iterable<HttpField> {
 		__qualities.put("0.0", __zero);
 	}
 
+	@Deprecated
 	public static Float getQuality(String value) {
 		if (value == null)
 			return __zero;
@@ -742,73 +869,40 @@ public class HttpFields implements Iterable<HttpField> {
 	 *            Enumeration of values with quality parameters
 	 * @return values in quality order.
 	 */
+	@Deprecated
 	public static List<String> qualityList(Enumeration<String> e) {
 		if (e == null || !e.hasMoreElements())
 			return Collections.emptyList();
 
-		Object list = null;
-		Object qual = null;
-
-		// Assume list will be well ordered and just add nonzero
-		while (e.hasMoreElements()) {
-			String v = e.nextElement();
-			Float q = getQuality(v);
-
-			if (q >= 0.001) {
-				list = LazyList.add(list, v);
-				qual = LazyList.add(qual, q);
-			}
-		}
-
-		List<String> vl = LazyList.getList(list, false);
-		if (vl.size() < 2)
-			return vl;
-
-		List<Float> ql = LazyList.getList(qual, false);
-
-		// sort list with swaps
-		Float last = __zero;
-		for (int i = vl.size(); i-- > 0;) {
-			Float q = ql.get(i);
-			if (last.compareTo(q) > 0) {
-				String tmp = vl.get(i);
-				vl.set(i, vl.get(i + 1));
-				vl.set(i + 1, tmp);
-				ql.set(i, ql.get(i + 1));
-				ql.set(i + 1, q);
-				last = __zero;
-				i = vl.size();
-				continue;
-			}
-			last = q;
-		}
-		ql.clear();
-		return vl;
+		QuotedQualityCSV values = new QuotedQualityCSV();
+		while (e.hasMoreElements())
+			values.addValue(e.nextElement());
+		return values.getValues();
 	}
 
 	private class Itr implements Iterator<HttpField> {
-		int cursor; // index of next element to return
-		int last = -1;
+		int _cursor; // index of next element to return
+		int _last = -1;
 
 		public boolean hasNext() {
-			return cursor != size;
+			return _cursor != _size;
 		}
 
 		public HttpField next() {
-			int i = cursor;
-			if (i >= size)
+			int i = _cursor;
+			if (i >= _size)
 				throw new NoSuchElementException();
-			cursor = i + 1;
-			return fields[last = i];
+			_cursor = i + 1;
+			return _fields[_last = i];
 		}
 
 		public void remove() {
-			if (last < 0)
+			if (_last < 0)
 				throw new IllegalStateException();
 
-			System.arraycopy(fields, last + 1, fields, last, --size - last);
-			cursor = last;
-			last = -1;
+			System.arraycopy(_fields, _last + 1, _fields, _last, --_size - _last);
+			_cursor = _last;
+			_last = -1;
 		}
 	}
 

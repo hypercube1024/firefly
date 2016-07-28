@@ -175,4 +175,10 @@ public class HTTP2MockSession implements Session {
 		return 0;
 	}
 
+	@Override
+	public long getIdleTimeout() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

@@ -17,6 +17,23 @@ import com.firefly.utils.lang.Utf8Appendable;
 
 public class HttpURITest {
 	@Test
+	public void testInvalidAddress() throws Exception {
+		assertInvalidURI("http://[ffff::1:8080/", "Invalid URL; no closing ']' -- should throw exception");
+		assertInvalidURI("**", "only '*', not '**'");
+		assertInvalidURI("*/", "only '*', not '*/'");
+	}
+
+	private void assertInvalidURI(String invalidURI, String message) {
+		HttpURI uri = new HttpURI();
+		try {
+			uri.parse(invalidURI);
+			fail(message);
+		} catch (IllegalArgumentException e) {
+			assertTrue(true);
+		}
+	}
+
+	@Test
 	public void testParse() {
 		HttpURI uri = new HttpURI();
 
@@ -56,23 +73,6 @@ public class HttpURITest {
 		uri.parseRequestTarget("GET", "http://foo/bar");
 		assertThat(uri.getHost(), is("foo"));
 		assertThat(uri.getPath(), is("/bar"));
-	}
-
-	@Test
-	public void testInvalidAddress() throws Exception {
-		assertInvalidURI("http://[ffff::1:8080/", "Invalid URL; no closing ']' -- should throw exception");
-		assertInvalidURI("**", "only '*', not '**'");
-		assertInvalidURI("*/", "only '*', not '*/'");
-	}
-
-	private void assertInvalidURI(String invalidURI, String message) {
-		HttpURI uri = new HttpURI();
-		try {
-			uri.parse(invalidURI);
-			fail(message);
-		} catch (IllegalArgumentException e) {
-			assertTrue(true);
-		}
 	}
 
 	@Test
@@ -185,5 +185,32 @@ public class HttpURITest {
 		assertEquals("/f00/bar", uri.getDecodedPath());
 		assertEquals("p2", uri.getParam());
 		assertEquals("other=123456", uri.getQuery());
+	}
+
+	@Test
+	public void testSchemeAndOrAuthority() throws Exception {
+		HttpURI uri = new HttpURI("/path/info");
+		assertEquals("/path/info", uri.toString());
+
+		uri.setAuthority("host", 0);
+		assertEquals("//host/path/info", uri.toString());
+
+		uri.setAuthority("host", 8888);
+		assertEquals("//host:8888/path/info", uri.toString());
+
+		uri.setScheme("http");
+		assertEquals("http://host:8888/path/info", uri.toString());
+
+		uri.setAuthority(null, 0);
+		assertEquals("http:/path/info", uri.toString());
+
+	}
+
+	@Test
+	public void testBasicAuthCredentials() throws Exception {
+		HttpURI uri = new HttpURI("http://user:password@example.com:8888/blah");
+		assertEquals("http://user:password@example.com:8888/blah", uri.toString());
+		assertEquals(uri.getAuthority(), "example.com:8888");
+		assertEquals(uri.getUser(), "user:password");
 	}
 }

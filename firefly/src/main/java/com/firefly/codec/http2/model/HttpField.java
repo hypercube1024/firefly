@@ -7,16 +7,16 @@ import com.firefly.utils.StringUtils;
 
 public class HttpField {
 	private final static String __zeroquality = "q=0";
-	private final HttpHeader header;
-	private final String name;
-	private final String value;
+	private final HttpHeader _header;
+	private final String _name;
+	private final String _value;
 	// cached hashcode for case insensitive name
 	private int hash = 0;
 
 	public HttpField(HttpHeader header, String name, String value) {
-		this.header = header;
-		this.name = name;
-		this.value = value;
+		_header = header;
+		_name = name;
+		_value = value;
 	}
 
 	public HttpField(HttpHeader header, String value) {
@@ -32,34 +32,37 @@ public class HttpField {
 	}
 
 	public HttpHeader getHeader() {
-		return header;
+		return _header;
 	}
 
 	public String getName() {
-		return name;
+		return _name;
 	}
 
 	public String getValue() {
-		return value;
+		return _value;
 	}
 
 	public int getIntValue() {
-		return Integer.valueOf(value);
+		return Integer.valueOf(_value);
 	}
 
 	public long getLongValue() {
-		return Long.valueOf(value);
+		return Long.valueOf(_value);
 	}
 
 	public String[] getValues() {
+		if (_value == null)
+			return null;
+
 		ArrayList<String> list = new ArrayList<>();
 		int state = 0;
 		int start = 0;
 		int end = 0;
 		StringBuilder builder = new StringBuilder();
 
-		for (int i = 0; i < value.length(); i++) {
-			char c = value.charAt(i);
+		for (int i = 0; i < _value.length(); i++) {
+			char c = _value.charAt(i);
 			switch (state) {
 			case 0: // initial white space
 				switch (c) {
@@ -84,7 +87,7 @@ public class HttpField {
 			case 1: // In token
 				switch (c) {
 				case ',': // next field
-					list.add(value.substring(start, end + 1));
+					list.add(_value.substring(start, end + 1));
 					state = 0;
 					break;
 
@@ -141,7 +144,7 @@ public class HttpField {
 		case 0:
 			break;
 		case 1:
-			list.add(value.substring(start, end + 1));
+			list.add(_value.substring(start, end + 1));
 			break;
 		case 4:
 			break;
@@ -165,11 +168,13 @@ public class HttpField {
 	 */
 	public boolean contains(String search) {
 		if (search == null)
-			return value == null;
+			return _value == null;
 		if (search.length() == 0)
 			return false;
-		if (value == null)
+		if (_value == null)
 			return false;
+		if (search.equals(_value))
+			return true;
 
 		search = StringUtils.asciiToLowerCase(search);
 
@@ -177,8 +182,8 @@ public class HttpField {
 		int match = 0;
 		int param = 0;
 
-		for (int i = 0; i < value.length(); i++) {
-			char c = value.charAt(i);
+		for (int i = 0; i < _value.length(); i++) {
+			char c = _value.charAt(i);
 			switch (state) {
 			case 0: // initial white space
 				switch (c) {
@@ -330,20 +335,20 @@ public class HttpField {
 			return false;
 		if (field == this)
 			return true;
-		if (header != null && header == field.getHeader())
+		if (_header != null && _header == field.getHeader())
 			return true;
-		if (name.equalsIgnoreCase(field.getName()))
+		if (_name.equalsIgnoreCase(field.getName()))
 			return true;
 		return false;
 	}
 
 	private int nameHashCode() {
 		int h = this.hash;
-		int len = name.length();
+		int len = _name.length();
 		if (h == 0 && len > 0) {
 			for (int i = 0; i < len; i++) {
 				// simple case insensitive hash
-				char c = name.charAt(i);
+				char c = _name.charAt(i);
 				// assuming us-ascii (per last paragraph on
 				// http://tools.ietf.org/html/rfc7230#section-3.2.4)
 				if ((c >= 'a' && c <= 'z'))
@@ -357,9 +362,10 @@ public class HttpField {
 
 	@Override
 	public int hashCode() {
-		if (header == null)
-			return value.hashCode() ^ nameHashCode();
-		return value.hashCode() ^ header.hashCode();
+		int vhc = Objects.hashCode(_value);
+		if (_header == null)
+			return vhc ^ nameHashCode();
+		return vhc ^ _header.hashCode();
 	}
 
 	@Override
@@ -369,13 +375,13 @@ public class HttpField {
 		if (!(o instanceof HttpField))
 			return false;
 		HttpField field = (HttpField) o;
-		if (header != field.getHeader())
+		if (_header != field.getHeader())
 			return false;
-		if (!name.equalsIgnoreCase(field.getName()))
+		if (!_name.equalsIgnoreCase(field.getName()))
 			return false;
-		if (value == null && field.getValue() != null)
+		if (_value == null && field.getValue() != null)
 			return false;
-		return Objects.equals(value, field.getValue());
+		return Objects.equals(_value, field.getValue());
 	}
 
 	public static class IntValueHttpField extends HttpField {
