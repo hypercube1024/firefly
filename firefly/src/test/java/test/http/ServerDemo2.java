@@ -14,8 +14,16 @@ public class ServerDemo2 {
 		start();
 	}
 
+	/**
+	 * Generate SSL credentials:
+	 * keytool -genkeypair -alias fireflySSLkeys -keyalg RSA -keystore fireflySSLkeys.jks
+	 * 
+	 * List credentials in key store
+	 * keytool -list -keystore fireflySSLkeys.jks
+	 */
 	public static void start() {
-		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
+//		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
+		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server3.xml");
 		bootstrap.start();
 	}
 
