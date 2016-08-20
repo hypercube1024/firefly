@@ -1,10 +1,9 @@
 package com.firefly.codec.http2.frame;
 
-import java.nio.ByteBuffer;
-
-import com.firefly.utils.io.BufferUtils;
+import java.nio.charset.StandardCharsets;
 
 public class GoAwayFrame extends Frame {
+
 	private final int lastStreamId;
 	private final int error;
 	private final byte[] payload;
@@ -29,23 +28,19 @@ public class GoAwayFrame extends Frame {
 	}
 
 	public String tryConvertPayload() {
-		if (payload == null)
+		if (payload == null || payload.length == 0)
 			return "";
-		ByteBuffer buffer = BufferUtils.toBuffer(payload);
 		try {
-			return BufferUtils.toUTF8String(buffer);
+			return new String(payload, StandardCharsets.UTF_8);
 		} catch (Throwable x) {
-			return BufferUtils.toDetailString(buffer);
+			return "";
 		}
 	}
 
 	@Override
 	public String toString() {
 		ErrorCode errorCode = ErrorCode.from(error);
-        return String.format("%s,%d/%s/%s",
-                super.toString(),
-                lastStreamId,
-                errorCode != null ? errorCode.toString() : String.valueOf(error),
-                tryConvertPayload());
+		return String.format("%s,%d/%s/%s", super.toString(), lastStreamId,
+				errorCode != null ? errorCode.toString() : String.valueOf(error), tryConvertPayload());
 	}
 }

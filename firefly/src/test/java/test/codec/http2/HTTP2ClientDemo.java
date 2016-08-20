@@ -129,9 +129,12 @@ public class HTTP2ClientDemo {
 					}
 
 					@Override
-					public void onTimeout(Stream stream, Throwable x) {
+					public boolean onIdleTimeout(Stream stream, Throwable x) {
 						log.error("the client stream {} is timeout", x, stream);
+						return true;
 					}
+
+					
 				});
 
 		final Stream clientStream = streamPromise.get();

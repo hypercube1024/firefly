@@ -115,8 +115,8 @@ public class HTTP2DecoderTest {
 							}
 
 							@Override
-							public void onTimeout(Stream stream, Throwable x) {
-
+							public boolean onIdleTimeout(Stream stream, Throwable x) {
+								return true;
 							}};
 					}
 
@@ -236,8 +236,8 @@ public class HTTP2DecoderTest {
 							}
 
 							@Override
-							public void onTimeout(Stream stream, Throwable x) {
-
+							public boolean onIdleTimeout(Stream stream, Throwable x) {
+								return true;
 							}};
 					}
 
