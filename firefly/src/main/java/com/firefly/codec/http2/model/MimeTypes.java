@@ -24,9 +24,6 @@ import com.firefly.utils.lang.Loader;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-/**
- * 
- */
 public class MimeTypes {
 	public enum Type {
 		FORM_ENCODED("application/x-www-form-urlencoded"),
