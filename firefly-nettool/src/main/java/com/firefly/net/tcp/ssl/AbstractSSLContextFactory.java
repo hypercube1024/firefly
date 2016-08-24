@@ -40,19 +40,30 @@ public abstract class AbstractSSLContextFactory implements SSLContextFactory {
 	public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword)
 			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
 			UnrecoverableKeyException, KeyManagementException {
+		return getSSLContext(in, keystorePassword, keyPassword, null, null, null);
+	}
+
+	public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword,
+			String keyManagerFactoryType, String trustManagerFactoryType, String sslProtocol)
+			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
+			UnrecoverableKeyException, KeyManagementException {
 		long start = Millisecond100Clock.currentTimeMillis();
 		final SSLContext sslContext;
 
 		KeyStore ks = KeyStore.getInstance("JKS");
-		ks.load(in, keystorePassword.toCharArray());
+		ks.load(in, keystorePassword != null ? keystorePassword.toCharArray() : null);
 
-		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-		kmf.init(ks, keyPassword.toCharArray());
+		// PKIX,SunX509
+		KeyManagerFactory kmf = KeyManagerFactory
+				.getInstance(keyManagerFactoryType == null ? "SunX509" : keyManagerFactoryType);
+		kmf.init(ks, keyPassword != null ? keyPassword.toCharArray() : null);
 
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+		TrustManagerFactory tmf = TrustManagerFactory
+				.getInstance(trustManagerFactoryType == null ? "SunX509" : trustManagerFactoryType);
 		tmf.init(ks);
 
-		sslContext = SSLContext.getInstance("TLSv1.2"); // TLSv1 TLSv1.2
+		// TLSv1 TLSv1.2
+		sslContext = SSLContext.getInstance(sslProtocol == null ? "TLSv1.2" : sslProtocol);
 		sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
 		_handle_BUG_JDK_8022063(sslContext);
