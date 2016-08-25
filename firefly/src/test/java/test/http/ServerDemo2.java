@@ -22,8 +22,8 @@ public class ServerDemo2 {
 	 * keytool -list -keystore fireflySSLkeys.jks
 	 */
 	public static void start() {
-//		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
-		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server3.xml");
+		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
+//		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server3.xml");
 		bootstrap.start();
 	}
 

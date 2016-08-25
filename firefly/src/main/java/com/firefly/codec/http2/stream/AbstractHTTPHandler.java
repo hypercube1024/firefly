@@ -33,9 +33,11 @@ public abstract class AbstractHTTPHandler implements Handler {
 	@Override
 	public void exceptionCaught(Session session, Throwable t) throws Throwable {
 		log.error("HTTP handler exception", t);
-		HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();
-		if (httpConnection != null && httpConnection.isOpen()) {
-			httpConnection.close();
+		if (session.getAttachment() instanceof HTTPConnection) {
+			HTTPConnection httpConnection = (HTTPConnection) session.getAttachment();
+			if (httpConnection != null && httpConnection.isOpen()) {
+				httpConnection.close();
+			}
 		}
 	}
 

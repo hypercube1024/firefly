@@ -13,7 +13,6 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -31,7 +30,6 @@ public abstract class AbstractSSLContextFactory implements SSLContextFactory {
 		long start = Millisecond100Clock.currentTimeMillis();
 		final SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(km, tm, random);
-		_handle_BUG_JDK_8022063(sslContext);
 		long end = Millisecond100Clock.currentTimeMillis();
 		log.info("creating SSL context spends {} ms", (end - start));
 		return sslContext;
@@ -66,18 +64,9 @@ public abstract class AbstractSSLContextFactory implements SSLContextFactory {
 		sslContext = SSLContext.getInstance(sslProtocol == null ? "TLSv1.2" : sslProtocol);
 		sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-		_handle_BUG_JDK_8022063(sslContext);
 		long end = Millisecond100Clock.currentTimeMillis();
 		log.info("creating SSL context spends time in {} ms", (end - start));
 		return sslContext;
-	}
-
-	protected void _handle_BUG_JDK_8022063(SSLContext sslContext) {
-		// TODO The bug JDK-8022063, the first createSSLEngine takes 5+ seconds
-		// to complete in OS X. Once createSSLEngine is invoked one time, the
-		// next invocation will be fast.
-		SSLEngine sslEngine = sslContext.createSSLEngine();
-		sslEngine.closeOutbound();
 	}
 
 }

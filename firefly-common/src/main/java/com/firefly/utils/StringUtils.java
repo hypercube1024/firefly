@@ -1,7 +1,9 @@
 package com.firefly.utils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -619,14 +621,20 @@ public class StringUtils {
 		for (int start; (start = s.indexOf("{}", cursor)) != -1;) {
 			ret.append(s.substring(cursor, start));
 			if (index < objs.length) {
+				Object obj = objs[index];
 				try {
-					ret.append(objs[index]);
+					if (obj instanceof AbstractCollection) {
+						ret.append(Arrays.toString(((AbstractCollection<?>)obj).toArray()));
+					} else {
+						ret.append(obj);
+					}
 				} catch (Throwable t) {
 					t.printStackTrace();
-					System.out.println(objs[index].getClass());
+					System.out.println(obj.getClass());
 				}
-			} else
+			} else {
 				ret.append("{}");
+			}
 			cursor = start + 2;
 			index++;
 		}

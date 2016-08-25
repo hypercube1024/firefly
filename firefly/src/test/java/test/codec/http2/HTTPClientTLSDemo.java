@@ -23,9 +23,8 @@ public class HTTPClientTLSDemo {
 		// System.setProperty("javax.net.debug", "all");
 
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-		// FileSSLContextFactory sslContextFactory = new
-		// FileSSLContextFactory("/Users/bjhl/Develop/CA_SSL/cacerts",
-		// "123456", null, "PKIX", "PKIX", null);
+//		FileSSLContextFactory sslContextFactory = new FileSSLContextFactory("/Users/xxxxx/Develop/CA_SSL/cacerts",
+//				"123456", null, "PKIX", "PKIX", null);
 		SSLContextFactory sslContextFactory = new DefaultSSLContextFactory();
 		http2Configuration.setSslContextFactory(sslContextFactory);
 		http2Configuration.setSecureConnectionEnabled(true);

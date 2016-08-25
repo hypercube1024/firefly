@@ -16,6 +16,7 @@ import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.concurrent.FutureCallback;
 import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -179,8 +180,6 @@ public class SSLSession implements Closeable {
 	                throw new IOException("Received" + result.getStatus() + "during initial handshaking");
 	            }
             }
-            
-            
         }  // "needIO" block.
     }
     
@@ -194,15 +193,22 @@ public class SSLSession implements Closeable {
 		        result = sslEngine.wrap(hsBuffer, writeBuf);
 		        initialHSStatus = result.getHandshakeStatus();
 		        if(log.isDebugEnabled()) {
-		        	log.debug("session {} handshake response, init: {} | ret: {} | complete: {}", session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
+		        	log.debug("session {} handshake response, init: {} | ret: {} | complete: {} | isOpen: {} | buf remain: {}", session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete, session.isOpen(), writeBuf.remaining());
 		        }
 		        switch (result.getStatus()) {
 		        case OK:
-		            if (initialHSStatus == HandshakeStatus.NEED_TASK)
+		            if (initialHSStatus == HandshakeStatus.NEED_TASK) {
 		                initialHSStatus = doTasks();
+		            }
+		            
+		            if (initialHSStatus == HandshakeStatus.FINISHED) {
+		            	log.debug("test");
+		            }
 		
 		            writeBuf.flip();
-		            session.write(writeBuf, Callback.NOOP);
+		            FutureCallback callback = new FutureCallback();
+		            session.write(writeBuf, callback);
+		            callback.get();
 		            break wrap;
 		            
 		        case BUFFER_OVERFLOW:
@@ -211,7 +217,6 @@ public class SSLSession implements Closeable {
 		            writeBuf.flip();
 		            b.put(writeBuf);
 		            writeBuf = b;
-		            // retry the operation.
 		        	break;
 		
 		        default: // BUFFER_OVERFLOW/BUFFER_UNDERFLOW/CLOSED:
