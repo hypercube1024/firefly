@@ -140,7 +140,8 @@ public class SSLSession implements Closeable {
 	            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
 	            initialHSStatus = result.getHandshakeStatus();
 	            if(log.isDebugEnabled()) {
-	            	log.debug("session {} handshake receives data, init: {} | ret: {} | complete: {} ", session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
+	            	log.debug("session {} handshake receives data, init: {} | ret: {} | complete: {} ", 
+	            			session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
 	            }
 	            switch (result.getStatus()) {
 	            case OK:
@@ -191,8 +192,9 @@ public class SSLSession implements Closeable {
 	    	while(true) {
 		        result = sslEngine.wrap(hsBuffer, writeBuf);
 		        initialHSStatus = result.getHandshakeStatus();
-		        if(log.isDebugEnabled()) {
-		        	log.debug("session {} handshake response, init: {} | ret: {} | complete: {} | isOpen: {} | buf remain: {}", session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete, session.isOpen(), writeBuf.remaining());
+		        if (log.isDebugEnabled()) {
+		        	log.debug("session {} handshake response, init: {} | ret: {} | complete: {} ", 
+		        			session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
 		        }
 		        switch (result.getStatus()) {
 		        case OK:
@@ -285,7 +287,7 @@ public class SSLSession implements Closeable {
     	if (!initialHSComplete)
             throw new IllegalStateException("The initial handshake is not complete.");
     	
-    	if(log.isDebugEnabled()) {
+    	if (log.isDebugEnabled()) {
     		log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
     	}
     	merge(receiveBuffer);
