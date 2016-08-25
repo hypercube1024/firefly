@@ -16,7 +16,6 @@ import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
-import com.firefly.utils.concurrent.FutureCallback;
 import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -200,15 +199,9 @@ public class SSLSession implements Closeable {
 		            if (initialHSStatus == HandshakeStatus.NEED_TASK) {
 		                initialHSStatus = doTasks();
 		            }
-		            
-		            if (initialHSStatus == HandshakeStatus.FINISHED) {
-		            	log.debug("test");
-		            }
 		
 		            writeBuf.flip();
-		            FutureCallback callback = new FutureCallback();
-		            session.write(writeBuf, callback);
-		            callback.get();
+		            session.write(writeBuf, Callback.NOOP);
 		            break wrap;
 		            
 		        case BUFFER_OVERFLOW:
