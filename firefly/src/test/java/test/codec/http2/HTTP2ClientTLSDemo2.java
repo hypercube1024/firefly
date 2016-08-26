@@ -21,9 +21,6 @@ import com.firefly.utils.io.BufferUtils;
 
 public class HTTP2ClientTLSDemo2 {
 
-	// private static Log log =
-	// LogFactory.getInstance().getLog("firefly-system");
-
 	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
 		http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
@@ -35,56 +32,35 @@ public class HTTP2ClientTLSDemo2 {
 
 		final HTTPClientConnection httpConnection = promise.get();
 
-		// ClientHTTPHandler handler = new ClientHTTPHandler.Adapter() {
-		//
-		// FileChannel fc = FileChannel.open(Paths.get("D:/favicon.ico"),
-		// StandardOpenOption.WRITE,
-		// StandardOpenOption.CREATE);
-		//
-		// @Override
-		// public boolean content(ByteBuffer item, Request request, Response
-		// response, HTTPOutputStream output,
-		// HTTPConnection connection) {
-		// try {
-		// fc.write(item);
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// return false;
-		// }
-		//
-		// @Override
-		// public boolean messageComplete(Request request, Response response,
-		// HTTPOutputStream output,
-		// HTTPConnection connection) {
-		// log.info("client received frame: {}, {}, {}", response.getStatus(),
-		// response.getReason(),
-		// response.getFields());
-		// try {
-		// fc.close();
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
-		// return true;
-		// }
-		// };
-
 		HttpFields fields = new HttpFields();
 		fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
 
 		if (httpConnection.getHttpVersion() == HttpVersion.HTTP_2) {
-			// httpConnection.send(new MetaData.Request("GET", HttpScheme.HTTP,
-			// new HostPortHttpField("127.0.0.1:6655"),
-			// "/favicon.ico", HttpVersion.HTTP_1_1, fields), handler);
-
 			httpConnection.send(
 					new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6655"), "/index",
 							HttpVersion.HTTP_1_1, fields),
 					new ClientHTTPHandler.Adapter().messageComplete((req, resp, outputStream, conn) -> {
 						System.out.println("message complete: " + resp.getStatus() + "|" + resp.getReason());
+						System.out.println();
+						System.out.println();
 						return true;
 					}).content((buffer, req, resp, outputStream, conn) -> {
-						System.out.println(BufferUtils.toString(buffer, StandardCharsets.UTF_8));
+						System.out.print(BufferUtils.toString(buffer, StandardCharsets.UTF_8));
+						return false;
+					}).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
+						System.out.println("error: " + errCode + "|" + reason);
+					}));
+			
+			httpConnection.send(
+					new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("127.0.0.1:6655"), "/index_1",
+							HttpVersion.HTTP_1_1, fields),
+					new ClientHTTPHandler.Adapter().messageComplete((req, resp, outputStream, conn) -> {
+						System.out.println("message complete: " + resp.getStatus() + "|" + resp.getReason());
+						System.out.println();
+						System.out.println();
+						return true;
+					}).content((buffer, req, resp, outputStream, conn) -> {
+						System.out.print(BufferUtils.toString(buffer, StandardCharsets.UTF_8));
 						return false;
 					}).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
 						System.out.println("error: " + errCode + "|" + reason);
