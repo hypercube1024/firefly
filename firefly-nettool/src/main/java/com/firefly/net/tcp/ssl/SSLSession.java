@@ -186,7 +186,7 @@ public class SSLSession implements Closeable {
     protected void doHandshakeResponse() throws Throwable {
     	while(initialHSStatus == HandshakeStatus.NEED_WRAP) {
 	    	SSLEngineResult result;
-	    	ByteBuffer writeBuf = ByteBuffer.allocate(writeBufferSize);
+	    	ByteBuffer writeBuf = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
 	    	
 	    	wrap:
 	    	while(true) {
@@ -201,7 +201,7 @@ public class SSLSession implements Closeable {
 		            if (initialHSStatus == HandshakeStatus.NEED_TASK) {
 		                initialHSStatus = doTasks();
 		            }
-		
+		            
 		            writeBuf.flip();
 		            session.write(writeBuf, Callback.NOOP);
 		            break wrap;
@@ -214,7 +214,7 @@ public class SSLSession implements Closeable {
 		            writeBuf = b;
 		        	break;
 		
-		        default: // BUFFER_OVERFLOW/BUFFER_UNDERFLOW/CLOSED:
+		        default: //BUFFER_UNDERFLOW, CLOSED:
 		            throw new IOException("Received " + result.getStatus() + " during initial handshaking");
 		        }
 	    	}
