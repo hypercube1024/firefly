@@ -141,7 +141,6 @@ public interface Stream {
 	 * @param idleTimeout
 	 *            the stream idle timeout
 	 * @see #getIdleTimeout()
-	 * @see Stream.Listener#onTimeout(Stream, Throwable)
 	 */
 	public void setIdleTimeout(long idleTimeout);
 
