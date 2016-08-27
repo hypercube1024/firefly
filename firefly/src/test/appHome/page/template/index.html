@@ -13,6 +13,7 @@
 	margin: 0 auto;
 }
 </style>
+<script type="text/javascript" src="/js/jquery-3.1.0.min.js"></script>
 </head>
 <body>
 <div>${hello}</div>
@@ -53,7 +54,7 @@
 </div>
 
 <div>
-<form action="upload" method="POST" enctype="multipart/form-data" >
+<form id="form0" action="upload" method="POST" enctype="multipart/form-data" >
 	<div>
 		书名：<input type="text" name="title"></input>
 	</div>
@@ -61,13 +62,14 @@
 		价格：<input type="text" name="price"></input>
 	</div>
 	<div>
-		内容1：<input type="file" name="content1" ></input>
+		内容1：<input id="content1" type="file" name="content1" ></input>
 	</div>
 	<div>
 		内容2：<input type="file" name="content2" ></input>
 	</div>
 	<div>
 		<input type="submit" value="提交"></input>
+		<input id="ajaxSubmit" type="button" value="ajax提交"></input>
 	</div>
 	</form>
 </div>
@@ -76,5 +78,23 @@
 <!-- #include /index_1.html -->
 <!-- #include /index_2.html -->
 <!-- #include /index_3.html -->
+
+<script>
+$('#ajaxSubmit').on('click', function () {
+	$.ajax({
+       url: "upload",
+       type: "POST",
+       data: new FormData($('#form0')[0]),
+       processData: false,
+       contentType: false,
+       success: function(response) {
+           alert(response);
+       },
+       error: function(jqXHR, textStatus, errorMessage) {
+    	   alert(errorMessage); // Optional
+       }
+    });
+})
+</script>
 </body>
 </html>

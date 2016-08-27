@@ -76,7 +76,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		this.maxLocalStreams = -1;
 		this.maxRemoteStreams = -1;
 		this.streamIds.set(initialStreamId);
-		this.streamIdleTimeout = streamIdleTimeout;
+		this.streamIdleTimeout = streamIdleTimeout > 0 ? streamIdleTimeout : endPoint.getIdleTimeout();
 		this.sendWindow.set(FlowControlStrategy.DEFAULT_WINDOW_SIZE);
 		this.recvWindow.set(FlowControlStrategy.DEFAULT_WINDOW_SIZE);
 		this.pushEnabled = true; // SPEC: by default, push is enabled.
@@ -252,9 +252,9 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 			}
 			case SettingsFrame.MAX_HEADER_LIST_SIZE: {
 				if (log.isDebugEnabled())
-                    log.debug("Update max header list size to {}", value);
-                generator.setMaxHeaderListSize(value);
-                break;
+					log.debug("Update max header list size to {}", value);
+				generator.setMaxHeaderListSize(value);
+				break;
 			}
 			default: {
 				if (log.isDebugEnabled())
@@ -266,7 +266,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 		notifySettings(this, frame);
 
 		if (reply) {
-			SettingsFrame replyFrame = new SettingsFrame(Collections.<Integer, Integer> emptyMap(), true);
+			SettingsFrame replyFrame = new SettingsFrame(Collections.emptyMap(), true);
 			settings(replyFrame, Callback.NOOP);
 		}
 	}
@@ -314,17 +314,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 				if (closed.compareAndSet(current, CloseState.REMOTELY_CLOSED)) {
 					// We received a GO_AWAY, so try to write
 					// what's in the queue and then disconnect.
-					control(null, new Callback() {
-						@Override
-						public void succeeded() {
-							notifyClose(HTTP2Session.this, frame);
-						}
-
-						@Override
-						public void failed(Throwable x) {
-							notifyClose(HTTP2Session.this, frame);
-						}
-					}, new DisconnectFrame());
+					notifyClose(this, frame);
+					control(null, Callback.NOOP, new DisconnectFrame());
 					return;
 				}
 				break;
@@ -542,7 +533,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 	protected StreamSPI createLocalStream(int streamId, Promise<Stream> promise) {
 		while (true) {
 			int localCount = localStreamCount.get();
-			int maxCount = maxLocalStreams;
+			int maxCount = getMaxLocalStreams();
 			if (maxCount >= 0 && localCount >= maxCount) {
 				promise.failed(new IllegalStateException("Max local stream count " + maxCount + " exceeded"));
 				return null;

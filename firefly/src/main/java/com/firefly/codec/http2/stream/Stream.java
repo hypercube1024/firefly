@@ -141,7 +141,6 @@ public interface Stream {
 	 * @param idleTimeout
 	 *            the stream idle timeout
 	 * @see #getIdleTimeout()
-	 * @see Stream.Listener#onTimeout(Stream, Throwable)
 	 */
 	public void setIdleTimeout(long idleTimeout);
 
@@ -220,8 +219,9 @@ public interface Stream {
 		 * @param x
 		 *            the timeout failure
 		 * @see #getIdleTimeout()
+		 * @return true to reset the stream, false to ignore the idle timeout
 		 */
-		public void onTimeout(Stream stream, Throwable x);
+		public boolean onIdleTimeout(Stream stream, Throwable x);
 
 		/**
 		 * <p>
@@ -248,7 +248,8 @@ public interface Stream {
 			}
 
 			@Override
-			public void onTimeout(Stream stream, Throwable x) {
+			public boolean onIdleTimeout(Stream stream, Throwable x) {
+				return true;
 			}
 		}
 	}

@@ -73,9 +73,12 @@ public class HTTP2ServerDemo {
 					}
 
 					@Override
-					public void onTimeout(Stream stream, Throwable x) {
-						log.error("the server stream {}, is timeout", x, stream);
+					public boolean onIdleTimeout(Stream stream, Throwable x) {
+						log.info("idle timeout", x);
+						return true;
 					}
+
+					
 				};
 			}
 

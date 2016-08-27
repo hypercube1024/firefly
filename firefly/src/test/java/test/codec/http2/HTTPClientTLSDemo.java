@@ -12,6 +12,7 @@ import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.ssl.DefaultSSLContextFactory;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
@@ -19,10 +20,13 @@ import com.firefly.utils.io.BufferUtils;
 public class HTTPClientTLSDemo {
 
 	public static void main(String[] args) throws InterruptedException, ExecutionException {
-//		System.setProperty("javax.net.debug", "all");
-		
+		// System.setProperty("javax.net.debug", "all");
+
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-		http2Configuration.setSslContextFactory(new DefaultSSLContextFactory());
+//		FileSSLContextFactory sslContextFactory = new FileSSLContextFactory("/Users/xxxxx/Develop/CA_SSL/cacerts",
+//				"123456", null, "PKIX", "PKIX", null);
+		SSLContextFactory sslContextFactory = new DefaultSSLContextFactory();
+		http2Configuration.setSslContextFactory(sslContextFactory);
 		http2Configuration.setSecureConnectionEnabled(true);
 		http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
 		HTTP2Client client = new HTTP2Client(http2Configuration);

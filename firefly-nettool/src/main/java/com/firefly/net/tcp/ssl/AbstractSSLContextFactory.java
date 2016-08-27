@@ -13,7 +13,6 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -31,7 +30,6 @@ public abstract class AbstractSSLContextFactory implements SSLContextFactory {
 		long start = Millisecond100Clock.currentTimeMillis();
 		final SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 		sslContext.init(km, tm, random);
-		_handle_BUG_JDK_8022063(sslContext);
 		long end = Millisecond100Clock.currentTimeMillis();
 		log.info("creating SSL context spends {} ms", (end - start));
 		return sslContext;
@@ -40,33 +38,35 @@ public abstract class AbstractSSLContextFactory implements SSLContextFactory {
 	public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword)
 			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
 			UnrecoverableKeyException, KeyManagementException {
+		return getSSLContext(in, keystorePassword, keyPassword, null, null, null);
+	}
+
+	public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword,
+			String keyManagerFactoryType, String trustManagerFactoryType, String sslProtocol)
+			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
+			UnrecoverableKeyException, KeyManagementException {
 		long start = Millisecond100Clock.currentTimeMillis();
 		final SSLContext sslContext;
 
 		KeyStore ks = KeyStore.getInstance("JKS");
-		ks.load(in, keystorePassword.toCharArray());
+		ks.load(in, keystorePassword != null ? keystorePassword.toCharArray() : null);
 
-		KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-		kmf.init(ks, keyPassword.toCharArray());
+		// PKIX,SunX509
+		KeyManagerFactory kmf = KeyManagerFactory
+				.getInstance(keyManagerFactoryType == null ? "SunX509" : keyManagerFactoryType);
+		kmf.init(ks, keyPassword != null ? keyPassword.toCharArray() : null);
 
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+		TrustManagerFactory tmf = TrustManagerFactory
+				.getInstance(trustManagerFactoryType == null ? "SunX509" : trustManagerFactoryType);
 		tmf.init(ks);
 
-		sslContext = SSLContext.getInstance("TLSv1.2"); // TLSv1 TLSv1.2
+		// TLSv1 TLSv1.2
+		sslContext = SSLContext.getInstance(sslProtocol == null ? "TLSv1.2" : sslProtocol);
 		sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-		_handle_BUG_JDK_8022063(sslContext);
 		long end = Millisecond100Clock.currentTimeMillis();
 		log.info("creating SSL context spends time in {} ms", (end - start));
 		return sslContext;
-	}
-
-	protected void _handle_BUG_JDK_8022063(SSLContext sslContext) {
-		// TODO The bug JDK-8022063, the first createSSLEngine takes 5+ seconds
-		// to complete in OS X. Once createSSLEngine is invoked one time, the
-		// next invocation will be fast.
-		SSLEngine sslEngine = sslContext.createSSLEngine();
-		sslEngine.closeOutbound();
 	}
 
 }
