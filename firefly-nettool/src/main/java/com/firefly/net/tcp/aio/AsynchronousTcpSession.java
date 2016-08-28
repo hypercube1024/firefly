@@ -134,7 +134,17 @@ public class AsynchronousTcpSession implements Session {
 		} else {
 			log.error("the session {} writes data is failed", t, getSessionId());
 		}
-		closeNow();
+		
+		outputLock.lock();
+		try {
+			int bufferSize = outputBuffer.size();
+			log.error("the session {} has {} buffer can not ouput", getSessionId(), bufferSize);
+			outputBuffer.clear();
+			isWriting = false;
+			shutdownSocketChannel();
+		} finally {
+			outputLock.unlock();
+		}
 		callback.failed(t);
 	}
 
@@ -144,7 +154,7 @@ public class AsynchronousTcpSession implements Session {
 			if (log.isDebugEnabled()) {
 				log.debug("the session {} output is closed, {}", getSessionId(), currentWritenBytes);
 			}
-			closeNow();
+			shutdownSocketChannel();
 			return;
 		}
 
@@ -244,6 +254,9 @@ public class AsynchronousTcpSession implements Session {
 
 	@Override
 	public void write(OutputEntry<?> entry) {
+		if (!isOpen())
+			return;
+		
 		if (entry == null)
 			return;
 

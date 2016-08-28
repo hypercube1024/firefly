@@ -25,7 +25,7 @@
 	</bean>
 	
 	<bean id="tcpConfiguration" class="com.firefly.net.Config">
-		<property name="timeout" value="80000"></property>
+		<property name="timeout" value="8000"></property>
 	</bean>
 	
 	<bean id="sslContextFactory" class="com.firefly.net.tcp.ssl.FileSSLContextFactory">
