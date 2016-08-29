@@ -8,12 +8,13 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.HashTimeWheel;
 import com.firefly.utils.time.Millisecond100Clock;
 
-public class LocalHttpSessionManager implements HttpSessionManager {
+public class LocalHttpSessionManager extends AbstractLifeCycle implements HttpSessionManager {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
@@ -25,12 +26,8 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 
 	private static final HashTimeWheel TIME_WHEEL = new HashTimeWheel();
 
-	static {
-		TIME_WHEEL.start();
-	}
-	
-	public static void shutdown() {
-		TIME_WHEEL.stop();
+	public LocalHttpSessionManager() {
+		start();
 	}
 
 	@Override
@@ -124,6 +121,16 @@ public class LocalHttpSessionManager implements HttpSessionManager {
 	@Override
 	public void setHttpSessionListener(HttpSessionListener httpSessionListener) {
 		this.httpSessionListener = httpSessionListener;
+	}
+
+	@Override
+	protected void init() {
+		TIME_WHEEL.start();
+	}
+
+	@Override
+	protected void destroy() {
+		TIME_WHEEL.stop();
 	}
 
 }

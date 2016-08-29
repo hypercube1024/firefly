@@ -9,7 +9,6 @@ import test.net.tcp.example.StringLineEncoder;
 import com.firefly.net.support.wrap.client.MessageReceivedCallback;
 import com.firefly.net.support.wrap.client.SimpleTcpClient;
 import com.firefly.net.support.wrap.client.TcpConnection;
-import com.firefly.utils.log.LogFactory;
 
 public class SimpleTcpClientExample {
 	public static void main(String[] args) throws Throwable {
@@ -73,7 +72,6 @@ public class SimpleTcpClientExample {
 		
 		Thread.sleep(4000);
 		client.shutdown();
-		LogFactory.getInstance().shutdown();
 //		System.out.println("shutdown");
 
 		

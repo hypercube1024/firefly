@@ -1,0 +1,3 @@
+INFO 2016-08-29 13:20:36	Asynchronous TCP configuration [timeout=10000, asynchronousCorePoolSize=8, asynchronousMaximumPoolSize=64, asynchronousPoolKeepAliveTime=15000]
+INFO 2016-08-29 13:20:36	create default event manager
+INFO 2016-08-29 13:20:36	start server. host: localhost, port: 9900

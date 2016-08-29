@@ -2,12 +2,14 @@ package com.firefly.utils.log;
 
 import com.firefly.utils.collection.TreeTrie;
 import com.firefly.utils.collection.Trie;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.file.FileLog;
 import com.firefly.utils.log.file.FileLogTask;
 import com.firefly.utils.time.Millisecond100Clock;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
-public class LogFactory {
+public class LogFactory extends AbstractLifeCycle {
+	
 	public static final SafeSimpleDateFormat DAY_DATE_FORMAT = new SafeSimpleDateFormat("yyyy-MM-dd");
 
 	private final Trie<Log> logTree = new TreeTrie<>();
@@ -45,7 +47,7 @@ public class LogFactory {
 			logTree.put(fileLog.getName(), fileLog);
 		}
 
-		logTask.start();
+		start();
 	}
 
 	public void flushAll() {
@@ -74,13 +76,15 @@ public class LogFactory {
 		return logTask;
 	}
 
-	public void shutdown() {
-		logTask.shutdown();
-		Millisecond100Clock.stop();
+	@Override
+	protected void init() {
+		logTask.start();
 	}
 
-	public void start() {
-		logTask.start();
+	@Override
+	protected void destroy() {
+		logTask.stop();
+		Millisecond100Clock.stop();
 	}
 
 }

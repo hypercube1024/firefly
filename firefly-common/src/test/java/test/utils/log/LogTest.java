@@ -239,7 +239,7 @@ public class LogTest {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		LogFactory.getInstance().shutdown();
+		LogFactory.getInstance().stop();
 	}
 	
 	public static void main(String[] args) throws Throwable {
@@ -294,7 +294,7 @@ public class LogTest {
 			}
 			Thread.sleep(3000L);
 		} finally {
-			LogFactory.getInstance().shutdown();
+			LogFactory.getInstance().stop();
 		}
 	}
 	

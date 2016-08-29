@@ -20,11 +20,15 @@ public class ServerDemo2 {
 	 * 
 	 * List credentials in key store
 	 * keytool -list -keystore fireflySSLkeys.jks
+	 * @throws InterruptedException 
 	 */
-	public static void start() {
-//		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
-		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server3.xml");
+	public static void start() throws InterruptedException {
+		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
+//		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server3.xml");
 		bootstrap.start();
+		
+//		Thread.sleep(2000L);
+//		bootstrap.stop();
 	}
 
 }

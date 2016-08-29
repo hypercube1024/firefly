@@ -1,9 +1,9 @@
 package com.firefly.utils.log;
 
-public interface LogTask extends Runnable {
-	void start();
+import com.firefly.utils.lang.LifeCycle;
 
-	void shutdown();
-
+public interface LogTask extends Runnable, LifeCycle {
+	
 	void add(LogItem logItem);
+	
 }

@@ -1,4 +1,4 @@
-package test.codec.http2;
+package test.http;
 
 import java.io.IOException;
 
@@ -66,6 +66,10 @@ public class HTTP2ClientTLSDemo2 {
 						System.out.println("error: " + errCode + "|" + reason);
 					}));
 		}
+		
+		Thread.sleep(3000L);
+		httpConnection.close();
+		client.stop();
 	}
 
 }

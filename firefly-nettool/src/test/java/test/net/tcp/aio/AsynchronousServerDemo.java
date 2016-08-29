@@ -15,7 +15,7 @@ public class AsynchronousServerDemo {
 		new StringLineDecoder(), 
 		new StringLineEncoder(), 
 		new SendFileHandler(), 5000);
-		server.start("localhost", 9900);
+		server.listen("localhost", 9900);
 	}
 
 }
