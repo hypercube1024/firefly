@@ -118,7 +118,7 @@ public class AsynchronousTcpSession implements Session {
 								log.debug("the session {} reading data is timeout.", getSessionId());
 							}
 						} else {
-							log.error("the session {} read data is failed", t, session.getSessionId());
+							log.warn("the session {} read data is failed", t, session.getSessionId());
 						}
 
 						session.closeNow();
@@ -132,13 +132,13 @@ public class AsynchronousTcpSession implements Session {
 				log.debug("the session {} writing data is timeout.", getSessionId());
 			}
 		} else {
-			log.error("the session {} writes data is failed", t, getSessionId());
+			log.warn("the session {} writes data is failed", t, getSessionId());
 		}
 		
 		outputLock.lock();
 		try {
 			int bufferSize = outputBuffer.size();
-			log.error("the session {} has {} buffer can not ouput", getSessionId(), bufferSize);
+			log.warn("the session {} has {} buffer data can not ouput", getSessionId(), bufferSize);
 			outputBuffer.clear();
 			isWriting = false;
 			shutdownSocketChannel();
