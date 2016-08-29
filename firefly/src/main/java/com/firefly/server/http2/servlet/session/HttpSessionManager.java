@@ -6,7 +6,9 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
-public interface HttpSessionManager {
+import com.firefly.utils.lang.LifeCycle;
+
+public interface HttpSessionManager extends LifeCycle {
 
 	public boolean containsKey(String id);
 

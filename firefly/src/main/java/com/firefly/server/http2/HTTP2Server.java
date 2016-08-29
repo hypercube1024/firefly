@@ -64,6 +64,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 		if (server != null) {
 			server.stop();
 		}
+		http2Configuration.getHttpSessionManager().stop();
 		AbstractHTTP2Connection.shutdown();
 		LogFactory.getInstance().stop();
 		Millisecond100Clock.stop();

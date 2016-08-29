@@ -1,5 +1,6 @@
-package test.codec.http2;
+package test.http;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 
@@ -19,7 +20,7 @@ import com.firefly.utils.io.BufferUtils;
 
 public class HTTPClientTLSDemo {
 
-	public static void main(String[] args) throws InterruptedException, ExecutionException {
+	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
 		// System.setProperty("javax.net.debug", "all");
 
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
@@ -52,6 +53,9 @@ public class HTTPClientTLSDemo {
 			}
 		});
 
+		Thread.sleep(3000L);
+		httpConnection.close();
+		client.stop();
 	}
 
 }
