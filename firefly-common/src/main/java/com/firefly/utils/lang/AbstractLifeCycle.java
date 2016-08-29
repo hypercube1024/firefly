@@ -1,4 +1,4 @@
-package com.firefly.core;
+package com.firefly.utils.lang;
 
 public abstract class AbstractLifeCycle implements LifeCycle {
 	

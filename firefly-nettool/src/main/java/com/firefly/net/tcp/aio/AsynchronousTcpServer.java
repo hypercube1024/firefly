@@ -23,18 +23,18 @@ import com.firefly.net.Handler;
 import com.firefly.net.Server;
 import com.firefly.net.event.DefaultEventManager;
 import com.firefly.net.exception.NetException;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
 
-public class AsynchronousTcpServer implements Server {
+public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
 	
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private Config config;
 	private AtomicInteger id = new AtomicInteger();
 	private AsynchronousTcpWorker worker;
 	private AsynchronousChannelGroup group;
-	private volatile boolean isInitialized = false;
 
 	public AsynchronousTcpServer() {}
 	
@@ -56,38 +56,6 @@ public class AsynchronousTcpServer implements Server {
 		config.setHandler(handler);
 		config.setTimeout(timeout);
 	}
-	
-	private void init() {
-		if(isInitialized)
-			return;
-		
-		synchronized(this) {
-			if(isInitialized)
-				return;
-			
-			try {
-				group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
-						config.getAsynchronousCorePoolSize(),
-						config.getAsynchronousMaximumPoolSize(), 
-						config.getAsynchronousPoolKeepAliveTime(), 
-						TimeUnit.MILLISECONDS, 
-						new LinkedTransferQueue<Runnable>(),
-						new ThreadFactory(){
-	
-							@Override
-							public Thread newThread(Runnable r) {
-								return new Thread(r, "firefly asynchronous server thread");
-							}
-						}));
-				log.info(config.toString());
-				EventManager eventManager = new DefaultEventManager(config);
-				worker = new AsynchronousTcpWorker(config, eventManager);
-			} catch (IOException e) {
-				log.error("initialization server channel group error", e);
-			}
-			isInitialized = true;
-		}
-	}
 
 	@Override
 	public void setConfig(Config config) {
@@ -95,10 +63,8 @@ public class AsynchronousTcpServer implements Server {
 	}
 
 	@Override
-	public void start(String host, int port) {
-		if (config == null)
-			throw new NetException("server config is null");
-		init();
+	public void listen(String host, int port) {
+		start();
 		listen(bind(host, port));
 		log.info("start server. host: {}, port: {}", host, port);
 	}
@@ -138,11 +104,38 @@ public class AsynchronousTcpServer implements Server {
 	}
 
 	@Override
-	public void shutdown() {
+	protected void init() {
+		if (config == null)
+			throw new NetException("server configuration is null");
+		
+		try {
+			group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
+					config.getAsynchronousCorePoolSize(),
+					config.getAsynchronousMaximumPoolSize(), 
+					config.getAsynchronousPoolKeepAliveTime(), 
+					TimeUnit.MILLISECONDS, 
+					new LinkedTransferQueue<Runnable>(),
+					new ThreadFactory(){
+
+						@Override
+						public Thread newThread(Runnable r) {
+							return new Thread(r, "firefly asynchronous server thread");
+						}
+					}));
+			log.info(config.toString());
+			EventManager eventManager = new DefaultEventManager(config);
+			worker = new AsynchronousTcpWorker(config, eventManager);
+		} catch (IOException e) {
+			log.error("initialization server channel group error", e);
+		}
+	}
+
+	@Override
+	protected void destroy() {
 		if(group != null) {
 			group.shutdown();
 		}
-		LogFactory.getInstance().shutdown();
+		LogFactory.getInstance().stop();
 		Millisecond100Clock.stop();
 	}
 

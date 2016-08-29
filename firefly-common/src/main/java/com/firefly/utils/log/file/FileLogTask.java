@@ -6,14 +6,15 @@ import java.util.concurrent.TimeUnit;
 
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.collection.Trie;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.log.LogItem;
 import com.firefly.utils.log.LogTask;
 import com.firefly.utils.time.Millisecond100Clock;
 
-public class FileLogTask implements LogTask {
-	private volatile boolean start;
+public class FileLogTask extends AbstractLifeCycle implements LogTask {
+
 	private BlockingQueue<LogItem> queue = new LinkedTransferQueue<>();
 	private Thread thread = new Thread(this, "firefly log thread");
 	private final Trie<Log> logTree;
@@ -71,23 +72,6 @@ public class FileLogTask implements LogTask {
 	}
 
 	@Override
-	public void start() {
-		if (!start) {
-			synchronized (this) {
-				if (!start) {
-					start = true;
-					thread.start();
-				}
-			}
-		}
-	}
-
-	@Override
-	public void shutdown() {
-		start = false;
-	}
-
-	@Override
 	public void add(LogItem logItem) {
 		if (!start)
 			return;
@@ -96,5 +80,16 @@ public class FileLogTask implements LogTask {
 			throw new IllegalArgumentException("log name is empty");
 
 		queue.offer(logItem);
+	}
+
+	@Override
+	protected void init() {
+		start = true;
+		thread.start();
+	}
+
+	@Override
+	protected void destroy() {
+		start = false;
 	}
 }

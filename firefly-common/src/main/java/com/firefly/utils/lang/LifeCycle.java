@@ -1,4 +1,4 @@
-package com.firefly.core;
+package com.firefly.utils.lang;
 
 public interface LifeCycle {
 	public void start();

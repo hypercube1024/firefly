@@ -1,15 +1,21 @@
 package com.firefly.utils.time;
 
-public class TimeProvider {
+import com.firefly.utils.lang.AbstractLifeCycle;
+
+public class TimeProvider extends AbstractLifeCycle {
 	private final long interval;
 	private volatile long current = System.currentTimeMillis();
-	private volatile boolean start;
 
 	public TimeProvider(long interval) {
 		this.interval = interval;
 	}
 
-	public void start() {
+	public long currentTimeMillis() {
+		return current;
+	}
+
+	@Override
+	protected void init() {
 		start = true;
 		new Thread(new Runnable() {
 			@Override
@@ -26,12 +32,9 @@ public class TimeProvider {
 		}, "filefly time provider " + interval + "ms").start();
 	}
 
-	public void stop() {
+	@Override
+	protected void destroy() {
 		start = false;
-	}
-
-	public long currentTimeMillis() {
-		return current;
 	}
 
 }

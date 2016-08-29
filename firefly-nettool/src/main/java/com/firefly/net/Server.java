@@ -1,9 +1,10 @@
 package com.firefly.net;
 
-public interface Server {
+import com.firefly.utils.lang.LifeCycle;
+
+public interface Server extends LifeCycle {
+	
 	void setConfig(Config config);
 	
-	void start(String host, int port);
-	
-	void shutdown();
+	void listen(String host, int port);
 }

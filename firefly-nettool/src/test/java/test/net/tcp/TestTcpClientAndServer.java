@@ -33,7 +33,7 @@ public class TestTcpClientAndServer {
 		config.setEncoder(new StringLineEncoder());
 		config.setHandler(new SendFileHandler());
 		server.setConfig(config);
-		server.start("localhost", 9900);
+		server.listen("localhost", 9900);
 		Thread.sleep(1000);
 		
 		final int LOOP = 50;

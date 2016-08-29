@@ -1,4 +1,4 @@
-package test.codec.http2;
+package test.http;
 
 import java.io.IOException;
 

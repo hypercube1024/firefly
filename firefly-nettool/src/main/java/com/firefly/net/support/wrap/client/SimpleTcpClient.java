@@ -3,13 +3,13 @@ package com.firefly.net.support.wrap.client;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.firefly.net.Client;
 import com.firefly.net.Decoder;
 import com.firefly.net.Encoder;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
+import com.firefly.utils.concurrent.FuturePromise;
 
 public class SimpleTcpClient {
 	private String host;
@@ -34,15 +34,13 @@ public class SimpleTcpClient {
 	
 	public Future<TcpConnection> connect(final long timeout) {
 		final long t = timeout <= 0 ? 5000L : timeout;
-		final ResultCallable<TcpConnection> callable = new ResultCallable<TcpConnection>();
-		final FutureTask<TcpConnection> future = new FutureTask<TcpConnection>(callable);
+		final FuturePromise<TcpConnection> future = new FuturePromise<>();
 		
 		connect(t, new SessionOpenedCallback(){
 
 			@Override
 			public void sessionOpened(TcpConnection connection) {
-				callable.setValue(connection);
-				future.run();
+				future.succeeded(connection);
 			}
 		});
 		return future;
@@ -58,6 +56,6 @@ public class SimpleTcpClient {
 	}
 
 	public void shutdown() {
-		client.shutdown();
+		client.stop();
 	}
 }

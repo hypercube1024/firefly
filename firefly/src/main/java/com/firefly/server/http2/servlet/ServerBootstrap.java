@@ -4,12 +4,12 @@ import java.io.File;
 import java.lang.management.ManagementFactory;
 
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.core.AbstractLifeCycle;
 import com.firefly.mvc.web.WebContext;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.servlet.session.LocalHttpSessionManager;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 

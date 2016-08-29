@@ -86,7 +86,7 @@ public class SSLServerDemo {
 				if(session.isOpen())
 					session.closeNow();
 			}}, 1000 * 5);	
-		server.start("localhost", 7676);
+		server.listen("localhost", 7676);
 	}
 
 }

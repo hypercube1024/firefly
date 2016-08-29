@@ -4,14 +4,14 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.lang.AbstractLifeCycle;
 
-public class HashTimeWheel {
+public class HashTimeWheel extends AbstractLifeCycle {
 	private int maxTimers = 60; // slot's number in wheel
 	private long interval = 1000; // the clock's accuracy
 	
 	private ConcurrentLinkedQueue<TimerTask>[] timerSlots;
 	private volatile int currentSlot = 0;
-	private volatile boolean start;
 
 	public int getMaxTimers() {
 		return maxTimers;
@@ -53,28 +53,6 @@ public class HashTimeWheel {
 	
 	private final boolean remove(TimerTask task, int index) {
 		return timerSlots[index].remove(task);
-	}
-
-	@SuppressWarnings("unchecked")
-	public void start() {
-		if (!start) {
-			synchronized (this) {
-				if (!start) {
-					timerSlots = new ConcurrentLinkedQueue[maxTimers];
-					for (int i = 0; i < timerSlots.length; i++) {
-						timerSlots[i] = new ConcurrentLinkedQueue<TimerTask>();
-					}
-
-					start = true;
-					new Thread(new Worker(), "firefly time wheel").start();
-				}
-			}
-		}
-	}
-
-	public void stop() {
-		start = false;
-		timerSlots = null;
 	}
 
 	private final class Worker implements Runnable {
@@ -145,6 +123,24 @@ public class HashTimeWheel {
 		public boolean cancel() {
 			return timeWheel.remove(task, index);
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected void init() {
+		timerSlots = new ConcurrentLinkedQueue[maxTimers];
+		for (int i = 0; i < timerSlots.length; i++) {
+			timerSlots[i] = new ConcurrentLinkedQueue<TimerTask>();
+		}
+
+		start = true;
+		new Thread(new Worker(), "firefly time wheel").start();
+	}
+
+	@Override
+	protected void destroy() {
+		start = false;
+		timerSlots = null;
 	}
 
 }
