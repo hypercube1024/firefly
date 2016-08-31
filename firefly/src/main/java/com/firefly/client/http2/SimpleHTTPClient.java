@@ -3,6 +3,8 @@ package com.firefly.client.http2;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
@@ -10,12 +12,14 @@ import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
+import com.firefly.utils.lang.pool.Pool;
 
 public class SimpleHTTPClient {
 
 	private static volatile SimpleHTTPClient client;
 
 	private HTTP2Client http2Client;
+	private Map<RequestBuilder, Pool<HTTPClientConnection>> pool = new ConcurrentHashMap<>();
 
 	private SimpleHTTPClient(HTTP2Configuration http2Configuration) {
 		http2Client = new HTTP2Client(http2Configuration);
