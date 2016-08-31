@@ -1,10 +1,12 @@
 package com.firefly.utils.lang.pool;
 
+import com.firefly.utils.lang.AbstractLifeCycle;
+
 /**
  * Represents an abstract pool, that defines the procedure of returning an
  * object to the pool.
  */
-abstract public class AbstractPool<T> implements Pool<T> {
+abstract public class AbstractPool<T> extends AbstractLifeCycle implements Pool<T> {
 
 	/**
 	 * Returns the object to the pool. The method first validates the object if
@@ -16,7 +18,7 @@ abstract public class AbstractPool<T> implements Pool<T> {
 	 *
 	 */
 	@Override
-	public final void release(T t) {
+	public void release(T t) {
 		if (isValid(t)) {
 			returnToPool(t);
 		} else {

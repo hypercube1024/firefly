@@ -22,7 +22,7 @@ public interface BlockingPool<T> extends Pool<T> {
 	 *
 	 * @return T an instance of the Object of type T from the pool.
 	 */
-	T get();
+	T take() throws InterruptedException;
 
 	/**
 	 * Returns an instance of type T from the pool, waiting up to the specified
@@ -51,5 +51,5 @@ public interface BlockingPool<T> extends Pool<T> {
 	 *             if interrupted while waiting
 	 */
 
-	T get(long time, TimeUnit unit) throws InterruptedException;
+	T take(long time, TimeUnit unit) throws InterruptedException;
 }

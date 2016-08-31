@@ -41,8 +41,7 @@ public interface Pool<T> extends LifeCycle {
 	void release(T t);
 
 	/**
-	 * Represents the functionality to validate an object of the pool and to
-	 * subsequently perform cleanup activities.
+	 * Represents the functionality to validate an object of the pool
 	 */
 	public static interface Validator<T> {
 		/**
@@ -55,16 +54,18 @@ public interface Pool<T> extends LifeCycle {
 		 */
 		public boolean isValid(T t);
 
+	}
+
+	public static interface Dispose<T> {
 		/**
 		 * Performs any cleanup activities before discarding the object. For
 		 * example before discarding database connection objects, the pool will
-		 * want to close the connections. This is done via the invalidate()
-		 * method.
+		 * want to close the connections.
 		 *
 		 * @param t
 		 *            the object to cleanup
 		 */
 
-		public void invalidate(T t);
+		public void destroy(T t);
 	}
 }
