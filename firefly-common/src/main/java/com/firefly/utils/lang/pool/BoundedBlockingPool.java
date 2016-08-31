@@ -87,4 +87,9 @@ public class BoundedBlockingPool<T> extends AbstractPool<T> implements BlockingP
 		}
 	}
 
+	@Override
+	public int size() {
+		return queue.size();
+	}
+
 }

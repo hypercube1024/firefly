@@ -12,43 +12,20 @@ import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
-import com.firefly.utils.lang.pool.Pool;
+import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.lang.pool.BlockingPool;
 
-public class SimpleHTTPClient {
-
-	private static volatile SimpleHTTPClient client;
+public class SimpleHTTPClient extends AbstractLifeCycle {
 
 	private HTTP2Client http2Client;
-	private Map<RequestBuilder, Pool<HTTPClientConnection>> pool = new ConcurrentHashMap<>();
+	private Map<RequestBuilder, BlockingPool<HTTPClientConnection>> pool = new ConcurrentHashMap<>();
 
-	private SimpleHTTPClient(HTTP2Configuration http2Configuration) {
+	public SimpleHTTPClient() {
+		this(new HTTP2Configuration());
+	}
+
+	public SimpleHTTPClient(HTTP2Configuration http2Configuration) {
 		http2Client = new HTTP2Client(http2Configuration);
-	}
-
-	public static SimpleHTTPClient create() {
-		return create(new HTTP2Configuration());
-	}
-
-	public static SimpleHTTPClient create(HTTP2Configuration http2Configuration) {
-		if (client != null) {
-			return client;
-		}
-
-		synchronized (SimpleHTTPClient.class) {
-			if (client != null) {
-				return client;
-			}
-
-			client = new SimpleHTTPClient(http2Configuration);
-			return client;
-		}
-	}
-
-	public synchronized static void destroy() {
-		if (client != null) {
-			client.http2Client.stop();
-			client = null;
-		}
 	}
 
 	public class RequestBuilder {
@@ -138,5 +115,17 @@ public class SimpleHTTPClient {
 
 	private void request(RequestBuilder request) {
 		// TODO
+	}
+
+	@Override
+	protected void init() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void destroy() {
+		// TODO Auto-generated method stub
+		
 	}
 }
