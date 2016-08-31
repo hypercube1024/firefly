@@ -47,6 +47,7 @@ public class TestBoundedBlockingPool {
 
 		Assert.assertThat(list.get(10).closed, is(true));
 		Assert.assertThat(list.get(9).closed, is(false));
+		Assert.assertThat(pool.size(), is(10));
 	}
 
 	public static class PooledObject {
