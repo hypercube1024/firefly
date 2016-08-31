@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -31,7 +30,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 	public class RequestBuilder {
 		String host;
 		int port;
-		HttpVersion httpVersion;
 
 		MetaData.Request request;
 		List<ByteBuffer> requestBody = new ArrayList<>();
@@ -78,8 +76,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
+			result = prime * result + getOuterType().hashCode();
 			result = prime * result + ((host == null) ? 0 : host.hashCode());
-			result = prime * result + ((httpVersion == null) ? 0 : httpVersion.hashCode());
 			result = prime * result + port;
 			return result;
 		}
@@ -93,17 +91,23 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 			if (getClass() != obj.getClass())
 				return false;
 			RequestBuilder other = (RequestBuilder) obj;
+			if (!getOuterType().equals(other.getOuterType()))
+				return false;
 			if (host == null) {
 				if (other.host != null)
 					return false;
 			} else if (!host.equals(other.host))
 				return false;
-			if (httpVersion != other.httpVersion)
-				return false;
 			if (port != other.port)
 				return false;
 			return true;
 		}
+
+		private SimpleHTTPClient getOuterType() {
+			return SimpleHTTPClient.this;
+		}
+
+		
 	}
 
 	public RequestBuilder connect(String host, int port) {

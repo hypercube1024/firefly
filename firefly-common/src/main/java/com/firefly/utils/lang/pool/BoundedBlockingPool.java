@@ -4,7 +4,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class BoundedBlockingPool<T> extends AbstractPool<T> implements BlockingPool<T> {
+import com.firefly.utils.lang.AbstractLifeCycle;
+
+public class BoundedBlockingPool<T> extends AbstractLifeCycle implements BlockingPool<T> {
 
 	private BlockingQueue<T> queue;
 	private int initSize;
@@ -48,28 +50,50 @@ public class BoundedBlockingPool<T> extends AbstractPool<T> implements BlockingP
 	}
 
 	private T _take(T t) {
-		if (validator.isValid(t)) {
-			return t;
-		} else {
+		if (t == null) {
 			return factory.createNew();
+		} else {
+			if (validator.isValid(t)) {
+				return t;
+			} else {
+				return factory.createNew();
+			}
 		}
 	}
 
 	@Override
-	protected void handleInvalidReturn(T t) {
-	}
-
-	@Override
-	protected void returnToPool(T t) {
-		boolean success = queue.offer(t);
-		if (success == false) {
+	public void release(T t) {
+		if (validator.isValid(t)) {
+			boolean success = queue.offer(t);
+			if (success == false) {
+				dispose.destroy(t);
+			}
+		} else {
 			dispose.destroy(t);
 		}
 	}
 
 	@Override
-	protected boolean isValid(T t) {
-		return validator.isValid(t);
+	public void put(T t) throws InterruptedException {
+		if (validator.isValid(t)) {
+			queue.put(t);
+		} else {
+			dispose.destroy(t);
+		}
+	}
+
+	@Override
+	public boolean put(T t, long timeout, TimeUnit unit) throws InterruptedException {
+		if (validator.isValid(t)) {
+			boolean success = queue.offer(t, timeout, unit);
+			if (success == false) {
+				dispose.destroy(t);
+			}
+			return success;
+		} else {
+			dispose.destroy(t);
+			return false;
+		}
 	}
 
 	@Override
