@@ -19,7 +19,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.HashTimeWheel;
@@ -40,7 +39,7 @@ public class AsyncContextImpl implements AsyncContext {
 
 	}
 
-	public static void init(HTTP2Configuration config) {
+	public static void init(ServerHTTP2Configuration config) {
 		executor = new ThreadPoolExecutor(config.getAsynchronousContextCorePoolSize(),
 				config.getAsynchronousContextMaximumPoolSize(), config.getAsynchronousContextCorePoolKeepAliveTime(),
 				TimeUnit.MILLISECONDS, new LinkedTransferQueue<Runnable>(), new AsyncContextTreadFactory());

@@ -14,6 +14,8 @@ public class HTTP2Server extends AbstractLifeCycle {
 
 	private final Server server;
 	private final HTTP2Configuration http2Configuration;
+	private final String host;
+	private final int port;
 
 	public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
 			ServerHTTPHandler serverHTTPHandler) {
@@ -28,8 +30,8 @@ public class HTTP2Server extends AbstractLifeCycle {
 		if (host == null)
 			throw new IllegalArgumentException("the http2 server host is empty");
 
-		http2Configuration.setHost(host);
-		http2Configuration.setPort(port);
+		this.host = host;
+		this.port = port;
 
 		DecoderChain decoder;
 		EncoderChain encoder;
@@ -56,7 +58,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 
 	@Override
 	protected void init() {
-		server.listen(http2Configuration.getHost(), http2Configuration.getPort());
+		server.listen(host, port);
 	}
 
 	@Override
@@ -64,7 +66,6 @@ public class HTTP2Server extends AbstractLifeCycle {
 		if (server != null) {
 			server.stop();
 		}
-		http2Configuration.getHttpSessionManager().stop();
 		AbstractHTTP2Connection.stopScheduler();
 		LogFactory.getInstance().stop();
 		Millisecond100Clock.stop();

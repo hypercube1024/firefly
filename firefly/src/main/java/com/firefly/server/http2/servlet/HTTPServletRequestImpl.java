@@ -40,7 +40,6 @@ import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.exception.HttpServerException;
@@ -71,7 +70,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	private List<Locale> localeList;
 	private Collection<Part> parts;
 
-	final HTTP2Configuration http2Configuration;
+	final ServerHTTP2Configuration http2Configuration;
 	private Charset encoding;
 	private String characterEncoding;
 	private Map<String, Object> attributeMap = new HashMap<String, Object>();
@@ -87,7 +86,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	private AsyncContextImpl asyncContext;
 	private RequestDispatcherImpl requestDispatcher;
 
-	public HTTPServletRequestImpl(HTTP2Configuration http2Configuration, Request request, Response response,
+	public HTTPServletRequestImpl(ServerHTTP2Configuration http2Configuration, Request request, Response response,
 			HTTPOutputStream output, HTTPConnection connection) {
 		this.request = request;
 		this.connection = connection;

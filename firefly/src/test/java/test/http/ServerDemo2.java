@@ -27,8 +27,8 @@ public class ServerDemo2 {
 //		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server3.xml");
 		bootstrap.start();
 		
-		Thread.sleep(12000L);
-		bootstrap.stop();
+//		Thread.sleep(2000L);
+//		bootstrap.stop();
 	}
 
 }
