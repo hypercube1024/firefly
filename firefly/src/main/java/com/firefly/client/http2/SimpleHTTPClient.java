@@ -42,9 +42,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private final HTTP2Client http2Client;
+	protected final HTTP2Client http2Client;
+	protected final Scheduler scheduler;
+	
 	private final Map<RequestBuilder, BlockingPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
-	private final Scheduler scheduler;
 
 	public SimpleHTTPClient() {
 		this(new SimpleHTTPClientConfiguration());
@@ -227,7 +228,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		}
 	}
 
-	private void send(RequestBuilder r) {
+	protected void send(RequestBuilder r) {
 		SimpleHTTPClientConfiguration config = (SimpleHTTPClientConfiguration) http2Client.getHttp2Configuration();
 		BlockingPool<HTTPClientConnection> pool = getPool(r);
 		try {
