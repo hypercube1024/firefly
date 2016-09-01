@@ -23,7 +23,8 @@ public class SimpleHTTPClientDemo {
 			System.out.println(response.getFields());
 		}).end();
 		
-
+		Thread.sleep(5000);
+		client.stop();
 	}
 
 }

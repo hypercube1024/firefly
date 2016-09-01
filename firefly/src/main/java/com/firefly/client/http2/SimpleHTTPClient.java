@@ -22,8 +22,10 @@ import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.utils.concurrent.FuturePromise;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action1;
@@ -64,6 +66,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		Action1<ByteBuffer> content;
 		Action3<Integer, String, Response> badMessage;
 		Action1<Response> earlyEof;
+		Promise<HTTPOutputStream> promise;
 
 		public RequestBuilder put(String name, List<String> list) {
 			request.getFields().put(name, list);
@@ -107,6 +110,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		public RequestBuilder write(ByteBuffer buffer) {
 			requestBody.add(buffer);
+			return this;
+		}
+
+		public RequestBuilder output(Promise<HTTPOutputStream> promise) {
+			this.promise = promise;
 			return this;
 		}
 
@@ -197,15 +205,23 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 	public RequestBuilder request(String method, String url) {
 		try {
-			URL u = new URL(url);
+			return request(method, new URL(url));
+		} catch (MalformedURLException e) {
+			log.error("url exception", e);
+			throw new IllegalArgumentException(e);
+		}
 
+	}
+
+	public RequestBuilder request(String method, URL url) {
+		try {
 			RequestBuilder req = new RequestBuilder();
-			req.host = u.getHost();
-			req.port = u.getPort() < 0 ? u.getDefaultPort() : u.getPort();
-			req.request = new MetaData.Request(method, new HttpURI(u.toURI()), HttpVersion.HTTP_1_1, new HttpFields());
-
+			req.host = url.getHost();
+			req.port = url.getPort() < 0 ? url.getDefaultPort() : url.getPort();
+			req.request = new MetaData.Request(method, new HttpURI(url.toURI()), HttpVersion.HTTP_1_1,
+					new HttpFields());
 			return req;
-		} catch (MalformedURLException | URISyntaxException e) {
+		} catch (URISyntaxException e) {
 			log.error("url exception", e);
 			throw new IllegalArgumentException(e);
 		}
@@ -216,8 +232,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		BlockingPool<HTTPClientConnection> pool = getPool(r);
 		try {
 			HTTPClientConnection connection = pool.take(config.getTakeConnectionTimeout(), TimeUnit.MILLISECONDS);
-			connection.send(r.request, r.requestBody.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY),
-					new ClientHTTPHandler.Adapter().messageComplete((req, resp, outputStream, conn) -> {
+
+			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
+					.messageComplete((req, resp, outputStream, conn) -> {
 						try {
 							if (r.messageComplete != null) {
 								r.messageComplete.call(resp);
@@ -247,7 +264,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 						} finally {
 							pool.release(connection);
 						}
-					}));
+					});
+
+			if (r.requestBody != null && r.requestBody.isEmpty() == false) {
+				connection.send(r.request, r.requestBody.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), handler);
+			} else if (r.promise != null) {
+				connection.send(r.request, r.promise, handler);
+			} else {
+				connection.send(r.request, handler);
+			}
 		} catch (InterruptedException e) {
 			log.error("take connection exception", e);
 		}
