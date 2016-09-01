@@ -1,5 +1,6 @@
 package com.firefly.utils.lang.pool;
 
+import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -114,6 +115,16 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 	@Override
 	public int size() {
 		return queue.size();
+	}
+
+	@Override
+	public void cleanup() {
+		for (Iterator<T> iterator = queue.iterator(); iterator.hasNext();) {
+			T t = iterator.next();
+			if (validator.isValid(t) == false) {
+				dispose.destroy(t);
+			}
+		}
 	}
 
 }

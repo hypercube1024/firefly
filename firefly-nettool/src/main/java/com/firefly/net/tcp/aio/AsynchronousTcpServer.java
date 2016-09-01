@@ -29,26 +29,27 @@ import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
 
 public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
-	
+
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	private Config config;
 	private AtomicInteger id = new AtomicInteger();
 	private AsynchronousTcpWorker worker;
 	private AsynchronousChannelGroup group;
 
-	public AsynchronousTcpServer() {}
-	
+	public AsynchronousTcpServer() {
+	}
+
 	public AsynchronousTcpServer(Config config) {
 		this.config = config;
 	}
-	
+
 	public AsynchronousTcpServer(Decoder decoder, Encoder encoder, Handler handler) {
 		config = new Config();
 		config.setDecoder(decoder);
 		config.setEncoder(encoder);
 		config.setHandler(handler);
 	}
-	
+
 	public AsynchronousTcpServer(Decoder decoder, Encoder encoder, Handler handler, int timeout) {
 		config = new Config();
 		config.setDecoder(decoder);
@@ -68,7 +69,7 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
 		listen(bind(host, port));
 		log.info("start server. host: {}, port: {}", host, port);
 	}
-	
+
 	private AsynchronousServerSocketChannel bind(String host, int port) {
 		AsynchronousServerSocketChannel serverSocketChannel = null;
 		try {
@@ -80,9 +81,9 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
 		}
 		return serverSocketChannel;
 	}
-	
+
 	private void listen(final AsynchronousServerSocketChannel serverSocketChannel) {
-		serverSocketChannel.accept(id.getAndIncrement(), new CompletionHandler<AsynchronousSocketChannel, Integer>(){
+		serverSocketChannel.accept(id.getAndIncrement(), new CompletionHandler<AsynchronousSocketChannel, Integer>() {
 
 			@Override
 			public void completed(AsynchronousSocketChannel socketChannel, Integer sessionId) {
@@ -94,28 +95,30 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
 			}
 
 			@Override
-			public void failed(Throwable exc, Integer id) {
+			public void failed(Throwable t, Integer sessionId) {
 				try {
-					log.error("server accepts channel " + id + " error occurs", exc);
+					try {
+						config.getHandler().failedAcceptingSession(sessionId, t);
+					} catch (Throwable e) {
+						log.error("session {} accepting exception", e, sessionId);
+					}
+					log.error("server accepts channel {} error occurs", t, sessionId);
 				} finally {
 					listen(serverSocketChannel);
 				}
-			}} );
+			}
+		});
 	}
 
 	@Override
 	protected void init() {
 		if (config == null)
 			throw new NetException("server configuration is null");
-		
+
 		try {
-			group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(
-					config.getAsynchronousCorePoolSize(),
-					config.getAsynchronousMaximumPoolSize(), 
-					config.getAsynchronousPoolKeepAliveTime(), 
-					TimeUnit.MILLISECONDS, 
-					new LinkedTransferQueue<Runnable>(),
-					new ThreadFactory(){
+			group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(config.getAsynchronousCorePoolSize(),
+					config.getAsynchronousMaximumPoolSize(), config.getAsynchronousPoolKeepAliveTime(),
+					TimeUnit.MILLISECONDS, new LinkedTransferQueue<Runnable>(), new ThreadFactory() {
 
 						@Override
 						public Thread newThread(Runnable r) {
@@ -132,7 +135,7 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
 
 	@Override
 	protected void destroy() {
-		if(group != null) {
+		if (group != null) {
 			group.shutdown();
 		}
 		LogFactory.getInstance().stop();

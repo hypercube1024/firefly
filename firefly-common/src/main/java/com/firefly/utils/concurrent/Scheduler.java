@@ -2,12 +2,13 @@ package com.firefly.utils.concurrent;
 
 import java.util.concurrent.TimeUnit;
 
-public interface Scheduler {
+import com.firefly.utils.lang.LifeCycle;
+
+public interface Scheduler extends LifeCycle {
+	
 	public interface Future {
 		public boolean cancel();
 	}
-	
-	public void shutdown();
 
 	public Future schedule(Runnable task, long delay, TimeUnit unit);
 

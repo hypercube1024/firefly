@@ -41,6 +41,8 @@ public interface Pool<T> extends LifeCycle {
 	void release(T t);
 	
 	int size();
+	
+	void cleanup();
 
 	/**
 	 * Represents the functionality to validate an object of the pool
