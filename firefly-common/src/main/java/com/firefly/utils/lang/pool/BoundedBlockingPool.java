@@ -122,6 +122,7 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 		for (Iterator<T> iterator = queue.iterator(); iterator.hasNext();) {
 			T t = iterator.next();
 			if (validator.isValid(t) == false) {
+				iterator.remove();
 				dispose.destroy(t);
 			}
 		}
