@@ -14,7 +14,6 @@ import java.util.UUID;
 
 import javax.servlet.http.Part;
 
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.server.exception.HttpServerException;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
@@ -25,7 +24,7 @@ import com.firefly.utils.io.PipedStream;
 
 public class PartImpl implements Part {
 
-	private final HTTP2Configuration http2Configuration;
+	private final ServerHTTP2Configuration http2Configuration;
 
 	private PipedStream pipedStream;
 	private String name, fileName;
@@ -34,7 +33,7 @@ public class PartImpl implements Part {
 	final Map<String, String> headMap = new HashMap<String, String>();
 	int size = 0;
 
-	public PartImpl(HTTP2Configuration http2Configuration) {
+	public PartImpl(ServerHTTP2Configuration http2Configuration) {
 		this.http2Configuration = http2Configuration;
 	}
 

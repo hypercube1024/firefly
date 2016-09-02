@@ -17,8 +17,8 @@ abstract public class AbstractHTTP2Connection extends AbstractHTTPConnection {
 
 	protected static final Scheduler scheduler = Schedulers.createScheduler();
 	
-	public static void shutdown() {
-		scheduler.shutdown();
+	public static void stopScheduler() {
+		scheduler.stop();
 	}
 
 	public AbstractHTTP2Connection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,

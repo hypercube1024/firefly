@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
@@ -22,10 +21,10 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
-	private final HTTP2Configuration http2Configuration;
+	private final ServerHTTP2Configuration http2Configuration;
 	private final HttpServletDispatcherController controller;
 
-	public ServletServerHTTPHandler(HTTP2Configuration http2Configuration, HttpServletDispatcherController controller) {
+	public ServletServerHTTPHandler(ServerHTTP2Configuration http2Configuration, HttpServletDispatcherController controller) {
 		this.http2Configuration = http2Configuration;
 		this.controller = controller;
 		AsyncContextImpl.init(http2Configuration);

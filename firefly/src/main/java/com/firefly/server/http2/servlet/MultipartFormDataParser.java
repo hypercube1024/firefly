@@ -10,7 +10,6 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.Part;
 
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.Log;
@@ -24,7 +23,7 @@ public class MultipartFormDataParser {
 	private static final int headBufSize = 1024;
 	private static final int dataBufSize = 8 * 1024;
 
-	public static Collection<Part> parse(final HTTP2Configuration http2Configuration, ServletInputStream input,
+	public static Collection<Part> parse(final ServerHTTP2Configuration http2Configuration, ServletInputStream input,
 			String contentType, Charset encoding) throws IOException, ServletException {
 		String[] contentTypeInfo = StringUtils.split(contentType, ';');
 		if (contentTypeInfo == null || contentTypeInfo.length < 2)

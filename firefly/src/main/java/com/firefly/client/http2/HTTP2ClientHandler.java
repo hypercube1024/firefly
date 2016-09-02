@@ -129,5 +129,14 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 			http2ClientContext.remove(session.getSessionId());
 		}
 	}
+	
+	@Override
+	public void failedOpeningSession(Integer sessionId, Throwable t) throws Throwable {
+		HTTP2ClientContext context = http2ClientContext.get(sessionId);
+		if (context != null) {
+			context.promise.failed(t);
+		}
+		http2ClientContext.remove(sessionId);
+	}
 
 }

@@ -16,9 +16,9 @@ import javax.servlet.http.Part;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.server.http2.servlet.MultipartFormDataParser;
 import com.firefly.server.http2.servlet.ServerBootstrap;
+import com.firefly.server.http2.servlet.ServerHTTP2Configuration;
 import com.firefly.utils.codec.Base64Utils;
 
 public class TestMultipartParser {
@@ -30,7 +30,7 @@ public class TestMultipartParser {
 		if(!tempdir.exists())
 			tempdir.mkdirs();
 
-		HTTP2Configuration http2Configuration = new HTTP2Configuration();
+		ServerHTTP2Configuration http2Configuration = new ServerHTTP2Configuration();
 		http2Configuration.setTemporaryDirectory(tempdir.getAbsolutePath());
 		String s = "LS0tLS0tV2ViS2l0Rm9ybUJvdW5kYXJ5bzZPV0pGWm9HOHc2MkxCTQ0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJuYW1lIg0KDQrpgrHpuY/mu5QNCi0tLS0tLVdlYktpdEZvcm1Cb3VuZGFyeW82T1dKRlpvRzh3NjJMQk0NCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsgbmFtZT0ibnVtIg0KDQpzZGZmZXcyMzQNCi0tLS0tLVdlYktpdEZvcm1Cb3VuZGFyeW82T1dKRlpvRzh3NjJMQk0NCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsgbmFtZT0iY29udGVudDEiOyBmaWxlbmFtZT0i5rWL6K+VMi50eHQiDQpDb250ZW50LVR5cGU6IHRleHQvcGxhaW4NCg0K5rWL6K+V5paH5Lu25LiK5LygMQ0KLS0tLS0tV2ViS2l0Rm9ybUJvdW5kYXJ5bzZPV0pGWm9HOHc2MkxCTQ0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJjb250ZW50MiI7IGZpbGVuYW1lPSJ0ZXN0MS50eHQiDQpDb250ZW50LVR5cGU6IHRleHQvcGxhaW4NCg0K5rWL6K+V5paH5Lu25LiK5LygMjENCi0tLS0tLVdlYktpdEZvcm1Cb3VuZGFyeW82T1dKRlpvRzh3NjJMQk0tLQ0K";
 		

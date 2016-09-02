@@ -5,7 +5,7 @@
 	<component-scan base-package="test.server" />
 	<mvc view-path="/template" view-encoding="UTF-8" />
 
-	<bean class="com.firefly.codec.http2.stream.HTTP2Configuration">
+	<bean class="com.firefly.server.http2.servlet.ServerHTTP2Configuration">
 		<property name="serverHome" value="target/test-classes/page"></property>
 		<property name="host" value="localhost"></property>
 		<property name="port" value="6655"></property>

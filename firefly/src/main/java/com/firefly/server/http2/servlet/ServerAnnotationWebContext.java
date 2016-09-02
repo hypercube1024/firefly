@@ -5,7 +5,6 @@ import java.io.File;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebHandler;
@@ -19,16 +18,16 @@ public class ServerAnnotationWebContext extends AnnotationWebContext {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 	
-	private final HTTP2Configuration http2Configuration;
+	private final ServerHTTP2Configuration http2Configuration;
 
 	public ServerAnnotationWebContext(String file) {
 		super(file);
-		http2Configuration = getBean(HTTP2Configuration.class);
+		http2Configuration = getBean(ServerHTTP2Configuration.class);
 		http2Configuration.setConfigFileName(file);
 		viewInit();
 	}
 
-	public ServerAnnotationWebContext(HTTP2Configuration http2Configuration) {
+	public ServerAnnotationWebContext(ServerHTTP2Configuration http2Configuration) {
 		super(http2Configuration.getConfigFileName());
 		this.http2Configuration = http2Configuration;
 		viewInit();
