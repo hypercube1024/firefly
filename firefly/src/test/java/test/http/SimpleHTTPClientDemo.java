@@ -56,11 +56,9 @@ public class SimpleHTTPClientDemo {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}).put(HttpHeader.CONTENT_LENGTH, String.valueOf(test.length))
-					.put(HttpHeader.COOKIE, CookieGenerator.generateCookies(
-							response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream().map((str) -> {
-								return CookieParser.parseSetCookie(str);
-							}).collect(Collectors.toList())))
+			}).put(HttpHeader.CONTENT_LENGTH, String.valueOf(test.length)).put(HttpHeader.COOKIE,
+					CookieGenerator.generateCookies(response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString())
+							.stream().map(CookieParser::parseSetCookie).collect(Collectors.toList())))
 					.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.asString()).content((buf) -> {
 						System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
 					}).messageComplete((res) -> {
