@@ -22,8 +22,8 @@ import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Response;
-import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.model.MimeTypes;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
@@ -44,7 +44,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 	protected final HTTP2Client http2Client;
 	protected final Scheduler scheduler;
-	
+
 	private final Map<RequestBuilder, BlockingPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
 
 	public SimpleHTTPClient() {
@@ -68,6 +68,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		Action3<Integer, String, Response> badMessage;
 		Action1<Response> earlyEof;
 		Promise<HTTPOutputStream> promise;
+		Action1<HTTPOutputStream> output;
 
 		public RequestBuilder put(String name, List<String> list) {
 			request.getFields().put(name, list);
@@ -111,6 +112,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		public RequestBuilder write(ByteBuffer buffer) {
 			requestBody.add(buffer);
+			return this;
+		}
+
+		public RequestBuilder output(Action1<HTTPOutputStream> output) {
+			this.output = output;
 			return this;
 		}
 
@@ -236,34 +242,25 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
 					.messageComplete((req, resp, outputStream, conn) -> {
-						try {
-							if (r.messageComplete != null) {
-								r.messageComplete.call(resp);
-							}
-							return true;
-						} finally {
-							pool.release(connection);
+						pool.release(connection);
+						if (r.messageComplete != null) {
+							r.messageComplete.call(resp);
 						}
+						return true;
 					}).content((buffer, req, resp, outputStream, conn) -> {
 						if (r.content != null) {
 							r.content.call(buffer);
 						}
 						return false;
 					}).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
-						try {
-							if (r.badMessage != null) {
-								r.badMessage.call(errCode, reason, resp);
-							}
-						} finally {
-							pool.release(connection);
+						pool.release(connection);
+						if (r.badMessage != null) {
+							r.badMessage.call(errCode, reason, resp);
 						}
 					}).earlyEOF((req, resp, outputStream, conn) -> {
-						try {
-							if (r.earlyEof != null) {
-								r.earlyEof.call(resp);
-							}
-						} finally {
-							pool.release(connection);
+						pool.release(connection);
+						if (r.earlyEof != null) {
+							r.earlyEof.call(resp);
 						}
 					});
 
@@ -271,6 +268,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 				connection.send(r.request, r.requestBody.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), handler);
 			} else if (r.promise != null) {
 				connection.send(r.request, r.promise, handler);
+			} else if (r.output != null) {
+				Promise<HTTPOutputStream> p = new Promise<HTTPOutputStream>() {
+					public void succeeded(HTTPOutputStream out) {
+						r.output.call(out);
+					}
+				};
+				connection.send(r.request, p, handler);
 			} else {
 				connection.send(r.request, handler);
 			}

@@ -99,6 +99,7 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 
 	@Override
 	protected void init() {
+
 		for (int i = 0; i < initSize; i++) {
 			queue.offer(factory.createNew());
 		}
