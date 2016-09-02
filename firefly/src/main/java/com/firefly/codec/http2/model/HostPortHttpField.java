@@ -7,7 +7,7 @@ public class HostPortHttpField extends HttpField {
 		this(HttpHeader.HOST, HttpHeader.HOST.asString(), authority);
 	}
 
-	protected HostPortHttpField(HttpHeader header, String name, String authority) {
+	public HostPortHttpField(HttpHeader header, String name, String authority) {
 		super(header, name, authority);
 		try {
 			_hostPort = new HostPort(authority);
