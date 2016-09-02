@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
@@ -31,7 +32,10 @@ import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.EofException;
 import com.firefly.utils.json.Json;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.BlockingPool;
 import com.firefly.utils.lang.pool.BoundedBlockingPool;
@@ -57,6 +61,45 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		start();
 	}
 
+	public class SimpleResponse {
+		Response response;
+		List<ByteBuffer> responseBody = new ArrayList<>();
+
+		public Response getResponse() {
+			return response;
+		}
+
+		public void setResponse(Response response) {
+			this.response = response;
+		}
+
+		public List<ByteBuffer> getResponseBody() {
+			return responseBody;
+		}
+
+		public void setResponseBody(List<ByteBuffer> responseBody) {
+			this.responseBody = responseBody;
+		}
+
+		public String getStringBody() {
+			StringBuilder builder = new StringBuilder();
+			responseBody.stream().map(BufferUtils::toUTF8String).forEach(builder::append);
+			return builder.toString();
+		}
+
+		public <T> T getJsonBody(Class<T> clazz) {
+			return Json.toObject(getStringBody(), clazz);
+		}
+
+		public JsonObject getJsonObjectBody() {
+			return Json.toJsonObject(getStringBody());
+		}
+
+		public JsonArray getJsonArrayBody() {
+			return Json.toJsonArray(getStringBody());
+		}
+	}
+
 	public class RequestBuilder {
 		String host;
 		int port;
@@ -69,6 +112,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		Action1<Response> earlyEof;
 		Promise<HTTPOutputStream> promise;
 		Action1<HTTPOutputStream> output;
+		FuturePromise<SimpleResponse> future;
+		SimpleResponse simpleResponse;
 
 		public RequestBuilder put(String name, List<String> list) {
 			request.getFields().put(name, list);
@@ -143,6 +188,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		public RequestBuilder earlyEof(Action1<Response> earlyEof) {
 			this.earlyEof = earlyEof;
 			return this;
+		}
+
+		public FuturePromise<SimpleResponse> submit() {
+			submit(new FuturePromise<>());
+			return future;
+		}
+
+		public void submit(FuturePromise<SimpleResponse> future) {
+			this.future = future;
+			simpleResponse = new SimpleResponse();
+			send(this);
 		}
 
 		public void end() {
@@ -246,10 +302,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 						if (r.messageComplete != null) {
 							r.messageComplete.call(resp);
 						}
+						if (r.future != null) {
+							r.simpleResponse.response = resp;
+							r.future.succeeded(r.simpleResponse);
+						}
 						return true;
 					}).content((buffer, req, resp, outputStream, conn) -> {
 						if (r.content != null) {
 							r.content.call(buffer);
+						}
+						if (r.future != null && r.simpleResponse != null) {
+							r.simpleResponse.responseBody.add(buffer);
 						}
 						return false;
 					}).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
@@ -257,10 +320,19 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 						if (r.badMessage != null) {
 							r.badMessage.call(errCode, reason, resp);
 						}
+
+						if (r.future != null) {
+							r.simpleResponse.response = resp;
+							r.future.failed(new BadMessageException(errCode, reason));
+						}
 					}).earlyEOF((req, resp, outputStream, conn) -> {
 						pool.release(connection);
 						if (r.earlyEof != null) {
 							r.earlyEof.call(resp);
+						}
+						if (r.future != null) {
+							r.simpleResponse.response = resp;
+							r.future.failed(new EofException("early eof"));
 						}
 					});
 

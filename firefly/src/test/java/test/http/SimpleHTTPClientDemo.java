@@ -2,9 +2,11 @@ package test.http;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import com.firefly.client.http2.SimpleHTTPClient;
+import com.firefly.client.http2.SimpleHTTPClient.SimpleResponse;
 import com.firefly.codec.http2.model.CookieGenerator;
 import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpHeader;
@@ -39,39 +41,37 @@ public class SimpleHTTPClientDemo {
 		}).end();
 
 		long s3 = System.currentTimeMillis();
-		client.get("http://localhost:6656/login").content((buf) -> {
-			System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
-		}).messageComplete((response) -> {
-			long end = System.currentTimeMillis();
-			System.out.println();
-			System.out.println(response.toString());
-			System.out.println(response.getFields());
-			System.out.println("------------------------------------ " + (end - s3));
+		Future<SimpleResponse> future = client.get("http://localhost:6656/login").submit();
+		SimpleResponse simpleResponse = future.get();
+		long end = System.currentTimeMillis();
+		System.out.println();
+		System.out.println(simpleResponse.getStringBody());
+		System.out.println(simpleResponse.getResponse().toString());
+		System.out.println(simpleResponse.getResponse().getFields());
+		System.out.println("------------------------------------ " + (end - s3));
 
-			long start2 = System.currentTimeMillis();
-			byte[] test = "content=hello_hello".getBytes(StandardCharsets.UTF_8);
-			client.post("http://localhost:6656/add").output((o) -> {
-				try (HTTPOutputStream out = o) {
-					out.write(test);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}).put(HttpHeader.CONTENT_LENGTH, String.valueOf(test.length))
-					.put(HttpHeader.COOKIE, CookieGenerator.generateCookies(
-							response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream().map((str) -> {
-								return CookieParser.parseSetCookie(str);
-							}).collect(Collectors.toList())))
-					.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.asString()).content((buf) -> {
-						System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
-					}).messageComplete((res) -> {
-						long end2 = System.currentTimeMillis();
-						System.out.println();
-						System.out.println(res.toString());
-						System.out.println(res.getFields());
-						System.out.println("------------------------------------ " + (end2 - start2));
-
-					}).end();
-		}).end();
+		long s4 = System.currentTimeMillis();
+		byte[] test = "content=hello_hello".getBytes(StandardCharsets.UTF_8);
+		future = client.post("http://localhost:6656/add").output((o) -> {
+			try (HTTPOutputStream out = o) {
+				out.write(test);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).put(HttpHeader.CONTENT_LENGTH, String.valueOf(test.length))
+		.put(HttpHeader.COOKIE, CookieGenerator.generateCookies(
+				simpleResponse.getResponse().getFields()
+				.getValuesList(HttpHeader.SET_COOKIE.asString())
+				.stream().map(CookieParser::parseSetCookie).collect(Collectors.toList())))
+		.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.asString())
+		.submit();
+		simpleResponse = future.get();
+		long end2 = System.currentTimeMillis();
+		System.out.println();
+		System.out.println(simpleResponse.getStringBody());
+		System.out.println(simpleResponse.getResponse().toString());
+		System.out.println(simpleResponse.getResponse().getFields());
+		System.out.println("------------------------------------ " + (end2 - s4));
 
 		Thread.sleep(5000);
 		client.stop();
