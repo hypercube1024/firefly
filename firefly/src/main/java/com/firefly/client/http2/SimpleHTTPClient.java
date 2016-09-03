@@ -423,7 +423,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							return promise.get();
 						} catch (InterruptedException | ExecutionException e) {
 							log.error("create http connection exception", e);
-							throw new IllegalStateException();
+							throw new IllegalStateException(e);
 						}
 					}, (conn) -> {
 						return conn.isOpen();
