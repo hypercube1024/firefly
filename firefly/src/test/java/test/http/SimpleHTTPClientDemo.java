@@ -3,12 +3,9 @@ package test.http;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClient.SimpleResponse;
-import com.firefly.codec.http2.model.CookieGenerator;
-import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
@@ -59,10 +56,7 @@ public class SimpleHTTPClientDemo {
 				e.printStackTrace();
 			}
 		}).put(HttpHeader.CONTENT_LENGTH, String.valueOf(test.length))
-		.put(HttpHeader.COOKIE, CookieGenerator.generateCookies(
-				simpleResponse.getResponse().getFields()
-				.getValuesList(HttpHeader.SET_COOKIE.asString())
-				.stream().map(CookieParser::parseSetCookie).collect(Collectors.toList())))
+		.cookies(simpleResponse.getCookies())
 		.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.asString())
 		.submit();
 		simpleResponse = future.get();
