@@ -13,8 +13,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.firefly.codec.http2.model.BadMessageException;
+import com.firefly.codec.http2.model.Cookie;
+import com.firefly.codec.http2.model.CookieGenerator;
+import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
@@ -98,6 +102,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		public JsonArray getJsonArrayBody() {
 			return Json.toJsonArray(getStringBody());
 		}
+
+		public List<Cookie> getCookies() {
+			return response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
+					.map(CookieParser::parseSetCookie).collect(Collectors.toList());
+		}
 	}
 
 	public class RequestBuilder {
@@ -114,6 +123,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		Action1<HTTPOutputStream> output;
 		FuturePromise<SimpleResponse> future;
 		SimpleResponse simpleResponse;
+
+		public RequestBuilder cookies(List<Cookie> cookies) {
+			request.getFields().put(HttpHeader.COOKIE, CookieGenerator.generateCookies(cookies));
+			return this;
+		}
 
 		public RequestBuilder put(String name, List<String> list) {
 			request.getFields().put(name, list);
@@ -199,6 +213,19 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 			this.future = future;
 			simpleResponse = new SimpleResponse();
 			send(this);
+		}
+
+		public void submit(Action1<SimpleResponse> action) {
+			FuturePromise<SimpleResponse> future = new FuturePromise<SimpleResponse>() {
+				public void succeeded(SimpleResponse t) {
+					action.call(t);
+				}
+
+				public void failed(Throwable c) {
+					log.error("http request exception", c);
+				}
+			};
+			submit(future);
 		}
 
 		public void end() {
@@ -295,10 +322,25 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		BlockingPool<HTTPClientConnection> pool = getPool(r);
 		try {
 			HTTPClientConnection connection = pool.take(config.getTakeConnectionTimeout(), TimeUnit.MILLISECONDS);
+			connection.setAttachment(false);
+
+			if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
+				connection.setAttachment(true);
+				pool.release(connection);
+			}
+
+			log.debug("take the connection {} from pool, released: {}", connection.getSessionId(),
+					connection.getAttachment());
 
 			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
 					.messageComplete((req, resp, outputStream, conn) -> {
-						pool.release(connection);
+						boolean released = (Boolean) connection.getAttachment();
+						if (released == false) {
+							connection.setAttachment(true);
+							pool.release(connection);
+						}
+						log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
+								connection.getAttachment());
 						if (r.messageComplete != null) {
 							r.messageComplete.call(resp);
 						}
@@ -316,7 +358,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 						}
 						return false;
 					}).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
-						pool.release(connection);
+						boolean released = (Boolean) connection.getAttachment();
+						if (released == false) {
+							connection.setAttachment(true);
+							pool.release(connection);
+						}
+						log.debug("bad message of the connection {} , released: {}", connection.getSessionId(),
+								connection.getAttachment());
 						if (r.badMessage != null) {
 							r.badMessage.call(errCode, reason, resp);
 						}
@@ -326,7 +374,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							r.future.failed(new BadMessageException(errCode, reason));
 						}
 					}).earlyEOF((req, resp, outputStream, conn) -> {
-						pool.release(connection);
+						boolean released = (Boolean) connection.getAttachment();
+						if (released == false) {
+							connection.setAttachment(true);
+							pool.release(connection);
+						}
+						log.debug("eafly EOF of the connection {} , released: {}", connection.getSessionId(),
+								connection.getAttachment());
 						if (r.earlyEof != null) {
 							r.earlyEof.call(resp);
 						}
