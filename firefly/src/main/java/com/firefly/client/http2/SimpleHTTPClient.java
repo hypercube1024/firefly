@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -160,13 +161,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		}
 
 		public RequestBuilder jsonBody(Object obj) {
-			request.getFields().put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString());
-			return body(Json.toJson(obj));
+			return put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).body(Json.toJson(obj));
 		}
 
 		public RequestBuilder body(String content) {
-			requestBody.add(BufferUtils.toBuffer(content, StandardCharsets.UTF_8));
-			return this;
+			return body(content, StandardCharsets.UTF_8);
+		}
+
+		public RequestBuilder body(String content, Charset charset) {
+			return write(BufferUtils.toBuffer(content, charset));
 		}
 
 		public RequestBuilder write(ByteBuffer buffer) {
@@ -317,6 +320,14 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		}
 	}
 
+	private void release(HTTPClientConnection connection, BlockingPool<HTTPClientConnection> pool) {
+		boolean released = (Boolean) connection.getAttachment();
+		if (released == false) {
+			connection.setAttachment(true);
+			pool.release(connection);
+		}
+	}
+
 	protected void send(RequestBuilder r) {
 		SimpleHTTPClientConfiguration config = (SimpleHTTPClientConfiguration) http2Client.getHttp2Configuration();
 		BlockingPool<HTTPClientConnection> pool = getPool(r);
@@ -325,8 +336,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 			connection.setAttachment(false);
 
 			if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
-				connection.setAttachment(true);
-				pool.release(connection);
+				release(connection, pool);
 			}
 
 			log.debug("take the connection {} from pool, released: {}", connection.getSessionId(),
@@ -334,11 +344,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
 					.messageComplete((req, resp, outputStream, conn) -> {
-						boolean released = (Boolean) connection.getAttachment();
-						if (released == false) {
-							connection.setAttachment(true);
-							pool.release(connection);
-						}
+						release(connection, pool);
 						log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
 								connection.getAttachment());
 						if (r.messageComplete != null) {
@@ -358,27 +364,18 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 						}
 						return false;
 					}).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
-						boolean released = (Boolean) connection.getAttachment();
-						if (released == false) {
-							connection.setAttachment(true);
-							pool.release(connection);
-						}
+						release(connection, pool);
 						log.debug("bad message of the connection {} , released: {}", connection.getSessionId(),
 								connection.getAttachment());
 						if (r.badMessage != null) {
 							r.badMessage.call(errCode, reason, resp);
 						}
-
 						if (r.future != null) {
 							r.simpleResponse.response = resp;
 							r.future.failed(new BadMessageException(errCode, reason));
 						}
 					}).earlyEOF((req, resp, outputStream, conn) -> {
-						boolean released = (Boolean) connection.getAttachment();
-						if (released == false) {
-							connection.setAttachment(true);
-							pool.release(connection);
-						}
+						release(connection, pool);
 						log.debug("eafly EOF of the connection {} , released: {}", connection.getSessionId(),
 								connection.getAttachment());
 						if (r.earlyEof != null) {
@@ -423,7 +420,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							return promise.get();
 						} catch (InterruptedException | ExecutionException e) {
 							log.error("create http connection exception", e);
-							throw new IllegalStateException();
+							throw new IllegalStateException(e);
 						}
 					}, (conn) -> {
 						return conn.isOpen();

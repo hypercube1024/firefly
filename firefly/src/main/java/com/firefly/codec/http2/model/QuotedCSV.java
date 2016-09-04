@@ -29,6 +29,12 @@ public class QuotedCSV implements Iterable<String> {
 			addValue(v);
 	}
 
+	/**
+	 * Add and parse a value string(s)
+	 * 
+	 * @param value
+	 *            A value that may contain one or more Quoted CSV items.
+	 */
 	public void addValue(String value) {
 		StringBuffer buffer = new StringBuffer();
 
@@ -205,6 +211,14 @@ public class QuotedCSV implements Iterable<String> {
 	 *            -1
 	 */
 	protected void parsedParam(StringBuffer buffer, int valueLength, int paramName, int paramValue) {
+	}
+
+	public int size() {
+		return _values.size();
+	}
+
+	public boolean isEmpty() {
+		return _values.isEmpty();
 	}
 
 	public List<String> getValues() {

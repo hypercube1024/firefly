@@ -38,6 +38,7 @@ public class HostPortHttpField extends HttpField {
 	 * Get the port.
 	 * 
 	 * @param defaultPort
+	 *            The default port to return if no port set
 	 * @return the port
 	 */
 	public int getPort(int defaultPort) {
