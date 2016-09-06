@@ -42,6 +42,8 @@ public interface Pool<T> extends LifeCycle {
 	
 	int size();
 	
+	boolean isEmpty();
+	
 	void cleanup();
 
 	/**

@@ -1,5 +1,6 @@
 package com.firefly.utils.io;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.List;
 
 import com.firefly.utils.lang.TypeUtils;
 
@@ -94,7 +96,7 @@ public class BufferUtils {
 
 	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.wrap(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTE_BUFFER_ARRAY = new ByteBuffer[0];
-	
+
 	/**
 	 * The capacity modulo 1024 is 0
 	 * 
@@ -1077,4 +1079,18 @@ public class BufferUtils {
 		throw new UnsupportedOperationException();
 	}
 
+	public static String toString(List<ByteBuffer> list) {
+		return toString(list, "UTF-8");
+	}
+
+	public static String toString(List<ByteBuffer> list, String charset) {
+		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+			for (ByteBuffer buf : list) {
+				BufferUtils.writeTo(buf, out);
+			}
+			return out.toString(charset);
+		} catch (IOException e) {
+			return null;
+		}
+	}
 }

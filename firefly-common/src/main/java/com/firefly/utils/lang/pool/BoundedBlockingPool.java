@@ -119,6 +119,11 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 	}
 
 	@Override
+	public boolean isEmpty() {
+		return queue.isEmpty();
+	}
+
+	@Override
 	public void cleanup() {
 		for (Iterator<T> iterator = queue.iterator(); iterator.hasNext();) {
 			T t = iterator.next();

@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -30,6 +29,7 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
@@ -54,7 +54,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 	protected final HTTP2Client http2Client;
 	protected final Scheduler scheduler;
 
-	private final Map<RequestBuilder, BlockingPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
+	private final Map<RequestBuilder, BlockingPool<HTTPClientConnection>> poolMap = new ConcurrentReferenceHashMap<>();
 
 	public SimpleHTTPClient() {
 		this(new SimpleHTTPClientConfiguration());
@@ -87,9 +87,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		}
 
 		public String getStringBody() {
-			StringBuilder builder = new StringBuilder();
-			responseBody.stream().map(BufferUtils::toUTF8String).forEach(builder::append);
-			return builder.toString();
+			return getStringBody("UTF-8");
+		}
+
+		public String getStringBody(String charset) {
+			return BufferUtils.toString(responseBody, charset);
 		}
 
 		public <T> T getJsonBody(Class<T> clazz) {
@@ -270,6 +272,29 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 			return SimpleHTTPClient.this;
 		}
 
+	}
+
+	public void removeConnectionPool(String url) {
+		try {
+			removeConnectionPool(new URL(url));
+		} catch (MalformedURLException e) {
+			log.error("url exception", e);
+			throw new IllegalArgumentException(e);
+		}
+	}
+
+	public void removeConnectionPool(URL url) {
+		RequestBuilder req = new RequestBuilder();
+		req.host = url.getHost();
+		req.port = url.getPort() < 0 ? url.getDefaultPort() : url.getPort();
+		poolMap.remove(req);
+	}
+
+	public void removeConnectionPool(String host, int port) {
+		RequestBuilder req = new RequestBuilder();
+		req.host = host;
+		req.port = port;
+		poolMap.remove(req);
 	}
 
 	public RequestBuilder get(String url) {
