@@ -1,11 +1,15 @@
 package test.http;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClient.SimpleResponse;
+import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
@@ -14,24 +18,28 @@ import com.firefly.utils.io.BufferUtils;
 public class SimpleHTTPClientDemo1 {
 
 	public static void main(String[] args) throws Throwable {
-		SimpleHTTPClient client = new SimpleHTTPClient();
+		SimpleHTTPClientConfiguration c = new SimpleHTTPClientConfiguration();
+		c.setCleanupInterval(3000);
+		SimpleHTTPClient client = new SimpleHTTPClient(c);
 		final long start = System.currentTimeMillis();
+		List<ByteBuffer> list = new ArrayList<>();
 		client.get("http://localhost:6656/index").content((buf) -> {
-			System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
+			list.add(buf);
 		}).messageComplete((response) -> {
 			long end = System.currentTimeMillis();
-			System.out.println();
+			System.out.println(BufferUtils.toString(list));
 			System.out.println(response.toString());
 			System.out.println(response.getFields());
 			System.out.println("------------------------------------ " + (end - start));
 		}).end();
 
 		long s2 = System.currentTimeMillis();
+		List<ByteBuffer> list2 = new ArrayList<>();
 		client.get("http://localhost:6656/index_1").content((buf) -> {
-			System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
+			list2.add(buf);
 		}).messageComplete((response) -> {
 			long end = System.currentTimeMillis();
-			System.out.println();
+			System.out.println(BufferUtils.toString(list2));
 			System.out.println(response.toString());
 			System.out.println(response.getFields());
 			System.out.println("------------------------------------ " + (end - s2));
@@ -71,11 +79,12 @@ public class SimpleHTTPClientDemo1 {
 		client.removeConnectionPool("http://localhost:6656");
 		
 		long s5 = System.currentTimeMillis();
+		List<ByteBuffer> list3 = new ArrayList<>();
 		client.get("http://localhost:6656/index_1").content((buf) -> {
-			System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
+			list3.add(buf);
 		}).messageComplete((response) -> {
 			long e5 = System.currentTimeMillis();
-			System.out.println();
+			System.out.println(BufferUtils.toString(list3));
 			System.out.println(response.toString());
 			System.out.println(response.getFields());
 			System.out.println("------------------------------------ " + (e5 - s5));

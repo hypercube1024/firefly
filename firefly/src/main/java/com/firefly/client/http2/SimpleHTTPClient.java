@@ -87,9 +87,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		}
 
 		public String getStringBody() {
-			StringBuilder builder = new StringBuilder();
-			responseBody.stream().map(BufferUtils::toUTF8String).forEach(builder::append);
-			return builder.toString();
+			return getStringBody("UTF-8");
+		}
+
+		public String getStringBody(String charset) {
+			return BufferUtils.toString(responseBody, charset);
 		}
 
 		public <T> T getJsonBody(Class<T> clazz) {
