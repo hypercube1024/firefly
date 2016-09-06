@@ -68,6 +68,19 @@ public class SimpleHTTPClientDemo1 {
 		System.out.println("------------------------------------ " + (end2 - s4));
 
 		Thread.sleep(5000);
+		client.removeConnectionPool("http://localhost:6656");
+		
+		long s5 = System.currentTimeMillis();
+		client.get("http://localhost:6656/index_1").content((buf) -> {
+			System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
+		}).messageComplete((response) -> {
+			long e5 = System.currentTimeMillis();
+			System.out.println();
+			System.out.println(response.toString());
+			System.out.println(response.getFields());
+			System.out.println("------------------------------------ " + (e5 - s5));
+		}).end();
+		Thread.sleep(5000);
 		client.stop();
 	}
 
