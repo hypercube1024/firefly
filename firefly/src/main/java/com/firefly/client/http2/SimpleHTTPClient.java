@@ -69,21 +69,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 	public class SimpleResponse {
 		Response response;
 		List<ByteBuffer> responseBody = new ArrayList<>();
+		List<Cookie> cookies;
+		String stringBody;
 
 		public Response getResponse() {
 			return response;
 		}
 
-		public void setResponse(Response response) {
-			this.response = response;
-		}
-
 		public List<ByteBuffer> getResponseBody() {
 			return responseBody;
-		}
-
-		public void setResponseBody(List<ByteBuffer> responseBody) {
-			this.responseBody = responseBody;
 		}
 
 		public String getStringBody() {
@@ -91,7 +85,12 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		}
 
 		public String getStringBody(String charset) {
-			return BufferUtils.toString(responseBody, charset);
+			if (stringBody == null) {
+				stringBody = BufferUtils.toString(responseBody, charset);
+				return stringBody;
+			} else {
+				return stringBody;
+			}
 		}
 
 		public <T> T getJsonBody(Class<T> clazz) {
@@ -107,8 +106,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		}
 
 		public List<Cookie> getCookies() {
-			return response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
-					.map(CookieParser::parseSetCookie).collect(Collectors.toList());
+			if (cookies == null) {
+				cookies = response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
+						.map(CookieParser::parseSetCookie).collect(Collectors.toList());
+				return cookies;
+			} else {
+				return cookies;
+			}
 		}
 	}
 
@@ -118,12 +122,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		MetaData.Request request;
 		List<ByteBuffer> requestBody = new ArrayList<>();
-		Action1<Response> messageComplete;
+
+		Action1<Response> headerComplete;
 		Action1<ByteBuffer> content;
+		Action1<Response> messageComplete;
+
 		Action3<Integer, String, Response> badMessage;
 		Action1<Response> earlyEof;
+
 		Promise<HTTPOutputStream> promise;
 		Action1<HTTPOutputStream> output;
+
 		FuturePromise<SimpleResponse> future;
 		SimpleResponse simpleResponse;
 
@@ -186,6 +195,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		public RequestBuilder output(Promise<HTTPOutputStream> promise) {
 			this.promise = promise;
+			return this;
+		}
+
+		public RequestBuilder headerComplete(Action1<Response> headerComplete) {
+			this.headerComplete = headerComplete;
 			return this;
 		}
 
@@ -368,7 +382,12 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 					connection.getAttachment());
 
 			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
-					.messageComplete((req, resp, outputStream, conn) -> {
+					.headerComplete((req, resp, outputStream, conn) -> {
+						if (r.headerComplete != null) {
+							r.headerComplete.call(resp);
+						}
+						return false;
+					}).messageComplete((req, resp, outputStream, conn) -> {
 						release(connection, pool);
 						log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
 								connection.getAttachment());
