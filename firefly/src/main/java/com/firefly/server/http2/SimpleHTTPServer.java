@@ -78,7 +78,6 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 			super(response.getVersion(), response.getStatus(), response.getReason(), response.getFields(),
 					response.getContentLength());
 			this.output = output;
-			this.setStatus(HttpStatus.OK_200);
 		}
 
 		public void addCookie(Cookie cookie) {
@@ -186,9 +185,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 	public class SimpleRequest extends MetaData.Request {
 
 		SimpleResponse response;
-
 		HTTPConnection connection;
-
 		Action1<ByteBuffer> content;
 		Action1<SimpleRequest> messageComplete;
 		List<ByteBuffer> requestBody = new ArrayList<>();
@@ -196,8 +193,11 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		List<Cookie> cookies;
 		String stringBody;
 
-		public SimpleRequest(Request request) {
+		public SimpleRequest(Request request, Response response, HTTPOutputStream output) {
 			super(request);
+			response.setStatus(HttpStatus.OK_200);
+			response.setHttpVersion(request.getVersion());
+			this.response = new SimpleResponse(response, output);
 		}
 
 		public SimpleResponse getResponse() {
@@ -258,10 +258,64 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		}
 	}
 
+	public void listen(String host, int port) {
+		configuration.setHost(host);
+		configuration.setPort(port);
+		listen();
+	}
+
+	public void listen() {
+		start();
+	}
+
 	@Override
 	protected void init() {
-		// TODO Auto-generated method stub
-
+		http2Server = new HTTP2Server(configuration.getHost(), configuration.getPort(), configuration,
+				new ServerHTTPHandler.Adapter().headerComplete((request, response, out, connection) -> {
+					SimpleRequest r = new SimpleRequest(request, response, out);
+					request.setAttachment(r);
+					if (headerComplete != null) {
+						headerComplete.call(r);
+					}
+					return false;
+				}).content((buffer, request, response, out, connection) -> {
+					SimpleRequest r = (SimpleRequest) request.getAttachment();
+					if (r.content != null) {
+						r.content.call(buffer);
+					} else {
+						r.requestBody.add(buffer);
+					}
+					return false;
+				}).messageComplete((request, response, out, connection) -> {
+					SimpleRequest r = (SimpleRequest) request.getAttachment();
+					if (r.messageComplete != null) {
+						r.messageComplete.call(r);
+					}
+					return true;
+				}).badMessage((status, reason, request, response, out, connection) -> {
+					if (badMessage != null) {
+						if (request.getAttachment() != null) {
+							SimpleRequest r = (SimpleRequest) request.getAttachment();
+							badMessage.call(status, reason, r);
+						} else {
+							SimpleRequest r = new SimpleRequest(request, response, out);
+							request.setAttachment(r);
+							badMessage.call(status, reason, r);
+						}
+					}
+				}).earlyEOF((request, response, out, connection) -> {
+					if (earlyEof != null) {
+						if (request.getAttachment() != null) {
+							SimpleRequest r = (SimpleRequest) request.getAttachment();
+							earlyEof.call(r);
+						} else {
+							SimpleRequest r = new SimpleRequest(request, response, out);
+							request.setAttachment(r);
+							earlyEof.call(r);
+						}
+					}
+				}));
+		http2Server.start();
 	}
 
 	@Override
