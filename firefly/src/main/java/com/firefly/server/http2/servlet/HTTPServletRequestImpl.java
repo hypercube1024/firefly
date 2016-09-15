@@ -843,12 +843,12 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	public DispatcherType getDispatcherType() {
 		return DispatcherType.REQUEST;
 	}
-	
+
 	@Override
 	public String getContextPath() {
 		return "";
 	}
-	
+
 	@Override
 	public String getServletPath() {
 		return "";

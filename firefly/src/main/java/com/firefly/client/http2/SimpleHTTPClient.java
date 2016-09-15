@@ -66,14 +66,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		start();
 	}
 
-	public class SimpleResponse {
-		Response response;
+	public class SimpleResponse extends Response {
+
 		List<ByteBuffer> responseBody = new ArrayList<>();
 		List<Cookie> cookies;
 		String stringBody;
 
-		public Response getResponse() {
-			return response;
+		public SimpleResponse(Response response) {
+			super(response.getVersion(), response.getStatus(), response.getReason(), response.getFields(),
+					response.getContentLength());
 		}
 
 		public List<ByteBuffer> getResponseBody() {
@@ -107,7 +108,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		public List<Cookie> getCookies() {
 			if (cookies == null) {
-				cookies = response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
+				cookies = getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
 						.map(CookieParser::parseSetCookie).collect(Collectors.toList());
 				return cookies;
 			} else {
@@ -230,7 +231,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		public void submit(FuturePromise<SimpleResponse> future) {
 			this.future = future;
-			simpleResponse = new SimpleResponse();
 			send(this);
 		}
 
@@ -386,6 +386,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 						if (r.headerComplete != null) {
 							r.headerComplete.call(resp);
 						}
+						if (r.future != null) {
+							if (r.simpleResponse == null) {
+								r.simpleResponse = new SimpleResponse(resp);
+							}
+						}
 						return false;
 					}).messageComplete((req, resp, outputStream, conn) -> {
 						release(connection, pool);
@@ -395,7 +400,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							r.messageComplete.call(resp);
 						}
 						if (r.future != null) {
-							r.simpleResponse.response = resp;
 							r.future.succeeded(r.simpleResponse);
 						}
 						return true;
@@ -415,7 +419,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							r.badMessage.call(errCode, reason, resp);
 						}
 						if (r.future != null) {
-							r.simpleResponse.response = resp;
+							if (r.simpleResponse == null) {
+								r.simpleResponse = new SimpleResponse(resp);
+							}
 							r.future.failed(new BadMessageException(errCode, reason));
 						}
 					}).earlyEOF((req, resp, outputStream, conn) -> {
@@ -426,7 +432,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							r.earlyEof.call(resp);
 						}
 						if (r.future != null) {
-							r.simpleResponse.response = resp;
+							if (r.simpleResponse == null) {
+								r.simpleResponse = new SimpleResponse(resp);
+							}
 							r.future.failed(new EofException("early eof"));
 						}
 					});

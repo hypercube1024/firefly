@@ -14,7 +14,9 @@ import com.firefly.codec.http2.model.CookieGenerator;
 import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.function.Action1;
@@ -66,7 +68,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		return this;
 	}
 
-	public class SimpleResponse extends MetaData.Response {
+	public class SimpleResponse extends Response {
 
 		HTTPOutputStream output;
 		PrintWriter printWriter;
@@ -182,7 +184,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		}
 	}
 
-	public class SimpleRequest extends MetaData.Request {
+	public class SimpleRequest extends Request {
 
 		SimpleResponse response;
 		HTTPConnection connection;
@@ -196,7 +198,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		public SimpleRequest(Request request, Response response, HTTPOutputStream output) {
 			super(request);
 			response.setStatus(HttpStatus.OK_200);
-			response.setHttpVersion(request.getVersion());
+			response.setHttpVersion(HttpVersion.HTTP_1_1);
 			this.response = new SimpleResponse(response, output);
 		}
 

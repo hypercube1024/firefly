@@ -46,8 +46,8 @@ public class SimpleHTTPClientDemo2 {
 		long end = System.currentTimeMillis();
 		System.out.println();
 		System.out.println(simpleResponse.getStringBody());
-		System.out.println(simpleResponse.getResponse().toString());
-		System.out.println(simpleResponse.getResponse().getFields());
+		System.out.println(simpleResponse.toString());
+		System.out.println(simpleResponse.getFields());
 		System.out.println("------------------------------------ " + (end - s3));
 
 		long s4 = System.currentTimeMillis();
@@ -66,8 +66,8 @@ public class SimpleHTTPClientDemo2 {
 		long end2 = System.currentTimeMillis();
 		System.out.println();
 		System.out.println(simpleResponse.getStringBody());
-		System.out.println(simpleResponse.getResponse().toString());
-		System.out.println(simpleResponse.getResponse().getFields());
+		System.out.println(simpleResponse.toString());
+		System.out.println(simpleResponse.getFields());
 		System.out.println("------------------------------------ " + (end2 - s4));
 
 		Thread.sleep(5000);
