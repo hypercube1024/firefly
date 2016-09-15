@@ -6,7 +6,7 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.server.http2.SimpleHTTPServer;
-import com.firefly.server.http2.SimpleHTTPServer.SimpleResponse;
+import com.firefly.server.http2.SimpleResponse;
 
 public class SimpleHTTPServerDemo1 {
 

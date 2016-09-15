@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Future;
 
 import com.firefly.client.http2.SimpleHTTPClient;
-import com.firefly.client.http2.SimpleHTTPClient.SimpleResponse;
+import com.firefly.client.http2.SimpleResponse;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MimeTypes;
