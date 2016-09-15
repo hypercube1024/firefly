@@ -8,7 +8,7 @@ import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleResponse;
 
-public class SimpleHTTPServerDemo1 {
+public class ServerDemo3 {
 
 	public static void main(String[] args) {
 		SimpleHTTPServer server = new SimpleHTTPServer();
@@ -26,9 +26,12 @@ public class SimpleHTTPServerDemo1 {
 						writer.print("hello index");
 					}
 					break;
-				case "/test":
+				case "/testPost":
+					System.out.println(req.getRequest().toString());
+					System.out.println(req.getRequest().getFields());
+					System.out.println(req.getStringBody());
 					try (PrintWriter writer = response.getPrintWriter()) {
-						writer.print("hello test");
+						writer.print("receive post -> " + req.getStringBody());
 					}
 					break;
 				default:
@@ -40,8 +43,6 @@ public class SimpleHTTPServerDemo1 {
 				}
 			});
 		}).listen("localhost", 3322);
-		;
-
 	}
 
 }
