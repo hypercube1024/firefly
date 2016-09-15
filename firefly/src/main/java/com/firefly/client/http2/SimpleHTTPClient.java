@@ -66,15 +66,19 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		start();
 	}
 
-	public class SimpleResponse extends Response {
+	public class SimpleResponse {
 
+		Response response;
 		List<ByteBuffer> responseBody = new ArrayList<>();
 		List<Cookie> cookies;
 		String stringBody;
 
 		public SimpleResponse(Response response) {
-			super(response.getVersion(), response.getStatus(), response.getReason(), response.getFields(),
-					response.getContentLength());
+			this.response = response;
+		}
+
+		public Response getResponse() {
+			return response;
 		}
 
 		public List<ByteBuffer> getResponseBody() {
@@ -108,7 +112,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		public List<Cookie> getCookies() {
 			if (cookies == null) {
-				cookies = getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
+				cookies = response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
 						.map(CookieParser::parseSetCookie).collect(Collectors.toList());
 				return cookies;
 			} else {

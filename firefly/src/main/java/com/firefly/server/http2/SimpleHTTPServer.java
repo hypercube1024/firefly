@@ -68,8 +68,9 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		return this;
 	}
 
-	public class SimpleResponse extends Response {
+	public class SimpleResponse {
 
+		Response response;
 		HTTPOutputStream output;
 		PrintWriter printWriter;
 		BufferedHTTPOutputStream bufferedOutputStream;
@@ -77,13 +78,16 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		String characterEncoding = "UTF-8";
 
 		public SimpleResponse(Response response, HTTPOutputStream output) {
-			super(response.getVersion(), response.getStatus(), response.getReason(), response.getFields(),
-					response.getContentLength());
 			this.output = output;
+			this.response = response;
+		}
+
+		public Response getResponse() {
+			return response;
 		}
 
 		public void addCookie(Cookie cookie) {
-			getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
+			response.getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
 		}
 
 		public OutputStream getOutputStream() {
@@ -184,8 +188,9 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		}
 	}
 
-	public class SimpleRequest extends Request {
+	public class SimpleRequest {
 
+		Request request;
 		SimpleResponse response;
 		HTTPConnection connection;
 		Action1<ByteBuffer> content;
@@ -196,10 +201,14 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 		String stringBody;
 
 		public SimpleRequest(Request request, Response response, HTTPOutputStream output) {
-			super(request);
+			this.request = request;
 			response.setStatus(HttpStatus.OK_200);
 			response.setHttpVersion(HttpVersion.HTTP_1_1);
 			this.response = new SimpleResponse(response, output);
+		}
+
+		public Request getRequest() {
+			return request;
 		}
 
 		public SimpleResponse getResponse() {
@@ -251,7 +260,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 
 		public List<Cookie> getCookies() {
 			if (cookies == null) {
-				String v = getFields().get(HttpHeader.COOKIE);
+				String v = request.getFields().get(HttpHeader.COOKIE);
 				cookies = CookieParser.parseCookie(v);
 				return cookies;
 			} else {
