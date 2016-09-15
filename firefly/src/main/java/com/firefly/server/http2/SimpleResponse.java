@@ -1,5 +1,6 @@
 package com.firefly.server.http2;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -14,7 +15,7 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class SimpleResponse {
+public class SimpleResponse implements Closeable {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
@@ -24,6 +25,7 @@ public class SimpleResponse {
 	BufferedHTTPOutputStream bufferedOutputStream;
 	int bufferSize = 8 * 1024;
 	String characterEncoding = "UTF-8";
+	boolean asynchronous;
 
 	public SimpleResponse(Response response, HTTPOutputStream output) {
 		this.output = output;
@@ -32,6 +34,14 @@ public class SimpleResponse {
 
 	public Response getResponse() {
 		return response;
+	}
+
+	public boolean isAsynchronous() {
+		return asynchronous;
+	}
+
+	public void setAsynchronous(boolean asynchronous) {
+		this.asynchronous = asynchronous;
 	}
 
 	public void addCookie(Cookie cookie) {
@@ -82,6 +92,26 @@ public class SimpleResponse {
 
 	public void setBufferSize(int bufferSize) {
 		this.bufferSize = bufferSize;
+	}
+
+	public boolean isClosed() {
+		return output.isClosed();
+	}
+
+	public void close() throws IOException {
+		if (bufferedOutputStream != null) {
+			bufferedOutputStream.close();
+		} else if (printWriter != null) {
+			printWriter.close();
+		}
+	}
+
+	public void flush() throws IOException {
+		if (bufferedOutputStream != null) {
+			bufferedOutputStream.flush();
+		} else if (printWriter != null) {
+			printWriter.flush();
+		}
 	}
 
 	private class BufferedHTTPOutputStream extends OutputStream {

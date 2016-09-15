@@ -1,11 +1,17 @@
 package com.firefly.server.http2;
 
+import java.io.IOException;
+
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.log.Log;
+import com.firefly.utils.log.LogFactory;
 
 public class SimpleHTTPServer extends AbstractLifeCycle {
+
+	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
 	protected HTTP2Server http2Server;
 	protected SimpleHTTPServerConfiguration configuration;
@@ -74,6 +80,15 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 					SimpleRequest r = (SimpleRequest) request.getAttachment();
 					if (r.messageComplete != null) {
 						r.messageComplete.call(r);
+					}
+					if (r.getResponse().isAsynchronous() == false) {
+						if (r.getResponse().isClosed() == false) {
+							try {
+								r.getResponse().close();
+							} catch (IOException e) {
+								log.error("close response output stream exception", e);
+							}
+						}
 					}
 					return true;
 				}).badMessage((status, reason, request, response, out, connection) -> {
