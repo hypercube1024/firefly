@@ -27,6 +27,11 @@ public class ServerDemo4 {
 				response.getResponse().getFields().put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_PLAIN.asString());
 
 				switch (path) {
+				case "/":
+					try (PrintWriter writer = response.getPrintWriter()) {
+						writer.print("server demo 4");
+					}
+					break;
 				case "/postData":
 					System.out.println(req.getRequest().toString());
 					System.out.println(req.getRequest().getFields());
