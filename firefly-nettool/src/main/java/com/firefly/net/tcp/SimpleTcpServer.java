@@ -39,7 +39,13 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 	protected void init() {
 		if (config.isSecureConnectionEnabled() == false) {
 			config.setDecoder((ByteBuffer buf, Session session) -> {
-
+				Object o = session.getAttachment();
+				if (o != null) {
+					TcpConnectionImpl c = (TcpConnectionImpl) o;
+					if (c.buffer != null) {
+						c.buffer.call(buf);
+					}
+				}
 			});
 			config.setEncoder((Object message, Session session) -> {
 
