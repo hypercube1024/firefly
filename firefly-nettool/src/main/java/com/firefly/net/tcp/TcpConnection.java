@@ -21,6 +21,8 @@ public interface TcpConnection {
 	TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded, Action1<Throwable> failed);
 
 	TcpConnection write(String message, Action0 succeeded, Action1<Throwable> failed);
+	
+	TcpConnection write(String message, String charset, Action0 succeeded, Action1<Throwable> failed);
 
 	TcpConnection write(FileRegion file, Action0 succeeded, Action1<Throwable> failed);
 
@@ -31,6 +33,8 @@ public interface TcpConnection {
 	TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded);
 
 	TcpConnection write(String message, Action0 succeeded);
+	
+	TcpConnection write(String message, String charset, Action0 succeeded);
 
 	TcpConnection write(FileRegion file, Action0 succeeded);
 
@@ -41,6 +45,8 @@ public interface TcpConnection {
 	TcpConnection write(Collection<ByteBuffer> byteBuffer);
 
 	TcpConnection write(String message);
+	
+	TcpConnection write(String message, String charset);
 
 	TcpConnection write(FileRegion file);
 

@@ -2,18 +2,24 @@ package com.firefly.net.tcp;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;
+import com.firefly.utils.io.BufferUtils;
 
 public class TcpConnectionImpl implements TcpConnection {
 
 	Session session;
 	Action0 closeCallback;
+	Action1<ByteBuffer> buffer;
 	Action1<Throwable> exception;
+	volatile Object attachment;
 
 	public TcpConnectionImpl(Session session) {
 		this.session = session;
@@ -21,8 +27,8 @@ public class TcpConnectionImpl implements TcpConnection {
 
 	@Override
 	public TcpConnection receive(Action1<ByteBuffer> buffer) {
-		// TODO Auto-generated method stub
-		return null;
+		this.buffer = buffer;
+		return this;
 	}
 
 	@Override
@@ -33,158 +39,243 @@ public class TcpConnectionImpl implements TcpConnection {
 
 	@Override
 	public TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+
+			public void failed(Throwable x) {
+				failed.call(x);
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+
+			public void failed(Throwable x) {
+				failed.call(x);
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+
+			public void failed(Throwable x) {
+				failed.call(x);
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(String message, Action0 succeeded, Action1<Throwable> failed) {
-		// TODO Auto-generated method stub
-		return null;
+		ByteBuffer byteBuffer = BufferUtils.toBuffer(message, StandardCharsets.UTF_8);
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+
+			public void failed(Throwable x) {
+				failed.call(x);
+			}
+		});
+		return this;
+	}
+
+	@Override
+	public TcpConnection write(String message, String charset, Action0 succeeded, Action1<Throwable> failed) {
+		ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+
+			public void failed(Throwable x) {
+				failed.call(x);
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(FileRegion file, Action0 succeeded, Action1<Throwable> failed) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(file, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+
+			public void failed(Throwable x) {
+				failed.call(x);
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(String message, Action0 succeeded) {
-		// TODO Auto-generated method stub
-		return null;
+		ByteBuffer byteBuffer = BufferUtils.toBuffer(message, StandardCharsets.UTF_8);
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+		});
+		return this;
+	}
+
+	@Override
+	public TcpConnection write(String message, String charset, Action0 succeeded) {
+		ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
+		session.write(byteBuffer, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(FileRegion file, Action0 succeeded) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(file, new Callback() {
+			public void succeeded() {
+				succeeded.call();
+			}
+		});
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(ByteBuffer byteBuffer) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, Callback.NOOP);
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(ByteBuffer[] byteBuffer) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, Callback.NOOP);
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(Collection<ByteBuffer> byteBuffer) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(byteBuffer, Callback.NOOP);
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(String message) {
-		// TODO Auto-generated method stub
-		return null;
+		ByteBuffer byteBuffer = BufferUtils.toBuffer(message, StandardCharsets.UTF_8);
+		session.write(byteBuffer, Callback.NOOP);
+		return this;
+	}
+
+	@Override
+	public TcpConnection write(String message, String charset) {
+		ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
+		session.write(byteBuffer, Callback.NOOP);
+		return this;
 	}
 
 	@Override
 	public TcpConnection write(FileRegion file) {
-		// TODO Auto-generated method stub
-		return null;
+		session.write(file, Callback.NOOP);
+		return this;
 	}
 
 	@Override
 	public Object getAttachment() {
-		// TODO Auto-generated method stub
-		return null;
+		return attachment;
 	}
 
 	@Override
-	public void setAttachment(Object object) {
-		// TODO Auto-generated method stub
-
+	public void setAttachment(Object attachment) {
+		this.attachment = attachment;
 	}
 
 	@Override
 	public int getSessionId() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getSessionId();
 	}
 
 	@Override
 	public long getOpenTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getOpenTime();
 	}
 
 	@Override
 	public long getCloseTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getCloseTime();
 	}
 
 	@Override
 	public long getDuration() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getDuration();
 	}
 
 	@Override
 	public long getLastReadTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getLastReadTime();
 	}
 
 	@Override
 	public long getLastWrittenTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getLastWrittenTime();
 	}
 
 	@Override
 	public long getLastActiveTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getLastActiveTime();
 	}
 
 	@Override
 	public long getReadBytes() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getReadBytes();
 	}
 
 	@Override
 	public long getWrittenBytes() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getWrittenBytes();
 	}
 
 	@Override
@@ -195,55 +286,47 @@ public class TcpConnectionImpl implements TcpConnection {
 
 	@Override
 	public void close() {
-
+		session.close();
 	}
 
 	@Override
 	public void closeNow() {
-		// TODO Auto-generated method stub
-
+		session.closeNow();
 	}
 
 	@Override
 	public void shutdownOutput() {
-		// TODO Auto-generated method stub
-
+		session.shutdownOutput();
 	}
 
 	@Override
 	public void shutdownInput() {
-		// TODO Auto-generated method stub
-
+		session.shutdownInput();
 	}
 
 	@Override
 	public int getState() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getState();
 	}
 
 	@Override
 	public boolean isOpen() {
-		// TODO Auto-generated method stub
-		return false;
+		return session.isOpen();
 	}
 
 	@Override
 	public InetSocketAddress getLocalAddress() {
-		// TODO Auto-generated method stub
-		return null;
+		return session.getLocalAddress();
 	}
 
 	@Override
 	public InetSocketAddress getRemoteAddress() {
-		// TODO Auto-generated method stub
-		return null;
+		return session.getRemoteAddress();
 	}
 
 	@Override
 	public long getIdleTimeout() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getIdleTimeout();
 	}
 
 }
