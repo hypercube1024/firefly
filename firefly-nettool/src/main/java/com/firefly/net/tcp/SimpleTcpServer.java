@@ -34,6 +34,12 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 		this.connectionFailed = connectionFailed;
 		return this;
 	}
+	
+	public void listen(String host, int port) {
+		config.setHost(host);
+		config.setPort(port);
+		start();
+	}
 
 	@Override
 	protected void init() {
@@ -48,7 +54,6 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 				}
 			});
 			config.setEncoder((Object message, Session session) -> {
-
 			});
 			config.setHandler(new Handler() {
 
@@ -74,8 +79,6 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 
 				@Override
 				public void messageRecieved(Session session, Object message) throws Throwable {
-					// TODO Auto-generated method stub
-
 				}
 
 				@Override
@@ -99,10 +102,9 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 
 			});
 		} else {
-
+			// TODO
 		}
-
-		server.start();
+		server.listen(config.getHost(), config.getPort());
 	}
 
 	@Override

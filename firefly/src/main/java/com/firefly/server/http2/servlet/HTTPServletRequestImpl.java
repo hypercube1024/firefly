@@ -592,13 +592,14 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 			}
 
 			String contentType = getContentType();
-			if (hasData() && "POST".equals(request.getMethod()) && contentType != null
-					&& contentType.startsWith("application/x-www-form-urlencoded")) {
-				try (BufferedReader in = getReader()) {
-					String urlencodedForm = IO.toString(in);
-					UrlEncoded.decodeTo(urlencodedForm, parameterMap, encoding);
-				} catch (IOException e) {
-					log.error("parse urlencoded form exception", e);
+			if (hasData() && contentType != null && contentType.startsWith("application/x-www-form-urlencoded")) {
+				if ("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod())) {
+					try (BufferedReader in = getReader()) {
+						String urlencodedForm = IO.toString(in);
+						UrlEncoded.decodeTo(urlencodedForm, parameterMap, encoding);
+					} catch (IOException e) {
+						log.error("parse urlencoded form exception", e);
+					}
 				}
 			}
 			return parameterMap;

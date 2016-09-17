@@ -63,6 +63,11 @@ public class IndexController {
 		System.out.println("into /add2");
 		return new TextView("test add 2");
 	}
+	
+	@RequestMapping(value = "/put", method = HttpMethod.PUT)
+	public View put(HttpServletRequest request, HttpServletResponse response) {
+		return new TextView("put -> " + request.getParameter("content"));
+	}
 
 	@RequestMapping(value = "/login")
 	public View test(HttpServletRequest request, HttpServletResponse response) {
