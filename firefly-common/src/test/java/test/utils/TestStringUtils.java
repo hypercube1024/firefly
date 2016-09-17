@@ -180,7 +180,7 @@ public class TestStringUtils {
 		Assert.assertThat(ret2, is("hello {{{foo and bar mm"));
 
 		ret2 = StringUtils.replace(str2, 12, 23L, 33);
-		Assert.assertThat(ret2, is("hello {{{12 and 23 mm"));
+		Assert.assertThat(ret2, is("hello {{{12 and 23 mm"));	
 	}
 
 	public static void main(String[] args) {
