@@ -9,7 +9,6 @@ import javax.net.ssl.SSLEngine;
 import org.eclipse.jetty.alpn.ALPN;
 
 import com.firefly.net.Handler;
-import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -21,12 +20,11 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 
 public class SimpleTcpServer extends AbstractLifeCycle {
 
-	// TCP connection callback
-	protected Action1<TcpConnection> acceptConnection;
-	protected Action2<Integer, Throwable> connectionFailed;
+	// accept TCP connection callback
+	protected Action1<TcpConnection> accept;
+	protected Action2<Integer, Throwable> failedAcceptance;
 
-	// SSL connection callback
-	protected Action1<SSLSession> sslHandshakeFinished;
+	// ALPN callback
 	protected Action0 alpnUnsupported;
 	protected Func1<List<String>, String> alpnSelectProtocols;
 
@@ -42,13 +40,24 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 		server = new AsynchronousTcpServer(config);
 	}
 
-	public SimpleTcpServer accept(Action1<TcpConnection> acceptConnection) {
-		this.acceptConnection = acceptConnection;
+	public SimpleTcpServer accept(Action1<TcpConnection> accept) {
+		this.accept = accept;
 		return this;
 	}
 
-	public SimpleTcpServer connectionFailed(Action2<Integer, Throwable> connectionFailed) {
-		this.connectionFailed = connectionFailed;
+	public SimpleTcpServer accept(Action1<TcpConnection> accept, Action2<Integer, Throwable> failed) {
+		this.accept = accept;
+		this.failedAcceptance = failed;
+		return this;
+	}
+
+	public SimpleTcpServer alpnUnsupported(Action0 alpnUnsupported) {
+		this.alpnUnsupported = alpnUnsupported;
+		return this;
+	}
+
+	public SimpleTcpServer alpnSelectProtocols(Func1<List<String>, String> alpnSelectProtocols) {
+		this.alpnSelectProtocols = alpnSelectProtocols;
 		return this;
 	}
 
@@ -58,96 +67,7 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 		start();
 	}
 
-	@Override
-	protected void init() {
-		if (config.isSecureConnectionEnabled() == false) {
-			config.setDecoder((ByteBuffer buf, Session session) -> {
-				Object o = session.getAttachment();
-				if (o != null) {
-					TcpConnectionImpl c = (TcpConnectionImpl) o;
-					if (c.buffer != null) {
-						c.buffer.call(buf);
-					}
-				}
-			});
-			config.setEncoder((Object message, Session session) -> {
-			});
-			config.setHandler(new AbstractServerHandler() {
-
-				@Override
-				public void sessionOpened(Session session) throws Throwable {
-					TcpConnectionImpl connection = new TcpConnectionImpl(session);
-					session.attachObject(connection);
-					if (acceptConnection != null) {
-						acceptConnection.call(connection);
-					}
-				}
-
-			});
-		} else {
-			config.setDecoder((ByteBuffer buf, Session session) -> {
-				Object o = session.getAttachment();
-				if (o != null) {
-					SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-					ByteBuffer plaintext = c.sslSession.read(buf);
-					if (plaintext != null) {
-						if (c.buffer != null) {
-							c.buffer.call(buf);
-						}
-					}
-				}
-			});
-			config.setEncoder((Object message, Session session) -> {
-			});
-
-			config.setHandler(new AbstractServerHandler() {
-
-				private SSLContext sslContext = config.getSslContextFactory().getSSLContext();
-
-				@Override
-				public void sessionOpened(Session session) throws Throwable {
-
-					final SSLEngine sslEngine = sslContext.createSSLEngine();
-					SSLSession sslSession = new SSLSession(sslContext, sslEngine, session, false,
-							new SSLEventHandler() {
-
-								@Override
-								public void handshakeFinished(SSLSession session) {
-									sslHandshakeFinished.call(session);
-								}
-							}, new ALPN.ServerProvider() {
-
-								@Override
-								public void unsupported() {
-									try {
-										alpnUnsupported.call();
-									} finally {
-										ALPN.remove(sslEngine);
-									}
-								}
-
-								@Override
-								public String select(List<String> protocols) {
-									try {
-										return alpnSelectProtocols.call(protocols);
-									} finally {
-										ALPN.remove(sslEngine);
-									}
-								}
-							});
-					SecureTcpConnectionImpl connection = new SecureTcpConnectionImpl(session, sslSession);
-					session.attachObject(connection);
-					if (acceptConnection != null) {
-						acceptConnection.call(connection);
-					}
-				}
-
-			});
-		}
-		server.listen(config.getHost(), config.getPort());
-	}
-
-	abstract private class AbstractServerHandler implements Handler {
+	public abstract class AbstractHandler implements Handler {
 
 		@Override
 		public void sessionClosed(Session session) throws Throwable {
@@ -178,11 +98,93 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 
 		@Override
 		public void failedAcceptingSession(Integer sessionId, Throwable t) throws Throwable {
-			if (connectionFailed != null) {
-				connectionFailed.call(sessionId, t);
+			if (failedAcceptance != null) {
+				failedAcceptance.call(sessionId, t);
 			}
 		}
 
+	}
+
+	@Override
+	protected void init() {
+		if (config.isSecureConnectionEnabled() == false) {
+			config.setDecoder((ByteBuffer buf, Session session) -> {
+				Object o = session.getAttachment();
+				if (o != null) {
+					TcpConnectionImpl c = (TcpConnectionImpl) o;
+					if (c.buffer != null) {
+						c.buffer.call(buf);
+					}
+				}
+			});
+			config.setHandler(new AbstractHandler() {
+
+				@Override
+				public void sessionOpened(Session session) throws Throwable {
+					TcpConnectionImpl c = new TcpConnectionImpl(session);
+					session.attachObject(c);
+					if (accept != null) {
+						accept.call(c);
+					}
+				}
+
+			});
+		} else {
+			config.setDecoder((ByteBuffer buf, Session session) -> {
+				Object o = session.getAttachment();
+				if (o != null) {
+					SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
+					ByteBuffer plaintext = c.sslSession.read(buf);
+					if (plaintext != null) {
+						if (c.buffer != null) {
+							c.buffer.call(buf);
+						}
+					}
+				}
+			});
+			config.setHandler(new AbstractHandler() {
+
+				private SSLContext sslContext = config.getSslContextFactory().getSSLContext();
+
+				@Override
+				public void sessionOpened(Session session) throws Throwable {
+
+					final SSLEngine sslEngine = sslContext.createSSLEngine();
+					SSLSession sslSession = new SSLSession(sslContext, sslEngine, session, false, (ssl) -> {
+						Object o = session.getAttachment();
+						if (o != null) {
+							SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
+							if (accept != null) {
+								accept.call(c);
+							}
+						}
+					}, new ALPN.ServerProvider() {
+
+						@Override
+						public void unsupported() {
+							try {
+								alpnUnsupported.call();
+							} finally {
+								ALPN.remove(sslEngine);
+							}
+						}
+
+						@Override
+						public String select(List<String> protocols) {
+							try {
+								return alpnSelectProtocols.call(protocols);
+							} finally {
+								ALPN.remove(sslEngine);
+							}
+						}
+					});
+					SecureTcpConnectionImpl c = new SecureTcpConnectionImpl(session, sslSession);
+					session.attachObject(c);
+				}
+
+			});
+		}
+		server.listen(config.getHost(), config.getPort());
 	}
 
 	@Override
