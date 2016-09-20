@@ -13,12 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.Cookie;
 import com.firefly.codec.http2.model.CookieGenerator;
-import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
@@ -39,8 +37,6 @@ import com.firefly.utils.function.Action3;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.EofException;
 import com.firefly.utils.json.Json;
-import com.firefly.utils.json.JsonArray;
-import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.BlockingPool;
 import com.firefly.utils.lang.pool.BoundedBlockingPool;
@@ -66,64 +62,23 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 		start();
 	}
 
-	public class SimpleResponse {
-		Response response;
-		List<ByteBuffer> responseBody = new ArrayList<>();
-
-		public Response getResponse() {
-			return response;
-		}
-
-		public void setResponse(Response response) {
-			this.response = response;
-		}
-
-		public List<ByteBuffer> getResponseBody() {
-			return responseBody;
-		}
-
-		public void setResponseBody(List<ByteBuffer> responseBody) {
-			this.responseBody = responseBody;
-		}
-
-		public String getStringBody() {
-			return getStringBody("UTF-8");
-		}
-
-		public String getStringBody(String charset) {
-			return BufferUtils.toString(responseBody, charset);
-		}
-
-		public <T> T getJsonBody(Class<T> clazz) {
-			return Json.toObject(getStringBody(), clazz);
-		}
-
-		public JsonObject getJsonObjectBody() {
-			return Json.toJsonObject(getStringBody());
-		}
-
-		public JsonArray getJsonArrayBody() {
-			return Json.toJsonArray(getStringBody());
-		}
-
-		public List<Cookie> getCookies() {
-			return response.getFields().getValuesList(HttpHeader.SET_COOKIE.asString()).stream()
-					.map(CookieParser::parseSetCookie).collect(Collectors.toList());
-		}
-	}
-
 	public class RequestBuilder {
 		String host;
 		int port;
 
 		MetaData.Request request;
 		List<ByteBuffer> requestBody = new ArrayList<>();
-		Action1<Response> messageComplete;
+
+		Action1<Response> headerComplete;
 		Action1<ByteBuffer> content;
+		Action1<Response> messageComplete;
+
 		Action3<Integer, String, Response> badMessage;
 		Action1<Response> earlyEof;
+
 		Promise<HTTPOutputStream> promise;
 		Action1<HTTPOutputStream> output;
+
 		FuturePromise<SimpleResponse> future;
 		SimpleResponse simpleResponse;
 
@@ -189,6 +144,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 			return this;
 		}
 
+		public RequestBuilder headerComplete(Action1<Response> headerComplete) {
+			this.headerComplete = headerComplete;
+			return this;
+		}
+
 		public RequestBuilder messageComplete(Action1<Response> messageComplete) {
 			this.messageComplete = messageComplete;
 			return this;
@@ -216,7 +176,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
 		public void submit(FuturePromise<SimpleResponse> future) {
 			this.future = future;
-			simpleResponse = new SimpleResponse();
 			send(this);
 		}
 
@@ -368,7 +327,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 					connection.getAttachment());
 
 			ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
-					.messageComplete((req, resp, outputStream, conn) -> {
+					.headerComplete((req, resp, outputStream, conn) -> {
+						if (r.headerComplete != null) {
+							r.headerComplete.call(resp);
+						}
+						if (r.future != null) {
+							if (r.simpleResponse == null) {
+								r.simpleResponse = new SimpleResponse(resp);
+							}
+						}
+						return false;
+					}).messageComplete((req, resp, outputStream, conn) -> {
 						release(connection, pool);
 						log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
 								connection.getAttachment());
@@ -376,7 +345,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							r.messageComplete.call(resp);
 						}
 						if (r.future != null) {
-							r.simpleResponse.response = resp;
 							r.future.succeeded(r.simpleResponse);
 						}
 						return true;
@@ -396,7 +364,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							r.badMessage.call(errCode, reason, resp);
 						}
 						if (r.future != null) {
-							r.simpleResponse.response = resp;
+							if (r.simpleResponse == null) {
+								r.simpleResponse = new SimpleResponse(resp);
+							}
 							r.future.failed(new BadMessageException(errCode, reason));
 						}
 					}).earlyEOF((req, resp, outputStream, conn) -> {
@@ -407,7 +377,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 							r.earlyEof.call(resp);
 						}
 						if (r.future != null) {
-							r.simpleResponse.response = resp;
+							if (r.simpleResponse == null) {
+								r.simpleResponse = new SimpleResponse(resp);
+							}
 							r.future.failed(new EofException("early eof"));
 						}
 					});

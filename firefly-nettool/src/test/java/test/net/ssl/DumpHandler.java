@@ -17,8 +17,6 @@ import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
 import com.firefly.net.tcp.ssl.SSLSession;
 
-import test.net.tcp.SendFileHandler;
-
 public class DumpHandler implements Handler {
 	
 	private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
@@ -58,7 +56,7 @@ public class DumpHandler implements Handler {
 //		session.encode(s.toString());
 		
 		
-		File file = new File(SendFileHandler.class.getResource("/index.html").toURI());
+		File file = new File(DumpHandler.class.getResource("/index.html").toURI());
 		SessionInfo info = (SessionInfo)session.getAttachment();
 		info.length = file.length();
 		@SuppressWarnings("resource")

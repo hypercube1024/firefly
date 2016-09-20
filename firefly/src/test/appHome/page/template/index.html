@@ -54,6 +54,17 @@
 </div>
 
 <div>
+	<form id="putForm">
+	<div>
+		PUT测试：<textarea id="putContent" name="content"></textarea>
+	</div>
+	<div>
+		<input id="putButton" type="button" value="提交"></input>
+	</div>
+	</form>
+</div>
+
+<div>
 <form id="form0" action="upload" method="POST" enctype="multipart/form-data" >
 	<div>
 		书名：<input type="text" name="title"></input>
@@ -95,6 +106,25 @@ $('#ajaxSubmit').on('click', function () {
        }
     });
 })
+
+$('#putButton').on('click', function () {
+	var c = $("#putContent").val();
+	console.log(c);
+	$.ajax({
+       url: "put",
+       type: "PUT",
+       data: {content : c},
+       processData: true,
+       contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+       success: function(response) {
+           alert(response);
+       },
+       error: function(jqXHR, textStatus, errorMessage) {
+    	   alert(errorMessage); // Optional
+       }
+    });
+})
+
 </script>
 </body>
 </html>

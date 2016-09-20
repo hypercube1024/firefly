@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Future;
 
 import com.firefly.client.http2.SimpleHTTPClient;
-import com.firefly.client.http2.SimpleHTTPClient.SimpleResponse;
+import com.firefly.client.http2.SimpleResponse;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MimeTypes;
@@ -46,7 +46,7 @@ public class SimpleHTTPClientDemo2 {
 		long end = System.currentTimeMillis();
 		System.out.println();
 		System.out.println(simpleResponse.getStringBody());
-		System.out.println(simpleResponse.getResponse().toString());
+		System.out.println(simpleResponse.toString());
 		System.out.println(simpleResponse.getResponse().getFields());
 		System.out.println("------------------------------------ " + (end - s3));
 
@@ -66,7 +66,7 @@ public class SimpleHTTPClientDemo2 {
 		long end2 = System.currentTimeMillis();
 		System.out.println();
 		System.out.println(simpleResponse.getStringBody());
-		System.out.println(simpleResponse.getResponse().toString());
+		System.out.println(simpleResponse.toString());
 		System.out.println(simpleResponse.getResponse().getFields());
 		System.out.println("------------------------------------ " + (end2 - s4));
 
