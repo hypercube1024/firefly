@@ -17,6 +17,7 @@ public class ServerDemo1 {
 
 			delimiterParser.complete(message -> {
 				String s = message.trim();
+				System.out.println("message -> " + s);
 				switch (s) {
 				case "quit":
 					connection.write("bye!\r\n").close();
