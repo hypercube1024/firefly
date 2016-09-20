@@ -92,9 +92,9 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 	public void connect(String host, int port, Promise<TcpConnection> promise) {
 		start();
 		int sessionId = client.connect(host, port);
-		ClientContext v = new ClientContext();
-		v.promise = promise;
-		context.put(sessionId, v);
+		ClientContext ctx = new ClientContext();
+		ctx.promise = promise;
+		context.put(sessionId, ctx);
 	}
 
 	public class ClientContext {
@@ -111,10 +111,8 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 		public void failedOpeningSession(Integer sessionId, Throwable t) throws Throwable {
 			try {
 				ClientContext ctx = context.get(sessionId);
-				if (ctx != null) {
-					if (ctx.promise != null) {
-						ctx.promise.failed(t);
-					}
+				if (ctx != null && ctx.promise != null) {
+					ctx.promise.failed(t);
 				}
 			} finally {
 				context.remove(sessionId);
@@ -125,7 +123,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 		public void sessionClosed(Session session) throws Throwable {
 			try {
 				Object o = session.getAttachment();
-				if (o != null) {
+				if (o != null && o instanceof AbstractTcpConnection) {
 					AbstractTcpConnection c = (AbstractTcpConnection) o;
 					if (c.closeCallback != null) {
 						c.closeCallback.call();
@@ -140,7 +138,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 		public void exceptionCaught(Session session, Throwable t) throws Throwable {
 			try {
 				Object o = session.getAttachment();
-				if (o != null) {
+				if (o != null && o instanceof AbstractTcpConnection) {
 					AbstractTcpConnection c = (AbstractTcpConnection) o;
 					if (c.exception != null) {
 						c.exception.call(t);
@@ -172,10 +170,8 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 					session.attachObject(c);
 					try {
 						ClientContext ctx = context.get(session.getSessionId());
-						if (c != null) {
-							if (ctx.promise != null) {
-								ctx.promise.succeeded(c);
-							}
+						if (ctx != null && ctx.promise != null) {
+							ctx.promise.succeeded(c);
 						}
 					} finally {
 						context.remove(session.getSessionId());
@@ -186,12 +182,12 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 		} else {
 			config.setDecoder((ByteBuffer buf, Session session) -> {
 				Object o = session.getAttachment();
-				if (o != null) {
+				if (o != null && o instanceof SecureTcpConnectionImpl) {
 					SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
 					ByteBuffer plaintext = c.sslSession.read(buf);
-					if (plaintext != null) {
+					if (plaintext != null && c.sslSession.isHandshakeFinished()) {
 						if (c.buffer != null) {
-							c.buffer.call(buf);
+							c.buffer.call(plaintext);
 						}
 					}
 				}
@@ -205,14 +201,12 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 					final SSLEngine sslEngine = sslContext.createSSLEngine();
 					SSLSession sslSession = new SSLSession(sslContext, sslEngine, session, true, (ssl) -> {
 						Object o = session.getAttachment();
-						if (o != null) {
+						if (o != null && o instanceof SecureTcpConnectionImpl) {
 							SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
 							try {
 								ClientContext ctx = context.get(session.getSessionId());
-								if (c != null) {
-									if (ctx.promise != null) {
-										ctx.promise.succeeded(c);
-									}
+								if (ctx != null && ctx.promise != null) {
+									ctx.promise.succeeded(c);
 								}
 							} finally {
 								context.remove(session.getSessionId());
@@ -245,6 +239,19 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 					});
 					SecureTcpConnectionImpl c = new SecureTcpConnectionImpl(session, sslSession);
 					session.attachObject(c);
+				}
+
+				@Override
+				public void sessionClosed(Session session) throws Throwable {
+					try {
+						super.sessionClosed(session);
+					} finally {
+						Object o = session.getAttachment();
+						if (o != null && o instanceof SecureTcpConnectionImpl) {
+							SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
+							c.sslSession.close();
+						}
+					}
 				}
 			});
 		}

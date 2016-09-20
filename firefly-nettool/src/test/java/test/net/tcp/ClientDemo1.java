@@ -1,6 +1,7 @@
 package test.net.tcp;
 
 import com.firefly.net.tcp.SimpleTcpClient;
+import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpConnection;
 import com.firefly.net.tcp.codec.CharParser;
 import com.firefly.net.tcp.codec.DelimiterParser;
@@ -9,7 +10,10 @@ import com.firefly.utils.function.Action1;
 public class ClientDemo1 {
 
 	public static void main(String[] args) {
-		SimpleTcpClient client = new SimpleTcpClient();
+		TcpConfiguration config = new TcpConfiguration();
+		config.setSecureConnectionEnabled(true);
+		config.setTimeout(2 * 60 * 1000);
+		SimpleTcpClient client = new SimpleTcpClient(config);
 
 		client.connect("localhost", 1212, connection -> {
 			getParser(message -> {
@@ -26,7 +30,6 @@ public class ClientDemo1 {
 			}).call(connection);
 			connection.write("hello world2!\r\n").write("test2\r\n").write("quit\r\n");
 		});
-
 	}
 
 	public static Action1<TcpConnection> getParser(Action1<String> complete) {

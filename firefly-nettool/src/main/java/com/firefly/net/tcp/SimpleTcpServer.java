@@ -72,7 +72,7 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 		@Override
 		public void sessionClosed(Session session) throws Throwable {
 			Object o = session.getAttachment();
-			if (o != null) {
+			if (o != null && o instanceof AbstractTcpConnection) {
 				AbstractTcpConnection c = (AbstractTcpConnection) o;
 				if (c.closeCallback != null) {
 					c.closeCallback.call();
@@ -87,7 +87,7 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 		@Override
 		public void exceptionCaught(Session session, Throwable t) throws Throwable {
 			Object o = session.getAttachment();
-			if (o != null) {
+			if (o != null && o instanceof AbstractTcpConnection) {
 				AbstractTcpConnection c = (AbstractTcpConnection) o;
 				if (c.exception != null) {
 					c.exception.call(t);
@@ -132,12 +132,12 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 		} else {
 			config.setDecoder((ByteBuffer buf, Session session) -> {
 				Object o = session.getAttachment();
-				if (o != null) {
+				if (o != null && o instanceof SecureTcpConnectionImpl) {
 					SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
 					ByteBuffer plaintext = c.sslSession.read(buf);
-					if (plaintext != null) {
+					if (plaintext != null && c.sslSession.isHandshakeFinished()) {
 						if (c.buffer != null) {
-							c.buffer.call(buf);
+							c.buffer.call(plaintext);
 						}
 					}
 				}
@@ -152,7 +152,7 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 					final SSLEngine sslEngine = sslContext.createSSLEngine();
 					SSLSession sslSession = new SSLSession(sslContext, sslEngine, session, false, (ssl) -> {
 						Object o = session.getAttachment();
-						if (o != null) {
+						if (o != null && o instanceof SecureTcpConnectionImpl) {
 							SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
 							if (accept != null) {
 								accept.call(c);
@@ -180,6 +180,19 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 					});
 					SecureTcpConnectionImpl c = new SecureTcpConnectionImpl(session, sslSession);
 					session.attachObject(c);
+				}
+
+				@Override
+				public void sessionClosed(Session session) throws Throwable {
+					try {
+						super.sessionClosed(session);
+					} finally {
+						Object o = session.getAttachment();
+						if (o != null && o instanceof SecureTcpConnectionImpl) {
+							SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
+							c.sslSession.close();
+						}
+					}
 				}
 
 			});

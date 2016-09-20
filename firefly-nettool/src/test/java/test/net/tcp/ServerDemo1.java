@@ -1,13 +1,18 @@
 package test.net.tcp;
 
 import com.firefly.net.tcp.SimpleTcpServer;
+import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.CharParser;
 import com.firefly.net.tcp.codec.DelimiterParser;
 
 public class ServerDemo1 {
 
 	public static void main(String[] args) {
-		SimpleTcpServer server = new SimpleTcpServer();
+		TcpServerConfiguration config = new TcpServerConfiguration();
+		config.setSecureConnectionEnabled(true);
+		config.setTimeout(2 * 60 * 1000);
+		SimpleTcpServer server = new SimpleTcpServer(config);
+
 		server.accept(connection -> {
 			CharParser charParser = new CharParser();
 			DelimiterParser delimiterParser = new DelimiterParser("\n");
@@ -28,6 +33,5 @@ public class ServerDemo1 {
 				}
 			});
 		}).listen("localhost", 1212);
-
 	}
 }
