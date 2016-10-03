@@ -11,13 +11,13 @@ import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public abstract class HandlerMetaInfo {
-	
+
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
-	protected final Object object; // controller的实例对象
-	protected final MethodProxy proxy; // 请求uri对应的方法
-	protected final byte[] methodParam; // 请求方法参数类型
-	
+
+	protected final Object object; // controller or interceptor instance
+	protected final MethodProxy proxy; // mapped method of the URI
+	protected final byte[] methodParam; // method type
+
 	public HandlerMetaInfo(Object object, Method method) {
 		this.object = object;
 		try {
@@ -32,9 +32,9 @@ public abstract class HandlerMetaInfo {
 	public byte[] getMethodParam() {
 		return methodParam;
 	}
-	
+
 	public final View invoke(Object[] args) {
-		return (View)proxy.invoke(object, args);
+		return (View) proxy.invoke(object, args);
 	}
 
 	@Override
