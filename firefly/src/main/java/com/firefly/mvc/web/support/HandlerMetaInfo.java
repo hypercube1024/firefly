@@ -16,7 +16,7 @@ public abstract class HandlerMetaInfo {
 
 	protected final Object object; // controller or interceptor instance
 	protected final MethodProxy proxy; // mapped method of the URI
-	protected final byte[] methodParam; // method type
+	protected final MethodParam[] methodParam; // method type
 
 	public HandlerMetaInfo(Object object, Method method) {
 		this.object = object;
@@ -26,10 +26,10 @@ public abstract class HandlerMetaInfo {
 			log.error("handler init error", e);
 			throw new WebException("handler invoke error");
 		}
-		this.methodParam = new byte[method.getParameterTypes().length];
+		this.methodParam = new MethodParam[method.getParameterTypes().length];
 	}
 
-	public byte[] getMethodParam() {
+	public MethodParam[] getMethodParam() {
 		return methodParam;
 	}
 

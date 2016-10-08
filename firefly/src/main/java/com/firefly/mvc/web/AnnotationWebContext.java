@@ -142,19 +142,21 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 					}
 					
 					private Object[] getParams(HttpServletRequest request, HttpServletResponse response) {
-						byte[] methodParam = interceptor.getMethodParam();
+						MethodParam[] methodParam = interceptor.getMethodParam();
 						Object[] p = new Object[methodParam.length];
 
 						for (int i = 0; i < p.length; i++) {
 							switch (methodParam[i]) {
-							case MethodParam.REQUEST:
+							case REQUEST:
 								p[i] = request;
 								break;
-							case MethodParam.RESPONSE:
+							case RESPONSE:
 								p[i] = response;
 								break;
-							case MethodParam.HANDLER_CHAIN:
+							case HANDLER_CHAIN:
 								p[i] = chain;
+								break;
+							default:
 								break;
 							}
 						}

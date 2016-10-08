@@ -156,19 +156,19 @@ public class Resource {
 		 */
 		private Object[] getParams(HttpServletRequest request, HttpServletResponse response) {
 			ControllerMetaInfo info = this.getController();
-			byte[] methodParam = info.getMethodParam();
+			MethodParam[] methodParam = info.getMethodParam();
 			ParamMetaInfo[] paramMetaInfos = info.getParamMetaInfos();
 			Object[] p = new Object[methodParam.length];
 
 			for (int i = 0; i < p.length; i++) {
 				switch (methodParam[i]) {
-				case MethodParam.REQUEST:
+				case REQUEST:
 					p[i] = request;
 					break;
-				case MethodParam.RESPONSE:
+				case RESPONSE:
 					p[i] = response;
 					break;
-				case MethodParam.HTTP_PARAM:
+				case HTTP_PARAM:
 					Enumeration<String> enumeration = request.getParameterNames();
 					ParamMetaInfo paramMetaInfo = paramMetaInfos[i];
 					p[i] = paramMetaInfo.newParamInstance();
@@ -183,8 +183,10 @@ public class Resource {
 						request.setAttribute(paramMetaInfo.getAttribute(), p[i]);
 					}
 					break;
-				case MethodParam.PATH_VARIBLE:
+				case PATH_VARIBLE:
 					p[i] = this.getParams();
+					break;
+				default:
 					break;
 				}
 			}
