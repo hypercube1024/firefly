@@ -27,25 +27,32 @@ public class ControllerMetaInfo extends HandlerMetaInfo {
 
 		// construct parameters
 		paramMetaInfos = new ParamMetaInfo[paraTypes.length];
-		Annotation[][] annotations = method.getParameterAnnotations();
+
 		for (int i = 0; i < paraTypes.length; i++) {
-			Annotation anno = getAnnotation(annotations[i]);
-			if (anno != null) {
-				if (anno.annotationType().equals(HttpParam.class)) {
-					HttpParam httpParam = (HttpParam) anno;
+			if (paraTypes[i].equals(HttpServletRequest.class)) {
+				methodParam[i] = MethodParam.REQUEST;
+			} else if (paraTypes[i].equals(HttpServletResponse.class)) {
+				methodParam[i] = MethodParam.RESPONSE;
+			} else {
+				Annotation[][] annotations = method.getParameterAnnotations();
+				Annotation anno = getAnnotation(annotations[i]);
+				if (anno != null) {
+					if (anno.annotationType().equals(HttpParam.class)) {
+						HttpParam httpParam = (HttpParam) anno;
+						ParamMetaInfo paramMetaInfo = new ParamMetaInfo(paraTypes[i],
+								ReflectUtils.getSetterMethods(paraTypes[i]), httpParam.value());
+						paramMetaInfos[i] = paramMetaInfo;
+						methodParam[i] = MethodParam.HTTP_PARAM;
+					} else if (anno.annotationType().equals(PathVariable.class)) {
+						if (paraTypes[i].equals(String[].class))
+							methodParam[i] = MethodParam.PATH_VARIBLE;
+					}
+				} else {
 					ParamMetaInfo paramMetaInfo = new ParamMetaInfo(paraTypes[i],
-							ReflectUtils.getSetterMethods(paraTypes[i]), httpParam.value());
+							ReflectUtils.getSetterMethods(paraTypes[i]), "");
 					paramMetaInfos[i] = paramMetaInfo;
 					methodParam[i] = MethodParam.HTTP_PARAM;
-				} else if (anno.annotationType().equals(PathVariable.class)) {
-					if (paraTypes[i].equals(String[].class))
-						methodParam[i] = MethodParam.PATH_VARIBLE;
 				}
-			} else {
-				if (paraTypes[i].equals(HttpServletRequest.class))
-					methodParam[i] = MethodParam.REQUEST;
-				else if (paraTypes[i].equals(HttpServletResponse.class))
-					methodParam[i] = MethodParam.RESPONSE;
 			}
 		}
 	}

@@ -31,20 +31,19 @@ public class HelloController {
 		log.info("into text output >>>>>>>>>>>>>>>>>");
 		return new TextView("文本输出");
 	}
-	
+
 	@RequestMapping(value = "/hello/text-?/?-?")
 	public View text2(HttpServletRequest request, @PathVariable String[] args) {
 		return new TextView("text-" + args[0] + "-" + args[1] + "-" + args[2]);
 	}
-	
+
 	@RequestMapping(value = "/hello?")
 	public View text3(HttpServletRequest request, @PathVariable String[] args) {
 		return new TextView("text-" + args[0]);
 	}
-	
+
 	@RequestMapping(value = "/hello/redirect")
-	public View hello5(HttpServletRequest request,
-			HttpServletResponse response) {
+	public View hello5(HttpServletRequest request, HttpServletResponse response) {
 		return new RedirectView("/hello");
 	}
 
@@ -63,8 +62,13 @@ public class HelloController {
 	public View getBook(@HttpParam("book") Book book) {
 		return new JsonView(book);
 	}
-	
-	@RequestMapping(value = "/book/testMethod", method = {HttpMethod.GET, HttpMethod.POST})
+
+	@RequestMapping(value = "/book/json2", method = HttpMethod.POST)
+	public View getBookJson(Book book) {
+		return new JsonView(book);
+	}
+
+	@RequestMapping(value = "/book/testMethod", method = { HttpMethod.GET, HttpMethod.POST })
 	public View testMethod(@HttpParam("book") Book book) {
 		return new JsonView(book);
 	}
