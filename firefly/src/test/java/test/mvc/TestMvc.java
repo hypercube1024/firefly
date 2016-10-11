@@ -108,6 +108,29 @@ public class TestMvc {
 	}
 	
 	@Test
+	public void testFoodAdd() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/food/add");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod("POST");
+		
+		request.setParameter("name", "pineapple");
+		request.setParameter("price", "79.9");
+		
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatch(request, response);
+		
+		Food food = (Food)request.getAttribute("foodFormInterceptor");
+		Assert.assertThat(food.getName(), is("pineapple"));
+		Assert.assertThat(food.getPrice(), is(79.9));
+		
+		Food food2 = (Food)request.getAttribute("foodForm");
+		Assert.assertThat(food2.getName(), is("pineapple"));
+		Assert.assertThat(food2.getPrice(), is(79.9));
+	}
+	
+	@Test
 	public void testNotFoundPage() {
 		MockHttpServletRequest request = new MockHttpServletRequest();
 		request.setRequestURI("/firefly/app/book/create00/");
