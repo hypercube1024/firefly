@@ -14,15 +14,19 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
 import com.firefly.annotation.Controller;
+import com.firefly.annotation.JsonBody;
 import com.firefly.annotation.PathVariable;
 import com.firefly.annotation.RequestMapping;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.View;
+import com.firefly.mvc.web.view.JsonView;
 import com.firefly.mvc.web.view.RedirectView;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
 import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.io.LineReaderHandler;
+
+import test.server.model.Book;
 
 @Controller
 public class IndexController {
@@ -62,6 +66,11 @@ public class IndexController {
 	public View add2(HttpServletRequest request, HttpServletResponse response) {
 		System.out.println("into /add2");
 		return new TextView("test add 2");
+	}
+	
+	@RequestMapping(value = "/insertBook", method = HttpMethod.POST)
+	public View addJson(@JsonBody Book book) {
+		return new JsonView(book);
 	}
 	
 	@RequestMapping(value = "/put", method = HttpMethod.PUT)

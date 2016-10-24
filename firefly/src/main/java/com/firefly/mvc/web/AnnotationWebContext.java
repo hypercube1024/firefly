@@ -20,21 +20,14 @@ import com.firefly.mvc.web.support.ControllerBeanDefinition;
 import com.firefly.mvc.web.support.ControllerMetaInfo;
 import com.firefly.mvc.web.support.InterceptorBeanDefinition;
 import com.firefly.mvc.web.support.InterceptorMetaInfo;
-import com.firefly.mvc.web.support.MethodParam;
 import com.firefly.mvc.web.support.WebBeanReader;
 import com.firefly.mvc.web.view.JsonView;
 import com.firefly.mvc.web.view.JspView;
 import com.firefly.mvc.web.view.TemplateView;
 import com.firefly.mvc.web.view.TextView;
 
-/**
- * Web context
- * 
- * @author AlvinQiu
- * 
- */
 public class AnnotationWebContext extends XmlApplicationContext implements WebContext {
-	
+
 	protected final Resource resource;
 	protected final List<InterceptorMetaInfo> interceptorList = new LinkedList<InterceptorMetaInfo>();
 
@@ -43,10 +36,10 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 		resource = new Resource(getEncoding());
 		initContext();
 	}
-	
+
 	public AnnotationWebContext(String file, ServletContext servletContext) {
 		this(file);
-		
+
 		if (servletContext != null)
 			TemplateView.init(servletContext.getRealPath(getViewPath()), getEncoding());
 	}
@@ -66,19 +59,18 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 				}
 			} else if (beanDef instanceof InterceptorBeanDefinition) {
 				InterceptorBeanDefinition beanDefinition = (InterceptorBeanDefinition) beanDef;
-				if(beanDefinition.getDisposeMethod() != null) {
+				if (beanDefinition.getDisposeMethod() != null) {
 					beanDefinition.getDisposeMethod().setAccessible(true);
-					InterceptorMetaInfo interceptor = new InterceptorMetaInfo(beanDefinition.getInjectedInstance(), 
-							beanDefinition.getDisposeMethod(),
-							beanDefinition.getUriPattern(), 
+					InterceptorMetaInfo interceptor = new InterceptorMetaInfo(beanDefinition.getInjectedInstance(),
+							beanDefinition.getDisposeMethod(), beanDefinition.getUriPattern(),
 							beanDefinition.getOrder());
 					interceptorList.add(interceptor);
 				}
 			}
 		}
-		if(interceptorList.size() > 0)
+		if (interceptorList.size() > 0)
 			Collections.sort(interceptorList);
-		
+
 		TextView.setEncoding(getEncoding());
 		JsonView.setEncoding(getEncoding());
 		JspView.setViewPath(getViewPath());
@@ -86,10 +78,8 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 
 	@Override
 	protected List<BeanDefinition> getBeanDefinitions(String file) {
-		List<BeanDefinition> list1 = new WebBeanReader(file)
-				.loadBeanDefinitions();
-		List<BeanDefinition> list2 = new XmlBeanReader(file)
-				.loadBeanDefinitions();
+		List<BeanDefinition> list1 = new WebBeanReader(file).loadBeanDefinitions();
+		List<BeanDefinition> list2 = new XmlBeanReader(file).loadBeanDefinitions();
 		if (list1 != null && list2 != null) {
 			list1.addAll(list2);
 			return list1;
@@ -109,7 +99,7 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 	public String getViewPath() {
 		return ConfigReader.getInstance().getConfig().getViewPath();
 	}
-	
+
 	@Override
 	public HandlerChain match(String uri, String servletURI) {
 		final HandlerChainImpl chain = new HandlerChainImpl();
@@ -118,81 +108,63 @@ public class AnnotationWebContext extends XmlApplicationContext implements WebCo
 		chain.init();
 		return chain;
 	}
-	
+
 	protected void addLastHandler(String uri, String servletURI, final HandlerChainImpl chain) {
-		if(servletURI == null)
+		if (servletURI == null)
 			return;
-		
+
 		WebHandler last = resource.match(servletURI);
-		if(last != null)
+		if (last != null)
 			chain.add(last);
 	}
-	
+
 	protected void addInterceptor(String uri, String servletURI, final HandlerChainImpl chain) {
-		if(servletURI == null)
+		if (servletURI == null)
 			return;
-		
-		for(final InterceptorMetaInfo interceptor : interceptorList) {
-			if(interceptor.getPattern().match(servletURI) != null) {
-				chain.add(new WebHandler(){
+
+		for (final InterceptorMetaInfo interceptor : interceptorList) {
+			if (interceptor.getPattern().match(servletURI) != null) {
+				chain.add(new WebHandler() {
 
 					@Override
 					public View invoke(HttpServletRequest request, HttpServletResponse response) {
-						return interceptor.invoke(getParams(request, response));
+						return interceptor.invoke(interceptor.getParameters(request, response, chain, null));
 					}
-					
-					private Object[] getParams(HttpServletRequest request, HttpServletResponse response) {
-						byte[] methodParam = interceptor.getMethodParam();
-						Object[] p = new Object[methodParam.length];
 
-						for (int i = 0; i < p.length; i++) {
-							switch (methodParam[i]) {
-							case MethodParam.REQUEST:
-								p[i] = request;
-								break;
-							case MethodParam.RESPONSE:
-								p[i] = response;
-								break;
-							case MethodParam.HANDLER_CHAIN:
-								p[i] = chain;
-								break;
-							}
-						}
-						return p;
-					}
 				});
 			}
 		}
 	}
-	
+
 	protected class HandlerChainImpl implements HandlerChain {
 		private List<WebHandler> list = new LinkedList<WebHandler>();
 		private Iterator<WebHandler> iterator;
-		
+
 		public void add(WebHandler webHandler) {
 			list.add(webHandler);
 		}
-		
+
 		private void init() {
-			if(list.size() == 0) { // If web handler is not found, response 404
-				list.add(new WebHandler(){
+			if (list.size() == 0) { // If web handler is not found, response 404
+				list.add(new WebHandler() {
 
 					@Override
 					public View invoke(HttpServletRequest request, HttpServletResponse response) {
 						String msg = request.getRequestURI() + " not found";
-						SystemHtmlPage.responseSystemPage(request, response, getEncoding(), HttpServletResponse.SC_NOT_FOUND, msg);
+						SystemHtmlPage.responseSystemPage(request, response, getEncoding(),
+								HttpServletResponse.SC_NOT_FOUND, msg);
 						return null;
 					}
 				});
 			}
-			
-			if(iterator == null)
+
+			if (iterator == null)
 				iterator = list.iterator();
 		}
 
 		@Override
 		public View doNext(HttpServletRequest request, HttpServletResponse response, HandlerChain chain) {
-			if(iterator.hasNext())
+			if (iterator.hasNext())
 				return iterator.next().invoke(request, response);
 			else
 				return null;

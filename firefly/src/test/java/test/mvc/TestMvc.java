@@ -108,6 +108,29 @@ public class TestMvc {
 	}
 	
 	@Test
+	public void testFoodAdd() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/food/add");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod("POST");
+		
+		request.setParameter("name", "pineapple");
+		request.setParameter("price", "79.9");
+		
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatch(request, response);
+		
+		Food food = (Food)request.getAttribute("foodFormInterceptor");
+		Assert.assertThat(food.getName(), is("pineapple"));
+		Assert.assertThat(food.getPrice(), is(79.9));
+		
+		Food food2 = (Food)request.getAttribute("foodForm");
+		Assert.assertThat(food2.getName(), is("pineapple"));
+		Assert.assertThat(food2.getPrice(), is(79.9));
+	}
+	
+	@Test
 	public void testNotFoundPage() {
 		MockHttpServletRequest request = new MockHttpServletRequest();
 		request.setRequestURI("/firefly/app/book/create00/");
@@ -246,6 +269,51 @@ public class TestMvc {
 		Assert.assertThat(book.getId(), is(331));
 		Assert.assertThat(book.getSell(), is(false));
 		Assert.assertThat(book.getTitle(), is("good book"));
+	}
+	
+	@Test
+	public void testJsonOutput2() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/book/json2");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod(HttpMethod.POST);
+		request.setParameter("title", "good book aha");
+		request.setParameter("text", "very good");
+		request.setParameter("id", "2345");
+		request.setParameter("price", "10.0");
+		request.setParameter("sell", "false");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatch(request, response);
+		log.info(response.getAsString());
+		Assert.assertThat(response.getAsString().length(), greaterThan(10));
+		Book book = Json.toObject(response.getAsString(), Book.class);
+		Assert.assertThat(book.getId(), is(2345));
+		Assert.assertThat(book.getSell(), is(false));
+		Assert.assertThat(book.getTitle(), is("good book aha"));
+	}
+	
+	@Test
+	public void testPostJson() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/book/insert");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod(HttpMethod.POST);
+		
+		Book post = new Book();
+		post.setId(10);
+		post.setPrice(3.3);
+		post.setText("hello post json");
+		request.setStringBody(Json.toJson(post));
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatch(request, response);
+		System.out.println(response.getAsString());
+		
+		Book book = Json.toObject(response.getAsString(), Book.class);
+		Assert.assertThat(book.getId(), is(10));
+		Assert.assertThat(book.getPrice(), is(3.3));
+		Assert.assertThat(book.getText(), is("hello post json"));
 	}
 
 	@Test
