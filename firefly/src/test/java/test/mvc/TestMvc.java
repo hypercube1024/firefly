@@ -292,6 +292,29 @@ public class TestMvc {
 		Assert.assertThat(book.getSell(), is(false));
 		Assert.assertThat(book.getTitle(), is("good book aha"));
 	}
+	
+	@Test
+	public void testPostJson() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/firefly/app/book/insert");
+		request.setServletPath("/app");
+		request.setContextPath("/firefly");
+		request.setMethod(HttpMethod.POST);
+		
+		Book post = new Book();
+		post.setId(10);
+		post.setPrice(3.3);
+		post.setText("hello post json");
+		request.setStringBody(Json.toJson(post));
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		dispatcherController.dispatch(request, response);
+		System.out.println(response.getAsString());
+		
+		Book book = Json.toObject(response.getAsString(), Book.class);
+		Assert.assertThat(book.getId(), is(10));
+		Assert.assertThat(book.getPrice(), is(3.3));
+		Assert.assertThat(book.getText(), is("hello post json"));
+	}
 
 	@Test
 	public void testRedirect() {

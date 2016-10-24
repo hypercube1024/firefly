@@ -3,6 +3,7 @@ package com.firefly.server.http2.servlet;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -50,11 +51,14 @@ import com.firefly.utils.io.ByteArrayPipedStream;
 import com.firefly.utils.io.FilePipedStream;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.io.PipedStream;
+import com.firefly.utils.json.Json;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.StringParser;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
-public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
+public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBodyRequest, Closeable {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
 
@@ -85,6 +89,8 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 
 	private AsyncContextImpl asyncContext;
 	private RequestDispatcherImpl requestDispatcher;
+
+	private String stringBody;
 
 	public HTTPServletRequestImpl(ServerHTTP2Configuration http2Configuration, Request request, Response response,
 			HTTPOutputStream output, HTTPConnection connection) {
@@ -913,6 +919,43 @@ public class HTTPServletRequestImpl implements HttpServletRequest, Closeable {
 	@Override
 	public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
 		throw new HttpServerException("not implement this method!");
+	}
+
+	@Override
+	public String getStringBody() {
+		return getStringBody(getCharacterEncoding());
+	}
+
+	@Override
+	public String getStringBody(String charset) {
+		if (stringBody != null) {
+			return stringBody;
+		} else {
+			try (InputStream in = getInputStream()) {
+				stringBody = IO.toString(in, charset);
+			} catch (IOException e) {
+				log.error("get http request string body exception", e);
+			}
+			if (stringBody == null) {
+				stringBody = "";
+			}
+			return stringBody;
+		}
+	}
+
+	@Override
+	public <T> T getJsonBody(Class<T> clazz) {
+		return Json.toObject(getStringBody(), clazz);
+	}
+
+	@Override
+	public JsonObject getJsonObjectBody() {
+		return Json.toJsonObject(getStringBody());
+	}
+
+	@Override
+	public JsonArray getJsonArrayBody() {
+		return Json.toJsonArray(getStringBody());
 	}
 
 }

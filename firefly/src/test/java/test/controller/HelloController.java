@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.annotation.Controller;
 import com.firefly.annotation.HttpParam;
+import com.firefly.annotation.JsonBody;
 import com.firefly.annotation.PathVariable;
 import com.firefly.annotation.RequestMapping;
 import com.firefly.mvc.web.HttpMethod;
@@ -65,6 +66,11 @@ public class HelloController {
 
 	@RequestMapping(value = "/book/json2", method = HttpMethod.POST)
 	public View getBookJson(Book book) {
+		return new JsonView(book);
+	}
+
+	@RequestMapping(value = "/book/insert", method = HttpMethod.POST)
+	public View postBook(@JsonBody Book book) {
 		return new JsonView(book);
 	}
 

@@ -9,10 +9,15 @@ import com.firefly.utils.log.LogFactory;
 
 public class ParamMetaInfo {
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	
-	private final Class<?> paramClass; // injecting type
-	private final Map<String, Method> beanSetMethod; // setter method of parameter
-	private final String attribute; // out attribute
+
+	// injecting type
+	private final Class<?> paramClass;
+
+	// setter method of parameter
+	private final Map<String, Method> beanSetMethod;
+
+	// out attribute
+	private final String attribute;
 
 	public ParamMetaInfo(Class<?> paramClass, Map<String, Method> beanSetMethod, String attribute) {
 		this.paramClass = paramClass;
@@ -26,9 +31,13 @@ public class ParamMetaInfo {
 
 	/**
 	 * Set value of the parameter object
-	 * @param o The parameter object
-	 * @param key The field name of the parameter object
-	 * @param value The value
+	 * 
+	 * @param o
+	 *            The parameter object
+	 * @param key
+	 *            The field name of the parameter object
+	 * @param value
+	 *            The value
 	 */
 	public void setParam(Object o, String key, String value) {
 		try {
@@ -44,6 +53,7 @@ public class ParamMetaInfo {
 
 	/**
 	 * Get an new instance of a parameter;
+	 * 
 	 * @return The instance
 	 */
 	public Object newParamInstance() {
@@ -54,6 +64,10 @@ public class ParamMetaInfo {
 			log.error("new param error", t);
 		}
 		return o;
+	}
+
+	public Class<?> getParamClass() {
+		return paramClass;
 	}
 
 }

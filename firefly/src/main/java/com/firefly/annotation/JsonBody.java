@@ -10,6 +10,6 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 @Target(PARAMETER)
 @Documented
-public @interface RequestBody {
+public @interface JsonBody {
 
 }

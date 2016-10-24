@@ -26,15 +26,19 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
+import com.firefly.server.http2.servlet.HttpStringBodyRequest;
 import com.firefly.utils.ConvertUtils;
+import com.firefly.utils.json.Json;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 
-public class MockHttpServletRequest implements HttpServletRequest {
+public class MockHttpServletRequest implements HttpServletRequest, HttpStringBodyRequest {
 
 	protected HttpSession session;
-
 	protected String contextPath;
-
 	protected String[] dispatcherTarget;
+	protected String stringBody;
+	protected Map<String, String[]> params = new HashMap<>();
 
 	public MockHttpServletRequest() {
 		this.headers = new HashMap<String, String>();
@@ -128,8 +132,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 				sb.append(entry.getKey()).append("=&");
 			else
 				for (String str : entry.getValue()) {
-					sb.append(entry.getKey()).append("=").append(str)
-							.append("&");
+					sb.append(entry.getKey()).append("=").append(str).append("&");
 				}
 		}
 		return sb.toString();
@@ -306,8 +309,6 @@ public class MockHttpServletRequest implements HttpServletRequest {
 		throw new NoImplException();
 	}
 
-	protected Map<String, String[]> params = new HashMap<String, String[]>();
-
 	public String getParameter(String key) {
 		if (params.containsKey(key)) {
 			return params.get(key)[0];
@@ -419,8 +420,8 @@ public class MockHttpServletRequest implements HttpServletRequest {
 	}
 
 	@Override
-	public AsyncContext startAsync(ServletRequest servletRequest,
-			ServletResponse servletResponse) throws IllegalStateException {
+	public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse)
+			throws IllegalStateException {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -450,8 +451,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
 	}
 
 	@Override
-	public boolean authenticate(HttpServletResponse response)
-			throws IOException, ServletException {
+	public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -459,13 +459,13 @@ public class MockHttpServletRequest implements HttpServletRequest {
 	@Override
 	public void login(String username, String password) throws ServletException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void logout() throws ServletException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -496,6 +496,35 @@ public class MockHttpServletRequest implements HttpServletRequest {
 	public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public void setStringBody(String stringBody) {
+		this.stringBody = stringBody;
+	}
+
+	@Override
+	public String getStringBody() {
+		return stringBody;
+	}
+
+	@Override
+	public String getStringBody(String charset) {
+		return stringBody;
+	}
+
+	@Override
+	public <T> T getJsonBody(Class<T> clazz) {
+		return Json.toObject(stringBody, clazz);
+	}
+
+	@Override
+	public JsonObject getJsonObjectBody() {
+		return Json.toJsonObject(stringBody);
+	}
+
+	@Override
+	public JsonArray getJsonArrayBody() {
+		return Json.toJsonArray(stringBody);
 	}
 
 }

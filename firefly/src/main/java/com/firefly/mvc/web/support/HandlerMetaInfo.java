@@ -1,27 +1,39 @@
 package com.firefly.mvc.web.support;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.firefly.annotation.HttpParam;
+import com.firefly.annotation.JsonBody;
 import com.firefly.annotation.PathVariable;
 import com.firefly.mvc.web.HandlerChain;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.support.exception.WebException;
+import com.firefly.server.http2.servlet.HttpStringBodyRequest;
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.ReflectUtils.MethodProxy;
+import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.io.IO;
+import com.firefly.utils.json.Json;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 
 public abstract class HandlerMetaInfo {
 
 	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final Set<Class<?>> ANNOTATION_TYPES = new HashSet<>(
+			Arrays.asList(HttpParam.class, PathVariable.class, JsonBody.class));
 
 	// controller or intercepter instance
 	protected final Object object;
@@ -64,6 +76,11 @@ public abstract class HandlerMetaInfo {
 					} else if (anno.annotationType().equals(PathVariable.class)) {
 						if (paraTypes[i].equals(String[].class))
 							methodParam[i] = MethodParam.PATH_VARIBLE;
+					} else if (anno.annotationType().equals(JsonBody.class)) {
+						ParamMetaInfo paramMetaInfo = new ParamMetaInfo(paraTypes[i],
+								ReflectUtils.getSetterMethods(paraTypes[i]), "");
+						paramMetaInfos[i] = paramMetaInfo;
+						methodParam[i] = MethodParam.JSON_BODY;
 					}
 				} else {
 					ParamMetaInfo paramMetaInfo = new ParamMetaInfo(paraTypes[i],
@@ -77,7 +94,7 @@ public abstract class HandlerMetaInfo {
 
 	private Annotation getAnnotation(Annotation[] annotations) {
 		for (Annotation a : annotations) {
-			if (a.annotationType().equals(HttpParam.class) || a.annotationType().equals(PathVariable.class))
+			if (ANNOTATION_TYPES.contains(a.annotationType()))
 				return a;
 		}
 		return null;
@@ -110,7 +127,7 @@ public abstract class HandlerMetaInfo {
 			case HANDLER_CHAIN:
 				p[i] = chain;
 				break;
-			case HTTP_PARAM:
+			case HTTP_PARAM: {
 				Enumeration<String> enumeration = request.getParameterNames();
 				ParamMetaInfo paramMetaInfo = paramMetaInfos[i];
 				p[i] = paramMetaInfo.newParamInstance();
@@ -124,9 +141,38 @@ public abstract class HandlerMetaInfo {
 				if (VerifyUtils.isNotEmpty(paramMetaInfo.getAttribute())) {
 					request.setAttribute(paramMetaInfo.getAttribute(), p[i]);
 				}
+			}
 				break;
 			case PATH_VARIBLE:
 				p[i] = pathParameters;
+				break;
+			case JSON_BODY: {
+				if (request instanceof HttpStringBodyRequest) {
+					HttpStringBodyRequest r = (HttpStringBodyRequest) request;
+					ParamMetaInfo paramMetaInfo = paramMetaInfos[i];
+					if (paramMetaInfo.getParamClass().equals(JsonObject.class)) {
+						p[i] = r.getJsonObjectBody();
+					} else if (paramMetaInfo.getParamClass().equals(JsonArray.class)) {
+						p[i] = r.getJsonArrayBody();
+					} else {
+						p[i] = r.getJsonBody(paramMetaInfo.getParamClass());
+					}
+				} else {
+					ParamMetaInfo paramMetaInfo = paramMetaInfos[i];
+					try (InputStream in = request.getInputStream()) {
+						String stringBody = IO.toString(in, request.getCharacterEncoding());
+						if (paramMetaInfo.getParamClass().equals(JsonObject.class)) {
+							p[i] = Json.toJsonObject(stringBody);
+						} else if (paramMetaInfo.getParamClass().equals(JsonArray.class)) {
+							p[i] = Json.toJsonArray(stringBody);
+						} else {
+							p[i] = Json.toObject(stringBody, paramMetaInfo.getParamClass());
+						}
+					} catch (IOException e) {
+						log.error("get http request string body exception", e);
+					}
+				}
+			}
 				break;
 			default:
 				break;
