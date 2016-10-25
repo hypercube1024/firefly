@@ -348,8 +348,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
 	@Override
 	public void onConnectionFailure(int error, String reason) {
-		close(error, reason, Callback.NOOP);
 		notifyFailure(this, new IOException(String.format("%d/%s", error, reason)));
+		close(error, reason, Callback.NOOP);
 	}
 
 	@Override
