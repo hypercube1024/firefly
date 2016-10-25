@@ -95,6 +95,7 @@
 			<attribute name="id" />
 			<attribute name="class" />
 			<attribute name="init-method" />
+			<attribute name="destroy-method" />
 		</complexType>
 	</element>
 	
