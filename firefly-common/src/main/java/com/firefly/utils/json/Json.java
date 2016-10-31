@@ -5,8 +5,6 @@ import com.firefly.utils.json.io.JsonStringWriter;
 import com.firefly.utils.json.parser.GeneralJSONObjectStateMacine;
 import com.firefly.utils.json.parser.ParserStateMachine;
 import com.firefly.utils.json.serializer.SerialStateMachine;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 

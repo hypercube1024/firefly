@@ -3,8 +3,6 @@ package com.firefly.utils.json.parser;
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.time.SafeSimpleDateFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 

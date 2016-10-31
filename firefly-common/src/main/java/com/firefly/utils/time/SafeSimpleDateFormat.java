@@ -1,14 +1,12 @@
 package com.firefly.utils.time;
 
+import com.firefly.utils.VerifyUtils;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-
-import com.firefly.utils.VerifyUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SafeSimpleDateFormat {
 

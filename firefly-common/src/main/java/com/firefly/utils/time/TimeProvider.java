@@ -1,8 +1,6 @@
 package com.firefly.utils.time;
 
 import com.firefly.utils.lang.AbstractLifeCycle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TimeProvider extends AbstractLifeCycle {
 

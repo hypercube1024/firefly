@@ -1,12 +1,10 @@
 package com.firefly.utils.time;
 
-import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class HashTimeWheel extends AbstractLifeCycle {
 

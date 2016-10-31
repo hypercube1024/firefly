@@ -2,8 +2,6 @@ package com.firefly.utils;
 
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
