@@ -1,9 +1,11 @@
 package com.firefly.utils.json.support;
 
-import java.lang.reflect.Field;
-
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.FieldProxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
 
 public class FieldInvoke implements PropertyInvoke {
 	
@@ -13,7 +15,6 @@ public class FieldInvoke implements PropertyInvoke {
 		try {
 			this.field = ReflectUtils.getFieldProxy(field);
 		} catch (Throwable e) {
-			e.printStackTrace();
 		}
 	}
 

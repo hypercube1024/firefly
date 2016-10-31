@@ -7,6 +7,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 import com.firefly.utils.VerifyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SafeSimpleDateFormat {
 
@@ -41,9 +43,8 @@ public class SafeSimpleDateFormat {
 		try {
 			return getFormat().parse(dateStr);
 		} catch (ParseException e) {
-			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
 
 	public String format(Date date) {

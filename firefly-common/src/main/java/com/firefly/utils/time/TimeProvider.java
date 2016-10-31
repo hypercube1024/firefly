@@ -1,8 +1,11 @@
 package com.firefly.utils.time;
 
 import com.firefly.utils.lang.AbstractLifeCycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TimeProvider extends AbstractLifeCycle {
+
 	private final long interval;
 	private volatile long current = System.currentTimeMillis();
 
@@ -24,7 +27,6 @@ public class TimeProvider extends AbstractLifeCycle {
 					try {
 						Thread.sleep(interval);
 					} catch (InterruptedException e) {
-						e.printStackTrace();
 					}
 					current = System.currentTimeMillis();
 				}

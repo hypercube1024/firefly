@@ -1,13 +1,15 @@
 package com.firefly.net.tcp.ssl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.FileInputStream;
 
-import javax.net.ssl.SSLContext;
-
-import com.firefly.net.tcp.ssl.AbstractSSLContextFactory;
-
 public class FileSSLContextFactory extends AbstractSSLContextFactory {
+
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private File file;
 	private String keystorePassword;
@@ -37,7 +39,7 @@ public class FileSSLContextFactory extends AbstractSSLContextFactory {
 			ret = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType,
 					sslProtocol);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("get SSL context exception", e);
 		}
 		return ret;
 	}

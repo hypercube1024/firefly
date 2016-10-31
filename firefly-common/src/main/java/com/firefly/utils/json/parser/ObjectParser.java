@@ -1,13 +1,15 @@
 package com.firefly.utils.json.parser;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.compiler.DecodeCompiler;
 import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.support.ParserMetaInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ObjectParser implements Parser {
 	
@@ -40,7 +42,6 @@ public class ObjectParser implements Parser {
 		try {
 			obj = clazz.newInstance();
 		} catch (Throwable e) {
-			e.printStackTrace();
 		}
 		
 		if(reader.isEmptyObject())

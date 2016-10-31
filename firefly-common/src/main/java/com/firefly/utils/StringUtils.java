@@ -1,18 +1,12 @@
 package com.firefly.utils;
 
-import java.nio.charset.StandardCharsets;
-import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class StringUtils {
 	
@@ -629,8 +623,7 @@ public class StringUtils {
 						ret.append(obj);
 					}
 				} catch (Throwable t) {
-					t.printStackTrace();
-					System.out.println(obj.getClass());
+
 				}
 			} else {
 				ret.append("{}");
@@ -889,7 +882,6 @@ public class StringUtils {
 		try {
 			return s.getBytes(charset);
 		} catch (Exception e) {
-			e.printStackTrace();
 			return s.getBytes();
 		}
 	}

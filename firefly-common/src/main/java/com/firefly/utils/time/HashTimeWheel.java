@@ -5,8 +5,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.lang.AbstractLifeCycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HashTimeWheel extends AbstractLifeCycle {
+
 	private int maxTimers = 60; // slot's number in wheel
 	private long interval = 1000; // the clock's accuracy
 	
@@ -73,7 +76,6 @@ public class HashTimeWheel extends AbstractLifeCycle {
 				try {
 					Thread.sleep(interval);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
 				}
 
 				currentSlot = currentSlotTemp;

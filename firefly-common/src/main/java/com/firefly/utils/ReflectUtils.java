@@ -1,5 +1,12 @@
 package com.firefly.utils;
 
+import com.firefly.utils.classproxy.ArrayProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.FieldProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.MethodProxyFactoryUsingJavassist;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -7,11 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.firefly.utils.classproxy.ArrayProxyFactoryUsingJavassist;
-import com.firefly.utils.classproxy.FieldProxyFactoryUsingJavassist;
-import com.firefly.utils.classproxy.MethodProxyFactoryUsingJavassist;
-import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 
 public abstract class ReflectUtils {
 
@@ -267,7 +269,7 @@ public abstract class ReflectUtils {
 					entry.getValue().invoke(dest, obj);
 				}
 			} catch (Throwable t) {
-				t.printStackTrace();
+
 			}
 		}
 	}

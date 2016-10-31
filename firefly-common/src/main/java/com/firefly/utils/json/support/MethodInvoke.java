@@ -1,9 +1,11 @@
 package com.firefly.utils.json.support;
 
-import java.lang.reflect.Method;
-
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.MethodProxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
 
 public class MethodInvoke implements PropertyInvoke {
 
@@ -13,7 +15,6 @@ public class MethodInvoke implements PropertyInvoke {
 		try {
 			this.method = ReflectUtils.getMethodProxy(method);
 		} catch (Throwable e) {
-			e.printStackTrace();
 		}
 	}
 

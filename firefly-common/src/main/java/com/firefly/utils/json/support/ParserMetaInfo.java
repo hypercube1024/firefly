@@ -1,10 +1,12 @@
 package com.firefly.utils.json.support;
 
-import java.io.IOException;
-import java.util.Arrays;
-
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Arrays;
 
 public class ParserMetaInfo extends MetaInfo {
 
@@ -15,7 +17,6 @@ public class ParserMetaInfo extends MetaInfo {
 		try {
 			propertyInvoke.set(obj, getValue(reader));
 		} catch (Throwable e) {
-			e.printStackTrace();
 		} 
 	}
 	

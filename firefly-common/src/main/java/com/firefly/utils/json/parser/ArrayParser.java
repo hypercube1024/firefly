@@ -1,15 +1,17 @@
 package com.firefly.utils.json.parser;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.support.ParserMetaInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ArrayParser implements Parser {
 	
@@ -52,7 +54,6 @@ public class ArrayParser implements Parser {
 			try {
 				ReflectUtils.arraySet(ret, i, list.get(i));
 			} catch (Throwable e) {
-				e.printStackTrace();
 			}
 		}
 		return ret;

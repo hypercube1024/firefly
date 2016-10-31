@@ -1,11 +1,13 @@
 package com.firefly.utils.json.parser;
 
+import com.firefly.utils.json.JsonReader;
+import com.firefly.utils.json.exception.JsonException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Map;
-
-import com.firefly.utils.json.JsonReader;
-import com.firefly.utils.json.exception.JsonException;
 
 public class MapParser extends ComplexTypeParser {
 	
@@ -26,7 +28,6 @@ public class MapParser extends ComplexTypeParser {
 		try {
 			obj = (Map)clazz.newInstance();
 		} catch (Throwable e) {
-			e.printStackTrace();
 		}
 		
 		if(reader.isEmptyObject())
