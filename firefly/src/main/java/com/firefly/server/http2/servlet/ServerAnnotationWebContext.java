@@ -1,22 +1,21 @@
 package com.firefly.server.http2.servlet;
 
-import java.io.File;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebHandler;
 import com.firefly.mvc.web.servlet.SystemHtmlPage;
 import com.firefly.mvc.web.view.StaticFileView;
 import com.firefly.mvc.web.view.TemplateView;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 
 public class ServerAnnotationWebContext extends AnnotationWebContext {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	
 	private final ServerHTTP2Configuration http2Configuration;
 

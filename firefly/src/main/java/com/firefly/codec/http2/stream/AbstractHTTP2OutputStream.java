@@ -1,9 +1,5 @@
 package com.firefly.codec.http2.stream;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.LinkedList;
-
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.DisconnectFrame;
 import com.firefly.codec.http2.frame.Frame;
@@ -11,12 +7,16 @@ import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
 abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	protected boolean isChunked;
 	private long size;

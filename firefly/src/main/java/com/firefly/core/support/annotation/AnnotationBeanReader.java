@@ -1,5 +1,14 @@
 package com.firefly.core.support.annotation;
 
+import com.firefly.annotation.Component;
+import com.firefly.annotation.InitialMethod;
+import com.firefly.annotation.Inject;
+import com.firefly.core.support.AbstractBeanReader;
+import com.firefly.core.support.BeanDefinition;
+import com.firefly.utils.ReflectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.lang.reflect.Constructor;
@@ -12,15 +21,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
 
-import com.firefly.annotation.Component;
-import com.firefly.annotation.InitialMethod;
-import com.firefly.annotation.Inject;
-import com.firefly.core.support.AbstractBeanReader;
-import com.firefly.core.support.BeanDefinition;
-import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 /**
  * Annotation Bean processor 
  * 
@@ -28,7 +28,7 @@ import com.firefly.utils.log.LogFactory;
  * 
  */
 public class AnnotationBeanReader extends AbstractBeanReader {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public AnnotationBeanReader() {
 		this(null);

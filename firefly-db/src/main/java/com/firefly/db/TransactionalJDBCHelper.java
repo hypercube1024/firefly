@@ -1,23 +1,21 @@
 package com.firefly.db;
 
+import com.firefly.utils.Assert;
+import com.firefly.utils.function.Func1;
+import com.firefly.utils.function.Func2;
+import org.apache.commons.dbutils.BeanProcessor;
+import org.apache.commons.dbutils.ResultSetHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
-import javax.sql.DataSource;
-
-import org.apache.commons.dbutils.BeanProcessor;
-import org.apache.commons.dbutils.ResultSetHandler;
-
-import com.firefly.utils.Assert;
-import com.firefly.utils.function.Func1;
-import com.firefly.utils.function.Func2;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class TransactionalJDBCHelper {
 
-	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private final static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private static final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
 	private final JDBCHelper jdbcHelper;

@@ -1,13 +1,13 @@
 package com.firefly.utils.concurrent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class SynchronousObject<T> {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private SynchronousQueue<T> queue = new SynchronousQueue<T>();
 	
 	public void put(T obj, long timeout) {

@@ -1,23 +1,22 @@
 package com.firefly.mvc.web.view;
 
-import java.io.IOException;
-import java.util.Enumeration;
+import com.firefly.mvc.web.View;
+import com.firefly.mvc.web.servlet.SystemHtmlPage;
+import com.firefly.template.Model;
+import com.firefly.template.TemplateFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.firefly.mvc.web.View;
-import com.firefly.mvc.web.servlet.SystemHtmlPage;
-import com.firefly.template.Model;
-import com.firefly.template.TemplateFactory;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import java.io.IOException;
+import java.util.Enumeration;
 
 public class TemplateView implements View {
 	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	protected static TemplateFactory templateFactory;
 	protected static boolean init = false;
 	protected static String charset = "UTF-8";

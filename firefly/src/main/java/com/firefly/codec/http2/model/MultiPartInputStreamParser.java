@@ -32,6 +32,8 @@ import com.firefly.utils.io.ReadLineInputStream;
 import com.firefly.utils.lang.QuotedStringTokenizer;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * MultiPartInputStream
@@ -40,7 +42,7 @@ import com.firefly.utils.log.LogFactory;
  * files and strings.
  */
 public class MultiPartInputStreamParser {
-	private static Log LOG = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public static final MultipartConfigElement __DEFAULT_MULTIPART_CONFIG = new MultipartConfigElement(
 			System.getProperty("java.io.tmpdir"));
 	protected InputStream _in;
@@ -470,7 +472,7 @@ public class MultiPartInputStreamParser {
 			try {
 				line = ((ReadLineInputStream) _in).readLine();
 			} catch (IOException e) {
-				LOG.warn("Badly formatted multipart request");
+				log.warn("Badly formatted multipart request");
 				throw e;
 			}
 
@@ -481,7 +483,7 @@ public class MultiPartInputStreamParser {
 			line = line.trim();
 			while (line != null && !line.equals(boundary) && !line.equals(lastBoundary)) {
 				if (!badFormatLogged) {
-					LOG.warn("Badly formatted multipart request");
+					log.warn("Badly formatted multipart request");
 					badFormatLogged = true;
 				}
 				line = ((ReadLineInputStream) _in).readLine();

@@ -1,31 +1,7 @@
 package com.firefly.client.http2;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import com.firefly.codec.http2.model.BadMessageException;
-import com.firefly.codec.http2.model.Cookie;
-import com.firefly.codec.http2.model.CookieGenerator;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.http2.model.HttpURI;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
-import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.concurrent.FuturePromise;
@@ -40,12 +16,26 @@ import com.firefly.utils.json.Json;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.BlockingPool;
 import com.firefly.utils.lang.pool.BoundedBlockingPool;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleHTTPClient extends AbstractLifeCycle {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	protected final HTTP2Client http2Client;
 	protected final Scheduler scheduler;

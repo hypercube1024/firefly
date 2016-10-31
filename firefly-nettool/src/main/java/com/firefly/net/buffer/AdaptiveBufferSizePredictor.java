@@ -1,17 +1,17 @@
 package com.firefly.net.buffer;
 
+import com.firefly.net.BufferSizePredictor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.firefly.net.BufferSizePredictor;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 
 public class AdaptiveBufferSizePredictor implements
 		BufferSizePredictor {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	static final int DEFAULT_MINIMUM = 64;
 	static final int DEFAULT_INITIAL = 1024;

@@ -1,18 +1,18 @@
 package com.firefly.mvc.web.servlet;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.HandlerChain;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.WebContext;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class HttpServletDispatcherController implements DispatcherController {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	protected WebContext webContext;
 	

@@ -12,8 +12,12 @@ import com.firefly.template.exception.ExpressionError;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.ArrayProxy;
 import com.firefly.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ObjectNavigator {
+
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private ObjectNavigator() {}
 
@@ -30,7 +34,7 @@ public class ObjectNavigator {
 				arrayProxy = ReflectUtils.getArrayProxy(array.getClass());
 				size = arrayProxy.size(array);
 			} catch (Throwable e) {
-				Config.LOG.error("get array proxy error", e);
+				log.error("get array proxy error", e);
 			}
 			iterator = new ArrayInterator();
 		}
@@ -139,7 +143,7 @@ public class ObjectNavigator {
 		try {
 			ret = ReflectUtils.arrayGet(obj, index);
 		} catch (Throwable e) {
-			Config.LOG.error("get array value error", e);
+			log.error("get array value error", e);
 		}
 		return ret;
 	}
@@ -223,7 +227,7 @@ public class ObjectNavigator {
 		try {
 			ret = ReflectUtils.get(current, propertyName);
 		} catch (Throwable e) {
-			Config.LOG.error("get property error", e);
+			log.error("get property error", e);
 		}
 		return ret;
 	}

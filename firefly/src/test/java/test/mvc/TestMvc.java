@@ -1,27 +1,23 @@
 package test.mvc;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import test.controller.Book;
-import test.mixed.Food;
-import test.mock.servlet.MockHttpServletRequest;
-import test.mock.servlet.MockHttpServletResponse;
-
 import com.firefly.mvc.web.AnnotationWebContext;
 import com.firefly.mvc.web.DispatcherController;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.utils.json.Json;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.junit.Assert;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import test.controller.Book;
+import test.mixed.Food;
+import test.mock.servlet.MockHttpServletRequest;
+import test.mock.servlet.MockHttpServletResponse;
+
+import static org.hamcrest.Matchers.*;
 
 public class TestMvc {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private static DispatcherController dispatcherController = new HttpServletDispatcherController(new AnnotationWebContext("firefly-mvc.xml"));
 	
 	public static void main(String[] args) {

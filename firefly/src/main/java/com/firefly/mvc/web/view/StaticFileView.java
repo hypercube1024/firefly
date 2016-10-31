@@ -1,26 +1,5 @@
 package com.firefly.mvc.web.view;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.firefly.mvc.web.Constants;
 import com.firefly.mvc.web.FileAccessFilter;
 import com.firefly.mvc.web.View;
@@ -34,14 +13,28 @@ import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.FileUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
 
 public class StaticFileView implements View {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public static final String CRLF = "\r\n";
-	private static Set<String> ALLOW_METHODS = new HashSet<String>(Arrays.asList("GET", "POST", "HEAD"));
+	private static Set<String> ALLOW_METHODS = new HashSet<>(Arrays.asList("GET", "POST", "HEAD"));
 	private static String RANGE_ERROR_HTML = SystemHtmlPage.systemPageTemplate(
 			HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
 			"None of the range-specifier values in the Range request-header field overlap the current extent of the selected resource.");

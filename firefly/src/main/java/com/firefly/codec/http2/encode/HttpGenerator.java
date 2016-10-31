@@ -1,27 +1,17 @@
 package com.firefly.codec.http2.encode;
 
+import com.firefly.codec.http2.model.*;
+import com.firefly.codec.http2.model.HttpTokens.EndOfContent;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.io.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.firefly.codec.http2.model.BadMessageException;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpHeaderValue;
-import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpTokens;
-import com.firefly.codec.http2.model.HttpTokens.EndOfContent;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
-import com.firefly.codec.http2.model.PreEncodedHttpField;
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 
 /**
  * HttpGenerator. Builds HTTP Messages.
@@ -33,7 +23,7 @@ import com.firefly.utils.log.LogFactory;
  * methods/headers
  */
 public class HttpGenerator {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final static byte[] __colon_space = new byte[] { ':', ' ' };
 	private final static HttpHeaderValue[] CLOSE = { HttpHeaderValue.CLOSE };

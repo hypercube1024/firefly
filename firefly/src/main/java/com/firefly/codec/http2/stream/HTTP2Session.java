@@ -1,48 +1,27 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.http2.decode.Parser;
+import com.firefly.codec.http2.encode.Generator;
+import com.firefly.codec.http2.frame.*;
+import com.firefly.utils.concurrent.*;
+import com.firefly.utils.lang.Pair;
+import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.firefly.codec.http2.decode.Parser;
-import com.firefly.codec.http2.encode.Generator;
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.DisconnectFrame;
-import com.firefly.codec.http2.frame.ErrorCode;
-import com.firefly.codec.http2.frame.Frame;
-import com.firefly.codec.http2.frame.FrameType;
-import com.firefly.codec.http2.frame.GoAwayFrame;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PingFrame;
-import com.firefly.codec.http2.frame.PriorityFrame;
-import com.firefly.codec.http2.frame.PushPromiseFrame;
-import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
-import com.firefly.utils.concurrent.Atomics;
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.CountingCallback;
-import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.lang.Pair;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
-
 public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final ConcurrentMap<Integer, StreamSPI> streams = new ConcurrentHashMap<>();
 	private final AtomicInteger streamIds = new AtomicInteger();

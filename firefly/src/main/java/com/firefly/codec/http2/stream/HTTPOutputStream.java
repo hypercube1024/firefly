@@ -1,16 +1,16 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.http2.model.MetaData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-import com.firefly.codec.http2.model.MetaData;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public abstract class HTTPOutputStream extends OutputStream {
 	
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 	
 	protected final boolean clientMode;
 	protected final MetaData info;

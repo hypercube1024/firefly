@@ -91,6 +91,11 @@
       <version>1.3</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.21</version>
+    </dependency>
   </dependencies>
   
   <build>
@@ -214,17 +219,4 @@
     </profile>
   </profiles>
 
-  <distributionManagement>
-    <!--<repository>
-      <id>3rdRepo</id>
-      <name>3rd party</name>
-      <url>http://localhost:7777/nexus-webapp/content/repositories/thirdparty</url>
-    </repository>
-    <snapshotRepository>
-      <id>dev</id>
-      <name>Snapshots</name>
-      <url>http://localhost:7777/nexus-webapp/content/repositories/snapshots</url>
-    </snapshotRepository>-->
-
-  </distributionManagement>
 </project>

@@ -1,10 +1,5 @@
 package com.firefly.client.http2;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Map;
-
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.frame.HeadersFrame;
@@ -15,24 +10,24 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
-import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
-import com.firefly.codec.http2.stream.FlowControlStrategy;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
-import com.firefly.codec.http2.stream.SessionSPI;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
 
 public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HTTPClientConnection {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public void initialize(HTTP2Configuration config, final Promise<HTTPClientConnection> promise,
 			final Listener listener) {

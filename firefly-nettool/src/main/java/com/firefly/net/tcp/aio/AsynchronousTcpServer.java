@@ -1,6 +1,13 @@
 package com.firefly.net.tcp.aio;
 
-import static com.firefly.net.tcp.TcpPerformanceParameter.BACKLOG;
+import com.firefly.net.*;
+import com.firefly.net.event.DefaultEventManager;
+import com.firefly.net.exception.NetException;
+import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,22 +22,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.firefly.net.Config;
-import com.firefly.net.Decoder;
-import com.firefly.net.Encoder;
-import com.firefly.net.EventManager;
-import com.firefly.net.Handler;
-import com.firefly.net.Server;
-import com.firefly.net.event.DefaultEventManager;
-import com.firefly.net.exception.NetException;
-import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
+import static com.firefly.net.tcp.TcpPerformanceParameter.BACKLOG;
 
 public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private Config config;
 	private AtomicInteger id = new AtomicInteger();
 	private AsynchronousTcpWorker worker;

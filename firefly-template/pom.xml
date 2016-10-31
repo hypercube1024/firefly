@@ -41,6 +41,12 @@
 			<groupId>com.fireflysource</groupId>
 			<artifactId>firefly-common</artifactId>
 		</dependency>
+
+		<dependency>
+			<groupId>com.fireflysource</groupId>
+			<artifactId>firefly-slf4j</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.freemarker</groupId>
 			<artifactId>freemarker</artifactId>

@@ -1,13 +1,21 @@
 package com.firefly.net.tcp.aio;
 
+import com.firefly.net.*;
+import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
+import com.firefly.net.buffer.FileRegion;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.io.BufferReaderHandler;
+import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.time.Millisecond100Clock;
+import com.firefly.utils.time.SafeSimpleDateFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.CompletionHandler;
-import java.nio.channels.InterruptedByTimeoutException;
+import java.nio.channels.*;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
@@ -16,27 +24,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.firefly.net.BufferSizePredictor;
-import com.firefly.net.ByteBufferArrayOutputEntry;
-import com.firefly.net.ByteBufferOutputEntry;
-import com.firefly.net.Config;
-import com.firefly.net.EventManager;
-import com.firefly.net.OutputEntry;
-import com.firefly.net.Session;
-import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
-import com.firefly.net.buffer.FileRegion;
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.CountingCallback;
-import com.firefly.utils.io.BufferReaderHandler;
-import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
-import com.firefly.utils.time.SafeSimpleDateFormat;
-
 public class AsynchronousTcpSession implements Session {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final int sessionId;
 	private final long openTime;

@@ -1,25 +1,14 @@
 package com.firefly.codec.http2.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
 import com.firefly.utils.collection.ArrayTernaryTrie;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.lang.QuotedStringTokenizer;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * HTTP Fields. A collection of HTTP header and or Trailer fields.
@@ -37,7 +26,7 @@ public class HttpFields implements Iterable<HttpField> {
 	@Deprecated
 	public static final String __separators = ", \t";
 
-	private static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private HttpField[] _fields;
 	private int _size;

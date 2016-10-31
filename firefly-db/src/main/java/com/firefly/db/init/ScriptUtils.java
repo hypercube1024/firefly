@@ -15,6 +15,8 @@ import com.firefly.utils.io.EncodedResource;
 import com.firefly.utils.io.Resource;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generic utility methods for working with SQL scripts.
@@ -68,7 +70,7 @@ public abstract class ScriptUtils {
 	 */
 	public static final String DEFAULT_BLOCK_COMMENT_END_DELIMITER = "*/";
 
-	private static final Log logger = LogFactory.getInstance().getLog("firefly-system");
+	private static final Logger logger = LoggerFactory.getLogger("firefly-system");
 
 	/**
 	 * Split an SQL script into separate statements delimited by the provided

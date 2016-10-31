@@ -1,5 +1,13 @@
 package com.firefly.codec.http2.model;
 
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.collection.ArrayTrie;
+import com.firefly.utils.collection.Trie;
+import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.lang.Loader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -7,22 +15,8 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-
-import java.util.Properties;
-import java.util.Set;
-
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.collection.ArrayTrie;
-import com.firefly.utils.collection.Trie;
-import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.lang.Loader;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 
 public class MimeTypes {
 	public enum Type {
@@ -128,7 +122,7 @@ public class MimeTypes {
 		}
 	}
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public final static Trie<MimeTypes.Type> CACHE = new ArrayTrie<>(512);
 	private final static Trie<ByteBuffer> TYPES = new ArrayTrie<ByteBuffer>(512);
 	private final static Map<String, String> __dftMimeMap = new HashMap<String, String>();

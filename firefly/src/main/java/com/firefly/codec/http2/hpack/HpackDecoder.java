@@ -1,16 +1,12 @@
 package com.firefly.codec.http2.hpack;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.hpack.HpackContext.Entry;
-import com.firefly.codec.http2.model.BadMessageException;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
 
 /**
  * Hpack Decoder
@@ -19,7 +15,7 @@ import com.firefly.utils.log.LogFactory;
  * </p>
  */
 public class HpackDecoder {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 = new HttpField.LongValueHttpField(
 			HttpHeader.CONTENT_LENGTH, 0L);
 

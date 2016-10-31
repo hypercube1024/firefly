@@ -1,14 +1,14 @@
 package test.net.ssl;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.net.Decoder;
 import com.firefly.net.Session;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
 
 public class StringLineDecoder implements Decoder {
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 	
 	private static final byte LINE_LIMITOR = '\n';
 

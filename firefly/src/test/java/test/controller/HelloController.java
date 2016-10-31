@@ -1,25 +1,21 @@
 package test.controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.firefly.annotation.Controller;
-import com.firefly.annotation.HttpParam;
-import com.firefly.annotation.JsonBody;
-import com.firefly.annotation.PathVariable;
-import com.firefly.annotation.RequestMapping;
+import com.firefly.annotation.*;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.view.JsonView;
 import com.firefly.mvc.web.view.JspView;
 import com.firefly.mvc.web.view.RedirectView;
 import com.firefly.mvc.web.view.TextView;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @Controller
 public class HelloController {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	@RequestMapping(value = "/hello")
 	public View index(HttpServletRequest request) {

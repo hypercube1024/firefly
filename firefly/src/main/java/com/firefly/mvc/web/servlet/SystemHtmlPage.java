@@ -1,5 +1,15 @@
 package com.firefly.mvc.web.servlet;
 
+import com.firefly.mvc.web.view.TemplateView;
+import com.firefly.template.Model;
+import com.firefly.template.TemplateFactory;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.VerifyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -8,19 +18,8 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.firefly.mvc.web.view.TemplateView;
-import com.firefly.template.Model;
-import com.firefly.template.TemplateFactory;
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.VerifyUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class SystemHtmlPage {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private static Map<Integer, String> errorPage = new HashMap<Integer, String>();
 	
 	public static void addErrorPage(Integer errorCode, String page) {

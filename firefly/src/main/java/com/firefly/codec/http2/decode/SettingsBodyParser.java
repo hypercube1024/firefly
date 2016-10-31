@@ -1,18 +1,18 @@
 package com.firefly.codec.http2.decode;
 
+import com.firefly.codec.http2.frame.ErrorCode;
+import com.firefly.codec.http2.frame.Flags;
+import com.firefly.codec.http2.frame.SettingsFrame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.firefly.codec.http2.frame.ErrorCode;
-import com.firefly.codec.http2.frame.Flags;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class SettingsBodyParser extends BodyParser {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private State state = State.PREPARE;
 	private int cursor;
 	private int length;

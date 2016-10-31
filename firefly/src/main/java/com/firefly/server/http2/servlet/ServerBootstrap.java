@@ -1,19 +1,19 @@
 package com.firefly.server.http2.servlet;
 
-import java.io.File;
-import java.lang.management.ManagementFactory;
-
 import com.firefly.mvc.web.WebContext;
 import com.firefly.mvc.web.servlet.HttpServletDispatcherController;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.lang.management.ManagementFactory;
 
 public class ServerBootstrap extends AbstractLifeCycle {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final HTTP2Server http2Server;
 	private final long createTime = System.currentTimeMillis();

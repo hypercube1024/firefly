@@ -1,8 +1,5 @@
 package com.firefly.server.http2.servlet;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
@@ -13,13 +10,16 @@ import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.servlet.utils.ClientIPUtils;
 import com.firefly.server.utils.StatisticsUtils;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final ServerHTTP2Configuration http2Configuration;
 	private final HttpServletDispatcherController controller;

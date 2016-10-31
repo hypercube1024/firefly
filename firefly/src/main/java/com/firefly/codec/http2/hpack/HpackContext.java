@@ -1,21 +1,17 @@
 package com.firefly.codec.http2.hpack;
 
+import com.firefly.codec.http2.model.*;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.collection.ArrayTernaryTrie;
+import com.firefly.utils.collection.Trie;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.http2.model.HttpScheme;
-import com.firefly.codec.http2.model.StaticTableHttpField;
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.collection.ArrayTernaryTrie;
-import com.firefly.utils.collection.Trie;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 
 /**
  * HPACK - Header Compression for HTTP/2
@@ -29,7 +25,7 @@ import com.firefly.utils.log.LogFactory;
  * </p>
  */
 public class HpackContext {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private static final String EMPTY = "";
 	public static final String[][] STATIC_TABLE =
 	    {

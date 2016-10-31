@@ -1,20 +1,19 @@
 package test.net.buffer;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.net.BufferSizePredictor;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FixedBufferSizePredictor;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.junit.Assert;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.Matchers.*;
 
 public class TestReceiveBufferSizePredictor {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	@Test
 	public void testAdaptive() {

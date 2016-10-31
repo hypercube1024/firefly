@@ -1,13 +1,13 @@
 package com.firefly.server.utils;
 
 import com.firefly.net.Session;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class StatisticsUtils {
 
-	private static Log access = LogFactory.getInstance().getLog("firefly-access");
-	private static Log monitor = LogFactory.getInstance().getLog("firefly-monitor");
+	private static Logger access = LoggerFactory.getLogger("firefly-access");
+	private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
 	public static void saveRequestInfo(Object sid, Object remoteAddr, String method, Object uri, long timeDiff) {
 		access.info("request: [sessionId={}, remoteAddr={}, method={}, uri={}, timeDiff={}]", sid, remoteAddr, method, uri,

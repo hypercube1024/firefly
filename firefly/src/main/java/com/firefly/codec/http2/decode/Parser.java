@@ -1,23 +1,12 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.ErrorCode;
-import com.firefly.codec.http2.frame.Flags;
-import com.firefly.codec.http2.frame.FrameType;
-import com.firefly.codec.http2.frame.GoAwayFrame;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PingFrame;
-import com.firefly.codec.http2.frame.PriorityFrame;
-import com.firefly.codec.http2.frame.PushPromiseFrame;
-import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.hpack.HpackDecoder;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
 
 /**
  * <p>
@@ -29,7 +18,7 @@ import com.firefly.utils.log.LogFactory;
  * </p>
  */
 public class Parser {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final Listener listener;
 	private final HeaderParser headerParser;

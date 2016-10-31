@@ -1,14 +1,17 @@
 package com.firefly.template.view;
 
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-
-import com.firefly.template.Config;
 import com.firefly.template.Model;
 import com.firefly.template.TemplateFactory;
 import com.firefly.template.View;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 public abstract class AbstractView implements View {
+
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	
 	protected TemplateFactory templateFactory;
 
@@ -17,7 +20,7 @@ public abstract class AbstractView implements View {
 		try {
 			main(model, out);
 		} catch (Throwable t) {
-			Config.LOG.error("view render error", t);
+			log.error("view render error", t);
 		}
 	}
 	
@@ -26,7 +29,7 @@ public abstract class AbstractView implements View {
 		try {
 			ret = str.getBytes(charset);
 		} catch (UnsupportedEncodingException e) {
-			Config.LOG.error("write text error", e);
+			log.error("write text error", e);
 		}
 		return ret;
 	}

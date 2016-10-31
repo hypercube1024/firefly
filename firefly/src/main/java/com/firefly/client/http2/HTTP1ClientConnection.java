@@ -1,5 +1,22 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.http2.decode.HttpParser;
+import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
+import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
+import com.firefly.codec.http2.encode.HttpGenerator;
+import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.model.*;
+import com.firefly.codec.http2.model.MetaData.Request;
+import com.firefly.codec.http2.stream.*;
+import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.net.Session;
+import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.codec.Base64Utils;
+import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.io.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,37 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.firefly.codec.http2.decode.HttpParser;
-import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
-import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
-import com.firefly.codec.http2.encode.HttpGenerator;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpHeaderValue;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
-import com.firefly.codec.http2.model.MetaData.Request;
-import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
-import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
-import com.firefly.codec.http2.stream.FlowControlStrategy;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.codec.http2.stream.Session.Listener;
-import com.firefly.codec.http2.stream.Stream;
-import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
-import com.firefly.utils.codec.Base64Utils;
-import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HTTPClientConnection {
 
-	private static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private Promise<HTTPClientConnection> http2ConnectionPromise;
 	private Listener http2Sessionlistener;

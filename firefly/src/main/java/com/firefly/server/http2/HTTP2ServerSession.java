@@ -1,29 +1,20 @@
 package com.firefly.server.http2;
 
+import com.firefly.codec.http2.decode.ServerParser;
+import com.firefly.codec.http2.encode.Generator;
+import com.firefly.codec.http2.frame.*;
+import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.stream.*;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.Scheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.Map;
 
-import com.firefly.codec.http2.decode.ServerParser;
-import com.firefly.codec.http2.encode.Generator;
-import com.firefly.codec.http2.frame.ErrorCode;
-import com.firefly.codec.http2.frame.Frame;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PushPromiseFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
-import com.firefly.codec.http2.model.MetaData;
-import com.firefly.codec.http2.stream.FlowControlStrategy;
-import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.Session;
-import com.firefly.codec.http2.stream.Stream;
-import com.firefly.codec.http2.stream.StreamSPI;
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class HTTP2ServerSession extends HTTP2Session implements ServerParser.Listener {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final ServerSessionListener listener;
 

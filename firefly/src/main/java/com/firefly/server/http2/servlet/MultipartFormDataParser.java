@@ -1,23 +1,22 @@
 package com.firefly.server.http2.servlet;
 
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.VerifyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.Part;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.Part;
-
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.VerifyUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class MultipartFormDataParser {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private static final int boundaryBufSize = 512;
 	private static final int headBufSize = 1024;

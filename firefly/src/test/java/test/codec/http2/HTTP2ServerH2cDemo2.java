@@ -1,11 +1,5 @@
 package test.codec.http2;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.HttpURI;
@@ -17,12 +11,18 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HTTP2ServerH2cDemo2 {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public static void main(String[] args) {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();

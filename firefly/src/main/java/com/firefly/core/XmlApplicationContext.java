@@ -1,31 +1,20 @@
 package com.firefly.core;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.firefly.annotation.Inject;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanReader;
-import com.firefly.core.support.xml.ManagedArray;
-import com.firefly.core.support.xml.ManagedList;
-import com.firefly.core.support.xml.ManagedMap;
-import com.firefly.core.support.xml.ManagedRef;
-import com.firefly.core.support.xml.ManagedValue;
-import com.firefly.core.support.xml.XmlBeanDefinition;
-import com.firefly.core.support.xml.XmlBeanReader;
-import com.firefly.core.support.xml.XmlManagedNode;
+import com.firefly.core.support.xml.*;
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.BeanMethodFilter;
 import com.firefly.utils.VerifyUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * The core application context mixed XML and annotation bean management
@@ -34,7 +23,7 @@ import com.firefly.utils.log.LogFactory;
  */
 public class XmlApplicationContext extends AbstractApplicationContext {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public XmlApplicationContext() {
 		this(null);

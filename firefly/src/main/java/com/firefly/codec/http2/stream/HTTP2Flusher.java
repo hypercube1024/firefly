@@ -1,14 +1,5 @@
 package com.firefly.codec.http2.stream;
 
-import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
 import com.firefly.net.ByteBufferArrayOutputEntry;
@@ -16,11 +7,15 @@ import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IteratingCallback;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.EofException;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.util.*;
 
 public class HTTP2Flusher extends IteratingCallback {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final Queue<WindowEntry> windows = new ArrayDeque<>();
 	private final Deque<Entry> frames = new ArrayDeque<>();
