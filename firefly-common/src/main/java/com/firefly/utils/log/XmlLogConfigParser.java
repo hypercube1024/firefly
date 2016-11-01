@@ -1,5 +1,6 @@
 package com.firefly.utils.log;
 
+import java.nio.charset.Charset;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -33,7 +34,8 @@ public class XmlLogConfigParser extends AbstractLogConfigParser {
 						DEFAULT_CONSOLE_ENABLED);
 				int maxFileSize = ConvertUtils.convert(dom.getTextValueByTagName(e, "max-file-size"),
 						DEFAULT_MAX_FILE_SIZE);
-				action.call(createLog(name, level, path, consoleEnabled, maxFileSize));
+				String charset = dom.getTextValueByTagName(e, "charset", DEFAULT_CHARSET.name());
+				action.call(createLog(name, level, path, consoleEnabled, maxFileSize, Charset.forName(charset)));
 			}
 		}
 		return true;
