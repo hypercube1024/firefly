@@ -2,28 +2,30 @@ package com.firefly.utils.json.support;
 
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.MethodProxy;
+import com.firefly.utils.exception.CommonRuntimeException;
 
 import java.lang.reflect.Method;
 
 public class MethodInvoke implements PropertyInvoke {
 
-	private MethodProxy method;
+    private MethodProxy method;
 
-	public MethodInvoke(Method method) {
-		try {
-			this.method = ReflectUtils.getMethodProxy(method);
-		} catch (Throwable e) {
-		}
-	}
+    public MethodInvoke(Method method) {
+        try {
+            this.method = ReflectUtils.getMethodProxy(method);
+        } catch (Throwable e) {
+            throw new CommonRuntimeException(e);
+        }
+    }
 
-	@Override
-	public void set(Object obj, Object arg) {
-		method.invoke(obj, arg);
-	}
+    @Override
+    public void set(Object obj, Object arg) {
+        method.invoke(obj, arg);
+    }
 
-	@Override
-	public Object get(Object obj) {
-		return method.invoke(obj);
-	}
+    @Override
+    public Object get(Object obj) {
+        return method.invoke(obj);
+    }
 
 }

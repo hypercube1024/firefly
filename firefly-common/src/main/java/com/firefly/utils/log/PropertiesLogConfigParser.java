@@ -22,7 +22,7 @@ public class PropertiesLogConfigParser extends AbstractLogConfigParser {
 				return false;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("parse exception, " + e.getMessage());
 			return false;
 		}
 	}

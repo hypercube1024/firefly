@@ -1,5 +1,6 @@
 package com.firefly.utils.json;
 
+import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.json.io.JsonStringReader;
 import com.firefly.utils.json.io.JsonStringWriter;
 import com.firefly.utils.json.parser.GeneralJSONObjectStateMacine;
@@ -15,7 +16,7 @@ public abstract class Json {
             SerialStateMachine.toJson(obj, writer);
             return writer.toString();
         } catch (IOException e) {
-            return null;
+            throw new CommonRuntimeException(e);
         }
     }
 
@@ -24,7 +25,7 @@ public abstract class Json {
         try (JsonReader reader = new JsonStringReader(json)) {
             return (T) ParserStateMachine.toObject(reader, clazz);
         } catch (IOException e) {
-            return null;
+            throw new CommonRuntimeException(e);
         }
     }
 
@@ -32,7 +33,7 @@ public abstract class Json {
         try (JsonReader reader = new JsonStringReader(json)) {
             return GeneralJSONObjectStateMacine.toJsonObject(reader);
         } catch (IOException e) {
-            return null;
+            throw new CommonRuntimeException(e);
         }
     }
 
@@ -40,7 +41,7 @@ public abstract class Json {
         try (JsonReader reader = new JsonStringReader(json)) {
             return GeneralJSONObjectStateMacine.toJsonArray(reader);
         } catch (IOException e) {
-            return null;
+            throw new CommonRuntimeException(e);
         }
     }
 

@@ -267,7 +267,7 @@ public abstract class ReflectUtils {
 					entry.getValue().invoke(dest, obj);
 				}
 			} catch (Throwable t) {
-
+				System.err.println("copy object exception, " + t.getMessage());
 			}
 		}
 	}

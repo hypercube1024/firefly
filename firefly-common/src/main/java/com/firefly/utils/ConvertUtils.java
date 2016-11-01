@@ -196,6 +196,7 @@ abstract public class ConvertUtils {
 			try {
 				ReflectUtils.arraySet(newArray, i, element);
 			} catch (Throwable e) {
+				System.err.println("set element to array exception, " + e.getMessage());
 			}
 		}
 
@@ -229,6 +230,7 @@ abstract public class ConvertUtils {
 			try {
 				collection = (Collection<Object>) clazz.newInstance();
 			} catch (Exception e) {
+				System.err.println("new collection instance exception, " + e.getMessage());
 			}
 			return collection;
 		}
@@ -254,6 +256,7 @@ abstract public class ConvertUtils {
 			try {
 				map = (Map<Object, Object>) clazz.newInstance();
 			} catch (Exception e) {
+				System.err.println("new map instance exception, " + e.getMessage());
 			}
 			return map;
 		}

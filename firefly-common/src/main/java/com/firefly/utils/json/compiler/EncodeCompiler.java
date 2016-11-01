@@ -59,7 +59,7 @@ public class EncodeCompiler {
 			try {
 				field = clazz.getDeclaredField(propertyName);
 			} catch (Throwable t) {
-//				t.printStackTrace();
+				System.err.println("get declared field exception, " + t.getMessage());
 			}
 
 			if (field != null
