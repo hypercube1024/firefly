@@ -1,72 +1,72 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>firefly-db</artifactId>
-	<packaging>jar</packaging>
+    <artifactId>firefly-db</artifactId>
+    <packaging>jar</packaging>
 
-	<name>firefly-db</name>
-	<url>http://maven.apache.org</url>
+    <name>firefly-db</name>
+    <url>http://maven.apache.org</url>
 
-	<parent>
-		<groupId>com.fireflysource</groupId>
-		<artifactId>firefly-framework</artifactId>
-		<version>4.0.15-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
+    <parent>
+        <groupId>com.fireflysource</groupId>
+        <artifactId>firefly-framework</artifactId>
+        <version>4.0.15-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
-	<build>
-		<finalName>firefly-db</finalName>
-		<defaultGoal>install</defaultGoal>
-		<resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
-		<testResources>
-			<testResource>
-				<filtering>true</filtering>
-				<directory>src/test/resources</directory>
-			</testResource>
-		</testResources>
-	</build>
+    <build>
+        <finalName>firefly-db</finalName>
+        <defaultGoal>install</defaultGoal>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <filtering>true</filtering>
+                <directory>src/test/resources</directory>
+            </testResource>
+        </testResources>
+    </build>
 
-	<dependencies>
+    <dependencies>
 
-		<!-- Common -->
-		<dependency>
-			<groupId>com.fireflysource</groupId>
-			<artifactId>firefly-common</artifactId>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.fireflysource</groupId>
-			<artifactId>firefly-slf4j</artifactId>
-			<scope>test</scope>
-		</dependency>
+        <!-- Common -->
+        <dependency>
+            <groupId>com.fireflysource</groupId>
+            <artifactId>firefly-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-dbutils</groupId>
+            <artifactId>commons-dbutils</artifactId>
+            <version>1.6</version>
+        </dependency>
 
-		<!-- DB -->
-		<dependency>
-			<groupId>commons-dbutils</groupId>
-			<artifactId>commons-dbutils</artifactId>
-			<version>1.6</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.zaxxer</groupId>
-			<artifactId>HikariCP</artifactId>
-			<version>2.5.1</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<version>1.4.191</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>com.fireflysource</groupId>
+            <artifactId>firefly-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>2.5.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.191</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 
 </project>
