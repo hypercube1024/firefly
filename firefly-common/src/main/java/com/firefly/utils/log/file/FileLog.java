@@ -19,7 +19,7 @@ public class FileLog implements Log, Closeable {
     private boolean consoleOutput;
     private boolean fileOutput;
     private int maxFileSize;
-    private int writedSize;
+    private int writeSize;
     private Charset charset = LogConfigParser.DEFAULT_CHARSET;
     private BufferedOutputStream bufferedOutputStream;
     private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
@@ -35,12 +35,12 @@ public class FileLog implements Log, Closeable {
         if (fileOutput) {
             byte[] text = (logItem.toString() + CL).getBytes(charset);
             Date d = new Date();
-            boolean success = initializeBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(d), writedSize + text.length);
+            boolean success = initializeBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(d), writeSize + text.length);
             if (success) {
                 logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
                 try {
                     bufferedOutputStream.write(text);
-                    writedSize += text.length;
+                    writeSize += text.length;
                 } catch (IOException e) {
                     System.err.println("writer log exception, " + e.getMessage());
                 }
@@ -76,7 +76,7 @@ public class FileLog implements Log, Closeable {
             File file = new File(path, getLogFileName(newDate));
             bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
             currentDate = newDate;
-            writedSize = (int) file.length();
+            writeSize = (int) file.length();
             System.out.println("get new log buffer, the file path is " + file.getAbsolutePath() + " and the size is " + file.length());
             return true;
         } catch (IOException e) {
