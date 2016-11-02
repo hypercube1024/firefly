@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Objects;
 
 public class FileLog implements Log, Closeable {
 
@@ -352,46 +353,15 @@ public class FileLog implements Log, Closeable {
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (consoleOutput ? 1231 : 1237);
-        result = prime * result + (fileOutput ? 1231 : 1237);
-        result = prime * result + ((level == null) ? 0 : level.hashCode());
-        result = prime * result + maxFileSize;
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
-        result = prime * result + ((path == null) ? 0 : path.hashCode());
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FileLog fileLog = (FileLog) o;
+        return Objects.equals(name, fileLog.name);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        FileLog other = (FileLog) obj;
-        if (consoleOutput != other.consoleOutput)
-            return false;
-        if (fileOutput != other.fileOutput)
-            return false;
-        if (level != other.level)
-            return false;
-        if (maxFileSize != other.maxFileSize)
-            return false;
-        if (name == null) {
-            if (other.name != null)
-                return false;
-        } else if (!name.equals(other.name))
-            return false;
-        if (path == null) {
-            if (other.path != null)
-                return false;
-        } else if (!path.equals(other.path))
-            return false;
-        return true;
+    public int hashCode() {
+        return Objects.hash(name);
     }
-
 }
