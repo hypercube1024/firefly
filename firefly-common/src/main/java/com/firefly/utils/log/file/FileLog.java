@@ -13,31 +13,44 @@ import java.util.Objects;
 
 public class FileLog implements Log, Closeable {
 
+    private static final boolean stackTrace = Boolean.getBoolean("debugMode");
+
     private LogLevel level;
     private String path;
     private String name;
     private boolean consoleOutput;
     private boolean fileOutput;
     private int maxFileSize;
-    private int writeSize;
     private Charset charset = LogConfigParser.DEFAULT_CHARSET;
-    private BufferedOutputStream bufferedOutputStream;
-    private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
-    private static final int bufferSize = 4 * 1024;
-    private static final boolean stackTrace = Boolean.getBoolean("debugMode");
+
+    private LogOutputStream output = new LogOutputStream();
 
     void write(LogItem logItem) {
+        Date date = new Date();
+        logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(date));
         if (consoleOutput) {
-            logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
             System.out.println(logItem.toString());
         }
 
         if (fileOutput) {
-            byte[] text = (logItem.toString() + CL).getBytes(charset);
-            Date d = new Date();
-            boolean success = initializeBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(d), writeSize + text.length);
+            logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(date));
+            output.write(logItem.toString(), date);
+        }
+    }
+
+    private class LogOutputStream {
+
+        private static final int bufferSize = 4 * 1024;
+        private BufferedOutputStream bufferedOutputStream;
+
+        private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
+        private int writeSize;
+        private int currentBakIndex;
+
+        public void write(String str, Date date) {
+            byte[] text = (str + CL).getBytes(charset);
+            boolean success = initializeBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(date), writeSize + text.length);
             if (success) {
-                logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
                 try {
                     bufferedOutputStream.write(text);
                     writeSize += text.length;
@@ -48,106 +61,106 @@ public class FileLog implements Log, Closeable {
                 System.err.println("The log " + toString() + " can not get buffered writer!");
             }
         }
+
+        public void flush() {
+            if (bufferedOutputStream != null) {
+                try {
+                    bufferedOutputStream.flush();
+                } catch (IOException e) {
+                    System.err.println("flush log buffer exception, " + e.getMessage());
+                }
+            }
+        }
+
+        public void close() {
+            if (bufferedOutputStream != null) {
+                try {
+                    bufferedOutputStream.close();
+                } catch (IOException e) {
+                    System.err.println("close log writer exception, " + e.getMessage());
+                }
+            }
+        }
+
+        private boolean createNewBufferedOutputStream(String newDate) {
+            try {
+                File file = new File(path, getLogFileName(newDate));
+                bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
+                currentDate = newDate;
+                writeSize = (int) file.length();
+                System.out.println("get new log buffer, the file path is " + file.getAbsolutePath() + " and the size is " + file.length());
+                return true;
+            } catch (IOException e) {
+                System.err.println("create log writer exception, " + e.getMessage());
+                return false;
+            }
+        }
+
+        private String getLogFileName(String date) {
+            return name + "." + date + ".txt";
+        }
+
+        private String getBackupLogFileName(String date, int index) {
+            return getLogFileName(date) + "." + index + ".bak";
+        }
+
+        private boolean createNewLogFile(String date, int currentWriteSize) {
+            boolean ret = false;
+            try {
+                Path logPath = Paths.get(path, getLogFileName(date));
+                if (!Files.exists(logPath)) {
+                    ret = true;
+                } else {
+                    if (maxFileSize > 0) {
+                        if (!currentDate.equals(date)) {
+                            ret = true;
+                        } else {
+                            if (currentWriteSize < 0 || currentWriteSize > maxFileSize) {
+                                // create log file backup
+                                while (Files.exists(Paths.get(path, getBackupLogFileName(date, currentBakIndex)))) {
+                                    currentBakIndex++;
+                                }
+                                Files.move(logPath, Paths.get(path, getBackupLogFileName(date, currentBakIndex)));
+                                ret = true;
+                            } else {
+                                ret = false;
+                            }
+                        }
+                    } else {
+                        ret = !currentDate.equals(date);
+                    }
+                }
+                if (ret) {
+                    Files.createFile(logPath);
+                }
+            } catch (IOException e) {
+                System.err.println("create new log file exception, " + e.getMessage());
+                ret = false;
+            }
+            return ret;
+        }
+
+        private boolean initializeBufferedWriter(String newDate, int currentWriteSize) {
+            if (createNewLogFile(newDate, currentWriteSize)) {
+                close();
+                return createNewBufferedOutputStream(newDate);
+            } else {
+                if (bufferedOutputStream == null) {
+                    return createNewBufferedOutputStream(newDate);
+                } else {
+                    return true;
+                }
+            }
+        }
     }
 
     public void flush() {
-        if (bufferedOutputStream != null) {
-            try {
-                bufferedOutputStream.flush();
-            } catch (IOException e) {
-                System.err.println("flush log buffer exception, " + e.getMessage());
-            }
-        }
+        output.flush();
     }
 
     @Override
     public void close() {
-        if (bufferedOutputStream != null) {
-            try {
-                bufferedOutputStream.close();
-            } catch (IOException e) {
-                System.err.println("close log writer exception, " + e.getMessage());
-            }
-        }
-    }
-
-    private boolean createNewBufferedOutputStream(String newDate) {
-        try {
-            File file = new File(path, getLogFileName(newDate));
-            bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
-            currentDate = newDate;
-            writeSize = (int) file.length();
-            System.out.println("get new log buffer, the file path is " + file.getAbsolutePath() + " and the size is " + file.length());
-            return true;
-        } catch (IOException e) {
-            System.err.println("create log writer exception, " + e.getMessage());
-            return false;
-        }
-    }
-
-    private String getLogFileName(String date) {
-        return name + "." + date + ".txt";
-    }
-
-    private String getBackupLogFileName(String date, int index) {
-        return getLogFileName(date) + "." + index + ".bak";
-    }
-
-    private boolean createNewLogFile(String date, int currentTextSize) {
-        try {
-            if (_createNewLogFile(date, currentTextSize)) {
-                Files.createFile(Paths.get(path, getLogFileName(date)));
-                return true;
-            } else {
-                return false;
-            }
-        } catch (IOException e) {
-            return true;
-        }
-    }
-
-    private boolean _createNewLogFile(String date, int currentTextSize) throws IOException {
-        Path logPath = Paths.get(path, getLogFileName(date));
-        if (!Files.exists(logPath)) {
-            return true;
-        } else {
-            if (maxFileSize > 0) {
-                if (!currentDate.equals(date)) {
-                    return true;
-                } else {
-                    if (currentTextSize < 0 || currentTextSize > maxFileSize) {
-                        // create log file backup
-                        int index = 0;
-                        while (Files.exists(Paths.get(path, getBackupLogFileName(date, index)))) {
-                            index++;
-                        }
-                        Files.move(logPath, Paths.get(path, getBackupLogFileName(date, index)));
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
-            } else {
-                if (!currentDate.equals(date)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }
-    }
-
-    private boolean initializeBufferedWriter(String newDate, int currentTextSize) {
-        if (createNewLogFile(newDate, currentTextSize)) {
-            close();
-            return createNewBufferedOutputStream(newDate);
-        } else {
-            if (bufferedOutputStream == null) {
-                return createNewBufferedOutputStream(newDate);
-            } else {
-                return true;
-            }
-        }
+        output.close();
     }
 
     public void setConsoleOutput(boolean consoleOutput) {
@@ -344,8 +357,15 @@ public class FileLog implements Log, Closeable {
 
     @Override
     public String toString() {
-        return "[level=" + level.getName() + ", name=" + name + ", path=" + path + ", consoleOutput=" + consoleOutput
-                + ", fileOutput=" + fileOutput + ", maxFileSize=" + maxFileSize + "]";
+        return "FileLog{" +
+                "level=" + level +
+                ", path='" + path + '\'' +
+                ", name='" + name + '\'' +
+                ", consoleOutput=" + consoleOutput +
+                ", fileOutput=" + fileOutput +
+                ", maxFileSize=" + maxFileSize +
+                ", charset=" + charset +
+                '}';
     }
 
     public static StackTraceElement getStackTraceElement() {

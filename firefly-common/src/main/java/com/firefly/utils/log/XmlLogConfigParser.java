@@ -34,6 +34,9 @@ public class XmlLogConfigParser extends AbstractLogConfigParser {
 						DEFAULT_CONSOLE_ENABLED);
 				int maxFileSize = ConvertUtils.convert(dom.getTextValueByTagName(e, "max-file-size"),
 						DEFAULT_MAX_FILE_SIZE);
+				if (maxFileSize < 1024 * 1024 * 10) {
+					System.err.println("the max log file less than 10MB, please set a larger file size");
+				}
 				String charset = dom.getTextValueByTagName(e, "charset", DEFAULT_CHARSET.name());
 				action.call(createLog(name, level, path, consoleEnabled, maxFileSize, Charset.forName(charset)));
 			}

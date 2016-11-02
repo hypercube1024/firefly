@@ -251,7 +251,7 @@ public class LogTest {
 		while(true) {
 			testMaxSize.info("test 测试 {} data {}", "log", data);
 //			testGBK.info("测试中文gbk, {}", data);
-//			data++;
+			data++;
 			Thread.sleep(1000);
 		}
 	}
