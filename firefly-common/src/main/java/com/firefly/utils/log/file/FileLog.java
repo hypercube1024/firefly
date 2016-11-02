@@ -114,7 +114,6 @@ public class FileLog implements Log, Closeable {
                 if (!currentDate.equals(date)) {
                     return true;
                 } else {
-                    System.out.println(currentTextSize);
                     if (currentTextSize < 0 || currentTextSize > maxFileSize) {
                         // create log file backup
                         int index = 0;
