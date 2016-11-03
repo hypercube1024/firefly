@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
@@ -31,6 +32,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     private final AtomicInteger sendWindow = new AtomicInteger();
     private final AtomicInteger recvWindow = new AtomicInteger();
     private final AtomicReference<CloseState> closed = new AtomicReference<>(CloseState.NOT_CLOSED);
+    private final AtomicLong bytesWritten = new AtomicLong();
     private final Scheduler scheduler;
     private final com.firefly.net.Session endPoint;
     private final Generator generator;
@@ -104,6 +106,11 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
     public Generator getGenerator() {
         return generator;
+    }
+
+    @Override
+    public long getBytesWritten() {
+        return bytesWritten.get();
     }
 
     @Override
@@ -264,13 +271,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     }
 
     /**
-     * This method is called when receiving a GO_AWAY from the other peer. We
-     * check the close state to act appropriately:
+     * This method is called when receiving a GO_AWAY from the other peer.
+     * We check the close state to act appropriately:
      * <p>
-     * * NOT_CLOSED: we move to REMOTELY_CLOSED and queue a disconnect, so that
-     * the content of the queue is written, and then the connection closed. We
-     * notify the application after being terminated. See
-     * <code>HTTP2Session.ControlEntry#succeeded()</code>
+     * * NOT_CLOSED: we move to REMOTELY_CLOSED and queue a disconnect, so
+     * that the content of the queue is written, and then the connection
+     * closed. We notify the application after being terminated.
+     * See <code>HTTP2Session.ControlEntry#succeeded()</code>
      * <p>
      * * In all other cases, we do nothing since other methods are already
      * performing their actions.
@@ -340,9 +347,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             if (streamId <= 0) {
                 streamId = streamIds.getAndAdd(2);
                 PriorityFrame priority = frame.getPriority();
-                priority = priority == null ? null
-                        : new PriorityFrame(streamId, priority.getParentStreamId(), priority.getWeight(),
-                        priority.isExclusive());
+                priority = priority == null ? null : new PriorityFrame(streamId, priority.getParentStreamId(),
+                        priority.getWeight(), priority.isExclusive());
                 frame = new HeadersFrame(streamId, frame.getMetaData(), priority, frame.isEndStream());
             }
             final StreamSPI stream = createLocalStream(streamId, promise);
@@ -364,7 +370,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         StreamSPI stream = streams.get(streamId);
         if (stream == null) {
             streamId = streamIds.getAndAdd(2);
-            frame = new PriorityFrame(streamId, frame.getParentStreamId(), frame.getWeight(), frame.isExclusive());
+            frame = new PriorityFrame(streamId, frame.getParentStreamId(),
+                    frame.getWeight(), frame.isExclusive());
         }
         control(stream, callback, frame);
         return streamId;
@@ -392,6 +399,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             flusher.iterate();
     }
 
+
     @Override
     public void settings(SettingsFrame frame, Callback callback) {
         control(null, callback, frame);
@@ -414,12 +422,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
      * other peer. We check the close state to act appropriately:
      * <p>
      * * NOT_CLOSED: we move to LOCALLY_CLOSED and queue a GO_AWAY. When the
-     * GO_AWAY has been written, it will only cause the output to be shut down
-     * (not the connection closed), so that the application can still read
-     * frames arriving from the other peer. Ideally the other peer will notice
-     * the GO_AWAY and close the connection. When that happen, we close the
-     * connection from {@link #onShutdown()}. Otherwise, the idle timeout
-     * mechanism will close the connection, see {@link #onIdleTimeout()}.
+     * GO_AWAY has been written, it will only cause the output to be shut
+     * down (not the connection closed), so that the application can still
+     * read frames arriving from the other peer.
+     * Ideally the other peer will notice the GO_AWAY and close the connection.
+     * When that happen, we close the connection from {@link #onShutdown()}.
+     * Otherwise, the idle timeout mechanism will close the connection, see
+     * {@link #onIdleTimeout()}.
      * <p>
      * * In all other cases, we do nothing since other methods are already
      * performing their actions.
@@ -575,6 +584,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             else
                 remoteStreamCount.decrementAndGet();
 
+            onStreamClosed(stream);
+
             flowControl.onStreamDestroyed(stream);
 
             if (log.isDebugEnabled())
@@ -636,24 +647,22 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     }
 
     /**
-     * A typical close by a remote peer involves a GO_AWAY frame followed by TCP
-     * FIN. This method is invoked when the TCP FIN is received, or when an
-     * exception is thrown while reading, and we check the close state to act
-     * appropriately:
+     * A typical close by a remote peer involves a GO_AWAY frame followed by TCP FIN.
+     * This method is invoked when the TCP FIN is received, or when an exception is
+     * thrown while reading, and we check the close state to act appropriately:
      * <p>
-     * * NOT_CLOSED: means that the remote peer did not send a GO_AWAY (abrupt
-     * close) or there was an exception while reading, and therefore we
-     * terminate.
+     * * NOT_CLOSED: means that the remote peer did not send a GO_AWAY (abrupt close)
+     * or there was an exception while reading, and therefore we terminate.
      * <p>
-     * * LOCALLY_CLOSED: we have sent the GO_AWAY to the remote peer, which
-     * received it and closed the connection; we queue a disconnect to close the
-     * connection on the local side. The GO_AWAY just shutdown the output, so we
-     * need this step to make sure the connection is closed. See
-     * {@link #close(int, String, Callback)}.
+     * * LOCALLY_CLOSED: we have sent the GO_AWAY to the remote peer, which received
+     * it and closed the connection; we queue a disconnect to close the connection
+     * on the local side.
+     * The GO_AWAY just shutdown the output, so we need this step to make sure the
+     * connection is closed. See {@link #close(int, String, Callback)}.
      * <p>
-     * * REMOTELY_CLOSED: we received the GO_AWAY, and the TCP FIN afterwards,
-     * so we do nothing since the handling of the GO_AWAY will take care of
-     * closing the connection. See {@link #onGoAway(GoAwayFrame)}.
+     * * REMOTELY_CLOSED: we received the GO_AWAY, and the TCP FIN afterwards, so we
+     * do nothing since the handling of the GO_AWAY will take care of closing the
+     * connection. See {@link #onGoAway(GoAwayFrame)}.
      *
      * @see #onGoAway(GoAwayFrame)
      * @see #close(int, String, Callback)
@@ -690,20 +699,20 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     }
 
     /**
-     * This method is invoked when the idle timeout triggers. We check the close
-     * state to act appropriately:
+     * This method is invoked when the idle timeout triggers. We check the close state
+     * to act appropriately:
      * <p>
      * * NOT_CLOSED: it's a real idle timeout, we just initiate a close, see
      * {@link #close(int, String, Callback)}.
      * <p>
-     * * LOCALLY_CLOSED: we have sent a GO_AWAY and only shutdown the output,
-     * but the other peer did not close the connection so we never received the
-     * TCP FIN, and therefore we terminate.
+     * * LOCALLY_CLOSED: we have sent a GO_AWAY and only shutdown the output, but the
+     * other peer did not close the connection so we never received the TCP FIN, and
+     * therefore we terminate.
      * <p>
-     * * REMOTELY_CLOSED: the other peer sent us a GO_AWAY, we should have
-     * queued a disconnect, but for some reason it was not processed (for
-     * example, queue was stuck because of TCP congestion), therefore we
-     * terminate. See {@link #onGoAway(GoAwayFrame)}.
+     * * REMOTELY_CLOSED: the other peer sent us a GO_AWAY, we should have queued a
+     * disconnect, but for some reason it was not processed (for example, queue was
+     * stuck because of TCP congestion), therefore we terminate.
+     * See {@link #onGoAway(GoAwayFrame)}.
      *
      * @return true if the session should be closed, false otherwise
      * @see #onGoAway(GoAwayFrame)
@@ -739,13 +748,19 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "upgrade");
     }
 
+    protected void onStreamOpened(StreamSPI stream) {
+    }
+
+    protected void onStreamClosed(StreamSPI stream) {
+    }
+
     public void disconnect() {
         if (log.isDebugEnabled())
             log.debug("Disconnecting {}", this);
         endPoint.close();
     }
 
-    private void terminate() {
+    private void terminate(Throwable cause) {
         while (true) {
             CloseState current = closed.get();
             switch (current) {
@@ -753,7 +768,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
                 case LOCALLY_CLOSED:
                 case REMOTELY_CLOSED: {
                     if (closed.compareAndSet(current, CloseState.CLOSED)) {
-                        flusher.terminate();
+                        flusher.terminate(cause);
                         for (StreamSPI stream : streams.values())
                             stream.close();
                         streams.clear();
@@ -770,8 +785,8 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     }
 
     protected void abort(Throwable failure) {
-        terminate();
         notifyFailure(this, failure);
+        terminate(failure);
     }
 
     public boolean isDisconnected() {
@@ -843,12 +858,20 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     @Override
     public String toString() {
         return String.format("%s@%x{l:%s <-> r:%s,queueSize=%d,sendWindow=%s,recvWindow=%s,streams=%d,%s}",
-                getClass().getSimpleName(), hashCode(), getEndPoint().getLocalAddress(),
-                getEndPoint().getRemoteAddress(), flusher.getQueueSize(), sendWindow, recvWindow, streams.size(),
+                getClass().getSimpleName(),
+                hashCode(),
+                getEndPoint().getLocalAddress(),
+                getEndPoint().getRemoteAddress(),
+                flusher.getQueueSize(),
+                sendWindow,
+                recvWindow,
+                streams.size(),
                 closed);
     }
 
     private class ControlEntry extends HTTP2Flusher.Entry {
+        private int bytes;
+
         private ControlEntry(Frame frame, StreamSPI stream, Callback callback) {
             super(frame, stream, callback);
         }
@@ -862,24 +885,17 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         }
 
         /**
-         * <p>
-         * Performs actions just before writing the frame to the network.
-         * </p>
-         * <p>
-         * Some frame, when sent over the network, causes the receiver to react
-         * and send back frames that may be processed by the original sender
-         * *before* {@link #succeeded()} is called.
-         * <p>
-         * If the action to perform updates some state, this update may not be
-         * seen by the received frames and cause errors.
-         * </p>
-         * <p>
-         * For example, suppose the action updates the stream window to a larger
-         * value; the sender sends the frame; the receiver is now entitled to
-         * send back larger data; when the data is received by the original
-         * sender, the action may have not been performed yet, causing the
-         * larger data to be rejected, when it should have been accepted.
-         * </p>
+         * <p>Performs actions just before writing the frame to the network.</p>
+         * <p>Some frame, when sent over the network, causes the receiver
+         * to react and send back frames that may be processed by the original
+         * sender *before* {@link #succeeded()} is called.
+         * <p>If the action to perform updates some state, this update may
+         * not be seen by the received frames and cause errors.</p>
+         * <p>For example, suppose the action updates the stream window to a
+         * larger value; the sender sends the frame; the receiver is now entitled
+         * to send back larger data; when the data is received by the original
+         * sender, the action may have not been performed yet, causing the larger
+         * data to be rejected, when it should have been accepted.</p>
          */
         private void prepare() {
             switch (frame.getType()) {
@@ -898,8 +914,10 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
         @Override
         public void succeeded() {
+            bytesWritten.addAndGet(bytes);
             switch (frame.getType()) {
                 case HEADERS: {
+                    onStreamOpened(stream);
                     HeadersFrame headersFrame = (HeadersFrame) frame;
                     if (stream.updateClose(headersFrame.isEndStream(), true))
                         removeStream(stream);
@@ -929,7 +947,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
                     break;
                 }
                 case DISCONNECT: {
-                    terminate();
+                    terminate(new ClosedChannelException());
                     break;
                 }
                 default: {
@@ -941,8 +959,9 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     }
 
     private class DataEntry extends HTTP2Flusher.Entry {
-        private int remaining;
-        private int generated;
+        private int bytes;
+        private int dataRemaining;
+        private int dataWritten;
 
         private DataEntry(DataFrame frame, StreamSPI stream, Callback callback) {
             super(frame, stream, callback);
@@ -951,12 +970,12 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             // of data frames that cannot be completely written due to
             // the flow control window exhausting, since in that case
             // we would have to count the padding only once.
-            remaining = frame.remaining();
+            dataRemaining = frame.remaining();
         }
 
         @Override
         public int dataRemaining() {
-            return remaining;
+            return dataRemaining;
         }
 
         protected boolean generate(Queue<ByteBuffer> buffers) {
@@ -965,29 +984,32 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             int sessionSendWindow = getSendWindow();
             int streamSendWindow = stream.updateSendWindow(0);
             int window = Math.min(streamSendWindow, sessionSendWindow);
-            if (window <= 0 && toWrite > 0)
+            if (window <= 0 && dataRemaining > 0)
                 return false;
 
-            int length = Math.min(toWrite, window);
+            int length = Math.min(dataRemaining, window);
 
             Pair<Integer, List<ByteBuffer>> pair = generator.data((DataFrame) frame, length);
             buffers.addAll(pair.second);
+            // Only one DATA frame is generated.
+            bytes = pair.first;
+            int written = bytes;
+            if (log.isDebugEnabled())
+                log.debug("Generated {}, length/window/data={}/{}/{}", frame, written, window, dataRemaining);
 
-            int generated = pair.first;
-            log.debug("Generated {}, length/window/data={}/{}/{}", (DataFrame) frame, generated, window, toWrite);
+            this.dataWritten = written;
+            this.dataRemaining -= written;
 
-            this.generated += generated;
-            this.remaining -= generated;
-
-            flowControl.onDataSending(stream, generated);
+            flowControl.onDataSending(stream, written);
 
             return true;
         }
 
         @Override
         public void succeeded() {
-            flowControl.onDataSent(stream, generated);
-            generated = 0;
+            bytesWritten.addAndGet(bytes);
+            flowControl.onDataSent(stream, dataWritten);
+
             // Do we have more to send ?
             DataFrame dataFrame = (DataFrame) frame;
             if (dataRemaining() <= 0) {
