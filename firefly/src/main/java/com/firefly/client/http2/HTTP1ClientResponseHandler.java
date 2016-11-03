@@ -74,11 +74,11 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 
 			connection.getParser().reset();
 
-			switch (response.getVersion()) {
+			switch (response.getHttpVersion()) {
 			case HTTP_1_0:
 				if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
 						&& "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
-					log.debug("the client {} connection is persistent", response.getVersion());
+					log.debug("the client {} connection is persistent", response.getHttpVersion());
 				} else {
 					try {
 						connection.close();
@@ -96,7 +96,7 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 						log.error("client closes connection exception", e);
 					}
 				} else {
-					log.debug("the client {} connection is persistent", response.getVersion());
+					log.debug("the client {} connection is persistent", response.getHttpVersion());
 				}
 				break;
 			default:

@@ -168,7 +168,7 @@ public class HpackTest {
 
 	private void assertMetadataSame(MetaData expected, MetaData actual) {
 		assertThat("Metadata.contentLength", actual.getContentLength(), is(expected.getContentLength()));
-		assertThat("Metadata.version" + ".version", actual.getVersion(), is(expected.getVersion()));
+		assertThat("Metadata.version" + ".version", actual.getHttpVersion(), is(expected.getHttpVersion()));
 		assertHttpFieldsSame("Metadata.fields", expected.getFields(), actual.getFields());
 	}
 

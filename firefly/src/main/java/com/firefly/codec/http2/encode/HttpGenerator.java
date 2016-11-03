@@ -151,7 +151,7 @@ public class HttpGenerator {
 
 			// If we have not been told our persistence, set the default
 			if (_persistent == null) {
-				_persistent = info.getVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal();
+				_persistent = info.getHttpVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal();
 				if (!_persistent && HttpMethod.CONNECT.is(info.getMethod()))
 					_persistent = true;
 			}
@@ -162,7 +162,7 @@ public class HttpGenerator {
 				// generate ResponseLine
 				generateRequestLine(info, header);
 
-				if (info.getVersion() == HttpVersion.HTTP_0_9)
+				if (info.getHttpVersion() == HttpVersion.HTTP_0_9)
 					throw new BadMessageException(500, "HTTP/0.9 not supported");
 
 				generateHeaders(info, header, content, last);
@@ -260,7 +260,7 @@ public class HttpGenerator {
 			if (info == null)
 				return Result.NEED_INFO;
 
-			HttpVersion version = info.getVersion();
+			HttpVersion version = info.getHttpVersion();
 			if (version == null)
 				throw new BadMessageException(500, "No version");
 
@@ -416,7 +416,7 @@ public class HttpGenerator {
 		header.put((byte) ' ');
 		header.put(StringUtils.getBytes(request.getURIString()));
 		header.put((byte) ' ');
-		header.put(request.getVersion().toBytes());
+		header.put(request.getHttpVersion().toBytes());
 		header.put(HttpTokens.CRLF);
 	}
 
@@ -504,7 +504,7 @@ public class HttpGenerator {
 					}
 
 					case TRANSFER_ENCODING: {
-						if (_info.getVersion() == HttpVersion.HTTP_1_1)
+						if (_info.getHttpVersion() == HttpVersion.HTTP_1_1)
 							transfer_encoding = field;
 						// Do NOT add yet!
 						break;
@@ -552,7 +552,7 @@ public class HttpGenerator {
 							}
 
 							case KEEP_ALIVE: {
-								if (_info.getVersion() == HttpVersion.HTTP_1_0) {
+								if (_info.getHttpVersion() == HttpVersion.HTTP_1_0) {
 									keep_alive = true;
 									if (response != null)
 										_persistent = true;
@@ -635,7 +635,7 @@ public class HttpGenerator {
 				// For a request with HTTP 1.0 & Connection: keep-alive
 				// we *must* close the connection, otherwise the client
 				// has no way to detect the end of the content.
-				if (!isPersistent() || _info.getVersion().ordinal() < HttpVersion.HTTP_1_1.ordinal())
+				if (!isPersistent() || _info.getHttpVersion().ordinal() < HttpVersion.HTTP_1_1.ordinal())
 					_endOfContent = EndOfContent.EOF_CONTENT;
 			}
 			break;
@@ -681,7 +681,7 @@ public class HttpGenerator {
 
 		// If this is a response, work out persistence
 		if (response != null) {
-			if (!isPersistent() && (close || _info.getVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal())) {
+			if (!isPersistent() && (close || _info.getHttpVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal())) {
 				if (connection == null)
 					header.put(CONNECTION_CLOSE);
 				else {

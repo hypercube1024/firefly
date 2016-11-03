@@ -255,7 +255,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 
 	@Override
 	public String getProtocol() {
-		return request.getVersion().asString();
+		return request.getHttpVersion().asString();
 	}
 
 	@Override

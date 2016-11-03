@@ -33,7 +33,7 @@ public class ServletServerHTTPHandler extends ServerHTTPHandler.Adapter {
 	@Override
 	public boolean headerComplete(Request request, Response response, HTTPOutputStream output,
 			HTTPConnection connection) {
-		response.setHttpVersion(request.getVersion());
+		response.setHttpVersion(request.getHttpVersion());
 		HTTPServletRequestImpl servletRequest = new HTTPServletRequestImpl(http2Configuration, request, response,
 				output, connection);
 		request.setAttachment(servletRequest);

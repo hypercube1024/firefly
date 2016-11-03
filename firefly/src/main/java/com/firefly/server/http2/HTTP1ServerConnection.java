@@ -165,11 +165,11 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
 			connection.getGenerator().reset();
 
-			switch (request.getVersion()) {
+			switch (request.getHttpVersion()) {
 			case HTTP_1_0:
 				if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
 						&& "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
-					log.debug("the server {} connection {} is persistent", response.getVersion(),
+					log.debug("the server {} connection {} is persistent", response.getHttpVersion(),
 							connection.getSessionId());
 				} else {
 					try {
@@ -188,7 +188,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 						log.error("server closes connection exception", e);
 					}
 				} else {
-					log.debug("the server {} connection {} is persistent", response.getVersion(),
+					log.debug("the server {} connection {} is persistent", response.getHttpVersion(),
 							connection.getSessionId());
 				}
 				break;
