@@ -173,7 +173,7 @@ public class IndexController {
     public View upload(HttpServletRequest request) throws IOException, ServletException {
         System.out.println(">>>>>>>>> upload start");
         for (Part part : request.getParts()) {
-            System.out.println(part.getName() + "|" + part.getSize());
+            System.out.println("the part -> " + part);
             System.out.println(IO.toString(part.getInputStream(), StandardCharsets.UTF_8));
             if (part.getName().startsWith("content")) {
                 part.write("test" + part.getSubmittedFileName());
