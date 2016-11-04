@@ -5,6 +5,7 @@ import com.firefly.codec.http2.model.CookieParser;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.http2.model.MultiPartInputStreamParser;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.exception.HttpServerException;
@@ -44,11 +45,12 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 	private Map<String, String[]> _parameterMap;
 	private List<Locale> localeList;
 	private Collection<Part> parts;
+	private MultipartConfigElement multipartConfigElement;
 
 	final ServerHTTP2Configuration http2Configuration;
 	private Charset encoding;
 	private String characterEncoding;
-	private Map<String, Object> attributeMap = new HashMap<String, Object>();
+	private Map<String, Object> attributeMap = new HashMap<>();
 	private boolean requestedSessionIdFromCookie;
 	private boolean requestedSessionIdFromURL;
 	private String requestedSessionId;
@@ -481,6 +483,8 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 
 	private class HTTPServletInputStream extends ServletInputStream {
 
+		private volatile boolean finished;
+
 		@Override
 		public int available() throws IOException {
 			if (hasData()) {
@@ -495,11 +499,12 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 			if (hasData()) {
 				getBodyPipedStream().getInputStream().close();
 			}
+			finished = true;
 		}
 
 		@Override
 		public boolean isFinished() {
-			return hasData();
+			return finished;
 		}
 
 		@Override
@@ -521,6 +526,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 
 		@Override
 		public int read() throws IOException {
+			finished = true;
 			if (hasData()) {
 				return getBodyPipedStream().getInputStream().read();
 			} else {
@@ -530,6 +536,7 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
+			finished = true;
 			if (hasData()) {
 				return getBodyPipedStream().getInputStream().read(b, off, len);
 			} else {
@@ -627,11 +634,23 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 	public Collection<Part> getParts() throws IOException, ServletException {
 		if (parts == null) {
 			try (ServletInputStream input = getInputStream()) {
-				parts = MultipartFormDataParser.parse(http2Configuration, input, getContentType(), encoding);
+				MultiPartInputStreamParser parser = getMultiPartInputStreamParser(input);
+				parser.setDeleteOnExit(true);
+				parts = parser.getParts();
 			}
 			return parts;
 		} else {
 			return parts;
+		}
+	}
+
+	private MultiPartInputStreamParser getMultiPartInputStreamParser(ServletInputStream input) {
+		if (multipartConfigElement != null) {
+			return new MultiPartInputStreamParser(input, getContentType(), multipartConfigElement, new File(http2Configuration.getTemporaryDirectory()));
+		} else if (http2Configuration.getMultipartConfigElement() != null) {
+			return new MultiPartInputStreamParser(input, getContentType(), http2Configuration.getMultipartConfigElement(), new File(http2Configuration.getTemporaryDirectory()));
+		} else {
+			return new MultiPartInputStreamParser(input, getContentType(), http2Configuration.getDefaultMultipartConfigElement(), new File(http2Configuration.getTemporaryDirectory()));
 		}
 	}
 
@@ -929,4 +948,11 @@ public class HTTPServletRequestImpl implements HttpServletRequest, HttpStringBod
 		return Json.toJsonArray(getStringBody());
 	}
 
+	public MultipartConfigElement getMultipartConfigElement() {
+		return multipartConfigElement;
+	}
+
+	public void setMultipartConfigElement(MultipartConfigElement multipartConfigElement) {
+		this.multipartConfigElement = multipartConfigElement;
+	}
 }
