@@ -72,7 +72,7 @@ public class ServerBootstrap extends AbstractLifeCycle {
 		log.info("the jvm name is {}", jvmName);
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			log.info("the server will be stopped");
+			System.out.println("the process " + jvmName + " will stop");
 			this.stop();
 		}));
 
