@@ -18,98 +18,89 @@ import java.util.List;
 
 public class WebBeanReader extends AnnotationBeanReader {
 
-	private static Logger log = LoggerFactory.getLogger("firefly-system");
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-	public WebBeanReader() {
-		this(null);
-	}
+    public WebBeanReader() {
+        this(null);
+    }
 
-	public WebBeanReader(String file) {
-		super(file);
-	}
+    public WebBeanReader(String file) {
+        super(file);
+    }
 
-	@Override
-	protected BeanDefinition getBeanDefinition(Class<?> c) {
-		if (c.isAnnotationPresent(Controller.class) || c.isAnnotationPresent(Component.class)) {
-			log.info("classes [{}]", c.getName());
-			return componentParser(c);
-		} else if (c.isAnnotationPresent(Interceptor.class)) {
-			log.info("classes [{}]", c.getName());
-			return interceptorParser(c);
-		} 
-		else
-			return null;
-	}
+    @Override
+    protected BeanDefinition getBeanDefinition(Class<?> c) {
+        if (c.isAnnotationPresent(Controller.class) || c.isAnnotationPresent(Component.class)) {
+            log.info("classes [{}]", c.getName());
+            return componentParser(c);
+        } else if (c.isAnnotationPresent(Interceptor.class)) {
+            log.info("classes [{}]", c.getName());
+            return interceptorParser(c);
+        } else
+            return null;
+    }
 
-	@Override
-	protected BeanDefinition componentParser(Class<?> c) {
-		ControllerBeanDefinition beanDefinition = new ControllerAnnotatedBeanDefinition();
-		setWebBeanDefinition(beanDefinition, c);
+    @Override
+    protected BeanDefinition componentParser(Class<?> c) {
+        ControllerBeanDefinition beanDefinition = new ControllerAnnotatedBeanDefinition();
+        setWebBeanDefinition(beanDefinition, c);
 
-		List<Method> reqMethods = getReqMethods(c);
-		beanDefinition.setReqMethods(reqMethods);
-		return beanDefinition;
-	}
+        List<Method> reqMethods = getReqMethods(c);
+        beanDefinition.setReqMethods(reqMethods);
+        return beanDefinition;
+    }
 
-	private BeanDefinition interceptorParser(Class<?> c) {
-		InterceptorBeanDefinition beanDefinition = new InterceptorAnnotatedBeanDefinition();
-		setWebBeanDefinition(beanDefinition, c);
-		
-		beanDefinition.setDisposeMethod(getInterceptors(c));
+    private BeanDefinition interceptorParser(Class<?> c) {
+        InterceptorBeanDefinition beanDefinition = new InterceptorAnnotatedBeanDefinition();
+        setWebBeanDefinition(beanDefinition, c);
 
-		String uriPattern = c.getAnnotation(Interceptor.class).uri();
-		beanDefinition.setUriPattern(uriPattern);
+        beanDefinition.setDisposeMethod(getInterceptors(c));
 
-		Integer order = c.getAnnotation(Interceptor.class).order();
-		beanDefinition.setOrder(order);
-		return beanDefinition;
-	}
+        String uriPattern = c.getAnnotation(Interceptor.class).uri();
+        beanDefinition.setUriPattern(uriPattern);
 
-	private void setWebBeanDefinition(AnnotationBeanDefinition beanDefinition, Class<?> c) {
-		beanDefinition.setClassName(c.getName());
+        Integer order = c.getAnnotation(Interceptor.class).order();
+        beanDefinition.setOrder(order);
+        return beanDefinition;
+    }
 
-		String id = getId(c);
-		beanDefinition.setId(id);
+    private void setWebBeanDefinition(AnnotationBeanDefinition beanDefinition, Class<?> c) {
+        beanDefinition.setClassName(c.getName());
+        beanDefinition.setId(getId(c));
+        beanDefinition.setInterfaceNames(ReflectUtils.getInterfaceNames(c));
+        beanDefinition.setInjectFields(getInjectField(c));
+        beanDefinition.setInjectMethods(getInjectMethod(c));
+        beanDefinition.setConstructor(getInjectConstructor(c));
+        beanDefinition.setInitMethod(getInitMethod(c));
+    }
 
-		String[] names = ReflectUtils.getInterfaceNames(c);
-		beanDefinition.setInterfaceNames(names);
+    private String getId(Class<?> c) {
+        if (c.isAnnotationPresent(Controller.class))
+            return c.getAnnotation(Controller.class).value();
+        else if (c.isAnnotationPresent(Interceptor.class))
+            return c.getAnnotation(Interceptor.class).value();
+        else if (c.isAnnotationPresent(Component.class))
+            return c.getAnnotation(Component.class).value();
+        else
+            return "";
+    }
 
-		List<Field> fields = getInjectField(c);
-		beanDefinition.setInjectFields(fields);
+    private List<Method> getReqMethods(Class<?> c) {
+        Method[] methods = c.getMethods();
+        List<Method> list = new ArrayList<Method>();
+        for (Method m : methods) {
+            if (m.isAnnotationPresent(RequestMapping.class)) {
+                list.add(m);
+            }
+        }
+        return list;
+    }
 
-		List<Method> methods = getInjectMethod(c);
-		beanDefinition.setInjectMethods(methods);
-
-		beanDefinition.setConstructor(getInjectConstructor(c));
-	}
-
-	private String getId(Class<?> c) {
-		if (c.isAnnotationPresent(Controller.class))
-			return c.getAnnotation(Controller.class).value();
-		else if (c.isAnnotationPresent(Interceptor.class))
-			return c.getAnnotation(Interceptor.class).value();
-		else if (c.isAnnotationPresent(Component.class))
-			return c.getAnnotation(Component.class).value();
-		else
-			return "";
-	}
-
-	private List<Method> getReqMethods(Class<?> c) {
-		Method[] methods = c.getMethods();
-		List<Method> list = new ArrayList<Method>();
-		for (Method m : methods) {
-			if (m.isAnnotationPresent(RequestMapping.class)) {
-				list.add(m);
-			}
-		}
-		return list;
-	}
-
-	private Method getInterceptors(Class<?> c) {
-		for (Method m : c.getMethods()) {// appoints method name is "dispose"
-			if (m.getName().equals("dispose"))
-				return m;
-		}
-		return null;
-	}
+    private Method getInterceptors(Class<?> c) {
+        for (Method m : c.getMethods()) {// appoints method name is "dispose"
+            if (m.getName().equals("dispose"))
+                return m;
+        }
+        return null;
+    }
 }
