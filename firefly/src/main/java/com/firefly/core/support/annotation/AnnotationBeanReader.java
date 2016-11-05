@@ -174,7 +174,7 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 
 	protected List<Field> getInjectField(Class<?> c) {
 		Field[] fields = c.getDeclaredFields();
-		List<Field> list = new ArrayList<Field>();
+		List<Field> list = new ArrayList<>();
 		for (Field field : fields) {
 			if (field.getAnnotation(Inject.class) != null) {
 				list.add(field);
@@ -185,7 +185,7 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 
 	protected List<Method> getInjectMethod(Class<?> c) {
 		Method[] methods = c.getDeclaredMethods();
-		List<Method> list = new ArrayList<Method>();
+		List<Method> list = new ArrayList<>();
 		for (Method m : methods) {
 			if (m.isAnnotationPresent(Inject.class)) {
 				list.add(m);

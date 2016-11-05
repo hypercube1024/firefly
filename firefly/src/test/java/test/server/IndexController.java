@@ -1,9 +1,6 @@
 package test.server;
 
-import com.firefly.annotation.Controller;
-import com.firefly.annotation.JsonBody;
-import com.firefly.annotation.PathVariable;
-import com.firefly.annotation.RequestMapping;
+import com.firefly.annotation.*;
 import com.firefly.mvc.web.HttpMethod;
 import com.firefly.mvc.web.View;
 import com.firefly.mvc.web.view.JsonView;
@@ -16,7 +13,6 @@ import com.firefly.utils.io.LineReaderHandler;
 import test.server.model.Book;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.*;
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +22,6 @@ import java.util.Arrays;
 import java.util.Map;
 
 @Controller
-@MultipartConfig(maxFileSize = 2000L)
 public class IndexController {
 
     @RequestMapping(value = "/index_1")
@@ -169,9 +164,10 @@ public class IndexController {
         throw new RuntimeException("test error");
     }
 
+    @MultipartSettings(maxFileSize = 50000L)
     @RequestMapping(value = "/upload", method = HttpMethod.POST)
     public View upload(HttpServletRequest request) throws IOException, ServletException {
-        System.out.println(">>>>>>>>> upload start");
+        System.out.println(">>>>>>>>> upload start ");
         for (Part part : request.getParts()) {
             System.out.println("the part -> " + part);
             System.out.println(IO.toString(part.getInputStream(), StandardCharsets.UTF_8));

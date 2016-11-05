@@ -1,9 +1,9 @@
 package com.firefly.mvc.web.support;
 
+import com.firefly.annotation.MultipartSettings;
 import com.firefly.annotation.RequestMapping;
 
 import javax.servlet.MultipartConfigElement;
-import javax.servlet.annotation.MultipartConfig;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,9 +17,9 @@ public class ControllerMetaInfo extends HandlerMetaInfo {
     public ControllerMetaInfo(Object object, Method method) {
         super(object, method);
         allowHttpMethod = new HashSet<String>(Arrays.asList(method.getAnnotation(RequestMapping.class).method()));
-        MultipartConfig multipartConfig = object.getClass().getAnnotation(MultipartConfig.class);
-        if (multipartConfig != null) {
-            multipartConfigElement = new MultipartConfigElement(multipartConfig);
+        MultipartSettings s = method.getAnnotation(MultipartSettings.class);
+        if (s != null) {
+            multipartConfigElement = new MultipartConfigElement(s.location(), s.maxFileSize(), s.maxRequestSize(), s.fileSizeThreshold());
         } else {
             multipartConfigElement = null;
         }
