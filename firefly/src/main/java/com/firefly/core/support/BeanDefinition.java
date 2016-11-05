@@ -3,30 +3,32 @@ package com.firefly.core.support;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-
-
 /**
  * Bean information, the id, className or interface name is used for map's key.
  */
 public interface BeanDefinition {
 
-	String getId();
-	
-	void setId(String id);
+    String getId();
 
-	String getClassName();
+    void setId(String id);
 
-	void setClassName(String className);
+    String getClassName();
 
-	String[] getInterfaceNames();
+    void setClassName(String className);
 
-	void setInterfaceNames(String[] names);
-	
-	Constructor<?> getConstructor();
-	
-	void setConstructor(Constructor<?> constructor);
-	
-	void setInitMethod(Method method);
-	
-	Method getInitMethod();
+    String[] getInterfaceNames();
+
+    void setInterfaceNames(String[] names);
+
+    Constructor<?> getConstructor();
+
+    void setConstructor(Constructor<?> constructor);
+
+    void setInitMethod(Method method);
+
+    Method getInitMethod();
+
+    void setDestroyedMethod(Method method);
+
+    Method getDestroyedMethod();
 }

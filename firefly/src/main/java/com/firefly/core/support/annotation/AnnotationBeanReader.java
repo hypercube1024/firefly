@@ -1,6 +1,7 @@
 package com.firefly.core.support.annotation;
 
 import com.firefly.annotation.Component;
+import com.firefly.annotation.DestroyedMethod;
 import com.firefly.annotation.InitialMethod;
 import com.firefly.annotation.Inject;
 import com.firefly.core.support.AbstractBeanReader;
@@ -131,7 +132,18 @@ public class AnnotationBeanReader extends AbstractBeanReader {
         annotationBeanDefinition.setInjectMethods(getInjectMethod(c));
         annotationBeanDefinition.setConstructor(getInjectConstructor(c));
         annotationBeanDefinition.setInitMethod(getInitMethod(c));
+        annotationBeanDefinition.setDestroyedMethod(getDestroyedMethod(c));
         return annotationBeanDefinition;
+    }
+
+    protected Method getDestroyedMethod(Class<?> c) {
+        Method[] methods = c.getDeclaredMethods();
+        for (Method m : methods) {
+            if (m.isAnnotationPresent(DestroyedMethod.class)) {
+                return m;
+            }
+        }
+        return null;
     }
 
     protected Method getInitMethod(Class<?> c) {

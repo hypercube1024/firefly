@@ -74,7 +74,7 @@ public class ServerBootstrap extends AbstractLifeCycle {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			System.out.println("the process " + jvmName + " will stop");
 			this.stop();
-		}));
+		}, "the firefly shutdown thead"));
 
 		log.info("the server start spends time in {} ms", System.currentTimeMillis() - createTime);
 	}

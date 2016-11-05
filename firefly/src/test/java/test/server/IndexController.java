@@ -11,6 +11,7 @@ import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.io.LineReaderHandler;
 import test.server.model.Book;
+import test.server.service.HelloWorldService;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
@@ -23,6 +24,9 @@ import java.util.Map;
 
 @Controller
 public class IndexController {
+
+    @Inject
+    private HelloWorldService helloWorldService;
 
     @RequestMapping(value = "/index_1")
     public View index_1(HttpServletRequest request, HttpServletResponse response) {
@@ -185,6 +189,21 @@ public class IndexController {
     public View testTimeout() throws InterruptedException {
         Thread.sleep(8000L);
         return new TextView("timeout");
+    }
+
+    @RequestMapping(value = "/hello")
+    public View hello() {
+        return new TextView(helloWorldService.sayHello());
+    }
+
+    @InitialMethod
+    public void init() {
+        System.out.println("initialize the index controller");
+    }
+
+    @DestroyedMethod
+    public void destroy() {
+        System.out.println("destroy the index controller");
     }
 
 }

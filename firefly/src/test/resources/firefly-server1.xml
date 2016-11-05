@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.fireflysource.com/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-	<component-scan base-package="test.server" />
-	<mvc view-path="/template" view-encoding="UTF-8" />
+    <component-scan base-package="test.server"/>
+    <mvc view-path="/template" view-encoding="UTF-8"/>
 
-	<bean class="com.firefly.server.http2.servlet.ServerHTTP2Configuration">
-		<property name="serverHome" value="firefly/target/test-classes/page"></property>
-		<property name="errorPage">
-			<map>
-				<entry key="404" value="/error/err404.html"></entry>
-				<entry key="500" value="/error/err500.html"></entry>
-			</map>
-		</property>
-	</bean>
+    <bean class="com.firefly.server.http2.servlet.ServerHTTP2Configuration">
+        <property name="serverHome" value="firefly/target/test-classes/page" />
+        <property name="errorPage">
+            <map>
+                <entry key="404" value="/error/err404.html" />
+                <entry key="500" value="/error/err500.html" />
+            </map>
+        </property>
+    </bean>
+
+    <bean class="test.server.service.impl.HelloWorldServiceImpl" destroy-method="destroy" init-method="init" />
 
 </beans>

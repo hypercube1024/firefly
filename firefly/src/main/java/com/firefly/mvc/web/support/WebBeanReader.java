@@ -72,6 +72,7 @@ public class WebBeanReader extends AnnotationBeanReader {
         beanDefinition.setInjectMethods(getInjectMethod(c));
         beanDefinition.setConstructor(getInjectConstructor(c));
         beanDefinition.setInitMethod(getInitMethod(c));
+        beanDefinition.setDestroyedMethod(getDestroyedMethod(c));
     }
 
     private String getId(Class<?> c) {
