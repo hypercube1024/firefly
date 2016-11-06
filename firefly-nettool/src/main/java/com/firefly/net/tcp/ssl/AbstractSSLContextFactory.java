@@ -1,29 +1,19 @@
 package com.firefly.net.tcp.ssl;
 
+import com.firefly.net.SSLContextFactory;
+import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.CertificateException;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import com.firefly.net.SSLContextFactory;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
 
 public abstract class AbstractSSLContextFactory implements SSLContextFactory {
 
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random)
 			throws NoSuchAlgorithmException, KeyManagementException {

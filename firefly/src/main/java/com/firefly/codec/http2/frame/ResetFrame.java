@@ -1,6 +1,7 @@
 package com.firefly.codec.http2.frame;
 
 public class ResetFrame extends Frame {
+	
 	private final int streamId;
 	private final int error;
 

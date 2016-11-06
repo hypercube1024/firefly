@@ -1,19 +1,24 @@
 package com.firefly.template.parser;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileFilter;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.firefly.template.Config;
 import com.firefly.template.exception.TemplateFileReadException;
 import com.firefly.template.support.CompileUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.FileUtils;
 import com.firefly.utils.io.LineReaderHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileFilter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ViewFileReader {
+
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
+
 	private Config config;
 	private List<String> javaFiles = new ArrayList<String>();
 	private List<String> templateFiles = new ArrayList<String>();
@@ -97,7 +102,7 @@ public class ViewFileReader {
 		try {
 			FileUtils.read(f, lineReaderHandler, config.getCharset());
 		} catch (Throwable t) {
-			Config.LOG.error("view file read error", t);
+			log.error("view file read error", t);
 		} finally {
 			lineReaderHandler.close();
 		}

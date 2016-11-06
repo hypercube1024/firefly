@@ -1,25 +1,27 @@
 package test.ioc;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
+import com.firefly.core.ApplicationContext;
+import com.firefly.core.XmlApplicationContext;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import test.component3.CollectionService;
 import test.component3.MapService;
 import test.component3.Person;
 import test.component3.PersonService;
-import com.firefly.core.ApplicationContext;
-import com.firefly.core.XmlApplicationContext;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
 
 public class TestXmlIoc {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public static ApplicationContext xmlApplicationContext = new XmlApplicationContext();
 
 	@Test

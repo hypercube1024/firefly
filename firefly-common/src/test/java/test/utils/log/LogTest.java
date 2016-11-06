@@ -2,6 +2,7 @@ package test.utils.log;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import org.junit.Assert;
@@ -41,6 +42,9 @@ public class LogTest {
 	
 	private static final Log logFoo = LogFactory.getInstance().getLog(Foo.class);
 	private static final Log logBar = LogFactory.getInstance().getLog(Bar.class);
+
+	private static final Log testMaxSize = LogFactory.getInstance().getLog("test.max.size");
+	private static final Log testGBK = LogFactory.getInstance().getLog("test.gbk");
 
 	@Before
 	public void init() {
@@ -245,7 +249,9 @@ public class LogTest {
 	public static void main(String[] args) throws Throwable {
 		long data = 0;
 		while(true) {
-			defaultLog.info("test {} data {}", "log", data++);
+			testMaxSize.info("test 测试 {} data {}", "log", data);
+//			testGBK.info("测试中文gbk, {}", data);
+			data++;
 			Thread.sleep(1000);
 		}
 	}

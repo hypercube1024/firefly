@@ -1,35 +1,24 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.Locale;
-
-import static com.firefly.codec.http2.model.HttpTokens.*;
-import static com.firefly.codec.http2.model.HttpCompliance.*;
-
-import com.firefly.codec.http2.model.BadMessageException;
-import com.firefly.codec.http2.model.HostPortHttpField;
-import com.firefly.codec.http2.model.HttpCompliance;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpHeaderValue;
-import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpTokens;
-import com.firefly.codec.http2.model.HttpTokens.EndOfContent;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.PreEncodedHttpField;
+import com.firefly.codec.http2.model.*;
+import com.firefly.codec.http2.model.HttpTokens.*;
 import com.firefly.utils.collection.ArrayTernaryTrie;
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
 import com.firefly.utils.lang.Utf8StringBuilder;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Locale;
+
+import static com.firefly.codec.http2.model.HttpCompliance.*;
+import static com.firefly.codec.http2.model.HttpTokens.*;
 
 /**
  * A Parser for 1.0 and 1.1 as defined by RFC7230
@@ -78,7 +67,7 @@ import com.firefly.utils.log.LogFactory;
  * @see <a href="http://tools.ietf.org/html/rfc7230">RFC 7230</a>
  */
 public class HttpParser {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	@Deprecated
 	public final static String __STRICT = "org.eclipse.jetty.http.HttpParser.STRICT";
 	public final static int INITIAL_URI_LENGTH = 256;

@@ -1,32 +1,30 @@
 package com.firefly.db;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import javax.sql.DataSource;
-
-import org.apache.commons.dbutils.BasicRowProcessor;
-import org.apache.commons.dbutils.BeanProcessor;
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanHandler;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
-
 import com.firefly.db.DefaultBeanProcessor.Mapper;
 import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
 import com.firefly.utils.function.Func2;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.apache.commons.dbutils.BasicRowProcessor;
+import org.apache.commons.dbutils.BeanProcessor;
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.BeanHandler;
+import org.apache.commons.dbutils.handlers.BeanListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class JDBCHelper {
 
-	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private final static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final DataSource dataSource;
 	private final QueryRunner runner;

@@ -1,16 +1,5 @@
 package com.firefly.core.support.xml.parse;
 
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.ARGUMENT_ELEMENT;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.CLASS_ATTRIBUTE;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.INIT_METHOD_ATTRIBUTE;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.CONTRUCTOR_ELEMENT;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.ID_ATTRIBUTE;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.NAME_ATTRIBUTE;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.PROPERTY_ELEMENT;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.REF_ATTRIBUTE;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.TYPE_ATTRIBUTE;
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.VALUE_ATTRIBUTE;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +19,8 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.dom.Dom;
 
+import static com.firefly.core.support.xml.parse.XmlNodeConstants.*;
+
 public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodeParser {
 
 	@Override
@@ -37,8 +28,7 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 		// gets basic attribute
 		String id = ele.getAttribute(ID_ATTRIBUTE);
 		String className = ele.getAttribute(CLASS_ATTRIBUTE);
-		String initMethod = ele.getAttribute(INIT_METHOD_ATTRIBUTE);
-		
+
 		XmlBeanDefinition xmlBeanDefinition = new XmlGenericBeanDefinition();
 		xmlBeanDefinition.setId(id);
 		xmlBeanDefinition.setClassName(className);
@@ -50,11 +40,22 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 		} catch (Throwable e) {
 			error("loads class \"" + className + "\" error");
 		}
-		
+
+		String initMethod = ele.getAttribute(INIT_METHOD_ATTRIBUTE);
 		if(StringUtils.hasText(initMethod)) {
 			try {
 				Method method = clazz.getMethod(initMethod);
 				xmlBeanDefinition.setInitMethod(method);
+			} catch (NoSuchMethodException | SecurityException e) {
+				error("the initial method " + initMethod + " not found");
+			}
+		}
+
+		String destroyedMethod = ele.getAttribute(DESTORY_METHOD_ATTRIBUTE);
+		if(StringUtils.hasText(destroyedMethod)) {
+			try {
+				Method method = clazz.getMethod(destroyedMethod);
+				xmlBeanDefinition.setDestroyedMethod(method);
 			} catch (NoSuchMethodException | SecurityException e) {
 				error("the initial method " + initMethod + " not found");
 			}
@@ -66,7 +67,7 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 			Element constructorElement = constructors.get(0);
 			List<Element> arguments = dom.elements(constructorElement, ARGUMENT_ELEMENT);
 			if(arguments != null && arguments.size() >= 1) {
-				List<Class<?>> argsClass = new ArrayList<Class<?>>();
+				List<Class<?>> argsClass = new ArrayList<>();
 				for(Element argument : arguments) {
 					XmlManagedNode xmlManagedNode = parseXmlManagedNode(argument, dom);
 					if(xmlManagedNode != null) {
@@ -102,7 +103,7 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 		// gets all interface name
 		String[] names = ReflectUtils.getInterfaceNames(clazz);
 		xmlBeanDefinition.setInterfaceNames(names);
-		log.debug("class [{}] names size [{}]", className, names.length);
+		log.debug("XML bean node parsing,  class name [{}], interface size [{}]", className, names.length);
 
 		// gets all properties
 		List<Element> properties = dom.elements(ele, PROPERTY_ELEMENT);

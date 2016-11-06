@@ -1,19 +1,18 @@
 package com.firefly.codec.http2.stream;
 
-import java.util.Arrays;
-import java.util.List;
-
-import javax.net.ssl.SSLContext;
-
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.server.utils.StatisticsUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLContext;
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class AbstractHTTPHandler implements Handler {
 
-	protected static Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	protected final HTTP2Configuration config;
 	protected final List<String> protocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1");

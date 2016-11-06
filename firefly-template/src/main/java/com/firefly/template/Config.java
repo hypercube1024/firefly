@@ -1,13 +1,15 @@
 package com.firefly.template;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.net.URL;
 
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class Config {
-	public static Log LOG = LogFactory.getInstance().getLog("firefly-system");
+
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
+
 	private String viewPath;
 	private String compiledPath;
 	private String suffix = "html";
@@ -23,7 +25,7 @@ public class Config {
 				this.classPath = new File(new URL(f.substring(0,
 						f.indexOf("!/com/firefly"))).toURI()).getAbsolutePath();
 			} catch (Throwable t) {
-				LOG.error("template config init error", t);
+				log.error("template config init error", t);
 			}
 		}
 	}

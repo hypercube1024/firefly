@@ -1,15 +1,16 @@
 package com.firefly.template.parser;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-
 import com.firefly.template.Config;
 import com.firefly.utils.VerifyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 
 public class JavaFileBuilder {
+
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
+
 	private String name;
 	private BufferedWriter writer;
 	private boolean writeHead = false;
@@ -29,7 +30,7 @@ public class JavaFileBuilder {
 			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), config.getCharset()));
 			this.config = config;
 		} catch (Throwable t) {
-			Config.LOG.error("java file builder error", t);
+			log.error("java file builder error", t);
 		}
 	}
 
@@ -42,7 +43,7 @@ public class JavaFileBuilder {
 			writeHead();
 			writer.write(str);
 		} catch (Throwable t) {
-			Config.LOG.error("write error", t);
+			log.error("write error", t);
 		}
 		return this;
 	}
@@ -186,7 +187,7 @@ public class JavaFileBuilder {
 		try {
 			writer.write(tail.toString());
 		} catch (Throwable t) {
-			Config.LOG.error("write error", t);
+			log.error("write error", t);
 		}
 		return this;
 	}
@@ -216,7 +217,7 @@ public class JavaFileBuilder {
 			if (writer != null)
 				writer.close();
 		} catch (Throwable t) {
-			Config.LOG.error("java file builder close error", t);
+			log.error("java file builder close error", t);
 		}
 	}
 

@@ -1,31 +1,19 @@
 package com.firefly.server.http2.servlet;
 
+import com.firefly.utils.time.HashTimeWheel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TransferQueue;
-
-import javax.servlet.AsyncContext;
-import javax.servlet.AsyncListener;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.HashTimeWheel;
+import java.util.concurrent.*;
 
 public class AsyncContextImpl implements AsyncContext {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private static final HashTimeWheel TIME_WHEEL = new HashTimeWheel();
 
 	private static ExecutorService executor;

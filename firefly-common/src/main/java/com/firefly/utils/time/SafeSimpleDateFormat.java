@@ -1,12 +1,12 @@
 package com.firefly.utils.time;
 
+import com.firefly.utils.VerifyUtils;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-
-import com.firefly.utils.VerifyUtils;
 
 public class SafeSimpleDateFormat {
 
@@ -41,9 +41,8 @@ public class SafeSimpleDateFormat {
 		try {
 			return getFormat().parse(dateStr);
 		} catch (ParseException e) {
-			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
 
 	public String format(Date date) {

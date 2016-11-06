@@ -4,22 +4,18 @@ import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final ServerHTTPHandler serverHTTPHandler;
 	HTTP2ServerConnection connection;

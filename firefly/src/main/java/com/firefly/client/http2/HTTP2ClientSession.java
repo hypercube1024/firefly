@@ -10,11 +10,11 @@ import com.firefly.codec.http2.stream.StreamSPI;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HTTP2ClientSession extends HTTP2Session {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public HTTP2ClientSession(Scheduler scheduler, com.firefly.net.Session endPoint, Generator generator,
 			Listener listener, FlowControlStrategy flowControl, int streamIdleTimeout) {

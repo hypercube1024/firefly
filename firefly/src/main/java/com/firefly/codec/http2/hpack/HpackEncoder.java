@@ -1,23 +1,17 @@
 package com.firefly.codec.http2.hpack;
 
+import com.firefly.codec.http2.hpack.HpackContext.Entry;
+import com.firefly.codec.http2.hpack.HpackContext.StaticEntry;
+import com.firefly.codec.http2.model.*;
+import com.firefly.utils.lang.TypeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
-import com.firefly.codec.http2.hpack.HpackContext.Entry;
-import com.firefly.codec.http2.hpack.HpackContext.StaticEntry;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpScheme;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
-import com.firefly.codec.http2.model.PreEncodedHttpField;
-import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class HpackEncoder {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final static HttpField[] __status = new HttpField[599];
 

@@ -1,5 +1,7 @@
 package com.firefly.utils;
 
+import com.firefly.utils.exception.CommonRuntimeException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -156,7 +158,7 @@ public class CompilerUtils {
 		try {
 			return new URI(name);
 		} catch (URISyntaxException e) {
-			throw new RuntimeException(e);
+			throw new CommonRuntimeException(e);
 		}
 	}
 

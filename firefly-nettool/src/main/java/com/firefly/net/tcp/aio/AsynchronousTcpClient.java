@@ -1,5 +1,13 @@
 package com.firefly.net.tcp.aio;
 
+import com.firefly.net.*;
+import com.firefly.net.event.DefaultEventManager;
+import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
@@ -12,21 +20,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.firefly.net.Client;
-import com.firefly.net.Config;
-import com.firefly.net.Decoder;
-import com.firefly.net.Encoder;
-import com.firefly.net.EventManager;
-import com.firefly.net.Handler;
-import com.firefly.net.event.DefaultEventManager;
-import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
-
 public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private Config config;
 	private AtomicInteger sessionId = new AtomicInteger(0);
 	private AsynchronousChannelGroup group;

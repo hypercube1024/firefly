@@ -1,6 +1,15 @@
 package com.firefly.codec.http2.encode;
 
-import static com.firefly.utils.lang.TypeUtils.convertHexDigit;
+import com.firefly.utils.collection.MultiMap;
+import com.firefly.utils.io.ByteArrayOutputStream2;
+import com.firefly.utils.io.IO;
+import com.firefly.utils.lang.TypeUtils;
+import com.firefly.utils.lang.Utf8Appendable;
+import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
+import com.firefly.utils.lang.Utf8StringBuffer;
+import com.firefly.utils.lang.Utf8StringBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,16 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import com.firefly.utils.collection.MultiMap;
-import com.firefly.utils.io.ByteArrayOutputStream2;
-import com.firefly.utils.io.IO;
-import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.lang.Utf8Appendable;
-import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
-import com.firefly.utils.lang.Utf8StringBuffer;
-import com.firefly.utils.lang.Utf8StringBuilder;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import static com.firefly.utils.lang.TypeUtils.convertHexDigit;
 
 /**
  * Handles coding of MIME "x-www-form-urlencoded".
@@ -47,7 +47,7 @@ import com.firefly.utils.log.LogFactory;
  */
 @SuppressWarnings("serial")
 public class UrlEncoded extends MultiMap<String>implements Cloneable {
-	private static Log LOG = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public static final Charset ENCODING;
 
 	static {
@@ -343,10 +343,10 @@ public class UrlEncoded extends MultiMap<String>implements Cloneable {
 						break;
 					}
 				} catch (NotUtf8Exception e) {
-					LOG.warn(e.toString());
+					log.warn(e.toString());
 				} catch (NumberFormatException e) {
 					buffer.append(Utf8Appendable.REPLACEMENT_UTF8, 0, 3);
-					LOG.warn(e.toString());
+					log.warn(e.toString());
 				}
 			}
 
@@ -547,10 +547,10 @@ public class UrlEncoded extends MultiMap<String>implements Cloneable {
 						break;
 					}
 				} catch (NotUtf8Exception e) {
-					LOG.warn(e.toString());
+					log.warn(e.toString());
 				} catch (NumberFormatException e) {
 					buffer.append(Utf8Appendable.REPLACEMENT_UTF8, 0, 3);
-					LOG.warn(e.toString());
+					log.warn(e.toString());
 				}
 				if (maxLength >= 0 && (++totalLength > maxLength))
 					throw new IllegalStateException("Form too large");
@@ -801,9 +801,9 @@ public class UrlEncoded extends MultiMap<String>implements Cloneable {
 								buffer.append(b);
 							}
 						} catch (NotUtf8Exception e) {
-							LOG.warn(e.toString());
+							log.warn(e.toString());
 						} catch (NumberFormatException e) {
-							LOG.warn(e.toString());
+							log.warn(e.toString());
 							buffer.getStringBuffer().append(Utf8Appendable.REPLACEMENT);
 						}
 					} else {
@@ -871,7 +871,7 @@ public class UrlEncoded extends MultiMap<String>implements Cloneable {
 										n++;
 									}
 								} catch (Exception e) {
-									LOG.warn(e.toString());
+									log.warn(e.toString());
 									ba[n++] = (byte) '?';
 								}
 							} else {

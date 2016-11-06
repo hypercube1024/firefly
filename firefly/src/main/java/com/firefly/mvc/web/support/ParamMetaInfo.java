@@ -1,14 +1,14 @@
 package com.firefly.mvc.web.support;
 
+import com.firefly.utils.ConvertUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import com.firefly.utils.ConvertUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class ParamMetaInfo {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	// injecting type
 	private final Class<?> paramClass;

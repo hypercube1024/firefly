@@ -1,5 +1,10 @@
 package com.firefly.template;
 
+import com.firefly.template.function.*;
+import com.firefly.template.parser.ViewFileReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,16 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.firefly.template.function.AutoincrementFunction;
-import com.firefly.template.function.CutStringFunction;
-import com.firefly.template.function.DateFormatFunction;
-import com.firefly.template.function.LengthFunction;
-import com.firefly.template.function.ModuloOutputFunction;
-import com.firefly.template.function.RemoveAttributeFunction;
-import com.firefly.template.function.XmlEscapeFunction;
-import com.firefly.template.parser.ViewFileReader;
-
 public class TemplateFactory {
+
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private Config config;
 	private Map<String, View> map = new HashMap<String, View>();
@@ -74,11 +72,11 @@ public class TemplateFactory {
 			try {
 				map.put(templateFiles.get(i), (View)classLoader.loadClass(classNames.get(i)).getConstructor(TemplateFactory.class).newInstance(this));
 			} catch (Throwable e) {
-				Config.LOG.error("load class error", e);
+				log.error("load class error", e);
 			}
 		}
 		long end = System.currentTimeMillis();
-		Config.LOG.info("template initialization spends time in {} ms", (end - start));
+		log.info("template initialization spends time in {} ms", (end - start));
 		return this;
 	}
 	
@@ -104,13 +102,13 @@ public class TemplateFactory {
 				bis = new BufferedInputStream(new FileInputStream(file));
 				bis.read(b);
 			} catch (Throwable e) {
-				Config.LOG.error("read class file error", e);
+				log.error("read class file error", e);
 			} finally {
 				if(bis != null)
 					try {
 						bis.close();
 					} catch (IOException e) {
-						Config.LOG.error("close error", e);
+						log.error("close error", e);
 					}
 			}
 			

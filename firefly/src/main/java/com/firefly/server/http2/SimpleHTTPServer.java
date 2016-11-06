@@ -1,17 +1,17 @@
 package com.firefly.server.http2;
 
-import java.io.IOException;
-
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class SimpleHTTPServer extends AbstractLifeCycle {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	protected HTTP2Server http2Server;
 	protected SimpleHTTPServerConfiguration configuration;

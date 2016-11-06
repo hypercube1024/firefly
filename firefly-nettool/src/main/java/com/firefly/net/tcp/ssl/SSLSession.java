@@ -1,28 +1,26 @@
 package com.firefly.net.tcp.ssl;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
-
-import org.eclipse.jetty.alpn.ALPN;
-
 import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.eclipse.jetty.alpn.ALPN;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class SSLSession implements Closeable {
 
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private static final boolean debugMode = Boolean.getBoolean("debugMode");
 

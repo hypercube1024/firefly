@@ -1,23 +1,18 @@
 package com.firefly.server.http2;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-
 import com.firefly.codec.http2.model.Cookie;
 import com.firefly.codec.http2.model.CookieGenerator;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 
 public class SimpleResponse implements Closeable {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	Response response;
 	HTTPOutputStream output;

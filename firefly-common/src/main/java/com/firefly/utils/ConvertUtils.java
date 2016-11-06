@@ -1,32 +1,13 @@
 package com.firefly.utils;
 
-import java.lang.reflect.Array;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Queue;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.LinkedBlockingDeque;
-
 import com.firefly.utils.collection.IdentityHashMap;
 
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.concurrent.*;
+
 abstract public class ConvertUtils {
+
 	private static final IdentityHashMap<Class<?>, ParseValue> map = new IdentityHashMap<Class<?>, ParseValue>();
 	private static final Map<String, ParseValue> map2 = new HashMap<String, ParseValue>();
 
@@ -215,7 +196,7 @@ abstract public class ConvertUtils {
 			try {
 				ReflectUtils.arraySet(newArray, i, element);
 			} catch (Throwable e) {
-				e.printStackTrace();
+				System.err.println("set element to array exception, " + e.getMessage());
 			}
 		}
 
@@ -248,10 +229,8 @@ abstract public class ConvertUtils {
 			Collection<Object> collection = null;
 			try {
 				collection = (Collection<Object>) clazz.newInstance();
-			} catch (InstantiationException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
+			} catch (Exception e) {
+				System.err.println("new collection instance exception, " + e.getMessage());
 			}
 			return collection;
 		}
@@ -276,10 +255,8 @@ abstract public class ConvertUtils {
 			Map<Object, Object> map = null;
 			try {
 				map = (Map<Object, Object>) clazz.newInstance();
-			} catch (InstantiationException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
+			} catch (Exception e) {
+				System.err.println("new map instance exception, " + e.getMessage());
 			}
 			return map;
 		}

@@ -41,12 +41,11 @@ public class DecodeCompiler {
             if (methodName.length() < 4) continue;
             
             String propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-//            System.out.println(propertyName);
             Field field = null;
 			try {
 				field = clazz.getDeclaredField(propertyName);
 			} catch (Throwable t) {
-//				t.printStackTrace();
+				System.err.println("get declared field exception, " + t.getMessage());
 			}
 
 			if (field != null

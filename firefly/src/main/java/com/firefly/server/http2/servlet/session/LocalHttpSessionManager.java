@@ -1,22 +1,21 @@
 package com.firefly.server.http2.servlet.session;
 
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.time.HashTimeWheel;
+import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
-
-import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.HashTimeWheel;
-import com.firefly.utils.time.Millisecond100Clock;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalHttpSessionManager extends AbstractLifeCycle implements HttpSessionManager {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private ConcurrentHashMap<String, HttpSessionImpl> map = new ConcurrentHashMap<String, HttpSessionImpl>();
 

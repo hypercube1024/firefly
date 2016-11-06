@@ -3,8 +3,8 @@ package com.firefly.net.event;
 import com.firefly.net.Config;
 import com.firefly.net.EventManager;
 import com.firefly.net.Session;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * It is the callback of net event in Worker's thread.
@@ -12,7 +12,7 @@ import com.firefly.utils.log.LogFactory;
  *
  */
 public class DefaultEventManager implements EventManager {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	private Config config;
 
 	public DefaultEventManager(Config config) {

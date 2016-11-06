@@ -4,7 +4,7 @@ import com.firefly.client.http2.SimpleHTTPClient;
 
 public class SimpleHTTPClientDemo4 {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		SimpleHTTPClient client = new SimpleHTTPClient();
 
 		for (int i = 0; i < 5; i++) {
@@ -14,6 +14,9 @@ public class SimpleHTTPClientDemo4 {
 				System.out.println(r.getStringBody());
 			});
 		}
+
+		Thread.sleep(5000);
+		client.stop();
 
 	}
 

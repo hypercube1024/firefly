@@ -1,20 +1,20 @@
 package test.interceptor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import test.mixed.Food;
-import test.mixed.FoodService;
 import com.firefly.annotation.Inject;
 import com.firefly.annotation.Interceptor;
 import com.firefly.mvc.web.HandlerChain;
 import com.firefly.mvc.web.View;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import test.mixed.Food;
+import test.mixed.FoodService;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @Interceptor(uri = "/food/view*", order = 1)
 public class FoodInterceptor2 {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	@Inject
 	private FoodService foodService;
 

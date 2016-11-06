@@ -1,27 +1,17 @@
 package com.firefly.codec.http2.encode;
 
+import com.firefly.codec.http2.model.*;
+import com.firefly.codec.http2.model.HttpTokens.EndOfContent;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.io.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.firefly.codec.http2.model.BadMessageException;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpHeaderValue;
-import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpTokens;
-import com.firefly.codec.http2.model.HttpTokens.EndOfContent;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
-import com.firefly.codec.http2.model.PreEncodedHttpField;
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 
 /**
  * HttpGenerator. Builds HTTP Messages.
@@ -33,7 +23,7 @@ import com.firefly.utils.log.LogFactory;
  * methods/headers
  */
 public class HttpGenerator {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final static byte[] __colon_space = new byte[] { ':', ' ' };
 	private final static HttpHeaderValue[] CLOSE = { HttpHeaderValue.CLOSE };
@@ -161,7 +151,7 @@ public class HttpGenerator {
 
 			// If we have not been told our persistence, set the default
 			if (_persistent == null) {
-				_persistent = info.getVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal();
+				_persistent = info.getHttpVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal();
 				if (!_persistent && HttpMethod.CONNECT.is(info.getMethod()))
 					_persistent = true;
 			}
@@ -172,7 +162,7 @@ public class HttpGenerator {
 				// generate ResponseLine
 				generateRequestLine(info, header);
 
-				if (info.getVersion() == HttpVersion.HTTP_0_9)
+				if (info.getHttpVersion() == HttpVersion.HTTP_0_9)
 					throw new BadMessageException(500, "HTTP/0.9 not supported");
 
 				generateHeaders(info, header, content, last);
@@ -270,7 +260,7 @@ public class HttpGenerator {
 			if (info == null)
 				return Result.NEED_INFO;
 
-			HttpVersion version = info.getVersion();
+			HttpVersion version = info.getHttpVersion();
 			if (version == null)
 				throw new BadMessageException(500, "No version");
 
@@ -426,7 +416,7 @@ public class HttpGenerator {
 		header.put((byte) ' ');
 		header.put(StringUtils.getBytes(request.getURIString()));
 		header.put((byte) ' ');
-		header.put(request.getVersion().toBytes());
+		header.put(request.getHttpVersion().toBytes());
 		header.put(HttpTokens.CRLF);
 	}
 
@@ -514,7 +504,7 @@ public class HttpGenerator {
 					}
 
 					case TRANSFER_ENCODING: {
-						if (_info.getVersion() == HttpVersion.HTTP_1_1)
+						if (_info.getHttpVersion() == HttpVersion.HTTP_1_1)
 							transfer_encoding = field;
 						// Do NOT add yet!
 						break;
@@ -562,7 +552,7 @@ public class HttpGenerator {
 							}
 
 							case KEEP_ALIVE: {
-								if (_info.getVersion() == HttpVersion.HTTP_1_0) {
+								if (_info.getHttpVersion() == HttpVersion.HTTP_1_0) {
 									keep_alive = true;
 									if (response != null)
 										_persistent = true;
@@ -645,7 +635,7 @@ public class HttpGenerator {
 				// For a request with HTTP 1.0 & Connection: keep-alive
 				// we *must* close the connection, otherwise the client
 				// has no way to detect the end of the content.
-				if (!isPersistent() || _info.getVersion().ordinal() < HttpVersion.HTTP_1_1.ordinal())
+				if (!isPersistent() || _info.getHttpVersion().ordinal() < HttpVersion.HTTP_1_1.ordinal())
 					_endOfContent = EndOfContent.EOF_CONTENT;
 			}
 			break;
@@ -691,7 +681,7 @@ public class HttpGenerator {
 
 		// If this is a response, work out persistence
 		if (response != null) {
-			if (!isPersistent() && (close || _info.getVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal())) {
+			if (!isPersistent() && (close || _info.getHttpVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal())) {
 				if (connection == null)
 					header.put(CONNECTION_CLOSE);
 				else {

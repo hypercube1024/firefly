@@ -1,230 +1,226 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                          http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                          http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.fireflysource</groupId>
-  <artifactId>firefly-framework</artifactId>
-  <version>4.0.14</version>
-  <packaging>pom</packaging>
+    <groupId>com.fireflysource</groupId>
+    <artifactId>firefly-framework</artifactId>
+    <version>4.0.15</version>
+    <packaging>pom</packaging>
 
 
-  <name>Firefly Framework</name>
-  <description>
-  Firefly framework helps you create a java web application easy and quickly. It provides MVC framework with HTTP Server and many other useful components for developing web applications. It means you can easy deploy your web without any other java web containers, in short , it's containerless. It taps into the fullest potential of hardware using SEDA architecture, a highly customizable thread model.
-  </description>
-  <url>http://www.fireflysource.com</url>
-  <licenses>
-    <license>
-      <name>The Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-    </license>
-  </licenses>
-  <developers>
-    <developer>
-      <name>Alvin Qiu</name>
-      <email>qptkk@163.com</email>
-      <organization>Fireflysource</organization>
-      <organizationUrl>http://www.fireflysource.com</organizationUrl>
-    </developer>
-  </developers>
-  <scm>
-    <connection>scm:git@github.com:hypercube1024/firefly.git</connection>
-    <developerConnection>scm:git@github.com:hypercube1024/firefly.git</developerConnection>
-    <url>git@github.com:hypercube1024/firefly.git</url>
-  </scm>
+    <name>Firefly Framework</name>
+    <description>
+        Firefly framework helps you create a java web application easy and quickly. It provides MVC framework with HTTP
+        Server and many other useful components for developing web applications. It means you can easy deploy your web
+        without any other java web containers, in short , it's containerless. It taps into the fullest potential of
+        hardware using SEDA architecture, a highly customizable thread model.
+    </description>
+    <url>http://www.fireflysource.com</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Alvin Qiu</name>
+            <email>qptkk@163.com</email>
+            <organization>Fireflysource</organization>
+            <organizationUrl>http://www.fireflysource.com</organizationUrl>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git@github.com:hypercube1024/firefly.git</connection>
+        <developerConnection>scm:git@github.com:hypercube1024/firefly.git</developerConnection>
+        <url>git@github.com:hypercube1024/firefly.git</url>
+    </scm>
 
-  <modules>
-    <module>firefly-common</module>
-    <module>firefly-nettool</module>
-    <module>firefly-template</module>
-    <module>firefly-slf4j</module>
-    <module>firefly-db</module>
-    <module>firefly</module>
-  </modules>
-  
-  <dependencyManagement>
-  	<dependencies>
-  		<dependency>
-  			<groupId>com.fireflysource</groupId>
-  			<artifactId>firefly-db</artifactId>
-  			<version>${project.version}</version>
-  		</dependency>
-  		<dependency>
-  			<groupId>com.fireflysource</groupId>
-  			<artifactId>firefly-slf4j</artifactId>
-  			<version>${project.version}</version>
-  		</dependency>
-  		<dependency>
-  			<groupId>com.fireflysource</groupId>
-  			<artifactId>firefly-common</artifactId>
-  			<version>${project.version}</version>
-  		</dependency>
-  		<dependency>
-  			<groupId>com.fireflysource</groupId>
-  			<artifactId>firefly-template</artifactId>
-  			<version>${project.version}</version>
-  		</dependency>
-  		<dependency>
-  			<groupId>com.fireflysource</groupId>
-  			<artifactId>firefly-nettool</artifactId>
-  			<version>${project.version}</version>
-  		</dependency>
-  		<dependency>
-  			<groupId>com.fireflysource</groupId>
-  			<artifactId>firefly</artifactId>
-  			<version>${project.version}</version>
-  		</dependency>
-  	</dependencies>
-  </dependencyManagement>
-  
-  <!-- junit -->
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-all</artifactId>
-      <version>1.3</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-  
-  <build>
-  	<plugins>
-  		<plugin>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.5.1</version>
-            <configuration>
-            	<compilerArgument>-parameters</compilerArgument>
-                <source>1.8</source>
-                <target>1.8</target>
-                <encoding>UTF-8</encoding>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-resources-plugin</artifactId>
-            <version>2.7</version>
-            <configuration>
-                <encoding>UTF-8</encoding>
-            </configuration>
-		</plugin>
-  	</plugins>
-  </build>
-  
-  <properties>
-	<log.level>INFO</log.level>
-	<log.path>D:/log/</log.path>
-  </properties>
+    <modules>
+        <module>firefly-common</module>
+        <module>firefly-nettool</module>
+        <module>firefly-template</module>
+        <module>firefly-slf4j</module>
+        <module>firefly-db</module>
+        <module>firefly</module>
+    </modules>
 
-  <profiles>
-    <profile>
-      <id>mac</id>
-      <properties>
-        <log.level>INFO</log.level>
-        <log.path>/Users/qiupengtao/develop/logs/</log.path>
-      </properties>
-    </profile>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-db</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-slf4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-template</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-nettool</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.21</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-    <profile>
-      <id>release</id>
-      <build>
+    <dependencies>
+        <!-- junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
         <plugins>
-          <!-- source -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.0.0</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- javadoc -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.9.1</version>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <failOnError>true</failOnError>
-              <charset>UTF-8</charset>
-              <encoding>UTF-8</encoding>
-            </configuration>
-          </plugin>
-
-          <!-- gpg -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- staging -->
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.7</version>
-            <extensions>true</extensions>
-            <configuration>
-               <serverId>ossrh</serverId>
-               <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-               <autoReleaseAfterClose>true</autoReleaseAfterClose>
-               <stagingProgressTimeoutMinutes>30</stagingProgressTimeoutMinutes>
-            </configuration>
-          </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <compilerArgument>-parameters</compilerArgument>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
         </plugins>
-      </build>
+    </build>
 
-      <distributionManagement>
-        <snapshotRepository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-      </distributionManagement>
-    </profile>
-  </profiles>
+    <properties>
+        <log.level>INFO</log.level>
+        <log.path>D:/log/</log.path>
+    </properties>
 
-  <distributionManagement>
-    <!--<repository>
-      <id>3rdRepo</id>
-      <name>3rd party</name>
-      <url>http://localhost:7777/nexus-webapp/content/repositories/thirdparty</url>
-    </repository>
-    <snapshotRepository>
-      <id>dev</id>
-      <name>Snapshots</name>
-      <url>http://localhost:7777/nexus-webapp/content/repositories/snapshots</url>
-    </snapshotRepository>-->
+    <profiles>
+        <profile>
+            <id>mac</id>
+            <properties>
+                <log.level>INFO</log.level>
+                <log.path>/Users/qiupengtao/develop/logs/</log.path>
+            </properties>
+        </profile>
 
-  </distributionManagement>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <!-- source -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- javadoc -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>2.9.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <failOnError>true</failOnError>
+                            <charset>UTF-8</charset>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                    </plugin>
+
+                    <!-- gpg -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- staging -->
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <stagingProgressTimeoutMinutes>30</stagingProgressTimeoutMinutes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
 </project>

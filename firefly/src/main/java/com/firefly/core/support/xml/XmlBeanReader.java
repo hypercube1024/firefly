@@ -32,10 +32,10 @@ public class XmlBeanReader extends AbstractBeanReader {
 	public XmlBeanReader(String file) {
 		beanDefinitions = new ArrayList<BeanDefinition>();
 		Dom dom = new DefaultDom();
-		Set<String> errorMemo = new HashSet<String>(); // It's used for eliminating circular references
+		Set<String> errorMemo = new HashSet<>(); // It's used for eliminating circular references
 
 		// all bean elements
-		List<Element> beansList = new ArrayList<Element>();
+		List<Element> beansList = new ArrayList<>();
 
 		parseXml(dom, file, beansList, errorMemo);
 

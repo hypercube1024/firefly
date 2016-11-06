@@ -14,12 +14,12 @@ import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final Request request;
 	private final ClientHTTPHandler handler;

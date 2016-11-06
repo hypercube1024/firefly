@@ -1,8 +1,5 @@
 package com.firefly.server.http2;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
@@ -11,14 +8,7 @@ import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.model.BadMessageException;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpHeaderValue;
-import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.AbstractHTTP1Connection;
 import com.firefly.codec.http2.stream.AbstractHTTP1OutputStream;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -28,12 +18,15 @@ import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HTTPServerConnection {
 
-	protected static final Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	final ServerSessionListener serverSessionListener;
 	final HTTP1ServerRequestHandler serverRequestHandler;
@@ -172,11 +165,11 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
 			connection.getGenerator().reset();
 
-			switch (request.getVersion()) {
+			switch (request.getHttpVersion()) {
 			case HTTP_1_0:
 				if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
 						&& "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
-					log.debug("the server {} connection {} is persistent", response.getVersion(),
+					log.debug("the server {} connection {} is persistent", response.getHttpVersion(),
 							connection.getSessionId());
 				} else {
 					try {
@@ -195,7 +188,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 						log.error("server closes connection exception", e);
 					}
 				} else {
-					log.debug("the server {} connection {} is persistent", response.getVersion(),
+					log.debug("the server {} connection {} is persistent", response.getHttpVersion(),
 							connection.getSessionId());
 				}
 				break;

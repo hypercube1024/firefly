@@ -1,335 +1,397 @@
 package com.firefly.utils.log.file;
 
-import java.io.BufferedWriter;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Date;
-
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.log.LogItem;
-import com.firefly.utils.log.LogLevel;
+import com.firefly.utils.log.*;
 import com.firefly.utils.time.SafeSimpleDateFormat;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.Objects;
 
 public class FileLog implements Log, Closeable {
 
-	private LogLevel level;
-	private String path;
-	private String name;
-	private boolean consoleOutput;
-	private boolean fileOutput;
-	private int maxFileSize;
-	private BufferedWriter bufferedWriter;
-	private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
-	private static final int bufferSize = 4 * 1024;
-	private static final boolean stackTrace = Boolean.getBoolean("debugMode");
+    private static final boolean stackTrace = Boolean.getBoolean("debugMode");
 
-	void write(LogItem logItem) {
-		if (consoleOutput) {
-			logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(new Date()));
-			System.out.println(logItem.toString());
-		}
+    private LogLevel level;
+    private String path;
+    private String name;
+    private boolean consoleOutput;
+    private boolean fileOutput;
+    private int maxFileSize;
+    private Charset charset = LogConfigParser.DEFAULT_CHARSET;
 
-		if (fileOutput) {
-			Date d = new Date();
-			boolean success = getBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(d));
-			if (success) {
-				logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(d));
-				try {
-					bufferedWriter.append(logItem.toString() + CL);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			} else {
-				System.err.println("The log " + toString() + " can not get buffered writer!");
-			}
-		}
-	}
+    private LogOutputStream output = new LogOutputStream();
 
-	public void flush() {
-		if (bufferedWriter != null) {
-			try {
-				bufferedWriter.flush();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+    void write(LogItem logItem) {
+        Date date = new Date();
+        logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(date));
+        if (consoleOutput) {
+            System.out.println(logItem.toString());
+        }
 
-	@Override
-	public void close() {
-		if (bufferedWriter != null) {
-			try {
-				bufferedWriter.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+        if (fileOutput) {
+            logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(date));
+            output.write(logItem.toString(), date);
+        }
+    }
 
-	private boolean createNewBufferedWriter(String newDate) {
-		File file = new File(path, name + "." + newDate + ".txt");
-		try {
-			bufferedWriter = new BufferedWriter(new FileWriter(file, true), bufferSize);
-			currentDate = newDate;
-			System.out.println("get new log buffer, the file path is " + file.getAbsolutePath());
-			return true;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
+    private class LogOutputStream {
 
-	private boolean getBufferedWriter(String newDate) {
-		if (bufferedWriter == null) {
-			return createNewBufferedWriter(newDate);
-		} else {
-			if (!currentDate.equals(newDate)) {
-				close();
-				return createNewBufferedWriter(newDate);
-			} else {
-				return true;
-			}
-		}
-	}
+        private static final int bufferSize = 4 * 1024;
+        private BufferedOutputStream bufferedOutputStream;
 
-	public void setConsoleOutput(boolean consoleOutput) {
-		this.consoleOutput = consoleOutput;
-	}
+        private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
+        private int writeSize;
+        private int currentBakIndex;
 
-	public void setFileOutput(boolean fileOutput) {
-		this.fileOutput = fileOutput;
-	}
+        public void write(String str, Date date) {
+            byte[] text = (str + CL).getBytes(charset);
+            boolean success = initializeBufferedWriter(LogFactory.DAY_DATE_FORMAT.format(date), writeSize + text.length);
+            if (success) {
+                try {
+                    bufferedOutputStream.write(text);
+                    writeSize += text.length;
+                } catch (IOException e) {
+                    System.err.println("writer log exception, " + e.getMessage());
+                }
+            } else {
+                System.err.println("The log " + toString() + " can not get buffered writer!");
+            }
+        }
 
-	public LogLevel getLevel() {
-		return level;
-	}
+        public void flush() {
+            if (bufferedOutputStream != null) {
+                try {
+                    bufferedOutputStream.flush();
+                } catch (IOException e) {
+                    System.err.println("flush log buffer exception, " + e.getMessage());
+                }
+            }
+        }
 
-	public void setLevel(LogLevel level) {
-		this.level = level;
-	}
+        public void close() {
+            if (bufferedOutputStream != null) {
+                try {
+                    bufferedOutputStream.close();
+                } catch (IOException e) {
+                    System.err.println("close log writer exception, " + e.getMessage());
+                }
+            }
+        }
 
-	public String getPath() {
-		return path;
-	}
+        private boolean createNewBufferedOutputStream(String newDate) {
+            try {
+                File file = new File(path, getLogFileName(newDate));
+                bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
+                currentDate = newDate;
+                writeSize = (int) file.length();
+                System.out.println("get new log buffer, the file path is " + file.getAbsolutePath() + " and the size is " + file.length());
+                return true;
+            } catch (IOException e) {
+                System.err.println("create log writer exception, " + e.getMessage());
+                return false;
+            }
+        }
 
-	public void setPath(String path) {
-		this.path = path;
-	}
+        private String getLogFileName(String date) {
+            return name + "." + date + ".txt";
+        }
 
-	@Override
-	public String getName() {
-		return name;
-	}
+        private String getBackupLogFileName(String date, int index) {
+            return getLogFileName(date) + "." + index + ".bak";
+        }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+        private boolean createNewLogFile(String date, int currentWriteSize) {
+            boolean ret = false;
+            try {
+                Path logPath = Paths.get(path, getLogFileName(date));
+                if (!Files.exists(logPath)) {
+                    ret = true;
+                } else {
+                    if (maxFileSize > 0) {
+                        if (!currentDate.equals(date)) {
+                            ret = true;
+                        } else {
+                            if (currentWriteSize < 0 || currentWriteSize > maxFileSize) {
+                                // create log file backup
+                                while (Files.exists(Paths.get(path, getBackupLogFileName(date, currentBakIndex)))) {
+                                    currentBakIndex++;
+                                }
+                                Files.move(logPath, Paths.get(path, getBackupLogFileName(date, currentBakIndex)));
+                                ret = true;
+                            } else {
+                                ret = false;
+                            }
+                        }
+                    } else {
+                        ret = !currentDate.equals(date);
+                    }
+                }
+                if (ret) {
+                    Files.createFile(logPath);
+                }
+            } catch (IOException e) {
+                System.err.println("create new log file exception, " + e.getMessage());
+                ret = false;
+            }
+            return ret;
+        }
 
-	public int getMaxFileSize() {
-		return maxFileSize;
-	}
+        private boolean initializeBufferedWriter(String newDate, int currentWriteSize) {
+            if (createNewLogFile(newDate, currentWriteSize)) {
+                close();
+                return createNewBufferedOutputStream(newDate);
+            } else {
+                if (bufferedOutputStream == null) {
+                    return createNewBufferedOutputStream(newDate);
+                } else {
+                    return true;
+                }
+            }
+        }
+    }
 
-	public void setMaxFileSize(int maxFileSize) {
-		this.maxFileSize = maxFileSize;
-	}
+    public void flush() {
+        output.flush();
+    }
 
-	private void add(String str, String level, Throwable throwable, Object... objs) {
-		LogItem item = new LogItem();
-		item.setLevel(level);
-		item.setName(name);
-		item.setContent(str);
-		item.setObjs(objs);
-		item.setThrowable(throwable);
-		if (stackTrace) {
-			item.setStackTraceElement(getStackTraceElement());
-		}
-		LogFactory.getInstance().getLogTask().add(item);
-	}
+    @Override
+    public void close() {
+        output.close();
+    }
 
-	@Override
-	public void trace(String str) {
-		if (!isTraceEnabled())
-			return;
-		add(str, LogLevel.TRACE.getName(), null, new Object[0]);
-	}
+    public void setConsoleOutput(boolean consoleOutput) {
+        this.consoleOutput = consoleOutput;
+    }
 
-	@Override
-	public void trace(String str, Object... objs) {
-		if (!isTraceEnabled())
-			return;
-		add(str, LogLevel.TRACE.getName(), null, objs);
-	}
+    public void setFileOutput(boolean fileOutput) {
+        this.fileOutput = fileOutput;
+    }
 
-	@Override
-	public void trace(String str, Throwable throwable, Object... objs) {
-		if (!isTraceEnabled())
-			return;
-		add(str, LogLevel.TRACE.getName(), null, objs);
-	}
+    public LogLevel getLevel() {
+        return level;
+    }
 
-	@Override
-	public void debug(String str) {
-		if (!isDebugEnabled())
-			return;
-		add(str, LogLevel.DEBUG.getName(), null, new Object[0]);
-	}
+    public void setLevel(LogLevel level) {
+        this.level = level;
+    }
 
-	@Override
-	public void debug(String str, Object... objs) {
-		if (!isDebugEnabled())
-			return;
-		add(str, LogLevel.DEBUG.getName(), null, objs);
-	}
+    public String getPath() {
+        return path;
+    }
 
-	@Override
-	public void debug(String str, Throwable throwable, Object... objs) {
-		if (!isDebugEnabled())
-			return;
-		add(str, LogLevel.DEBUG.getName(), throwable, objs);
-	}
+    public void setPath(String path) {
+        this.path = path;
+    }
 
-	@Override
-	public void info(String str) {
-		if (!isInfoEnabled())
-			return;
-		add(str, LogLevel.INFO.getName(), null, new Object[0]);
-	}
+    @Override
+    public String getName() {
+        return name;
+    }
 
-	@Override
-	public void info(String str, Object... objs) {
-		if (!isInfoEnabled())
-			return;
-		add(str, LogLevel.INFO.getName(), null, objs);
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public void info(String str, Throwable throwable, Object... objs) {
-		if (!isInfoEnabled())
-			return;
-		add(str, LogLevel.INFO.getName(), throwable, objs);
-	}
+    public int getMaxFileSize() {
+        return maxFileSize;
+    }
 
-	@Override
-	public void warn(String str) {
-		if (!isWarnEnabled())
-			return;
-		add(str, LogLevel.WARN.getName(), null, new Object[0]);
-	}
+    public void setMaxFileSize(int maxFileSize) {
+        this.maxFileSize = maxFileSize;
+    }
 
-	@Override
-	public void warn(String str, Object... objs) {
-		if (!isWarnEnabled())
-			return;
-		add(str, LogLevel.WARN.getName(), null, objs);
-	}
+    public Charset getCharset() {
+        return charset;
+    }
 
-	@Override
-	public void warn(String str, Throwable throwable, Object... objs) {
-		if (!isWarnEnabled())
-			return;
-		add(str, LogLevel.WARN.getName(), throwable, objs);
-	}
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
 
-	@Override
-	public void error(String str, Object... objs) {
-		if (!isErrorEnabled())
-			return;
-		add(str, LogLevel.ERROR.getName(), null, objs);
-	}
+    private void add(String str, String level, Throwable throwable, Object... objs) {
+        LogItem item = new LogItem();
+        item.setLevel(level);
+        item.setName(name);
+        item.setContent(str);
+        item.setObjs(objs);
+        item.setThrowable(throwable);
+        if (stackTrace) {
+            item.setStackTraceElement(getStackTraceElement());
+        }
+        LogFactory.getInstance().getLogTask().add(item);
+    }
 
-	@Override
-	public void error(String str, Throwable throwable, Object... objs) {
-		if (!isErrorEnabled())
-			return;
-		add(str, LogLevel.ERROR.getName(), throwable, objs);
-	}
+    @Override
+    public void trace(String str) {
+        if (isTraceEnabled()) {
+            add(str, LogLevel.TRACE.getName(), null, new Object[0]);
+        }
+    }
 
-	@Override
-	public void error(String str) {
-		if (!isErrorEnabled())
-			return;
-		add(str, LogLevel.ERROR.getName(), null, new Object[0]);
-	}
+    @Override
+    public void trace(String str, Object... objs) {
+        if (isTraceEnabled()) {
+            add(str, LogLevel.TRACE.getName(), null, objs);
+        }
+    }
 
-	@Override
-	public boolean isTraceEnabled() {
-		return level.isEnabled(LogLevel.TRACE);
-	}
+    @Override
+    public void trace(String str, Throwable throwable, Object... objs) {
+        if (isTraceEnabled()) {
+            add(str, LogLevel.TRACE.getName(), null, objs);
+        }
+    }
 
-	@Override
-	public boolean isDebugEnabled() {
-		return level.isEnabled(LogLevel.DEBUG);
-	}
+    @Override
+    public void debug(String str) {
+        if (isDebugEnabled()) {
+            add(str, LogLevel.DEBUG.getName(), null, new Object[0]);
+        }
+    }
 
-	@Override
-	public boolean isInfoEnabled() {
-		return level.isEnabled(LogLevel.INFO);
-	}
+    @Override
+    public void debug(String str, Object... objs) {
+        if (isDebugEnabled()) {
+            add(str, LogLevel.DEBUG.getName(), null, objs);
+        }
+    }
 
-	@Override
-	public boolean isWarnEnabled() {
-		return level.isEnabled(LogLevel.WARN);
-	}
+    @Override
+    public void debug(String str, Throwable throwable, Object... objs) {
+        if (isDebugEnabled()) {
+            add(str, LogLevel.DEBUG.getName(), throwable, objs);
+        }
+    }
 
-	@Override
-	public boolean isErrorEnabled() {
-		return level.isEnabled(LogLevel.ERROR);
-	}
+    @Override
+    public void info(String str) {
+        if (isInfoEnabled()) {
+            add(str, LogLevel.INFO.getName(), null, new Object[0]);
+        }
+    }
 
-	@Override
-	public String toString() {
-		return "[level=" + level.getName() + ", name=" + name + ", path=" + path + ", consoleOutput=" + consoleOutput
-				+ ", fileOutput=" + fileOutput + ", maxFileSize=" + maxFileSize + "]";
-	}
+    @Override
+    public void info(String str, Object... objs) {
+        if (isInfoEnabled()) {
+            add(str, LogLevel.INFO.getName(), null, objs);
+        }
+    }
 
-	public static StackTraceElement getStackTraceElement() {
-		return Thread.currentThread().getStackTrace()[4];
-	}
+    @Override
+    public void info(String str, Throwable throwable, Object... objs) {
+        if (isInfoEnabled()) {
+            add(str, LogLevel.INFO.getName(), throwable, objs);
+        }
+    }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (consoleOutput ? 1231 : 1237);
-		result = prime * result + (fileOutput ? 1231 : 1237);
-		result = prime * result + ((level == null) ? 0 : level.hashCode());
-		result = prime * result + maxFileSize;
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((path == null) ? 0 : path.hashCode());
-		return result;
-	}
+    @Override
+    public void warn(String str) {
+        if (isWarnEnabled()) {
+            add(str, LogLevel.WARN.getName(), null, new Object[0]);
+        }
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		FileLog other = (FileLog) obj;
-		if (consoleOutput != other.consoleOutput)
-			return false;
-		if (fileOutput != other.fileOutput)
-			return false;
-		if (level != other.level)
-			return false;
-		if (maxFileSize != other.maxFileSize)
-			return false;
-		if (name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
-			return false;
-		if (path == null) {
-			if (other.path != null)
-				return false;
-		} else if (!path.equals(other.path))
-			return false;
-		return true;
-	}
+    @Override
+    public void warn(String str, Object... objs) {
+        if (isWarnEnabled()) {
+            add(str, LogLevel.WARN.getName(), null, objs);
+        }
+    }
 
+    @Override
+    public void warn(String str, Throwable throwable, Object... objs) {
+        if (isWarnEnabled()) {
+            add(str, LogLevel.WARN.getName(), throwable, objs);
+        }
+    }
+
+    @Override
+    public void error(String str, Object... objs) {
+        if (isErrorEnabled()) {
+            add(str, LogLevel.ERROR.getName(), null, objs);
+        }
+    }
+
+    @Override
+    public void error(String str, Throwable throwable, Object... objs) {
+        if (isErrorEnabled()) {
+            add(str, LogLevel.ERROR.getName(), throwable, objs);
+        }
+    }
+
+    @Override
+    public void error(String str) {
+        if (isErrorEnabled()) {
+            add(str, LogLevel.ERROR.getName(), null, new Object[0]);
+        }
+    }
+
+    @Override
+    public boolean isTraceEnabled() {
+        return level.isEnabled(LogLevel.TRACE);
+    }
+
+    @Override
+    public boolean isDebugEnabled() {
+        return level.isEnabled(LogLevel.DEBUG);
+    }
+
+    @Override
+    public boolean isInfoEnabled() {
+        return level.isEnabled(LogLevel.INFO);
+    }
+
+    @Override
+    public boolean isWarnEnabled() {
+        return level.isEnabled(LogLevel.WARN);
+    }
+
+    @Override
+    public boolean isErrorEnabled() {
+        return level.isEnabled(LogLevel.ERROR);
+    }
+
+    @Override
+    public String toString() {
+        return "FileLog{" +
+                "level=" + level +
+                ", path='" + path + '\'' +
+                ", name='" + name + '\'' +
+                ", consoleOutput=" + consoleOutput +
+                ", fileOutput=" + fileOutput +
+                ", maxFileSize=" + maxFileSize +
+                ", charset=" + charset +
+                '}';
+    }
+
+    public static StackTraceElement getStackTraceElement() {
+        StackTraceElement[] arr = Thread.currentThread().getStackTrace();
+        StackTraceElement s = arr[4];
+        if (s != null) {
+            if (s.getClassName().equals("org.slf4j.impl.LoggerImpl")) {
+                return arr[5];
+            } else {
+                return s;
+            }
+        } else {
+            return s;
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FileLog fileLog = (FileLog) o;
+        return Objects.equals(name, fileLog.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
 }

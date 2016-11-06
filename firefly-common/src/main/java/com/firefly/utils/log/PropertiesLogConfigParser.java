@@ -22,7 +22,7 @@ public class PropertiesLogConfigParser extends AbstractLogConfigParser {
 				return false;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("parse exception, " + e.getMessage());
 			return false;
 		}
 	}
@@ -47,23 +47,23 @@ public class PropertiesLogConfigParser extends AbstractLogConfigParser {
 
 			switch (strs.length) {
 			case 1:
-				fileLog.call(createLog(name, strs[0], null, false, DEFAULT_MAX_FILE_SIZE));
+				fileLog.call(createLog(name, strs[0], null, false, DEFAULT_MAX_FILE_SIZE, DEFAULT_CHARSET));
 				break;
 			case 2:
 				if ("console".equalsIgnoreCase(strs[1])) {
-					fileLog.call(createLog(name, strs[0], null, true, DEFAULT_MAX_FILE_SIZE));
+					fileLog.call(createLog(name, strs[0], null, true, DEFAULT_MAX_FILE_SIZE, DEFAULT_CHARSET));
 				} else {
-					fileLog.call(createLog(name, strs[0], strs[1], false, DEFAULT_MAX_FILE_SIZE));
+					fileLog.call(createLog(name, strs[0], strs[1], false, DEFAULT_MAX_FILE_SIZE, DEFAULT_CHARSET));
 				}
 				break;
 			case 3:
 				fileLog.call(
-						createLog(name, strs[0], strs[1], "console".equalsIgnoreCase(strs[2]), DEFAULT_MAX_FILE_SIZE));
+						createLog(name, strs[0], strs[1], "console".equalsIgnoreCase(strs[2]), DEFAULT_MAX_FILE_SIZE, DEFAULT_CHARSET));
 				break;
 			default:
 				System.err.println(
 						"The log " + name + " configuration format is illegal. It will use default log configuration");
-				fileLog.call(createLog(name, DEFAULT_LOG_LEVEL, null, false, DEFAULT_MAX_FILE_SIZE));
+				fileLog.call(createLog(name, DEFAULT_LOG_LEVEL, null, false, DEFAULT_MAX_FILE_SIZE, DEFAULT_CHARSET));
 				break;
 			}
 		}
