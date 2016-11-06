@@ -8,6 +8,7 @@ import com.firefly.core.support.xml.*;
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.BeanMethodFilter;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,42 +64,70 @@ public class XmlApplicationContext extends AbstractApplicationContext {
             return null;
     }
 
-    private Object xmlInject(BeanDefinition beanDef) {
-        final XmlBeanDefinition beanDefinition = (XmlBeanDefinition) beanDef;
-        Class<?> clazz = null;
-        Object object = null;
-
-        try {
-            clazz = XmlApplicationContext.class.getClassLoader().loadClass(beanDefinition.getClassName());
-            if (beanDefinition.getContructorParameters().size() <= 0) {
-                object = clazz.newInstance();
-            } else {
-                List<Object> constructorParameters = new ArrayList<>();
-                for (int i = 0; i < beanDefinition.getContructorParameters().size(); i++) {
-                    Object p = getInjectArg(beanDefinition.getContructorParameters().get(i), beanDefinition.getConstructor().getParameterTypes()[i]);
-                    constructorParameters.add(p);
-                }
-                object = beanDefinition.getConstructor().newInstance(constructorParameters.toArray());
+    private Object getInstance(BeanDefinition beanDef) {
+        if (StringUtils.hasText(beanDef.getId())) {
+            return map.get(beanDef.getId());
+        } else {
+            Object instance = map.get(beanDef.getClassName());
+            if (instance != null) {
+                return instance;
             }
-        } catch (Throwable t) {
-            log.error("object initiate error", t);
+
+            String[] keys = beanDef.getInterfaceNames();
+            for (String k : keys) {
+                instance = map.get(beanDef);
+                if (instance != null) {
+                    return instance;
+                }
+            }
+            return instance;
         }
+    }
 
-        final Object instance = object;
-        ReflectUtils.getSetterMethods(clazz, (String propertyName, Method method) -> {
-            XmlManagedNode value = beanDefinition.getProperties().get(propertyName);
-            if (value != null) {
-                try {
-                    method.invoke(instance, getInjectArg(value, method.getParameterTypes()[0]));
-                } catch (Throwable t) {
-                    log.error("xml inject error", t);
+    private Object xmlInject(BeanDefinition beanDef) {
+        Object instance = getInstance(beanDef);
+        if (instance == null) {
+            final XmlBeanDefinition beanDefinition = (XmlBeanDefinition) beanDef;
+            Class<?> clazz = null;
+
+            try {
+                clazz = XmlApplicationContext.class.getClassLoader().loadClass(beanDefinition.getClassName());
+                if (beanDefinition.getContructorParameters().size() <= 0) {
+                    instance = clazz.newInstance();
+                } else {
+                    List<Object> constructorParameters = new ArrayList<>();
+                    for (int i = 0; i < beanDefinition.getContructorParameters().size(); i++) {
+                        Object p = getInjectArg(beanDefinition.getContructorParameters().get(i), beanDefinition.getConstructor().getParameterTypes()[i]);
+                        constructorParameters.add(p);
+                    }
+                    instance = beanDefinition.getConstructor().newInstance(constructorParameters.toArray());
                 }
+            } catch (Throwable t) {
+                log.error("object initiate error", t);
             }
-            return false;
-        });
 
-        addObjectToContext(beanDefinition, object);
-        return instance;
+            if (instance != null) {
+                final Object obj = instance;
+                ReflectUtils.getSetterMethods(clazz, (String propertyName, Method method) -> {
+                    XmlManagedNode value = beanDefinition.getProperties().get(propertyName);
+                    if (value != null) {
+                        try {
+                            method.invoke(obj, getInjectArg(value, method.getParameterTypes()[0]));
+                        } catch (Throwable t) {
+                            log.error("xml inject error", t);
+                        }
+                    }
+                    return false;
+                });
+            } else {
+                error("initialize XML bean exception, the instance is null");
+            }
+
+            addObjectToContext(beanDefinition, instance);
+            return instance;
+        } else {
+            return instance;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -204,14 +233,19 @@ public class XmlApplicationContext extends AbstractApplicationContext {
      * @return
      */
     private Object annotationInject(BeanDefinition beanDef) {
-        AnnotationBeanDefinition beanDefinition = (AnnotationBeanDefinition) beanDef;
-        // constructor injecting
-        Object object = constructorInject(beanDefinition);
-        beanDefinition.setInjectedInstance(object);
-        fieldInject(beanDefinition, object);
-        methodInject(beanDefinition, object);
-        addObjectToContext(beanDefinition, object);
-        return object;
+        Object instance = getInstance(beanDef);
+        if (instance == null) {
+            AnnotationBeanDefinition beanDefinition = (AnnotationBeanDefinition) beanDef;
+            // constructor injecting
+            instance = constructorInject(beanDefinition);
+            beanDefinition.setInjectedInstance(instance);
+            fieldInject(beanDefinition, instance);
+            methodInject(beanDefinition, instance);
+            addObjectToContext(beanDefinition, instance);
+            return instance;
+        } else {
+            return instance;
+        }
     }
 
     private Object constructorInject(AnnotationBeanDefinition beanDefinition) {

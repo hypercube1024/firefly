@@ -369,7 +369,17 @@ public class FileLog implements Log, Closeable {
     }
 
     public static StackTraceElement getStackTraceElement() {
-        return Thread.currentThread().getStackTrace()[4];
+        StackTraceElement[] arr = Thread.currentThread().getStackTrace();
+        StackTraceElement s = arr[4];
+        if (s != null) {
+            if (s.getClassName().equals("org.slf4j.impl.LoggerImpl")) {
+                return arr[5];
+            } else {
+                return s;
+            }
+        } else {
+            return s;
+        }
     }
 
     @Override

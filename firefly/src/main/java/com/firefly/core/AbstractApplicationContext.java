@@ -119,8 +119,9 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
     protected void addObjectToContext(final BeanDefinition beanDefinition, final Object object) {
         // context key using id
         String id = beanDefinition.getId();
-        if (VerifyUtils.isNotEmpty(id))
+        if (VerifyUtils.isNotEmpty(id)) {
             map.put(id, object);
+        }
 
         // context key using class name
         map.put(beanDefinition.getClassName(), object);
@@ -129,6 +130,10 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
         String[] keys = beanDefinition.getInterfaceNames();
         for (String k : keys) {
             map.put(k, object);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("add object [{}] - [{}] to context", beanDefinition.getClass(), object.toString());
         }
 
         // invoke initial method

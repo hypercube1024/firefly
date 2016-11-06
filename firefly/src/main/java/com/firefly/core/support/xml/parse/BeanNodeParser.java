@@ -67,7 +67,7 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 			Element constructorElement = constructors.get(0);
 			List<Element> arguments = dom.elements(constructorElement, ARGUMENT_ELEMENT);
 			if(arguments != null && arguments.size() >= 1) {
-				List<Class<?>> argsClass = new ArrayList<Class<?>>();
+				List<Class<?>> argsClass = new ArrayList<>();
 				for(Element argument : arguments) {
 					XmlManagedNode xmlManagedNode = parseXmlManagedNode(argument, dom);
 					if(xmlManagedNode != null) {
@@ -103,7 +103,7 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
 		// gets all interface name
 		String[] names = ReflectUtils.getInterfaceNames(clazz);
 		xmlBeanDefinition.setInterfaceNames(names);
-		log.debug("class [{}] names size [{}]", className, names.length);
+		log.debug("XML bean node parsing,  class name [{}], interface size [{}]", className, names.length);
 
 		// gets all properties
 		List<Element> properties = dom.elements(ele, PROPERTY_ELEMENT);
