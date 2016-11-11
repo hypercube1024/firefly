@@ -25,8 +25,8 @@ public class DecodeCompiler {
 	private static final ParserMetaInfo[] EMPTY_ARRAY = new ParserMetaInfo[0];
 	
 	public static ParserMetaInfo[] compile(Class<?> clazz) {
-		ParserMetaInfo[] parserMetaInfos = null;
-		Set<ParserMetaInfo> fieldSet = new TreeSet<ParserMetaInfo>();
+		ParserMetaInfo[] parserMetaInfos;
+		Set<ParserMetaInfo> fieldSet = new TreeSet<>();
 		for (Method method : clazz.getMethods()) {
 			method.setAccessible(true);
 			String methodName = method.getName();
