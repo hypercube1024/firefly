@@ -3,7 +3,9 @@ package com.firefly.annotation;
 import java.lang.annotation.*;
 
 /**
- * Created by Pengtao Qiu on 2016/11/5.
+ * The multipart settings for method
+ *
+ * @author Pengtao Qiu
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

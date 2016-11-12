@@ -1,7 +1,8 @@
 package com.firefly.utils.exception;
 
 /**
- * Created by Pengtao Qiu on 2016/11/1.
+ * Firefly common module runtime exception
+ * @author Pengtao Qiu
  */
 public class CommonRuntimeException extends RuntimeException {
 
