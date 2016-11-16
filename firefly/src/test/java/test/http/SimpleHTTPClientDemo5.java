@@ -16,7 +16,7 @@ public class SimpleHTTPClientDemo5 {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 10; i++) {
                 long start = System.currentTimeMillis();
-                Future<SimpleResponse> future = client.get("http://shoukuan.genshuixue.com/Api/getOrderInfoBatch?_from=1&id=%7B%22purchase_id%22%3A%5B150116111487703960%5D%7D").submit();
+                Future<SimpleResponse> future = client.get("http://www.baidu.com").submit();
 //            System.out.println(future.get().getStringBody("GBK"));
                 String body = future.get().getStringBody("GBK");
                 long end = System.currentTimeMillis();
