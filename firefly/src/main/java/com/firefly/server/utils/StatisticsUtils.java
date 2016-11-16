@@ -15,7 +15,7 @@ public abstract class StatisticsUtils {
 	}
 
 	public static void saveConnectionInfo(Session session) {
-		monitor.info("session: {}", session);
+		monitor.info("HTTP TcpSession: {}", session);
 	}
 	
 }

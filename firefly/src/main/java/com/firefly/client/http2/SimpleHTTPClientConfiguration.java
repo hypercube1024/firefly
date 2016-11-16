@@ -7,8 +7,8 @@ public class SimpleHTTPClientConfiguration extends HTTP2Configuration {
 	private int initPoolSize = 1;
 	private int maxPoolSize = 8;
 	private int takeConnectionTimeout = 3 * 1000;
-	private int cleanupInterval = 15 * 1000;
-	private int cleanupInitialDelay = 5 * 1000;
+	private int cleanupInterval = 30 * 1000;
+	private int cleanupInitialDelay = 15 * 1000;
 
 	public int getInitPoolSize() {
 		return initPoolSize;

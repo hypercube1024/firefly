@@ -9,3 +9,7 @@
 .idea
 out
 target
+firefly-common/logs/
+firefly/temp/
+logs/
+temp/

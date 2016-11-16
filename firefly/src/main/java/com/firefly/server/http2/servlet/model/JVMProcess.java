@@ -1,7 +1,7 @@
 package com.firefly.server.http2.servlet.model;
 
 /**
- * Created by Pengtao Qiu on 2016/11/7.
+ * @author Pengtao Qiu
  */
 public class JVMProcess {
     private String name;

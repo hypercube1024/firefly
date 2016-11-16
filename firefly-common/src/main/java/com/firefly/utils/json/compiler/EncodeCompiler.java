@@ -18,8 +18,8 @@ public class EncodeCompiler {
 	private static final SerializerMetaInfo[] EMPTY_ARRAY = new SerializerMetaInfo[0];
 	
 	public static SerializerMetaInfo[] compile(Class<?> clazz) {
-		SerializerMetaInfo[] serializerMetaInfos = null;
-		Set<SerializerMetaInfo> fieldSet = new TreeSet<SerializerMetaInfo>();
+		SerializerMetaInfo[] serializerMetaInfos;
+		Set<SerializerMetaInfo> fieldSet = new TreeSet<>();
 		
 		for (Method method : clazz.getMethods()) {
 			method.setAccessible(true);
@@ -34,7 +34,7 @@ public class EncodeCompiler {
             if (method.getReturnType() == void.class) continue;
             if (method.isAnnotationPresent(Transient.class)) continue;
 
-            String propertyName = null;
+            String propertyName;
 			if (methodName.charAt(0) == 'g') { // start with 'get'
 				if (methodName.length() < 4)
 					continue;
