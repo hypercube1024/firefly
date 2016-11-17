@@ -40,7 +40,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
     protected final HTTP2Client http2Client;
-    protected final Scheduler scheduler;
 
     private final Map<RequestBuilder, BlockingPool<HTTPClientConnection>> poolMap = new ConcurrentReferenceHashMap<>();
 
@@ -50,7 +49,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
         http2Client = new HTTP2Client(http2Configuration);
-        scheduler = Schedulers.createScheduler();
         start();
     }
 
@@ -248,6 +246,38 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         poolMap.remove(req);
     }
 
+    public int getConnectionPoolSize(String host, int port) {
+        RequestBuilder req = new RequestBuilder();
+        req.host = host;
+        req.port = port;
+        return _getPoolSize(req);
+    }
+
+    public int getConnectionPoolSize(String url) {
+        try {
+            return getConnectionPoolSize(new URL(url));
+        } catch (MalformedURLException e) {
+            log.error("url exception", e);
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public int getConnectionPoolSize(URL url) {
+        RequestBuilder req = new RequestBuilder();
+        req.host = url.getHost();
+        req.port = url.getPort() < 0 ? url.getDefaultPort() : url.getPort();
+        return _getPoolSize(req);
+    }
+
+    private int _getPoolSize(RequestBuilder req) {
+        BlockingPool<HTTPClientConnection> pool = poolMap.get(req);
+        if (pool != null) {
+            return pool.size();
+        } else {
+            return 0;
+        }
+    }
+
     public RequestBuilder get(String url) {
         return request(HttpMethod.GET.asString(), url);
     }
@@ -431,24 +461,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     @Override
     protected void init() {
-        SimpleHTTPClientConfiguration config = (SimpleHTTPClientConfiguration) http2Client.getHttp2Configuration();
-        scheduler.scheduleAtFixedRate(() -> {
-            Iterator<Map.Entry<RequestBuilder, BlockingPool<HTTPClientConnection>>> iterator = poolMap.entrySet()
-                    .iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<RequestBuilder, BlockingPool<HTTPClientConnection>> entry = iterator.next();
-                entry.getValue().cleanup();
-                if (log.isDebugEnabled()) {
-                    log.debug("clean up connection pool [{}:{}], current pool size is {}", entry.getKey().host,
-                            entry.getKey().port, entry.getValue().size());
-                }
-            }
-        }, config.getCleanupInitialDelay(), config.getCleanupInterval(), TimeUnit.MILLISECONDS);
+
     }
 
     @Override
     protected void destroy() {
         http2Client.stop();
-        scheduler.stop();
     }
 }

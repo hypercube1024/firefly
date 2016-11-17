@@ -19,7 +19,6 @@ public class SimpleHTTPClientDemo1 {
 
 	public static void main(String[] args) throws Throwable {
 		SimpleHTTPClientConfiguration c = new SimpleHTTPClientConfiguration();
-		c.setCleanupInterval(3000);
 		SimpleHTTPClient client = new SimpleHTTPClient(c);
 		final long start = System.currentTimeMillis();
 		List<ByteBuffer> list = new ArrayList<>();
