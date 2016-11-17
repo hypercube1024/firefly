@@ -18,6 +18,7 @@ public class SimpleHTTPClientDemo5 {
                 long start = System.currentTimeMillis();
                 Future<SimpleResponse> future = client.get("http://www.baidu.com").submit();
                 String body = future.get().getStringBody("GBK");
+                System.out.println(body);
                 long end = System.currentTimeMillis();
                 System.out.println("time: " + (end - start));
             }

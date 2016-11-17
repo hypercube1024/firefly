@@ -17,7 +17,7 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 
 	public BoundedBlockingPool(int initSize, int maxSize, ObjectFactory<T> factory, Validator<T> validator,
 			Dispose<T> dispose) {
-		this(initSize, new LinkedBlockingQueue<T>(maxSize), factory, validator, dispose);
+		this(initSize, new LinkedBlockingQueue<>(maxSize), factory, validator, dispose);
 	}
 
 	public BoundedBlockingPool(int initSize, BlockingQueue<T> queue, ObjectFactory<T> factory, Validator<T> validator,
@@ -66,7 +66,7 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 	public void release(T t) {
 		if (validator.isValid(t)) {
 			boolean success = queue.offer(t);
-			if (success == false) {
+			if (!success) {
 				dispose.destroy(t);
 			}
 		} else {
@@ -87,7 +87,7 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 	public boolean put(T t, long timeout, TimeUnit unit) throws InterruptedException {
 		if (validator.isValid(t)) {
 			boolean success = queue.offer(t, timeout, unit);
-			if (success == false) {
+			if (!success) {
 				dispose.destroy(t);
 			}
 			return success;
@@ -99,7 +99,6 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 
 	@Override
 	protected void init() {
-
 		for (int i = 0; i < initSize; i++) {
 			queue.offer(factory.createNew());
 		}
@@ -107,7 +106,7 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 
 	@Override
 	protected void destroy() {
-		T t = null;
+		T t;
 		while ((t = queue.poll()) != null) {
 			dispose.destroy(t);
 		}
@@ -121,17 +120,6 @@ public class BoundedBlockingPool<T> extends AbstractLifeCycle implements Blockin
 	@Override
 	public boolean isEmpty() {
 		return queue.isEmpty();
-	}
-
-	@Override
-	public void cleanup() {
-		for (Iterator<T> iterator = queue.iterator(); iterator.hasNext();) {
-			T t = iterator.next();
-			if (validator.isValid(t) == false) {
-				iterator.remove();
-				dispose.destroy(t);
-			}
-		}
 	}
 
 }
