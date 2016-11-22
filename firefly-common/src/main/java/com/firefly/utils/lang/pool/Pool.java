@@ -47,7 +47,7 @@ public interface Pool<T> extends LifeCycle {
 	/**
 	 * Represents the functionality to validate an object of the pool
 	 */
-	public static interface Validator<T> {
+	interface Validator<T> {
 		/**
 		 * Checks whether the object is valid.
 		 *
@@ -56,11 +56,11 @@ public interface Pool<T> extends LifeCycle {
 		 *
 		 * @return true if the object is valid else false.
 		 */
-		public boolean isValid(T t);
+		boolean isValid(T t);
 
 	}
 
-	public static interface Dispose<T> {
+	interface Dispose<T> {
 		/**
 		 * Performs any cleanup activities before discarding the object. For
 		 * example before discarding database connection objects, the pool will
@@ -70,6 +70,6 @@ public interface Pool<T> extends LifeCycle {
 		 *            the object to cleanup
 		 */
 
-		public void destroy(T t);
+		void destroy(T t);
 	}
 }

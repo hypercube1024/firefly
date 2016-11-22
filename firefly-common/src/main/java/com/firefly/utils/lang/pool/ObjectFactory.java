@@ -10,5 +10,5 @@ public interface ObjectFactory<T> {
 	 *
 	 * @return T an new instance of the object of type T
 	 */
-	public T createNew();
+	T createNew();
 }
