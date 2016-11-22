@@ -2,12 +2,11 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.io.BufferUtils;
@@ -28,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -328,7 +326,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     private void release(HTTPClientConnection connection, BlockingPool<HTTPClientConnection> pool) {
         boolean released = (Boolean) connection.getAttachment();
-        if (released == false) {
+        if (!released) {
             connection.setAttachment(true);
             pool.release(connection);
         }
@@ -407,7 +405,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         }
                     });
 
-            if (r.requestBody != null && r.requestBody.isEmpty() == false) {
+            if (r.requestBody != null && !r.requestBody.isEmpty()) {
                 connection.send(r.request, r.requestBody.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), handler);
             } else if (r.promise != null) {
                 connection.send(r.request, r.promise, handler);
@@ -444,7 +442,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             log.error("create http connection exception", e);
                             throw new IllegalStateException(e);
                         }
-                    }, (conn) -> conn.isOpen(), (conn) -> {
+                    }, HTTPConnection::isOpen, (conn) -> {
                         try {
                             conn.close();
                         } catch (IOException e) {
