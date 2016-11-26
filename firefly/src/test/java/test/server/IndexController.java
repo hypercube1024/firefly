@@ -67,7 +67,7 @@ public class IndexController {
 
     @RequestMapping(value = "/insertBook", method = HttpMethod.POST)
     public View addJson(@JsonBody Book book) {
-        return new JsonView(book);
+        return new JsonView<>(book);
     }
 
     @RequestMapping(value = "/put", method = HttpMethod.PUT)

@@ -19,6 +19,6 @@ public class FoodInterceptor3 {
 		food.setName("banana");
 		food.setPrice(3.99);
 		log.info("food interceptor 2 : {}", food);
-		return new JsonView(food);
+		return new JsonView<>(food);
 	}
 }

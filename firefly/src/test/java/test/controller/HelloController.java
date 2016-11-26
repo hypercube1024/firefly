@@ -57,21 +57,21 @@ public class HelloController {
 
 	@RequestMapping(value = "/book/json", method = HttpMethod.POST)
 	public View getBook(@HttpParam("book") Book book) {
-		return new JsonView(book);
+		return new JsonView<>(book);
 	}
 
 	@RequestMapping(value = "/book/json2", method = HttpMethod.POST)
 	public View getBookJson(Book book) {
-		return new JsonView(book);
+		return new JsonView<>(book);
 	}
 
 	@RequestMapping(value = "/book/insert", method = HttpMethod.POST)
 	public View postBook(@JsonBody Book book) {
-		return new JsonView(book);
+		return new JsonView<>(book);
 	}
 
 	@RequestMapping(value = "/book/testMethod", method = { HttpMethod.GET, HttpMethod.POST })
 	public View testMethod(@HttpParam("book") Book book) {
-		return new JsonView(book);
+		return new JsonView<>(book);
 	}
 }
