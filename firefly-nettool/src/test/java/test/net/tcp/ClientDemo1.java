@@ -10,6 +10,8 @@ import com.firefly.utils.function.Action1;
 public class ClientDemo1 {
 
     public static void main(String[] args) {
+//        System.setProperty("javax.net.debug", "all");
+//        System.setProperty("debugMode", "true");
         TcpConfiguration config = new TcpConfiguration();
         config.setSecureConnectionEnabled(true);
         config.setTimeout(2 * 60 * 1000);
