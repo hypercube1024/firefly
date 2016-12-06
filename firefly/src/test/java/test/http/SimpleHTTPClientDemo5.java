@@ -16,11 +16,12 @@ public class SimpleHTTPClientDemo5 {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 10; i++) {
                 long start = System.currentTimeMillis();
-                Future<SimpleResponse> future = client.get("http://www.baidu.com").submit();
-                String body = future.get().getStringBody("GBK");
-                System.out.println(body);
-                long end = System.currentTimeMillis();
-                System.out.println("time: " + (end - start));
+                client.get("http://www.baidu.com").submit().thenAccept(res -> {
+                    String body = res.getStringBody("GBK");
+                    System.out.println(body);
+                    long end = System.currentTimeMillis();
+                    System.out.println("time: " + (end - start));
+                });
             }
             Thread.sleep(5000L);
         }

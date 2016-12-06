@@ -21,15 +21,15 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 public class SimpleTcpServer extends AbstractLifeCycle {
 
 	// accept TCP connection callback
-	protected Action1<TcpConnection> accept;
-	protected Action2<Integer, Throwable> failedAcceptance;
+	private Action1<TcpConnection> accept;
+	private Action2<Integer, Throwable> failedAcceptance;
 
 	// ALPN callback
-	protected Action0 alpnUnsupported;
-	protected Func1<List<String>, String> alpnSelectProtocols;
+	private Action0 alpnUnsupported;
+	private Func1<List<String>, String> alpnSelectProtocols;
 
-	protected AsynchronousTcpServer server;
-	protected TcpServerConfiguration config;
+	private AsynchronousTcpServer server;
+	private TcpServerConfiguration config;
 
 	public SimpleTcpServer() {
 		this(new TcpServerConfiguration());

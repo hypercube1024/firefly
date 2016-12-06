@@ -13,12 +13,12 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 
 	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-	protected HTTP2Server http2Server;
-	protected SimpleHTTPServerConfiguration configuration;
-	protected Action1<SimpleRequest> headerComplete;
-	protected Action3<Integer, String, SimpleRequest> badMessage;
-	protected Action1<SimpleRequest> earlyEof;
-	protected Action1<HTTPConnection> acceptConnection;
+	private HTTP2Server http2Server;
+	private SimpleHTTPServerConfiguration configuration;
+	private Action1<SimpleRequest> headerComplete;
+	private Action3<Integer, String, SimpleRequest> badMessage;
+	private Action1<SimpleRequest> earlyEof;
+	private Action1<HTTPConnection> acceptConnection;
 
 	public SimpleHTTPServer() {
 		this(new SimpleHTTPServerConfiguration());

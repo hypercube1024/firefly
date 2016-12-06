@@ -18,9 +18,7 @@ public class ServerDemo4 {
 		SimpleHTTPServer server = new SimpleHTTPServer();
 		server.headerComplete(req -> {
 			List<ByteBuffer> list = new ArrayList<>();
-			req.content(buf -> {
-				list.add(buf);
-			}).messageComplete(request -> {
+			req.content(list::add).messageComplete(request -> {
 				SimpleResponse response = req.getResponse();
 				String path = req.getRequest().getURI().getPath();
 

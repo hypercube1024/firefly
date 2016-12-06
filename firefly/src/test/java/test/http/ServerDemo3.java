@@ -20,7 +20,6 @@ public class ServerDemo3 {
 				response.getResponse().getFields().put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_PLAIN.asString());
 				switch (path) {
 				case "/index":
-					response.getResponse().getFields();
 					response.getResponse().getFields().put(HttpHeader.CONTENT_LENGTH, "11");
 					try (PrintWriter writer = response.getPrintWriter()) {
 						writer.print("hello index");

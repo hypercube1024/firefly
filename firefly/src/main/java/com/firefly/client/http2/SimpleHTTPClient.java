@@ -37,7 +37,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     private static Logger log = LoggerFactory.getLogger("firefly-system");
     private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
-    protected final HTTP2Client http2Client;
+    private final HTTP2Client http2Client;
 
     private final Map<RequestBuilder, BlockingPool<HTTPClientConnection>> poolMap = new ConcurrentReferenceHashMap<>();
 
@@ -67,7 +67,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         Promise<HTTPOutputStream> promise;
         Action1<HTTPOutputStream> output;
 
-        FuturePromise<SimpleResponse> future;
+        Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
 
         public RequestBuilder cookies(List<Cookie> cookies) {
@@ -157,23 +157,25 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             return this;
         }
 
-        public FuturePromise<SimpleResponse> submit() {
-            submit(new FuturePromise<>());
+        public Promise.Completable<SimpleResponse> submit() {
+            submit(new Promise.Completable<>());
             return future;
         }
 
-        public void submit(FuturePromise<SimpleResponse> future) {
+        public void submit(Promise.Completable<SimpleResponse> future) {
             this.future = future;
             send(this);
         }
 
         public void submit(Action1<SimpleResponse> action) {
-            FuturePromise<SimpleResponse> future = new FuturePromise<SimpleResponse>() {
+            Promise.Completable<SimpleResponse> future = new Promise.Completable<SimpleResponse>() {
                 public void succeeded(SimpleResponse t) {
+                    super.succeeded(t);
                     action.call(t);
                 }
 
                 public void failed(Throwable c) {
+                    super.failed(c);
                     log.error("http request exception", c);
                 }
             };
