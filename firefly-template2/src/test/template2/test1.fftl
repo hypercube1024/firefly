@@ -1,28 +1,37 @@
 #main
-
-#while (${a} = 3 + --4.4++ * 5 > ${sdfsdf.ss[22]})
-    ```dfsdf``` ${sfsf}
-    #if (${x} == true)
+    #while (${a} = 3 + --4.4++ * 5 > ${sdfsdf.ss[22]})
+        ```dfsdf```${sfsf}
+        #if (${x} == true)
+        #end
     #end
+
+    ${ssfdsf[33]}
+
+    #for (ss : ${ssssdf})
+    #end
+
+    #switch (${x})
+        #case "ssdfdsf"
+        #break
+
+        #case "ss"
+        #break
+
+        #case "hello"
+        #break
+
+        #default
+        #break
+    #end
+
+    ${str.length()}
+
 #end
-${ssfdsf[33]}
-#for (ss : ${ssssdf})
-#end
 
-#switch (${x})
-    #case "ssdfdsf"
-    #break
-
-    #case "ss"
-    #break
-
-    #case "hello"
-    #break
-
-    #default
-    #break
-#end
-
-${str.length()}
-
+#function hello1(arg1, arg2)
+    ```testaaa```${arg1}
+    ```dsfdsf```${arg2}
+    #if (${arg1.length()} > 3)
+        ```ok```
+    #end
 #end
