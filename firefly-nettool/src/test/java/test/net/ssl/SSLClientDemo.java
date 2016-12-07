@@ -76,7 +76,7 @@ public class SSLClientDemo {
 			}
 
 			@Override
-			public void messageRecieved(Session session, Object message) throws Throwable {
+			public void messageReceived(Session session, Object message) throws Throwable {
 				System.out.println("client receives message: " + message);
 			}
 

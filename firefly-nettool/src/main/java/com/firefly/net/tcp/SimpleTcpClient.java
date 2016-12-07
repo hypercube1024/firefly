@@ -1,6 +1,5 @@
 package com.firefly.net.tcp;
 
-import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -98,10 +97,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
         TcpConnection connection;
     }
 
-    public abstract class AbstractHandler implements Handler {
-        @Override
-        public void messageRecieved(Session session, Object message) throws Throwable {
-        }
+    public abstract class AbstractHandler extends AbstractSimpleHandler {
 
         @Override
         public void failedOpeningSession(Integer sessionId, Throwable t) throws Throwable {
@@ -118,13 +114,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
         @Override
         public void sessionClosed(Session session) throws Throwable {
             try {
-                Object o = session.getAttachment();
-                if (o != null && o instanceof AbstractTcpConnection) {
-                    AbstractTcpConnection c = (AbstractTcpConnection) o;
-                    if (c.closeCallback != null) {
-                        c.closeCallback.call();
-                    }
-                }
+                super.sessionClosed(session);
             } finally {
                 context.remove(session.getSessionId());
             }
@@ -133,13 +123,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
         @Override
         public void exceptionCaught(Session session, Throwable t) throws Throwable {
             try {
-                Object o = session.getAttachment();
-                if (o != null && o instanceof AbstractTcpConnection) {
-                    AbstractTcpConnection c = (AbstractTcpConnection) o;
-                    if (c.exception != null) {
-                        c.exception.call(t);
-                    }
-                }
+                super.exceptionCaught(session, t);
             } finally {
                 context.remove(session.getSessionId());
             }
@@ -149,7 +133,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     @Override
     protected void init() {
         if (!config.isSecureConnectionEnabled()) {
-            config.setDecoder(TcpConfiguration.decoder);
+            config.setDecoder(AbstractSimpleHandler.decoder);
             config.setHandler(new AbstractHandler() {
 
                 @Override
@@ -161,7 +145,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 
             });
         } else {
-            config.setDecoder(TcpConfiguration.sslDecoder);
+            config.setDecoder(AbstractSimpleHandler.sslDecoder);
             config.setHandler(new AbstractHandler() {
 
                 private SSLContext sslContext = config.getSslContextFactory().getSSLContext();
@@ -207,13 +191,9 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                 @Override
                 public void sessionClosed(Session session) throws Throwable {
                     try {
-                        super.sessionClosed(session);
+                        super.sslSessionClosed(session);
                     } finally {
-                        Object o = session.getAttachment();
-                        if (o != null && o instanceof SecureTcpConnectionImpl) {
-                            SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-                            c.sslSession.close();
-                        }
+                        context.remove(session.getSessionId());
                     }
                 }
             });

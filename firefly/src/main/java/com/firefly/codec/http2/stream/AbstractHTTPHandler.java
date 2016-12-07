@@ -26,7 +26,7 @@ public abstract class AbstractHTTPHandler implements Handler {
 	}
 
 	@Override
-	public void messageRecieved(Session session, Object message) throws Throwable {
+	public void messageReceived(Session session, Object message) throws Throwable {
 	}
 
 	@Override

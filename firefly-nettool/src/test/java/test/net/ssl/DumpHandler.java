@@ -45,7 +45,7 @@ public class DumpHandler implements Handler {
 	}
 
 	@Override
-	public void messageRecieved(Session session, Object message)
+	public void messageReceived(Session session, Object message)
 			throws Throwable {
 //		StringBuilder s = new StringBuilder(20000);
 //		s.append("hello world!\r\n ----");

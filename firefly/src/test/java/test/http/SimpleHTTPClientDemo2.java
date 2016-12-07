@@ -19,7 +19,7 @@ public class SimpleHTTPClientDemo2 {
 		config.setSecureConnectionEnabled(true);
 		SimpleHTTPClient client = new SimpleHTTPClient(config);
 		final long start = System.currentTimeMillis();
-		client.get("http://localhost:6655/index").content((buf) -> {
+		client.get("https://localhost:6655/index").content((buf) -> {
 			System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
 		}).messageComplete((response) -> {
 			long end = System.currentTimeMillis();
@@ -30,7 +30,7 @@ public class SimpleHTTPClientDemo2 {
 		}).end();
 
 		long s2 = System.currentTimeMillis();
-		client.get("http://localhost:6655/index_1").content((buf) -> {
+		client.get("https://localhost:6655/index_1").content((buf) -> {
 			System.out.print(BufferUtils.toString(buf, StandardCharsets.UTF_8));
 		}).messageComplete((response) -> {
 			long end = System.currentTimeMillis();
@@ -41,7 +41,7 @@ public class SimpleHTTPClientDemo2 {
 		}).end();
 
 		long s3 = System.currentTimeMillis();
-		Future<SimpleResponse> future = client.get("http://localhost:6655/login").submit();
+		Future<SimpleResponse> future = client.get("https://localhost:6655/login").submit();
 		SimpleResponse simpleResponse = future.get();
 		long end = System.currentTimeMillis();
 		System.out.println();

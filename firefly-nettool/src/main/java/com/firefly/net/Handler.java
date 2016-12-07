@@ -6,7 +6,7 @@ public interface Handler {
 
 	void sessionClosed(Session session) throws Throwable;
 
-	void messageRecieved(Session session, Object message) throws Throwable;
+	void messageReceived(Session session, Object message) throws Throwable;
 
 	void exceptionCaught(Session session, Throwable t) throws Throwable;
 

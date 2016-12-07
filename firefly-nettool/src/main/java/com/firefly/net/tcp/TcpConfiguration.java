@@ -10,29 +10,6 @@ import java.nio.ByteBuffer;
 
 public class TcpConfiguration extends Config {
 
-    static final Decoder decoder = (ByteBuffer buf, Session session) -> {
-        Object o = session.getAttachment();
-        if (o != null) {
-            TcpConnectionImpl c = (TcpConnectionImpl) o;
-            if (c.buffer != null) {
-                c.buffer.call(buf);
-            }
-        }
-    };
-
-    static final Decoder sslDecoder = (ByteBuffer buf, Session session) -> {
-        Object o = session.getAttachment();
-        if (o != null && o instanceof SecureTcpConnectionImpl) {
-            SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-            ByteBuffer plaintext = c.sslSession.read(buf);
-            if (plaintext != null && c.sslSession.isHandshakeFinished()) {
-                if (c.buffer != null) {
-                    c.buffer.call(plaintext);
-                }
-            }
-        }
-    };
-
     // SSL/TLS settings
     private boolean isSecureConnectionEnabled;
     private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();

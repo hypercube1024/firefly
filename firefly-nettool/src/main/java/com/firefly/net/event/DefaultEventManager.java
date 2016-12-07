@@ -52,7 +52,7 @@ public class DefaultEventManager implements EventManager {
 	public void executeReceiveTask(Session session, Object message) {
 		try {
 			log.debug("CurrentThreadEventManager");
-			config.getHandler().messageRecieved(session, message);
+			config.getHandler().messageReceived(session, message);
 		} catch (Throwable t) {
 			executeExceptionTask(session, t);
 		}
