@@ -39,7 +39,7 @@ public class ClientDemo1 {
                       String s = message.trim();
                       System.out.println(s);
                   }).call(connection);
-                  connection.write("hello world3!\r\n").write("test2\r\n").write("quit\r\n");
+                  connection.write("hello world3!\r\n").write("test3\r\n").write("quit\r\n");
               });
     }
 

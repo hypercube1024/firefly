@@ -13,7 +13,6 @@ import org.eclipse.jetty.alpn.ALPN;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -150,45 +149,19 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     @Override
     protected void init() {
         if (!config.isSecureConnectionEnabled()) {
-            config.setDecoder((ByteBuffer buf, Session session) -> {
-                Object o = session.getAttachment();
-                if (o != null) {
-                    TcpConnectionImpl c = (TcpConnectionImpl) o;
-                    if (c.buffer != null) {
-                        c.buffer.call(buf);
-                    }
-                }
-            });
+            config.setDecoder(TcpConfiguration.decoder);
             config.setHandler(new AbstractHandler() {
 
                 @Override
                 public void sessionOpened(Session session) throws Throwable {
                     TcpConnectionImpl c = new TcpConnectionImpl(session);
                     session.attachObject(c);
-                    try {
-                        ClientContext ctx = context.get(session.getSessionId());
-                        if (ctx != null && ctx.promise != null) {
-                            ctx.promise.succeeded(c);
-                        }
-                    } finally {
-                        context.remove(session.getSessionId());
-                    }
+                    sessionOpen(session, c);
                 }
 
             });
         } else {
-            config.setDecoder((ByteBuffer buf, Session session) -> {
-                Object o = session.getAttachment();
-                if (o != null && o instanceof SecureTcpConnectionImpl) {
-                    SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-                    ByteBuffer plaintext = c.sslSession.read(buf);
-                    if (plaintext != null && c.sslSession.isHandshakeFinished()) {
-                        if (c.buffer != null) {
-                            c.buffer.call(plaintext);
-                        }
-                    }
-                }
-            });
+            config.setDecoder(TcpConfiguration.sslDecoder);
             config.setHandler(new AbstractHandler() {
 
                 private SSLContext sslContext = config.getSslContextFactory().getSSLContext();
@@ -200,14 +173,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                         Object o = session.getAttachment();
                         if (o != null && o instanceof SecureTcpConnectionImpl) {
                             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-                            try {
-                                ClientContext ctx = context.get(session.getSessionId());
-                                if (ctx != null && ctx.promise != null) {
-                                    ctx.promise.succeeded(c);
-                                }
-                            } finally {
-                                context.remove(session.getSessionId());
-                            }
+                            sessionOpen(session, c);
                         }
                     }, new ALPN.ClientProvider() {
 
@@ -251,6 +217,17 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                     }
                 }
             });
+        }
+    }
+
+    private void sessionOpen(Session session, TcpConnection c) {
+        try {
+            ClientContext ctx = context.get(session.getSessionId());
+            if (ctx != null && ctx.promise != null) {
+                ctx.promise.succeeded(c);
+            }
+        } finally {
+            context.remove(session.getSessionId());
         }
     }
 

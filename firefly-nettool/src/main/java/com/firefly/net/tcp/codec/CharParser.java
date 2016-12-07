@@ -69,8 +69,7 @@ public class CharParser implements MessageHandler<ByteBuffer, String> {
 
 	protected CharBuffer allocate() {
 		int expectedLength = (int) (buffer.remaining() * decoder.averageCharsPerByte()) + 1;
-		CharBuffer charBuff = CharBuffer.allocate(expectedLength);
-		return charBuff;
+		return CharBuffer.allocate(expectedLength);
 	}
 
 }

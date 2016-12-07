@@ -1,6 +1,5 @@
 package com.firefly.net.tcp;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
@@ -107,16 +106,8 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 
 	@Override
 	protected void init() {
-		if (config.isSecureConnectionEnabled() == false) {
-			config.setDecoder((ByteBuffer buf, Session session) -> {
-				Object o = session.getAttachment();
-				if (o != null) {
-					TcpConnectionImpl c = (TcpConnectionImpl) o;
-					if (c.buffer != null) {
-						c.buffer.call(buf);
-					}
-				}
-			});
+		if (!config.isSecureConnectionEnabled()) {
+			config.setDecoder(TcpConfiguration.decoder);
 			config.setHandler(new AbstractHandler() {
 
 				@Override
@@ -130,18 +121,7 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 
 			});
 		} else {
-			config.setDecoder((ByteBuffer buf, Session session) -> {
-				Object o = session.getAttachment();
-				if (o != null && o instanceof SecureTcpConnectionImpl) {
-					SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-					ByteBuffer plaintext = c.sslSession.read(buf);
-					if (plaintext != null && c.sslSession.isHandshakeFinished()) {
-						if (c.buffer != null) {
-							c.buffer.call(plaintext);
-						}
-					}
-				}
-			});
+			config.setDecoder(TcpConfiguration.sslDecoder);
 			config.setHandler(new AbstractHandler() {
 
 				private SSLContext sslContext = config.getSslContextFactory().getSSLContext();
