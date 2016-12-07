@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -187,38 +188,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
 
         @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + getOuterType().hashCode();
-            result = prime * result + ((host == null) ? 0 : host.hashCode());
-            result = prime * result + port;
-            return result;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            RequestBuilder that = (RequestBuilder) o;
+            return port == that.port &&
+                    Objects.equals(host, that.host);
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            RequestBuilder other = (RequestBuilder) obj;
-            if (!getOuterType().equals(other.getOuterType()))
-                return false;
-            if (host == null) {
-                if (other.host != null)
-                    return false;
-            } else if (!host.equals(other.host))
-                return false;
-            if (port != other.port)
-                return false;
-            return true;
-        }
-
-        private SimpleHTTPClient getOuterType() {
-            return SimpleHTTPClient.this;
+        public int hashCode() {
+            return Objects.hash(host, port);
         }
 
     }

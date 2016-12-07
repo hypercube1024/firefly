@@ -23,7 +23,7 @@ public class SimpleHTTPClientDemo5 {
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
 
         for (int j = 0; j < 1000; j++) {
-            for (int i = 0; i < 1; i++) {
+            for (int i = 0; i < 5; i++) {
                 long start = System.currentTimeMillis();
                 client.get("https://www.baidu.com").submit().thenAccept(res -> {
                     String body = res.getStringBody("UTF-8");
