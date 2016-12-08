@@ -25,9 +25,7 @@ public class ClientDemo1 {
             client.connect("localhost", 1212)
                   .thenApply(connection -> {
                       StringParser parser = new StringParser();
-                      parser.complete(message -> {
-                          System.out.println(message.trim());
-                      });
+                      parser.complete(message -> System.out.println(message.trim()));
                       connection.receive(parser::receive)
                                 .write("hello world" + j + "!\r\n")
                                 .write("test" + j + "\r\n")
