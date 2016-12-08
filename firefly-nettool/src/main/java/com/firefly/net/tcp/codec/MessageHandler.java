@@ -6,6 +6,8 @@ public interface MessageHandler<R, T> {
 
     void receive(R obj);
 
-    void complete(Action1<T> complete);
+    MessageHandler<R, T> complete(Action1<T> action);
+
+    MessageHandler<R, T> exception(Action1<Throwable> exception);
 
 }

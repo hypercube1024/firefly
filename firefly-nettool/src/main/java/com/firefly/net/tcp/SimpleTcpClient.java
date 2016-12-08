@@ -26,7 +26,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     private AsynchronousTcpClient client;
     private TcpConfiguration config;
 
-    private Map<Integer, ClientContext> context = new ConcurrentHashMap<>();
+    private Map<Integer, Promise<TcpConnection>> context = new ConcurrentHashMap<>();
 
     public SimpleTcpClient() {
         this(new TcpConfiguration());
@@ -77,6 +77,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                 conn.call(result);
             }
 
+            @Override
             public void failed(Throwable x) {
                 failed.call(x);
             }
@@ -87,14 +88,8 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     public void connect(String host, int port, Promise<TcpConnection> promise) {
         start();
         int sessionId = client.connect(host, port);
-        ClientContext ctx = new ClientContext();
-        ctx.promise = promise;
-        context.put(sessionId, ctx);
-    }
 
-    public class ClientContext {
-        Promise<TcpConnection> promise;
-        TcpConnection connection;
+        context.put(sessionId, promise);
     }
 
     public abstract class AbstractHandler extends AbstractSimpleHandler {
@@ -102,9 +97,9 @@ public class SimpleTcpClient extends AbstractLifeCycle {
         @Override
         public void failedOpeningSession(Integer sessionId, Throwable t) throws Throwable {
             try {
-                ClientContext ctx = context.get(sessionId);
-                if (ctx != null && ctx.promise != null) {
-                    ctx.promise.failed(t);
+                Promise<TcpConnection> promise = context.get(sessionId);
+                if (promise != null) {
+                    promise.failed(t);
                 }
             } finally {
                 context.remove(sessionId);
@@ -202,9 +197,9 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 
     private void sessionOpen(Session session, TcpConnection c) {
         try {
-            ClientContext ctx = context.get(session.getSessionId());
-            if (ctx != null && ctx.promise != null) {
-                ctx.promise.succeeded(c);
+            Promise<TcpConnection> promise = context.get(session.getSessionId());
+            if (promise != null) {
+                promise.succeeded(c);
             }
         } finally {
             context.remove(session.getSessionId());

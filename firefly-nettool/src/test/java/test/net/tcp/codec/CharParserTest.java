@@ -46,9 +46,7 @@ public class CharParserTest {
 		b.get(b5);
 		buffers.add(ByteBuffer.wrap(b5));
 
-		buffers.forEach(buffer -> {
-			parser.receive(buffer);
-		});
+		buffers.forEach(parser::receive);
 
 	}
 }

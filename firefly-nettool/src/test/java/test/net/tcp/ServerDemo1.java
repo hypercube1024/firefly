@@ -2,8 +2,7 @@ package test.net.tcp;
 
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpServerConfiguration;
-import com.firefly.net.tcp.codec.CharParser;
-import com.firefly.net.tcp.codec.DelimiterParser;
+import com.firefly.net.tcp.codec.StringParser;
 
 public class ServerDemo1 {
 
@@ -15,13 +14,8 @@ public class ServerDemo1 {
         SimpleTcpServer server = new SimpleTcpServer(config);
 
         server.accept(connection -> {
-            CharParser charParser = new CharParser();
-            DelimiterParser delimiterParser = new DelimiterParser("\n");
-
-            connection.receive(charParser::receive);
-            charParser.complete(delimiterParser::receive);
-
-            delimiterParser.complete(message -> {
+            StringParser parser = new StringParser();
+            parser.complete(message -> {
                 String s = message.trim();
                 System.out.println("message -> " + s);
                 switch (s) {
@@ -33,6 +27,8 @@ public class ServerDemo1 {
                         break;
                 }
             });
+            connection.receive(parser::receive);
         }).listen("localhost", 1212);
     }
+
 }

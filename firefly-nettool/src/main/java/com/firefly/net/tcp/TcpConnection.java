@@ -1,95 +1,95 @@
 package com.firefly.net.tcp;
 
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;
 
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+
 public interface TcpConnection {
 
-	TcpConnection receive(Action1<ByteBuffer> buffer);
+    TcpConnection receive(Action1<ByteBuffer> buffer);
 
-	TcpConnection exception(Action1<Throwable> exception);
+    TcpConnection exception(Action1<Throwable> exception);
 
-	TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed);
+    TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed);
 
-	TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded, Action1<Throwable> failed);
+    TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded, Action1<Throwable> failed);
 
-	TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded, Action1<Throwable> failed);
+    TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded, Action1<Throwable> failed);
 
-	TcpConnection write(String message, Action0 succeeded, Action1<Throwable> failed);
-	
-	TcpConnection write(String message, String charset, Action0 succeeded, Action1<Throwable> failed);
+    TcpConnection write(String message, Action0 succeeded, Action1<Throwable> failed);
 
-	TcpConnection write(FileRegion file, Action0 succeeded, Action1<Throwable> failed);
+    TcpConnection write(String message, String charset, Action0 succeeded, Action1<Throwable> failed);
 
-	TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded);
+    TcpConnection write(FileRegion file, Action0 succeeded, Action1<Throwable> failed);
 
-	TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded);
+    TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded);
 
-	TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded);
+    TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded);
 
-	TcpConnection write(String message, Action0 succeeded);
-	
-	TcpConnection write(String message, String charset, Action0 succeeded);
+    TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded);
 
-	TcpConnection write(FileRegion file, Action0 succeeded);
+    TcpConnection write(String message, Action0 succeeded);
 
-	TcpConnection write(ByteBuffer byteBuffer);
+    TcpConnection write(String message, String charset, Action0 succeeded);
 
-	TcpConnection write(ByteBuffer[] byteBuffer);
+    TcpConnection write(FileRegion file, Action0 succeeded);
 
-	TcpConnection write(Collection<ByteBuffer> byteBuffer);
+    TcpConnection write(ByteBuffer byteBuffer);
 
-	TcpConnection write(String message);
-	
-	TcpConnection write(String message, String charset);
+    TcpConnection write(ByteBuffer[] byteBuffer);
 
-	TcpConnection write(FileRegion file);
+    TcpConnection write(Collection<ByteBuffer> byteBuffer);
 
-	Object getAttachment();
+    TcpConnection write(String message);
 
-	void setAttachment(Object object);
+    TcpConnection write(String message, String charset);
 
-	int getSessionId();
+    TcpConnection write(FileRegion file);
 
-	long getOpenTime();
+    Object getAttachment();
 
-	long getCloseTime();
+    void setAttachment(Object object);
 
-	long getDuration();
+    int getSessionId();
 
-	long getLastReadTime();
+    long getOpenTime();
 
-	long getLastWrittenTime();
+    long getCloseTime();
 
-	long getLastActiveTime();
+    long getDuration();
 
-	long getReadBytes();
+    long getLastReadTime();
 
-	long getWrittenBytes();
+    long getLastWrittenTime();
 
-	TcpConnection closeCallback(Action0 closeCallback);
+    long getLastActiveTime();
 
-	void close();
+    long getReadBytes();
 
-	void closeNow();
+    long getWrittenBytes();
 
-	void shutdownOutput();
+    TcpConnection closeCallback(Action0 closeCallback);
 
-	void shutdownInput();
+    void close();
 
-	int getState();
+    void closeNow();
 
-	boolean isOpen();
+    void shutdownOutput();
 
-	InetSocketAddress getLocalAddress();
+    void shutdownInput();
 
-	InetSocketAddress getRemoteAddress();
+    int getState();
 
-	long getIdleTimeout();
+    boolean isOpen();
+
+    InetSocketAddress getLocalAddress();
+
+    InetSocketAddress getRemoteAddress();
+
+    long getIdleTimeout();
 
 }

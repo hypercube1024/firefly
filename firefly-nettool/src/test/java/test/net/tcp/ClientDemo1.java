@@ -5,6 +5,8 @@ import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpConnection;
 import com.firefly.net.tcp.codec.CharParser;
 import com.firefly.net.tcp.codec.DelimiterParser;
+import com.firefly.net.tcp.codec.StringParser;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 
 public class ClientDemo1 {
@@ -17,44 +19,22 @@ public class ClientDemo1 {
         config.setTimeout(2 * 60 * 1000);
         SimpleTcpClient client = new SimpleTcpClient(config);
 
-        client.connect("localhost", 1212, connection -> {
-            getParser(message -> {
-                String s = message.trim();
-                System.out.println(s);
-            }).call(connection);
-            connection.write("hello world!\r\n").write("test\r\n").write("quit\r\n");
-        });
+        for (int i = 0; i < 5; i++) {
+            final int j = i;
 
-        client.connect("localhost", 1212, connection -> {
-            getParser(message -> {
-                String s = message.trim();
-                System.out.println(s);
-            }).call(connection);
-            connection.write("hello world2!\r\n").write("test2\r\n").write("quit\r\n");
-        });
-
-        client.connect("localhost", 1212)
-              .thenAcceptAsync(connection -> {
-                  getParser(message -> {
-                      String s = message.trim();
-                      System.out.println(s);
-                  }).call(connection);
-                  connection.write("hello world3!\r\n").write("test3\r\n").write("quit\r\n");
-              });
-    }
-
-    private static Action1<TcpConnection> getParser(Action1<String> complete) {
-        return connection -> {
-            CharParser charParser = new CharParser();
-            DelimiterParser delimiterParser = new DelimiterParser("\n");
-
-            connection.receive(charParser::receive);
-            charParser.complete(delimiterParser::receive);
-            delimiterParser.complete(complete);
-            connection.closeCallback(() -> {
-                System.out.println(connection.getSessionId() + " is closed");
-            });
-        };
+            client.connect("localhost", 1212)
+                  .thenApply(connection -> {
+                      StringParser parser = new StringParser();
+                      parser.complete(message -> {
+                          System.out.println(message.trim());
+                      });
+                      connection.receive(parser::receive)
+                                .write("hello world" + j + "!\r\n")
+                                .write("test" + j + "\r\n")
+                                .write("quit\r\n");
+                      return connection;
+                  });
+        }
     }
 
 }
