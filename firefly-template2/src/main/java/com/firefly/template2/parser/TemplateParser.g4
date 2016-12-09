@@ -2,7 +2,15 @@ grammar TemplateParser;
 import TemplateLexer;
 
 // program
-program : mainFunction functionDeclaration*;
+program : extends? mainFunction functionDeclaration*;
+
+templateBody : (OutputString | include | selection | switch | whileLoop | forLoop | beanAccess)*;
+
+extends : EXTENDS templatePath ';';
+
+include : INCLUDE '(' templatePath methodCall? ')';
+
+templatePath : Identifier ('.' Identifier)* ;
 
 // function
 mainFunction : MAIN templateBody END;
@@ -10,8 +18,6 @@ mainFunction : MAIN templateBody END;
 functionDeclaration : FUNCTION Identifier functionParameters templateBody END;
 
 functionParameters : '(' ')' | '(' Identifier (',' Identifier)* ')';
-
-templateBody : (OUT_STRING | selection | switch | whileLoop | forLoop | beanAccess)*;
 
 
 // flow control
@@ -66,12 +72,12 @@ beanAccess : '${' objectAccess '}';
 
 objectAccess : Identifier (propertyAccess | arrayAccess | mapAccess | methodCall)*;
 
-propertyAccess : DOT Identifier;
+propertyAccess : '.' Identifier;
 
 arrayAccess : '[' IntegerLiteral ']';
 
 mapAccess : '[' StringLiteral ']';
 
-methodCall : DOT Identifier callMethodParameters;
+methodCall : '.' Identifier callMethodParameters;
 
 callMethodParameters : '(' ')' | '(' expression ( ',' expression )* ')';

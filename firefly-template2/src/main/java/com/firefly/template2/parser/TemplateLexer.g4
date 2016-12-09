@@ -1,11 +1,10 @@
 lexer grammar TemplateLexer;
 
-
 // Keywords
 EXTENDS : '#extends';
+INCLUDE : '#include';
 MAIN : '#main';
 FUNCTION : '#function';
-
 IF : '#if';
 ELSE : '#else';
 THEN_IF : 'if' ;
@@ -17,10 +16,10 @@ BREAK : '#break';
 DEFAULT : '#default';
 END : '#end';
 
-OUT_STRING : '```'.*?'```';
+// output string
+OutputString : '```' .*? '```';
 
 // §3.10.1 Integer Literals
-
 IntegerLiteral
 	:	DecimalIntegerLiteral
 	|	HexIntegerLiteral

@@ -1,9 +1,12 @@
+#extends hello.common.Test;
+
 #main
     #while (${a} = 3 + --4.4++ * 5 > ${sdfsdf.ss[22]})
         ```dfsdf```${sfsf}
         #if (${x} == true)
         #end
     #end
+    #include(common.Foo.get(3))
 
     ${ssfdsf[33]}
 
@@ -23,9 +26,8 @@
         #default
         #break
     #end
-
+    ```test &oquot;&oquot;```
     ${str.length()}
-
 #end
 
 #function hello1(arg1, arg2)
@@ -34,4 +36,6 @@
     #if (${arg1.length()} > 3)
         ```ok```
     #end
+
+    #include(test2.go)
 #end
