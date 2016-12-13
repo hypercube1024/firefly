@@ -46,6 +46,7 @@ expression
     | IntegerLiteral                                    # integerLiteral
     | FloatingPointLiteral                              # floatingPointLiteral
     | BooleanLiteral                                    # booleanLiteral
+    | StringLiteral                                     # stringLiteral
     | '(' expression ')'                                # parens
     | ('+' | '-' | '~' | '!' | '++' | '--') expression  # prefixUnary
     | expression ('++' | '--')                          # suffixUnary
@@ -70,7 +71,7 @@ expression
 // bean access
 beanAccess : '${' objectAccess '}';
 
-objectAccess : Identifier (propertyAccess | arrayAccess | mapAccess | methodCall)*;
+objectAccess : (THIS | Identifier) (propertyAccess | arrayAccess | mapAccess | methodCall)*;
 
 propertyAccess : '.' Identifier;
 

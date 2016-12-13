@@ -28,6 +28,7 @@
     #end
     ```test &oquot;&oquot;```
     ${str.length()}
+    ${this.hello1("test1", "test2")}
 #end
 
 #function hello1(arg1, arg2)

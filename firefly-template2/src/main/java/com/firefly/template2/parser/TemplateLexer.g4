@@ -15,6 +15,7 @@ CASE : '#case';
 BREAK : '#break';
 DEFAULT : '#default';
 END : '#end';
+THIS : 'this';
 
 // output string
 OutputString : '```' .*? '```';
