@@ -50,7 +50,7 @@ public class DateParser {
 				Date date = (Date) _dateReceive[i].parseObject(dateVal);
 				return date.getTime();
 			} catch (java.lang.Exception e) {
-				// LOG.ignore(e);
+				// log.ignore(e);
 			}
 		}
 
@@ -62,7 +62,7 @@ public class DateParser {
 					Date date = (Date) element.parseObject(val);
 					return date.getTime();
 				} catch (java.lang.Exception e) {
-					// LOG.ignore(e);
+					// log.ignore(e);
 				}
 			}
 		}
