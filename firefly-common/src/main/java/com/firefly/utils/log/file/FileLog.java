@@ -105,7 +105,7 @@ public class FileLog implements Log, Closeable {
         }
 
         private boolean createNewLogFile(String date, int currentWriteSize) {
-            boolean ret = false;
+            boolean ret;
             try {
                 Path logPath = Paths.get(path, getLogFileName(date));
                 if (!Files.exists(logPath)) {
@@ -145,11 +145,7 @@ public class FileLog implements Log, Closeable {
                 close();
                 return createNewBufferedOutputStream(newDate);
             } else {
-                if (bufferedOutputStream == null) {
-                    return createNewBufferedOutputStream(newDate);
-                } else {
-                    return true;
-                }
+                return bufferedOutputStream != null || createNewBufferedOutputStream(newDate);
             }
         }
     }
@@ -228,7 +224,7 @@ public class FileLog implements Log, Closeable {
     @Override
     public void trace(String str) {
         if (isTraceEnabled()) {
-            add(str, LogLevel.TRACE.getName(), null, new Object[0]);
+            add(str, LogLevel.TRACE.getName(), null);
         }
     }
 
@@ -249,7 +245,7 @@ public class FileLog implements Log, Closeable {
     @Override
     public void debug(String str) {
         if (isDebugEnabled()) {
-            add(str, LogLevel.DEBUG.getName(), null, new Object[0]);
+            add(str, LogLevel.DEBUG.getName(), null);
         }
     }
 
@@ -270,7 +266,7 @@ public class FileLog implements Log, Closeable {
     @Override
     public void info(String str) {
         if (isInfoEnabled()) {
-            add(str, LogLevel.INFO.getName(), null, new Object[0]);
+            add(str, LogLevel.INFO.getName(), null);
         }
     }
 
@@ -291,7 +287,7 @@ public class FileLog implements Log, Closeable {
     @Override
     public void warn(String str) {
         if (isWarnEnabled()) {
-            add(str, LogLevel.WARN.getName(), null, new Object[0]);
+            add(str, LogLevel.WARN.getName(), null);
         }
     }
 
@@ -326,7 +322,7 @@ public class FileLog implements Log, Closeable {
     @Override
     public void error(String str) {
         if (isErrorEnabled()) {
-            add(str, LogLevel.ERROR.getName(), null, new Object[0]);
+            add(str, LogLevel.ERROR.getName(), null);
         }
     }
 
