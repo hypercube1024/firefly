@@ -10,11 +10,14 @@ main function
     // control flow
     #set(count = 0)
     #while (${count} < 20)
-        #if (${count} % 2 == 0)
+        #if (${count} % 3 == 0)
             ``red``
-        #else
+        #else if (${count} % 3 == 1)
             ``blue``
+        #else
+            ``black``
         #end
+        #set(count = ${count} + 1)
     #end
 
     #for (book : ${bookList})
