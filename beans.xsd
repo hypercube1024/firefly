@@ -1,167 +1,162 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:bean="http://www.fireflysource.com/beans"
-	targetNamespace="http://www.fireflysource.com/beans"
-	elementFormDefault="qualified">
+        targetNamespace="http://www.fireflysource.com/beans"
+        elementFormDefault="qualified">
 
-	<element name="mvc">
-		<complexType>
-			<attribute name="view-path" />
-			<attribute name="view-encoding" />
-			<!-- <attribute name="view-type" />  -->
-		</complexType>
-	</element>
-	<element name="import">
-		<complexType>
-			<attribute name="resource" />
-		</complexType>
-	</element>
-	<element name="component-scan">
-		<complexType>
-			<attribute name="base-package" />
-		</complexType>
-	</element>
-	<element name="value">
-		<complexType mixed="true">
-			<attribute name="type" />
-		</complexType>
-	</element>
-	<element name="ref">
-		<complexType>
-			<attribute name="bean" />
-		</complexType>
-	</element>
-	<element name="list">
-		<complexType>
-			<group ref="bean:collectionElements"></group>
-			<attribute name="type" />
-		</complexType>
-	</element>
-	<element name="array">
-		<complexType>
-			<group ref="bean:collectionElements"></group>
-		</complexType>
-	</element>
-	<element name="map">
-		<complexType>
-			<sequence>
-				<element name="entry" minOccurs="0" maxOccurs="unbounded">
-					<complexType>
-						<sequence>
-							<element name="key" minOccurs="0" maxOccurs="1">
-								<complexType mixed="true">
-									<group ref="bean:mapElements"></group>
-								</complexType>
-							</element>
-							<element name="value" minOccurs="0" maxOccurs="1">
-								<complexType mixed="true">
-									<group ref="bean:mapElements"></group>
-								</complexType>
-							</element>
-						</sequence>
-						<attribute name="key" />
-						<attribute name="value" />
-					</complexType>
-				</element>
-			</sequence>
-			<attribute name="type" />
-		</complexType>
-	</element>
-	<element name="bean">
-		<complexType>
-			<sequence>
-				<element name="constructor" minOccurs="0" maxOccurs="1">
-					<complexType>
-						<sequence>
-							<element name="argument" minOccurs="0" maxOccurs="unbounded">
-								<complexType>
-									<group ref="bean:propertyElements"></group>
-									<attribute name="value" />
-									<attribute name="ref" />
-									<attribute name="type" use="required" />
-								</complexType>
-							</element>
-						</sequence>
-					</complexType>
-				</element>
-				<element name="property" minOccurs="0" maxOccurs="unbounded">
-					<complexType>
-						<group ref="bean:propertyElements"></group>
-						<attribute name="name" use="required" />
-						<attribute name="value" />
-						<attribute name="ref" />
-					</complexType>
-				</element>
-			</sequence>
-			<attribute name="id" />
-			<attribute name="class" />
-			<attribute name="init-method" />
-			<attribute name="destroy-method" />
-		</complexType>
-	</element>
-	
-	
+    <element name="mvc">
+        <complexType>
+            <attribute name="view-path"/>
+            <attribute name="view-encoding"/>
+        </complexType>
+    </element>
+    <element name="import">
+        <complexType>
+            <attribute name="resource"/>
+        </complexType>
+    </element>
+    <element name="component-scan">
+        <complexType>
+            <attribute name="base-package"/>
+        </complexType>
+    </element>
+    <element name="value">
+        <complexType mixed="true">
+            <attribute name="type"/>
+        </complexType>
+    </element>
+    <element name="ref">
+        <complexType>
+            <attribute name="bean"/>
+        </complexType>
+    </element>
+    <element name="list">
+        <complexType>
+            <group ref="bean:collectionElements"/>
+            <attribute name="type"/>
+        </complexType>
+    </element>
+    <element name="array">
+        <complexType>
+            <group ref="bean:collectionElements"/>
+        </complexType>
+    </element>
+    <element name="map">
+        <complexType>
+            <sequence>
+                <element name="entry" minOccurs="0" maxOccurs="unbounded">
+                    <complexType>
+                        <sequence>
+                            <element name="key" minOccurs="0" maxOccurs="1">
+                                <complexType mixed="true">
+                                    <group ref="bean:mapElements"/>
+                                </complexType>
+                            </element>
+                            <element name="value" minOccurs="0" maxOccurs="1">
+                                <complexType mixed="true">
+                                    <group ref="bean:mapElements"/>
+                                </complexType>
+                            </element>
+                        </sequence>
+                        <attribute name="key"/>
+                        <attribute name="value"/>
+                    </complexType>
+                </element>
+            </sequence>
+            <attribute name="type"/>
+        </complexType>
+    </element>
+    <element name="bean">
+        <complexType>
+            <sequence>
+                <element name="constructor" minOccurs="0" maxOccurs="1">
+                    <complexType>
+                        <sequence>
+                            <element name="argument" minOccurs="0" maxOccurs="unbounded">
+                                <complexType>
+                                    <group ref="bean:propertyElements"/>
+                                    <attribute name="value"/>
+                                    <attribute name="ref"/>
+                                    <attribute name="type" use="required"/>
+                                </complexType>
+                            </element>
+                        </sequence>
+                    </complexType>
+                </element>
+                <element name="property" minOccurs="0" maxOccurs="unbounded">
+                    <complexType>
+                        <group ref="bean:propertyElements"/>
+                        <attribute name="name" use="required"/>
+                        <attribute name="value"/>
+                        <attribute name="ref"/>
+                    </complexType>
+                </element>
+            </sequence>
+            <attribute name="id"/>
+            <attribute name="class"/>
+            <attribute name="init-method"/>
+            <attribute name="destroy-method"/>
+        </complexType>
+    </element>
 
-	<!-- 顶层元素 -->
-	<element name="beans">
-		<complexType>
-			<sequence>
-				<element ref="bean:import" minOccurs="0" maxOccurs="unbounded"></element>
-				<element ref="bean:component-scan" minOccurs="0" maxOccurs="unbounded"></element>
-				<element ref="bean:mvc" minOccurs="0" maxOccurs="1"></element>
-				<element ref="bean:bean" minOccurs="0" maxOccurs="unbounded"></element>
-			</sequence>
-		</complexType>
-		<unique name="idUnique">
-			<selector xpath="bean:bean"></selector>
-			<field xpath="@id"></field>
-		</unique>
-		<!-- <key name="beanKey">
-			<selector xpath=".//bean:bean"></selector>
-			<field xpath="@id"></field>
-		</key>
-		<keyref name="refKey" refer="bean:beanKey">
-			<selector xpath=".//bean:ref"></selector>
-			<field xpath="@bean"></field>
-		</keyref>
-		<keyref name="beanRefKey" refer="bean:beanKey">
-			<selector xpath=".//bean:property"></selector>
-			<field xpath="@ref"></field>
-		</keyref> -->
-	</element>
 
-	<group name="collectionElements">
-		<sequence>
-			<choice minOccurs="0" maxOccurs="unbounded">
-				<element ref="bean:value"></element>
-				<element ref="bean:ref"></element>
-				<element ref="bean:list"></element>
-				<element ref="bean:array"></element>
-				<element ref="bean:map"></element>
-				<!-- <element ref="bean:bean"></element> -->
-			</choice>
-		</sequence>
-	</group>
-	<group name="propertyElements">
-		<sequence>
-			<choice minOccurs="0" maxOccurs="1">
-				<element ref="bean:value"></element>
-				<element ref="bean:ref"></element>
-				<element ref="bean:list"></element>
-				<element ref="bean:array"></element>
-				<element ref="bean:map"></element>
-				<!-- <element ref="bean:bean"></element> -->
-			</choice>
-		</sequence>
-	</group>
-	<group name="mapElements">
-		<sequence>
-			<choice minOccurs="0" maxOccurs="1">
-				<element ref="bean:ref"></element>
-				<element ref="bean:list"></element>
-				<element ref="bean:array"></element>
-				<element ref="bean:map"></element>
-				<!-- <element ref="bean:bean"></element> -->
-			</choice>
-		</sequence>
-	</group>
+    <!-- root element -->
+    <element name="beans">
+        <complexType>
+            <sequence>
+                <element ref="bean:import" minOccurs="0" maxOccurs="unbounded"/>
+                <element ref="bean:component-scan" minOccurs="0" maxOccurs="unbounded"/>
+                <element ref="bean:mvc" minOccurs="0" maxOccurs="1"/>
+                <element ref="bean:bean" minOccurs="0" maxOccurs="unbounded"/>
+            </sequence>
+        </complexType>
+        <unique name="idUnique">
+            <selector xpath="bean:bean"/>
+            <field xpath="@id"/>
+        </unique>
+        <!-- <key name="beanKey">
+            <selector xpath=".//bean:bean"></selector>
+            <field xpath="@id"></field>
+        </key>
+        <keyref name="refKey" refer="bean:beanKey">
+            <selector xpath=".//bean:ref"></selector>
+            <field xpath="@bean"></field>
+        </keyref>
+        <keyref name="beanRefKey" refer="bean:beanKey">
+            <selector xpath=".//bean:property"></selector>
+            <field xpath="@ref"></field>
+        </keyref> -->
+    </element>
+
+    <group name="collectionElements">
+        <sequence>
+            <choice minOccurs="0" maxOccurs="unbounded">
+                <element ref="bean:value"/>
+                <element ref="bean:ref"/>
+                <element ref="bean:list"/>
+                <element ref="bean:array"/>
+                <element ref="bean:map"/>
+            </choice>
+        </sequence>
+    </group>
+    <group name="propertyElements">
+        <sequence>
+            <choice minOccurs="0" maxOccurs="1">
+                <element ref="bean:value"/>
+                <element ref="bean:ref"/>
+                <element ref="bean:list"/>
+                <element ref="bean:array"/>
+                <element ref="bean:map"/>
+            </choice>
+        </sequence>
+    </group>
+    <group name="mapElements">
+        <sequence>
+            <choice minOccurs="0" maxOccurs="1">
+                <element ref="bean:ref"/>
+                <element ref="bean:list"/>
+                <element ref="bean:array"/>
+                <element ref="bean:map"/>
+            </choice>
+        </sequence>
+    </group>
 </schema>
