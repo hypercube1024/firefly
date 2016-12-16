@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
@@ -34,13 +35,14 @@ public class TestModel {
 
     @Test
     public void testCallAction() {
-        ModelService service = new ModelServiceImpl();
-        Map<String, Object> global = service.createMap();
+        Map<String, Object> global = new HashMap<>();
         global.put("hello", "world");
         global.put("level", "1");
 
-        service.callAction(Collections.singletonList(global), s -> {
-            Assert.assertThat(service.size(), is(1));
+        ModelService service = new ModelServiceImpl(global);
+
+        service.callAction(s -> {
+            Assert.assertThat(service.size(), is(2));
             s.put("hello", "local variable");
             Assert.assertThat(service.size(), is(2));
             Assert.assertThat(service.get("hello"), is("local variable"));

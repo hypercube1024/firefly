@@ -32,6 +32,6 @@ public interface ModelService {
 
     int size();
 
-    void callAction(List<Map<String, Object>> global, Action1<ModelService> action1);
+    void callAction(Action1<ModelService> action1);
 
 }

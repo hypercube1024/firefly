@@ -3,7 +3,10 @@ package com.firefly.template2.model.impl;
 import com.firefly.template2.model.ModelService;
 import com.firefly.utils.function.Action1;
 
-import java.util.*;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * @author Pengtao Qiu
@@ -14,6 +17,11 @@ public class ModelServiceImpl implements ModelService {
 
     public ModelServiceImpl() {
         this(new LinkedList<>());
+    }
+
+    public ModelServiceImpl(Map<String, Object> globalVariable) {
+        this(new LinkedList<>());
+        addFirst(globalVariable);
     }
 
     public ModelServiceImpl(Deque<Map<String, Object>> deque) {
@@ -84,10 +92,7 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public void callAction(List<Map<String, Object>> global, Action1<ModelService> action1) {
-        if (global != null && !global.isEmpty()) {
-            global.forEach(this::addFirst);
-        }
+    public void callAction(Action1<ModelService> action1) {
         addFirst(new HashMap<>());
         try {
             action1.call(this);
