@@ -17,9 +17,6 @@ DEFAULT : '#default';
 END : '#end';
 THIS : 'this';
 
-// output string
-OutputString : '```' .*? '```';
-
 // §3.10.1 Integer Literals
 IntegerLiteral
 	:	DecimalIntegerLiteral

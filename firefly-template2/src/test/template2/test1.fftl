@@ -7,6 +7,7 @@
         #end
     #end
     #include(common.Foo.get(3))
+    #include(this.hello())
 
     ${ssfdsf[33]}
 
@@ -28,7 +29,7 @@
     #end
     ```test &oquot;&oquot;```
     ${str.length()}
-    ${this.hello1("test1", "test2")}
+    ${test.hello1("test1", "test2")}
 #end
 
 #function hello1(arg1, arg2)

@@ -4,13 +4,15 @@ import TemplateLexer;
 // program
 program : extends? mainFunction functionDeclaration*;
 
-templateBody : (OutputString | include | selection | switch | whileLoop | forLoop | beanAccess)*;
+templateBody : (outputString | include | selection | switch | whileLoop | forLoop | beanAccess)*;
 
 extends : EXTENDS templatePath ';';
 
-include : INCLUDE '(' templatePath methodCall? ')';
+include : INCLUDE '(' (THIS | templatePath) methodCall? ')';
 
 templatePath : Identifier ('.' Identifier)* ;
+
+outputString : '```' .*? '```';
 
 // function
 mainFunction : MAIN templateBody END;
@@ -71,7 +73,7 @@ expression
 // bean access
 beanAccess : '${' objectAccess '}';
 
-objectAccess : (THIS | Identifier) (propertyAccess | arrayAccess | mapAccess | methodCall)*;
+objectAccess : Identifier (propertyAccess | arrayAccess | mapAccess | methodCall)*;
 
 propertyAccess : '.' Identifier;
 
