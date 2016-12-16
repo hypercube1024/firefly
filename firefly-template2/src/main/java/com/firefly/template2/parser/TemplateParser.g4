@@ -4,15 +4,19 @@ import TemplateLexer;
 // program
 program : extends? mainFunction functionDeclaration*;
 
-templateBody : (outputString | include | selection | switch | whileLoop | forLoop | beanAccess)*;
+templateBody :
+    ( OutputString
+    | OutputStringWithNewLine
+    | OutputNewLine
+    | set | include | selection | switch | whileLoop | forLoop | beanAccess)*;
 
 extends : EXTENDS templatePath ';';
 
 include : INCLUDE '(' (THIS | templatePath) methodCall? ')';
 
-templatePath : Identifier ('.' Identifier)* ;
+set : SET '(' Identifier '=' expression ')';
 
-outputString : '```' .*? '```';
+templatePath : Identifier ('.' Identifier)* ;
 
 // function
 mainFunction : MAIN templateBody END;

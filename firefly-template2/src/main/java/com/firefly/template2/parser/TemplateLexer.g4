@@ -3,6 +3,7 @@ lexer grammar TemplateLexer;
 // Keywords
 EXTENDS : '#extends';
 INCLUDE : '#include';
+SET : '#set';
 MAIN : '#main';
 FUNCTION : '#function';
 IF : '#if';
@@ -16,6 +17,18 @@ BREAK : '#break';
 DEFAULT : '#default';
 END : '#end';
 THIS : 'this';
+
+OutputString : '```' .*? '```';
+OutputStringWithNewLine : '``' .*? '``';
+OutputNewLine : '&nl;';
+
+COMMENT
+    :   '/*' .*? '*/' -> skip
+    ;
+
+LINE_COMMENT
+    :   '//' ~[\r\n]* -> skip
+    ;
 
 // §3.10.1 Integer Literals
 IntegerLiteral

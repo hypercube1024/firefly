@@ -1,43 +1,53 @@
 #extends hello.common.Test;
 
+/*
+main function
+*/
 #main
-    #while (${a} = 3 + --4.4++ * 5 > ${sdfsdf.ss[22]})
-        ```dfsdf```${sfsf}
-        #if (${x} == true)
+    // call function
+    #include(this.hello("my first function"))
+
+    // control flow
+    #set(count = 0)
+    #while (${count} < 20)
+        #if (${count} % 2 == 0)
+            ``red``
+        #else
+            ``blue``
         #end
     #end
-    #include(common.Foo.get(3))
-    #include(this.hello())
 
-    ${ssfdsf[33]}
-
-    #for (ss : ${ssssdf})
+    #for (book : ${bookList})
+    ```book name: ``` ${book.name} &nl;
+    ```author: ``` ${book.author} &nl;
+    ```introduce: ``` ${book.content[0]["introduce"].substring(0, ${maxSize})} &nl;
     #end
 
-    #switch (${x})
-        #case "ssdfdsf"
+    #switch (${brand})
+        #case "apple"
+        ``cool macbook pro``
         #break
 
-        #case "ss"
+        #case "sony"
+        ``black technology``
         #break
 
-        #case "hello"
+        #case "pentax"
+        ``solid & reliable``
         #break
 
         #default
+        ``"nothing" wrong``
         #break
     #end
-    ```test &oquot;&oquot;```
-    ${str.length()}
-    ${test.hello1("test1", "test2")}
+
+    ```
+    test
+    &oquot;string&oquot;
+    ```
 #end
 
-#function hello1(arg1, arg2)
-    ```testaaa```${arg1}
-    ```dsfdsf```${arg2}
-    #if (${arg1.length()} > 3)
-        ```ok```
-    #end
-
-    #include(test2.go)
+// show hello message
+#function hello(message)
+    ```hello``` ${message}
 #end
