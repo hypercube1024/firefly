@@ -1,31 +1,22 @@
 package com.firefly.template2.model.impl;
 
-import com.firefly.template2.model.ModelService;
-import com.firefly.utils.function.Action1;
+import com.firefly.template2.model.VariableStorage;
+import com.firefly.utils.function.Action0;
 
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Pengtao Qiu
  */
-public class ModelServiceImpl implements ModelService {
+public class VariableStorageImpl implements VariableStorage {
 
-    private Deque<Map<String, Object>> deque;
+    private Deque<Map<String, Object>> deque = new LinkedList<>();
 
-    public ModelServiceImpl() {
-        this(new LinkedList<>());
+    public VariableStorageImpl() {
     }
 
-    public ModelServiceImpl(Map<String, Object> globalVariable) {
-        this(new LinkedList<>());
-        addFirst(globalVariable);
-    }
-
-    public ModelServiceImpl(Deque<Map<String, Object>> deque) {
-        this.deque = deque;
+    public VariableStorageImpl(Collection<Map<String, Object>> collection) {
+        collection.forEach(this::addFirst);
     }
 
     @Override
@@ -45,14 +36,14 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public Map<String, Object> createMap() {
+    public Map<String, Object> createVariable() {
         Map<String, Object> map = new HashMap<>();
         addFirst(map);
         return map;
     }
 
     @Override
-    public Map<String, Object> popMap() {
+    public Map<String, Object> removeVariable() {
         return deque.pop();
     }
 
@@ -92,12 +83,12 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public void callAction(Action1<ModelService> action1) {
-        addFirst(new HashMap<>());
+    public void callAction(Action0 action0) {
+        createVariable();
         try {
-            action1.call(this);
+            action0.call();
         } finally {
-            popMap();
+            removeVariable();
         }
     }
 }

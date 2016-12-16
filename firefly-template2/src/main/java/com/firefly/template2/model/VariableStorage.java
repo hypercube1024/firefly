@@ -1,22 +1,21 @@
 package com.firefly.template2.model;
 
-import com.firefly.utils.function.Action1;
+import com.firefly.utils.function.Action0;
 
-import java.util.List;
 import java.util.Map;
 
 /**
  * @author Pengtao Qiu
  */
-public interface ModelService {
+public interface VariableStorage {
 
     Object get(String key);
 
     Object put(String key, Object object);
 
-    Map<String, Object> createMap();
+    Map<String, Object> createVariable();
 
-    Map<String, Object> popMap();
+    Map<String, Object> removeVariable();
 
     void addFirst(Map<String, Object> map);
 
@@ -32,6 +31,6 @@ public interface ModelService {
 
     int size();
 
-    void callAction(Action1<ModelService> action1);
+    void callAction(Action0 action0);
 
 }
