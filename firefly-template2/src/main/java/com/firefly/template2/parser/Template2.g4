@@ -1,16 +1,16 @@
-grammar TemplateParser;
-import TemplateLexer;
+grammar Template2;
+import Template2Lexer;
 
 // program
-program : extends? mainFunction functionDeclaration*;
+program : extendTemplate? mainFunction functionDeclaration*;
 
 templateBody :
     ( OutputString
     | OutputStringWithNewLine
     | OutputNewLine
-    | set | include | selection | switch | whileLoop | forLoop | beanAccess)*;
+    | set | include | selection | switchCondition | whileLoop | forLoop | beanAccess)*;
 
-extends : EXTENDS templatePath ';';
+extendTemplate : EXTENDS templatePath ';';
 
 include : INCLUDE '(' (THIS | templatePath) methodCall? ')';
 
@@ -34,7 +34,7 @@ selection
     END
     ;
 
-switch
+switchCondition
     : SWITCH '(' beanAccess ')'
     (CASE (StringLiteral | IntegerLiteral) templateBody BREAK)+
     (DEFAULT templateBody BREAK)?

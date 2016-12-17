@@ -1,4 +1,4 @@
-// Generated from /Users/qiupengtao/Develop/github_project/firefly/firefly-template2/src/main/java/com/firefly/template2/parser/TemplateParser.g4 by ANTLR 4.5.3
+// Generated from Template2.g4 by ANTLR 4.6
 package com.firefly.template2.parser;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
@@ -10,8 +10,8 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
-public class TemplateParserLexer extends Lexer {
-	static { RuntimeMetaData.checkVersion("4.5.3", RuntimeMetaData.VERSION); }
+public class Template2Lexer extends Lexer {
+	static { RuntimeMetaData.checkVersion("4.6", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
@@ -116,13 +116,13 @@ public class TemplateParserLexer extends Lexer {
 	}
 
 
-	public TemplateParserLexer(CharStream input) {
+	public Template2Lexer(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
 	@Override
-	public String getGrammarFileName() { return "TemplateParser.g4"; }
+	public String getGrammarFileName() { return "Template2.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }

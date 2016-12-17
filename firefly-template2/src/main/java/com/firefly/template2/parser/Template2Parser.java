@@ -1,4 +1,4 @@
-// Generated from /Users/qiupengtao/Develop/github_project/firefly/firefly-template2/src/main/java/com/firefly/template2/parser/TemplateParser.g4 by ANTLR 4.5.3
+// Generated from Template2.g4 by ANTLR 4.6
 package com.firefly.template2.parser;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -10,8 +10,8 @@ import java.util.Iterator;
 import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
-public class TemplateParserParser extends Parser {
-	static { RuntimeMetaData.checkVersion("4.5.3", RuntimeMetaData.VERSION); }
+public class Template2Parser extends Parser {
+	static { RuntimeMetaData.checkVersion("4.6", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
@@ -30,17 +30,18 @@ public class TemplateParserParser extends Parser {
 		XOR_ASSIGN=70, MOD_ASSIGN=71, LSHIFT_ASSIGN=72, RSHIFT_ASSIGN=73, URSHIFT_ASSIGN=74, 
 		Identifier=75, WS=76;
 	public static final int
-		RULE_program = 0, RULE_templateBody = 1, RULE_extends = 2, RULE_include = 3, 
+		RULE_program = 0, RULE_templateBody = 1, RULE_extendTemplate = 2, RULE_include = 3, 
 		RULE_set = 4, RULE_templatePath = 5, RULE_mainFunction = 6, RULE_functionDeclaration = 7, 
-		RULE_functionParameters = 8, RULE_selection = 9, RULE_switch = 10, RULE_whileLoop = 11, 
-		RULE_forLoop = 12, RULE_expression = 13, RULE_beanAccess = 14, RULE_objectAccess = 15, 
-		RULE_propertyAccess = 16, RULE_arrayAccess = 17, RULE_mapAccess = 18, 
-		RULE_methodCall = 19, RULE_callMethodParameters = 20;
+		RULE_functionParameters = 8, RULE_selection = 9, RULE_switchCondition = 10, 
+		RULE_whileLoop = 11, RULE_forLoop = 12, RULE_expression = 13, RULE_beanAccess = 14, 
+		RULE_objectAccess = 15, RULE_propertyAccess = 16, RULE_arrayAccess = 17, 
+		RULE_mapAccess = 18, RULE_methodCall = 19, RULE_callMethodParameters = 20;
 	public static final String[] ruleNames = {
-		"program", "templateBody", "extends", "include", "set", "templatePath", 
+		"program", "templateBody", "extendTemplate", "include", "set", "templatePath", 
 		"mainFunction", "functionDeclaration", "functionParameters", "selection", 
-		"switch", "whileLoop", "forLoop", "expression", "beanAccess", "objectAccess", 
-		"propertyAccess", "arrayAccess", "mapAccess", "methodCall", "callMethodParameters"
+		"switchCondition", "whileLoop", "forLoop", "expression", "beanAccess", 
+		"objectAccess", "propertyAccess", "arrayAccess", "mapAccess", "methodCall", 
+		"callMethodParameters"
 	};
 
 	private static final String[] _LITERAL_NAMES = {
@@ -101,7 +102,7 @@ public class TemplateParserParser extends Parser {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "TemplateParser.g4"; }
+	public String getGrammarFileName() { return "Template2.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
@@ -112,7 +113,7 @@ public class TemplateParserParser extends Parser {
 	@Override
 	public ATN getATN() { return _ATN; }
 
-	public TemplateParserParser(TokenStream input) {
+	public Template2Parser(TokenStream input) {
 		super(input);
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
@@ -120,8 +121,8 @@ public class TemplateParserParser extends Parser {
 		public MainFunctionContext mainFunction() {
 			return getRuleContext(MainFunctionContext.class,0);
 		}
-		public ExtendsContext extends() {
-			return getRuleContext(ExtendsContext.class,0);
+		public ExtendTemplateContext extendTemplate() {
+			return getRuleContext(ExtendTemplateContext.class,0);
 		}
 		public List<FunctionDeclarationContext> functionDeclaration() {
 			return getRuleContexts(FunctionDeclarationContext.class);
@@ -135,15 +136,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_program; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterProgram(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterProgram(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitProgram(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitProgram(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitProgram(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitProgram(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -156,11 +157,12 @@ public class TemplateParserParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(43);
+			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==EXTENDS) {
 				{
 				setState(42);
-				extends();
+				extendTemplate();
 				}
 			}
 
@@ -194,17 +196,17 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class TemplateBodyContext extends ParserRuleContext {
-		public List<TerminalNode> OutputString() { return getTokens(TemplateParserParser.OutputString); }
+		public List<TerminalNode> OutputString() { return getTokens(Template2Parser.OutputString); }
 		public TerminalNode OutputString(int i) {
-			return getToken(TemplateParserParser.OutputString, i);
+			return getToken(Template2Parser.OutputString, i);
 		}
-		public List<TerminalNode> OutputStringWithNewLine() { return getTokens(TemplateParserParser.OutputStringWithNewLine); }
+		public List<TerminalNode> OutputStringWithNewLine() { return getTokens(Template2Parser.OutputStringWithNewLine); }
 		public TerminalNode OutputStringWithNewLine(int i) {
-			return getToken(TemplateParserParser.OutputStringWithNewLine, i);
+			return getToken(Template2Parser.OutputStringWithNewLine, i);
 		}
-		public List<TerminalNode> OutputNewLine() { return getTokens(TemplateParserParser.OutputNewLine); }
+		public List<TerminalNode> OutputNewLine() { return getTokens(Template2Parser.OutputNewLine); }
 		public TerminalNode OutputNewLine(int i) {
-			return getToken(TemplateParserParser.OutputNewLine, i);
+			return getToken(Template2Parser.OutputNewLine, i);
 		}
 		public List<SetContext> set() {
 			return getRuleContexts(SetContext.class);
@@ -224,11 +226,11 @@ public class TemplateParserParser extends Parser {
 		public SelectionContext selection(int i) {
 			return getRuleContext(SelectionContext.class,i);
 		}
-		public List<SwitchContext> switch() {
-			return getRuleContexts(SwitchContext.class);
+		public List<SwitchConditionContext> switchCondition() {
+			return getRuleContexts(SwitchConditionContext.class);
 		}
-		public SwitchContext switch(int i) {
-			return getRuleContext(SwitchContext.class,i);
+		public SwitchConditionContext switchCondition(int i) {
+			return getRuleContext(SwitchConditionContext.class,i);
 		}
 		public List<WhileLoopContext> whileLoop() {
 			return getRuleContexts(WhileLoopContext.class);
@@ -254,15 +256,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_templateBody; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterTemplateBody(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterTemplateBody(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitTemplateBody(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitTemplateBody(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitTemplateBody(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitTemplateBody(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -280,6 +282,7 @@ public class TemplateParserParser extends Parser {
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__2) | (1L << INCLUDE) | (1L << SET) | (1L << IF) | (1L << FOR) | (1L << WHILE) | (1L << SWITCH) | (1L << OutputString) | (1L << OutputStringWithNewLine) | (1L << OutputNewLine))) != 0)) {
 				{
 				setState(62);
+				_errHandler.sync(this);
 				switch (_input.LA(1)) {
 				case OutputString:
 					{
@@ -320,7 +323,7 @@ public class TemplateParserParser extends Parser {
 				case SWITCH:
 					{
 					setState(58);
-					switch();
+					switchCondition();
 					}
 					break;
 				case WHILE:
@@ -362,33 +365,33 @@ public class TemplateParserParser extends Parser {
 		return _localctx;
 	}
 
-	public static class ExtendsContext extends ParserRuleContext {
-		public TerminalNode EXTENDS() { return getToken(TemplateParserParser.EXTENDS, 0); }
+	public static class ExtendTemplateContext extends ParserRuleContext {
+		public TerminalNode EXTENDS() { return getToken(Template2Parser.EXTENDS, 0); }
 		public TemplatePathContext templatePath() {
 			return getRuleContext(TemplatePathContext.class,0);
 		}
-		public ExtendsContext(ParserRuleContext parent, int invokingState) {
+		public ExtendTemplateContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_extends; }
+		@Override public int getRuleIndex() { return RULE_extendTemplate; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterExtends(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterExtendTemplate(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitExtends(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitExtendTemplate(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitExtends(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitExtendTemplate(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 
-	public final ExtendsContext extends() throws RecognitionException {
-		ExtendsContext _localctx = new ExtendsContext(_ctx, getState());
-		enterRule(_localctx, 4, RULE_extends);
+	public final ExtendTemplateContext extendTemplate() throws RecognitionException {
+		ExtendTemplateContext _localctx = new ExtendTemplateContext(_ctx, getState());
+		enterRule(_localctx, 4, RULE_extendTemplate);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
@@ -412,8 +415,8 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class IncludeContext extends ParserRuleContext {
-		public TerminalNode INCLUDE() { return getToken(TemplateParserParser.INCLUDE, 0); }
-		public TerminalNode THIS() { return getToken(TemplateParserParser.THIS, 0); }
+		public TerminalNode INCLUDE() { return getToken(Template2Parser.INCLUDE, 0); }
+		public TerminalNode THIS() { return getToken(Template2Parser.THIS, 0); }
 		public TemplatePathContext templatePath() {
 			return getRuleContext(TemplatePathContext.class,0);
 		}
@@ -426,15 +429,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_include; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterInclude(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterInclude(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitInclude(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitInclude(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitInclude(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitInclude(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -451,6 +454,7 @@ public class TemplateParserParser extends Parser {
 			setState(72);
 			match(LPAREN);
 			setState(75);
+			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case THIS:
 				{
@@ -468,6 +472,7 @@ public class TemplateParserParser extends Parser {
 				throw new NoViableAltException(this);
 			}
 			setState(78);
+			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==DOT) {
 				{
@@ -492,8 +497,8 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class SetContext extends ParserRuleContext {
-		public TerminalNode SET() { return getToken(TemplateParserParser.SET, 0); }
-		public TerminalNode Identifier() { return getToken(TemplateParserParser.Identifier, 0); }
+		public TerminalNode SET() { return getToken(Template2Parser.SET, 0); }
+		public TerminalNode Identifier() { return getToken(Template2Parser.Identifier, 0); }
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
@@ -503,15 +508,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_set; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterSet(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterSet(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitSet(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitSet(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitSet(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitSet(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -548,9 +553,9 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class TemplatePathContext extends ParserRuleContext {
-		public List<TerminalNode> Identifier() { return getTokens(TemplateParserParser.Identifier); }
+		public List<TerminalNode> Identifier() { return getTokens(Template2Parser.Identifier); }
 		public TerminalNode Identifier(int i) {
-			return getToken(TemplateParserParser.Identifier, i);
+			return getToken(Template2Parser.Identifier, i);
 		}
 		public TemplatePathContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -558,15 +563,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_templatePath; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterTemplatePath(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterTemplatePath(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitTemplatePath(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitTemplatePath(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitTemplatePath(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitTemplatePath(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -612,26 +617,26 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class MainFunctionContext extends ParserRuleContext {
-		public TerminalNode MAIN() { return getToken(TemplateParserParser.MAIN, 0); }
+		public TerminalNode MAIN() { return getToken(Template2Parser.MAIN, 0); }
 		public TemplateBodyContext templateBody() {
 			return getRuleContext(TemplateBodyContext.class,0);
 		}
-		public TerminalNode END() { return getToken(TemplateParserParser.END, 0); }
+		public TerminalNode END() { return getToken(Template2Parser.END, 0); }
 		public MainFunctionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_mainFunction; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterMainFunction(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterMainFunction(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitMainFunction(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitMainFunction(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitMainFunction(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitMainFunction(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -662,30 +667,30 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class FunctionDeclarationContext extends ParserRuleContext {
-		public TerminalNode FUNCTION() { return getToken(TemplateParserParser.FUNCTION, 0); }
-		public TerminalNode Identifier() { return getToken(TemplateParserParser.Identifier, 0); }
+		public TerminalNode FUNCTION() { return getToken(Template2Parser.FUNCTION, 0); }
+		public TerminalNode Identifier() { return getToken(Template2Parser.Identifier, 0); }
 		public FunctionParametersContext functionParameters() {
 			return getRuleContext(FunctionParametersContext.class,0);
 		}
 		public TemplateBodyContext templateBody() {
 			return getRuleContext(TemplateBodyContext.class,0);
 		}
-		public TerminalNode END() { return getToken(TemplateParserParser.END, 0); }
+		public TerminalNode END() { return getToken(Template2Parser.END, 0); }
 		public FunctionDeclarationContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_functionDeclaration; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterFunctionDeclaration(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterFunctionDeclaration(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitFunctionDeclaration(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitFunctionDeclaration(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitFunctionDeclaration(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitFunctionDeclaration(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -720,9 +725,9 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class FunctionParametersContext extends ParserRuleContext {
-		public List<TerminalNode> Identifier() { return getTokens(TemplateParserParser.Identifier); }
+		public List<TerminalNode> Identifier() { return getTokens(Template2Parser.Identifier); }
 		public TerminalNode Identifier(int i) {
-			return getToken(TemplateParserParser.Identifier, i);
+			return getToken(Template2Parser.Identifier, i);
 		}
 		public FunctionParametersContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -730,15 +735,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_functionParameters; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterFunctionParameters(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterFunctionParameters(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitFunctionParameters(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitFunctionParameters(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitFunctionParameters(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitFunctionParameters(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -801,7 +806,7 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class SelectionContext extends ParserRuleContext {
-		public TerminalNode IF() { return getToken(TemplateParserParser.IF, 0); }
+		public TerminalNode IF() { return getToken(Template2Parser.IF, 0); }
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
@@ -814,14 +819,14 @@ public class TemplateParserParser extends Parser {
 		public TemplateBodyContext templateBody(int i) {
 			return getRuleContext(TemplateBodyContext.class,i);
 		}
-		public TerminalNode END() { return getToken(TemplateParserParser.END, 0); }
-		public List<TerminalNode> ELSE() { return getTokens(TemplateParserParser.ELSE); }
+		public TerminalNode END() { return getToken(Template2Parser.END, 0); }
+		public List<TerminalNode> ELSE() { return getTokens(Template2Parser.ELSE); }
 		public TerminalNode ELSE(int i) {
-			return getToken(TemplateParserParser.ELSE, i);
+			return getToken(Template2Parser.ELSE, i);
 		}
-		public List<TerminalNode> THEN_IF() { return getTokens(TemplateParserParser.THEN_IF); }
+		public List<TerminalNode> THEN_IF() { return getTokens(Template2Parser.THEN_IF); }
 		public TerminalNode THEN_IF(int i) {
-			return getToken(TemplateParserParser.THEN_IF, i);
+			return getToken(Template2Parser.THEN_IF, i);
 		}
 		public SelectionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -829,15 +834,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_selection; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterSelection(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterSelection(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitSelection(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitSelection(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitSelection(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitSelection(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -887,6 +892,7 @@ public class TemplateParserParser extends Parser {
 				_alt = getInterpreter().adaptivePredict(_input,9,_ctx);
 			}
 			setState(140);
+			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==ELSE) {
 				{
@@ -912,15 +918,15 @@ public class TemplateParserParser extends Parser {
 		return _localctx;
 	}
 
-	public static class SwitchContext extends ParserRuleContext {
-		public TerminalNode SWITCH() { return getToken(TemplateParserParser.SWITCH, 0); }
+	public static class SwitchConditionContext extends ParserRuleContext {
+		public TerminalNode SWITCH() { return getToken(Template2Parser.SWITCH, 0); }
 		public BeanAccessContext beanAccess() {
 			return getRuleContext(BeanAccessContext.class,0);
 		}
-		public TerminalNode END() { return getToken(TemplateParserParser.END, 0); }
-		public List<TerminalNode> CASE() { return getTokens(TemplateParserParser.CASE); }
+		public TerminalNode END() { return getToken(Template2Parser.END, 0); }
+		public List<TerminalNode> CASE() { return getTokens(Template2Parser.CASE); }
 		public TerminalNode CASE(int i) {
-			return getToken(TemplateParserParser.CASE, i);
+			return getToken(Template2Parser.CASE, i);
 		}
 		public List<TemplateBodyContext> templateBody() {
 			return getRuleContexts(TemplateBodyContext.class);
@@ -928,41 +934,41 @@ public class TemplateParserParser extends Parser {
 		public TemplateBodyContext templateBody(int i) {
 			return getRuleContext(TemplateBodyContext.class,i);
 		}
-		public List<TerminalNode> BREAK() { return getTokens(TemplateParserParser.BREAK); }
+		public List<TerminalNode> BREAK() { return getTokens(Template2Parser.BREAK); }
 		public TerminalNode BREAK(int i) {
-			return getToken(TemplateParserParser.BREAK, i);
+			return getToken(Template2Parser.BREAK, i);
 		}
-		public TerminalNode DEFAULT() { return getToken(TemplateParserParser.DEFAULT, 0); }
-		public List<TerminalNode> StringLiteral() { return getTokens(TemplateParserParser.StringLiteral); }
+		public TerminalNode DEFAULT() { return getToken(Template2Parser.DEFAULT, 0); }
+		public List<TerminalNode> StringLiteral() { return getTokens(Template2Parser.StringLiteral); }
 		public TerminalNode StringLiteral(int i) {
-			return getToken(TemplateParserParser.StringLiteral, i);
+			return getToken(Template2Parser.StringLiteral, i);
 		}
-		public List<TerminalNode> IntegerLiteral() { return getTokens(TemplateParserParser.IntegerLiteral); }
+		public List<TerminalNode> IntegerLiteral() { return getTokens(Template2Parser.IntegerLiteral); }
 		public TerminalNode IntegerLiteral(int i) {
-			return getToken(TemplateParserParser.IntegerLiteral, i);
+			return getToken(Template2Parser.IntegerLiteral, i);
 		}
-		public SwitchContext(ParserRuleContext parent, int invokingState) {
+		public SwitchConditionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_switch; }
+		@Override public int getRuleIndex() { return RULE_switchCondition; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterSwitch(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterSwitchCondition(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitSwitch(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitSwitchCondition(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitSwitch(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitSwitchCondition(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 
-	public final SwitchContext switch() throws RecognitionException {
-		SwitchContext _localctx = new SwitchContext(_ctx, getState());
-		enterRule(_localctx, 20, RULE_switch);
+	public final SwitchConditionContext switchCondition() throws RecognitionException {
+		SwitchConditionContext _localctx = new SwitchConditionContext(_ctx, getState());
+		enterRule(_localctx, 20, RULE_switchCondition);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
@@ -987,7 +993,10 @@ public class TemplateParserParser extends Parser {
 				_la = _input.LA(1);
 				if ( !(_la==IntegerLiteral || _la==StringLiteral) ) {
 				_errHandler.recoverInline(this);
-				} else {
+				}
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
 					consume();
 				}
 				setState(150);
@@ -1001,6 +1010,7 @@ public class TemplateParserParser extends Parser {
 				_la = _input.LA(1);
 			} while ( _la==CASE );
 			setState(161);
+			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==DEFAULT) {
 				{
@@ -1029,29 +1039,29 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class WhileLoopContext extends ParserRuleContext {
-		public TerminalNode WHILE() { return getToken(TemplateParserParser.WHILE, 0); }
+		public TerminalNode WHILE() { return getToken(Template2Parser.WHILE, 0); }
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
 		public TemplateBodyContext templateBody() {
 			return getRuleContext(TemplateBodyContext.class,0);
 		}
-		public TerminalNode END() { return getToken(TemplateParserParser.END, 0); }
+		public TerminalNode END() { return getToken(Template2Parser.END, 0); }
 		public WhileLoopContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_whileLoop; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterWhileLoop(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterWhileLoop(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitWhileLoop(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitWhileLoop(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitWhileLoop(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitWhileLoop(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1088,30 +1098,30 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class ForLoopContext extends ParserRuleContext {
-		public TerminalNode FOR() { return getToken(TemplateParserParser.FOR, 0); }
-		public TerminalNode Identifier() { return getToken(TemplateParserParser.Identifier, 0); }
+		public TerminalNode FOR() { return getToken(Template2Parser.FOR, 0); }
+		public TerminalNode Identifier() { return getToken(Template2Parser.Identifier, 0); }
 		public BeanAccessContext beanAccess() {
 			return getRuleContext(BeanAccessContext.class,0);
 		}
 		public TemplateBodyContext templateBody() {
 			return getRuleContext(TemplateBodyContext.class,0);
 		}
-		public TerminalNode END() { return getToken(TemplateParserParser.END, 0); }
+		public TerminalNode END() { return getToken(Template2Parser.END, 0); }
 		public ForLoopContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_forLoop; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterForLoop(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterForLoop(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitForLoop(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitForLoop(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitForLoop(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitForLoop(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1172,15 +1182,15 @@ public class TemplateParserParser extends Parser {
 		public MulDivModContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterMulDivMod(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterMulDivMod(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitMulDivMod(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitMulDivMod(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitMulDivMod(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitMulDivMod(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1191,15 +1201,15 @@ public class TemplateParserParser extends Parser {
 		public SuffixUnaryContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterSuffixUnary(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterSuffixUnary(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitSuffixUnary(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitSuffixUnary(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitSuffixUnary(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitSuffixUnary(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1210,15 +1220,15 @@ public class TemplateParserParser extends Parser {
 		public ParensContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterParens(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterParens(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitParens(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitParens(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitParens(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitParens(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1232,15 +1242,15 @@ public class TemplateParserParser extends Parser {
 		public BitOrContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterBitOr(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterBitOr(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitBitOr(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitBitOr(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitBitOr(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitBitOr(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1254,15 +1264,15 @@ public class TemplateParserParser extends Parser {
 		public AssignmentContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterAssignment(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterAssignment(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitAssignment(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitAssignment(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitAssignment(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitAssignment(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1276,15 +1286,15 @@ public class TemplateParserParser extends Parser {
 		public ShiftContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterShift(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterShift(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitShift(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitShift(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitShift(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitShift(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1298,32 +1308,32 @@ public class TemplateParserParser extends Parser {
 		public AddSubContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterAddSub(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterAddSub(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitAddSub(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitAddSub(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitAddSub(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitAddSub(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class FloatingPointLiteralContext extends ExpressionContext {
-		public TerminalNode FloatingPointLiteral() { return getToken(TemplateParserParser.FloatingPointLiteral, 0); }
+		public TerminalNode FloatingPointLiteral() { return getToken(Template2Parser.FloatingPointLiteral, 0); }
 		public FloatingPointLiteralContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterFloatingPointLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterFloatingPointLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitFloatingPointLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitFloatingPointLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitFloatingPointLiteral(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitFloatingPointLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1337,15 +1347,15 @@ public class TemplateParserParser extends Parser {
 		public ShortCircuitOrContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterShortCircuitOr(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterShortCircuitOr(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitShortCircuitOr(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitShortCircuitOr(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitShortCircuitOr(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitShortCircuitOr(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1356,15 +1366,15 @@ public class TemplateParserParser extends Parser {
 		public PrefixUnaryContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterPrefixUnary(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterPrefixUnary(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitPrefixUnary(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitPrefixUnary(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitPrefixUnary(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitPrefixUnary(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1378,15 +1388,15 @@ public class TemplateParserParser extends Parser {
 		public EqualOrNotEqualContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterEqualOrNotEqual(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterEqualOrNotEqual(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitEqualOrNotEqual(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitEqualOrNotEqual(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitEqualOrNotEqual(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitEqualOrNotEqual(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1400,49 +1410,49 @@ public class TemplateParserParser extends Parser {
 		public BitAndContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterBitAnd(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterBitAnd(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitBitAnd(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitBitAnd(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitBitAnd(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitBitAnd(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class StringLiteralContext extends ExpressionContext {
-		public TerminalNode StringLiteral() { return getToken(TemplateParserParser.StringLiteral, 0); }
+		public TerminalNode StringLiteral() { return getToken(Template2Parser.StringLiteral, 0); }
 		public StringLiteralContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterStringLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterStringLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitStringLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitStringLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitStringLiteral(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitStringLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class IntegerLiteralContext extends ExpressionContext {
-		public TerminalNode IntegerLiteral() { return getToken(TemplateParserParser.IntegerLiteral, 0); }
+		public TerminalNode IntegerLiteral() { return getToken(Template2Parser.IntegerLiteral, 0); }
 		public IntegerLiteralContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterIntegerLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterIntegerLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitIntegerLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitIntegerLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitIntegerLiteral(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitIntegerLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1456,32 +1466,32 @@ public class TemplateParserParser extends Parser {
 		public XorContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterXor(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterXor(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitXor(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitXor(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitXor(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitXor(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 	public static class BooleanLiteralContext extends ExpressionContext {
-		public TerminalNode BooleanLiteral() { return getToken(TemplateParserParser.BooleanLiteral, 0); }
+		public TerminalNode BooleanLiteral() { return getToken(Template2Parser.BooleanLiteral, 0); }
 		public BooleanLiteralContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterBooleanLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterBooleanLiteral(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitBooleanLiteral(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitBooleanLiteral(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitBooleanLiteral(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitBooleanLiteral(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1495,15 +1505,15 @@ public class TemplateParserParser extends Parser {
 		public TernaryContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterTernary(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterTernary(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitTernary(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitTernary(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitTernary(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitTernary(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1514,15 +1524,15 @@ public class TemplateParserParser extends Parser {
 		public BeanContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterBean(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterBean(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitBean(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitBean(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitBean(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitBean(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1536,15 +1546,15 @@ public class TemplateParserParser extends Parser {
 		public ShortCircuitAndContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterShortCircuitAnd(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterShortCircuitAnd(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitShortCircuitAnd(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitShortCircuitAnd(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitShortCircuitAnd(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitShortCircuitAnd(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1558,15 +1568,15 @@ public class TemplateParserParser extends Parser {
 		public GreatOrLessContext(ExpressionContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterGreatOrLess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterGreatOrLess(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitGreatOrLess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitGreatOrLess(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitGreatOrLess(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitGreatOrLess(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1588,6 +1598,7 @@ public class TemplateParserParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(193);
+			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__2:
 				{
@@ -1662,7 +1673,10 @@ public class TemplateParserParser extends Parser {
 				_la = _input.LA(1);
 				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BANG) | (1L << TILDE) | (1L << INC) | (1L << DEC) | (1L << ADD) | (1L << SUB))) != 0)) ) {
 				_errHandler.recoverInline(this);
-				} else {
+				}
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
 					consume();
 				}
 				setState(192);
@@ -1694,7 +1708,10 @@ public class TemplateParserParser extends Parser {
 						_la = _input.LA(1);
 						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << MUL) | (1L << DIV) | (1L << MOD))) != 0)) ) {
 						_errHandler.recoverInline(this);
-						} else {
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
 							consume();
 						}
 						setState(197);
@@ -1711,7 +1728,10 @@ public class TemplateParserParser extends Parser {
 						_la = _input.LA(1);
 						if ( !(_la==ADD || _la==SUB) ) {
 						_errHandler.recoverInline(this);
-						} else {
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
 							consume();
 						}
 						setState(200);
@@ -1728,7 +1748,10 @@ public class TemplateParserParser extends Parser {
 						_la = _input.LA(1);
 						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << LSHIFT) | (1L << RSHIFT) | (1L << URSHIFT))) != 0)) ) {
 						_errHandler.recoverInline(this);
-						} else {
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
 							consume();
 						}
 						setState(203);
@@ -1745,7 +1768,10 @@ public class TemplateParserParser extends Parser {
 						_la = _input.LA(1);
 						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << GT) | (1L << LT) | (1L << LE) | (1L << GE))) != 0)) ) {
 						_errHandler.recoverInline(this);
-						} else {
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
 							consume();
 						}
 						setState(206);
@@ -1762,7 +1788,10 @@ public class TemplateParserParser extends Parser {
 						_la = _input.LA(1);
 						if ( !(_la==EQUAL || _la==NOTEQUAL) ) {
 						_errHandler.recoverInline(this);
-						} else {
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
 							consume();
 						}
 						setState(209);
@@ -1855,7 +1884,10 @@ public class TemplateParserParser extends Parser {
 						_la = _input.LA(1);
 						if ( !(((((_la - 36)) & ~0x3f) == 0 && ((1L << (_la - 36)) & ((1L << (ASSIGN - 36)) | (1L << (ADD_ASSIGN - 36)) | (1L << (SUB_ASSIGN - 36)) | (1L << (MUL_ASSIGN - 36)) | (1L << (DIV_ASSIGN - 36)) | (1L << (AND_ASSIGN - 36)) | (1L << (OR_ASSIGN - 36)) | (1L << (XOR_ASSIGN - 36)) | (1L << (MOD_ASSIGN - 36)) | (1L << (LSHIFT_ASSIGN - 36)) | (1L << (RSHIFT_ASSIGN - 36)) | (1L << (URSHIFT_ASSIGN - 36)))) != 0)) ) {
 						_errHandler.recoverInline(this);
-						} else {
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
 							consume();
 						}
 						setState(233);
@@ -1872,7 +1904,10 @@ public class TemplateParserParser extends Parser {
 						_la = _input.LA(1);
 						if ( !(_la==INC || _la==DEC) ) {
 						_errHandler.recoverInline(this);
-						} else {
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
 							consume();
 						}
 						}
@@ -1907,15 +1942,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_beanAccess; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterBeanAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterBeanAccess(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitBeanAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitBeanAccess(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitBeanAccess(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitBeanAccess(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1946,7 +1981,7 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class ObjectAccessContext extends ParserRuleContext {
-		public TerminalNode Identifier() { return getToken(TemplateParserParser.Identifier, 0); }
+		public TerminalNode Identifier() { return getToken(Template2Parser.Identifier, 0); }
 		public List<PropertyAccessContext> propertyAccess() {
 			return getRuleContexts(PropertyAccessContext.class);
 		}
@@ -1977,15 +2012,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_objectAccess; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterObjectAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterObjectAccess(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitObjectAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitObjectAccess(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitObjectAccess(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitObjectAccess(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2051,22 +2086,22 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class PropertyAccessContext extends ParserRuleContext {
-		public TerminalNode Identifier() { return getToken(TemplateParserParser.Identifier, 0); }
+		public TerminalNode Identifier() { return getToken(Template2Parser.Identifier, 0); }
 		public PropertyAccessContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_propertyAccess; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterPropertyAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterPropertyAccess(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitPropertyAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitPropertyAccess(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitPropertyAccess(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitPropertyAccess(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2095,22 +2130,22 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class ArrayAccessContext extends ParserRuleContext {
-		public TerminalNode IntegerLiteral() { return getToken(TemplateParserParser.IntegerLiteral, 0); }
+		public TerminalNode IntegerLiteral() { return getToken(Template2Parser.IntegerLiteral, 0); }
 		public ArrayAccessContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_arrayAccess; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterArrayAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterArrayAccess(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitArrayAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitArrayAccess(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitArrayAccess(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitArrayAccess(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2141,22 +2176,22 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class MapAccessContext extends ParserRuleContext {
-		public TerminalNode StringLiteral() { return getToken(TemplateParserParser.StringLiteral, 0); }
+		public TerminalNode StringLiteral() { return getToken(Template2Parser.StringLiteral, 0); }
 		public MapAccessContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_mapAccess; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterMapAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterMapAccess(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitMapAccess(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitMapAccess(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitMapAccess(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitMapAccess(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2187,7 +2222,7 @@ public class TemplateParserParser extends Parser {
 	}
 
 	public static class MethodCallContext extends ParserRuleContext {
-		public TerminalNode Identifier() { return getToken(TemplateParserParser.Identifier, 0); }
+		public TerminalNode Identifier() { return getToken(Template2Parser.Identifier, 0); }
 		public CallMethodParametersContext callMethodParameters() {
 			return getRuleContext(CallMethodParametersContext.class,0);
 		}
@@ -2197,15 +2232,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_methodCall; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterMethodCall(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterMethodCall(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitMethodCall(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitMethodCall(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitMethodCall(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitMethodCall(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -2248,15 +2283,15 @@ public class TemplateParserParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_callMethodParameters; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).enterCallMethodParameters(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).enterCallMethodParameters(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof TemplateParserListener ) ((TemplateParserListener)listener).exitCallMethodParameters(this);
+			if ( listener instanceof Template2Listener ) ((Template2Listener)listener).exitCallMethodParameters(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof TemplateParserVisitor ) return ((TemplateParserVisitor<? extends T>)visitor).visitCallMethodParameters(this);
+			if ( visitor instanceof Template2Visitor ) return ((Template2Visitor<? extends T>)visitor).visitCallMethodParameters(this);
 			else return visitor.visitChildren(this);
 		}
 	}
