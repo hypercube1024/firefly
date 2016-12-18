@@ -2,6 +2,7 @@ package com.firefly.template2.generator;
 
 import com.firefly.template2.Configuration;
 import com.firefly.template2.parser.Template2Parser;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class Generator {
         map.put(Template2Parser.ProgramContext.class, new ProgramGenerator(configuration));
     }
 
-    public <T> JavaGenerator getGenerator(Class<T> parseTree) {
-        return map.get(parseTree);
+    public <T extends ParseTree, R> R getGenerator(Class<T> parseTree) {
+        return (R)map.get(parseTree);
     }
 }
