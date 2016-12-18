@@ -6,5 +6,9 @@ import java.io.Writer;
  * @author Pengtao Qiu
  */
 public interface JavaGenerator<T> {
-    void generate(T node, Writer writer);
+
+    void enter(T node, Writer writer, Object... args);
+
+    void exit(T node, Writer writer, Object... args);
+
 }
