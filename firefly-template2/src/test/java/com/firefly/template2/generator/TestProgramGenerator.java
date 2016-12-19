@@ -49,7 +49,6 @@ public class TestProgramGenerator {
                             + "import java.io.OutputStream;" + configuration.getLineSeparator()
                             + "import com.firefly.template2.TemplateRenderer;" + configuration.getLineSeparator()
                             + "import com.firefly.template2.model.VariableStorage;" + configuration.getLineSeparator()
-                            + "import com.firefly.template2.model.impl.VariableStorageImpl;" + configuration.getLineSeparator()
                             + configuration.getLineSeparator()
                             + "public class HelloTest implements TemplateRenderer {" + configuration.getLineSeparator()
                             + "}" + configuration.getLineSeparator()));

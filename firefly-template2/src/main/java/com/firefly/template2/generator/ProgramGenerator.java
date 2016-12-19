@@ -51,7 +51,6 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
         writer.append("import java.io.OutputStream;").append(configuration.getLineSeparator());
         writer.append("import com.firefly.template2.TemplateRenderer;").append(configuration.getLineSeparator());
         writer.append("import com.firefly.template2.model.VariableStorage;").append(configuration.getLineSeparator());
-        writer.append("import com.firefly.template2.model.impl.VariableStorageImpl;").append(configuration.getLineSeparator());
     }
 
     public String generateClassName(File templateFile) {
