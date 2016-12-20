@@ -19,7 +19,7 @@ public class MainFunctionGenerator extends AbstractJavaGenerator<Template2Parser
     public void enter(Template2Parser.MainFunctionContext node, Writer writer, Object... args) {
         try {
             generateBlank(writer, args);
-            writer.append("public void main(OutputStream outputStream, VariableStorage var) {")
+            writer.append("public void main(OutputStream out, VariableStorage var) throws IOException {")
                   .append(configuration.getLineSeparator());
         } catch (IOException e) {
             log.error("generate main function exception", e);

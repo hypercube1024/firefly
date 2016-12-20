@@ -12,36 +12,36 @@ main function
     #set(count = 0)
     #while (${count} < 20)
         #if (${count} % 3 == 0)
-            ``red``
+            ```red```
         #else if (${count} % 3 == 1)
-            ``blue``
+            ```blue```
         #else
-            ``black``
+            ```black```
         #end
         #set(count = ${count} + 1)
     #end
 
     #for (book : ${bookList})
-    ```book name: ``` ${book.name} &nl;
-    ```author: ``` ${book.author} &nl;
-    ```introduce: ``` ${book.content[0]["introduce"].substring(0, ${maxSize})} &nl;
+    ``book name: `` ${book.name} &nl;
+    ``author: `` ${book.author} &nl;
+    ``introduce: `` ${book.content[0]["introduce"].substring(0, ${maxSize})} &nl;
     #end
 
     #switch (${brand})
         #case "apple"
-        ``cool macbook pro``
+        ```cool macbook pro```
         #break
 
         #case "sony"
-        ``black technology``
+        ```black technology```
         #break
 
         #case "pentax"
-        ``solid & reliable``
+        ```solid & reliable```
         #break
 
         #default
-        ``"nothing" wrong``
+        ```"nothing" wrong```
         #break
     #end
 
@@ -53,5 +53,5 @@ main function
 
 // show hello message
 #function hello(message)
-    ```hello``` ${message}
+    ``hello`` ${message}
 #end

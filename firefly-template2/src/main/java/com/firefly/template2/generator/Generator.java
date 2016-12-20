@@ -18,6 +18,7 @@ public class Generator {
         map.put(Template2Parser.ProgramContext.class, new ProgramGenerator(configuration));
         map.put(Template2Parser.ExtendTemplateContext.class, new ExtendTemplateGenerator(configuration));
         map.put(Template2Parser.MainFunctionContext.class, new MainFunctionGenerator(configuration));
+        map.put(Template2Parser.OutputContext.class, new OutputGenerator(configuration));
     }
 
     public <T extends ParseTree, R> R getGenerator(Class<T> parseTree) {

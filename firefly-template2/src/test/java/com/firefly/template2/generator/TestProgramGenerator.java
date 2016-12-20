@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 import static org.hamcrest.Matchers.is;
 
@@ -41,12 +42,13 @@ public class TestProgramGenerator {
 
         try (StringWriter writer = new StringWriter()) {
             program.enter(null, writer, templateFile);
-            program.exit(null, writer, templateFile);
+            program.exit(null, writer, new ArrayList<String>());
             System.out.println(writer.toString());
             Assert.assertThat(writer.toString(),
                     is("package com.firefly.template2.compiled.test;" + configuration.getLineSeparator()
                             + configuration.getLineSeparator()
                             + "import java.io.OutputStream;" + configuration.getLineSeparator()
+                            + "import java.io.IOException;" + configuration.getLineSeparator()
                             + "import com.firefly.template2.TemplateRenderer;" + configuration.getLineSeparator()
                             + "import com.firefly.template2.model.VariableStorage;" + configuration.getLineSeparator()
                             + configuration.getLineSeparator()

@@ -19,8 +19,8 @@ END : '#end';
 THIS : 'this';
 SUPER : 'super';
 
-OutputString : '```' .*? '```';
-OutputStringWithNewLine : '``' .*? '``';
+OutputString : '``' .*? '``';
+OutputStringWithNewLine : '```' .*? '```';
 OutputNewLine : '&nl;';
 
 COMMENT

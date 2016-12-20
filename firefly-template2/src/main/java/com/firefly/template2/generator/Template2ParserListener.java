@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Pengtao Qiu
@@ -24,6 +26,8 @@ public class Template2ParserListener extends Template2BaseListener {
     private final String className;
     private final boolean output;
     private int treeLevel;
+    private int stringId;
+    private List<String> tailList = new ArrayList<>();
 
     public Template2ParserListener(Configuration configuration, Template2ParserWrap template2ParserWrap) throws IOException {
         this.configuration = configuration;
@@ -80,7 +84,7 @@ public class Template2ParserListener extends Template2BaseListener {
     @Override
     public void exitProgram(Template2Parser.ProgramContext ctx) {
         ProgramGenerator programGenerator = generator.getGenerator(Template2Parser.ProgramContext.class);
-        programGenerator.exit(ctx, writer);
+        programGenerator.exit(ctx, writer, tailList);
         try {
             if (writer != null) {
                 writer.close();
@@ -124,5 +128,16 @@ public class Template2ParserListener extends Template2BaseListener {
     @Override
     public void exitTemplateBody(Template2Parser.TemplateBodyContext ctx) {
         treeLevel--;
+    }
+
+    @Override
+    public void enterOutput(Template2Parser.OutputContext ctx) {
+        OutputGenerator outputGenerator = generator.getGenerator(Template2Parser.OutputContext.class);
+        outputGenerator.enter(ctx, writer, treeLevel, stringId, tailList);
+    }
+
+    @Override
+    public void exitOutput(Template2Parser.OutputContext ctx) {
+        stringId++;
     }
 }

@@ -7,6 +7,7 @@ import com.firefly.template2.utils.PathUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 
 /**
  * @author Pengtao Qiu
@@ -39,12 +40,25 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
             }
         } catch (IOException e) {
             log.error("generate program exception", e);
-            throw new RuntimeException("generate program exception", e);
+        }
+    }
+
+    @Override
+    public void exit(Template2Parser.ProgramContext node, Writer writer, Object... args) {
+        List<String> list = (List<String>) args[0];
+        try {
+            for (String s : list) {
+                writer.append("    ").append(s);
+            }
+            writer.append('}').append(configuration.getLineSeparator());
+        } catch (IOException e) {
+            log.error("generate program exception", e);
         }
     }
 
     public void generateImport(Writer writer) throws IOException {
         writer.append("import java.io.OutputStream;").append(configuration.getLineSeparator());
+        writer.append("import java.io.IOException;").append(configuration.getLineSeparator());
         writer.append("import com.firefly.template2.TemplateRenderer;").append(configuration.getLineSeparator());
         writer.append("import com.firefly.template2.model.VariableStorage;").append(configuration.getLineSeparator());
     }

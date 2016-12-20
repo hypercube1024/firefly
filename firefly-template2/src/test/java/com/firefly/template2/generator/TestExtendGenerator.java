@@ -30,6 +30,7 @@ public class TestExtendGenerator {
                 "package com.firefly.template2.compiled;" + configuration.getLineSeparator() +
                         configuration.getLineSeparator() +
                         "import java.io.OutputStream;" + configuration.getLineSeparator() +
+                        "import java.io.IOException;" + configuration.getLineSeparator() +
                         "import com.firefly.template2.TemplateRenderer;" + configuration.getLineSeparator() +
                         "import com.firefly.template2.model.VariableStorage;" + configuration.getLineSeparator() +
                         configuration.getLineSeparator() +
