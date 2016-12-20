@@ -1,9 +1,9 @@
 package com.firefly.template2;
 
 import com.firefly.template2.generator.Template2ParserListener;
-import com.firefly.template2.parser.Template2ParserHelper;
-import com.firefly.template2.parser.Template2ParserWrap;
 import com.firefly.template2.utils.CompileUtils;
+import com.firefly.template2.utils.Template2ParserHelper;
+import com.firefly.template2.utils.Template2ParserWrap;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.slf4j.Logger;
@@ -48,7 +48,7 @@ public class Template2Compiler {
         return javaFiles;
     }
 
-    public void generateJavaFile() {
+    public Template2Compiler generateJavaFiles() {
         Path path = Paths.get(configuration.getTemplateHome());
         try {
             Files.walk(path)
@@ -73,9 +73,10 @@ public class Template2Compiler {
         } catch (IOException e) {
             log.error("generate java file exception", e);
         }
+        return this;
     }
 
-    public void compileJavaFiles() {
+    public Template2Compiler compileJavaFiles() {
         if (!javaFiles.isEmpty()) {
             CompileUtils.compile(configuration.getRootPath().getAbsolutePath(), getClassPath(),
                     configuration.getOutputJavaFileCharset(),
@@ -86,6 +87,7 @@ public class Template2Compiler {
                              .collect(Collectors.toList())
             );
         }
+        return this;
     }
 
     public String getClassPath() {
@@ -96,7 +98,7 @@ public class Template2Compiler {
                 return new File(new URL(f.substring(0,
                         f.indexOf("!/com/firefly"))).toURI()).getAbsolutePath();
             } catch (Throwable t) {
-                log.error("template config init error", t);
+                log.error("get class path exception", t);
                 return null;
             }
         } else {

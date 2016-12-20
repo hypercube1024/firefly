@@ -5,6 +5,7 @@ main function
 */
 #main
     // call function
+    #include(super.main())
     #include(this.hello("my first function"))
 
     // control flow

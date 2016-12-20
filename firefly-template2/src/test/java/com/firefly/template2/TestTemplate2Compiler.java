@@ -16,7 +16,7 @@ public class TestTemplate2Compiler {
         System.out.println(configuration.getTemplateHome());
 
         Template2Compiler compiler = new Template2Compiler(configuration);
-        compiler.generateJavaFile();
+        compiler.generateJavaFiles().compileJavaFiles();
         compiler.getJavaFiles().entrySet().forEach(entry -> {
             String className = entry.getKey();
             File file = entry.getValue();
@@ -28,7 +28,5 @@ public class TestTemplate2Compiler {
                 e.printStackTrace();
             }
         });
-
-        compiler.compileJavaFiles();
     }
 }

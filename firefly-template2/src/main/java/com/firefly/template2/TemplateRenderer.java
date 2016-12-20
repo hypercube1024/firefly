@@ -9,6 +9,6 @@ import java.io.OutputStream;
  */
 public interface TemplateRenderer {
 
-//    void main(OutputStream outputStream, VariableStorage var);
+    void main(OutputStream outputStream, VariableStorage var);
 
 }

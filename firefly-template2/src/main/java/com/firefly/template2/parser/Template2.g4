@@ -1,8 +1,8 @@
 grammar Template2;
-import Template2Lexer;
+import Template2CommonLexer;
 
 // program
-program : extendTemplate? mainFunction functionDeclaration*;
+program : extendTemplate? mainFunction? functionDeclaration*;
 
 templateBody :
     ( OutputString
@@ -12,7 +12,7 @@ templateBody :
 
 extendTemplate : EXTENDS templatePath ';';
 
-include : INCLUDE '(' (THIS | templatePath) methodCall? ')';
+include : INCLUDE '(' (THIS | SUPER | templatePath) methodCall? ')';
 
 set : SET '(' Identifier '=' expression ')';
 

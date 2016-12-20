@@ -31,12 +31,7 @@ abstract public class AbstractJavaGenerator<T> implements JavaGenerator<T> {
     @Override
     public void exit(T node, Writer writer, Object... args) {
         try {
-            if (args.length > 0 && args[0] instanceof Integer) {
-                Integer levelCount = (Integer) args[0];
-                for (int i = 0; i < levelCount; i++) {
-                    writer.append("    ");
-                }
-            }
+            generateBlank(writer, args);
             writer.append('}').append(configuration.getLineSeparator());
         } catch (IOException e) {
             log.error("exit program generator exception", e);
@@ -45,6 +40,15 @@ abstract public class AbstractJavaGenerator<T> implements JavaGenerator<T> {
 
     public void generateImplementDeclaration(Writer writer) throws IOException {
         writer.append(" implements TemplateRenderer {").append(configuration.getLineSeparator());
+    }
+
+    public void generateBlank(Writer writer, Object... args) throws IOException {
+        if (args.length > 0 && args[0] instanceof Integer) {
+            Integer treeLevel = (Integer) args[0];
+            for (int i = 0; i < treeLevel; i++) {
+                writer.append("    ");
+            }
+        }
     }
 
 }

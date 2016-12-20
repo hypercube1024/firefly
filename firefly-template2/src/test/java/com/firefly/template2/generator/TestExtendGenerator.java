@@ -1,5 +1,7 @@
-package com.firefly.template2;
+package com.firefly.template2.generator;
 
+import com.firefly.template2.Configuration;
+import com.firefly.template2.Template2Compiler;
 import com.firefly.utils.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,7 +22,7 @@ public class TestExtendGenerator {
         Configuration configuration = new Configuration();
         configuration.setTemplateHome(new File(Template2Compiler.class.getResource("/").toURI()).getAbsolutePath());
         Template2Compiler compiler = new Template2Compiler(configuration);
-        compiler.generateJavaFile();
+        compiler.generateJavaFiles();
 
         File file = compiler.getJavaFiles().get(configuration.getPackagePrefix() + ".TestProgramAndExtendsGenerator");
         System.out.println(FileUtils.readFileToString(file, configuration.getOutputJavaFileCharset()));

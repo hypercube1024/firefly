@@ -3,7 +3,7 @@ package com.firefly.template2.generator;
 import com.firefly.template2.Configuration;
 import com.firefly.template2.parser.Template2BaseListener;
 import com.firefly.template2.parser.Template2Parser;
-import com.firefly.template2.parser.Template2ParserWrap;
+import com.firefly.template2.utils.Template2ParserWrap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +22,7 @@ public class Template2ParserListener extends Template2BaseListener {
     private final Writer writer;
     private final File outputJavaFile;
     private final String className;
+    private int treeLevel;
 
     public Template2ParserListener(Configuration configuration, Template2ParserWrap template2ParserWrap) throws IOException {
         this.configuration = configuration;
@@ -85,5 +86,19 @@ public class Template2ParserListener extends Template2BaseListener {
     public void exitExtendTemplate(Template2Parser.ExtendTemplateContext ctx) {
         ExtendTemplateGenerator extendTemplateGenerator = generator.getGenerator(Template2Parser.ExtendTemplateContext.class);
         extendTemplateGenerator.exit(ctx, writer);
+    }
+
+    @Override
+    public void enterMainFunction(Template2Parser.MainFunctionContext ctx) {
+        treeLevel++;
+        MainFunctionGenerator mainFunctionGenerator = generator.getGenerator(Template2Parser.MainFunctionContext.class);
+        mainFunctionGenerator.enter(ctx, writer, treeLevel);
+    }
+
+    @Override
+    public void exitMainFunction(Template2Parser.MainFunctionContext ctx) {
+        MainFunctionGenerator mainFunctionGenerator = generator.getGenerator(Template2Parser.MainFunctionContext.class);
+        mainFunctionGenerator.exit(ctx, writer, treeLevel);
+        treeLevel--;
     }
 }

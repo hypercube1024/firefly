@@ -1,4 +1,4 @@
-// Generated from Template2.g4 by ANTLR 4.6
+// Generated from /Users/bjhl/Develop/local_git/firefly/firefly-template2/src/main/java/com/firefly/template2/parser/Template2.g4 by ANTLR 4.6
 package com.firefly.template2.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;

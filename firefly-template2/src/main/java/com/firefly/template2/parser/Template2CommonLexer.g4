@@ -1,4 +1,4 @@
-lexer grammar TemplateLexer;
+lexer grammar Template2CommonLexer;
 
 // Keywords
 EXTENDS : '#extends';
@@ -17,6 +17,7 @@ BREAK : '#break';
 DEFAULT : '#default';
 END : '#end';
 THIS : 'this';
+SUPER : 'super';
 
 OutputString : '```' .*? '```';
 OutputStringWithNewLine : '``' .*? '``';
