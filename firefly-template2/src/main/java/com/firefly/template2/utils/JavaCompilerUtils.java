@@ -5,7 +5,7 @@ import javax.tools.ToolProvider;
 import java.util.LinkedList;
 import java.util.List;
 
-public class CompileUtils {
+public class JavaCompilerUtils {
 
     public static int compile(String path, String classPath, String encoding, List<String> files) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();

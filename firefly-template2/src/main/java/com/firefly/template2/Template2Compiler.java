@@ -1,7 +1,7 @@
 package com.firefly.template2;
 
 import com.firefly.template2.generator.Template2ParserListener;
-import com.firefly.template2.utils.CompileUtils;
+import com.firefly.template2.utils.JavaCompilerUtils;
 import com.firefly.template2.parser.helper.Template2ParserHelper;
 import com.firefly.template2.parser.helper.Template2ParserWrap;
 import com.firefly.utils.lang.Pair;
@@ -93,7 +93,7 @@ public class Template2Compiler {
 
     public void compileJavaFiles(Map<String, File> toCompiledJavaFiles) {
         if (!toCompiledJavaFiles.isEmpty()) {
-            CompileUtils.compile(configuration.getRootPath().getAbsolutePath(), getClassPath(),
+            JavaCompilerUtils.compile(configuration.getRootPath().getAbsolutePath(), getClassPath(),
                     configuration.getOutputJavaFileCharset(),
                     toCompiledJavaFiles.entrySet()
                                        .stream()
