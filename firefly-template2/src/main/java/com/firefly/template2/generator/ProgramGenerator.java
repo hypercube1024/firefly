@@ -24,11 +24,11 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
         File templateFile = (File) args[0];
 
         try {
-            writer.append(generatePackageName(templateFile));
+            writer.append("package ").append(generatePackage(templateFile)).append(";").append(configuration.getLineSeparator());
             writer.append(configuration.getLineSeparator());
             generateImport(writer);
             writer.append(configuration.getLineSeparator());
-            writer.append("public class ").append(generateClassName(templateFile));
+            writer.append("public class ").append(generateClass(templateFile));
             if (node != null) {
                 Template2Parser.ExtendTemplateContext extendTemplateContext = node.getRuleContext(Template2Parser.ExtendTemplateContext.class, 0);
                 if (extendTemplateContext == null) {
@@ -43,17 +43,13 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
         }
     }
 
-    public void generateImplementDeclaration(Writer writer) throws IOException {
-        writer.append(" implements TemplateRenderer {").append(configuration.getLineSeparator());
-    }
-
     public void generateImport(Writer writer) throws IOException {
         writer.append("import java.io.OutputStream;").append(configuration.getLineSeparator());
         writer.append("import com.firefly.template2.TemplateRenderer;").append(configuration.getLineSeparator());
         writer.append("import com.firefly.template2.model.VariableStorage;").append(configuration.getLineSeparator());
     }
 
-    public String generateClassName(File templateFile) {
+    public String generateClass(File templateFile) {
         String name = templateFile.getName();
         name = name.substring(0, name.length() - configuration.getSuffix().length() - 1);
         if (name.length() == 1) {
@@ -63,17 +59,14 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
         }
     }
 
-    public String generatePackageName(File templateFile) {
+    public String generatePackage(File templateFile) {
         StringBuilder ret = new StringBuilder();
-        ret.append("package ");
         ret.append(configuration.getPackagePrefix());
-
         String templateFilePath = templateFile.getAbsolutePath();
         String packageName = templateFilePath.substring(configuration.getTemplateHome().length(), templateFilePath.length() - templateFile.getName().length());
         if (!packageName.equals(File.separator)) {
             ret.append(PathUtils.removeTheLastPathSeparator(packageName).replace(File.separatorChar, '.'));
         }
-        ret.append(";").append(configuration.getLineSeparator());
         return ret.toString();
     }
 

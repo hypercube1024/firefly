@@ -29,22 +29,22 @@ public class TestProgramGenerator {
 
         File templateFile = new File(file, "a.fftl");
         System.out.println(templateFile.getName());
-        Assert.assertThat(program.generateClassName(templateFile), is("A"));
-        System.out.println(program.generatePackageName(templateFile));
-        Assert.assertThat(program.generatePackageName(templateFile), is("package com.firefly.template2;" + configuration.getLineSeparator()));
+        Assert.assertThat(program.generateClass(templateFile), is("A"));
+        System.out.println(program.generatePackage(templateFile));
+        Assert.assertThat(program.generatePackage(templateFile), is(configuration.getPackagePrefix()));
 
         templateFile = new File(file, "test" + File.separator + "helloTest.fftl");
         System.out.println(templateFile.getAbsolutePath());
-        Assert.assertThat(program.generateClassName(templateFile), is("HelloTest"));
-        System.out.println(program.generatePackageName(templateFile));
-        Assert.assertThat(program.generatePackageName(templateFile), is("package com.firefly.template2.test;" + configuration.getLineSeparator()));
+        Assert.assertThat(program.generateClass(templateFile), is("HelloTest"));
+        System.out.println(program.generatePackage(templateFile));
+        Assert.assertThat(program.generatePackage(templateFile), is(configuration.getPackagePrefix() + ".test"));
 
         try (StringWriter writer = new StringWriter()) {
             program.enter(null, writer, templateFile);
             program.exit(null, writer, templateFile);
             System.out.println(writer.toString());
             Assert.assertThat(writer.toString(),
-                    is("package com.firefly.template2.test;" + configuration.getLineSeparator()
+                    is("package com.firefly.template2.compiled.test;" + configuration.getLineSeparator()
                             + configuration.getLineSeparator()
                             + "import java.io.OutputStream;" + configuration.getLineSeparator()
                             + "import com.firefly.template2.TemplateRenderer;" + configuration.getLineSeparator()

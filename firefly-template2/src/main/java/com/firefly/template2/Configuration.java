@@ -12,7 +12,7 @@ public class Configuration {
     private String suffix = "fftl";
     private String templateCharset = "UTF-8";
     private String outputJavaFileCharset = "UTF-8";
-    private String packagePrefix = "com.firefly.template2";
+    private String packagePrefix = "com.firefly.template2.compiled";
     private String lineSeparator = System.getProperty("line.separator");
 
     public String getTemplateHome() {

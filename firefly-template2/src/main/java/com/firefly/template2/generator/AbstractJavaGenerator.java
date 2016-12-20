@@ -28,6 +28,7 @@ abstract public class AbstractJavaGenerator<T> implements JavaGenerator<T> {
         this.configuration = configuration;
     }
 
+    @Override
     public void exit(T node, Writer writer, Object... args) {
         try {
             if (args.length > 0 && args[0] instanceof Integer) {
@@ -40,6 +41,10 @@ abstract public class AbstractJavaGenerator<T> implements JavaGenerator<T> {
         } catch (IOException e) {
             log.error("exit program generator exception", e);
         }
+    }
+
+    public void generateImplementDeclaration(Writer writer) throws IOException {
+        writer.append(" implements TemplateRenderer {").append(configuration.getLineSeparator());
     }
 
 }

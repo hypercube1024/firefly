@@ -1,4 +1,4 @@
-#extends hello.common.Test;
+#extends common.Layout;
 
 /*
 main function
