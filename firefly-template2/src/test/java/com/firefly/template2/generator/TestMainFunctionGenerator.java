@@ -22,7 +22,7 @@ public class TestMainFunctionGenerator {
         Configuration configuration = new Configuration();
         configuration.setTemplateHome(new File(Template2Compiler.class.getResource("/").toURI()).getAbsolutePath());
         Template2Compiler compiler = new Template2Compiler(configuration);
-        compiler.generateJavaFiles().compileJavaFiles();
+        compiler.generateJavaFiles();
 
         File file = compiler.getJavaFiles().get(configuration.getPackagePrefix() + ".TestMain");
         System.out.println(FileUtils.readFileToString(file, configuration.getOutputJavaFileCharset()));

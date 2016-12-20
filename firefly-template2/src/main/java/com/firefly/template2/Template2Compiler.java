@@ -4,6 +4,7 @@ import com.firefly.template2.generator.Template2ParserListener;
 import com.firefly.template2.utils.CompileUtils;
 import com.firefly.template2.utils.Template2ParserHelper;
 import com.firefly.template2.utils.Template2ParserWrap;
+import com.firefly.utils.lang.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.slf4j.Logger;
@@ -48,7 +49,8 @@ public class Template2Compiler {
         return javaFiles;
     }
 
-    public Template2Compiler generateJavaFiles() {
+    public Map<String, File> generateJavaFiles() {
+        Map<String, File> toCompiledJavaFiles = new HashMap<>();
         Path path = Paths.get(configuration.getTemplateHome());
         try {
             Files.walk(path)
@@ -57,37 +59,49 @@ public class Template2Compiler {
                      if (log.isDebugEnabled()) {
                          log.debug("find template file -> {}", p.toFile().getName());
                      }
-
-                     Template2ParserHelper helper = new Template2ParserHelper(configuration);
-                     Template2ParserWrap template2ParserWrap = helper.createTemplate2ParserWrap(p.toFile());
-                     try {
-                         Template2ParserListener listener = new Template2ParserListener(configuration, template2ParserWrap);
-                         ParseTree tree = template2ParserWrap.getParser().program();
-                         ParseTreeWalker walker = new ParseTreeWalker();
-                         walker.walk(listener, tree);
-                         javaFiles.put(listener.getClassName(), listener.getOutputJavaFile());
-                     } catch (IOException e) {
-                         log.error("create template parser listener exception", e);
+                     Pair<String, File> pair = generateJavaFile(p);
+                     if (pair != null) {
+                         toCompiledJavaFiles.put(pair.first, pair.second);
                      }
                  });
         } catch (IOException e) {
             log.error("generate java file exception", e);
         }
-        return this;
+        return toCompiledJavaFiles;
     }
 
-    public Template2Compiler compileJavaFiles() {
-        if (!javaFiles.isEmpty()) {
+    public Pair<String, File> generateJavaFile(Path p) {
+        Template2ParserHelper helper = new Template2ParserHelper(configuration);
+        Template2ParserWrap template2ParserWrap = helper.createTemplate2ParserWrap(p.toFile());
+        try {
+            Template2ParserListener listener = new Template2ParserListener(configuration, template2ParserWrap);
+            javaFiles.put(listener.getClassName(), listener.getOutputJavaFile());
+            if (listener.isOutput()) {
+                ParseTree tree = template2ParserWrap.getParser().program();
+                ParseTreeWalker walker = new ParseTreeWalker();
+                walker.walk(listener, tree);
+                Pair<String, File> toCompiledJavaFiles = new Pair<>();
+                toCompiledJavaFiles.first = listener.getClassName();
+                toCompiledJavaFiles.second = listener.getOutputJavaFile();
+                return toCompiledJavaFiles;
+            }
+        } catch (IOException e) {
+            log.error("create template parser listener exception", e);
+        }
+        return null;
+    }
+
+    public void compileJavaFiles(Map<String, File> toCompiledJavaFiles) {
+        if (!toCompiledJavaFiles.isEmpty()) {
             CompileUtils.compile(configuration.getRootPath().getAbsolutePath(), getClassPath(),
                     configuration.getOutputJavaFileCharset(),
-                    javaFiles.entrySet()
-                             .stream()
-                             .map(Map.Entry::getValue)
-                             .map(File::getAbsolutePath)
-                             .collect(Collectors.toList())
+                    toCompiledJavaFiles.entrySet()
+                                       .stream()
+                                       .map(Map.Entry::getValue)
+                                       .map(File::getAbsolutePath)
+                                       .collect(Collectors.toList())
             );
         }
-        return this;
     }
 
     public String getClassPath() {

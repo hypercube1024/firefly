@@ -19,9 +19,10 @@ public class Template2ParserListener extends Template2BaseListener {
     private final Configuration configuration;
     private final Generator generator;
     private final Template2ParserWrap template2ParserWrap;
-    private final Writer writer;
+    private Writer writer;
     private final File outputJavaFile;
     private final String className;
+    private final boolean output;
     private int treeLevel;
 
     public Template2ParserListener(Configuration configuration, Template2ParserWrap template2ParserWrap) throws IOException {
@@ -44,7 +45,12 @@ public class Template2ParserListener extends Template2BaseListener {
                 throw new IOException("create package directory exception");
             }
         }
-        writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputJavaFile), configuration.getOutputJavaFileCharset()));
+        if (!getOutputJavaFile().exists() || template2ParserWrap.getFile().lastModified() > getOutputJavaFile().lastModified()) {
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputJavaFile), configuration.getOutputJavaFileCharset()));
+            output = true;
+        } else {
+            output = false;
+        }
     }
 
     public Configuration getConfiguration() {
@@ -59,6 +65,10 @@ public class Template2ParserListener extends Template2BaseListener {
         return className;
     }
 
+    public boolean isOutput() {
+        return output;
+    }
+
     @Override
     public void enterProgram(Template2Parser.ProgramContext ctx) {
         ProgramGenerator programGenerator = generator.getGenerator(Template2Parser.ProgramContext.class);
@@ -70,7 +80,9 @@ public class Template2ParserListener extends Template2BaseListener {
         ProgramGenerator programGenerator = generator.getGenerator(Template2Parser.ProgramContext.class);
         programGenerator.exit(ctx, writer);
         try {
-            writer.close();
+            if (writer != null) {
+                writer.close();
+            }
         } catch (IOException e) {
             log.error("exit program exception", e);
         }

@@ -5,6 +5,7 @@ import com.firefly.utils.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 /**
  * @author Pengtao Qiu
@@ -16,7 +17,7 @@ public class TestTemplate2Compiler {
         System.out.println(configuration.getTemplateHome());
 
         Template2Compiler compiler = new Template2Compiler(configuration);
-        compiler.generateJavaFiles().compileJavaFiles();
+        Map<String, File> toCompiledJavaFiles =  compiler.generateJavaFiles();
         compiler.getJavaFiles().entrySet().forEach(entry -> {
             String className = entry.getKey();
             File file = entry.getValue();
@@ -28,5 +29,7 @@ public class TestTemplate2Compiler {
                 e.printStackTrace();
             }
         });
+        System.out.println(toCompiledJavaFiles.size());
+        compiler.compileJavaFiles(toCompiledJavaFiles);
     }
 }
