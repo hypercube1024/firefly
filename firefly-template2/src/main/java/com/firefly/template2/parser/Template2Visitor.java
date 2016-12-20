@@ -47,6 +47,12 @@ public interface Template2Visitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTemplatePath(Template2Parser.TemplatePathContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link Template2Parser#output}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitOutput(Template2Parser.OutputContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link Template2Parser#mainFunction}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

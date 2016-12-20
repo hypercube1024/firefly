@@ -59,6 +59,13 @@ public class Template2BaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitOutput(Template2Parser.OutputContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitMainFunction(Template2Parser.MainFunctionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}

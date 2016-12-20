@@ -5,10 +5,7 @@ import Template2CommonLexer;
 program : extendTemplate? mainFunction? functionDeclaration*;
 
 templateBody :
-    ( OutputString
-    | OutputStringWithNewLine
-    | OutputNewLine
-    | set | include | selection | switchCondition | whileLoop | forLoop | beanAccess)*;
+    ( output | set | include | selection | switchCondition | whileLoop | forLoop | beanAccess)*;
 
 extendTemplate : EXTENDS templatePath ';';
 
@@ -17,6 +14,8 @@ include : INCLUDE '(' (THIS | SUPER | templatePath) methodCall? ')';
 set : SET '(' Identifier '=' expression ')';
 
 templatePath : Identifier ('.' Identifier)* ;
+
+output : OutputString | OutputStringWithNewLine | OutputNewLine;
 
 // function
 mainFunction : MAIN templateBody END;

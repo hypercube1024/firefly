@@ -1,4 +1,4 @@
-package com.firefly.template2.utils;
+package com.firefly.template2.parser.helper;
 
 import com.firefly.template2.parser.Template2Lexer;
 import com.firefly.template2.parser.Template2Parser;

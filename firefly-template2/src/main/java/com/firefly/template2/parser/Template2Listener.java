@@ -68,6 +68,16 @@ public interface Template2Listener extends ParseTreeListener {
 	 */
 	void exitTemplatePath(Template2Parser.TemplatePathContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link Template2Parser#output}.
+	 * @param ctx the parse tree
+	 */
+	void enterOutput(Template2Parser.OutputContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link Template2Parser#output}.
+	 * @param ctx the parse tree
+	 */
+	void exitOutput(Template2Parser.OutputContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link Template2Parser#mainFunction}.
 	 * @param ctx the parse tree
 	 */

@@ -88,6 +88,18 @@ public class Template2BaseListener implements Template2Listener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterOutput(Template2Parser.OutputContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitOutput(Template2Parser.OutputContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterMainFunction(Template2Parser.MainFunctionContext ctx) { }
 	/**
 	 * {@inheritDoc}

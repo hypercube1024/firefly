@@ -3,7 +3,7 @@ package com.firefly.template2.generator;
 import com.firefly.template2.Configuration;
 import com.firefly.template2.parser.Template2BaseListener;
 import com.firefly.template2.parser.Template2Parser;
-import com.firefly.template2.utils.Template2ParserWrap;
+import com.firefly.template2.parser.helper.Template2ParserWrap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,14 +38,16 @@ public class Template2ParserListener extends Template2BaseListener {
         }
         ProgramGenerator programGenerator = generator.getGenerator(Template2Parser.ProgramContext.class);
         className = programGenerator.generatePackage(template2ParserWrap.getFile()) + "." + programGenerator.generateClass(template2ParserWrap.getFile());
-        String outputFilePath = File.separatorChar + className.replace('.', File.separatorChar) + ".java";
+        String outputFile = File.separatorChar + className.replace('.', File.separatorChar);
+        String outputFilePath = outputFile + ".java";
         outputJavaFile = new File(root, outputFilePath);
         if (!outputJavaFile.getParentFile().exists()) {
             if (!outputJavaFile.getParentFile().mkdirs()) {
                 throw new IOException("create package directory exception");
             }
         }
-        if (!getOutputJavaFile().exists() || template2ParserWrap.getFile().lastModified() > getOutputJavaFile().lastModified()) {
+        File outputClassFile = new File(root, outputFile + ".class");
+        if (!outputClassFile.exists() || !getOutputJavaFile().exists() || template2ParserWrap.getFile().lastModified() > getOutputJavaFile().lastModified()) {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputJavaFile), configuration.getOutputJavaFileCharset()));
             output = true;
         } else {
@@ -111,6 +113,16 @@ public class Template2ParserListener extends Template2BaseListener {
     public void exitMainFunction(Template2Parser.MainFunctionContext ctx) {
         MainFunctionGenerator mainFunctionGenerator = generator.getGenerator(Template2Parser.MainFunctionContext.class);
         mainFunctionGenerator.exit(ctx, writer, treeLevel);
+        treeLevel--;
+    }
+
+    @Override
+    public void enterTemplateBody(Template2Parser.TemplateBodyContext ctx) {
+        treeLevel++;
+    }
+
+    @Override
+    public void exitTemplateBody(Template2Parser.TemplateBodyContext ctx) {
         treeLevel--;
     }
 }
