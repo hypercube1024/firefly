@@ -2,6 +2,8 @@ package com.firefly.template2;
 
 import com.firefly.template2.utils.PathUtils;
 
+import java.io.File;
+
 /**
  * @author Pengtao Qiu
  */
@@ -69,5 +71,9 @@ public class Configuration {
 
     public void setJavaFileOutputPath(String javaFileOutputPath) {
         this.javaFileOutputPath = PathUtils.removeTheLastPathSeparator(javaFileOutputPath);
+    }
+
+    public File getRootPath() {
+        return new File(getTemplateHome(), getJavaFileOutputPath());
     }
 }

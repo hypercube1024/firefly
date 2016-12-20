@@ -28,5 +28,7 @@ public class TestTemplate2Compiler {
                 e.printStackTrace();
             }
         });
+
+        compiler.compileJavaFiles();
     }
 }

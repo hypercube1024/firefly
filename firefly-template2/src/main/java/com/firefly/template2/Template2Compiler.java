@@ -3,6 +3,7 @@ package com.firefly.template2;
 import com.firefly.template2.generator.Template2ParserListener;
 import com.firefly.template2.parser.Template2ParserHelper;
 import com.firefly.template2.parser.Template2ParserWrap;
+import com.firefly.template2.utils.CompileUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.slf4j.Logger;
@@ -10,11 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Pengtao Qiu
@@ -69,6 +72,35 @@ public class Template2Compiler {
                  });
         } catch (IOException e) {
             log.error("generate java file exception", e);
+        }
+    }
+
+    public void compileJavaFiles() {
+        if (!javaFiles.isEmpty()) {
+            CompileUtils.compile(configuration.getRootPath().getAbsolutePath(), getClassPath(),
+                    configuration.getOutputJavaFileCharset(),
+                    javaFiles.entrySet()
+                             .stream()
+                             .map(Map.Entry::getValue)
+                             .map(File::getAbsolutePath)
+                             .collect(Collectors.toList())
+            );
+        }
+    }
+
+    public String getClassPath() {
+        URL url = this.getClass().getResource("");
+        if ("jar".equals(url.getProtocol())) {
+            String f = url.getPath();
+            try {
+                return new File(new URL(f.substring(0,
+                        f.indexOf("!/com/firefly"))).toURI()).getAbsolutePath();
+            } catch (Throwable t) {
+                log.error("template config init error", t);
+                return null;
+            }
+        } else {
+            return null;
         }
     }
 }

@@ -28,7 +28,7 @@ public class Template2ParserListener extends Template2BaseListener {
         this.template2ParserWrap = template2ParserWrap;
         this.generator = new Generator(configuration);
 
-        File root = new File(configuration.getTemplateHome(), configuration.getJavaFileOutputPath());
+        File root = configuration.getRootPath();
         if (!root.exists()) {
             if (!root.mkdirs()) {
                 throw new IOException("create root directory exception");
