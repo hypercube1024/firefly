@@ -32,9 +32,21 @@ public class TestExtendGenerator {
         System.out.println(FileUtils.readFileToString(file, configuration.getOutputJavaFileCharset()));
         Assert.assertThat(FileUtils.readFileToString(file, configuration.getOutputJavaFileCharset()), is(
                 "package com.firefly.template2.compiled;" + configuration.getLineSeparator() +
+<<<<<<< Updated upstream
                         program.generateImport() +
                         "public class TestProgramAndExtendsGenerator extends com.firefly.template2.compiled.common.Layout implements TemplateRenderer {" + configuration.getLineSeparator() +
                         "}" +
                         configuration.getLineSeparator()));
+=======
+                        configuration.getLineSeparator() +
+                        "import java.io.OutputStream;" + configuration.getLineSeparator() +
+                        "import java.io.IOException;" + configuration.getLineSeparator() +
+                        "import static com.firefly.utils.StringUtils.getBytes;" + configuration.getLineSeparator() +
+                        "import com.firefly.template2.TemplateRenderer;" + configuration.getLineSeparator() +
+                        "import com.firefly.template2.model.VariableStorage;" + configuration.getLineSeparator() +
+                        configuration.getLineSeparator() +
+                        "public class TestProgramAndExtendsGenerator extends com.firefly.template2.compiled.common.Layout implements TemplateRenderer {\n" +
+                        "}" + configuration.getLineSeparator()));
+>>>>>>> Stashed changes
     }
 }

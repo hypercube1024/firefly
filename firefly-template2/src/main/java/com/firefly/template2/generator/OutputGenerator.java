@@ -43,7 +43,7 @@ public class OutputGenerator extends AbstractJavaGenerator<Template2Parser.Outpu
                     if (s != null) {
                         generateBlank(writer, args);
                         writer.append("out.write(_s").append(stringId.toString()).append(");").append(configuration.getLineSeparator());
-                        list.add("private byte[] _s" + stringId + " = toBytes(" + s + ", \"" + configuration.getOutputJavaFileCharset() + "\");" + configuration.getLineSeparator());
+                        list.add("private static final byte[] _s" + stringId + " = getBytes(" + s + ", \"" + configuration.getOutputJavaFileCharset() + "\");" + configuration.getLineSeparator());
                     }
                 } catch (IOException e) {
                     log.error("generate output string exception", e);
