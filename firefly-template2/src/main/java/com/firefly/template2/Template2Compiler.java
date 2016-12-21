@@ -1,9 +1,9 @@
 package com.firefly.template2;
 
 import com.firefly.template2.generator.Template2ParserListener;
-import com.firefly.template2.utils.JavaCompilerUtils;
 import com.firefly.template2.parser.helper.Template2ParserHelper;
 import com.firefly.template2.parser.helper.Template2ParserWrap;
+import com.firefly.template2.utils.JavaCompilerUtils;
 import com.firefly.utils.lang.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -91,16 +91,22 @@ public class Template2Compiler {
         return null;
     }
 
-    public void compileJavaFiles(Map<String, File> toCompiledJavaFiles) {
+    public int compileJavaFiles(Map<String, File> toCompiledJavaFiles) {
         if (!toCompiledJavaFiles.isEmpty()) {
-            JavaCompilerUtils.compile(configuration.getRootPath().getAbsolutePath(), getClassPath(),
+            int ret = JavaCompilerUtils.compile(configuration.getRootPath().getAbsolutePath(),
+                    getClassPath(),
                     configuration.getOutputJavaFileCharset(),
                     toCompiledJavaFiles.entrySet()
                                        .stream()
                                        .map(Map.Entry::getValue)
                                        .map(File::getAbsolutePath)
-                                       .collect(Collectors.toList())
-            );
+                                       .collect(Collectors.toList()));
+            if (ret != 0) {
+                log.error("java file compiling exception");
+            }
+            return ret;
+        } else {
+            return 0;
         }
     }
 
