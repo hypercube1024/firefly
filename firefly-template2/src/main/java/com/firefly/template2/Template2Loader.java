@@ -5,11 +5,11 @@ import com.firefly.template2.model.impl.VariableStorageImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,26 +30,26 @@ public class Template2Loader {
             Files.walk(root)
                  .filter(p -> p.getFileName().toString().endsWith(".class"))
                  .forEach(p -> {
-                     String fileName = p.getFileName().toString();
-                     String className = fileName.substring(0, fileName.length() - ".class".length());
-                     try {
-                         loadClass(className, Paths.get(fileName));
-                     } catch (Exception e) {
-                         log.error("load class exception", e);
-                     }
+                     String fileName = p.toFile().getAbsolutePath();
+                     String rootFilePath = root.toFile().getAbsolutePath();
+                     String className = fileName.substring(rootFilePath.length() + 1, fileName.length() - ".class".length()).replace(File.separatorChar, '.');
+                     loadClass(className, p);
                  });
         } catch (IOException e) {
             log.error("read class file exception", e);
         }
     }
 
-    private Class<?> loadClass(String name, Path path) throws Exception {
-        classFilePath.putIfAbsent(name, path);
-        Class<?> clazz = classLoader.loadClass(name);
-        if (clazz != null) {
-            map.put(name, (TemplateRenderer) clazz.newInstance());
+    public void loadClass(String className, Path path) {
+        try {
+            classFilePath.putIfAbsent(className, path);
+            Class<?> clazz = classLoader.loadClass(className);
+            if (clazz != null) {
+                map.put(className, (TemplateRenderer) clazz.newInstance());
+            }
+        } catch (Exception e) {
+            log.error("load class exception", e);
         }
-        return clazz;
     }
 
     public void render(String name, OutputStream outputStream, Map<String, Object> parameters) {

@@ -28,7 +28,6 @@ public class Template2Compiler {
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     private Configuration configuration;
-    private final Map<String, File> javaFiles = new HashMap<>();
 
     public Template2Compiler() {
     }
@@ -43,10 +42,6 @@ public class Template2Compiler {
 
     public void setConfiguration(Configuration configuration) {
         this.configuration = configuration;
-    }
-
-    public Map<String, File> getJavaFiles() {
-        return javaFiles;
     }
 
     public Map<String, File> generateJavaFiles() {
@@ -75,7 +70,6 @@ public class Template2Compiler {
         Template2ParserWrap template2ParserWrap = helper.createTemplate2ParserWrap(p.toFile());
         try {
             Template2ParserListener listener = new Template2ParserListener(configuration, template2ParserWrap);
-            javaFiles.put(listener.getClassName(), listener.getOutputJavaFile());
             if (listener.isOutput()) {
                 ParseTree tree = template2ParserWrap.getParser().program();
                 ParseTreeWalker walker = new ParseTreeWalker();
@@ -91,16 +85,16 @@ public class Template2Compiler {
         return null;
     }
 
-    public int compileJavaFiles(Map<String, File> toCompiledJavaFiles) {
-        if (!toCompiledJavaFiles.isEmpty()) {
+    public int compileJavaFiles(Map<String, File> javaFiles) {
+        if (!javaFiles.isEmpty()) {
             int ret = JavaCompilerUtils.compile(configuration.getRootPath().getAbsolutePath(),
                     getClassPath(),
                     configuration.getOutputJavaFileCharset(),
-                    toCompiledJavaFiles.entrySet()
-                                       .stream()
-                                       .map(Map.Entry::getValue)
-                                       .map(File::getAbsolutePath)
-                                       .collect(Collectors.toList()));
+                    javaFiles.entrySet()
+                             .stream()
+                             .map(Map.Entry::getValue)
+                             .map(File::getAbsolutePath)
+                             .collect(Collectors.toList()));
             if (ret != 0) {
                 log.error("java file compiling exception");
             }
