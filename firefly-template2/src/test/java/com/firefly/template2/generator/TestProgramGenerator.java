@@ -46,12 +46,7 @@ public class TestProgramGenerator {
             System.out.println(writer.toString());
             Assert.assertThat(writer.toString(),
                     is("package com.firefly.template2.compiled.test;" + configuration.getLineSeparator()
-                            + configuration.getLineSeparator()
-                            + "import java.io.OutputStream;" + configuration.getLineSeparator()
-                            + "import java.io.IOException;" + configuration.getLineSeparator()
-                            + "import com.firefly.template2.TemplateRenderer;" + configuration.getLineSeparator()
-                            + "import com.firefly.template2.model.VariableStorage;" + configuration.getLineSeparator()
-                            + configuration.getLineSeparator()
+                            + program.generateImport()
                             + "public class HelloTest implements TemplateRenderer {" + configuration.getLineSeparator()
                             + "}" + configuration.getLineSeparator()));
         }

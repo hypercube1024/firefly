@@ -2,6 +2,7 @@ package com.firefly.template2.generator;
 
 import com.firefly.template2.Configuration;
 import com.firefly.template2.Template2Compiler;
+import com.firefly.template2.parser.Template2Parser;
 import com.firefly.utils.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,19 +23,18 @@ public class TestExtendGenerator {
         Configuration configuration = new Configuration();
         configuration.setTemplateHome(new File(Template2Compiler.class.getResource("/").toURI()).getAbsolutePath());
         Template2Compiler compiler = new Template2Compiler(configuration);
-        compiler.generateJavaFiles();
+        compiler.compileJavaFiles(compiler.generateJavaFiles());
+
+        Generator generator = new Generator(configuration);
+        ProgramGenerator program = generator.getGenerator(Template2Parser.ProgramContext.class);
 
         File file = compiler.getJavaFiles().get(configuration.getPackagePrefix() + ".TestProgramAndExtendsGenerator");
         System.out.println(FileUtils.readFileToString(file, configuration.getOutputJavaFileCharset()));
         Assert.assertThat(FileUtils.readFileToString(file, configuration.getOutputJavaFileCharset()), is(
                 "package com.firefly.template2.compiled;" + configuration.getLineSeparator() +
-                        configuration.getLineSeparator() +
-                        "import java.io.OutputStream;" + configuration.getLineSeparator() +
-                        "import java.io.IOException;" + configuration.getLineSeparator() +
-                        "import com.firefly.template2.TemplateRenderer;" + configuration.getLineSeparator() +
-                        "import com.firefly.template2.model.VariableStorage;" + configuration.getLineSeparator() +
-                        configuration.getLineSeparator() +
-                        "public class TestProgramAndExtendsGenerator extends com.firefly.template2.compiled.common.Layout implements TemplateRenderer {\n" +
-                        "}" + configuration.getLineSeparator()));
+                        program.generateImport() +
+                        "public class TestProgramAndExtendsGenerator extends com.firefly.template2.compiled.common.Layout implements TemplateRenderer {" + configuration.getLineSeparator() +
+                        "}" +
+                        configuration.getLineSeparator()));
     }
 }

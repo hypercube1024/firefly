@@ -26,9 +26,7 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
 
         try {
             writer.append("package ").append(generatePackage(templateFile)).append(";").append(configuration.getLineSeparator());
-            writer.append(configuration.getLineSeparator());
-            generateImport(writer);
-            writer.append(configuration.getLineSeparator());
+            writer.append(generateImport());
             writer.append("public class ").append(generateClass(templateFile));
             if (node != null) {
                 Template2Parser.ExtendTemplateContext extendTemplateContext = node.getRuleContext(Template2Parser.ExtendTemplateContext.class, 0);
@@ -56,11 +54,15 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
         }
     }
 
-    public void generateImport(Writer writer) throws IOException {
-        writer.append("import java.io.OutputStream;").append(configuration.getLineSeparator());
-        writer.append("import java.io.IOException;").append(configuration.getLineSeparator());
-        writer.append("import com.firefly.template2.TemplateRenderer;").append(configuration.getLineSeparator());
-        writer.append("import com.firefly.template2.model.VariableStorage;").append(configuration.getLineSeparator());
+    public String generateImport() {
+        StringBuilder s = new StringBuilder();
+        s.append(configuration.getLineSeparator());
+        s.append("import java.io.OutputStream;").append(configuration.getLineSeparator());
+        s.append("import java.io.IOException;").append(configuration.getLineSeparator());
+        s.append("import com.firefly.template2.TemplateRenderer;").append(configuration.getLineSeparator());
+        s.append("import com.firefly.template2.model.VariableStorage;").append(configuration.getLineSeparator());
+        s.append(configuration.getLineSeparator());
+        return s.toString();
     }
 
     public String generateClass(File templateFile) {
