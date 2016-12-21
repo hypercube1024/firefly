@@ -54,24 +54,16 @@ public class ProgramGenerator extends AbstractJavaGenerator<Template2Parser.Prog
         }
     }
 
-<<<<<<< Updated upstream
     public String generateImport() {
         StringBuilder s = new StringBuilder();
         s.append(configuration.getLineSeparator());
         s.append("import java.io.OutputStream;").append(configuration.getLineSeparator());
         s.append("import java.io.IOException;").append(configuration.getLineSeparator());
+        s.append("import static com.firefly.utils.StringUtils.getBytes;").append(configuration.getLineSeparator());
         s.append("import com.firefly.template2.TemplateRenderer;").append(configuration.getLineSeparator());
         s.append("import com.firefly.template2.model.VariableStorage;").append(configuration.getLineSeparator());
         s.append(configuration.getLineSeparator());
         return s.toString();
-=======
-    public void generateImport(Writer writer) throws IOException {
-        writer.append("import java.io.OutputStream;").append(configuration.getLineSeparator());
-        writer.append("import java.io.IOException;").append(configuration.getLineSeparator());
-        writer.append("import static com.firefly.utils.StringUtils.getBytes;").append(configuration.getLineSeparator());
-        writer.append("import com.firefly.template2.TemplateRenderer;").append(configuration.getLineSeparator());
-        writer.append("import com.firefly.template2.model.VariableStorage;").append(configuration.getLineSeparator());
->>>>>>> Stashed changes
     }
 
     public String generateClass(File templateFile) {
