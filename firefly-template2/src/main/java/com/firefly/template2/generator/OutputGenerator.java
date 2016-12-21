@@ -34,7 +34,7 @@ public class OutputGenerator extends AbstractJavaGenerator<Template2Parser.Outpu
                             s = strEscape(token.getText().substring(2, token.getText().length() - 2));
                             break;
                         case Template2Parser.OutputStringWithNewLine:
-                            s = strEscape(token.getText().substring(3, token.getText().length() - 3));
+                            s = strEscape(token.getText().substring(3, token.getText().length() - 3) + configuration.getLineSeparator());
                             break;
                         case Template2Parser.OutputNewLine:
                             s = strEscape(configuration.getLineSeparator());

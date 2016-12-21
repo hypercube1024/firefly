@@ -45,7 +45,7 @@ public class Template2Compiler {
     }
 
     public Map<String, File> generateJavaFiles() {
-        Map<String, File> toCompiledJavaFiles = new HashMap<>();
+        Map<String, File> javaFiles = new HashMap<>();
         Path path = Paths.get(configuration.getTemplateHome());
         try {
             Files.walk(path)
@@ -56,13 +56,13 @@ public class Template2Compiler {
                      }
                      Pair<String, File> pair = generateJavaFile(p);
                      if (pair != null) {
-                         toCompiledJavaFiles.put(pair.first, pair.second);
+                         javaFiles.put(pair.first, pair.second);
                      }
                  });
         } catch (IOException e) {
             log.error("generate java file exception", e);
         }
-        return toCompiledJavaFiles;
+        return javaFiles;
     }
 
     public Pair<String, File> generateJavaFile(Path p) {
@@ -74,10 +74,10 @@ public class Template2Compiler {
                 ParseTree tree = template2ParserWrap.getParser().program();
                 ParseTreeWalker walker = new ParseTreeWalker();
                 walker.walk(listener, tree);
-                Pair<String, File> toCompiledJavaFiles = new Pair<>();
-                toCompiledJavaFiles.first = listener.getClassName();
-                toCompiledJavaFiles.second = listener.getOutputJavaFile();
-                return toCompiledJavaFiles;
+                Pair<String, File> javaFile = new Pair<>();
+                javaFile.first = listener.getClassName();
+                javaFile.second = listener.getOutputJavaFile();
+                return javaFile;
             }
         } catch (IOException e) {
             log.error("create template parser listener exception", e);

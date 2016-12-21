@@ -23,7 +23,7 @@ public class Template2Loader {
 
     private final Map<String, TemplateRenderer> map = new ConcurrentHashMap<>();
     private final Map<String, Path> classFilePath = new ConcurrentHashMap<>();
-    private final Template2ClassLoader classLoader = new Template2ClassLoader(Template2Loader.class.getClassLoader());
+    private Template2ClassLoader classLoader = new Template2ClassLoader(Template2Loader.class.getClassLoader());
 
     public void loadAllClass(Path root) {
         try {
@@ -42,7 +42,7 @@ public class Template2Loader {
 
     public void loadClass(String className, Path path) {
         try {
-            classFilePath.putIfAbsent(className, path);
+            classFilePath.put(className, path);
             Class<?> clazz = classLoader.loadClass(className);
             if (clazz != null) {
                 map.put(className, (TemplateRenderer) clazz.newInstance());
@@ -52,12 +52,12 @@ public class Template2Loader {
         }
     }
 
-    public void render(String name, OutputStream outputStream, Map<String, Object> parameters) {
-        this.render(name, outputStream, parameters, null);
+    public void render(String className, OutputStream outputStream, Map<String, Object> parameters) {
+        this.render(className, outputStream, parameters, null);
     }
 
-    public void render(String name, OutputStream outputStream, Map<String, Object> parameters, Map<String, Object> globalVar) {
-        TemplateRenderer renderer = map.get(name);
+    public void render(String className, OutputStream outputStream, Map<String, Object> parameters, Map<String, Object> globalVar) {
+        TemplateRenderer renderer = map.get(className);
         if (renderer != null) {
             VariableStorage var = globalVar != null ? new VariableStorageImpl(Collections.singleton(globalVar)) : new VariableStorageImpl();
             var.callAction(() -> {
@@ -79,8 +79,18 @@ public class Template2Loader {
         @Override
         public Class<?> findClass(String name) {
             try {
-                byte[] data = Files.readAllBytes(classFilePath.get(name));
-                return defineClass(name, data, 0, data.length);
+                Path path = classFilePath.get(name);
+                if (path != null) {
+                    byte[] data = Files.readAllBytes(path);
+                    if (data != null && data.length > 0) {
+                        classFilePath.remove(name);
+                        return defineClass(name, data, 0, data.length);
+                    } else {
+                        throw new IllegalArgumentException("class " + name + " file is empty");
+                    }
+                } else {
+                    throw new IllegalArgumentException("class " + name + " not found");
+                }
             } catch (IOException e) {
                 log.error("read class file exception", e);
                 throw new RuntimeException(e);
