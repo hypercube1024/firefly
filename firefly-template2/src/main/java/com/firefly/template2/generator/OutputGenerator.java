@@ -55,11 +55,12 @@ public class OutputGenerator extends AbstractJavaGenerator<Template2Parser.Outpu
                 }
             }
             break;
-            case Template2Parser.OutputNewLine: {
-                String str = strEscape(configuration.getLineSeparator());
-                generateOutputJava(str, writer, args);
-            }
-            break;
+            case Template2Parser.OutputNewLine:
+                generateOutputJava(strEscape(configuration.getLineSeparator()), writer, args);
+                break;
+            case Template2Parser.OutputSpace:
+                generateOutputJava(strEscape(" "), writer, args);
+                break;
         }
     }
 

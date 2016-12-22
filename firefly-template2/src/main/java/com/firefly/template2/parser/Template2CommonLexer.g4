@@ -22,6 +22,7 @@ SUPER : 'super';
 OutputString : '``' .*? '``';
 EscapeOutputString : '```' .*? '```';
 OutputNewLine : '&nl;';
+OutputSpace : '&sp;';
 
 COMMENT
     :   '/*' .*? '*/' -> skip

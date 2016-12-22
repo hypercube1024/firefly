@@ -15,7 +15,7 @@ set : SET '(' Identifier '=' expression ')';
 
 templatePath : Identifier ('.' Identifier)* ;
 
-output : OutputString | EscapeOutputString | OutputNewLine;
+output : OutputString | EscapeOutputString | OutputNewLine | OutputSpace;
 
 // function
 mainFunction : MAIN templateBody END;
