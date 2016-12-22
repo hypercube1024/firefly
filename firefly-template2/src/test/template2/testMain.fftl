@@ -8,4 +8,6 @@ foo
 ```
 &nl;
 ``end``
+
+```` // test empty string
 #end

@@ -41,8 +41,12 @@ public class Template2ParserHelper {
             return new ANTLRInputStream(reader);
         } catch (IOException e) {
             log.error("create char stream exception", e);
-            throw new RuntimeException("create char stream exception", e);
+            throw new RuntimeException(e);
         }
+    }
+
+    public CharStream createCharStream(String string) {
+        return new ANTLRInputStream(string);
     }
 
     public Template2Lexer createLexer(CharStream input) {

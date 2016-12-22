@@ -2,13 +2,14 @@ package com.firefly.template2.generator;
 
 import com.firefly.template2.Configuration;
 import com.firefly.template2.parser.Template2Parser;
+import com.firefly.utils.StringUtils;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
@@ -21,34 +22,15 @@ public class OutputGenerator extends AbstractJavaGenerator<Template2Parser.Outpu
 
     @Override
     public void enter(Template2Parser.OutputContext node, Writer writer, Object... args) {
-        Integer stringId = (Integer) args[1];
-        List<String> list = (List<String>) args[2];
-        for (ParseTree o : node.children) {
-            if (o instanceof TerminalNode) {
-                TerminalNode terminalNode = (TerminalNode) o;
-                Token token = terminalNode.getSymbol();
-                try {
-                    String s = null;
-                    switch (token.getType()) {
-                        case Template2Parser.OutputString:
-                            s = strEscape(token.getText().substring(2, token.getText().length() - 2));
-                            break;
-                        case Template2Parser.OutputStringWithNewLine:
-                            s = strEscape(token.getText().substring(3, token.getText().length() - 3) + configuration.getLineSeparator());
-                            break;
-                        case Template2Parser.OutputNewLine:
-                            s = strEscape(configuration.getLineSeparator());
-                            break;
-                    }
-                    if (s != null) {
-                        generateBlank(writer, args);
-                        writer.append("out.write(_s").append(stringId.toString()).append(");").append(configuration.getLineSeparator());
-                        list.add("private static final byte[] _s" + stringId + " = getBytes(" + s + ", \"" + configuration.getOutputJavaFileCharset() + "\");" + configuration.getLineSeparator());
-                    }
-                } catch (IOException e) {
-                    log.error("generate output string exception", e);
-                }
-            }
+        Optional<Token> opt = node.children.stream()
+                                           .filter(n -> n instanceof TerminalNode)
+                                           .map(n -> (TerminalNode) n)
+                                           .map(TerminalNode::getSymbol)
+                                           .findFirst();
+
+        if (opt.isPresent()) {
+            Token token = opt.get();
+            token2OutputString(token, writer, args);
         }
     }
 
@@ -57,7 +39,46 @@ public class OutputGenerator extends AbstractJavaGenerator<Template2Parser.Outpu
 
     }
 
-    public String strEscape(String str) {
+    private void token2OutputString(Token token, Writer writer, Object... args) {
+        switch (token.getType()) {
+            case Template2Parser.OutputString: {
+                String c = token.getText().substring(2, token.getText().length() - 2);
+                if (StringUtils.hasText(c)) {
+                    generateOutputJava(strEscape(c), writer, args); // TODO process bean access
+                }
+            }
+            break;
+            case Template2Parser.EscapeOutputString: {
+                String c = token.getText().substring(3, token.getText().length() - 3);
+                if (StringUtils.hasText(c)) {
+                    generateOutputJava(strEscape(c), writer, args);
+                }
+            }
+            break;
+            case Template2Parser.OutputNewLine: {
+                String str = strEscape(configuration.getLineSeparator());
+                generateOutputJava(str, writer, args);
+            }
+            break;
+        }
+    }
+
+    private void generateOutputJava(String str, Writer writer, Object... args) {
+        try {
+            generateBlank(writer, args);
+            Integer stringId = (Integer) args[1];
+            List<String> list = (List<String>) args[2];
+            writer.append("out.write(_s").append(stringId.toString()).append(");")
+                  .append(configuration.getLineSeparator());
+            list.add("private static final byte[] _s" + stringId
+                    + " = getBytes(" + str + ", \"" + configuration.getOutputJavaFileCharset() + "\");"
+                    + configuration.getLineSeparator());
+        } catch (IOException e) {
+            log.error("generate output string exception", e);
+        }
+    }
+
+    private String strEscape(String str) {
         StringBuilder sb = new StringBuilder(str.length() * 2);
         sb.append('"');
 

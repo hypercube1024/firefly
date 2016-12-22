@@ -24,7 +24,6 @@ public class TestTemplate2Factory {
                         "ok" + configuration.getLineSeparator() +
                         "foo" + configuration.getLineSeparator() +
                         configuration.getLineSeparator() +
-                        configuration.getLineSeparator() +
                         "end"));
     }
 

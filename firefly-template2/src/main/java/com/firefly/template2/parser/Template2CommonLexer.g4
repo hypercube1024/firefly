@@ -20,7 +20,7 @@ THIS : 'this';
 SUPER : 'super';
 
 OutputString : '``' .*? '``';
-OutputStringWithNewLine : '```' .*? '```';
+EscapeOutputString : '```' .*? '```';
 OutputNewLine : '&nl;';
 
 COMMENT
