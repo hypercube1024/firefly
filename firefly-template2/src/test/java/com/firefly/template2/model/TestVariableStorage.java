@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * @author Pengtao Qiu
@@ -34,7 +35,9 @@ public class TestVariableStorage {
             Assert.assertThat(var.size(), is(3));
 
             Assert.assertThat(var.get("hello"), is("local variable"));
+            Assert.assertThat(var.getFirst("hello"), is("local variable"));
             Assert.assertThat(var.get("level"), is("1"));
+            Assert.assertThat(var.getFirst("level"), nullValue());
             Assert.assertThat(var.get("methodName"), is("main"));
 
             var.callAction(() -> {

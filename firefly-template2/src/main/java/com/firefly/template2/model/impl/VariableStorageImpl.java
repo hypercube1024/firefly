@@ -31,6 +31,11 @@ public class VariableStorageImpl implements VariableStorage {
     }
 
     @Override
+    public Object getFirst(String key) {
+        return deque.isEmpty() ? null : deque.getFirst().get(key);
+    }
+
+    @Override
     public Object put(String key, Object object) {
         return deque.getFirst().put(key, object);
     }

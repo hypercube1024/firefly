@@ -11,6 +11,8 @@ public interface VariableStorage {
 
     Object get(String key);
 
+    Object getFirst(String key);
+
     Object put(String key, Object object);
 
     int size();
