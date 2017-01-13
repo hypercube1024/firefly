@@ -16,13 +16,9 @@ public abstract class AbstractHTTPHandler implements Handler {
 
 	protected final HTTP2Configuration config;
 	protected final List<String> protocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1");
-	protected SSLContext sslContext;
 
 	public AbstractHTTPHandler(HTTP2Configuration config) {
 		this.config = config;
-		if (config.isSecureConnectionEnabled()) {
-			sslContext = config.getSslContextFactory().getSSLContext();
-		}
 	}
 
 	@Override

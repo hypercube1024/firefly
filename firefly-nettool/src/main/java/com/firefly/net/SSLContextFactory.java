@@ -1,8 +1,9 @@
 package com.firefly.net;
 
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 
 public interface SSLContextFactory {
 
-	public SSLContext getSSLContext();
+    SSLEngine createSSLEngine(boolean clientMode);
+
 }

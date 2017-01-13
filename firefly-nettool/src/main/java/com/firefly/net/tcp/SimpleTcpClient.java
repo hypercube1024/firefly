@@ -10,7 +10,6 @@ import com.firefly.utils.function.Func0;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.eclipse.jetty.alpn.ALPN;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.util.List;
 import java.util.Map;
@@ -143,12 +142,10 @@ public class SimpleTcpClient extends AbstractLifeCycle {
             config.setDecoder(AbstractSimpleHandler.sslDecoder);
             config.setHandler(new AbstractHandler() {
 
-                private SSLContext sslContext = config.getSslContextFactory().getSSLContext();
-
                 @Override
                 public void sessionOpened(Session session) throws Throwable {
-                    final SSLEngine sslEngine = sslContext.createSSLEngine();
-                    SSLSession sslSession = new SSLSession(sslContext, sslEngine, session, true, (ssl) -> {
+                    final SSLEngine sslEngine = config.getSslContextFactory().createSSLEngine(true);
+                    SSLSession sslSession = new SSLSession(sslEngine, session, (ssl) -> {
                         Object o = session.getAttachment();
                         if (o != null && o instanceof SecureTcpConnectionImpl) {
                             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
