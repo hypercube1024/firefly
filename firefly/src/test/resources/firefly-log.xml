@@ -4,9 +4,9 @@
 	
 	<logger>
 		<name>firefly-system</name>
-		<level>DEBUG</level>
+		<level>INFO</level>
 		<path>${log.path}</path>
- 		<enable-console>true</enable-console>
+ 		<!--<enable-console>true</enable-console>-->
 	</logger>
 	
 	<logger>

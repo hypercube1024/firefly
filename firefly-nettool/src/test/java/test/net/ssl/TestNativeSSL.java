@@ -7,7 +7,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 

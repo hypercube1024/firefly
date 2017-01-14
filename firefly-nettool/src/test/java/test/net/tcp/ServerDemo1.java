@@ -8,6 +8,7 @@ public class ServerDemo1 {
 
     public static void main(String[] args) {
 //        System.setProperty("javax.net.debug", "all");
+//        System.setProperty("debugMode", "true");
         TcpServerConfiguration config = new TcpServerConfiguration();
         config.setSecureConnectionEnabled(true);
         config.setTimeout(2 * 60 * 1000);

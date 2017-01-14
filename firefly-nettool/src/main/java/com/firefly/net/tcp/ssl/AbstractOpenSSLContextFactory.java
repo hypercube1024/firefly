@@ -23,25 +23,29 @@ public abstract class AbstractOpenSSLContextFactory implements SSLContextFactory
         byteBufAllocator = PooledByteBufAllocator.DEFAULT;
     }
 
-    public AbstractOpenSSLContextFactory(ByteBufAllocator byteBufAllocator) {
+    public ByteBufAllocator getByteBufAllocator() {
+        return byteBufAllocator;
+    }
+
+    public void setByteBufAllocator(ByteBufAllocator byteBufAllocator) {
         this.byteBufAllocator = byteBufAllocator;
     }
 
     @Override
     public SSLEngine createSSLEngine(boolean clientMode) {
+        init(clientMode);
+        return sslContext.newEngine(byteBufAllocator);
+    }
+
+    private void init(boolean clientMode) {
         if (sslContext == null) {
             synchronized (this) {
                 if (sslContext == null) {
-                    createSSLContext(clientMode);
-                    return sslContext.newEngine(byteBufAllocator);
-                } else {
-                    return sslContext.newEngine(byteBufAllocator);
+                    sslContext = createSSLContext(clientMode);
                 }
             }
-        } else {
-            return sslContext.newEngine(byteBufAllocator);
         }
     }
 
-    abstract public void createSSLContext(boolean clientMode);
+    abstract public SslContext createSSLContext(boolean clientMode);
 }

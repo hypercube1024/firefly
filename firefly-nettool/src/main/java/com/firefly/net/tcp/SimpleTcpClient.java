@@ -4,23 +4,13 @@ import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;
-import com.firefly.utils.function.Func0;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import org.eclipse.jetty.alpn.ALPN;
 
-import javax.net.ssl.SSLEngine;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleTcpClient extends AbstractLifeCycle {
-
-    // ALPN callback
-    private Action0 alpnUnsupported;
-    private Action1<String> alpnSelected;
-    private Func0<List<String>> alpnProtocols;
 
     private AsynchronousTcpClient client;
     private TcpConfiguration config;
@@ -34,21 +24,6 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     public SimpleTcpClient(TcpConfiguration config) {
         client = new AsynchronousTcpClient(config);
         this.config = config;
-    }
-
-    public SimpleTcpClient alpnUnsupported(Action0 alpnUnsupported) {
-        this.alpnUnsupported = alpnUnsupported;
-        return this;
-    }
-
-    public SimpleTcpClient alpnSelected(Action1<String> alpnSelected) {
-        this.alpnSelected = alpnSelected;
-        return this;
-    }
-
-    public SimpleTcpClient alpnProtocols(Func0<List<String>> alpnProtocols) {
-        this.alpnProtocols = alpnProtocols;
-        return this;
     }
 
     public Promise.Completable<TcpConnection> connect(String host, int port) {
@@ -144,40 +119,13 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 
                 @Override
                 public void sessionOpened(Session session) throws Throwable {
-                    final SSLEngine sslEngine = config.getSslContextFactory().createSSLEngine(true);
-                    SSLSession sslSession = new SSLSession(sslEngine, session, (ssl) -> {
+                    session.attachObject(new SecureTcpConnectionImpl(session, new SSLSession(config.getSslContextFactory(), true, session, (ssl) -> {
                         Object o = session.getAttachment();
                         if (o != null && o instanceof SecureTcpConnectionImpl) {
                             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
                             sessionOpen(session, c);
                         }
-                    }, new ALPN.ClientProvider() {
-
-                        @Override
-                        public List<String> protocols() {
-                            if (alpnProtocols != null) {
-                                return alpnProtocols.call();
-                            } else {
-                                return null;
-                            }
-                        }
-
-                        @Override
-                        public void unsupported() {
-                            if (alpnUnsupported != null) {
-                                alpnUnsupported.call();
-                            }
-                        }
-
-                        @Override
-                        public void selected(String protocol) {
-                            if (alpnSelected != null) {
-                                alpnSelected.call(protocol);
-                            }
-                        }
-                    });
-                    SecureTcpConnectionImpl c = new SecureTcpConnectionImpl(session, sslSession);
-                    session.attachObject(c);
+                    })));
                 }
 
                 @Override

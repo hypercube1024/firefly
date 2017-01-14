@@ -13,16 +13,14 @@ import java.util.concurrent.ExecutionException;
 public class SimpleHTTPClientDemo5 {
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
+//        System.setProperty("debugMode", "true");
         SimpleHTTPClientConfiguration httpConfiguration = new SimpleHTTPClientConfiguration();
-        SSLContextFactory sslContextFactory = new SelfSignedCertificateOpenSSLContextFactory();
-//        SSLContextFactory sslContextFactory = new DefaultSSLContextFactory();
-        httpConfiguration.setSslContextFactory(sslContextFactory);
         httpConfiguration.setSecureConnectionEnabled(true);
 
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
 
-        for (int j = 0; j < 1; j++) {
-            for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 1000; j++) {
+            for (int i = 0; i < 5; i++) {
                 long start = System.currentTimeMillis();
                 client.get("https://www.baidu.com")
                       .submit()

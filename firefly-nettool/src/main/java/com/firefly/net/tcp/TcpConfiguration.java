@@ -1,18 +1,14 @@
 package com.firefly.net.tcp;
 
 import com.firefly.net.Config;
-import com.firefly.net.Decoder;
 import com.firefly.net.SSLContextFactory;
-import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
-
-import java.nio.ByteBuffer;
+import com.firefly.net.tcp.ssl.SelfSignedCertificateOpenSSLContextFactory;
 
 public class TcpConfiguration extends Config {
 
     // SSL/TLS settings
     private boolean isSecureConnectionEnabled;
-    private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
+    private SSLContextFactory sslContextFactory = new SelfSignedCertificateOpenSSLContextFactory();
 
     public boolean isSecureConnectionEnabled() {
         return isSecureConnectionEnabled;

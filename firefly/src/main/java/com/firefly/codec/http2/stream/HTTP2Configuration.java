@@ -1,131 +1,131 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.net.SSLContextFactory;
-import com.firefly.net.tcp.ssl.DefaultCredentialSSLContextFactory;
+import com.firefly.net.tcp.ssl.SelfSignedCertificateOpenSSLContextFactory;
 
 public class HTTP2Configuration {
 
-	// TCP settings
-	private com.firefly.net.Config tcpConfiguration = new com.firefly.net.Config();
+    // TCP settings
+    private com.firefly.net.Config tcpConfiguration = new com.firefly.net.Config();
 
-	// SSL/TLS settings
-	private boolean isSecureConnectionEnabled;
-	private SSLContextFactory sslContextFactory = new DefaultCredentialSSLContextFactory();
+    // SSL/TLS settings
+    private boolean isSecureConnectionEnabled;
+    private SSLContextFactory sslContextFactory = new SelfSignedCertificateOpenSSLContextFactory();
 
-	// HTTP settings
-	private int maxDynamicTableSize = 4096;
-	private int streamIdleTimeout = 10 * 1000;
-	private String flowControlStrategy = "buffer";
-	private int initialStreamSendWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
-	private int initialSessionRecvWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
-	private int maxConcurrentStreams = -1;
-	private int maxHeaderBlockFragment = 0;
-	private int maxRequestHeadLength = 4 * 1024;
-	private int maxResponseHeadLength = 4 * 1024;
-	private String characterEncoding = "UTF-8";
+    // HTTP settings
+    private int maxDynamicTableSize = 4096;
+    private int streamIdleTimeout = 10 * 1000;
+    private String flowControlStrategy = "buffer";
+    private int initialStreamSendWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
+    private int initialSessionRecvWindow = FlowControlStrategy.DEFAULT_WINDOW_SIZE;
+    private int maxConcurrentStreams = -1;
+    private int maxHeaderBlockFragment = 0;
+    private int maxRequestHeadLength = 4 * 1024;
+    private int maxResponseHeadLength = 4 * 1024;
+    private String characterEncoding = "UTF-8";
 
-	public com.firefly.net.Config getTcpConfiguration() {
-		return tcpConfiguration;
-	}
+    public com.firefly.net.Config getTcpConfiguration() {
+        return tcpConfiguration;
+    }
 
-	public void setTcpConfiguration(com.firefly.net.Config tcpConfiguration) {
-		this.tcpConfiguration = tcpConfiguration;
-	}
+    public void setTcpConfiguration(com.firefly.net.Config tcpConfiguration) {
+        this.tcpConfiguration = tcpConfiguration;
+    }
 
-	public int getMaxDynamicTableSize() {
-		return maxDynamicTableSize;
-	}
+    public int getMaxDynamicTableSize() {
+        return maxDynamicTableSize;
+    }
 
-	public void setMaxDynamicTableSize(int maxDynamicTableSize) {
-		this.maxDynamicTableSize = maxDynamicTableSize;
-	}
+    public void setMaxDynamicTableSize(int maxDynamicTableSize) {
+        this.maxDynamicTableSize = maxDynamicTableSize;
+    }
 
-	public int getStreamIdleTimeout() {
-		return streamIdleTimeout;
-	}
+    public int getStreamIdleTimeout() {
+        return streamIdleTimeout;
+    }
 
-	public void setStreamIdleTimeout(int streamIdleTimeout) {
-		this.streamIdleTimeout = streamIdleTimeout;
-	}
+    public void setStreamIdleTimeout(int streamIdleTimeout) {
+        this.streamIdleTimeout = streamIdleTimeout;
+    }
 
-	public String getFlowControlStrategy() {
-		return flowControlStrategy;
-	}
+    public String getFlowControlStrategy() {
+        return flowControlStrategy;
+    }
 
-	public void setFlowControlStrategy(String flowControlStrategy) {
-		this.flowControlStrategy = flowControlStrategy;
-	}
+    public void setFlowControlStrategy(String flowControlStrategy) {
+        this.flowControlStrategy = flowControlStrategy;
+    }
 
-	public int getInitialSessionRecvWindow() {
-		return initialSessionRecvWindow;
-	}
+    public int getInitialSessionRecvWindow() {
+        return initialSessionRecvWindow;
+    }
 
-	public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
-		this.initialSessionRecvWindow = initialSessionRecvWindow;
-	}
+    public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
+        this.initialSessionRecvWindow = initialSessionRecvWindow;
+    }
 
-	public int getInitialStreamSendWindow() {
-		return initialStreamSendWindow;
-	}
+    public int getInitialStreamSendWindow() {
+        return initialStreamSendWindow;
+    }
 
-	public void setInitialStreamSendWindow(int initialStreamSendWindow) {
-		this.initialStreamSendWindow = initialStreamSendWindow;
-	}
+    public void setInitialStreamSendWindow(int initialStreamSendWindow) {
+        this.initialStreamSendWindow = initialStreamSendWindow;
+    }
 
-	public int getMaxConcurrentStreams() {
-		return maxConcurrentStreams;
-	}
+    public int getMaxConcurrentStreams() {
+        return maxConcurrentStreams;
+    }
 
-	public void setMaxConcurrentStreams(int maxConcurrentStreams) {
-		this.maxConcurrentStreams = maxConcurrentStreams;
-	}
+    public void setMaxConcurrentStreams(int maxConcurrentStreams) {
+        this.maxConcurrentStreams = maxConcurrentStreams;
+    }
 
-	public int getMaxHeaderBlockFragment() {
-		return maxHeaderBlockFragment;
-	}
+    public int getMaxHeaderBlockFragment() {
+        return maxHeaderBlockFragment;
+    }
 
-	public void setMaxHeaderBlockFragment(int maxHeaderBlockFragment) {
-		this.maxHeaderBlockFragment = maxHeaderBlockFragment;
-	}
+    public void setMaxHeaderBlockFragment(int maxHeaderBlockFragment) {
+        this.maxHeaderBlockFragment = maxHeaderBlockFragment;
+    }
 
-	public int getMaxRequestHeadLength() {
-		return maxRequestHeadLength;
-	}
+    public int getMaxRequestHeadLength() {
+        return maxRequestHeadLength;
+    }
 
-	public void setMaxRequestHeadLength(int maxRequestHeadLength) {
-		this.maxRequestHeadLength = maxRequestHeadLength;
-	}
+    public void setMaxRequestHeadLength(int maxRequestHeadLength) {
+        this.maxRequestHeadLength = maxRequestHeadLength;
+    }
 
-	public int getMaxResponseHeadLength() {
-		return maxResponseHeadLength;
-	}
+    public int getMaxResponseHeadLength() {
+        return maxResponseHeadLength;
+    }
 
-	public void setMaxResponseHeadLength(int maxResponseHeadLength) {
-		this.maxResponseHeadLength = maxResponseHeadLength;
-	}
+    public void setMaxResponseHeadLength(int maxResponseHeadLength) {
+        this.maxResponseHeadLength = maxResponseHeadLength;
+    }
 
-	public String getCharacterEncoding() {
-		return characterEncoding;
-	}
+    public String getCharacterEncoding() {
+        return characterEncoding;
+    }
 
-	public void setCharacterEncoding(String characterEncoding) {
-		this.characterEncoding = characterEncoding;
-	}
+    public void setCharacterEncoding(String characterEncoding) {
+        this.characterEncoding = characterEncoding;
+    }
 
-	public boolean isSecureConnectionEnabled() {
-		return isSecureConnectionEnabled;
-	}
+    public boolean isSecureConnectionEnabled() {
+        return isSecureConnectionEnabled;
+    }
 
-	public void setSecureConnectionEnabled(boolean isSecureConnectionEnabled) {
-		this.isSecureConnectionEnabled = isSecureConnectionEnabled;
-	}
+    public void setSecureConnectionEnabled(boolean isSecureConnectionEnabled) {
+        this.isSecureConnectionEnabled = isSecureConnectionEnabled;
+    }
 
-	public SSLContextFactory getSslContextFactory() {
-		return sslContextFactory;
-	}
+    public SSLContextFactory getSslContextFactory() {
+        return sslContextFactory;
+    }
 
-	public void setSslContextFactory(SSLContextFactory sslContextFactory) {
-		this.sslContextFactory = sslContextFactory;
-	}
+    public void setSslContextFactory(SSLContextFactory sslContextFactory) {
+        this.sslContextFactory = sslContextFactory;
+    }
 
 }

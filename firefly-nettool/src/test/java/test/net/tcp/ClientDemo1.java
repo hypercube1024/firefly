@@ -19,7 +19,7 @@ public class ClientDemo1 {
         config.setTimeout(2 * 60 * 1000);
         SimpleTcpClient client = new SimpleTcpClient(config);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 1; i++) {
             final int j = i;
 
             client.connect("localhost", 1212)

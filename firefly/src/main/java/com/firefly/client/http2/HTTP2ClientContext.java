@@ -9,5 +9,4 @@ public class HTTP2ClientContext {
 	public Promise<HTTPClientConnection> promise;
 	public Listener listener;
 	public ResponseHandler responseHandler;
-	public volatile HttpVersion httpVersion = HttpVersion.HTTP_1_1;
 }

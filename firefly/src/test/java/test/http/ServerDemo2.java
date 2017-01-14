@@ -24,7 +24,6 @@ public class ServerDemo2 {
 	 */
 	public static void start() throws InterruptedException {
 		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server2.xml");
-//		ServerBootstrap bootstrap = new ServerBootstrap("firefly-server3.xml");
 		bootstrap.start();
 		
 //		Thread.sleep(2000L);

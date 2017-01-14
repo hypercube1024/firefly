@@ -1,14 +1,10 @@
 package com.firefly.client.http2;
 
-import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
-import org.eclipse.jetty.alpn.ALPN;
 
-import javax.net.ssl.SSLEngine;
-import java.util.List;
 import java.util.Map;
 
 public class HTTP2ClientHandler extends AbstractHTTPHandler {
@@ -31,52 +27,12 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
         }
 
         if (config.isSecureConnectionEnabled()) {
-            final SSLEngine sslEngine = config.getSslContextFactory().createSSLEngine(true);
-            session.attachObject(new SSLSession(sslEngine, session, sslSession -> {
+            session.attachObject(new SSLSession(config.getSslContextFactory(), true, session, sslSession -> {
                 log.debug("client session {} SSL handshake finished", session.getSessionId());
-                switch (context.httpVersion) {
-                    case HTTP_1_1:
-                        initializeHTTP1ClientConnection(session, context, (SSLSession) session.getAttachment());
-                        break;
-                    case HTTP_2:
-                        initializeHTTP2ClientConnection(session, context, (SSLSession) session.getAttachment());
-                        break;
-                    default:
-                        throw new IllegalStateException(
-                                "client does not support the http version " + context.httpVersion);
-                }
-            }, new ALPN.ClientProvider() {
-
-                @Override
-                public List<String> protocols() {
-                    return protocols;
-                }
-
-                @Override
-                public void unsupported() {
-                    context.httpVersion = HttpVersion.HTTP_1_1;
-                    ALPN.remove(sslEngine);
-                }
-
-                @Override
-                public void selected(String protocol) {
-                    try {
-                        for (String clientProtocol : protocols) {
-                            if (clientProtocol.equals(protocol)) {
-                                log.debug("HTTP2 client selected protocol {}", protocol);
-                                if ("http/1.1".equalsIgnoreCase(protocol)) {
-                                    context.httpVersion = HttpVersion.HTTP_1_1;
-                                } else {
-                                    context.httpVersion = HttpVersion.HTTP_2;
-                                }
-                                return;
-                            }
-                        }
-                        log.info("The client can not negotiate protocol. server [{}] - client {}", protocol, protocols);
-                        session.close();
-                    } finally {
-                        ALPN.remove(sslEngine);
-                    }
+                if ("http/1.1".equals(sslSession.applicationProtocol())) {
+                    initializeHTTP1ClientConnection(session, context, sslSession);
+                } else {
+                    initializeHTTP2ClientConnection(session, context, sslSession);
                 }
             }));
         } else {
