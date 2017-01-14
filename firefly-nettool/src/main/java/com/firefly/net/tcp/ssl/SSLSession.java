@@ -103,9 +103,7 @@ public class SSLSession implements Closeable {
         switch (initialHSStatus) {
             case NOT_HANDSHAKING:
             case FINISHED: {
-                log.info("session {} handshake success!", session.getSessionId());
-                initialHSComplete = true;
-                sslEventHandler.handshakeFinished(this);
+                handshakeFinish();
                 return initialHSComplete;
             }
 
@@ -149,9 +147,7 @@ public class SSLSession implements Closeable {
 
                             case NOT_HANDSHAKING:
                             case FINISHED:
-                                log.info("session {} handshake success!", session.getSessionId());
-                                initialHSComplete = true;
-                                sslEventHandler.handshakeFinished(this);
+                                handshakeFinish();
                                 break needIO;
                             default:
                                 break;
@@ -162,9 +158,7 @@ public class SSLSession implements Closeable {
                         switch (initialHSStatus) {
                             case NOT_HANDSHAKING:
                             case FINISHED:
-                                log.info("session {} handshake success!", session.getSessionId());
-                                initialHSComplete = true;
-                                sslEventHandler.handshakeFinished(this);
+                                handshakeFinish();
                                 break needIO;
                         }
                         break needIO;
@@ -184,6 +178,12 @@ public class SSLSession implements Closeable {
                 }
             }
         } // "needIO" block.
+    }
+
+    private void handshakeFinish() {
+        log.info("session {} handshake success!", session.getSessionId());
+        initialHSComplete = true;
+        sslEventHandler.handshakeFinished(this);
     }
 
     private void doHandshakeResponse() throws IOException {
