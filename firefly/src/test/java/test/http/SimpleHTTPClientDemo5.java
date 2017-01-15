@@ -22,14 +22,14 @@ public class SimpleHTTPClientDemo5 {
                 long start = System.currentTimeMillis();
                 client.get("https://www.taobao.com")
                       .submit()
-                      .thenApply(res -> res.getStringBody("UTF-8"))
+                      .thenApply(res -> res.getStringBody("UTF-8").length())
                       .thenAccept(System.out::println)
                       .thenAccept(v -> {
                           System.out.print("------------------------");
                           System.out.println("time: " + (System.currentTimeMillis() - start));
                       });
             }
-            Thread.sleep(3000L);
+            Thread.sleep(5000L);
         }
     }
 }

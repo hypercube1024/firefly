@@ -6,7 +6,7 @@
 		<name>firefly-system</name>
 		<level>INFO</level>
 		<path>${log.path}</path>
- 		<!--<enable-console>true</enable-console>-->
+ 		<enable-console>true</enable-console>
 	</logger>
 	
 	<logger>

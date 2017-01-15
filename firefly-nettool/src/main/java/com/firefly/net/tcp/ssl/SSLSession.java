@@ -7,6 +7,7 @@ import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
+import com.firefly.utils.io.BufferUtils;
 import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public class SSLSession implements Closeable {
 
@@ -26,7 +28,7 @@ public class SSLSession implements Closeable {
     private final SSLEngine sslEngine;
 
     private ByteBuffer inNetBuffer;
-    private ByteBuffer requestBuffer;
+    private ByteBuffer outAppBuffer;
 
     private static final int requestBufferSize = 1024 * 8;
     private static final int writeBufferSize = 1024 * 8;
@@ -69,7 +71,7 @@ public class SSLSession implements Closeable {
         this.sslEventHandler = sslEventHandler;
         this.sslEngine = sslEngine;
 
-        requestBuffer = ByteBuffer.allocate(requestBufferSize);
+        outAppBuffer = ByteBuffer.allocate(requestBufferSize);
         initialHSComplete = false;
         sslHandler = new SslHandler(sslEngine);
 
@@ -132,7 +134,7 @@ public class SSLSession implements Closeable {
 
             unwrap:
             while (true) {
-                result = sslEngine.unwrap(inNetBuffer, requestBuffer);
+                result = sslEngine.unwrap(inNetBuffer, outAppBuffer);
                 initialHSStatus = result.getHandshakeStatus();
                 if (log.isDebugEnabled()) {
                     log.debug("session {} handshake receives data, init: {} | ret: {} | complete: {} ",
@@ -166,10 +168,10 @@ public class SSLSession implements Closeable {
                     case BUFFER_OVERFLOW:
                         // Reset the application buffer size.
                         int appSize = sslEngine.getSession().getApplicationBufferSize();
-                        ByteBuffer b = ByteBuffer.allocate(appSize + requestBuffer.position());
-                        requestBuffer.flip();
-                        b.put(requestBuffer);
-                        requestBuffer = b;
+                        ByteBuffer b = ByteBuffer.allocate(appSize + outAppBuffer.position());
+                        outAppBuffer.flip();
+                        b.put(outAppBuffer);
+                        outAppBuffer = b;
                         // retry the operation.
                         break;
 
@@ -241,12 +243,16 @@ public class SSLSession implements Closeable {
         }
     }
 
-    private ByteBuffer getRequestBuffer() {
-        requestBuffer.flip();
-        ByteBuffer buf = ByteBuffer.allocate(requestBuffer.remaining());
-        buf.put(requestBuffer).flip();
-        requestBuffer = ByteBuffer.allocate(requestBufferSize);
-        return buf;
+    private ByteBuffer getOutAppBuffer() {
+        outAppBuffer.flip();
+        if (outAppBuffer.hasRemaining()) {
+            ByteBuffer buf = ByteBuffer.allocate(outAppBuffer.remaining());
+            buf.put(outAppBuffer).flip();
+            outAppBuffer = ByteBuffer.allocate(requestBufferSize);
+            return buf;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -301,47 +307,60 @@ public class SSLSession implements Closeable {
             log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
         }
         merge(receiveBuffer);
-        if (!inNetBuffer.hasRemaining())
+        if (!inNetBuffer.hasRemaining()) {
             return null;
+        }
 
-        SSLEngineResult result;
+        //split net buffer when the net buffer remaining great than the net size
+        int netSize = sslEngine.getSession().getPacketBufferSize();
+        List<ByteBuffer> inNetBuffers = BufferUtils.split(inNetBuffer, netSize);
+        for (ByteBuffer net : inNetBuffers) {
+            SSLEngineResult result;
+            while (true) {
+                if (log.isInfoEnabled()) {
+                    log.info("SSL session {} unwrap, pocket -> {},  in -> {}, out -> {}, temp -> {}",
+                            session.getSessionId(), netSize, inNetBuffer.remaining(), outAppBuffer.remaining(),
+                            net.remaining());
+                }
+                result = sslEngine.unwrap(net, outAppBuffer);
+                int consumed = result.bytesConsumed();
+                inNetBuffer.position(inNetBuffer.position() + consumed);
+                if (log.isInfoEnabled()) {
+                    log.info("SSL session {} unwrap, status -> {}, in -> {}, out -> {}, temp -> {}, consumed -> {}",
+                            session.getSessionId(), result.getStatus(), inNetBuffer.remaining(), outAppBuffer.remaining(),
+                            net.remaining(), consumed);
+                }
 
-        while (true) {
-            result = sslEngine.unwrap(inNetBuffer, requestBuffer);
+                switch (result.getStatus()) {
+                    case BUFFER_OVERFLOW:
+                        // Reset the application buffer size.
+                        int appSize = sslEngine.getSession().getApplicationBufferSize();
+                        ByteBuffer b = ByteBuffer.allocate(appSize + outAppBuffer.position());
+                        outAppBuffer.flip();
+                        b.put(outAppBuffer);
+                        outAppBuffer = b;
+                        // retry the operation.
+                        break;
 
-			/*
-             * Could check here for a renegotation, but we're only doing a
-			 * simple read/write, and won't have enough state transitions to do
-			 * a complete handshake, so ignore that possibility.
-			 */
-            switch (result.getStatus()) {
+                    case BUFFER_UNDERFLOW:
+                        return getOutAppBuffer();
 
-                case BUFFER_OVERFLOW:
-                    // Reset the application buffer size.
-                    int appSize = sslEngine.getSession().getApplicationBufferSize();
-                    ByteBuffer b = ByteBuffer.allocate(appSize + requestBuffer.position());
-                    requestBuffer.flip();
-                    b.put(requestBuffer);
-                    requestBuffer = b;
-                    // retry the operation.
-                    break;
+                    case OK:
+                        if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
+                            doTasks();
+                        }
+                        if (!inNetBuffer.hasRemaining()) {
+                            return getOutAppBuffer();
+                        }
+                        break;
 
-                case BUFFER_UNDERFLOW:
-                    return null;
-
-                case OK:
-                    if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
-                        doTasks();
-                    }
-                    if (!inNetBuffer.hasRemaining())
-                        return getRequestBuffer();
-
-                    break;
-
-                default:
-                    throw new IOException("sslEngine error during data read: " + result.getStatus());
+                    default:
+                        throw new IOException("sslEngine error during data read: " + result.getStatus());
+                }
             }
         }
+
+        return getOutAppBuffer();
     }
 
     public int write(ByteBuffer[] outputBuffers, Callback callback) throws Throwable {
