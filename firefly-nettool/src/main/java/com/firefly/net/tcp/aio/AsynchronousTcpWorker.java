@@ -15,9 +15,9 @@ public class AsynchronousTcpWorker implements Worker {
 	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final Config config;
-	final EventManager eventManager;
+	private final EventManager eventManager;
 
-	public AsynchronousTcpWorker(Config config, EventManager eventManager) {
+	AsynchronousTcpWorker(Config config, EventManager eventManager) {
 		this.config = config;
 		this.eventManager = eventManager;
 	}

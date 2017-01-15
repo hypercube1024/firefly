@@ -49,8 +49,8 @@ public class AsynchronousTcpSession implements Session {
     private final Queue<OutputEntry<?>> outputBuffer = new LinkedList<>();
     private final BufferSizePredictor bufferSizePredictor = new AdaptiveBufferSizePredictor();
 
-    public AsynchronousTcpSession(int sessionId, Config config, EventManager eventManager,
-                                  AsynchronousSocketChannel socketChannel) {
+    AsynchronousTcpSession(int sessionId, Config config, EventManager eventManager,
+                           AsynchronousSocketChannel socketChannel) {
         this.sessionId = sessionId;
         this.openTime = Millisecond100Clock.currentTimeMillis();
         this.config = config;
@@ -168,7 +168,7 @@ public class AsynchronousTcpSession implements Session {
         }
     }
 
-    void _write(final OutputEntry<?> entry) {
+    private void _write(final OutputEntry<?> entry) {
         if (!isOpen())
             return;
 
@@ -282,7 +282,7 @@ public class AsynchronousTcpSession implements Session {
 
         private final long len;
 
-        public FileBufferReaderHandler(long len) {
+        private FileBufferReaderHandler(long len) {
             this.len = len;
         }
 
