@@ -1,24 +1,20 @@
 package com.firefly.net.buffer;
 
+import com.firefly.net.BufferPool;
+
 import java.nio.ByteBuffer;
 
-import com.firefly.net.ReceiveBufferPool;
+public class ThreadSafeIOBufferPool implements BufferPool {
 
-public class ThreadSafeIOBufferPool implements ReceiveBufferPool {
-	private final ThreadLocal<ReceiveBufferPool> receiveBufferPool = new ThreadLocal<ReceiveBufferPool>(){
-		@Override
-		protected ReceiveBufferPool initialValue() {
-			return new IOBufferPool();
-		}
-	};
-	
-	@Override
-	public final ByteBuffer acquire(int size) {
-		return receiveBufferPool.get().acquire(size);
-	}
-	
-	@Override
-	public final void release(ByteBuffer buffer) {
-		receiveBufferPool.get().release(buffer);
-	}
+    private final ThreadLocal<BufferPool> safeBufferPool = ThreadLocal.withInitial(IOBufferPool::new);
+
+    @Override
+    public final ByteBuffer acquire(int size) {
+        return safeBufferPool.get().acquire(size);
+    }
+
+    @Override
+    public final void release(ByteBuffer buffer) {
+        safeBufferPool.get().release(buffer);
+    }
 }

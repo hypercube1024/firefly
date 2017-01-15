@@ -2,7 +2,7 @@ package com.firefly.net;
 
 import java.nio.ByteBuffer;
 
-public interface ReceiveBufferPool {
+public interface BufferPool {
 
 	/**
 	 * Get byte buffer
