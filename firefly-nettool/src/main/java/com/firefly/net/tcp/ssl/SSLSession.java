@@ -249,6 +249,7 @@ public class SSLSession implements Closeable {
             ByteBuffer buf = ByteBuffer.allocate(outAppBuffer.remaining());
             buf.put(outAppBuffer).flip();
             outAppBuffer = ByteBuffer.allocate(requestBufferSize);
+            log.info("SSL session {} unwrap, app buffer -> {}, {}", session.getSessionId(), buf.remaining());
             return buf;
         } else {
             return null;
