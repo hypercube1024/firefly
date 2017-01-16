@@ -4,7 +4,7 @@
 	
 	<logger>
 		<name>firefly-system</name>
-		<level>INFO</level>
+		<level>DEBUG</level>
 		<path>${log.path}</path>
  		<!--<enable-console>true</enable-console>-->
 	</logger>
