@@ -13,10 +13,7 @@ import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Buffer utility methods.
@@ -1055,5 +1052,13 @@ public class BufferUtils {
             return list;
         }
 
+    }
+
+    public static long remaining(Collection<ByteBuffer> collection) {
+        long count = 0;
+        for (ByteBuffer byteBuffer : collection) {
+            count += byteBuffer.remaining();
+        }
+        return count;
     }
 }
