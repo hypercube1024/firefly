@@ -39,9 +39,10 @@ public class ProxyDemo {
                     AtomicLong count = new AtomicLong();
                     srcRequest.content(srcBuffer -> outputCompletable.thenAccept(dstOutput -> {
                         try {
-                            if (count.getAndAdd(srcBuffer.remaining()) < contentLength) {
+                            if (count.addAndGet(srcBuffer.remaining()) < contentLength) {
                                 dstOutput.write(srcBuffer);
                             } else {
+                                dstOutput.write(srcBuffer);
                                 dstOutput.close();
                             }
                         } catch (IOException e) {
