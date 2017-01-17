@@ -1,7 +1,8 @@
 package test.http;
 
 import com.firefly.client.http2.SimpleHTTPClient;
-import com.firefly.client.http2.SimpleHTTPClientConfiguration;
+import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.utils.io.BufferUtils;
 
 import java.util.concurrent.ExecutionException;
 
@@ -10,9 +11,9 @@ import java.util.concurrent.ExecutionException;
  */
 public class SimpleHTTPClientDemo5 {
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main2(String[] args) throws ExecutionException, InterruptedException {
 //        System.setProperty("debugMode", "true");
-        SimpleHTTPClientConfiguration httpConfiguration = new SimpleHTTPClientConfiguration();
+        HTTP2Configuration httpConfiguration = new HTTP2Configuration();
         httpConfiguration.setSecureConnectionEnabled(true);
 
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
@@ -31,5 +32,18 @@ public class SimpleHTTPClientDemo5 {
             }
             Thread.sleep(5000L);
         }
+    }
+
+    public static void main(String[] args) {
+        SimpleHTTPClient client = new SimpleHTTPClient();
+        client.get("http://www.csdn.net")
+              .headerComplete(res -> {
+                  System.out.println(res.toString());
+                  System.out.println(res.getFields());
+              })
+              .content(buf -> System.out.println(BufferUtils.toUTF8String(buf)))
+              .messageComplete(res -> System.out.println("ok"))
+              .end();
+
     }
 }

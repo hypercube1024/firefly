@@ -54,9 +54,15 @@ public class TestAsyncPool {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
         Promise.Completable<String> completable = new Promise.Completable<>();
         completable.succeeded("hello");
+        completable.thenAccept(System.out::println);
+        System.out.println(completable.get());
+        System.out.println(completable.get());
+        completable.thenAccept(System.out::println);
+        completable.thenAccept(System.out::println);
+        completable.thenAccept(System.out::println);
         completable.thenAccept(System.out::println);
     }
 

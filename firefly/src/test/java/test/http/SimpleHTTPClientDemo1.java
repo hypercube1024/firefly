@@ -9,16 +9,16 @@ import java.util.concurrent.Future;
 
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleResponse;
-import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MimeTypes;
+import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.io.BufferUtils;
 
 public class SimpleHTTPClientDemo1 {
 
 	public static void main(String[] args) throws Throwable {
-		SimpleHTTPClientConfiguration c = new SimpleHTTPClientConfiguration();
+		HTTP2Configuration c = new HTTP2Configuration();
 		SimpleHTTPClient client = new SimpleHTTPClient(c);
 		final long start = System.currentTimeMillis();
 		List<ByteBuffer> list = new ArrayList<>();

@@ -6,12 +6,12 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Pengtao Qiu
@@ -20,60 +20,76 @@ public class ProxyDemo {
 
     public static void main(String[] args) {
         SimpleHTTPClient client = new SimpleHTTPClient();
-        SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
-//        configuration.setSecureConnectionEnabled(true);
-        SimpleHTTPServer server = new SimpleHTTPServer(configuration);
-        server.headerComplete(request -> request.messageComplete(req -> {
-            SimpleResponse response = req.getResponse();
+        SimpleHTTPServer server = new SimpleHTTPServer();
 
-            System.out.println(req.getRequest().toString());
-            System.out.println(req.getRequest().getFields());
-            long length = req.getRequest().getFields().getLongField(HttpHeader.CONTENT_LENGTH.asString());
-
+        server.headerComplete(srcRequest -> {
             long start = System.currentTimeMillis();
+            System.out.println(srcRequest.getRequest().toString());
+            System.out.println(srcRequest.getRequest().getFields());
             try {
-                SimpleHTTPClient.RequestBuilder builder = client.request(req.getRequest().getMethod(), req.getRequest().getURI().toURI().toURL())
-                                                                .addAll(req.getRequest().getFields());
+                // copy origin request line and headers to destination request
+                Promise.Completable<HTTPOutputStream> outputCompletable = new Promise.Completable<>();
+                SimpleHTTPClient.RequestBuilder dstReq = client.request(srcRequest.getRequest().getMethod(), srcRequest.getRequest().getURI().toURI().toURL())
+                                                               .addAll(srcRequest.getRequest().getFields())
+                                                               .output(outputCompletable);
 
-                if (length > 0L) {
-                    builder.output(output -> {
-                        try (HTTPOutputStream out = output) {
-                            out.writeWithContentLength(req.getRequestBody().toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
+                long contentLength = srcRequest.getRequest().getFields().getLongField(HttpHeader.CONTENT_LENGTH.asString());
+                if (contentLength > 0) {
+                    // transmit origin request body to destination server
+                    AtomicLong count = new AtomicLong();
+                    srcRequest.content(srcBuffer -> outputCompletable.thenAccept(dstOutput -> {
+                        try {
+                            if (count.getAndAdd(srcBuffer.remaining()) < contentLength) {
+                                dstOutput.write(srcBuffer);
+                            } else {
+                                dstOutput.close();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }));
+                } else {
+                    outputCompletable.thenAccept(dstOutput -> {
+                        try {
+                            dstOutput.close();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     });
                 }
 
-                builder.submit()
-                       .thenAccept(dst -> {
-                           response.getResponse().setStatus(dst.getResponse().getStatus());
-                           response.getResponse().setReason(dst.getResponse().getReason());
-                           response.getResponse().setHttpVersion(dst.getResponse().getHttpVersion());
-                           response.getResponse()
-                                   .getFields()
-                                   .addAll(dst.getResponse().getFields());
-                           try (OutputStream out = response.getOutputStream()) {
-                               dst.getResponseBody().forEach(buffer -> {
-                                   try {
-                                       out.write(BufferUtils.toArray(buffer));
-                                   } catch (IOException e) {
-                                       e.printStackTrace();
-                                   }
-                               });
-                           } catch (IOException e) {
-                               e.printStackTrace();
-                           }
-                           System.out.println("time: " + (System.currentTimeMillis() - start));
-                       })
-                       .exceptionally(e -> {
-                           e.printStackTrace();
-                           return null;
-                       });
-            } catch (MalformedURLException | URISyntaxException e) {
+                srcRequest.messageComplete(req -> {
+                    SimpleResponse srcResponse = req.getResponse();
+                    srcResponse.setAsynchronous(true);
+                    dstReq.headerComplete(dstResponse -> {
+                        // copy destination server response line and headers to origin response
+                        System.out.println(dstResponse.toString());
+                        System.out.println(dstResponse.getFields());
+                        srcResponse.getResponse().setStatus(dstResponse.getStatus());
+                        srcResponse.getResponse().setReason(dstResponse.getReason());
+                        srcResponse.getResponse().setHttpVersion(dstResponse.getHttpVersion());
+                        srcResponse.getResponse().getFields().addAll(dstResponse.getFields());
+                    }).content(dstBuffer -> {
+                        // transmit destination server response body
+                        System.out.println("receive dst data -> " + dstBuffer.remaining());
+                        try {
+                            srcResponse.getOutputStream().write(BufferUtils.toArray(dstBuffer));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }).messageComplete(dstResponse -> {
+                        try {
+                            srcResponse.getOutputStream().close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("time: " + (System.currentTimeMillis() - start));
+                    }).end();
+                });
+                System.out.println("block time: " + (System.currentTimeMillis() - start) + "|" + srcRequest.getRequest().getURIString());
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-            System.out.println("block time: " + (System.currentTimeMillis() - start) + "|" + request.getRequest().getURIString());
-        })).listen("localhost", 3344);
+        }).listen("localhost", 3344);
     }
 }
