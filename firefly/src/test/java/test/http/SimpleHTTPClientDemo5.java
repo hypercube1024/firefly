@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class SimpleHTTPClientDemo5 {
 
-    public static void main2(String[] args) throws ExecutionException, InterruptedException {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
 //        System.setProperty("debugMode", "true");
         HTTP2Configuration httpConfiguration = new HTTP2Configuration();
         httpConfiguration.setSecureConnectionEnabled(true);
@@ -34,7 +34,7 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main2(String[] args) {
         SimpleHTTPClient client = new SimpleHTTPClient();
         client.get("http://www.csdn.net")
               .headerComplete(res -> {
