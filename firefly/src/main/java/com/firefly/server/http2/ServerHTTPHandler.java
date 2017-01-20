@@ -16,12 +16,12 @@ import com.firefly.utils.function.Func5;
 
 public interface ServerHTTPHandler extends HTTPHandler {
 
-	public void acceptConnection(HTTPConnection connection);
+	void acceptConnection(HTTPConnection connection);
 
-	public boolean accept100Continue(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
+	boolean accept100Continue(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
 			HTTPConnection connection);
 
-	public static class Adapter extends HTTPHandler.Adapter implements ServerHTTPHandler {
+	class Adapter extends HTTPHandler.Adapter implements ServerHTTPHandler {
 
 		protected Action1<HTTPConnection> acceptConnection;
 		protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> accept100Continue;
