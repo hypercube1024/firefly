@@ -14,7 +14,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class SimpleHTTPClientDemo5 {
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main(String[] args) {
+        HTTP2Configuration httpConfiguration = new HTTP2Configuration();
+        httpConfiguration.setSecureConnectionEnabled(true);
+        SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
+        client.get("https://tls.ctf.network/")
+              .submit()
+              .thenApply(res -> res.getStringBody("UTF-8"))
+              .thenAccept(System.out::println);
+    }
+
+    public static void main4(String[] args) throws ExecutionException, InterruptedException {
 //        System.setProperty("debugMode", "true");
         HTTP2Configuration httpConfiguration = new HTTP2Configuration();
         httpConfiguration.setSecureConnectionEnabled(true);

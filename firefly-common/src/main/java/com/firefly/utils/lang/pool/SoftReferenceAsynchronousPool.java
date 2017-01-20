@@ -38,9 +38,12 @@ public class SoftReferenceAsynchronousPool<T> extends AbstractLifeCycle implemen
     public T get() {
         for (int i = 0; i < pool.length; i++) {
             SoftReference<T> ref = pool[i];
-            if (ref != null && ref.get() != null && validator.isValid(ref.get())) {
-                pool[i] = null;
-                return ref.get();
+            if (ref != null) {
+                T t = ref.get();
+                if (t != null && validator.isValid(t)) {
+                    pool[i] = null;
+                    return t;
+                }
             }
         }
         return null;
@@ -50,9 +53,15 @@ public class SoftReferenceAsynchronousPool<T> extends AbstractLifeCycle implemen
     public void release(T t) {
         for (int i = 0; i < pool.length; i++) {
             SoftReference<T> ref = pool[i];
-            if (ref == null || ref.get() == null || !validator.isValid(ref.get())) {
+            if (ref == null) {
                 pool[i] = new SoftReference<>(t);
                 return;
+            } else {
+                T tmp = ref.get();
+                if (tmp == null || !validator.isValid(tmp)) {
+                    pool[i] = new SoftReference<>(t);
+                    return;
+                }
             }
         }
 
@@ -74,13 +83,7 @@ public class SoftReferenceAsynchronousPool<T> extends AbstractLifeCycle implemen
 
     @Override
     public boolean isEmpty() {
-        for (int i = 0; i < pool.length; i++) {
-            SoftReference<T> ref = pool[i];
-            if (ref != null && ref.get() != null) {
-                return true;
-            }
-        }
-        return false;
+        return size() == 0;
     }
 
     @Override

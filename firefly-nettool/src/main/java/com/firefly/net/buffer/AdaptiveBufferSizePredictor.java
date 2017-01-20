@@ -9,148 +9,143 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class AdaptiveBufferSizePredictor implements
-		BufferSizePredictor {
-	private static Logger log = LoggerFactory.getLogger("firefly-system");
+public class AdaptiveBufferSizePredictor implements BufferSizePredictor {
 
-	static final int DEFAULT_MINIMUM = 64;
-	static final int DEFAULT_INITIAL = 1024;
-	static final int DEFAULT_MAXIMUM = 65536;
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-	private static final int INDEX_INCREMENT = 4;
-	private static final int INDEX_DECREMENT = 1;
+    private static final int DEFAULT_MINIMUM = 64;
+    private static final int DEFAULT_INITIAL = 1024;
+    private static final int DEFAULT_MAXIMUM = 65536;
 
-	private static final int[] SIZE_TABLE;
+    private static final int INDEX_INCREMENT = 4;
+    private static final int INDEX_DECREMENT = 1;
 
-	static {
-		List<Integer> sizeTable = new ArrayList<Integer>();
-		for (int i = 1; i <= 8; i++) {
-			sizeTable.add(i);
-		}
+    private static final int[] SIZE_TABLE;
 
-		for (int i = 4; i < 32; i++) {
-			long v = 1L << i;
-			long inc = v >>> 4;
-			v -= inc << 3;
+    static {
+        List<Integer> sizeTable = new ArrayList<>();
+        for (int i = 1; i <= 8; i++) {
+            sizeTable.add(i);
+        }
 
-			for (int j = 0; j < 8; j++) {
-				v += inc;
-				if (v > Integer.MAX_VALUE) {
-					sizeTable.add(Integer.MAX_VALUE);
-				} else {
-					sizeTable.add((int) v);
-				}
-			}
-		}
+        for (int i = 4; i < 32; i++) {
+            long v = 1L << i;
+            long inc = v >>> 4;
+            v -= inc << 3;
 
-		SIZE_TABLE = new int[sizeTable.size()];
-		for (int i = 0; i < SIZE_TABLE.length; i++) {
-			SIZE_TABLE[i] = sizeTable.get(i);
-		}
-		log.debug(Arrays.toString(SIZE_TABLE));
-	}
+            for (int j = 0; j < 8; j++) {
+                v += inc;
+                if (v > Integer.MAX_VALUE) {
+                    sizeTable.add(Integer.MAX_VALUE);
+                } else {
+                    sizeTable.add((int) v);
+                }
+            }
+        }
 
-	private static int getSizeTableIndex(final int size) {
-		if (size <= 16) {
-			return size - 1;
-		}
+        SIZE_TABLE = new int[sizeTable.size()];
+        for (int i = 0; i < SIZE_TABLE.length; i++) {
+            SIZE_TABLE[i] = sizeTable.get(i);
+        }
+        log.debug(Arrays.toString(SIZE_TABLE));
+    }
 
-		int bits = 0;
-		int v = size;
-		do {
-			v >>>= 1;
-			bits++;
-		} while (v != 0);
+    private static int getSizeTableIndex(final int size) {
+        if (size <= 16) {
+            return size - 1;
+        }
 
-		final int baseIdx = bits << 3;
-		final int startIdx = baseIdx - 18;
-		final int endIdx = baseIdx - 25;
+        int bits = 0;
+        int v = size;
+        do {
+            v >>>= 1;
+            bits++;
+        } while (v != 0);
 
-		for (int i = startIdx; i >= endIdx; i--) {
-			if (size >= SIZE_TABLE[i]) {
-				return i;
-			}
-		}
+        final int baseIdx = bits << 3;
+        final int startIdx = baseIdx - 18;
+        final int endIdx = baseIdx - 25;
 
-		throw new Error("shouldn't reach here; please file a bug report.");
-	}
+        for (int i = startIdx; i >= endIdx; i--) {
+            if (size >= SIZE_TABLE[i]) {
+                return i;
+            }
+        }
 
-	private final int minIndex;
-	private final int maxIndex;
-	private int index;
-	private int nextReceiveBufferSize;
-	private boolean decreaseNow;
+        throw new Error("shouldn't reach here; please file a bug report.");
+    }
 
-	/**
-	 * Creates a new predictor with the default parameters. With the default
-	 * parameters, the expected buffer size starts from {@code 1024}, does not
-	 * go down below {@code 64}, and does not go up above {@code 65536}.
-	 */
-	public AdaptiveBufferSizePredictor() {
-		this(DEFAULT_MINIMUM, DEFAULT_INITIAL, DEFAULT_MAXIMUM);
-	}
+    private final int minIndex;
+    private final int maxIndex;
+    private int index;
+    private int nextReceiveBufferSize;
+    private boolean decreaseNow;
 
-	/**
-	 * Creates a new predictor with the specified parameters.
-	 * 
-	 * @param minimum
-	 *            the inclusive lower bound of the expected buffer size
-	 * @param initial
-	 *            the initial buffer size when no feed back was received
-	 * @param maximum
-	 *            the inclusive upper bound of the expected buffer size
-	 */
-	public AdaptiveBufferSizePredictor(int minimum, int initial,
-			int maximum) {
-		if (minimum <= 0) {
-			throw new IllegalArgumentException("minimum: " + minimum);
-		}
-		if (initial < minimum) {
-			throw new IllegalArgumentException("initial: " + initial);
-		}
-		if (maximum < initial) {
-			throw new IllegalArgumentException("maximum: " + maximum);
-		}
+    /**
+     * Creates a new predictor with the default parameters. With the default
+     * parameters, the expected buffer size starts from {@code 1024}, does not
+     * go down below {@code 64}, and does not go up above {@code 65536}.
+     */
+    public AdaptiveBufferSizePredictor() {
+        this(DEFAULT_MINIMUM, DEFAULT_INITIAL, DEFAULT_MAXIMUM);
+    }
 
-		int minIndex = getSizeTableIndex(minimum);
-		if (SIZE_TABLE[minIndex] < minimum) {
-			this.minIndex = minIndex + 1;
-		} else {
-			this.minIndex = minIndex;
-		}
+    /**
+     * Creates a new predictor with the specified parameters.
+     *
+     * @param minimum the inclusive lower bound of the expected buffer size
+     * @param initial the initial buffer size when no feed back was received
+     * @param maximum the inclusive upper bound of the expected buffer size
+     */
+    public AdaptiveBufferSizePredictor(int minimum, int initial, int maximum) {
+        if (minimum <= 0) {
+            throw new IllegalArgumentException("minimum: " + minimum);
+        }
+        if (initial < minimum) {
+            throw new IllegalArgumentException("initial: " + initial);
+        }
+        if (maximum < initial) {
+            throw new IllegalArgumentException("maximum: " + maximum);
+        }
 
-		int maxIndex = getSizeTableIndex(maximum);
-		if (SIZE_TABLE[maxIndex] > maximum) {
-			this.maxIndex = maxIndex - 1;
-		} else {
-			this.maxIndex = maxIndex;
-		}
+        int minIndex = getSizeTableIndex(minimum);
+        if (SIZE_TABLE[minIndex] < minimum) {
+            this.minIndex = minIndex + 1;
+        } else {
+            this.minIndex = minIndex;
+        }
 
-		index = getSizeTableIndex(initial);
-		nextReceiveBufferSize = SIZE_TABLE[index];
-	}
+        int maxIndex = getSizeTableIndex(maximum);
+        if (SIZE_TABLE[maxIndex] > maximum) {
+            this.maxIndex = maxIndex - 1;
+        } else {
+            this.maxIndex = maxIndex;
+        }
 
-	@Override
-	public int nextBufferSize() {
-		return nextReceiveBufferSize;
-	}
+        index = getSizeTableIndex(initial);
+        nextReceiveBufferSize = SIZE_TABLE[index];
+    }
 
-	@Override
-	public void previousReceivedBufferSize(int previousReceivedBufferSize) {
-		if (previousReceivedBufferSize <= SIZE_TABLE[Math.max(0, index
-				- INDEX_DECREMENT - 1)]) {
-			if (decreaseNow) {
-				index = Math.max(index - INDEX_DECREMENT, minIndex);
-				nextReceiveBufferSize = SIZE_TABLE[index];
-				decreaseNow = false;
-			} else {
-				decreaseNow = true;
-			}
-		} else if (previousReceivedBufferSize >= nextReceiveBufferSize) {
-			index = Math.min(index + INDEX_INCREMENT, maxIndex);
-			nextReceiveBufferSize = SIZE_TABLE[index];
-			decreaseNow = false;
-		}
-	}
+    @Override
+    public int nextBufferSize() {
+        return nextReceiveBufferSize;
+    }
+
+    @Override
+    public void previousReceivedBufferSize(int previousReceivedBufferSize) {
+        if (previousReceivedBufferSize <= SIZE_TABLE[Math.max(0, index - INDEX_DECREMENT - 1)]) {
+            if (decreaseNow) {
+                index = Math.max(index - INDEX_DECREMENT, minIndex);
+                nextReceiveBufferSize = SIZE_TABLE[index];
+                decreaseNow = false;
+            } else {
+                decreaseNow = true;
+            }
+        } else if (previousReceivedBufferSize >= nextReceiveBufferSize) {
+            index = Math.min(index + INDEX_INCREMENT, maxIndex);
+            nextReceiveBufferSize = SIZE_TABLE[index];
+            decreaseNow = false;
+        }
+    }
 
 }
