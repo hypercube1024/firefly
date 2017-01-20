@@ -60,8 +60,7 @@ public class ProxyDemo {
                 }
 
                 srcRequest.messageComplete(req -> {
-                    SimpleResponse srcResponse = req.getResponse();
-                    srcResponse.setAsynchronous(true);
+                    SimpleResponse srcResponse = req.getAsyncResponse();
                     dstReq.headerComplete(dstResponse -> {
                         // copy destination server response line and headers to origin response
                         System.out.println(dstResponse.toString());
