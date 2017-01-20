@@ -13,7 +13,10 @@ import com.firefly.utils.json.JsonObject;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 public class SimpleRequest {
 
@@ -34,10 +37,50 @@ public class SimpleRequest {
         this.response = new SimpleResponse(response, output);
     }
 
+    public HttpVersion getHttpVersion() {
+        return request.getHttpVersion();
+    }
+
+    public HttpFields getFields() {
+        return request.getFields();
+    }
+
+    public long getContentLength() {
+        return getFields().getLongField(HttpHeader.CONTENT_LENGTH.asString());
+    }
+
+    public Iterator<HttpField> iterator() {
+        return request.iterator();
+    }
+
+    public String getMethod() {
+        return request.getMethod();
+    }
+
+    public HttpURI getURI() {
+        return request.getURI();
+    }
+
+    public String getURIString() {
+        return request.getURIString();
+    }
+
+    public void forEach(Consumer<? super HttpField> action) {
+        request.forEach(action);
+    }
+
+    public Spliterator<HttpField> spliterator() {
+        return request.spliterator();
+    }
+
+    @Override
+    public String toString() {
+        return request.toString();
+    }
+
     public Request getRequest() {
         return request;
     }
-
 
     public SimpleResponse getResponse() {
         return response;

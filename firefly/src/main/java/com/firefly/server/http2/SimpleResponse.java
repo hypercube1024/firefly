@@ -1,8 +1,6 @@
 package com.firefly.server.http2;
 
-import com.firefly.codec.http2.model.Cookie;
-import com.firefly.codec.http2.model.CookieGenerator;
-import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.BufferedHTTPOutputStream;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
@@ -10,6 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 public class SimpleResponse implements Closeable {
 
@@ -26,6 +27,50 @@ public class SimpleResponse implements Closeable {
     public SimpleResponse(Response response, HTTPOutputStream output) {
         this.output = output;
         this.response = response;
+    }
+
+    public HttpVersion getHttpVersion() {
+        return response.getHttpVersion();
+    }
+
+    public void setHttpVersion(HttpVersion httpVersion) {
+        response.setHttpVersion(httpVersion);
+    }
+
+    public HttpFields getFields() {
+        return response.getFields();
+    }
+
+    public long getContentLength() {
+        return response.getContentLength();
+    }
+
+    public Iterator<HttpField> iterator() {
+        return response.iterator();
+    }
+
+    public int getStatus() {
+        return response.getStatus();
+    }
+
+    public String getReason() {
+        return response.getReason();
+    }
+
+    public void setStatus(int status) {
+        response.setStatus(status);
+    }
+
+    public void setReason(String reason) {
+        response.setReason(reason);
+    }
+
+    public void forEach(Consumer<? super HttpField> action) {
+        response.forEach(action);
+    }
+
+    public Spliterator<HttpField> spliterator() {
+        return response.spliterator();
     }
 
     public Response getResponse() {
