@@ -1,30 +1,32 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.http2.model.HttpVersion;
+
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 
-import com.firefly.codec.http2.model.HttpVersion;
-
 public interface HTTPConnection extends Closeable {
 
-	public HttpVersion getHttpVersion();
+    HttpVersion getHttpVersion();
 
-	public Object getAttachment();
+    Object getAttachment();
 
-	public void setAttachment(Object attachment);
+    void setAttachment(Object attachment);
 
-	public boolean isOpen();
+    boolean isOpen();
 
-	public boolean isEncrypted();
+    boolean isEncrypted();
 
-	public int getSessionId();
+    boolean isTunnel();
 
-	public long getReadBytes();
+    int getSessionId();
 
-	public long getWrittenBytes();
+    long getReadBytes();
 
-	public InetSocketAddress getLocalAddress();
+    long getWrittenBytes();
 
-	public InetSocketAddress getRemoteAddress();
+    InetSocketAddress getLocalAddress();
+
+    InetSocketAddress getRemoteAddress();
 
 }

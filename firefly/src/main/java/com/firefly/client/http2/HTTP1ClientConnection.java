@@ -30,7 +30,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private Promise<HTTPClientConnection> http2ConnectionPromise;
-	private Listener http2Sessionlistener;
+	private Listener http2SessionListener;
 	private Promise<Stream> initStream;
 	private Stream.Listener initStreamListener;
 	private volatile boolean upgradeHTTP2Successfully = false;
@@ -137,14 +137,14 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 	}
 
 	boolean upgradeProtocolToHTTP2(MetaData.Request request, MetaData.Response response) {
-		if (http2ConnectionPromise != null && http2Sessionlistener != null) {
+		if (http2ConnectionPromise != null && http2SessionListener != null) {
 			String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
 			if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
 				upgradeHTTP2Successfully = true;
 
 				// initialize http2 client connection;
 				final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
-						getTcpSession(), null, http2Sessionlistener) {
+						getTcpSession(), null, http2SessionListener) {
 					@Override
 					protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
 							Listener listener) {
@@ -154,7 +154,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 					}
 				};
 				getTcpSession().attachObject(http2Connection);
-				http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2Sessionlistener);
+				http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
 				return true;
 			} else {
 				return false;
@@ -169,7 +169,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 			final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler) {
 		upgradeHTTP2WithCleartext(request, settings,
 				promise, new HTTP2ClientResponseHandler.ClientStreamPromise(request,
-						new Promise.Adapter<HTTPOutputStream>(), true),
+						new Promise.Adapter<>(), true),
 				new HTTP2ClientResponseHandler(request, handler, this), new Listener.Adapter() {
 
 					@Override
@@ -193,7 +193,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 		}
 
 		this.http2ConnectionPromise = promise;
-		this.http2Sessionlistener = listener;
+		this.http2SessionListener = listener;
 		this.initStream = initStream;
 		this.initStreamListener = initStreamListener;
 

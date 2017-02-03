@@ -27,16 +27,12 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 		if (log.isDebugEnabled()) {
 			log.debug("server received the request line, {}, {}, {}", method, uri, version);
 		}
-		
+
 		request = new HTTPServerRequest(method, uri, version);
 		response = new HTTPServerResponse();
 		outputStream = new HTTP1ServerResponseOutputStream(response, connection);
-		
-		if(HttpMethod.PRI.is(method)) {
-			return connection.upgradeProtocolToHTTP2(request, response);
-		} else {
-			return false;
-		}
+
+		return HttpMethod.PRI.is(method) && connection.upgradeProtocolToHTTP2(request, response);
 	}
 
 	@Override
@@ -46,21 +42,23 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 
 	@Override
 	public boolean headerComplete() {
-		String expectedValue = request.getFields().get(HttpHeader.EXPECT);
-		if ("100-continue".equalsIgnoreCase(expectedValue)) {
-			boolean skipNext = serverHTTPHandler.accept100Continue(request, response, outputStream, connection);
-			if (skipNext) {
-				return true;
-			} else {
-				connection.response100Continue();
-				return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
-			}
+		if (HttpMethod.CONNECT.asString().equalsIgnoreCase(request.getMethod())) {
+			// TODO http tunnel
+			boolean skipNext = serverHTTPHandler.acceptHTTPTunnelConnection(request, response, outputStream, connection);
+			return skipNext;
 		} else {
-			boolean success = connection.upgradeProtocolToHTTP2(request, response);
-			if(success) {
-				return true;
+			String expectedValue = request.getFields().get(HttpHeader.EXPECT);
+			if ("100-continue".equalsIgnoreCase(expectedValue)) {
+				boolean skipNext = serverHTTPHandler.accept100Continue(request, response, outputStream, connection);
+				if (skipNext) {
+					return true;
+				} else {
+					connection.response100Continue();
+					return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
+				}
 			} else {
-				return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
+				boolean success = connection.upgradeProtocolToHTTP2(request, response);
+				return success || serverHTTPHandler.headerComplete(request, response, outputStream, connection);
 			}
 		}
 	}
@@ -73,11 +71,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 	@Override
 	public boolean messageComplete() {
 		try {
-			if(connection.upgradeHTTP2Successfully) {
-				return true;
-			} else {
-				return serverHTTPHandler.messageComplete(request, response, outputStream, connection);
-			}
+			return connection.upgradeHTTP2Successfully || serverHTTPHandler.messageComplete(request, response, outputStream, connection);
 		} finally {
 			connection.getParser().reset();
 		}

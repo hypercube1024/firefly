@@ -229,7 +229,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
 	boolean upgradeProtocolToHTTP2(MetaData.Request request, MetaData.Response response) {
 		if (HttpMethod.PRI.is(request.getMethod())) {
-			// TODO need to test not implements
+			// XXX need test
 			HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config, tcpSession, sslSession,
 					serverSessionListener);
 			tcpSession.attachObject(http2ServerConnection);
