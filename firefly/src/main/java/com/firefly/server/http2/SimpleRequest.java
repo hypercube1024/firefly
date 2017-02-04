@@ -12,10 +12,8 @@ import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Spliterator;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class SimpleRequest {
@@ -30,6 +28,8 @@ public class SimpleRequest {
 
     List<Cookie> cookies;
     String stringBody;
+
+    ConcurrentHashMap<String, Object> attributes = new ConcurrentHashMap<>();
 
     public SimpleRequest(Request request, Response response, HTTPOutputStream output) {
         this.request = request;
@@ -72,6 +72,22 @@ public class SimpleRequest {
 
     public Spliterator<HttpField> spliterator() {
         return request.spliterator();
+    }
+
+    public Object get(String key) {
+        return attributes.get(key);
+    }
+
+    public Object put(String key, Object value) {
+        return attributes.put(key, value);
+    }
+
+    public Object remove(String key) {
+        return attributes.remove(key);
+    }
+
+    public ConcurrentHashMap<String, Object> getAttributes() {
+        return attributes;
     }
 
     @Override

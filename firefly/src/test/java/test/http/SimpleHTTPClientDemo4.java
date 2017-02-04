@@ -13,12 +13,14 @@ public class SimpleHTTPClientDemo4 {
 
         for (int i = 0; i < 5; i++) {
             client.post("http://localhost:3333/postData")
+                  .put("RequestId", i + "_")
                   .body("test post data, hello foo " + i)
                   .submit(r -> System.out.println(r.getStringBody()));
         }
 
         for (int i = 10; i < 20; i++) {
             client.post("http://localhost:3333/postData")
+                  .put("RequestId", i + "_")
                   .body("test post data, hello foo " + i)
                   .submit()
                   .thenAcceptAsync(r -> System.out.println(r.getStringBody()));
@@ -27,6 +29,7 @@ public class SimpleHTTPClientDemo4 {
         for (int i = 20; i < 30; i++) {
             Promise.Completable<SimpleResponse> future = client
                     .post("http://localhost:3333/postData")
+                    .put("RequestId", i + "_")
                     .body("test post data, hello foo " + i)
                     .submit();
             SimpleResponse r = future.get();
