@@ -43,9 +43,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
 	@Override
 	public boolean headerComplete() {
 		if (HttpMethod.CONNECT.asString().equalsIgnoreCase(request.getMethod())) {
-			// TODO http tunnel
-			boolean skipNext = serverHTTPHandler.acceptHTTPTunnelConnection(request, response, outputStream, connection);
-			return skipNext;
+			return serverHTTPHandler.acceptHTTPTunnelConnection(request, response, outputStream, connection);
 		} else {
 			String expectedValue = request.getFields().get(HttpHeader.EXPECT);
 			if ("100-continue".equalsIgnoreCase(expectedValue)) {

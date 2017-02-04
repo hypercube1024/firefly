@@ -46,8 +46,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 
         http2Configuration.getTcpConfiguration().setDecoder(decoder);
         http2Configuration.getTcpConfiguration().setEncoder(encoder);
-        http2Configuration.getTcpConfiguration()
-                .setHandler(new HTTP2ServerHandler(http2Configuration, listener, serverHTTPHandler));
+        http2Configuration.getTcpConfiguration().setHandler(new HTTP2ServerHandler(http2Configuration, listener, serverHTTPHandler));
         this.server = new AsynchronousTcpServer(http2Configuration.getTcpConfiguration());
         this.http2Configuration = http2Configuration;
     }
