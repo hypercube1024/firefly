@@ -13,7 +13,12 @@ import java.nio.ByteBuffer;
 public interface HTTPHandler {
 
     boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response,
-                    HTTPOutputStream output, HTTPConnection connection);
+                    HTTPOutputStream output,
+                    HTTPConnection connection);
+
+    boolean contentComplete(MetaData.Request request, MetaData.Response response,
+                            HTTPOutputStream output,
+                            HTTPConnection connection);
 
     boolean headerComplete(MetaData.Request request, MetaData.Response response,
                            HTTPOutputStream output,
@@ -32,24 +37,16 @@ public interface HTTPHandler {
 
     class Adapter implements HTTPHandler {
 
-        protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> messageComplete;
         protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> headerComplete;
         protected Func5<ByteBuffer, Request, Response, HTTPOutputStream, HTTPConnection, Boolean> content;
+        protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> contentComplete;
+        protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> messageComplete;
         protected Action6<Integer, String, Request, Response, HTTPOutputStream, HTTPConnection> badMessage;
         protected Action4<Request, Response, HTTPOutputStream, HTTPConnection> earlyEOF;
 
         @Override
-        public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
-                               HTTPConnection connection) {
-            if (content != null) {
-                return content.call(item, request, response, output, connection);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public boolean headerComplete(Request request, Response response, HTTPOutputStream output,
+        public boolean headerComplete(Request request, Response response,
+                                      HTTPOutputStream output,
                                       HTTPConnection connection) {
             if (headerComplete != null) {
                 return headerComplete.call(request, response, output, connection);
@@ -59,7 +56,31 @@ public interface HTTPHandler {
         }
 
         @Override
-        public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
+        public boolean content(ByteBuffer item, Request request, Response response,
+                               HTTPOutputStream output,
+                               HTTPConnection connection) {
+            if (content != null) {
+                return content.call(item, request, response, output, connection);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public boolean contentComplete(MetaData.Request request, MetaData.Response response,
+                                       HTTPOutputStream output,
+                                       HTTPConnection connection) {
+            if (contentComplete != null) {
+                return contentComplete.call(request, response, output, connection);
+            } else {
+                return false;
+            }
+        }
+
+
+        @Override
+        public boolean messageComplete(Request request, Response response,
+                                       HTTPOutputStream output,
                                        HTTPConnection connection) {
             if (messageComplete != null) {
                 return messageComplete.call(request, response, output, connection);
@@ -69,7 +90,8 @@ public interface HTTPHandler {
         }
 
         @Override
-        public void badMessage(int status, String reason, Request request, Response response, HTTPOutputStream output,
+        public void badMessage(int status, String reason, Request request, Response response,
+                               HTTPOutputStream output,
                                HTTPConnection connection) {
             if (badMessage != null) {
                 badMessage.call(status, reason, request, response, output, connection);

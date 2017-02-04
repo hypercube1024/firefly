@@ -57,6 +57,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         Action1<Response> headerComplete;
         Action1<ByteBuffer> content;
+        Action1<Response> contentComplete;
         Action1<Response> messageComplete;
 
         Action3<Integer, String, Response> badMessage;
@@ -142,6 +143,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         public RequestBuilder content(Action1<ByteBuffer> content) {
             this.content = content;
+            return this;
+        }
+
+        public RequestBuilder contentComplete(Action1<Response> contentComplete) {
+            this.contentComplete = contentComplete;
             return this;
         }
 
@@ -334,6 +340,19 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             }
                         }
                         return false;
+                    }).content((buffer, req, resp, outputStream, conn) -> {
+                        if (r.content != null) {
+                            r.content.call(buffer);
+                        }
+                        if (r.future != null && r.simpleResponse != null) {
+                            r.simpleResponse.responseBody.add(buffer);
+                        }
+                        return false;
+                    }).contentComplete((req, resp, outputStream, conn) -> {
+                        if (r.contentComplete != null) {
+                            r.contentComplete.call(resp);
+                        }
+                        return false;
                     }).messageComplete((req, resp, outputStream, conn) -> {
                         release(connection, pool);
                         log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
@@ -345,14 +364,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             r.future.succeeded(r.simpleResponse);
                         }
                         return true;
-                    }).content((buffer, req, resp, outputStream, conn) -> {
-                        if (r.content != null) {
-                            r.content.call(buffer);
-                        }
-                        if (r.future != null && r.simpleResponse != null) {
-                            r.simpleResponse.responseBody.add(buffer);
-                        }
-                        return false;
                     }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
                         release(connection, pool);
                         log.debug("bad message of the connection {} , released: {}", connection.getSessionId(),

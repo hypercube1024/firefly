@@ -141,6 +141,11 @@ public class HttpGeneratorServerHTTPTest {
                         chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
                         continue;
 
+                    case NEED_CHUNK_TRAILER:
+                        chunk = BufferUtils.allocate(2048);
+                        continue;
+
+
                     case FLUSH:
                         if (BufferUtils.hasContent(header)) {
                             response += BufferUtils.toString(header);
@@ -196,6 +201,11 @@ public class HttpGeneratorServerHTTPTest {
         @Override
         public boolean headerComplete() {
             _content = null;
+            return false;
+        }
+
+        @Override
+        public boolean contentComplete() {
             return false;
         }
 

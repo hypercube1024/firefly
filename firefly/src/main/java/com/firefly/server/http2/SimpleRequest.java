@@ -24,6 +24,7 @@ public class SimpleRequest {
     SimpleResponse response;
     HTTPConnection connection;
     Action1<ByteBuffer> content;
+    Action1<SimpleRequest> contentComplete;
     Action1<SimpleRequest> messageComplete;
     List<ByteBuffer> requestBody = new ArrayList<>();
 
@@ -101,6 +102,11 @@ public class SimpleRequest {
 
     public SimpleRequest content(Action1<ByteBuffer> content) {
         this.content = content;
+        return this;
+    }
+
+    public SimpleRequest contentComplete(Action1<SimpleRequest> contentComplete) {
+        this.contentComplete = contentComplete;
         return this;
     }
 

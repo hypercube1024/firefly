@@ -5,6 +5,7 @@ import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.io.BufferUtils;
 
+import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class SimpleHTTPClientDemo5 {
 
-    public static void main(String[] args) {
+    public static void main5(String[] args) {
         HTTP2Configuration httpConfiguration = new HTTP2Configuration();
         httpConfiguration.setSecureConnectionEnabled(true);
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
@@ -72,8 +73,25 @@ public class SimpleHTTPClientDemo5 {
                   System.out.println(res.getFields());
               })
               .content(buf -> System.out.println(BufferUtils.toUTF8String(buf)))
+              .contentComplete(res -> System.out.println("content complete"))
               .messageComplete(res -> System.out.println("ok"))
               .end();
 
+    }
+
+    public static void main(String[] args) {
+        HTTP2Configuration httpConfiguration = new HTTP2Configuration();
+        httpConfiguration.setSecureConnectionEnabled(true);
+
+        SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
+        client.get("https://login.taobao.com/")
+              .headerComplete(res -> {
+                  System.out.println(res.toString());
+                  System.out.println(res.getFields());
+              })
+              .content(buf -> System.out.println(BufferUtils.toString(buf, Charset.forName("GBK"))))
+              .contentComplete(res -> System.out.println("content complete"))
+              .messageComplete(res -> System.out.println("ok"))
+              .end();
     }
 }

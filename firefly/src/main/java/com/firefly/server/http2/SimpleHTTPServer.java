@@ -76,6 +76,12 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
                         r.requestBody.add(buffer);
                     }
                     return false;
+                }).contentComplete((request, response, out, connection) -> {
+                    SimpleRequest r = (SimpleRequest) request.getAttachment();
+                    if (r.contentComplete != null) {
+                        r.contentComplete.call(r);
+                    }
+                    return false;
                 }).messageComplete((request, response, out, connection) -> {
                     SimpleRequest r = (SimpleRequest) request.getAttachment();
                     if (r.messageComplete != null) {

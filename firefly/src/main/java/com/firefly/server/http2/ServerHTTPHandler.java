@@ -32,21 +32,27 @@ public interface ServerHTTPHandler extends HTTPHandler {
         protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> acceptHTTPTunnelConnection;
         protected Action2<ByteBuffer, HTTPTunnelConnection> httpTunnelContent;
 
-        public ServerHTTPHandler.Adapter messageComplete(
-                Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> messageComplete) {
-            this.messageComplete = messageComplete;
-            return this;
-        }
-
         public ServerHTTPHandler.Adapter headerComplete(
                 Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> headerComplete) {
             this.headerComplete = headerComplete;
             return this;
         }
 
+        public ServerHTTPHandler.Adapter messageComplete(
+                Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> messageComplete) {
+            this.messageComplete = messageComplete;
+            return this;
+        }
+
         public ServerHTTPHandler.Adapter content(
                 Func5<ByteBuffer, Request, Response, HTTPOutputStream, HTTPConnection, Boolean> content) {
             this.content = content;
+            return this;
+        }
+
+        public ServerHTTPHandler.Adapter contentComplete(
+                Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> contentComplete) {
+            this.contentComplete = contentComplete;
             return this;
         }
 
@@ -76,6 +82,11 @@ public interface ServerHTTPHandler extends HTTPHandler {
         public ServerHTTPHandler.Adapter acceptHTTPTunnelConnection(
                 Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> acceptHTTPTunnelConnection) {
             this.acceptHTTPTunnelConnection = acceptHTTPTunnelConnection;
+            return this;
+        }
+
+        public ServerHTTPHandler.Adapter httpTunnelContent(Action2<ByteBuffer, HTTPTunnelConnection> httpTunnelContent) {
+            this.httpTunnelContent = httpTunnelContent;
             return this;
         }
 
