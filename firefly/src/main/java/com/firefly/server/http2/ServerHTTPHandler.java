@@ -6,6 +6,7 @@ import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPHandler;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.http2.stream.HTTPTunnelConnection;
 import com.firefly.utils.function.*;
 
 import java.nio.ByteBuffer;
@@ -22,11 +23,14 @@ public interface ServerHTTPHandler extends HTTPHandler {
                                        HTTPOutputStream output,
                                        HTTPConnection connection);
 
+    void httpTunnelContent(ByteBuffer item, HTTPTunnelConnection httpTunnelConnection);
+
     class Adapter extends HTTPHandler.Adapter implements ServerHTTPHandler {
 
         protected Action1<HTTPConnection> acceptConnection;
         protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> accept100Continue;
         protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> acceptHTTPTunnelConnection;
+        protected Action2<ByteBuffer, HTTPTunnelConnection> httpTunnelContent;
 
         public ServerHTTPHandler.Adapter messageComplete(
                 Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> messageComplete) {
@@ -69,6 +73,12 @@ public interface ServerHTTPHandler extends HTTPHandler {
             return this;
         }
 
+        public ServerHTTPHandler.Adapter acceptHTTPTunnelConnection(
+                Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> acceptHTTPTunnelConnection) {
+            this.acceptHTTPTunnelConnection = acceptHTTPTunnelConnection;
+            return this;
+        }
+
         @Override
         public void acceptConnection(HTTPConnection connection) {
             if (acceptConnection != null) {
@@ -88,12 +98,19 @@ public interface ServerHTTPHandler extends HTTPHandler {
 
         @Override
         public boolean acceptHTTPTunnelConnection(MetaData.Request request, MetaData.Response response,
-                                           HTTPOutputStream output,
-                                           HTTPConnection connection) {
+                                                  HTTPOutputStream output,
+                                                  HTTPConnection connection) {
             if (acceptHTTPTunnelConnection != null) {
                 return acceptHTTPTunnelConnection.call(request, response, output, connection);
             } else {
                 return false;
+            }
+        }
+
+        @Override
+        public void httpTunnelContent(ByteBuffer item, HTTPTunnelConnection httpTunnelConnection) {
+            if (httpTunnelContent != null) {
+                httpTunnelContent.call(item, httpTunnelConnection);
             }
         }
 

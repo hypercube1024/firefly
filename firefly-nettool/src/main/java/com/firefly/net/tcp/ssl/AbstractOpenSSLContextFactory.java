@@ -36,6 +36,11 @@ public abstract class AbstractOpenSSLContextFactory implements SSLContextFactory
         return getSslContext(clientMode).newEngine(byteBufAllocator);
     }
 
+    @Override
+    public SSLEngine createSSLEngine(boolean clientMode, String peerHost, int peerPort) {
+        return getSslContext(clientMode).newEngine(byteBufAllocator, peerHost, peerPort);
+    }
+
     public SslContext getSslContext(boolean clientMode) {
         init(clientMode);
         return sslContext;
