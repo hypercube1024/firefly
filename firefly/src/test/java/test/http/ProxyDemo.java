@@ -73,7 +73,7 @@ public class ProxyDemo {
                             e.printStackTrace();
                         }
                     }).messageComplete(dstResponse -> {
-                        IO.close(srcResponse.getOutputStream());
+                        IO.close(srcResponse);
                         System.out.println("time: " + (System.currentTimeMillis() - start));
                     }).end();
                 });
