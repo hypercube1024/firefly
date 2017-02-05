@@ -24,25 +24,22 @@ import static org.junit.Assert.assertEquals;
 public class TestBufferUtils {
 
     @Test
-    public void testNormalizeCapacity() {
-        Assert.assertThat(BufferUtils.normalizeBufferSize(5), is(1024));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(1023), is(1024));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(1024), is(1024));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(70), is(1024));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(1025), is(1024 * 2));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(1900), is(1024 * 2));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(2048), is(1024 * 2));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(2049), is(1024 * 3));
-        Assert.assertThat(BufferUtils.normalizeBufferSize(5000), is(1024 * 5));
-    }
-
-    @Test
     public void testToInt() throws Exception {
-        ByteBuffer buf[] = {BufferUtils.toBuffer("0"), BufferUtils.toBuffer(" 42 "), BufferUtils.toBuffer("   43abc"),
-                BufferUtils.toBuffer("-44"), BufferUtils.toBuffer(" - 45;"), BufferUtils.toBuffer("-2147483648"),
-                BufferUtils.toBuffer("2147483647"),};
+        ByteBuffer buf[] =
+                {
+                        BufferUtils.toBuffer("0"),
+                        BufferUtils.toBuffer(" 42 "),
+                        BufferUtils.toBuffer("   43abc"),
+                        BufferUtils.toBuffer("-44"),
+                        BufferUtils.toBuffer(" - 45;"),
+                        BufferUtils.toBuffer("-2147483648"),
+                        BufferUtils.toBuffer("2147483647"),
+                };
 
-        int val[] = {0, 42, 43, -44, -45, -2147483648, 2147483647};
+        int val[] =
+                {
+                        0, 42, 43, -44, -45, -2147483648, 2147483647
+                };
 
         for (int i = 0; i < buf.length; i++)
             assertEquals("t" + i, val[i], BufferUtils.toInt(buf[i]));
@@ -50,9 +47,15 @@ public class TestBufferUtils {
 
     @Test
     public void testPutInt() throws Exception {
-        int val[] = {0, 42, 43, -44, -45, Integer.MIN_VALUE, Integer.MAX_VALUE};
+        int val[] =
+                {
+                        0, 42, 43, -44, -45, Integer.MIN_VALUE, Integer.MAX_VALUE
+                };
 
-        String str[] = {"0", "42", "43", "-44", "-45", "" + Integer.MIN_VALUE, "" + Integer.MAX_VALUE};
+        String str[] =
+                {
+                        "0", "42", "43", "-44", "-45", "" + Integer.MIN_VALUE, "" + Integer.MAX_VALUE
+                };
 
         ByteBuffer buffer = ByteBuffer.allocate(24);
 
@@ -66,9 +69,15 @@ public class TestBufferUtils {
 
     @Test
     public void testPutLong() throws Exception {
-        long val[] = {0L, 42L, 43L, -44L, -45L, Long.MIN_VALUE, Long.MAX_VALUE};
+        long val[] =
+                {
+                        0L, 42L, 43L, -44L, -45L, Long.MIN_VALUE, Long.MAX_VALUE
+                };
 
-        String str[] = {"0", "42", "43", "-44", "-45", "" + Long.MIN_VALUE, "" + Long.MAX_VALUE};
+        String str[] =
+                {
+                        "0", "42", "43", "-44", "-45", "" + Long.MIN_VALUE, "" + Long.MAX_VALUE
+                };
 
         ByteBuffer buffer = ByteBuffer.allocate(50);
 
@@ -82,9 +91,15 @@ public class TestBufferUtils {
 
     @Test
     public void testPutHexInt() throws Exception {
-        int val[] = {0, 42, 43, -44, -45, -2147483648, 2147483647};
+        int val[] =
+                {
+                        0, 42, 43, -44, -45, -2147483648, 2147483647
+                };
 
-        String str[] = {"0", "2A", "2B", "-2C", "-2D", "-80000000", "7FFFFFFF"};
+        String str[] =
+                {
+                        "0", "2A", "2B", "-2C", "-2D", "-80000000", "7FFFFFFF"
+                };
 
         ByteBuffer buffer = ByteBuffer.allocate(50);
 
@@ -114,6 +129,7 @@ public class TestBufferUtils {
         assertEquals("1234567890", BufferUtils.toString(to));
     }
 
+
     @Test
     public void testAppend() throws Exception {
         ByteBuffer to = BufferUtils.allocate(8);
@@ -130,6 +146,7 @@ public class TestBufferUtils {
         } catch (BufferOverflowException e) {
         }
     }
+
 
     @Test
     public void testPutDirect() throws Exception {
@@ -171,8 +188,7 @@ public class TestBufferUtils {
         Arrays.fill(arr, (byte) 0xFF); // fill whole thing with FF
         int offset = 10;
         int length = 100;
-        Arrays.fill(arr, offset, offset + length, (byte) 0x77); // fill partial
-        // with 0x77
+        Arrays.fill(arr, offset, offset + length, (byte) 0x77); // fill partial with 0x77
         ByteBuffer buf = BufferUtils.toBuffer(arr, offset, length);
 
         int count = 0;
@@ -186,8 +202,8 @@ public class TestBufferUtils {
     }
 
     @Test
-    @Ignore("Very simple microbenchmark to compare different writeTo implementations. Only for development thus "
-            + "ignored.")
+    @Ignore("Very simple microbenchmark to compare different writeTo implementations. Only for development thus " +
+            "ignored.")
     public void testWriteToMicrobenchmark() throws IOException {
         int capacity = 1024 * 128;
         int iterations = 100;
@@ -204,15 +220,13 @@ public class TestBufferUtils {
                 long startRun = System.nanoTime();
                 BufferUtils.writeTo(buffer.asReadOnlyBuffer(), out);
                 long elapsedRun = System.nanoTime() - startRun;
-                System.out.println("elapsed run=" + elapsedRun);
+//                LOG.warn("run elapsed={}ms", elapsedRun / 1000);
                 assertThat("Bytes in out equal bytes in buffer", Arrays.equals(bytes, out.toByteArray()), is(true));
             }
             long elapsed = System.nanoTime() - start;
-            System.out.println(
-                    StringUtils.replace("elapsed={}ms average={}ms", elapsed / 1000, elapsed / iterations / 1000));
+            System.out.println(StringUtils.replace("elapsed={}ms average={}ms", elapsed / 1000, elapsed / iterations / 1000));
         }
-        System.out.println(StringUtils.replace("overall average: {}ms",
-                (System.nanoTime() - startTest) / testRuns / iterations / 1000));
+        System.out.println(StringUtils.replace("overall average: {}ms", (System.nanoTime() - startTest) / testRuns / iterations / 1000));
     }
 
     @Test
@@ -229,10 +243,12 @@ public class TestBufferUtils {
 
     @Test
     public void testWriteToWithBufferThatDoesNotExposeArrayAndContentSlightlyBiggerThanTwoTimesTempBufferSize()
-            throws IOException {
+            throws
+            IOException {
         int capacity = BufferUtils.TEMP_BUFFER_SIZE * 2 + 1024;
         testWriteToWithBufferThatDoesNotExposeArray(capacity);
     }
+
 
     @Test
     public void testEnsureCapacity() throws Exception {
@@ -240,6 +256,7 @@ public class TestBufferUtils {
         assertTrue(b == BufferUtils.ensureCapacity(b, 0));
         assertTrue(b == BufferUtils.ensureCapacity(b, 10));
         assertTrue(b == BufferUtils.ensureCapacity(b, b.capacity()));
+
 
         ByteBuffer b1 = BufferUtils.ensureCapacity(b, 64);
         assertTrue(b != b1);
@@ -265,6 +282,7 @@ public class TestBufferUtils {
 
     }
 
+
     private void testWriteToWithBufferThatDoesNotExposeArray(int capacity) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] bytes = new byte[capacity];
@@ -289,9 +307,9 @@ public class TestBufferUtils {
         assertTrue(BufferUtils.isMappedBuffer(mapped));
 
         ByteBuffer direct = BufferUtils.allocateDirect(data.length());
-        direct.clear();
+        BufferUtils.clearToFill(direct);
         direct.put(data.getBytes(StandardCharsets.ISO_8859_1));
-        direct.flip();
+        BufferUtils.flipToFlush(direct, 0);
         assertEquals(data, BufferUtils.toString(direct));
         assertFalse(BufferUtils.isMappedBuffer(direct));
 
@@ -306,6 +324,19 @@ public class TestBufferUtils {
         ByteBuffer readonly = direct.asReadOnlyBuffer();
         assertEquals(data, BufferUtils.toString(readonly));
         assertFalse(BufferUtils.isMappedBuffer(readonly));
+    }
+
+    @Test
+    public void testNormalizeCapacity() {
+        Assert.assertThat(BufferUtils.normalizeBufferSize(5), is(1024));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(1023), is(1024));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(1024), is(1024));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(70), is(1024));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(1025), is(1024 * 2));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(1900), is(1024 * 2));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(2048), is(1024 * 2));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(2049), is(1024 * 3));
+        Assert.assertThat(BufferUtils.normalizeBufferSize(5000), is(1024 * 5));
     }
 
     @Test
