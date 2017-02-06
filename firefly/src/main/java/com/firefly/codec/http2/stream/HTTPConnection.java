@@ -23,6 +23,8 @@ public interface HTTPConnection extends Closeable {
 
     boolean isReadyToSwitchTunnelConnection();
 
+    HTTPTunnelConnection getHTTPTunnelConnection();
+
     int getSessionId();
 
     long getReadBytes();

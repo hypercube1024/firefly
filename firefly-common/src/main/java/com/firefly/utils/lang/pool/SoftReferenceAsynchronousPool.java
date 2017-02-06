@@ -20,6 +20,7 @@ public class SoftReferenceAsynchronousPool<T> extends AbstractLifeCycle implemen
         this.objectFactory = objectFactory;
         this.validator = validator;
         this.dispose = dispose;
+        start();
     }
 
     @Override
@@ -40,9 +41,14 @@ public class SoftReferenceAsynchronousPool<T> extends AbstractLifeCycle implemen
             SoftReference<T> ref = pool[i];
             if (ref != null) {
                 T t = ref.get();
-                if (t != null && validator.isValid(t)) {
+                if (t != null) {
                     pool[i] = null;
-                    return t;
+                    if (validator.isValid(t)) {
+                        return t;
+                    } else {
+                        dispose.destroy(t);
+                        return null;
+                    }
                 }
             }
         }
@@ -58,9 +64,15 @@ public class SoftReferenceAsynchronousPool<T> extends AbstractLifeCycle implemen
                 return;
             } else {
                 T tmp = ref.get();
-                if (tmp == null || !validator.isValid(tmp)) {
+                if (tmp == null) {
                     pool[i] = new SoftReference<>(t);
                     return;
+                } else {
+                    if (!validator.isValid(tmp)) {
+                        dispose.destroy(tmp);
+                        pool[i] = new SoftReference<>(t);
+                        return;
+                    }
                 }
             }
         }

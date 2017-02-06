@@ -1,6 +1,7 @@
 package test.utils.lang.pool;
 
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.lang.pool.ThreadLocalAsynchronousPool;
 import org.junit.Assert;
 import org.junit.Test;
@@ -52,6 +53,9 @@ public class TestAsyncPool {
             PooledObject o3 = pool.take().get();
             System.out.println(o3.i + "|" + o3.closed);
         }
+
+        pool.stop();
+        Assert.assertThat(pool.size(), is(0));
     }
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
@@ -64,6 +68,17 @@ public class TestAsyncPool {
         completable.thenAccept(System.out::println);
         completable.thenAccept(System.out::println);
         completable.thenAccept(System.out::println);
+
+
+        completable = new Promise.Completable<>();
+        completable.exceptionally(t -> {
+            System.out.println("failure1");
+            return "failure1";
+        }).exceptionally(t -> {
+            System.out.println("failure2");
+            return "failure2";
+        });
+        completable.failed(new CommonRuntimeException("test"));
     }
 
     public static class PooledObject {

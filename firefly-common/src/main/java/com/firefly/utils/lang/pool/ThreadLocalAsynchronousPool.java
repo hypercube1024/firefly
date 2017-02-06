@@ -12,6 +12,7 @@ public class ThreadLocalAsynchronousPool<T> extends AbstractLifeCycle implements
 
     public ThreadLocalAsynchronousPool(CompletableObjectFactory<T> objectFactory, Pool.Validator<T> validator, Pool.Dispose<T> dispose) {
         pool = ThreadLocal.withInitial(() -> new SoftReferenceAsynchronousPool<>(objectFactory, validator, dispose));
+        start();
     }
 
     @Override

@@ -14,6 +14,7 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     protected final HttpVersion httpVersion;
     protected volatile Object attachment;
     protected volatile boolean readyToSwitchTunnelConnection;
+    protected HTTPTunnelConnectionImpl httpTunnelConnection;
 
     public AbstractHTTPConnection(SSLSession sslSession, Session tcpSession, HttpVersion httpVersion) {
         this.sslSession = sslSession;
@@ -92,4 +93,13 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
         return readyToSwitchTunnelConnection;
     }
 
+    @Override
+    public HTTPTunnelConnection getHTTPTunnelConnection() {
+        if (httpTunnelConnection == null) {
+            httpTunnelConnection = new HTTPTunnelConnectionImpl(sslSession, tcpSession, httpVersion);
+            httpTunnelConnection.attachment = attachment;
+            httpTunnelConnection.readyToSwitchTunnelConnection = true;
+        }
+        return httpTunnelConnection;
+    }
 }
