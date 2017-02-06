@@ -1,10 +1,10 @@
 package test.http;
 
 import com.firefly.client.http2.SimpleHTTPClient;
+import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MimeTypes;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 public class SimpleHTTPClientDemo2 {
 
     public static void main(String[] args) throws Throwable {
-        HTTP2Configuration config = new HTTP2Configuration();
+        SimpleHTTPClientConfiguration config = new SimpleHTTPClientConfiguration();
         config.setSecureConnectionEnabled(true);
         SimpleHTTPClient client = new SimpleHTTPClient(config);
 

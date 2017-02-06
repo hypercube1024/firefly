@@ -36,8 +36,8 @@ public class SimpleHTTPClientDemo4 {
             System.out.println(r.getStringBody());
         }
 
-        Thread.sleep(5000);
-        client.stop();
+//        Thread.sleep(5000);
+//        client.stop();
 
     }
 

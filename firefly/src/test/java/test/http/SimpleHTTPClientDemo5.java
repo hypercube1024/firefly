@@ -1,6 +1,7 @@
 package test.http;
 
 import com.firefly.client.http2.SimpleHTTPClient;
+import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.io.BufferUtils;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class SimpleHTTPClientDemo5 {
 
     public static void main5(String[] args) {
-        HTTP2Configuration httpConfiguration = new HTTP2Configuration();
+        SimpleHTTPClientConfiguration httpConfiguration = new SimpleHTTPClientConfiguration();
         httpConfiguration.setSecureConnectionEnabled(true);
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
         client.get("https://tls.ctf.network/")
@@ -25,15 +26,15 @@ public class SimpleHTTPClientDemo5 {
               .thenAccept(System.out::println);
     }
 
-    public static void main4(String[] args) throws ExecutionException, InterruptedException {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
 //        System.setProperty("debugMode", "true");
-        HTTP2Configuration httpConfiguration = new HTTP2Configuration();
+        SimpleHTTPClientConfiguration httpConfiguration = new SimpleHTTPClientConfiguration();
         httpConfiguration.setSecureConnectionEnabled(true);
 
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
 
         for (int j = 0; j < 1000; j++) {
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 15; i++) {
                 long start = System.currentTimeMillis();
                 client.get("https://login.taobao.com/")
                       .submit()
@@ -79,8 +80,8 @@ public class SimpleHTTPClientDemo5 {
 
     }
 
-    public static void main(String[] args) {
-        HTTP2Configuration httpConfiguration = new HTTP2Configuration();
+    public static void main1(String[] args) {
+        SimpleHTTPClientConfiguration httpConfiguration = new SimpleHTTPClientConfiguration();
         httpConfiguration.setSecureConnectionEnabled(true);
 
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);

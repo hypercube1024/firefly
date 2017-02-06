@@ -89,7 +89,7 @@ public class SimpleResponse implements Closeable {
         response.getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
     }
 
-    public OutputStream getOutputStream() {
+    public synchronized OutputStream getOutputStream() {
         if (printWriter != null) {
             throw new IllegalStateException("the response has used print writer");
         }
@@ -102,7 +102,7 @@ public class SimpleResponse implements Closeable {
         }
     }
 
-    public PrintWriter getPrintWriter() {
+    public synchronized PrintWriter getPrintWriter() {
         if (bufferedOutputStream != null) {
             throw new IllegalStateException("the response has used output stream");
         }
@@ -138,15 +138,17 @@ public class SimpleResponse implements Closeable {
         return output.isClosed();
     }
 
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (bufferedOutputStream != null) {
             bufferedOutputStream.close();
         } else if (printWriter != null) {
             printWriter.close();
+        } else {
+            getOutputStream().close();
         }
     }
 
-    public void flush() throws IOException {
+    public synchronized void flush() throws IOException {
         if (bufferedOutputStream != null) {
             bufferedOutputStream.flush();
         } else if (printWriter != null) {

@@ -2,9 +2,7 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
@@ -13,7 +11,7 @@ import com.firefly.utils.io.EofException;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.AsynchronousPool;
-import com.firefly.utils.lang.pool.ThreadLocalAsynchronousPool;
+import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
 import com.firefly.utils.time.Millisecond100Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +25,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleHTTPClient extends AbstractLifeCycle {
 
@@ -36,14 +34,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
     private final HTTP2Client http2Client;
-
-    private final Map<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentReferenceHashMap<>();
+    private final ConcurrentHashMap<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
+    private final SimpleHTTPClientConfiguration simpleHTTPClientConfiguration;
 
     public SimpleHTTPClient() {
-        this(new HTTP2Configuration());
+        this(new SimpleHTTPClientConfiguration());
     }
 
-    public SimpleHTTPClient(HTTP2Configuration http2Configuration) {
+    public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
+        this.simpleHTTPClientConfiguration = http2Configuration;
         http2Client = new HTTP2Client(http2Configuration);
         start();
     }
@@ -219,14 +218,19 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         RequestBuilder req = new RequestBuilder();
         req.host = url.getHost();
         req.port = url.getPort() < 0 ? url.getDefaultPort() : url.getPort();
-        poolMap.remove(req);
+        removePool(req);
     }
 
     public void removeConnectionPool(String host, int port) {
         RequestBuilder req = new RequestBuilder();
         req.host = host;
         req.port = port;
-        poolMap.remove(req);
+        removePool(req);
+    }
+
+    private void removePool(RequestBuilder req) {
+        AsynchronousPool<HTTPClientConnection> pool = poolMap.remove(req);
+        pool.stop();
     }
 
     public int getConnectionPoolSize(String host, int port) {
@@ -326,7 +330,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 release(connection, pool);
             }
 
-            log.debug("take the connection {} from pool, released: {}", connection.getSessionId(),
+            log.debug("take the connection {} from pool, released: {}",
+                    connection.getSessionId(),
                     connection.getAttachment());
 
             ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
@@ -407,7 +412,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 connection.send(r.request, handler);
             }
             long end = Millisecond100Clock.currentTimeMillis();
-            monitor.info("SimpleHTTPClient take connection total time: {}", (end - start));
+            monitor.info("SimpleHTTPClient take connection {} total time: {}", connection.getSessionId(), (end - start));
         }).exceptionally(e -> {
             log.error("SimpleHTTPClient sends message exception", e);
             return null;
@@ -415,21 +420,18 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     private AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
-        AsynchronousPool<HTTPClientConnection> pool = poolMap.get(request);
-        if (pool == null) {
-            pool = new ThreadLocalAsynchronousPool<>(() -> http2Client.connect(request.host, request.port),
-                    HTTPClientConnection::isOpen,
-                    (conn) -> {
-                        try {
-                            conn.close();
-                        } catch (IOException e) {
-                            log.error("close http connection exception", e);
-                        }
-                    });
-            poolMap.put(request, pool);
-            return pool;
-        }
-        return pool;
+        return poolMap.computeIfAbsent(request,
+                req -> new BoundedAsynchronousPool<>(simpleHTTPClientConfiguration.getPoolSize(),
+                        simpleHTTPClientConfiguration.getConnectTimeout(),
+                        () -> http2Client.connect(request.host, request.port),
+                        HTTPClientConnection::isOpen,
+                        (conn) -> {
+                            try {
+                                conn.close();
+                            } catch (IOException e) {
+                                log.error("close http connection exception", e);
+                            }
+                        }));
     }
 
     @Override
@@ -440,5 +442,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     @Override
     protected void destroy() {
         http2Client.stop();
+        poolMap.forEach((k, v) -> v.stop());
     }
 }
