@@ -319,7 +319,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         AsynchronousPool<HTTPClientConnection> pool = getPool(r);
         pool.take().thenAccept(o -> {
             HTTPClientConnection connection = o.getObject();
-            connection.setAttachment(false);
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
                 pool.release(o);
@@ -327,7 +326,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
             log.debug("take the connection {} from pool, released: {}",
                     connection.getSessionId(),
-                    connection.getAttachment());
+                    o.isReleased());
 
             ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
                     .headerComplete((req, resp, outputStream, conn) -> {
@@ -355,8 +354,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         return false;
                     }).messageComplete((req, resp, outputStream, conn) -> {
                         pool.release(o);
-                        log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
-                                connection.getAttachment());
+                        log.debug("complete request of the connection {} , released: {}",
+                                connection.getSessionId(),
+                                o.isReleased());
                         if (r.messageComplete != null) {
                             r.messageComplete.call(resp);
                         }
@@ -366,8 +366,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         return true;
                     }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
                         pool.release(o);
-                        log.debug("bad message of the connection {} , released: {}", connection.getSessionId(),
-                                connection.getAttachment());
+                        log.debug("bad message of the connection {} , released: {}",
+                                connection.getSessionId(),
+                                o.isReleased());
                         if (r.badMessage != null) {
                             r.badMessage.call(errCode, reason, resp);
                         }
@@ -382,8 +383,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         }
                     }).earlyEOF((req, resp, outputStream, conn) -> {
                         pool.release(o);
-                        log.debug("eafly EOF of the connection {} , released: {}", connection.getSessionId(),
-                                connection.getAttachment());
+                        log.debug("eafly EOF of the connection {} , released: {}",
+                                connection.getSessionId(),
+                                o.isReleased());
                         if (r.earlyEof != null) {
                             r.earlyEof.call(resp);
                         }
