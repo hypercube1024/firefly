@@ -14,6 +14,7 @@ import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
         @Override
         public void earlyEOF() {
-            writing.get().earlyEOF();
+            HTTP1ClientResponseHandler h = writing.get();
+            if (h != null) {
+                h.earlyEOF();
+            } else {
+                IO.close(connection);
+            }
         }
 
 
@@ -83,7 +89,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
         @Override
         public void badMessage(int status, String reason) {
-            writing.get().badMessage(status, reason);
+            HTTP1ClientResponseHandler h = writing.get();
+            if (h != null) {
+                h.badMessage(status, reason);
+            } else {
+                IO.close(connection);
+            }
         }
 
         @Override

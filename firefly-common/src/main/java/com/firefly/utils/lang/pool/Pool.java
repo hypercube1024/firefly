@@ -1,5 +1,6 @@
 package com.firefly.utils.lang.pool;
 
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.lang.LifeCycle;
 
 /**
@@ -26,7 +27,7 @@ public interface Pool<T> extends LifeCycle {
      *
      * @return T one of the pooled objects.
      */
-    T get();
+    PooledObject<T> get();
 
     /**
      * Releases the object and puts it back to the pool.
@@ -37,11 +38,15 @@ public interface Pool<T> extends LifeCycle {
      * @param t the object to return to the pool
      */
 
-    void release(T t);
+    void release(PooledObject<T> t);
+
+    boolean isValid(PooledObject<T> t);
 
     int size();
 
     boolean isEmpty();
+
+    int getCreatedObjectSize();
 
     /**
      * Represents the functionality to validate an object of the pool
@@ -53,7 +58,7 @@ public interface Pool<T> extends LifeCycle {
          * @param t the object to check.
          * @return true if the object is valid else false.
          */
-        boolean isValid(T t);
+        boolean isValid(PooledObject<T> t);
 
     }
 
@@ -66,6 +71,16 @@ public interface Pool<T> extends LifeCycle {
          * @param t the object to cleanup
          */
 
-        void destroy(T t);
+        void destroy(PooledObject<T> t);
+    }
+
+    interface ObjectFactory<T> {
+
+        /**
+         * Returns a new instance of an object of type T.
+         *
+         * @return T an new instance of the object of type T
+         */
+        Promise.Completable<PooledObject<T>> createNew();
     }
 }

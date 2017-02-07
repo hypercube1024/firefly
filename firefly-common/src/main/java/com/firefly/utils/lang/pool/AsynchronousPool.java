@@ -7,6 +7,6 @@ import com.firefly.utils.concurrent.Promise;
  */
 public interface AsynchronousPool<T> extends Pool<T> {
 
-    Promise.Completable<T> take();
+    Promise.Completable<PooledObject<T>> take();
 
 }

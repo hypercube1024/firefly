@@ -12,6 +12,7 @@ import com.firefly.utils.json.Json;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.AsynchronousPool;
 import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
+import com.firefly.utils.lang.pool.PooledObject;
 import com.firefly.utils.time.Millisecond100Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -312,22 +313,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
-    private void release(HTTPClientConnection connection, AsynchronousPool<HTTPClientConnection> pool) {
-        boolean released = (Boolean) connection.getAttachment();
-        if (!released) {
-            connection.setAttachment(true);
-            pool.release(connection);
-        }
-    }
-
     protected void send(RequestBuilder r) {
         long start = Millisecond100Clock.currentTimeMillis();
         AsynchronousPool<HTTPClientConnection> pool = getPool(r);
-        pool.take().thenAccept(connection -> {
+        pool.take().thenAccept(o -> {
+            HTTPClientConnection connection = o.getObject();
             connection.setAttachment(false);
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
-                release(connection, pool);
+                pool.release(o);
             }
 
             log.debug("take the connection {} from pool, released: {}",
@@ -359,7 +353,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         }
                         return false;
                     }).messageComplete((req, resp, outputStream, conn) -> {
-                        release(connection, pool);
+                        pool.release(o);
                         log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
                                 connection.getAttachment());
                         if (r.messageComplete != null) {
@@ -370,7 +364,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         }
                         return true;
                     }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
-                        release(connection, pool);
+                        pool.release(o);
                         log.debug("bad message of the connection {} , released: {}", connection.getSessionId(),
                                 connection.getAttachment());
                         if (r.badMessage != null) {
@@ -383,7 +377,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             r.future.failed(new BadMessageException(errCode, reason));
                         }
                     }).earlyEOF((req, resp, outputStream, conn) -> {
-                        release(connection, pool);
+                        pool.release(o);
                         log.debug("eafly EOF of the connection {} , released: {}", connection.getSessionId(),
                                 connection.getAttachment());
                         if (r.earlyEof != null) {
@@ -423,11 +417,20 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         return poolMap.computeIfAbsent(request,
                 req -> new BoundedAsynchronousPool<>(simpleHTTPClientConfiguration.getPoolSize(),
                         simpleHTTPClientConfiguration.getConnectTimeout(),
-                        () -> http2Client.connect(request.host, request.port),
-                        HTTPClientConnection::isOpen,
-                        (conn) -> {
+                        () -> {
+                            Promise.Completable<PooledObject<HTTPClientConnection>> r = new Promise.Completable<>();
+                            Promise.Completable<HTTPClientConnection> c = http2Client.connect(request.host, request.port);
+                            c.thenAccept(conn -> r.succeeded(new PooledObject<>(conn)))
+                             .exceptionally(e -> {
+                                 r.failed(e);
+                                 return null;
+                             });
+                            return r;
+                        },
+                        o -> o.getObject().isOpen(),
+                        (o) -> {
                             try {
-                                conn.close();
+                                o.getObject().close();
                             } catch (IOException e) {
                                 log.error("close http connection exception", e);
                             }

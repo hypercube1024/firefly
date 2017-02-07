@@ -34,7 +34,7 @@ public class SimpleHTTPClientDemo5 {
         SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
 
         for (int j = 0; j < 1000; j++) {
-            for (int i = 0; i < 15; i++) {
+            for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();
                 client.get("https://login.taobao.com/")
                       .submit()

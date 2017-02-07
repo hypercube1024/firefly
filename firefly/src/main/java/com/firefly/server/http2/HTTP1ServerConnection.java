@@ -119,10 +119,10 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 		void responseH2c() throws IOException {
 			ByteBuffer header = getHeaderByteBuffer();
 			HttpGenerator gen = getHttpGenerator();
-			HttpGenerator.Result result = gen.generateResponse(H2C_RESPONSE, header, null, null, true);
+			HttpGenerator.Result result = gen.generateResponse(H2C_RESPONSE, false, header, null, null, true);
 			if (result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING) {
 				getSession().encode(header);
-				result = gen.generateResponse(null, null, null, null, true);
+				result = gen.generateResponse(null, false, null, null, null, true);
 				if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.END) {
 					log.debug("the server session {} sends 101 switching protocols successfully",
 							getSession().getSessionId());
@@ -137,11 +137,11 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 		void response100Continue() throws IOException {
 			ByteBuffer header = getHeaderByteBuffer();
 			HttpGenerator gen = getHttpGenerator();
-			HttpGenerator.Result result = gen.generateResponse(HttpGenerator.CONTINUE_100_INFO, header, null, null,
+			HttpGenerator.Result result = gen.generateResponse(HttpGenerator.CONTINUE_100_INFO, false, header, null, null,
 					false);
 			if (result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING_1XX) {
 				getSession().encode(header);
-				result = gen.generateResponse(null, null, null, null, false);
+				result = gen.generateResponse(null, false, null, null, null, false);
 				if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.START) {
 					log.debug("the server session {} sends 100 continue successfully", getSession().getSessionId());
 				} else {

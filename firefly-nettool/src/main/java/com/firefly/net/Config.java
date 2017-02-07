@@ -2,7 +2,7 @@ package com.firefly.net;
 
 public class Config {
 
-	private int timeout = 10 * 1000;
+	private int timeout = 60 * 1000;
 
 	// asynchronous I/O thread pool settings
 	private int asynchronousCorePoolSize = Runtime.getRuntime().availableProcessors() * 2;
