@@ -8,6 +8,7 @@ import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.EofException;
+import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.AsynchronousPool;
@@ -376,6 +377,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             }
                             r.future.failed(new BadMessageException(errCode, reason));
                         }
+                        if (r.badMessage == null && r.future == null) {
+                            IO.close(o.getObject());
+                        }
                     }).earlyEOF((req, resp, outputStream, conn) -> {
                         pool.release(o);
                         log.debug("eafly EOF of the connection {} , released: {}", connection.getSessionId(),
@@ -388,6 +392,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                                 r.simpleResponse = new SimpleResponse(resp);
                             }
                             r.future.failed(new EofException("early eof"));
+                        }
+                        if (r.earlyEof == null && r.future == null) {
+                            IO.close(o.getObject());
                         }
                     });
 

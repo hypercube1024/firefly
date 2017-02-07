@@ -13,7 +13,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     private int maxSize;
     private AtomicInteger createdObjectSize = new AtomicInteger(0);
-    private long timeout = 2000L;
+    private long timeout = 5000L;
     private BlockingQueue<PooledObject<T>> queue;
     private ExecutorService service;
     private ObjectFactory<T> objectFactory;
