@@ -5,8 +5,8 @@ public class Config {
 	private int timeout = 60 * 1000;
 
 	// asynchronous I/O thread pool settings
-	private int asynchronousCorePoolSize = Runtime.getRuntime().availableProcessors() * 2;
-	private int asynchronousMaximumPoolSize = 32;
+	private int asynchronousCorePoolSize = Runtime.getRuntime().availableProcessors();
+	private int asynchronousMaximumPoolSize = Runtime.getRuntime().availableProcessors() * 2;
 	private int asynchronousPoolKeepAliveTime = 15 * 1000;
 
 	private String serverName = "firefly-server";
