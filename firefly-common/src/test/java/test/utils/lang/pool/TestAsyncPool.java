@@ -1,6 +1,7 @@
 package test.utils.lang.pool;
 
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.lang.pool.AsynchronousPool;
 import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
@@ -10,8 +11,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -142,8 +142,41 @@ public class TestAsyncPool {
         System.out.println(i.get());
 
         AtomicBoolean bool = new AtomicBoolean(false);
-        Assert.assertThat(bool.compareAndSet(false, true),  is(true));
-        Assert.assertThat(bool.get(), is (true));
+        Assert.assertThat(bool.compareAndSet(false, true), is(true));
+        Assert.assertThat(bool.get(), is(true));
+    }
+
+    @Test
+    public void testInvalid() throws Exception {
+        AtomicInteger i = new AtomicInteger();
+        AtomicBoolean start = new AtomicBoolean(true);
+        TransferQueue<TestPooledObject> queue = new LinkedTransferQueue<>();
+        BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(8, () -> {
+            Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
+            new Thread(() -> {
+                ThreadUtils.sleep(500L);
+                int x = i.incrementAndGet();
+                TestPooledObject obj = new TestPooledObject(x);
+                queue.offer(obj);
+                completable.succeeded(new PooledObject<>(obj));
+            }).start();
+            return completable;
+        }, (o) -> !o.getObject().closed, (o) -> {
+            System.out.println("destory obj - [" + o.getObject().i + "]");
+            o.getObject().closed = true;
+        });
+        new Thread(() -> {
+
+            while(start.get()) {
+                try {
+                    TestPooledObject obj = queue.poll(2, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        // TODO
     }
 
     @Test
@@ -152,11 +185,7 @@ public class TestAsyncPool {
         BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(8, () -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
             new Thread(() -> {
-                try {
-                    Thread.sleep(500L);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                ThreadUtils.sleep(500L);
                 int x = i.incrementAndGet();
                 if (x % 3 == 0) {
                     completable.failed(new CommonRuntimeException("test create pooled object: " + x + " exception"));
@@ -178,11 +207,7 @@ public class TestAsyncPool {
                 .thenAccept(o -> {
                     System.out.println("get o: " + o.getObject().i + "| created object size: " + pool.getCreatedObjectSize());
                     new Thread(() -> {
-                        try {
-                            Thread.sleep(500L);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        ThreadUtils.sleep(500L);
                         phaser.arrive();
                         pool.release(o);
                     }).start();
@@ -214,8 +239,8 @@ public class TestAsyncPool {
     }
 
     public static class TestPooledObject {
-        public boolean closed = false;
-        public int i;
+        public volatile boolean closed = false;
+        public final int i;
 
         public TestPooledObject(int i) {
             this.i = i;

@@ -3,6 +3,8 @@ package com.firefly.codec.http2.stream;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.function.Action1;
+import com.firefly.utils.function.Action2;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,6 +17,8 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     protected volatile Object attachment;
     protected volatile boolean readyToSwitchTunnelConnection;
     protected HTTPTunnelConnectionImpl httpTunnelConnection;
+    protected Action1<HTTPConnection> closedListener;
+    protected Action2<HTTPConnection, Throwable> exceptionListener;
 
     public AbstractHTTPConnection(SSLSession sslSession, Session tcpSession, HttpVersion httpVersion) {
         this.sslSession = sslSession;
@@ -101,5 +105,25 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
             httpTunnelConnection.readyToSwitchTunnelConnection = true;
         }
         return httpTunnelConnection;
+    }
+
+    @Override
+    public HTTPConnection closedListener(Action1<HTTPConnection> closedListener) {
+        this.closedListener = closedListener;
+        return this;
+    }
+
+    @Override
+    public HTTPConnection exceptionListener(Action2<HTTPConnection, Throwable> exceptionListener) {
+        this.exceptionListener = exceptionListener;
+        return this;
+    }
+
+    Action1<HTTPConnection> getClosedListener() {
+        return closedListener;
+    }
+
+    Action2<HTTPConnection, Throwable> getExceptionListener() {
+        return exceptionListener;
     }
 }
