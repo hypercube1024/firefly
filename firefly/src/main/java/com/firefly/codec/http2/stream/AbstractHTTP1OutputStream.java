@@ -179,7 +179,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
         if (clientMode) {
             return generator.generateRequest((MetaData.Request) info, header, chunk, content, last);
         } else {
-            return generator.generateResponse((MetaData.Response) info, header, chunk, content, last);
+            return generator.generateResponse((MetaData.Response) info, false, header, chunk, content, last);
         }
     }
 

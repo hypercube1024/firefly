@@ -45,8 +45,8 @@ abstract public class AbstractHTTP2Connection extends AbstractHTTPConnection {
     }
 
     @Override
-    public boolean isTunnel() {
-        return false;
+    public ConnectionType getConnectionType() {
+        return ConnectionType.HTTP2;
     }
 
     abstract protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,

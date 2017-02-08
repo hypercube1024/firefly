@@ -21,16 +21,13 @@ public interface ServerHTTPHandler extends HTTPHandler {
 
     boolean acceptHTTPTunnelConnection(MetaData.Request request, MetaData.Response response,
                                        HTTPOutputStream output,
-                                       HTTPConnection connection);
-
-    void httpTunnelContent(ByteBuffer item, HTTPTunnelConnection httpTunnelConnection);
+                                       HTTPServerConnection connection);
 
     class Adapter extends HTTPHandler.Adapter implements ServerHTTPHandler {
 
         protected Action1<HTTPConnection> acceptConnection;
         protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> accept100Continue;
-        protected Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> acceptHTTPTunnelConnection;
-        protected Action2<ByteBuffer, HTTPTunnelConnection> httpTunnelContent;
+        protected Func4<Request, Response, HTTPOutputStream, HTTPServerConnection, Boolean> acceptHTTPTunnelConnection;
 
         public ServerHTTPHandler.Adapter headerComplete(
                 Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> headerComplete) {
@@ -80,13 +77,8 @@ public interface ServerHTTPHandler extends HTTPHandler {
         }
 
         public ServerHTTPHandler.Adapter acceptHTTPTunnelConnection(
-                Func4<Request, Response, HTTPOutputStream, HTTPConnection, Boolean> acceptHTTPTunnelConnection) {
+                Func4<Request, Response, HTTPOutputStream, HTTPServerConnection, Boolean> acceptHTTPTunnelConnection) {
             this.acceptHTTPTunnelConnection = acceptHTTPTunnelConnection;
-            return this;
-        }
-
-        public ServerHTTPHandler.Adapter httpTunnelContent(Action2<ByteBuffer, HTTPTunnelConnection> httpTunnelContent) {
-            this.httpTunnelContent = httpTunnelContent;
             return this;
         }
 
@@ -110,18 +102,11 @@ public interface ServerHTTPHandler extends HTTPHandler {
         @Override
         public boolean acceptHTTPTunnelConnection(MetaData.Request request, MetaData.Response response,
                                                   HTTPOutputStream output,
-                                                  HTTPConnection connection) {
+                                                  HTTPServerConnection connection) {
             if (acceptHTTPTunnelConnection != null) {
                 return acceptHTTPTunnelConnection.call(request, response, output, connection);
             } else {
-                return false;
-            }
-        }
-
-        @Override
-        public void httpTunnelContent(ByteBuffer item, HTTPTunnelConnection httpTunnelConnection) {
-            if (httpTunnelContent != null) {
-                httpTunnelContent.call(item, httpTunnelConnection);
+                return true;
             }
         }
 

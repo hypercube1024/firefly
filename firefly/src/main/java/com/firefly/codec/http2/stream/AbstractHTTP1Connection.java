@@ -27,8 +27,8 @@ abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
     }
 
     @Override
-    public boolean isTunnel() {
-        return false;
+    public ConnectionType getConnectionType() {
+        return ConnectionType.HTTP1;
     }
 
     abstract protected HttpParser initHttpParser(HTTP2Configuration config, RequestHandler requestHandler,

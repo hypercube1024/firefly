@@ -15,8 +15,6 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     protected final Session tcpSession;
     protected final HttpVersion httpVersion;
     protected volatile Object attachment;
-    protected volatile boolean readyToSwitchTunnelConnection;
-    protected HTTPTunnelConnectionImpl httpTunnelConnection;
     protected Action1<HTTPConnection> closedListener;
     protected Action2<HTTPConnection, Throwable> exceptionListener;
 
@@ -85,26 +83,6 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     @Override
     public InetSocketAddress getRemoteAddress() {
         return tcpSession.getRemoteAddress();
-    }
-
-    @Override
-    public void switchToTunnelConnection() {
-        readyToSwitchTunnelConnection = true;
-    }
-
-    @Override
-    public boolean isReadyToSwitchTunnelConnection() {
-        return readyToSwitchTunnelConnection;
-    }
-
-    @Override
-    public HTTPTunnelConnection getHTTPTunnelConnection() {
-        if (httpTunnelConnection == null) {
-            httpTunnelConnection = new HTTPTunnelConnectionImpl(sslSession, tcpSession, httpVersion);
-            httpTunnelConnection.attachment = attachment;
-            httpTunnelConnection.readyToSwitchTunnelConnection = true;
-        }
-        return httpTunnelConnection;
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.firefly.server.http2;
 
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.function.Action1;
+import com.firefly.utils.function.Action2;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
     private Action3<Integer, String, SimpleRequest> badMessage;
     private Action1<SimpleRequest> earlyEof;
     private Action1<HTTPConnection> acceptConnection;
+    Action2<SimpleRequest, HTTPServerConnection> tunnel;
 
     public SimpleHTTPServer() {
         this(new SimpleHTTPServerConfiguration());
@@ -26,6 +28,11 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 
     public SimpleHTTPServer(SimpleHTTPServerConfiguration configuration) {
         this.configuration = configuration;
+    }
+
+    public SimpleHTTPServer acceptHTTPTunnelConnection(Action2<SimpleRequest, HTTPServerConnection> tunnel) {
+        this.tunnel = tunnel;
+        return this;
     }
 
     public SimpleHTTPServer headerComplete(Action1<SimpleRequest> headerComplete) {
@@ -61,7 +68,14 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
     @Override
     protected void init() {
         http2Server = new HTTP2Server(configuration.getHost(), configuration.getPort(), configuration,
-                new ServerHTTPHandler.Adapter().headerComplete((request, response, out, connection) -> {
+                new ServerHTTPHandler.Adapter().acceptHTTPTunnelConnection((request, response, out, connection) -> {
+                    SimpleRequest r = new SimpleRequest(request, response, out);
+                    request.setAttachment(r);
+                    if (tunnel != null) {
+                        tunnel.call(r, connection);
+                    }
+                    return true;
+                }).headerComplete((request, response, out, connection) -> {
                     SimpleRequest r = new SimpleRequest(request, response, out);
                     request.setAttachment(r);
                     if (headerComplete != null) {

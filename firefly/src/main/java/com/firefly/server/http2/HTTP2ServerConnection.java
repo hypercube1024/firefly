@@ -3,14 +3,11 @@ package com.firefly.server.http2;
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.decode.ServerParser;
 import com.firefly.codec.http2.encode.Generator;
-import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
-import com.firefly.codec.http2.stream.FlowControlStrategy;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.SessionSPI;
+import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.concurrent.Promise;
 
 public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HTTPServerConnection {
 
@@ -53,5 +50,9 @@ public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HT
 	SessionSPI getSessionSPI() {
 		return http2Session;
 	}
-	
+
+	@Override
+	public void upgradeHTTPTunnel(Promise<HTTPTunnelConnection> promise) {
+		throw new IllegalStateException("the http2 connection can not upgrade to http tunnel");
+	}
 }

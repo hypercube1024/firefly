@@ -19,13 +19,7 @@ public interface HTTPConnection extends Closeable {
 
     boolean isEncrypted();
 
-    boolean isTunnel();
-
-    void switchToTunnelConnection();
-
-    boolean isReadyToSwitchTunnelConnection();
-
-    HTTPTunnelConnection getHTTPTunnelConnection();
+    ConnectionType getConnectionType();
 
     int getSessionId();
 
