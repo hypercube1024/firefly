@@ -14,7 +14,6 @@ public abstract class AbstractHTTPHandler implements Handler {
     protected static Logger log = LoggerFactory.getLogger("firefly-system");
 
     protected final HTTP2Configuration config;
-    protected final List<String> protocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1");
 
     public AbstractHTTPHandler(HTTP2Configuration config) {
         this.config = config;
