@@ -160,8 +160,14 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
     private void generateLastData(HttpGenerator generator) throws IOException {
         HttpGenerator.Result generatorResult;
         generatorResult = generate(null, null, null, null, true);
-        if (generatorResult == HttpGenerator.Result.DONE && generator.getState() == HttpGenerator.State.END) {
-            generateHTTPMessageSuccessfully();
+        if (generator.getState() == HttpGenerator.State.END) {
+            if (generatorResult == HttpGenerator.Result.DONE) {
+                generateHTTPMessageSuccessfully();
+            } else if (generatorResult == HttpGenerator.Result.SHUTDOWN_OUT) {
+                getSession().close();
+            } else {
+                generateHTTPMessageExceptionally(generatorResult, generator.getState());
+            }
         } else {
             generateHTTPMessageExceptionally(generatorResult, generator.getState());
         }
