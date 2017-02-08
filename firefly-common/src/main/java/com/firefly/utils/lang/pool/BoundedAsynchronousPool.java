@@ -1,6 +1,8 @@
 package com.firefly.utils.lang.pool;
 
+import com.firefly.utils.concurrent.Atomics;
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
 import java.util.concurrent.*;
@@ -31,7 +33,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     public BoundedAsynchronousPool(int maxSize, long timeout,
                                    ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
         this(maxSize, timeout,
-                Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()),
+                Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "firefly bounded asynchronous pool")),
                 objectFactory, validator, dispose);
     }
 
@@ -54,18 +56,18 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     }
 
     private void createObject(Promise.Completable<PooledObject<T>> completable) {
-        createdObjectSize.incrementAndGet();
+        Atomics.getAndIncrement(createdObjectSize, maxSize);
         Promise.Completable<PooledObject<T>> tmp = objectFactory.createNew();
         tmp.thenAccept(completable::succeeded)
            .exceptionally(e0 -> {
-               createdObjectSize.decrementAndGet();
+               Atomics.getAndDecrement(createdObjectSize, 0);
                completable.failed(e0);
                return null;
            });
     }
 
     private void destroyObject(PooledObject<T> t) {
-        createdObjectSize.decrementAndGet();
+        Atomics.getAndDecrement(createdObjectSize, 0);
         dispose.destroy(t);
     }
 
@@ -83,7 +85,9 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
             }
         } else {
             // the queue is empty
-            if (maxSize - getCreatedObjectSize() > 0) {
+            int availableSize = maxSize - getCreatedObjectSize();
+            System.out.println("available object size -> " + availableSize);
+            if (availableSize > 0) {
                 return createObject();
             } else {
                 Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
@@ -91,12 +95,15 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
                     try {
                         PooledObject<T> r = queue.poll(timeout, TimeUnit.MILLISECONDS);
                         if (r != null) {
-                            r.takeFromPool();
-                            if (validator.isValid(r)) {
-                                completable.succeeded(r);
+                            if (r.prepareTake()) {
+                                if (validator.isValid(r)) {
+                                    completable.succeeded(r);
+                                } else {
+                                    destroyObject(r);
+                                    createObject(completable);
+                                }
                             } else {
-                                destroyObject(r);
-                                createObject(completable);
+                                completable.failed(new CommonRuntimeException("the pooled object has been used"));
                             }
                         } else {
                             completable.failed(new TimeoutException("take pooled object timeout"));
@@ -113,25 +120,21 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     @Override
     public void release(PooledObject<T> t) {
         if (t != null) {
-            if (validator.isValid(t)) {
-                if (t.prepareRelease()) {
-                    boolean success = queue.offer(t);
-                    if (!success) {
-                        // the queue is full
-                        service.execute(() -> {
-                            try {
-                                boolean success0 = queue.offer(t, timeout, TimeUnit.MILLISECONDS);
-                                if (!success0) {
-                                    destroyObject(t);
-                                }
-                            } catch (InterruptedException e) {
+            if (t.prepareRelease()) {
+                boolean success = queue.offer(t);
+                if (!success) {
+                    // the queue is full
+                    service.execute(() -> {
+                        try {
+                            boolean success0 = queue.offer(t, timeout, TimeUnit.MILLISECONDS);
+                            if (!success0) {
                                 destroyObject(t);
                             }
-                        });
-                    }
+                        } catch (InterruptedException e) {
+                            destroyObject(t);
+                        }
+                    });
                 }
-            } else {
-                destroyObject(t);
             }
         }
     }
@@ -140,8 +143,11 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     public PooledObject<T> get() {
         PooledObject<T> t = queue.poll();
         if (t != null) {
-            t.takeFromPool();
-            return t;
+            if (t.prepareTake()) {
+                return t;
+            } else {
+                return null;
+            }
         } else {
             return t;
         }
@@ -175,7 +181,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     protected void destroy() {
         PooledObject<T> t;
         while ((t = queue.poll()) != null) {
-            t.takeFromPool();
+            t.prepareTake();
             destroyObject(t);
         }
         if (service != null) {

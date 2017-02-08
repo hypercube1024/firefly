@@ -43,7 +43,7 @@ public class TestAsyncPool {
 
         Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
         System.out.println(pool.size());
-        Assert.assertThat(pool.size(), is(3));
+        Assert.assertThat(pool.size(), is(4));
         pool.stop();
     }
 
@@ -103,55 +103,12 @@ public class TestAsyncPool {
     }
 
     @Test
-    public void testAtomic() {
-        int maxSize = 8;
-        AtomicInteger i = new AtomicInteger(0);
-        for (int j = 0; j < maxSize + 5; j++) {
-            final int k = j;
-            int p = i.accumulateAndGet(maxSize, (prev, max) -> {
-                if (prev < max) {
-                    System.out.println("prev: " + prev + ", next: " + max);
-                    Assert.assertThat(prev, is(k));
-                    Assert.assertThat(max, is(maxSize));
-                    return prev + 1;
-                } else {
-                    Assert.assertThat(max, is(maxSize));
-                    return max;
-                }
-            });
-            System.out.println("--------p: " + p);
-        }
-        System.out.println(">>>>>>>>>> " + i.get());
-        System.out.println();
-
-        for (int j = maxSize; j > 0 - 5; j--) {
-            final int k = j;
-            int p = i.getAndAccumulate(maxSize, (prev, max) -> {
-                if (prev > 0) {
-                    System.out.println("prev: " + prev + ", next: " + max);
-                    Assert.assertThat(prev, is(k));
-                    Assert.assertThat(max, is(maxSize));
-                    return prev - 1;
-                } else {
-                    return 0;
-                }
-            });
-            System.out.println("--------p: " + p);
-        }
-
-        System.out.println(i.get());
-
-        AtomicBoolean bool = new AtomicBoolean(false);
-        Assert.assertThat(bool.compareAndSet(false, true), is(true));
-        Assert.assertThat(bool.get(), is(true));
-    }
-
-    @Test
     public void testInvalid() throws Exception {
+        int maxSize = 8;
         AtomicInteger i = new AtomicInteger();
         AtomicBoolean start = new AtomicBoolean(true);
         TransferQueue<TestPooledObject> queue = new LinkedTransferQueue<>();
-        BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(8, () -> {
+        BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(maxSize, () -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
             new Thread(() -> {
                 ThreadUtils.sleep(500L);
@@ -167,16 +124,26 @@ public class TestAsyncPool {
         });
         new Thread(() -> {
 
-            while(start.get()) {
+            while (start.get()) {
                 try {
-                    TestPooledObject obj = queue.poll(2, TimeUnit.SECONDS);
+                    TestPooledObject obj = queue.poll(5, TimeUnit.SECONDS);
+                    if (obj != null) {
+                        ThreadUtils.sleep(500L);
+                        obj.closed = true;
+                    }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    System.out.println(e.getMessage());
                 }
             }
         }).start();
 
-        // TODO
+        int number = 100;
+        takeObjectTest(pool, number);
+        Assert.assertThat(pool.size(), is(maxSize));
+        Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
+        System.out.println(pool.size());
+        start.set(false);
+        pool.stop();
     }
 
     @Test
@@ -201,6 +168,14 @@ public class TestAsyncPool {
         });
 
         int number = 100;
+        takeObjectTest(pool, number);
+        Assert.assertThat(pool.size(), is(6));
+        Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
+        System.out.println(pool.size());
+        pool.stop();
+    }
+
+    private void takeObjectTest(BoundedAsynchronousPool<TestPooledObject> pool, int number) {
         Phaser phaser = new Phaser(number + 1);
         for (int j = 0; j < number; j++) {
             pool.take()
@@ -218,12 +193,9 @@ public class TestAsyncPool {
                     Assert.assertThat(t, instanceOf(CommonRuntimeException.class));
                     return null;
                 });
+            System.out.println("loop num -> " + j);
         }
         phaser.arriveAndAwaitAdvance();
-        Assert.assertThat(pool.size(), is(6));
-        Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
-        System.out.println(pool.size());
-        pool.stop();
     }
 
     private BoundedAsynchronousPool<TestPooledObject> createPool(int size) {

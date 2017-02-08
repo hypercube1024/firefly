@@ -20,8 +20,8 @@ public class PooledObject<T> {
         activeTime = createTime;
     }
 
-    void takeFromPool() {
-        released.compareAndSet(true, false);
+    boolean prepareTake() {
+        return released.compareAndSet(true, false);
     }
 
     boolean prepareRelease() {
