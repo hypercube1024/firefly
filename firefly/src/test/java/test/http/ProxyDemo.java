@@ -1,14 +1,12 @@
 package test.http;
 
 import com.firefly.client.http2.SimpleHTTPClient;
-import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.HTTPTunnelConnection;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.TcpConnection;
 import com.firefly.server.http2.SimpleHTTPServer;
-import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
@@ -16,9 +14,6 @@ import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
