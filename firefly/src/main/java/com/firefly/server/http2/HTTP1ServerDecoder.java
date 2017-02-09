@@ -24,18 +24,24 @@ public class HTTP1ServerDecoder extends DecoderChain {
             break;
             case HTTP1: {
                 final HTTP1ServerConnection http1Connection = (HTTP1ServerConnection) connection;
-                if (http1Connection.httpTunnelConnectionPromise == null) {
+                if (http1Connection.tunnelConnectionPromise == null) {
                     final HttpParser parser = http1Connection.getParser();
                     while (buf.hasRemaining()) {
                         parser.parseNext(buf);
                     }
                 } else {
-                    // TODO
+                    HTTP1ServerTunnelConnection tunnelConnection = http1Connection.createHTTPTunnel();
+                    if (tunnelConnection.content != null) {
+                        tunnelConnection.content.call(buf);
+                    }
                 }
             }
             break;
             case HTTP_TUNNEL: {
-                // TODO
+                HTTP1ServerTunnelConnection tunnelConnection = (HTTP1ServerTunnelConnection) connection;
+                if (tunnelConnection.content != null) {
+                    tunnelConnection.content.call(buf);
+                }
             }
             break;
             default:

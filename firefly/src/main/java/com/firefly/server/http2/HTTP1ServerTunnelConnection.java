@@ -1,6 +1,9 @@
-package com.firefly.codec.http2.stream;
+package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.codec.http2.stream.AbstractHTTPConnection;
+import com.firefly.codec.http2.stream.ConnectionType;
+import com.firefly.codec.http2.stream.HTTPTunnelConnection;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Callback;
@@ -12,11 +15,11 @@ import java.util.Collection;
 /**
  * @author Pengtao Qiu
  */
-public class HTTPTunnelConnectionImpl extends AbstractHTTPConnection implements HTTPTunnelConnection {
+public class HTTP1ServerTunnelConnection extends AbstractHTTPConnection implements HTTPTunnelConnection {
 
     Action1<ByteBuffer> content;
 
-    public HTTPTunnelConnectionImpl(SSLSession sslSession, com.firefly.net.Session tcpSession, HttpVersion httpVersion) {
+    public HTTP1ServerTunnelConnection(SSLSession sslSession, com.firefly.net.Session tcpSession, HttpVersion httpVersion) {
         super(sslSession, tcpSession, httpVersion);
     }
 

@@ -4,11 +4,10 @@ import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
 import com.firefly.utils.function.Action3;
+import com.firefly.utils.io.IO;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class SimpleHTTPServer extends AbstractLifeCycle {
 
@@ -102,13 +101,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
                         r.messageComplete.call(r);
                     }
                     if (!r.getResponse().isAsynchronous()) {
-                        if (!r.getResponse().isClosed()) {
-                            try {
-                                r.getResponse().close();
-                            } catch (IOException e) {
-                                log.error("close response output stream exception", e);
-                            }
-                        }
+                        IO.close(r.getResponse());
                     }
                     return true;
                 }).badMessage((status, reason, request, response, out, connection) -> {

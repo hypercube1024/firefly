@@ -26,13 +26,13 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    final ServerSessionListener serverSessionListener;
-    final HTTP1ServerRequestHandler serverRequestHandler;
+    private final ServerSessionListener serverSessionListener;
+    private final HTTP1ServerRequestHandler serverRequestHandler;
     boolean upgradeHTTP2Successfully = false;
-    Promise<HTTPTunnelConnection> httpTunnelConnectionPromise;
+    Promise<HTTPTunnelConnection> tunnelConnectionPromise;
 
-    public HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
-                                 HTTP1ServerRequestHandler requestHandler, ServerSessionListener serverSessionListener) {
+    HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
+                          HTTP1ServerRequestHandler requestHandler, ServerSessionListener serverSessionListener) {
         super(config, sslSession, tcpSession, requestHandler, null);
         requestHandler.connection = this;
         this.serverSessionListener = serverSessionListener;
@@ -78,7 +78,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         return serverRequestHandler.response;
     }
 
-    public void response100Continue() {
+    void response100Continue() {
         try {
             serverRequestHandler.outputStream.response100Continue();
         } catch (IOException e) {
@@ -95,8 +95,19 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    public void upgradeHTTPTunnel(Promise<HTTPTunnelConnection> promise) {
-        httpTunnelConnectionPromise = promise;
+    public void upgradeHTTPTunnel(Promise<HTTPTunnelConnection> tunnelConnectionPromise) {
+        this.tunnelConnectionPromise = tunnelConnectionPromise;
+    }
+
+    HTTP1ServerTunnelConnection createHTTPTunnel() {
+        if (tunnelConnectionPromise != null) {
+            HTTP1ServerTunnelConnection tunnelConnection = new HTTP1ServerTunnelConnection(sslSession, tcpSession, httpVersion);
+            tunnelConnectionPromise.succeeded(tunnelConnection);
+            tcpSession.attachObject(tunnelConnection);
+            return tunnelConnection;
+        } else {
+            return null;
+        }
     }
 
     static class HTTP1ServerResponseOutputStream extends AbstractHTTP1OutputStream {
@@ -111,7 +122,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
         private final HTTP1ServerConnection connection;
 
-        public HTTP1ServerResponseOutputStream(MetaData.Response response, HTTP1ServerConnection connection) {
+        HTTP1ServerResponseOutputStream(MetaData.Response response, HTTP1ServerConnection connection) {
             super(response, false);
             this.connection = connection;
         }

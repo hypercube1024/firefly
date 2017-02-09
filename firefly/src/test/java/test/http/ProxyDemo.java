@@ -2,16 +2,23 @@ package test.http;
 
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.http2.stream.HTTPTunnelConnection;
+import com.firefly.net.tcp.SimpleTcpClient;
+import com.firefly.net.tcp.TcpConnection;
 import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -22,8 +29,30 @@ public class ProxyDemo {
     public static void main(String[] args) {
         SimpleHTTPClient client = new SimpleHTTPClient();
         SimpleHTTPServer server = new SimpleHTTPServer();
+        SimpleTcpClient tcpClient = new SimpleTcpClient();
 
-        server.headerComplete(srcRequest -> {
+        server.acceptHTTPTunnelConnection((request, serverConnection) -> {
+            SimpleResponse response = request.getAsyncResponse();
+            request.getAttributes().computeIfAbsent("tunnelSuccess", k -> {
+                Promise.Completable<TcpConnection> p = tcpClient.connect(request.getURI().getHost(), request.getURI().getPort());
+                p.thenAccept(tcpConn -> {
+                    Promise.Completable<HTTPTunnelConnection> promise = new Promise.Completable<>();
+                    serverConnection.upgradeHTTPTunnel(promise);
+                    promise.thenAccept(tunnel -> {
+                        tcpConn.receive(dstBuf -> tunnel.write(dstBuf, Callback.NOOP))
+                               .exception(e -> tcpConn.close())
+                               .closeCallback(() -> request.remove("tunnelSuccess"));
+                        tunnel.content(tcpConn::write);
+                    });
+                    IO.close(response);
+                }).exceptionally(e -> {
+                    response.setStatus(HttpStatus.BAD_GATEWAY_502);
+                    IO.close(response);
+                    return null;
+                });
+                return p;
+            });
+        }).headerComplete(srcRequest -> {
             long start = System.currentTimeMillis();
             System.out.println(srcRequest.toString());
             System.out.println(srcRequest.getFields());
