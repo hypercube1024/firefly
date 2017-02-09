@@ -86,13 +86,13 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     }
 
     @Override
-    public HTTPConnection closedListener(Action1<HTTPConnection> closedListener) {
+    public HTTPConnection close(Action1<HTTPConnection> closedListener) {
         this.closedListener = closedListener;
         return this;
     }
 
     @Override
-    public HTTPConnection exceptionListener(Action2<HTTPConnection, Throwable> exceptionListener) {
+    public HTTPConnection exception(Action2<HTTPConnection, Throwable> exceptionListener) {
         this.exceptionListener = exceptionListener;
         return this;
     }

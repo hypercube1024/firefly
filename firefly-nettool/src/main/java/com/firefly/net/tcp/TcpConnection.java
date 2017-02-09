@@ -72,7 +72,7 @@ public interface TcpConnection {
 
     long getWrittenBytes();
 
-    TcpConnection closeCallback(Action0 closeCallback);
+    TcpConnection close(Action0 closeCallback);
 
     void close();
 

@@ -36,8 +36,8 @@ public class ProxyDemo {
                     promise.thenAccept(tunnel -> {
                         tcpConn.receive(dstBuf -> tunnel.write(dstBuf, Callback.NOOP))
                                .exception(e -> tcpConn.close())
-                               .closeCallback(() -> request.remove("tunnelSuccess"));
-                        tunnel.content(tcpConn::write);
+                               .close(() -> request.remove("tunnelSuccess"));
+                        tunnel.receive(tcpConn::write);
                     });
                     IO.close(response);
                 }).exceptionally(e -> {

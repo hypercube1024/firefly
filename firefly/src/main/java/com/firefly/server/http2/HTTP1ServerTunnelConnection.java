@@ -44,7 +44,7 @@ public class HTTP1ServerTunnelConnection extends AbstractHTTPConnection implemen
     }
 
     @Override
-    public void content(Action1<ByteBuffer> content) {
+    public void receive(Action1<ByteBuffer> content) {
         this.content = content;
     }
 

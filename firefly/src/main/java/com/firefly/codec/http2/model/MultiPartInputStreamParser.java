@@ -28,7 +28,7 @@ import java.util.*;
 public class MultiPartInputStreamParser {
     private static Logger log = LoggerFactory.getLogger("firefly-system");
     public static final MultipartConfigElement __DEFAULT_MULTIPART_CONFIG = new MultipartConfigElement(System.getProperty("java.io.tmpdir"));
-    public static final MultiMap<Part> EMPTY_MAP = new MultiMap(Collections.emptyMap());
+    public static final MultiMap<Part> EMPTY_MAP = new MultiMap<>(Collections.emptyMap());
 
     protected InputStream _in;
     protected MultipartConfigElement _config;

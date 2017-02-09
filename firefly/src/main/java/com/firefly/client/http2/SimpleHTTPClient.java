@@ -319,8 +319,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         AsynchronousPool<HTTPClientConnection> pool = getPool(r);
         pool.take().thenAccept(o -> {
             HTTPClientConnection connection = o.getObject();
-            connection.closedListener(conn -> pool.release(o))
-                      .exceptionListener((conn, exception) -> pool.release(o));
+            connection.close(conn -> pool.release(o))
+                      .exception((conn, exception) -> pool.release(o));
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
                 pool.release(o);

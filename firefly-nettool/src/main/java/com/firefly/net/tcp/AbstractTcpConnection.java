@@ -87,7 +87,7 @@ public abstract class AbstractTcpConnection implements TcpConnection {
 	}
 
 	@Override
-	public TcpConnection closeCallback(Action0 closeCallback) {
+	public TcpConnection close(Action0 closeCallback) {
 		this.closeCallback = closeCallback;
 		return this;
 	}

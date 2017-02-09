@@ -31,8 +31,8 @@ public interface HTTPConnection extends Closeable {
 
     InetSocketAddress getRemoteAddress();
 
-    HTTPConnection closedListener(Action1<HTTPConnection> closedListener);
+    HTTPConnection close(Action1<HTTPConnection> closedListener);
 
-    HTTPConnection exceptionListener(Action2<HTTPConnection, Throwable> exceptionListener);
+    HTTPConnection exception(Action2<HTTPConnection, Throwable> exceptionListener);
 
 }
