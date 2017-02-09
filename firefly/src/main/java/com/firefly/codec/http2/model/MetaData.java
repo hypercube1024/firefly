@@ -2,11 +2,13 @@ package com.firefly.codec.http2.model;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.function.Supplier;
 
 public class MetaData implements Iterable<HttpField> {
     private HttpVersion _httpVersion;
-    private HttpFields _fields;
+    private final HttpFields _fields;
     private long _contentLength;
+    private Supplier<HttpFields> _trailers;
 
     public MetaData(HttpVersion version, HttpFields fields) {
         this(version, fields, Long.MIN_VALUE);
@@ -34,6 +36,14 @@ public class MetaData implements Iterable<HttpField> {
     }
 
     /**
+     * @deprecated use {@link #getHttpVersion()} instead
+     */
+    @Deprecated
+    public HttpVersion getVersion() {
+        return getHttpVersion();
+    }
+
+    /**
      * @return the HTTP version of this MetaData object
      */
     public HttpVersion getHttpVersion() {
@@ -52,6 +62,14 @@ public class MetaData implements Iterable<HttpField> {
      */
     public HttpFields getFields() {
         return _fields;
+    }
+
+    public Supplier<HttpFields> getTrailerSupplier() {
+        return _trailers;
+    }
+
+    public void setTrailerSupplier(Supplier<HttpFields> trailers) {
+        _trailers = trailers;
     }
 
     /**
@@ -87,7 +105,7 @@ public class MetaData implements Iterable<HttpField> {
     public static class Request extends MetaData {
         private String _method;
         private HttpURI _uri;
-        protected Object attachment;
+        private volatile Object attachment;
 
         public Request(HttpFields fields) {
             this(null, null, null, fields);

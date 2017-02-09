@@ -11,24 +11,29 @@ import com.firefly.net.tcp.ssl.SSLSession;
 
 abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
 
-	protected final HttpParser parser;
-	protected final HttpGenerator generator;
-	protected final Generator http2Generator;
-	protected final HTTP2Configuration config;
+    protected final HttpParser parser;
+    protected final HttpGenerator generator;
+    protected final Generator http2Generator;
+    protected final HTTP2Configuration config;
 
-	public AbstractHTTP1Connection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession,
-			RequestHandler requestHandler, ResponseHandler responseHandler) {
-		super(sslSession, tcpSession, HttpVersion.HTTP_1_1);
+    public AbstractHTTP1Connection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession,
+                                   RequestHandler requestHandler, ResponseHandler responseHandler) {
+        super(sslSession, tcpSession, HttpVersion.HTTP_1_1);
 
-		this.config = config;
-		parser = initHttpParser(config, requestHandler, responseHandler);
-		generator = initHttpGenerator();
-		http2Generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());
-	}
+        this.config = config;
+        parser = initHttpParser(config, requestHandler, responseHandler);
+        generator = initHttpGenerator();
+        http2Generator = new Generator(config.getMaxDynamicTableSize(), config.getMaxHeaderBlockFragment());
+    }
 
-	abstract protected HttpParser initHttpParser(HTTP2Configuration config, RequestHandler requestHandler,
-			ResponseHandler responseHandler);
-	
-	abstract protected HttpGenerator initHttpGenerator();
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.HTTP1;
+    }
+
+    abstract protected HttpParser initHttpParser(HTTP2Configuration config, RequestHandler requestHandler,
+                                                 ResponseHandler responseHandler);
+
+    abstract protected HttpGenerator initHttpGenerator();
 
 }

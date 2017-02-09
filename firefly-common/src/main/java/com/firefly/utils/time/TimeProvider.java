@@ -18,17 +18,14 @@ public class TimeProvider extends AbstractLifeCycle {
     @Override
     protected void init() {
         start = true;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (start) {
-                    try {
-                        Thread.sleep(interval);
-                    } catch (InterruptedException e) {
-                        System.err.println("sleep exception, " + e.getMessage());
-                    }
-                    current = System.currentTimeMillis();
+        new Thread(() -> {
+            while (start) {
+                try {
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    System.err.println("sleep exception, " + e.getMessage());
                 }
+                current = System.currentTimeMillis();
             }
         }, "filefly time provider " + interval + "ms").start();
     }

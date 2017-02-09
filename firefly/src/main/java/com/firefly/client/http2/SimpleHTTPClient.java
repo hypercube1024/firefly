@@ -2,18 +2,18 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.EofException;
+import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.AsynchronousPool;
-import com.firefly.utils.lang.pool.ThreadLocalAsynchronousPool;
+import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
+import com.firefly.utils.lang.pool.PooledObject;
 import com.firefly.utils.time.Millisecond100Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +27,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleHTTPClient extends AbstractLifeCycle {
 
@@ -36,14 +36,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
     private final HTTP2Client http2Client;
-
-    private final Map<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentReferenceHashMap<>();
+    private final ConcurrentHashMap<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
+    private final SimpleHTTPClientConfiguration simpleHTTPClientConfiguration;
 
     public SimpleHTTPClient() {
-        this(new HTTP2Configuration());
+        this(new SimpleHTTPClientConfiguration());
     }
 
-    public SimpleHTTPClient(HTTP2Configuration http2Configuration) {
+    public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
+        this.simpleHTTPClientConfiguration = http2Configuration;
         http2Client = new HTTP2Client(http2Configuration);
         start();
     }
@@ -57,6 +58,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         Action1<Response> headerComplete;
         Action1<ByteBuffer> content;
+        Action1<Response> contentComplete;
         Action1<Response> messageComplete;
 
         Action3<Integer, String, Response> badMessage;
@@ -145,6 +147,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             return this;
         }
 
+        public RequestBuilder contentComplete(Action1<Response> contentComplete) {
+            this.contentComplete = contentComplete;
+            return this;
+        }
+
         public RequestBuilder badMessage(Action3<Integer, String, Response> badMessage) {
             this.badMessage = badMessage;
             return this;
@@ -213,14 +220,19 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         RequestBuilder req = new RequestBuilder();
         req.host = url.getHost();
         req.port = url.getPort() < 0 ? url.getDefaultPort() : url.getPort();
-        poolMap.remove(req);
+        removePool(req);
     }
 
     public void removeConnectionPool(String host, int port) {
         RequestBuilder req = new RequestBuilder();
         req.host = host;
         req.port = port;
-        poolMap.remove(req);
+        removePool(req);
+    }
+
+    private void removePool(RequestBuilder req) {
+        AsynchronousPool<HTTPClientConnection> pool = poolMap.remove(req);
+        pool.stop();
     }
 
     public int getConnectionPoolSize(String host, int port) {
@@ -302,26 +314,21 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
-    private void release(HTTPClientConnection connection, AsynchronousPool<HTTPClientConnection> pool) {
-        boolean released = (Boolean) connection.getAttachment();
-        if (!released) {
-            connection.setAttachment(true);
-            pool.release(connection);
-        }
-    }
-
     protected void send(RequestBuilder r) {
         long start = Millisecond100Clock.currentTimeMillis();
         AsynchronousPool<HTTPClientConnection> pool = getPool(r);
-        pool.take().thenAccept(connection -> {
-            connection.setAttachment(false);
+        pool.take().thenAccept(o -> {
+            HTTPClientConnection connection = o.getObject();
+            connection.closedListener(conn -> pool.release(o))
+                      .exceptionListener((conn, exception) -> pool.release(o));
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
-                release(connection, pool);
+                pool.release(o);
             }
 
-            log.debug("take the connection {} from pool, released: {}", connection.getSessionId(),
-                    connection.getAttachment());
+            log.debug("take the connection {} from pool, released: {}",
+                    connection.getSessionId(),
+                    o.isReleased());
 
             ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
                     .headerComplete((req, resp, outputStream, conn) -> {
@@ -334,17 +341,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             }
                         }
                         return false;
-                    }).messageComplete((req, resp, outputStream, conn) -> {
-                        release(connection, pool);
-                        log.debug("complete request of the connection {} , released: {}", connection.getSessionId(),
-                                connection.getAttachment());
-                        if (r.messageComplete != null) {
-                            r.messageComplete.call(resp);
-                        }
-                        if (r.future != null) {
-                            r.future.succeeded(r.simpleResponse);
-                        }
-                        return true;
                     }).content((buffer, req, resp, outputStream, conn) -> {
                         if (r.content != null) {
                             r.content.call(buffer);
@@ -353,10 +349,28 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             r.simpleResponse.responseBody.add(buffer);
                         }
                         return false;
+                    }).contentComplete((req, resp, outputStream, conn) -> {
+                        if (r.contentComplete != null) {
+                            r.contentComplete.call(resp);
+                        }
+                        return false;
+                    }).messageComplete((req, resp, outputStream, conn) -> {
+                        pool.release(o);
+                        log.debug("complete request of the connection {} , released: {}",
+                                connection.getSessionId(),
+                                o.isReleased());
+                        if (r.messageComplete != null) {
+                            r.messageComplete.call(resp);
+                        }
+                        if (r.future != null) {
+                            r.future.succeeded(r.simpleResponse);
+                        }
+                        return true;
                     }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
-                        release(connection, pool);
-                        log.debug("bad message of the connection {} , released: {}", connection.getSessionId(),
-                                connection.getAttachment());
+                        pool.release(o);
+                        log.debug("bad message of the connection {} , released: {}",
+                                connection.getSessionId(),
+                                o.isReleased());
                         if (r.badMessage != null) {
                             r.badMessage.call(errCode, reason, resp);
                         }
@@ -366,10 +380,14 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             }
                             r.future.failed(new BadMessageException(errCode, reason));
                         }
+                        if (r.badMessage == null && r.future == null) {
+                            IO.close(o.getObject());
+                        }
                     }).earlyEOF((req, resp, outputStream, conn) -> {
-                        release(connection, pool);
-                        log.debug("eafly EOF of the connection {} , released: {}", connection.getSessionId(),
-                                connection.getAttachment());
+                        pool.release(o);
+                        log.debug("eafly EOF of the connection {} , released: {}",
+                                connection.getSessionId(),
+                                o.isReleased());
                         if (r.earlyEof != null) {
                             r.earlyEof.call(resp);
                         }
@@ -378,6 +396,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                                 r.simpleResponse = new SimpleResponse(resp);
                             }
                             r.future.failed(new EofException("early eof"));
+                        }
+                        if (r.earlyEof == null && r.future == null) {
+                            IO.close(o.getObject());
                         }
                     });
 
@@ -396,7 +417,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 connection.send(r.request, handler);
             }
             long end = Millisecond100Clock.currentTimeMillis();
-            monitor.info("SimpleHTTPClient take connection total time: {}", (end - start));
+            monitor.info("SimpleHTTPClient take connection {} total time: {}", connection.getSessionId(), (end - start));
         }).exceptionally(e -> {
             log.error("SimpleHTTPClient sends message exception", e);
             return null;
@@ -404,21 +425,27 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     private AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
-        AsynchronousPool<HTTPClientConnection> pool = poolMap.get(request);
-        if (pool == null) {
-            pool = new ThreadLocalAsynchronousPool<>(() -> http2Client.connect(request.host, request.port),
-                    HTTPClientConnection::isOpen,
-                    (conn) -> {
-                        try {
-                            conn.close();
-                        } catch (IOException e) {
-                            log.error("close http connection exception", e);
-                        }
-                    });
-            poolMap.put(request, pool);
-            return pool;
-        }
-        return pool;
+        return poolMap.computeIfAbsent(request,
+                req -> new BoundedAsynchronousPool<>(simpleHTTPClientConfiguration.getPoolSize(),
+                        simpleHTTPClientConfiguration.getConnectTimeout(),
+                        () -> {
+                            Promise.Completable<PooledObject<HTTPClientConnection>> r = new Promise.Completable<>();
+                            Promise.Completable<HTTPClientConnection> c = http2Client.connect(request.host, request.port);
+                            c.thenAccept(conn -> r.succeeded(new PooledObject<>(conn)))
+                             .exceptionally(e -> {
+                                 r.failed(e);
+                                 return null;
+                             });
+                            return r;
+                        },
+                        o -> o.getObject().isOpen(),
+                        (o) -> {
+                            try {
+                                o.getObject().close();
+                            } catch (IOException e) {
+                                log.error("close http connection exception", e);
+                            }
+                        }));
     }
 
     @Override
@@ -429,5 +456,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     @Override
     protected void destroy() {
         http2Client.stop();
+        poolMap.forEach((k, v) -> v.stop());
     }
 }
