@@ -9,10 +9,10 @@ import com.firefly.utils.concurrent.Callback;
 
 public interface Session {
 
-	public static final DisconnectionOutputEntry DISCONNECTION_FLAG = new DisconnectionOutputEntry(null, null);
+	DisconnectionOutputEntry DISCONNECTION_FLAG = new DisconnectionOutputEntry(null, null);
 
-	public static final int CLOSE = 0;
-	public static final int OPEN = 1;
+	int CLOSE = 0;
+	int OPEN = 1;
 
 	void attachObject(Object attachment);
 
