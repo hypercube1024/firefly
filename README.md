@@ -1,64 +1,180 @@
-# Firefly Framework
+# What is Firefly?
 
-Firefly framework is a high performance full-stack java web framework. It helps you create a java web application __*Easy*__ and __*Quickly*__. It provides MVC framework with HTTP Server and many other useful components for developing web applications. That means you can easy deploy your web without any other java web containers, in short , it's containerless. It taps into the fullest potential of hardware using __*SEDA*__ architecture, a highly customizable thread model.  
+Firefly framework is a asynchronous java web framework. It helps you create a web application ***Easy*** and ***Quickly***. It provides MVC framework, asynchronous HTTP Server/Client, asynchronous TCP Server/Client and many other useful components for developing web applications, protocol servers, etc. That means you can easy deploy your web without any other java web containers, in short , it's containerless. It taps into the fullest potential of hardware using ***SEDA*** architecture, a highly customizable thread model.  
 
-## Getting start
+Firefly core provides functionality for things like:
+- Writing TCP clients and servers
+- Writing HTTP clients and servers
+- Writing web application with MVC framework and template engine
+- Database access
 
-Running firefly is very easy, now you can download the dependency from Apache Central Repository, the pom is:
+# Event driven
 
+The Firefly APIs are largely event driven. This means that when things happen in Firefly that you are interested in, Firefly will call you by sending you events.
+
+Some example events are:
+- some data has arrived on a socket
+- an HTTP server has received a request
+
+Firefly handles a lot of concurrency using just a small number of threads, so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.  
+
+With a conventional blocking API the calling thread might block when:
+- Thread.sleep()
+- Waiting on a lock
+- Waiting on a mutex or monitor
+- Doing a long lived database operation and waiting for a result
+- Call blocking I/O APIs
+
+In all the above cases, when your thread is waiting for a result it can’t do anything else - it’s effectively useless.
+
+This means that if you want a lot of concurrency using blocking APIs then you need a lot of threads to prevent your application grinding to a halt.
+
+Threads have overhead in terms of the memory they require (e.g. for their stack) and in context switching.
+
+For the levels of concurrency required in many modern applications, a blocking approach just doesn’t scale.
+
+# Gettings start
+Add maven dependency in your pom.xml.
 ```xml
-	<dependency>
-      <groupId>com.fireflysource</groupId>
-      <artifactId>firefly-common</artifactId>
-      <version>3.0.4.5</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fireflysource</groupId>
-      <artifactId>firefly-template</artifactId>
-      <version>3.0.4.5</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fireflysource</groupId>
-      <artifactId>firefly-nettool</artifactId>
-      <version>3.0.4.5</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fireflysource</groupId>
-      <artifactId>firefly</artifactId>
-      <version>3.0.4.5</version>
-    </dependency>
+<dependency>
+    <groupId>com.fireflysource</groupId>
+    <artifactId>firefly</artifactId>
+    <version>4.0.21</version>
+</dependency>
+
+<dependency>
+    <groupId>com.fireflysource</groupId>
+    <artifactId>firefly-slf4j</artifactId>
+    <version>4.0.21</version>
+</dependency>
 ```
 
-There are two ways to start a firefly application, building by maven, or just run it on eclipse simply.
+Write HTTP server and client test case as follows:
+```java
+public class TestHTTPServerAndClient {
 
-### Building by maven
-1. Clone firefly source code from Github.
-2. Find the demo project 'firefly-demo', modify the log path in firefly-log.properties, you can find it in 'firefly-demo/src/main/resources', in this case, you __*Must*__ modify these two rows to your own location
+    @Parameter
+    public Run r;
 
+    static class Run {
+        SimpleHTTPClientConfiguration clientConfig;
+        SimpleHTTPServerConfiguration serverConfig;
+        String requestURL;
+        String quitURL;
+        int port;
+        int maxMsg;
+        String testName;
+
+        @Override
+        public String toString() {
+            return testName;
+        }
+    }
+
+    @Parameters(name = "{0}")
+    public static Collection<Run> data() {
+        List<Run> data = new ArrayList<>();
+        Run run = new Run();
+        run.clientConfig = new SimpleHTTPClientConfiguration();
+        run.serverConfig = new SimpleHTTPServerConfiguration();
+        run.port = 1332;
+        run.maxMsg = 5;
+        run.requestURL = "http://localhost:" + run.port + "/";
+        run.quitURL = "http://localhost:" + run.port + "/quit";
+        run.testName = "Test HTTP server and client";
+        data.add(run);
+
+        run = new Run();
+        run.clientConfig = new SimpleHTTPClientConfiguration();
+        run.clientConfig.setSecureConnectionEnabled(true); // enable HTTPs
+        run.serverConfig = new SimpleHTTPServerConfiguration();
+        run.serverConfig.setSecureConnectionEnabled(true);
+        run.port = 1333;
+        run.maxMsg = 15;
+        run.requestURL = "https://localhost:" + run.port + "/";
+        run.quitURL = "https://localhost:" + run.port + "/quit";
+        run.testName = "Test HTTP server and client with TLS";
+        data.add(run);
+
+        return data;
+    }
+
+    @Test
+    public void test() {
+        SimpleHTTPServer server = new SimpleHTTPServer(r.serverConfig);
+        SimpleHTTPClient client = new SimpleHTTPClient(r.clientConfig);
+        int port = r.port;
+        int maxMsg = r.maxMsg;
+        Phaser phaser = new Phaser(maxMsg + 2);
+
+        AtomicInteger msgCount = new AtomicInteger();
+        server.headerComplete(r -> r.messageComplete(request -> {
+            SimpleResponse response = request.getResponse();
+            String path = request.getURI().getPath();
+
+            System.out.println("server receives message -> " + request.getStringBody());
+            response.getFields().put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_PLAIN.asString());
+            switch (path) {
+                case "/": {
+                    msgCount.incrementAndGet();
+                    try (PrintWriter writer = response.getPrintWriter()) {
+                        writer.print("response message [" + request.getStringBody() + "]");
+                    }
+                }
+                break;
+                case "/quit": {
+                    try (PrintWriter writer = response.getPrintWriter()) {
+                        writer.print("bye!");
+                    }
+                }
+                break;
+            }
+            phaser.arrive();
+        })).listen("localhost", port);
+
+        for (int i = 0; i < maxMsg; i++) {
+            client.post(r.requestURL)
+                  .body("hello world" + i + "!")
+                  .submit()
+                  .thenAcceptAsync(r -> System.out.println("client receives message -> " + r.getStringBody()));
+        }
+        client.post(r.quitURL)
+              .body("quit test")
+              .submit()
+              .thenAcceptAsync(r -> System.out.println("client receives message -> " + r.getStringBody()));
+
+        phaser.arriveAndAwaitAdvance();
+        Assert.assertThat(msgCount.get(), is(maxMsg));
+        client.stop();
+        server.stop();
+    }
+}
 ```
-firefly-system=INFO,/Users/qiupengtao/develop/logs
-firefly-access=INFO,/Users/qiupengtao/develop/logs
+
+Firefly HTTP client/server supports both HTTP1 and HTTP2 protocol, when you enable the TLS configuration, Firefly will negotiate HTTP version using ALPN automatically.  
+
+The HTTP client uses a bounded connection pool to send requests. In this example, the client sends request in different TCP connections, so the HTTP server received messages are unordered.
+
+Run JUnit result:
 ```
-When you have finished these operations above-mentioned, run maven command 'mvn test' and 'mvn compile', then run the class 'App' and visit the URL http://localhost:8080/index in your browser, you will see the 'Hello World'.  
+server receives message -> hello world0!
+server receives message -> hello world3!
+server receives message -> hello world2!
+server receives message -> hello world4!
+client receives message -> response message [hello world3!]
+client receives message -> response message [hello world0!]
+server receives message -> hello world1!
+client receives message -> response message [hello world2!]
+client receives message -> response message [hello world4!]
+client receives message -> response message [hello world1!]
+server receives message -> quit test
+client receives message -> bye!
 
-
-### Running on eclipse
-
-1. Clone firefly source code from Github.
-2. Open Eclipse IDE and import the demo project - 'firefly-benchmark'
-3. Modify the log path in firefly-log.properties, you can find it in 'firefly-benchmark/src', in this case, you __*Must*__ modify these two rows to your own location
-
+......
 ```
-firefly-system=INFO,/Users/qiupengtao/develop/logs
-firefly-access=INFO,/Users/qiupengtao/develop/logs
-```
-When you have finished these operations above-mentioned, run the class 'Bootstrap' and visit the URL http://localhost:8080/ in your browser, you will see the 'Hello World'.  
 
+More detailed information, please refer to the [full document](http://www.fireflysource.com)
 
-Notice: you __*Must*__ use JDK in your IDE environment __*NOT*__ JRE, because the firefly depends on Java Compiler API that doesn't exist in JRE.    
-
-More details you can find in [Wiki](https://github.com/hypercube1024/firefly/wiki/Guide) or [guide document](http://www.fireflysource.com/docs/firefly-guide.html)
-
-##Contact information
+#Contact information
 E-mail: qptkk@163.com  
 QQ Group: 126079579
