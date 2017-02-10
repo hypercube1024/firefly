@@ -1,7 +1,7 @@
 ---
 
 category : docs
-layout: post
+layout: document
 title: Getting Started
 
 ---
@@ -180,10 +180,14 @@ public class TestSimpleTcpServerAndClient {
 Firefly TCP server/client can guarantee the message order in the same connection if you write (or receive) message in the Firefly network event thread.
 
 TCP client sends message order
-> "hello world0!", "hello world1!", "hello world2!" , "hello world3!" ......
+```
+"hello world0!", "hello world1!", "hello world2!" , "hello world3!" ......
+```
 
 TCP server receives message order
-> "hello world0!", "hello world1!", "hello world2!" , "hello world3!" ......
+```
+"hello world0!", "hello world1!", "hello world2!" , "hello world3!" ......
+```
 
 
 Run JUnit result:

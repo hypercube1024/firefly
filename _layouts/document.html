@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+{% include head.html %}
+
+<body>
+{% include navbar.html %}
+
+<div id="content" >
+<div class="container">
+	<div class="row">
+		<div class="col-lg-9">{{ content }}</div>
+    <div class="col-lg-3">
+      <nav class="bs-docs-sidebar">
+        <ul class="list-unstyled">
+          <li><a href="{{ site.url }}/docs/getting-start.html">Getting start</a></li>
+          <li><a href="{{ site.url }}/docs/tcp-server-client.html">TCP server and client</a></li>
+          <li><a href="{{ site.url }}/docs/tcp-configuration.html">TCP configuration</a></li>
+          <li><a href="{{ site.url }}/docs/http-server-client.html">HTTP server and client</a></li>
+          <li><a href="{{ site.url }}/docs/http-server-client.html">HTTP router</a></li>
+          <li><a href="{{ site.url }}/docs/http-configuration.html">HTTP configuration</a></li>
+          <li><a href="{{ site.url }}/docs/ioc-framework.html">IOC framework</a></li>
+          <li><a href="{{ site.url }}/docs/database-access.html">Database access</a></li>
+          <li><a href="{{ site.url }}/docs/log-configuration.html">Log configuration</a></li>
+        </ul>
+        <a href="#top">Back to top</a>
+      </nav>
+    </div>
+	</div>
+</div>
+</div>
+
+{% include foot.html %}
+</body>
+</html>
