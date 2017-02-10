@@ -6,6 +6,17 @@ title: Getting Started
 
 ---
 
+Table Of Contents
+
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [What is Firefly?](#what-is-firefly)
+- [Event driven](#event-driven)
+- [Writing TCP servers and clients](#writing-tcp-servers-and-clients)
+- [Writing HTTP servers and clients](#writing-http-servers-and-clients)
+
+<!-- /TOC -->
+
 # What is Firefly?
 
 Firefly framework is a asynchronous java web framework. It helps you create a web application ***Easy*** and ***Quickly***. It provides MVC framework, asynchronous HTTP Server/Client, asynchronous TCP Server/Client and many other useful components for developing web applications, protocol servers, etc. That means you can easy deploy your web without any other java web containers, in short , it's containerless. It taps into the fullest potential of hardware using ***SEDA*** architecture, a highly customizable thread model.  
@@ -24,16 +35,42 @@ Some example events are:
 - some data has arrived on a socket
 - an HTTP server has received a request
 
-Threads have overhead in terms of the memory they require (e.g. for their stack) and in context switching. For the levels of concurrency required in many modern applications, a blocking approach just doesn’t scale. Firefly handles a lot of concurrency using just a small number of threads, so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.  
+Firefly handles a lot of concurrency using just a small number of threads, so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.  
 
-Examples of blocking include:
+With a conventional blocking API the calling thread might block when:
 - Thread.sleep()
 - Waiting on a lock
 - Waiting on a mutex or monitor
 - Doing a long lived database operation and waiting for a result
-- Blocking I/O APIs
+- Call blocking I/O APIs
+
+In all the above cases, when your thread is waiting for a result it can’t do anything else - it’s effectively useless.
+
+This means that if you want a lot of concurrency using blocking APIs then you need a lot of threads to prevent your application grinding to a halt.
+
+Threads have overhead in terms of the memory they require (e.g. for their stack) and in context switching.
+
+For the levels of concurrency required in many modern applications, a blocking approach just doesn’t scale.
+
 
 # Writing TCP servers and clients
+
+Add maven dependency in your pom.xml.
+```xml
+<dependency>
+    <groupId>com.fireflysource</groupId>
+    <artifactId>firefly</artifactId>
+    <version>4.0.21</version>
+</dependency>
+
+<dependency>
+    <groupId>com.fireflysource</groupId>
+    <artifactId>firefly-slf4j</artifactId>
+    <version>4.0.21</version>
+</dependency>
+```
+
+Write the test case as follows:
 ```java
 @RunWith(Parameterized.class)
 public class TestSimpleTcpServerAndClient {
@@ -140,7 +177,7 @@ public class TestSimpleTcpServerAndClient {
     }
 }
 ```
-Firefly TCP server/client can guarantee the message order in the same connection if you write (or receive) message in the Firefly event thread.
+Firefly TCP server/client can guarantee the message order in the same connection if you write (or receive) message in the Firefly network event thread.
 
 TCP client sends message order
 > "hello world0!", "hello world1!", "hello world2!" , "hello world3!" ......
@@ -149,7 +186,7 @@ TCP server receives message order
 > "hello world0!", "hello world1!", "hello world2!" , "hello world3!" ......
 
 
-This example result:
+Run JUnit result:
 ```
 server receives message -> hello world0!
 server receives message -> hello world1!
@@ -273,7 +310,7 @@ Firefly HTTP client/server supports both HTTP1 and HTTP2 protocol, when you enab
 
 The HTTP client uses a bounded connection pool to send requests. In this example, the client sends request in different TCP connections, so the HTTP server received messages are unordered.
 
-This example result:
+Run JUnit result:
 ```
 server receives message -> hello world0!
 server receives message -> hello world3!
@@ -287,4 +324,6 @@ client receives message -> response message [hello world4!]
 client receives message -> response message [hello world1!]
 server receives message -> quit test
 client receives message -> bye!
+
+......
 ```
