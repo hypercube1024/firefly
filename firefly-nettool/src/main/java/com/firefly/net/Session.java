@@ -1,70 +1,69 @@
 package com.firefly.net;
 
+import com.firefly.net.buffer.FileRegion;
+import com.firefly.utils.concurrent.Callback;
+
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import com.firefly.net.buffer.FileRegion;
-import com.firefly.utils.concurrent.Callback;
-
 public interface Session {
 
-	DisconnectionOutputEntry DISCONNECTION_FLAG = new DisconnectionOutputEntry(null, null);
+    DisconnectionOutputEntry DISCONNECTION_FLAG = new DisconnectionOutputEntry(null, null);
 
-	int CLOSE = 0;
-	int OPEN = 1;
+    enum State {CLOSE, OPEN}
 
-	void attachObject(Object attachment);
+    void attachObject(Object attachment);
 
-	Object getAttachment();
+    Object getAttachment();
 
-	void fireReceiveMessage(Object message);
+    void fireReceiveMessage(Object message);
 
-	void encode(Object message);
+    void encode(Object message);
 
-	void write(OutputEntry<?> entry);
+    void write(OutputEntry<?> entry);
 
-	void write(ByteBuffer byteBuffer, Callback callback);
+    void write(ByteBuffer byteBuffer, Callback callback);
 
-	void write(ByteBuffer[] buffers, Callback callback);
+    void write(ByteBuffer[] buffers, Callback callback);
 
-	void write(Collection<ByteBuffer> buffers, Callback callback);
+    void write(Collection<ByteBuffer> buffers, Callback callback);
 
-	void write(FileRegion file, Callback callback);
+    void write(FileRegion file, Callback callback);
 
-	int getSessionId();
+    int getSessionId();
 
-	long getOpenTime();
+    long getOpenTime();
 
-	long getCloseTime();
+    long getCloseTime();
 
-	long getDuration();
+    long getDuration();
 
-	long getLastReadTime();
+    long getLastReadTime();
 
-	long getLastWrittenTime();
+    long getLastWrittenTime();
 
-	long getLastActiveTime();
+    long getLastActiveTime();
 
-	long getReadBytes();
+    long getReadBytes();
 
-	long getWrittenBytes();
+    long getWrittenBytes();
 
-	void close();
+    void close();
 
-	void closeNow();
+    void closeNow();
 
-	void shutdownOutput();
+    void shutdownOutput();
 
-	void shutdownInput();
+    void shutdownInput();
 
-	int getState();
+    State getState();
 
-	boolean isOpen();
+    boolean isOpen();
 
-	InetSocketAddress getLocalAddress();
+    InetSocketAddress getLocalAddress();
 
-	InetSocketAddress getRemoteAddress();
-	
-	long getIdleTimeout();
+    InetSocketAddress getRemoteAddress();
+
+    long getIdleTimeout();
 }

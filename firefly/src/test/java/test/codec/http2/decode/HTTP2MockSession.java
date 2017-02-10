@@ -90,9 +90,9 @@ public class HTTP2MockSession implements Session {
 	}
 
 	@Override
-	public int getState() {
+	public Session.State getState() {
 		// TODO Auto-generated method stub
-		return 0;
+		return State.OPEN;
 	}
 
 	@Override

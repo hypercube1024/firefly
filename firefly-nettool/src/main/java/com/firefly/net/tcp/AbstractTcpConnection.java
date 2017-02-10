@@ -7,6 +7,7 @@ import com.firefly.net.Session;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;
 
+
 public abstract class AbstractTcpConnection implements TcpConnection {
 
 	Session session;
@@ -113,7 +114,7 @@ public abstract class AbstractTcpConnection implements TcpConnection {
 	}
 
 	@Override
-	public int getState() {
+	public Session.State getState() {
 		return session.getState();
 	}
 

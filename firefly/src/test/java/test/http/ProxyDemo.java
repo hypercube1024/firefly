@@ -35,7 +35,7 @@ public class ProxyDemo {
                     serverConnection.upgradeHTTPTunnel(promise);
                     promise.thenAccept(tunnel -> {
                         tcpConn.receive(dstBuf -> tunnel.write(dstBuf, Callback.NOOP))
-                               .exception(e -> tcpConn.close())
+                               .exception(e -> IO.close(tcpConn))
                                .close(() -> request.remove("tunnelSuccess"));
                         tunnel.receive(tcpConn::write);
                     });

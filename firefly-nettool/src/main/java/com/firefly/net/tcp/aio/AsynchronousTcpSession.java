@@ -35,7 +35,7 @@ public class AsynchronousTcpSession implements Session {
     private long lastWrittenTime;
     private long readBytes = 0;
     private long writtenBytes = 0;
-    private volatile int state;
+    private volatile State state;
     private final AsynchronousSocketChannel socketChannel;
     private volatile InetSocketAddress localAddress;
     private volatile InetSocketAddress remoteAddress;
@@ -56,7 +56,7 @@ public class AsynchronousTcpSession implements Session {
         this.config = config;
         this.eventManager = eventManager;
         this.socketChannel = socketChannel;
-        state = OPEN;
+        state = State.OPEN;
     }
 
     void _read() {
@@ -322,7 +322,7 @@ public class AsynchronousTcpSession implements Session {
         } catch (IOException e) {
             log.error("the session {} close error", e, sessionId);
         }
-        state = CLOSE;
+        state = State.CLOSE;
         eventManager.executeCloseTask(this);
     }
 
@@ -403,13 +403,13 @@ public class AsynchronousTcpSession implements Session {
     }
 
     @Override
-    public int getState() {
+    public State getState() {
         return state;
     }
 
     @Override
     public boolean isOpen() {
-        return state > 0;
+        return state == State.OPEN;
     }
 
     @Override
