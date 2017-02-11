@@ -1,0 +1,195 @@
+package com.firefly.server.http2.router.impl;
+
+import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.server.http2.router.Router;
+import com.firefly.server.http2.router.RoutingContext;
+import com.firefly.server.http2.router.utils.PathUtils;
+import com.firefly.utils.function.Action1;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * @author Pengtao Qiu
+ */
+public class RouterImpl implements Router, Comparable<RouterImpl> {
+
+    private final int id;
+    private final RouterManagerImpl routerManager;
+    private final Set<MatchType> patchTypes;
+
+    private volatile boolean enable = true;
+    private String url;
+
+
+    public RouterImpl(int id, RouterManagerImpl routerManager) {
+        this.id = id;
+        this.routerManager = routerManager;
+        patchTypes = new HashSet<>();
+    }
+
+    @Override
+    public Router path(String url) {
+        checkPath(url);
+        url = url.trim();
+
+        if (url.length() == 1) {
+            switch (url.charAt(0)) {
+                case '/':
+                    routerManager.precisePath(url, this);
+                    break;
+                case '*':
+                    routerManager.patternPath(url, this);
+                    break;
+                default:
+                    throw new IllegalArgumentException("the url: [" + url + "] format error");
+            }
+        } else {
+            if (url.charAt(0) != '/') {
+                throw new IllegalArgumentException("the path must start with '/'");
+            }
+
+            if (url.contains("*")) {
+                routerManager.patternPath(url, this);
+            } else {
+                if (url.charAt(url.length() - 1) != '/') {
+                    url = url + "/";
+                }
+
+                List<String> paths = PathUtils.split(url);
+                if (isParameterPath(paths)) {
+                    routerManager.parameterPath(url, paths, this);
+                } else {
+                    routerManager.precisePath(url, this);
+                }
+            }
+        }
+        this.url = url;
+        patchTypes.add(MatchType.PATH);
+        return this;
+    }
+
+    private void checkPath(String url) {
+        if (url == null) {
+            throw new IllegalArgumentException("the url is null");
+        }
+
+        if (this.url != null) {
+            throw new IllegalArgumentException("the path of this router has been set");
+        }
+    }
+
+    private boolean isParameterPath(List<String> paths) {
+        for (String p : paths) {
+            if (p.charAt(0) == ':') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Router pathRegex(String regex) {
+        checkPath(regex);
+        regex = regex.trim();
+        routerManager.regexPath(regex, this);
+        this.url = regex;
+        patchTypes.add(MatchType.PATH);
+        return this;
+    }
+
+    @Override
+    public Router method(HttpMethod httpMethod) {
+        return null;
+    }
+
+    @Override
+    public Router get(String url) {
+        return null;
+    }
+
+    @Override
+    public Router post(String url) {
+        return null;
+    }
+
+    @Override
+    public Router put(String url) {
+        return null;
+    }
+
+    @Override
+    public Router delete(String url) {
+        return null;
+    }
+
+    @Override
+    public Router consumes(String contentType) {
+        return null;
+    }
+
+    @Override
+    public Router produces(String contentType) {
+        return null;
+    }
+
+    @Override
+    public Router handler(Action1<RoutingContext> context) {
+        return null;
+    }
+
+    @Override
+    public Router handler(Action1<RoutingContext> context, HTTPEvent... event) {
+        return null;
+    }
+
+    @Override
+    public Router interest(HTTPEvent event) {
+        return null;
+    }
+
+    @Override
+    public Router interest(HTTPEvent... event) {
+        return null;
+    }
+
+    @Override
+    public Router enable() {
+        enable = true;
+        return this;
+    }
+
+    @Override
+    public Router disable() {
+        enable = false;
+        return this;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public boolean isEnable() {
+        return enable;
+    }
+
+    @Override
+    public int compareTo(RouterImpl o) {
+        return Integer.compare(id, o.id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RouterImpl router = (RouterImpl) o;
+        return id == router.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+}

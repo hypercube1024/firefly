@@ -37,4 +37,9 @@ public interface Router {
     Router interest(HTTPEvent event);
 
     Router interest(HTTPEvent... event);
+
+    Router enable();
+
+    Router disable();
+
 }
