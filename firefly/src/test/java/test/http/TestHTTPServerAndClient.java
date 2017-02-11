@@ -1,5 +1,6 @@
 package test.http;
 
+import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.model.HttpHeader;
@@ -77,8 +78,8 @@ public class TestHTTPServerAndClient {
 
     @Test
     public void test() {
-        SimpleHTTPServer server = new SimpleHTTPServer(r.serverConfig);
-        SimpleHTTPClient client = new SimpleHTTPClient(r.clientConfig);
+        SimpleHTTPServer server = $.createHTTPServer(r.serverConfig); // new SimpleHTTPServer(r.serverConfig);
+        SimpleHTTPClient client = $.createHTTPClient(r.clientConfig); // new SimpleHTTPClient(r.clientConfig);
         int port = r.port;
         int maxMsg = r.maxMsg;
         Phaser phaser = new Phaser(maxMsg + 2);
