@@ -209,6 +209,7 @@ client receives message -> bye!
 
 # Writing HTTP servers and clients
 ```java
+@RunWith(Parameterized.class)
 public class TestHTTPServerAndClient {
 
     @Parameter
@@ -259,8 +260,8 @@ public class TestHTTPServerAndClient {
 
     @Test
     public void test() {
-        SimpleHTTPServer server = new SimpleHTTPServer(r.serverConfig);
-        SimpleHTTPClient client = new SimpleHTTPClient(r.clientConfig);
+        SimpleHTTPServer server = $.createHTTPServer(r.serverConfig); // new SimpleHTTPServer(r.serverConfig);
+        SimpleHTTPClient client = $.createHTTPClient(r.clientConfig); // new SimpleHTTPClient(r.clientConfig);
         int port = r.port;
         int maxMsg = r.maxMsg;
         Phaser phaser = new Phaser(maxMsg + 2);
@@ -310,6 +311,8 @@ public class TestHTTPServerAndClient {
 ```
 
 Firefly HTTP client/server supports both HTTP1 and HTTP2 protocol, when you enable the TLS configuration, Firefly will negotiate HTTP version using ALPN automatically.  
+
+In this test case, we use class "$" to create HTTP server and client. Class "$" is an unsorted utility, the main functions of Firefly start from class "$".
 
 The HTTP client uses a bounded connection pool to send requests. In this example, the client sends request in different TCP connections, so the HTTP server received messages are unordered.
 
