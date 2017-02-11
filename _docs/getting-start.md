@@ -6,7 +6,7 @@ title: Getting Started
 
 ---
 
-Table Of Contents
+**Table of Contents**
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
@@ -51,7 +51,6 @@ This means that if you want a lot of concurrency using blocking APIs then you ne
 Threads have overhead in terms of the memory they require (e.g. for their stack) and in context switching.
 
 For the levels of concurrency required in many modern applications, a blocking approach just doesn’t scale.
-
 
 # Writing TCP servers and clients
 
