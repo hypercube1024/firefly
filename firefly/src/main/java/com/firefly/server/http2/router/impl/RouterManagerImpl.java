@@ -17,7 +17,11 @@ public class RouterManagerImpl implements RouterManager {
     private final Matcher patternPathMatcher = new PatternPathMatcher();
     private final Matcher regexPathMatcher = new RegexPathMatcher();
     private final Matcher parameterPathMatcher = new ParameterPathMatcher();
+    private final Matcher httpMethodMatcher = new HTTPMethodMatcher();
 
+    public Matcher getHttpMethodMatcher() {
+        return httpMethodMatcher;
+    }
 
     public Matcher getPrecisePathMather() {
         return precisePathMather;

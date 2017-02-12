@@ -14,7 +14,28 @@ import static org.hamcrest.Matchers.*;
 public class TestMatcher {
 
     @Test
-    public void test() {
+    public void testMethodMatcher() {
+        RouterManagerImpl routerManager = new RouterManagerImpl();
+
+        Router router0 = routerManager.register().post("/food/update");
+
+        Matcher.MatchResult result = routerManager.getHttpMethodMatcher().match("POST");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router0), is(true));
+
+        result = routerManager.getPrecisePathMather().match("/food/update");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router0), is(true));
+
+        result = routerManager.getHttpMethodMatcher().match("GET");
+        Assert.assertThat(result, nullValue());
+    }
+
+
+    @Test
+    public void testPathMatcher() {
         RouterManagerImpl routerManager = new RouterManagerImpl();
 
         Router router0 = routerManager.register().path("/hello/foo");

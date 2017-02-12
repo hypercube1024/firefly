@@ -31,16 +31,12 @@ public class PrecisePathMatcher implements Matcher {
             return null;
         }
 
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-
         if (value.charAt(value.length() - 1) != '/') {
             value += "/";
         }
 
         Set<Router> routers = precisePath.get(value);
-        if (routers != null) {
+        if (routers != null && !routers.isEmpty()) {
             return new MatchResult(routers, Collections.emptyMap(), MatchType.PATH);
         } else {
             return null;

@@ -8,13 +8,11 @@ import com.firefly.utils.function.Action1;
  */
 public interface Router {
 
-    enum HTTPEvent {
-        HEADER_COMPLETE, CONTENT_COMPLETE, MESSAGE_COMPLETE
-    }
-
     Router path(String url);
 
     Router pathRegex(String regex);
+
+    Router method(String method);
 
     Router method(HttpMethod httpMethod);
 
@@ -31,12 +29,6 @@ public interface Router {
     Router produces(String contentType);
 
     Router handler(Action1<RoutingContext> context);
-
-    Router handler(Action1<RoutingContext> context, HTTPEvent... event);
-
-    Router interest(HTTPEvent event);
-
-    Router interest(HTTPEvent... event);
 
     Router enable();
 

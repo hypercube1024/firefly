@@ -21,9 +21,9 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
     private final RouterManagerImpl routerManager;
     private final Set<MatchType> patchTypes;
 
+    private Action1<RoutingContext> context;
     private volatile boolean enable = true;
     private String url;
-
 
     public RouterImpl(int id, RouterManagerImpl routerManager) {
         this.id = id;
@@ -103,27 +103,34 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
 
     @Override
     public Router method(HttpMethod httpMethod) {
-        return null;
+        return method(httpMethod.asString());
+    }
+
+    @Override
+    public Router method(String method) {
+        routerManager.getHttpMethodMatcher().add(method, this);
+        patchTypes.add(MatchType.METHOD);
+        return this;
     }
 
     @Override
     public Router get(String url) {
-        return null;
+        return method(HttpMethod.GET).path(url);
     }
 
     @Override
     public Router post(String url) {
-        return null;
+        return method(HttpMethod.POST).path(url);
     }
 
     @Override
     public Router put(String url) {
-        return null;
+        return method(HttpMethod.PUT).path(url);
     }
 
     @Override
     public Router delete(String url) {
-        return null;
+        return method(HttpMethod.DELETE).path(url);
     }
 
     @Override
@@ -138,22 +145,8 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
 
     @Override
     public Router handler(Action1<RoutingContext> context) {
-        return null;
-    }
-
-    @Override
-    public Router handler(Action1<RoutingContext> context, HTTPEvent... event) {
-        return null;
-    }
-
-    @Override
-    public Router interest(HTTPEvent event) {
-        return null;
-    }
-
-    @Override
-    public Router interest(HTTPEvent... event) {
-        return null;
+        this.context = context;
+        return this;
     }
 
     @Override
@@ -174,6 +167,14 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
 
     public boolean isEnable() {
         return enable;
+    }
+
+    public Set<MatchType> getPatchTypes() {
+        return patchTypes;
+    }
+
+    public Action1<RoutingContext> getContext() {
+        return context;
     }
 
     @Override
