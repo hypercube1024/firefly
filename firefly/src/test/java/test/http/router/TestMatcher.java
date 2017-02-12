@@ -14,6 +14,25 @@ import static org.hamcrest.Matchers.*;
 public class TestMatcher {
 
     @Test
+    public void testMIMETypeMatcher() {
+        RouterManagerImpl routerManager = new RouterManagerImpl();
+
+        Router router0 = routerManager.register().consumes("text/html");
+        Router router1 = routerManager.register().consumes("*/json");
+
+        Matcher.MatchResult result = routerManager.getContentTypePreciseMatcher().match("text/html");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router0), is(true));
+
+        result = routerManager.getContentTypePatternMatcher().match("application/json");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router1), is(true));
+        Assert.assertThat(result.getParameters().get(router1).get("param0"), is("application"));
+    }
+
+    @Test
     public void testMethodMatcher() {
         RouterManagerImpl routerManager = new RouterManagerImpl();
 

@@ -39,4 +39,6 @@ public interface Matcher {
     void add(String rule, Router router);
 
     MatchResult match(String value);
+
+    MatchType getMatchType();
 }

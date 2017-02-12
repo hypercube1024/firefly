@@ -26,7 +26,7 @@ public interface Router {
 
     Router consumes(String contentType);
 
-    Router produces(String contentType);
+    Router produces(String accept);
 
     Router handler(Action1<RoutingContext> context);
 

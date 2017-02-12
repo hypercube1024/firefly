@@ -135,12 +135,24 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
 
     @Override
     public Router consumes(String contentType) {
-        return null;
+        if (!contentType.contains("*")) {
+            routerManager.getContentTypePreciseMatcher().add(contentType, this);
+        } else {
+            routerManager.getContentTypePatternMatcher().add(contentType, this);
+        }
+        patchTypes.add(MatchType.CONTENT_TYPE);
+        return this;
     }
 
     @Override
-    public Router produces(String contentType) {
-        return null;
+    public Router produces(String accept) {
+        if (!accept.contains("*")) {
+            routerManager.getAcceptHeaderPreciseMatcher().add(accept, this);
+        } else {
+            routerManager.getAcceptHeaderPatternMatcher().add(accept, this);
+        }
+        patchTypes.add(MatchType.ACCEPT);
+        return this;
     }
 
     @Override

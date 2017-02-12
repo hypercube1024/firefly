@@ -96,7 +96,7 @@ public class ParameterPathMatcher implements Matcher {
                 });
 
                 if (!routers.isEmpty()) {
-                    return new MatchResult(routers, parameters, MatchType.PATH);
+                    return new MatchResult(routers, parameters, getMatchType());
                 } else {
                     return null;
                 }
@@ -104,5 +104,10 @@ public class ParameterPathMatcher implements Matcher {
                 return null;
             }
         }
+    }
+
+    @Override
+    public MatchType getMatchType() {
+        return MatchType.PATH;
     }
 }
