@@ -75,7 +75,11 @@ public class RegexPathMatcher implements Matcher {
                          }
                      }
                  });
-        return null;
+        if (routers.isEmpty()) {
+            return null;
+        } else {
+            return new MatchResult(routers, parameters, MatchType.PATH);
+        }
     }
 
 }
