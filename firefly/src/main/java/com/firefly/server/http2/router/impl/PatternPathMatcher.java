@@ -13,10 +13,9 @@ public class PatternPathMatcher implements Matcher {
 
     private Map<PatternPath, Set<Router>> patternPath;
 
-
     private static class PatternPath {
-        String rule;
-        Pattern pattern;
+        final String rule;
+        final Pattern pattern;
 
         public PatternPath(String rule) {
             this.rule = rule;

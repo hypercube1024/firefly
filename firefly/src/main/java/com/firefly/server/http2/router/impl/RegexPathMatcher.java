@@ -14,8 +14,8 @@ public class RegexPathMatcher implements Matcher {
     private Map<RegexPath, Set<Router>> regexPath;
 
     private static class RegexPath {
-        String rule;
-        Pattern pattern;
+        final String rule;
+        final Pattern pattern;
 
         public RegexPath(String rule) {
             this.rule = rule;
@@ -50,7 +50,6 @@ public class RegexPathMatcher implements Matcher {
 
     @Override
     public MatchResult match(String value) {
-        // TODO
         if (regexPath == null) {
             return null;
         }

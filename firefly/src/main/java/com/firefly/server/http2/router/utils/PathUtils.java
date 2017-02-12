@@ -15,13 +15,14 @@ abstract public class PathUtils {
 
         for (int i = 1; i <= max; i++) {
             if (path.charAt(i) == '/') {
-                ret.add(path.substring(start, i));
+                ret.add(path.substring(start, i).trim());
                 start = i + 1;
             }
         }
 
-        if (path.charAt(max) != '/')
-            ret.add(path.substring(start));
+        if (path.charAt(max) != '/') {
+            ret.add(path.substring(start).trim());
+        }
         return ret;
     }
 
