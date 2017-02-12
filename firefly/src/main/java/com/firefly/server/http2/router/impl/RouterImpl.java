@@ -1,6 +1,7 @@
 package com.firefly.server.http2.router.impl;
 
 import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.server.http2.router.Matcher.MatchType;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.utils.PathUtils;
@@ -38,10 +39,10 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
         if (url.length() == 1) {
             switch (url.charAt(0)) {
                 case '/':
-                    routerManager.precisePath(url, this);
+                    routerManager.getPrecisePathMather().add(url, this);
                     break;
                 case '*':
-                    routerManager.patternPath(url, this);
+                    routerManager.getPatternPathMatcher().add(url, this);
                     break;
                 default:
                     throw new IllegalArgumentException("the url: [" + url + "] format error");
@@ -52,7 +53,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
             }
 
             if (url.contains("*")) {
-                routerManager.patternPath(url, this);
+                routerManager.getPatternPathMatcher().add(url, this);
             } else {
                 if (url.charAt(url.length() - 1) != '/') {
                     url = url + "/";
@@ -60,9 +61,9 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
 
                 List<String> paths = PathUtils.split(url);
                 if (isParameterPath(paths)) {
-                    routerManager.parameterPath(url, paths, this);
+                    routerManager.getParameterPathMatcher().add(url, this);
                 } else {
-                    routerManager.precisePath(url, this);
+                    routerManager.getPrecisePathMather().add(url, this);
                 }
             }
         }
@@ -94,7 +95,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
     public Router pathRegex(String regex) {
         checkPath(regex);
         regex = regex.trim();
-        routerManager.regexPath(regex, this);
+        routerManager.getRegexPathMatcher().add(regex, this);
         this.url = regex;
         patchTypes.add(MatchType.PATH);
         return this;
