@@ -25,8 +25,7 @@ public class RouterManagerImpl implements RouterManager {
     private final Matcher httpMethodMatcher;
     private final Matcher contentTypePreciseMatcher;
     private final Matcher contentTypePatternMatcher;
-    private final Matcher acceptHeaderPreciseMatcher;
-    private final Matcher acceptHeaderPatternMatcher;
+    private final Matcher acceptHeaderMatcher;
 
     public RouterManagerImpl() {
         matcherMap = new HashMap<>();
@@ -43,9 +42,8 @@ public class RouterManagerImpl implements RouterManager {
         contentTypePatternMatcher = new ContentTypePatternMatcher();
         matcherMap.put(Matcher.MatchType.CONTENT_TYPE, new ArrayList<>(Arrays.asList(contentTypePreciseMatcher, contentTypePatternMatcher)));
 
-        acceptHeaderPreciseMatcher = new AcceptHeaderPreciseMatcher();
-        acceptHeaderPatternMatcher = new AcceptHeaderPatternMatcher();
-        matcherMap.put(Matcher.MatchType.ACCEPT, new ArrayList<>(Arrays.asList(acceptHeaderPreciseMatcher, acceptHeaderPatternMatcher)));
+        acceptHeaderMatcher = new AcceptHeaderMatcher();
+        matcherMap.put(Matcher.MatchType.ACCEPT, new ArrayList<>(Arrays.asList(acceptHeaderMatcher)));
     }
 
     public Matcher getHttpMethodMatcher() {
@@ -72,16 +70,12 @@ public class RouterManagerImpl implements RouterManager {
         return contentTypePreciseMatcher;
     }
 
-    public Matcher getAcceptHeaderPreciseMatcher() {
-        return acceptHeaderPreciseMatcher;
+    public Matcher getAcceptHeaderMatcher() {
+        return acceptHeaderMatcher;
     }
 
     public Matcher getContentTypePatternMatcher() {
         return contentTypePatternMatcher;
-    }
-
-    public Matcher getAcceptHeaderPatternMatcher() {
-        return acceptHeaderPatternMatcher;
     }
 
     @Override

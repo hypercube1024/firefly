@@ -146,11 +146,7 @@ public class RouterImpl implements Router {
 
     @Override
     public Router produces(String accept) {
-        if (!accept.contains("*")) {
-            routerManager.getAcceptHeaderPreciseMatcher().add(accept, this);
-        } else {
-            routerManager.getAcceptHeaderPatternMatcher().add(accept, this);
-        }
+        routerManager.getAcceptHeaderMatcher().add(accept, this);
         matchTypes.add(MatchType.ACCEPT);
         return this;
     }

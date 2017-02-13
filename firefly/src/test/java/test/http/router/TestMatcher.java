@@ -16,7 +16,7 @@ import static org.hamcrest.Matchers.*;
  */
 public class TestMatcher {
 
-//    @Test
+    @Test
     public void testFindRouter() {
         RouterManager routerManager = new RouterManagerImpl();
         Router router0 = routerManager.register()
@@ -24,13 +24,16 @@ public class TestMatcher {
                                       .produces("application/json");
         Router router1 = routerManager.register()
                                       .get("/hello/:testParam0")
-                                      .produces("*/json");
+                                      .produces("application/json");
         Router router2 = routerManager.register()
                                       .get("/hello/:testParam1")
-                                      .produces("*/json");
+                                      .produces("application/json");
         Router router3 = routerManager.register()
                                       .post("/book/update/:id")
                                       .consumes("*/json");
+        Router router4 = routerManager.register()
+                                      .post("/book/update/:id")
+                                      .consumes("application/json");
 
         NavigableSet<RouterManager.RouterMatchResult> result = routerManager.findRouter("GET", "/hello/get", null,
                 "application/json,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
@@ -40,7 +43,27 @@ public class TestMatcher {
         Assert.assertThat(result.lower(result.last()).getRouter(), is(router1));
         Assert.assertThat(result.last().getRouter(), is(router2));
         Assert.assertThat(result.last().getParameters().get("testParam1"), is("get"));
-        Assert.assertThat(result.last().getParameters().get("param0"), is("application"));
+
+        result = routerManager.findRouter("GET", "/hello/get", null,
+                "application/*,*/*;q=0.8");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.size(), is(3));
+        Assert.assertThat(result.first().getRouter(), is(router0));
+        Assert.assertThat(result.lower(result.last()).getRouter(), is(router1));
+        Assert.assertThat(result.last().getRouter(), is(router2));
+        Assert.assertThat(result.last().getParameters().get("testParam1"), is("get"));
+
+        result = routerManager.findRouter("GET", "/hello/get", null,
+                "*/json,*/*;q=0.8");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.size(), is(3));
+        Assert.assertThat(result.first().getRouter(), is(router0));
+        Assert.assertThat(result.lower(result.last()).getRouter(), is(router1));
+        Assert.assertThat(result.last().getRouter(), is(router2));
+        Assert.assertThat(result.last().getParameters().get("testParam1"), is("get"));
+
+        result = routerManager.findRouter("GET", "/hello/get", null, "*/*");
+        Assert.assertThat(result, empty());
 
         result = routerManager.findRouter("GET", "/hello/get", null, null);
         Assert.assertThat(result, empty());
@@ -50,10 +73,11 @@ public class TestMatcher {
 
         result = routerManager.findRouter("POST", "/book/update/3", "application/json;charset=UTF-8", null);
         Assert.assertThat(result, notNullValue());
-        Assert.assertThat(result.size(), is(1));
+        Assert.assertThat(result.size(), is(2));
         Assert.assertThat(result.first().getRouter(), is(router3));
+        Assert.assertThat(result.last().getRouter(), is(router4));
         Assert.assertThat(result.last().getParameters().get("id"), is("3"));
-        Assert.assertThat(result.last().getParameters().get("param0"), is("application"));
+        Assert.assertThat(result.first().getParameters().get("param0"), is("application"));
     }
 
     @Test
