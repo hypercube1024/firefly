@@ -3,10 +3,18 @@ package com.firefly.server.http2.router;
 import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.utils.function.Action1;
 
+import java.util.Set;
+
 /**
  * @author Pengtao Qiu
  */
-public interface Router {
+public interface Router extends Comparable<Router> {
+
+    int getId();
+
+    boolean isEnable();
+
+    Set<Matcher.MatchType> getMatchTypes();
 
     Router path(String url);
 

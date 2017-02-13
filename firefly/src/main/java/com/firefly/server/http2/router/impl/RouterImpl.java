@@ -15,11 +15,11 @@ import java.util.Set;
 /**
  * @author Pengtao Qiu
  */
-public class RouterImpl implements Router, Comparable<RouterImpl> {
+public class RouterImpl implements Router {
 
     private final int id;
     private final RouterManagerImpl routerManager;
-    private final Set<MatchType> patchTypes;
+    private final Set<MatchType> matchTypes;
 
     private Action1<RoutingContext> context;
     private volatile boolean enable = true;
@@ -28,7 +28,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
     public RouterImpl(int id, RouterManagerImpl routerManager) {
         this.id = id;
         this.routerManager = routerManager;
-        patchTypes = new HashSet<>();
+        matchTypes = new HashSet<>();
     }
 
     @Override
@@ -68,7 +68,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
             }
         }
         this.url = url;
-        patchTypes.add(MatchType.PATH);
+        matchTypes.add(MatchType.PATH);
         return this;
     }
 
@@ -97,7 +97,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
         regex = regex.trim();
         routerManager.getRegexPathMatcher().add(regex, this);
         this.url = regex;
-        patchTypes.add(MatchType.PATH);
+        matchTypes.add(MatchType.PATH);
         return this;
     }
 
@@ -109,7 +109,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
     @Override
     public Router method(String method) {
         routerManager.getHttpMethodMatcher().add(method, this);
-        patchTypes.add(MatchType.METHOD);
+        matchTypes.add(MatchType.METHOD);
         return this;
     }
 
@@ -140,7 +140,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
         } else {
             routerManager.getContentTypePatternMatcher().add(contentType, this);
         }
-        patchTypes.add(MatchType.CONTENT_TYPE);
+        matchTypes.add(MatchType.CONTENT_TYPE);
         return this;
     }
 
@@ -151,7 +151,7 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
         } else {
             routerManager.getAcceptHeaderPatternMatcher().add(accept, this);
         }
-        patchTypes.add(MatchType.ACCEPT);
+        matchTypes.add(MatchType.ACCEPT);
         return this;
     }
 
@@ -173,16 +173,19 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
         return this;
     }
 
+    @Override
     public int getId() {
         return id;
     }
 
+    @Override
     public boolean isEnable() {
         return enable;
     }
 
-    public Set<MatchType> getPatchTypes() {
-        return patchTypes;
+    @Override
+    public Set<MatchType> getMatchTypes() {
+        return matchTypes;
     }
 
     public Action1<RoutingContext> getContext() {
@@ -190,8 +193,8 @@ public class RouterImpl implements Router, Comparable<RouterImpl> {
     }
 
     @Override
-    public int compareTo(RouterImpl o) {
-        return Integer.compare(id, o.id);
+    public int compareTo(Router o) {
+        return Integer.compare(id, o.getId());
     }
 
     @Override

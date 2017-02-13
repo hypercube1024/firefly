@@ -6,12 +6,35 @@ import com.firefly.server.http2.router.impl.RouterManagerImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.SortedSet;
+
 import static org.hamcrest.Matchers.*;
 
 /**
  * @author Pengtao Qiu
  */
 public class TestMatcher {
+
+    @Test
+    public void testFindRouter() {
+        RouterManagerImpl routerManager = new RouterManagerImpl();
+        Router router0 = routerManager.register()
+                                      .get("/hello/get")
+                                      .produces("application/json");
+        Router router1 = routerManager.register()
+                                      .get("/hello/:param")
+                                      .produces("*/json");
+
+        SortedSet<RouterManagerImpl.RouterMatchResult> result = routerManager.findRouter("GET", "/hello/get", null, "application/json");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.size(), is(2));
+        Assert.assertThat(result.first().getRouter(), is(router0));
+        Assert.assertThat(result.last().getRouter(), is(router1));
+        Assert.assertThat(result.last().getParameters().get("param"), is("get"));
+
+        result = routerManager.findRouter("GET", "/hello/get", null, null);
+        Assert.assertThat(result, empty());
+    }
 
     @Test
     public void testMIMETypeMatcher() {
