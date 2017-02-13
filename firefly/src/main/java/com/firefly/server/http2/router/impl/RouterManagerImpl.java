@@ -154,6 +154,8 @@ public class RouterManagerImpl implements RouterManager {
         String path = request.getURI().getPath();
         String contentType = request.getFields().get(HttpHeader.CONTENT_TYPE);
         String accept = request.getFields().get(HttpHeader.ACCEPT);
+
+        NavigableSet<RouterMatchResult> set = findRouter(method, path, contentType, accept);
         // TODO
     }
 }
