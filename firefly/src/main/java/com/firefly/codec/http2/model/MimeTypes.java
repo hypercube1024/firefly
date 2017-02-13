@@ -553,4 +553,29 @@ public class MimeTypes {
         return builder.toString();
 
     }
+
+    public static String getContentTypeMIMEType(String contentType) {
+        if (contentType != null) {
+            // parsing content-type
+            String[] strings = StringUtils.split(contentType, ';');
+            return strings[0];
+        } else {
+            return null;
+        }
+    }
+
+    public static List<String> getAcceptMIMETypes(String accept) {
+        if (accept != null) {
+            List<String> list = new ArrayList<>();
+            // parsing accept
+            String[] strings = StringUtils.split(accept, ',');
+            for (String string : strings) {
+                String[] s = StringUtils.split(string, ';');
+                list.add(s[0].trim());
+            }
+            return list;
+        } else {
+            return Collections.emptyList();
+        }
+    }
 }

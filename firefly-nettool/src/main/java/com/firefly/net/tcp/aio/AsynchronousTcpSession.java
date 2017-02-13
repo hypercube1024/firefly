@@ -18,11 +18,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class AsynchronousTcpSession implements Session {
 
@@ -43,10 +39,6 @@ public class AsynchronousTcpSession implements Session {
     private final Config config;
     private final EventManager eventManager;
     private volatile Object attachment;
-
-    private final Lock outputLock = new ReentrantLock();
-    private boolean isWriting = false;
-    private final Queue<OutputEntry<?>> outputBuffer = new LinkedList<>();
     private final BufferSizePredictor bufferSizePredictor = new AdaptiveBufferSizePredictor();
 
     AsynchronousTcpSession(int sessionId, Config config, EventManager eventManager,
@@ -125,16 +117,7 @@ public class AsynchronousTcpSession implements Session {
             log.warn("the session {} writes data is failed", t, getSessionId());
         }
 
-        outputLock.lock();
-        try {
-            int bufferSize = outputBuffer.size();
-            log.warn("the session {} has {} buffer data can not ouput", getSessionId(), bufferSize);
-            outputBuffer.clear();
-            isWriting = false;
-            shutdownSocketChannel();
-        } finally {
-            outputLock.unlock();
-        }
+        shutdownSocketChannel();
         callback.failed(t);
     }
 
@@ -154,18 +137,6 @@ public class AsynchronousTcpSession implements Session {
 
         writtenBytes += currentWritenBytes;
         callback.succeeded();
-
-        outputLock.lock();
-        try {
-            OutputEntry<?> obj = outputBuffer.poll();
-            if (obj != null) {
-                _write(obj);
-            } else {
-                isWriting = false;
-            }
-        } finally {
-            outputLock.unlock();
-        }
     }
 
     private void _write(final OutputEntry<?> entry) {
@@ -244,23 +215,15 @@ public class AsynchronousTcpSession implements Session {
 
     @Override
     public void write(OutputEntry<?> entry) {
-        if (!isOpen())
+        if (!isOpen()) {
             return;
-
-        if (entry == null)
-            return;
-
-        outputLock.lock();
-        try {
-            if (!isWriting) {
-                isWriting = true;
-                _write(entry);
-            } else {
-                outputBuffer.offer(entry);
-            }
-        } finally {
-            outputLock.unlock();
         }
+
+        if (entry == null) {
+            return;
+        }
+
+        _write(entry);
     }
 
     @Override

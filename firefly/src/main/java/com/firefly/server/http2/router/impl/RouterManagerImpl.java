@@ -1,5 +1,6 @@
 package com.firefly.server.http2.router.impl;
 
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.router.Matcher;
 import com.firefly.server.http2.router.Router;
@@ -91,6 +92,7 @@ public class RouterManagerImpl implements RouterManager {
         findRouter(path, Matcher.MatchType.PATH, routerMatchTypes, routerParameters);
         findRouter(contentType, Matcher.MatchType.CONTENT_TYPE, routerMatchTypes, routerParameters);
         findRouter(accept, Matcher.MatchType.ACCEPT, routerMatchTypes, routerParameters);
+
         Map<Router, Set<Matcher.MatchType>> filtered = filterUnMatched(routerMatchTypes);
 
         if (filtered.isEmpty()) {
@@ -154,6 +156,10 @@ public class RouterManagerImpl implements RouterManager {
 
     @Override
     public void accept(SimpleRequest request) {
-
+        String method = request.getMethod();
+        String path = request.getURI().getPath();
+        String contentType = request.getFields().get(HttpHeader.CONTENT_TYPE);
+        String accept = request.getFields().get(HttpHeader.ACCEPT);
+        // TODO
     }
 }
