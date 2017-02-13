@@ -3,12 +3,6 @@
         targetNamespace="http://www.fireflysource.com/beans"
         elementFormDefault="qualified">
 
-    <element name="mvc">
-        <complexType>
-            <attribute name="view-path"/>
-            <attribute name="view-encoding"/>
-        </complexType>
-    </element>
     <element name="import">
         <complexType>
             <attribute name="resource"/>

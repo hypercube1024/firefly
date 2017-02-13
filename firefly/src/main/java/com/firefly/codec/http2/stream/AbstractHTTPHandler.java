@@ -2,16 +2,13 @@ package com.firefly.codec.http2.stream;
 
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
-import com.firefly.server.utils.StatisticsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.List;
 
 public abstract class AbstractHTTPHandler implements Handler {
 
     protected static Logger log = LoggerFactory.getLogger("firefly-system");
+    private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
     protected final HTTP2Configuration config;
 
@@ -46,7 +43,7 @@ public abstract class AbstractHTTPHandler implements Handler {
     @Override
     public void sessionClosed(Session session) throws Throwable {
         log.info("session {} closed", session.getSessionId());
-        StatisticsUtils.saveConnectionInfo(session);
+        saveConnectionInfo(session);
         try {
             if (session.getAttachment() instanceof AbstractHTTPConnection) {
                 AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment();
@@ -67,6 +64,10 @@ public abstract class AbstractHTTPHandler implements Handler {
         } catch (Throwable t) {
             log.error("http2 conection close exception", t);
         }
+    }
+
+    public static void saveConnectionInfo(Session session) {
+        monitor.info("HTTP TcpSession: {}", session);
     }
 
 }

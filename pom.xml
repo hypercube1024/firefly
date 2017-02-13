@@ -40,7 +40,6 @@
     <modules>
         <module>firefly-common</module>
         <module>firefly-nettool</module>
-        <module>firefly-template</module>
         <module>firefly-slf4j</module>
         <module>firefly-db</module>
         <module>firefly</module>
@@ -61,11 +60,6 @@
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fireflysource</groupId>
-                <artifactId>firefly-template</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
