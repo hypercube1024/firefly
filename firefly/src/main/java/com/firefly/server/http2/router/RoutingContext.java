@@ -2,8 +2,11 @@ package com.firefly.server.http2.router;
 
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.server.http2.router.spi.RoutingContextSPI;
 
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Pengtao Qiu
  */
-public interface RoutingContext extends Cloneable {
+public interface RoutingContext extends Closeable {
 
     Object get(String key);
 
@@ -24,9 +27,11 @@ public interface RoutingContext extends Cloneable {
 
     SimpleResponse getResponse();
 
+    SimpleResponse getAsyncResponse();
+
     SimpleRequest getRequest();
 
-    String getPathParameter(String name);
+    String getRouterParameter(String name);
 
     String getParameter(String name);
 
@@ -38,5 +43,9 @@ public interface RoutingContext extends Cloneable {
 
     Part getPart(String name);
 
-    void next();
+    HttpSession getHttpSession();
+
+    void setRoutingContextSPI(RoutingContextSPI routingContextSPI);
+
+    boolean next();
 }

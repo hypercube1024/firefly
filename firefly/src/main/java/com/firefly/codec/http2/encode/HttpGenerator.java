@@ -44,7 +44,16 @@ public class HttpGenerator {
         START, COMMITTED, COMPLETING, COMPLETING_1XX, END
     }
 
-    public enum Result {NEED_CHUNK, NEED_INFO, NEED_HEADER, NEED_CHUNK_TRAILER, FLUSH, CONTINUE, SHUTDOWN_OUT, DONE}
+    public enum Result {
+        NEED_CHUNK,             // Need a small chunk buffer of CHUNK_SIZE
+        NEED_INFO,              // Need the request/response metadata info
+        NEED_HEADER,            // Need a buffer to build HTTP headers into
+        NEED_CHUNK_TRAILER,     // Need a large chunk buffer for last chunk and trailers
+        FLUSH,                  // The buffers previously generated should be flushed
+        CONTINUE,               // Continue generating the message
+        SHUTDOWN_OUT,           // Need EOF to be signaled
+        DONE                    // Message generation complete
+    }
 
     // other statics
     public static final int CHUNK_SIZE = 12;

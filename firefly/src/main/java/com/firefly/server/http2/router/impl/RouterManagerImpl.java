@@ -5,6 +5,7 @@ import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.router.Matcher;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
+import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.utils.StringUtils;
 
 import java.util.*;
@@ -155,7 +156,8 @@ public class RouterManagerImpl implements RouterManager {
         String contentType = request.getFields().get(HttpHeader.CONTENT_TYPE);
         String accept = request.getFields().get(HttpHeader.ACCEPT);
 
-        NavigableSet<RouterMatchResult> set = findRouter(method, path, contentType, accept);
-        // TODO
+        NavigableSet<RouterMatchResult> routers = findRouter(method, path, contentType, accept);
+        RoutingContext routingContext = new RoutingContextImpl(request, routers);
+        routingContext.next();
     }
 }

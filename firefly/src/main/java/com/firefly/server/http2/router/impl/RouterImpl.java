@@ -1,6 +1,7 @@
 package com.firefly.server.http2.router.impl;
 
 import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Matcher.MatchType;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RoutingContext;
@@ -21,7 +22,7 @@ public class RouterImpl implements Router {
     private final RouterManagerImpl routerManager;
     private final Set<MatchType> matchTypes;
 
-    private Action1<RoutingContext> context;
+    private Handler handler;
     private volatile boolean enable = true;
     private String url;
 
@@ -152,8 +153,8 @@ public class RouterImpl implements Router {
     }
 
     @Override
-    public Router handler(Action1<RoutingContext> context) {
-        this.context = context;
+    public Router handler(Handler handler) {
+        this.handler = handler;
         return this;
     }
 
@@ -184,8 +185,8 @@ public class RouterImpl implements Router {
         return matchTypes;
     }
 
-    public Action1<RoutingContext> getContext() {
-        return context;
+    public Handler getHandler() {
+        return handler;
     }
 
     @Override

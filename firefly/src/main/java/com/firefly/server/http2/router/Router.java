@@ -1,7 +1,6 @@
 package com.firefly.server.http2.router;
 
 import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.utils.function.Action1;
 
 import java.util.Set;
 
@@ -36,7 +35,7 @@ public interface Router extends Comparable<Router> {
 
     Router produces(String accept);
 
-    Router handler(Action1<RoutingContext> context);
+    Router handler(Handler context);
 
     Router enable();
 
