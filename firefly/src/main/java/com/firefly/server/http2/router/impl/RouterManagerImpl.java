@@ -47,49 +47,6 @@ public class RouterManagerImpl implements RouterManager {
         matcherMap.put(Matcher.MatchType.ACCEPT, new ArrayList<>(Arrays.asList(acceptHeaderPreciseMatcher, acceptHeaderPatternMatcher)));
     }
 
-    public static class RouterMatchResult implements Comparable<RouterMatchResult> {
-
-        private final Router router;
-        private final Map<String, String> parameters;
-        private final Set<Matcher.MatchType> matchTypes;
-
-        public RouterMatchResult(Router router, Map<String, String> parameters, Set<Matcher.MatchType> matchTypes) {
-            this.router = router;
-            this.parameters = parameters;
-            this.matchTypes = matchTypes;
-        }
-
-        public Router getRouter() {
-            return router;
-        }
-
-        public Map<String, String> getParameters() {
-            return parameters;
-        }
-
-        public Set<Matcher.MatchType> getMatchTypes() {
-            return matchTypes;
-        }
-
-        @Override
-        public int compareTo(RouterMatchResult o) {
-            return router.compareTo(o.getRouter());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            RouterMatchResult that = (RouterMatchResult) o;
-            return Objects.equals(router, that.router);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(router);
-        }
-    }
-
     public Matcher getHttpMethodMatcher() {
         return httpMethodMatcher;
     }
@@ -126,7 +83,8 @@ public class RouterManagerImpl implements RouterManager {
         return acceptHeaderPatternMatcher;
     }
 
-    public SortedSet<RouterMatchResult> findRouter(String method, String path, String contentType, String accept) {
+    @Override
+    public NavigableSet<RouterMatchResult> findRouter(String method, String path, String contentType, String accept) {
         Map<Router, Set<Matcher.MatchType>> routerMatchTypes = new HashMap<>();
         Map<Router, Map<String, String>> routerParameters = new HashMap<>();
         findRouter(method, Matcher.MatchType.METHOD, routerMatchTypes, routerParameters);
@@ -136,9 +94,9 @@ public class RouterManagerImpl implements RouterManager {
         Map<Router, Set<Matcher.MatchType>> filtered = filterUnMatched(routerMatchTypes);
 
         if (filtered.isEmpty()) {
-            return Collections.emptySortedSet();
+            return Collections.emptyNavigableSet();
         } else {
-            SortedSet<RouterMatchResult> ret = new TreeSet<>();
+            NavigableSet<RouterMatchResult> ret = new TreeSet<>();
             filtered.entrySet()
                     .forEach(e -> {
                         Router router = e.getKey();
