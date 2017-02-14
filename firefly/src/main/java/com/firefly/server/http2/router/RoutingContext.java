@@ -54,48 +54,59 @@ public interface RoutingContext extends Closeable {
     boolean next();
 
     // response wrap
-    default SimpleResponse setStatus(int status) {
-        return getResponse().setStatus(status);
+    default RoutingContext setStatus(int status) {
+        getResponse().setStatus(status);
+        return this;
     }
 
-    default SimpleResponse setReason(String reason) {
-        return getResponse().setReason(reason);
+    default RoutingContext setReason(String reason) {
+        getResponse().setReason(reason);
+        return this;
     }
 
-    default SimpleResponse setHttpVersion(HttpVersion httpVersion) {
-        return getResponse().setHttpVersion(httpVersion);
+    default RoutingContext setHttpVersion(HttpVersion httpVersion) {
+        getResponse().setHttpVersion(httpVersion);
+        return this;
     }
 
-    default SimpleResponse put(HttpHeader header, String value) {
-        return getResponse().put(header, value);
+    default RoutingContext put(HttpHeader header, String value) {
+        getResponse().put(header, value);
+        return this;
     }
 
-    default SimpleResponse put(String header, String value) {
-        return getResponse().put(header, value);
+    default RoutingContext put(String header, String value) {
+        getResponse().put(header, value);
+        return this;
     }
 
-    default SimpleResponse add(HttpHeader header, String value) {
-        return getResponse().add(header, value);
+    default RoutingContext add(HttpHeader header, String value) {
+        getResponse().add(header, value);
+        return this;
     }
 
-    default SimpleResponse add(String name, String value) {
-        return getResponse().add(name, value);
+    default RoutingContext add(String name, String value) {
+        getResponse().add(name, value);
+        return this;
     }
 
-    default SimpleResponse addCookie(Cookie cookie) {
-        return getResponse().addCookie(cookie);
+    default RoutingContext addCookie(Cookie cookie) {
+        getResponse().addCookie(cookie);
+        return this;
     }
 
-    default SimpleResponse write(String value) {
-        return getResponse().write(value);
+    default RoutingContext write(String value) {
+        getResponse().write(value);
+        return this;
     }
 
-    default SimpleResponse end(String value) {
-        return getResponse().end(value);
+    default RoutingContext end(String value) {
+        getResponse().end(value);
+        return this;
     }
 
-    default SimpleResponse end() {
-        return getResponse().end();
+    default RoutingContext end() {
+        getResponse().end();
+        return this;
     }
 
 
