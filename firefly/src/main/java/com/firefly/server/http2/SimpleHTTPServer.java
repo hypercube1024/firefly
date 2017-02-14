@@ -6,12 +6,8 @@ import com.firefly.utils.function.Action2;
 import com.firefly.utils.function.Action3;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SimpleHTTPServer extends AbstractLifeCycle {
-
-    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private HTTP2Server http2Server;
     private SimpleHTTPServerConfiguration configuration;

@@ -58,6 +58,12 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
+    public HTTP2ServerBuilder listen() {
+        check();
+        server.headerComplete(routerManager::accept).listen();
+        return this;
+    }
+
     public HTTP2ServerBuilder stop() {
         check();
         server.stop();

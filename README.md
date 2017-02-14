@@ -55,8 +55,7 @@ Create a HTTP server in main function
 public class HTTPServerDemo1 {
 
     public static void main(String[] args) {
-        $.httpServer().router().get("/")
-         .handler(ctx -> ctx.end("hello world!"))
+        $.httpServer().router().get("/").handler(ctx -> ctx.end("hello world!"))
          .listen("localhost", 8080);
     }
 }
