@@ -88,7 +88,7 @@ public class RouterManagerImpl implements RouterManager {
         findRouter(contentType, Matcher.MatchType.CONTENT_TYPE, routerMatchTypes, routerParameters);
         findRouter(accept, Matcher.MatchType.ACCEPT, routerMatchTypes, routerParameters);
 
-        Map<Router, Set<Matcher.MatchType>> filtered = filterUnMatched(routerMatchTypes);
+        Map<Router, Set<Matcher.MatchType>> filtered = filter(routerMatchTypes);
 
         if (filtered.isEmpty()) {
             return Collections.emptyNavigableSet();
@@ -104,10 +104,11 @@ public class RouterManagerImpl implements RouterManager {
         }
     }
 
-    private Map<Router, Set<Matcher.MatchType>> filterUnMatched(Map<Router, Set<Matcher.MatchType>> routerMatchTypes) {
+    private Map<Router, Set<Matcher.MatchType>> filter(Map<Router, Set<Matcher.MatchType>> routerMatchTypes) {
         Map<Router, Set<Matcher.MatchType>> ret = new HashMap<>();
         routerMatchTypes.entrySet()
                         .stream()
+                        .filter(e -> e.getKey().isEnable())
                         .filter(e -> e.getKey().getMatchTypes().equals(e.getValue()))
                         .forEach(e -> ret.computeIfAbsent(e.getKey(), k -> new HashSet<>()).addAll(e.getValue()));
         return ret;

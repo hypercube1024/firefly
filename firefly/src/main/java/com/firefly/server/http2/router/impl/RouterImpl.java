@@ -23,7 +23,7 @@ public class RouterImpl implements Router {
     private final Set<MatchType> matchTypes;
 
     private Handler handler;
-    private volatile boolean enable = true;
+    private boolean enable = true;
     private String url;
 
     public RouterImpl(int id, RouterManagerImpl routerManager) {
