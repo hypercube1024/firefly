@@ -5,6 +5,8 @@ import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.utils.function.Action1;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
@@ -38,6 +40,14 @@ public interface RoutingContext extends Closeable {
 
     String getRouterParameter(String name);
 
+    RoutingContext content(Action1<ByteBuffer> content);
+
+    RoutingContext contentComplete(Action1<SimpleRequest> contentComplete);
+
+    RoutingContext messageComplete(Action1<SimpleRequest> messageComplete);
+
+    boolean isAsynchronousRead();
+
     boolean next();
 
 
@@ -56,9 +66,15 @@ public interface RoutingContext extends Closeable {
 
     BufferedReader getBufferedReader();
 
-    void content(Action1<ByteBuffer> content);
+    String getStringBody(String charset);
 
-    void contentComplete(Action1<SimpleRequest> contentComplete);
+    String getStringBody();
+
+    <T> T getJsonBody(Class<T> clazz);
+
+    JsonObject getJsonObjectBody();
+
+    JsonArray getJsonArrayBody();
 
     void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI);
 

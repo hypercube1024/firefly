@@ -206,4 +206,13 @@ public class RouterImpl implements Router {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    @Override
+    public String toString() {
+        return "RouterImpl{" +
+                "id=" + id +
+                ", matchTypes=" + matchTypes +
+                ", url='" + url + '\'' +
+                '}';
+    }
 }

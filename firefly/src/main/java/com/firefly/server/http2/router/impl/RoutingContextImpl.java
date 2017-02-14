@@ -7,6 +7,8 @@ import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.utils.function.Action1;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
@@ -30,6 +32,7 @@ public class RoutingContextImpl implements RoutingContext {
     private volatile RouterManager.RouterMatchResult current;
     private volatile HTTPBodyHandlerSPI httpBodyHandlerSPI;
     private volatile HTTPSessionHandlerSPI httpSessionHandlerSPI;
+    private volatile boolean asynchronousRead;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -74,6 +77,32 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public String getRouterParameter(String name) {
         return current.getParameters().get(name);
+    }
+
+    @Override
+    public RoutingContext content(Action1<ByteBuffer> content) {
+        request.content(content);
+        asynchronousRead = true;
+        return this;
+    }
+
+    @Override
+    public RoutingContext contentComplete(Action1<SimpleRequest> contentComplete) {
+        request.contentComplete(contentComplete);
+        asynchronousRead = true;
+        return this;
+    }
+
+    @Override
+    public RoutingContext messageComplete(Action1<SimpleRequest> messageComplete) {
+        request.messageComplete(messageComplete);
+        asynchronousRead = true;
+        return this;
+    }
+
+    @Override
+    public boolean isAsynchronousRead() {
+        return asynchronousRead;
     }
 
     @Override
@@ -156,20 +185,47 @@ public class RoutingContextImpl implements RoutingContext {
     }
 
     @Override
-    public void content(Action1<ByteBuffer> content) {
+    public String getStringBody(String charset) {
         if (httpBodyHandlerSPI == null) {
-            request.content(content);
+            return request.getStringBody(charset);
         } else {
-            httpBodyHandlerSPI.content(content);
+            return httpBodyHandlerSPI.getStringBody(charset);
         }
     }
 
     @Override
-    public void contentComplete(Action1<SimpleRequest> contentComplete) {
+    public String getStringBody() {
         if (httpBodyHandlerSPI == null) {
-            request.contentComplete(contentComplete);
+            return request.getStringBody();
         } else {
-            httpBodyHandlerSPI.contentComplete(contentComplete);
+            return httpBodyHandlerSPI.getStringBody();
+        }
+    }
+
+    @Override
+    public <T> T getJsonBody(Class<T> clazz) {
+        if (httpBodyHandlerSPI == null) {
+            return request.getJsonBody(clazz);
+        } else {
+            return httpBodyHandlerSPI.getJsonBody(clazz);
+        }
+    }
+
+    @Override
+    public JsonObject getJsonObjectBody() {
+        if (httpBodyHandlerSPI == null) {
+            return request.getJsonObjectBody();
+        } else {
+            return httpBodyHandlerSPI.getJsonObjectBody();
+        }
+    }
+
+    @Override
+    public JsonArray getJsonArrayBody() {
+        if (httpBodyHandlerSPI == null) {
+            return request.getJsonArrayBody();
+        } else {
+            return httpBodyHandlerSPI.getJsonArrayBody();
         }
     }
 
@@ -177,6 +233,7 @@ public class RoutingContextImpl implements RoutingContext {
     public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {
         this.httpBodyHandlerSPI = httpBodyHandlerSPI;
     }
+
 
     @Override
     public HttpSession getHttpSession() {

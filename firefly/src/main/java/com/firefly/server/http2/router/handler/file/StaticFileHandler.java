@@ -1,4 +1,4 @@
-package com.firefly.server.http2.router.handler;
+package com.firefly.server.http2.router.handler.file;
 
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.RoutingContext;
@@ -6,10 +6,10 @@ import com.firefly.server.http2.router.RoutingContext;
 /**
  * @author Pengtao Qiu
  */
-public class HTTPBodyHandler implements Handler {
+public class StaticFileHandler implements Handler {
 
     @Override
     public void handle(RoutingContext routingContext) {
-        // TODO
+
     }
 }
