@@ -117,6 +117,11 @@ public class RoutingContextImpl implements RoutingContext {
     }
 
     @Override
+    public boolean hasNext() {
+        return !routers.isEmpty();
+    }
+
+    @Override
     public void close() throws IOException {
         request.getResponse().close();
     }

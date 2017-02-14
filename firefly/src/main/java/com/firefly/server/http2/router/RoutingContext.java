@@ -1,8 +1,6 @@
 package com.firefly.server.http2.router;
 
-import com.firefly.codec.http2.model.Cookie;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
@@ -52,6 +50,33 @@ public interface RoutingContext extends Closeable {
     boolean isAsynchronousRead();
 
     boolean next();
+
+    boolean hasNext();
+
+    // request wrap
+    default String getMethod() {
+        return getRequest().getMethod();
+    }
+
+    default HttpURI getURI() {
+        return getRequest().getURI();
+    }
+
+    default HttpVersion getHttpVersion() {
+        return getRequest().getHttpVersion();
+    }
+
+    default HttpFields getFields() {
+        return getRequest().getFields();
+    }
+
+    default long getContentLength() {
+        return getRequest().getContentLength();
+    }
+
+    default List<Cookie> getCookies() {
+        return getRequest().getCookies();
+    }
 
     // response wrap
     default RoutingContext setStatus(int status) {
