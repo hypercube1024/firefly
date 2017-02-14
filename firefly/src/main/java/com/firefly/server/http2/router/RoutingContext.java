@@ -1,5 +1,8 @@
 package com.firefly.server.http2.router;
 
+import com.firefly.codec.http2.model.Cookie;
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
@@ -49,6 +52,51 @@ public interface RoutingContext extends Closeable {
     boolean isAsynchronousRead();
 
     boolean next();
+
+    // response wrap
+    default SimpleResponse setStatus(int status) {
+        return getResponse().setStatus(status);
+    }
+
+    default SimpleResponse setReason(String reason) {
+        return getResponse().setReason(reason);
+    }
+
+    default SimpleResponse setHttpVersion(HttpVersion httpVersion) {
+        return getResponse().setHttpVersion(httpVersion);
+    }
+
+    default SimpleResponse put(HttpHeader header, String value) {
+        return getResponse().put(header, value);
+    }
+
+    default SimpleResponse put(String header, String value) {
+        return getResponse().put(header, value);
+    }
+
+    default SimpleResponse add(HttpHeader header, String value) {
+        return getResponse().add(header, value);
+    }
+
+    default SimpleResponse add(String name, String value) {
+        return getResponse().add(name, value);
+    }
+
+    default SimpleResponse addCookie(Cookie cookie) {
+        return getResponse().addCookie(cookie);
+    }
+
+    default SimpleResponse write(String value) {
+        return getResponse().write(value);
+    }
+
+    default SimpleResponse end(String value) {
+        return getResponse().end(value);
+    }
+
+    default SimpleResponse end() {
+        return getResponse().end();
+    }
 
 
     // HTTP body API

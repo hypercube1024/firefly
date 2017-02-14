@@ -1,6 +1,8 @@
 package com.firefly.server.http2.router;
 
 import com.firefly.server.http2.SimpleRequest;
+import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
+import com.firefly.server.http2.router.handler.body.HTTPBodyHandler;
 import com.firefly.server.http2.router.impl.RouterManagerImpl;
 import com.firefly.utils.function.Action1;
 
@@ -64,8 +66,13 @@ public interface RouterManager extends RequestAcceptor {
     RouterManager routerNotFound(Action1<SimpleRequest> routerNotFound);
 
     static RouterManager create() {
-        // TODO
-        return new RouterManagerImpl();
+        return create(new HTTPBodyConfiguration());
+    }
+
+    static RouterManager create(HTTPBodyConfiguration configuration) {
+        RouterManager routerManager = new RouterManagerImpl();
+        routerManager.register().path("*").handler(new HTTPBodyHandler(configuration));
+        return routerManager;
     }
 
     static RouterManager createEmpty() {

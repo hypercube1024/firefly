@@ -4,6 +4,7 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.BufferedHTTPOutputStream;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,10 +34,6 @@ public class SimpleResponse implements Closeable {
         return response.getHttpVersion();
     }
 
-    public void setHttpVersion(HttpVersion httpVersion) {
-        response.setHttpVersion(httpVersion);
-    }
-
     public HttpFields getFields() {
         return response.getFields();
     }
@@ -57,14 +54,6 @@ public class SimpleResponse implements Closeable {
         return response.getReason();
     }
 
-    public void setStatus(int status) {
-        response.setStatus(status);
-    }
-
-    public void setReason(String reason) {
-        response.setReason(reason);
-    }
-
     public void forEach(Consumer<? super HttpField> action) {
         response.forEach(action);
     }
@@ -83,10 +72,6 @@ public class SimpleResponse implements Closeable {
 
     public void setAsynchronous(boolean asynchronous) {
         this.asynchronous = asynchronous;
-    }
-
-    public void addCookie(Cookie cookie) {
-        response.getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
     }
 
     public synchronized OutputStream getOutputStream() {
@@ -117,6 +102,7 @@ public class SimpleResponse implements Closeable {
             return printWriter;
         }
     }
+
 
     public String getCharacterEncoding() {
         return characterEncoding;
@@ -160,4 +146,58 @@ public class SimpleResponse implements Closeable {
         return output != null && output.isCommited();
     }
 
+
+    public SimpleResponse setStatus(int status) {
+        response.setStatus(status);
+        return this;
+    }
+
+    public SimpleResponse setReason(String reason) {
+        response.setReason(reason);
+        return this;
+    }
+
+    public SimpleResponse setHttpVersion(HttpVersion httpVersion) {
+        response.setHttpVersion(httpVersion);
+        return this;
+    }
+
+    public SimpleResponse put(HttpHeader header, String value) {
+        getFields().put(header, value);
+        return this;
+    }
+
+    public SimpleResponse put(String header, String value) {
+        getFields().put(header, value);
+        return this;
+    }
+
+    public SimpleResponse add(HttpHeader header, String value) {
+        getFields().add(header, value);
+        return this;
+    }
+
+    public SimpleResponse add(String name, String value) {
+        getFields().add(name, value);
+        return this;
+    }
+    public SimpleResponse addCookie(Cookie cookie) {
+        response.getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
+        return this;
+    }
+
+    public SimpleResponse write(String value) {
+        getPrintWriter().print(value);
+        return this;
+    }
+
+    public SimpleResponse end(String value) {
+        write(value).end();
+        return this;
+    }
+
+    public SimpleResponse end() {
+        IO.close(this);
+        return this;
+    }
 }
