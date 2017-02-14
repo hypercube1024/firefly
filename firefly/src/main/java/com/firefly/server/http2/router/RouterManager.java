@@ -1,10 +1,8 @@
 package com.firefly.server.http2.router;
 
-import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyHandler;
 import com.firefly.server.http2.router.impl.RouterManagerImpl;
-import com.firefly.utils.function.Action1;
 
 import java.util.Map;
 import java.util.NavigableSet;
@@ -62,8 +60,6 @@ public interface RouterManager extends RequestAcceptor {
     Router register();
 
     NavigableSet<RouterMatchResult> findRouter(String method, String path, String contentType, String accept);
-
-    RouterManager routerNotFound(Action1<SimpleRequest> routerNotFound);
 
     static RouterManager create() {
         return create(new HTTPBodyConfiguration());

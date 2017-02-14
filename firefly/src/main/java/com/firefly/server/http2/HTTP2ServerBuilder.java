@@ -5,7 +5,6 @@ import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
-import com.firefly.utils.function.Action1;
 
 /**
  * @author Pengtao Qiu
@@ -43,12 +42,6 @@ public class HTTP2ServerBuilder {
         }
     }
 
-    public HTTP2ServerBuilder routerNotFound(Action1<SimpleRequest> routerNotFound) {
-        check();
-        routerManager.routerNotFound(routerNotFound);
-        return this;
-    }
-
     public HTTP2ServerBuilder listen(String host, int port) {
         check();
         server.headerComplete(routerManager::accept).listen(host, port);
@@ -60,7 +53,6 @@ public class HTTP2ServerBuilder {
         server.stop();
         return this;
     }
-
 
     // delegated Router methods
 

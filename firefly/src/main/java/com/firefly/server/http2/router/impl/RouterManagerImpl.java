@@ -7,7 +7,6 @@ import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.function.Action1;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,7 +27,6 @@ public class RouterManagerImpl implements RouterManager {
     private final Matcher contentTypePreciseMatcher;
     private final Matcher contentTypePatternMatcher;
     private final Matcher acceptHeaderMatcher;
-    private Action1<SimpleRequest> routerNotFound;
 
     public RouterManagerImpl() {
         matcherMap = new HashMap<>();
@@ -147,12 +145,6 @@ public class RouterManagerImpl implements RouterManager {
     }
 
     @Override
-    public RouterManager routerNotFound(Action1<SimpleRequest> routerNotFound) {
-        this.routerNotFound = routerNotFound;
-        return this;
-    }
-
-    @Override
     public Router register() {
         return new RouterImpl(idGenerator.getAndIncrement(), this);
     }
@@ -165,11 +157,7 @@ public class RouterManagerImpl implements RouterManager {
         String accept = request.getFields().get(HttpHeader.ACCEPT);
 
         NavigableSet<RouterMatchResult> routers = findRouter(method, path, contentType, accept);
-        if (routers.isEmpty()) {
-            routerNotFound.call(request);
-        } else {
-            RoutingContext routingContext = new RoutingContextImpl(request, routers);
-            routingContext.next();
-        }
+        RoutingContext routingContext = new RoutingContextImpl(request, routers);
+        routingContext.next();
     }
 }
