@@ -99,7 +99,6 @@
             <sequence>
                 <element ref="bean:import" minOccurs="0" maxOccurs="unbounded"/>
                 <element ref="bean:component-scan" minOccurs="0" maxOccurs="unbounded"/>
-                <element ref="bean:mvc" minOccurs="0" maxOccurs="1"/>
                 <element ref="bean:bean" minOccurs="0" maxOccurs="unbounded"/>
             </sequence>
         </complexType>
