@@ -2,11 +2,16 @@ package com.firefly.server.http2.router;
 
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
-import com.firefly.server.http2.router.spi.RoutingContextSPI;
+import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
+import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
+import com.firefly.utils.function.Action1;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
+import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +38,10 @@ public interface RoutingContext extends Closeable {
 
     String getRouterParameter(String name);
 
+    boolean next();
+
+
+    // HTTP body API
     String getParameter(String name);
 
     List<String> getParameterValues(String name);
@@ -43,9 +52,29 @@ public interface RoutingContext extends Closeable {
 
     Part getPart(String name);
 
+    InputStream getInputStream();
+
+    BufferedReader getBufferedReader();
+
+    void content(Action1<ByteBuffer> content);
+
+    void contentComplete(Action1<SimpleRequest> contentComplete);
+
+    void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI);
+
+
+    // HTTP session API
     HttpSession getHttpSession();
 
-    void setRoutingContextSPI(RoutingContextSPI routingContextSPI);
+    HttpSession getSession(boolean create);
 
-    boolean next();
+    boolean isRequestedSessionIdFromURL();
+
+    boolean isRequestedSessionIdFromCookie();
+
+    boolean isRequestedSessionIdValid();
+
+    String getRequestedSessionId();
+
+    void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI);
 }

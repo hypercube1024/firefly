@@ -4,11 +4,16 @@ import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
-import com.firefly.server.http2.router.spi.RoutingContextSPI;
+import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
+import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
+import com.firefly.utils.function.Action1;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +28,8 @@ public class RoutingContextImpl implements RoutingContext {
     private final SimpleRequest request;
     private final NavigableSet<RouterManager.RouterMatchResult> routers;
     private volatile RouterManager.RouterMatchResult current;
-    private volatile RoutingContextSPI routingContextSPI;
+    private volatile HTTPBodyHandlerSPI httpBodyHandlerSPI;
+    private volatile HTTPSessionHandlerSPI httpSessionHandlerSPI;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -71,65 +77,6 @@ public class RoutingContextImpl implements RoutingContext {
     }
 
     @Override
-    public String getParameter(String name) {
-        if (routingContextSPI == null) {
-            return null;
-        } else {
-            return routingContextSPI.getParameter(name);
-        }
-    }
-
-    @Override
-    public List<String> getParameterValues(String name) {
-        if (routingContextSPI == null) {
-            return null;
-        } else {
-            return routingContextSPI.getParameterValues(name);
-        }
-    }
-
-    @Override
-    public Map<String, List<String>> getParameterMap() {
-        if (routingContextSPI == null) {
-            return null;
-        } else {
-            return routingContextSPI.getParameterMap();
-        }
-    }
-
-    @Override
-    public Collection<Part> getParts() {
-        if (routingContextSPI == null) {
-            return null;
-        } else {
-            return routingContextSPI.getParts();
-        }
-    }
-
-    @Override
-    public Part getPart(String name) {
-        if (routingContextSPI == null) {
-            return null;
-        } else {
-            return routingContextSPI.getPart(name);
-        }
-    }
-
-    @Override
-    public HttpSession getHttpSession() {
-        if (routingContextSPI == null) {
-            return null;
-        } else {
-            return routingContextSPI.getHttpSession();
-        }
-    }
-
-    @Override
-    public void setRoutingContextSPI(RoutingContextSPI routingContextSPI) {
-        this.routingContextSPI = routingContextSPI;
-    }
-
-    @Override
     public boolean next() {
         current = routers.pollFirst();
         if (current != null) {
@@ -143,5 +90,138 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public void close() throws IOException {
         request.getResponse().close();
+    }
+
+    @Override
+    public String getParameter(String name) {
+        if (httpBodyHandlerSPI == null) {
+            return null;
+        } else {
+            return httpBodyHandlerSPI.getParameter(name);
+        }
+    }
+
+    @Override
+    public List<String> getParameterValues(String name) {
+        if (httpBodyHandlerSPI == null) {
+            return null;
+        } else {
+            return httpBodyHandlerSPI.getParameterValues(name);
+        }
+    }
+
+    @Override
+    public Map<String, List<String>> getParameterMap() {
+        if (httpBodyHandlerSPI == null) {
+            return null;
+        } else {
+            return httpBodyHandlerSPI.getParameterMap();
+        }
+    }
+
+    @Override
+    public Collection<Part> getParts() {
+        if (httpBodyHandlerSPI == null) {
+            return null;
+        } else {
+            return httpBodyHandlerSPI.getParts();
+        }
+    }
+
+    @Override
+    public Part getPart(String name) {
+        if (httpBodyHandlerSPI == null) {
+            return null;
+        } else {
+            return httpBodyHandlerSPI.getPart(name);
+        }
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        if (httpBodyHandlerSPI == null) {
+            return null;
+        } else {
+            return httpBodyHandlerSPI.getInputStream();
+        }
+    }
+
+    @Override
+    public BufferedReader getBufferedReader() {
+        if (httpBodyHandlerSPI == null) {
+            return null;
+        } else {
+            return httpBodyHandlerSPI.getBufferedReader();
+        }
+    }
+
+    @Override
+    public void content(Action1<ByteBuffer> content) {
+        if (httpBodyHandlerSPI == null) {
+            request.content(content);
+        } else {
+            httpBodyHandlerSPI.content(content);
+        }
+    }
+
+    @Override
+    public void contentComplete(Action1<SimpleRequest> contentComplete) {
+        if (httpBodyHandlerSPI == null) {
+            request.contentComplete(contentComplete);
+        } else {
+            httpBodyHandlerSPI.contentComplete(contentComplete);
+        }
+    }
+
+    @Override
+    public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {
+        this.httpBodyHandlerSPI = httpBodyHandlerSPI;
+    }
+
+    @Override
+    public HttpSession getHttpSession() {
+        if (httpSessionHandlerSPI == null) {
+            return null;
+        } else {
+            return httpSessionHandlerSPI.getHttpSession();
+        }
+    }
+
+    @Override
+    public HttpSession getSession(boolean create) {
+        if (httpSessionHandlerSPI == null) {
+            return null;
+        } else {
+            return httpSessionHandlerSPI.getSession(create);
+        }
+    }
+
+    @Override
+    public boolean isRequestedSessionIdFromURL() {
+        return httpSessionHandlerSPI != null && httpSessionHandlerSPI.isRequestedSessionIdFromURL();
+    }
+
+    @Override
+    public boolean isRequestedSessionIdFromCookie() {
+        return httpSessionHandlerSPI != null && httpSessionHandlerSPI.isRequestedSessionIdFromCookie();
+    }
+
+    @Override
+    public boolean isRequestedSessionIdValid() {
+        return httpSessionHandlerSPI != null && httpSessionHandlerSPI.isRequestedSessionIdValid();
+    }
+
+    @Override
+    public String getRequestedSessionId() {
+        if (httpSessionHandlerSPI == null) {
+            return null;
+        } else {
+            return httpSessionHandlerSPI.getRequestedSessionId();
+        }
+    }
+
+    @Override
+    public void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI) {
+        this.httpSessionHandlerSPI = httpSessionHandlerSPI;
     }
 }

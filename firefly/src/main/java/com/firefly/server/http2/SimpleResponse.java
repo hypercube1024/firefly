@@ -156,4 +156,8 @@ public class SimpleResponse implements Closeable {
         }
     }
 
+    public boolean isCommited() {
+        return output != null && output.isCommited();
+    }
+
 }

@@ -68,7 +68,7 @@ public interface RouterManager extends RequestAcceptor {
         return new RouterManagerImpl();
     }
 
-    static RouterManager createEmptyRouterManager() {
+    static RouterManager createEmpty() {
         return new RouterManagerImpl();
     }
 }
