@@ -9,7 +9,6 @@ import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
-import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 
 /**
@@ -51,18 +50,6 @@ abstract public class $ {
         return new SimpleTcpServer(configuration);
     }
 
-    public static RouterManager createRouterManager() {
-        return RouterManager.create();
-    }
-
-    public static RouterManager create(HTTPBodyConfiguration configuration) {
-        return RouterManager.create(configuration);
-    }
-
-    public static RouterManager createEmpty() {
-        return RouterManager.createEmpty();
-    }
-
     public static HTTP2ServerBuilder httpServer() {
         return new HTTP2ServerBuilder().httpServer();
     }
@@ -70,5 +57,13 @@ abstract public class $ {
     public static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration,
                                                 HTTPBodyConfiguration httpBodyConfiguration) {
         return new HTTP2ServerBuilder().httpServer(serverConfiguration, httpBodyConfiguration);
+    }
+
+    public static HTTP2ServerBuilder emptyHttpServer() {
+        return new HTTP2ServerBuilder().emptyHttpServer();
+    }
+
+    public static HTTP2ServerBuilder emptyHttpServer(SimpleHTTPServerConfiguration serverConfiguration) {
+        return new HTTP2ServerBuilder().emptyHttpServer(serverConfiguration);
     }
 }

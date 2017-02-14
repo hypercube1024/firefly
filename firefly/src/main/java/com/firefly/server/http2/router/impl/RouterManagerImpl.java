@@ -34,17 +34,17 @@ public class RouterManagerImpl implements RouterManager {
         patternPathMatcher = new PatternPathMatcher();
         parameterPathMatcher = new ParameterPathMatcher();
         regexPathMatcher = new RegexPathMatcher();
-        matcherMap.put(Matcher.MatchType.PATH, new ArrayList<>(Arrays.asList(precisePathMather, patternPathMatcher, parameterPathMatcher, regexPathMatcher)));
+        matcherMap.put(Matcher.MatchType.PATH, Arrays.asList(precisePathMather, patternPathMatcher, parameterPathMatcher, regexPathMatcher));
 
         httpMethodMatcher = new HTTPMethodMatcher();
-        matcherMap.put(Matcher.MatchType.METHOD, new ArrayList<>(Arrays.asList(httpMethodMatcher)));
+        matcherMap.put(Matcher.MatchType.METHOD, Collections.singletonList(httpMethodMatcher));
 
         contentTypePreciseMatcher = new ContentTypePreciseMatcher();
         contentTypePatternMatcher = new ContentTypePatternMatcher();
-        matcherMap.put(Matcher.MatchType.CONTENT_TYPE, new ArrayList<>(Arrays.asList(contentTypePreciseMatcher, contentTypePatternMatcher)));
+        matcherMap.put(Matcher.MatchType.CONTENT_TYPE, Arrays.asList(contentTypePreciseMatcher, contentTypePatternMatcher));
 
         acceptHeaderMatcher = new AcceptHeaderMatcher();
-        matcherMap.put(Matcher.MatchType.ACCEPT, new ArrayList<>(Arrays.asList(acceptHeaderMatcher)));
+        matcherMap.put(Matcher.MatchType.ACCEPT, Collections.singletonList(acceptHeaderMatcher));
     }
 
     public Matcher getHttpMethodMatcher() {

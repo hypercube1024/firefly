@@ -26,6 +26,16 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
+    public HTTP2ServerBuilder emptyHttpServer() {
+        return emptyHttpServer(new SimpleHTTPServerConfiguration());
+    }
+
+    public HTTP2ServerBuilder emptyHttpServer(SimpleHTTPServerConfiguration serverConfiguration) {
+        server = new SimpleHTTPServer(serverConfiguration);
+        routerManager = RouterManager.createEmpty();
+        return this;
+    }
+
     /**
      * register an new router
      *
