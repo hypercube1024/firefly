@@ -7,7 +7,7 @@ import javax.servlet.http.HttpSession;
  */
 public interface HTTPSessionHandlerSPI {
 
-    HttpSession getHttpSession();
+    HttpSession getSession();
 
     HttpSession getSession(boolean create);
 

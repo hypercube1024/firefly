@@ -241,11 +241,11 @@ public class RoutingContextImpl implements RoutingContext {
 
 
     @Override
-    public HttpSession getHttpSession() {
+    public HttpSession getSession() {
         if (httpSessionHandlerSPI == null) {
             return null;
         } else {
-            return httpSessionHandlerSPI.getHttpSession();
+            return httpSessionHandlerSPI.getSession();
         }
     }
 

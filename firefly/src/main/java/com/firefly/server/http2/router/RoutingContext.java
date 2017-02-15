@@ -178,7 +178,7 @@ public interface RoutingContext extends Closeable {
 
 
     // HTTP session API
-    HttpSession getHttpSession();
+    HttpSession getSession();
 
     HttpSession getSession(boolean create);
 
