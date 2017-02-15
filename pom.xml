@@ -43,6 +43,7 @@
         <module>firefly-slf4j</module>
         <module>firefly-db</module>
         <module>firefly</module>
+        <module>firefly-example</module>
     </modules>
 
     <dependencyManagement>

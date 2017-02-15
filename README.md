@@ -52,10 +52,10 @@ Add maven dependency in your pom.xml.
 
 Create a HTTP server in main function
 ```java
-public class HTTPServerDemo1 {
-
+public class HelloHTTPServer {
     public static void main(String[] args) {
-        $.httpServer().router().get("/").handler(ctx -> ctx.end("hello world!"))
+        $.httpServer()
+         .router().get("/").handler(ctx -> ctx.end("hello world!"))
          .listen("localhost", 8080);
     }
 }

@@ -11,22 +11,15 @@ public class HTTP2ClientSingleton {
         return ourInstance;
     }
 
-    private volatile SimpleHTTPClient httpClient;
-    private SimpleHTTPClientConfiguration configuration;
+    private SimpleHTTPClient httpClient;
+    private volatile SimpleHTTPClientConfiguration configuration;
 
     private HTTP2ClientSingleton() {
         init();
     }
 
-    public SimpleHTTPClient httpClient() {
-        if (httpClient == null) {
-            throw new IllegalStateException("the http client has not been initialized");
-        }
-
-        if (httpClient.isStopped()) {
-            httpClient = null;
-            throw new IllegalStateException("the http client has stopped, please call init() again");
-        }
+    public synchronized SimpleHTTPClient httpClient() {
+        init();
         return httpClient;
     }
 
@@ -35,20 +28,27 @@ public class HTTP2ClientSingleton {
         return this;
     }
 
-    public HTTP2ClientSingleton init() {
+    private HTTP2ClientSingleton init() {
         if (httpClient != null) {
+            if (httpClient.isStopped()) {
+                create();
+            }
             return this;
         } else {
-            if (configuration != null) {
-                httpClient = new SimpleHTTPClient(configuration);
-            } else {
-                httpClient = new SimpleHTTPClient();
-            }
+            create();
             return this;
         }
     }
 
-    public HTTP2ClientSingleton destroy() {
+    private void create() {
+        if (configuration != null) {
+            httpClient = new SimpleHTTPClient(configuration);
+        } else {
+            httpClient = new SimpleHTTPClient();
+        }
+    }
+
+    public synchronized HTTP2ClientSingleton destroy() {
         if (httpClient != null) {
             httpClient.stop();
             httpClient = null;

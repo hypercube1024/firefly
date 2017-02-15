@@ -1,5 +1,6 @@
-package test.http;
+package com.firefly.example.http.proxy;
 
+import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
@@ -11,7 +12,6 @@ import com.firefly.server.http2.SimpleResponse;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.io.IO;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -22,9 +22,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ProxyDemo {
 
     public static void main(String[] args) {
-        SimpleHTTPClient client = new SimpleHTTPClient();
-        SimpleHTTPServer server = new SimpleHTTPServer();
-        SimpleTcpClient tcpClient = new SimpleTcpClient();
+        SimpleHTTPClient client = $.createHTTPClient();
+        SimpleHTTPServer server = $.createHTTPServer();
+        SimpleTcpClient tcpClient = $.createTCPClient();
 
         server.acceptHTTPTunnelConnection((request, serverConnection) -> {
             SimpleResponse response = request.getAsyncResponse();
@@ -35,14 +35,14 @@ public class ProxyDemo {
                     serverConnection.upgradeHTTPTunnel(promise);
                     promise.thenAccept(tunnel -> {
                         tcpConn.receive(dstBuf -> tunnel.write(dstBuf, Callback.NOOP))
-                               .exception(e -> IO.close(tcpConn))
+                               .exception(e -> $.io.close(tcpConn))
                                .close(() -> request.remove("tunnelSuccess"));
                         tunnel.receive(tcpConn::write);
                     });
-                    IO.close(response);
+                    $.io.close(response);
                 }).exceptionally(e -> {
                     response.setStatus(HttpStatus.BAD_GATEWAY_502);
-                    IO.close(response);
+                    $.io.close(response);
                     return null;
                 });
                 return p;
@@ -75,7 +75,7 @@ public class ProxyDemo {
                         }
                     }));
                 } else {
-                    outputCompletable.thenAccept(IO::close);
+                    outputCompletable.thenAccept($.io::close);
                 }
 
                 srcRequest.messageComplete(req -> {
@@ -97,7 +97,7 @@ public class ProxyDemo {
                             e.printStackTrace();
                         }
                     }).messageComplete(dstResponse -> {
-                        IO.close(srcResponse);
+                        $.io.close(srcResponse);
                         System.out.println("time: " + (System.currentTimeMillis() - start));
                     }).end();
                 });
@@ -105,6 +105,6 @@ public class ProxyDemo {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }).listen("localhost", 3344);
+        }).listen("localhost", 6666);
     }
 }

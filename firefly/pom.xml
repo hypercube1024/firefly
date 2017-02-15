@@ -29,10 +29,6 @@
                 <filtering>true</filtering>
                 <directory>src/test/resources</directory>
             </testResource>
-            <testResource>
-                <filtering>false</filtering>
-                <directory>src/test/appHome</directory>
-            </testResource>
         </testResources>
     </build>
 
