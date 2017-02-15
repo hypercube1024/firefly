@@ -1,5 +1,6 @@
 package com.firefly.codec.http2.encode;
 
+import com.firefly.Version;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.HttpTokens.EndOfContent;
 import com.firefly.utils.StringUtils;
@@ -747,9 +748,9 @@ public class HttpGenerator {
     private static final byte[] TRANSFER_ENCODING_CHUNKED = StringUtils.getBytes("Transfer-Encoding: chunked\015\012");
     private static final byte[][] SEND = new byte[][]{
             new byte[0],
-            StringUtils.getBytes("Server: Firefly(4.x.x)\015\012"),
-            StringUtils.getBytes("X-Powered-By: Firefly(4.x.x)\015\012"),
-            StringUtils.getBytes("Server: Firefly(4.x.x)\015\012X-Powered-By: Firefly(4.x.x)\015\012")
+            StringUtils.getBytes("Server: Firefly(" + Version.value + ")\015\012"),
+            StringUtils.getBytes("X-Powered-By: Firefly(" + Version.value + ")\015\012"),
+            StringUtils.getBytes("Server: Firefly(" + Version.value + ")\015\012X-Powered-By: Firefly(" + Version.value + ")\015\012")
     };
 
     /* ------------------------------------------------------------------------------- */

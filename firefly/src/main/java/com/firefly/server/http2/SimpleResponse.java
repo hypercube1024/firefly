@@ -192,12 +192,28 @@ public class SimpleResponse implements Closeable {
     }
 
     public SimpleResponse end(String value) {
-        write(value).end();
-        return this;
+        return write(value).end();
     }
 
     public SimpleResponse end() {
         IO.close(this);
         return this;
+    }
+
+    public SimpleResponse write(byte[] b, int off, int len) {
+        try {
+            getOutputStream().write(b, off, len);
+        } catch (IOException e) {
+            log.error("write data exception", e);
+        }
+        return this;
+    }
+
+    public SimpleResponse write(byte[] b) {
+        return write(b, 0, b.length);
+    }
+
+    public SimpleResponse end(byte[] b) {
+        return write(b).end();
     }
 }

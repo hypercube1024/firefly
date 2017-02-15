@@ -46,25 +46,25 @@ public class HTTPBodyHandler implements Handler {
     }
 
     @Override
-    public void handle(RoutingContext routingContext) {
-        SimpleRequest request = routingContext.getRequest();
+    public void handle(RoutingContext ctx) {
+        SimpleRequest request = ctx.getRequest();
         HTTPBodyHandlerSPIImpl httpBodyHandlerSPI = new HTTPBodyHandlerSPIImpl();
         httpBodyHandlerSPI.urlEncodedMap = new UrlEncoded();
         httpBodyHandlerSPI.charset = configuration.getCharset();
-        routingContext.setHTTPBodyHandlerSPI(httpBodyHandlerSPI);
+        ctx.setHTTPBodyHandlerSPI(httpBodyHandlerSPI);
 
         if (StringUtils.hasText(request.getURI().getQuery())) {
             httpBodyHandlerSPI.urlEncodedMap.decode(request.getURI().getQuery(), Charset.forName(configuration.getCharset()));
         }
 
-        if (routingContext.isAsynchronousRead()) { // receive content event has been listened
-            routingContext.next();
+        if (ctx.isAsynchronousRead()) { // receive content event has been listened
+            ctx.next();
             return;
         }
 
         long contentLength = request.getContentLength();
         if (contentLength <= 0) { // no content
-            routingContext.next();
+            ctx.next();
             return;
         }
 
@@ -84,7 +84,7 @@ public class HTTPBodyHandler implements Handler {
                     new File(configuration.getTempFilePath()));
         }
 
-        routingContext.content(buf -> {
+        ctx.content(buf -> {
             try {
                 httpBodyHandlerSPI.pipedStream.getOutputStream().write(BufferUtils.toArray(buf));
             } catch (IOException e) {
@@ -102,6 +102,7 @@ public class HTTPBodyHandler implements Handler {
             } catch (IOException e) {
                 log.error("http server ends receiving data exception", e);
             }
-        }).messageComplete(req -> routingContext.next());
+        }).messageComplete(req -> ctx.next());
     }
+
 }

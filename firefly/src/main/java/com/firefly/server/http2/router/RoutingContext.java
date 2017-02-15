@@ -53,6 +53,7 @@ public interface RoutingContext extends Closeable {
 
     boolean hasNext();
 
+
     // request wrap
     default String getMethod() {
         return getRequest().getMethod();
@@ -77,6 +78,7 @@ public interface RoutingContext extends Closeable {
     default List<Cookie> getCookies() {
         return getRequest().getCookies();
     }
+
 
     // response wrap
     default RoutingContext setStatus(int status) {
@@ -125,13 +127,25 @@ public interface RoutingContext extends Closeable {
     }
 
     default RoutingContext end(String value) {
-        getResponse().end(value);
-        return this;
+        return write(value).end();
     }
 
     default RoutingContext end() {
         getResponse().end();
         return this;
+    }
+
+    default RoutingContext write(byte[] b, int off, int len) {
+        getResponse().write(b, off, len);
+        return this;
+    }
+
+    default RoutingContext write(byte[] b) {
+        return write(b, 0, b.length);
+    }
+
+    default RoutingContext end(byte[] b) {
+        return write(b).end();
     }
 
 
