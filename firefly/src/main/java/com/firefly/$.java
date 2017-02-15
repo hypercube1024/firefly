@@ -11,13 +11,18 @@ import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.io.IO;
+import com.firefly.utils.json.Json;
+import com.firefly.utils.json.JsonArray;
+import com.firefly.utils.json.JsonObject;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.Map;
 
 /**
  * Unsorted utilities. The main functions of Firefly start from here.
@@ -109,7 +114,6 @@ public interface $ {
     }
 
     interface io {
-
         static void close(Closeable closeable) {
             IO.close(closeable);
         }
@@ -133,14 +137,63 @@ public interface $ {
                 return null;
             }
         }
-
     }
 
     interface thread {
-
         static void sleep(long millis) {
             ThreadUtils.sleep(millis);
         }
+    }
 
+    interface json {
+        static String toJson(Object obj) {
+            return Json.toJson(obj);
+        }
+
+        static <T> T parse(String json, Class<T> clazz) {
+            return Json.toObject(json, clazz);
+        }
+
+        static JsonObject parseToObject(String json) {
+            return Json.toJsonObject(json);
+        }
+
+        static JsonArray parseToArray(String json) {
+            return Json.toJsonArray(json);
+        }
+    }
+
+    interface string {
+        static boolean hasText(String str) {
+            return StringUtils.hasText(str);
+        }
+
+        static String[] split(String str, String separatorChars) {
+            return StringUtils.split(str, separatorChars);
+        }
+
+        static String[] split(String str, char separatorChar) {
+            return StringUtils.split(str, separatorChar);
+        }
+
+        static String replace(String s, Map<String, Object> map) {
+            return StringUtils.replace(s, map);
+        }
+
+        static String replace(String s, Object... objs) {
+            return StringUtils.replace(s, objs);
+        }
+
+        static String escapeXML(String str) {
+            return StringUtils.escapeXML(str);
+        }
+
+        static byte[] getUtf8Bytes(String s) {
+            return StringUtils.getUtf8Bytes(s);
+        }
+
+        static byte[] getBytes(String s, String charset) {
+            return StringUtils.getBytes(s, charset);
+        }
     }
 }

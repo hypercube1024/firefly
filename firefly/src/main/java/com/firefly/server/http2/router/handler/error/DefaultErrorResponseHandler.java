@@ -31,7 +31,7 @@ public class DefaultErrorResponseHandler implements Handler {
         }
     }
 
-    private void render(RoutingContext ctx, int status, String content) {
+    public static void render(RoutingContext ctx, int status, String content) {
         HttpStatus.Code code = HttpStatus.getCode(status);
         String title = status + " " + (code != null ? code.getMessage() : "error");
         ctx.setStatus(status).put(HttpHeader.CONTENT_TYPE, "text/html")
