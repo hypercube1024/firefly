@@ -2,6 +2,7 @@ package test.http.router.handler.body;
 
 import com.firefly.$;
 import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.codec.http2.model.InputStreamContentProvider;
 import com.firefly.codec.http2.model.MultiPartContentProvider;
 import com.firefly.codec.http2.model.StringContentProvider;
 import com.firefly.server.http2.HTTP2ServerBuilder;
@@ -46,16 +47,36 @@ public class TestMultiPartContentProvider {
     }
 
     @Test
-    public void testStringMultiPart() {
+    public void testInputStreamContent() {
+        InputStream inputStream = $.class.getResourceAsStream("/poem.txt");
+        InputStreamContentProvider inputStreamContentProvider = new InputStreamContentProvider(inputStream);
+        MultiPartContentProvider multiPartProvider = new MultiPartContentProvider();
+        System.out.println(multiPartProvider.getContentType());
+        multiPartProvider.addFilePart("poetry", "poem.txt", inputStreamContentProvider, null);
+
+        multiPartProvider.close();
+        multiPartProvider.setListener(() -> System.out.println("on content"));
+
+        List<ByteBuffer> list = new ArrayList<>();
+        for (ByteBuffer buf : multiPartProvider) {
+            list.add(buf);
+        }
+        String value = BufferUtils.toString(list);
+        System.out.println(value);
+        System.out.println(multiPartProvider.getLength());
+    }
+
+    @Test
+    public void testMultiPart() {
         String host = "localhost";
         int port = 8084;
         StringBuilder uri = $.uri.newURIBuilder("http", host, port);
         System.out.println(uri);
 
-        Phaser phaser = new Phaser(3);
+        Phaser phaser = new Phaser(5);
 
         HTTP2ServerBuilder httpServer = $.httpServer();
-        httpServer.router().post("/file/upload").handler(ctx -> {
+        httpServer.router().post("/upload/string").handler(ctx -> {
             // small multi part data test case
             Assert.assertThat(ctx.getParts().size(), is(2));
             Part test1 = ctx.getPart("test1");
@@ -74,9 +95,24 @@ public class TestMultiPartContentProvider {
             }
             ctx.end("server received multi part data");
             phaser.arrive();
+        }).router().post("/upload/poetry").handler(ctx -> {
+            // upload poetry
+            System.out.println(ctx.getFields());
+            Part poetry = ctx.getPart("poetry");
+            Assert.assertThat(poetry.getSubmittedFileName(), is("poem.txt"));
+            try (InputStream inputStream = $.class.getResourceAsStream("/poem.txt");
+                 InputStream in = poetry.getInputStream()) {
+                String poem = $.io.toString(inputStream);
+                System.out.println(poem);
+                Assert.assertThat(poem, is($.io.toString(in)));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ctx.end("server received poetry");
+            phaser.arrive();
         }).listen(host, port);
 
-        $.httpClient().post(uri + "/file/upload")
+        $.httpClient().post(uri + "/upload/string")
          .addFieldPart("test1", new StringContentProvider("hello multi part1"), null)
          .addFieldPart("test2", new StringContentProvider("hello multi part2"), null)
          .submit()
@@ -84,6 +120,20 @@ public class TestMultiPartContentProvider {
              System.out.println(res.getStringBody());
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
              Assert.assertThat(res.getStringBody(), is("server received multi part data"));
+             phaser.arrive();
+         });
+
+        InputStream inputStream = $.class.getResourceAsStream("/poem.txt");
+        InputStreamContentProvider inputStreamContentProvider = new InputStreamContentProvider(inputStream);
+        $.httpClient().post(uri + "/upload/poetry")
+         .addFilePart("poetry", "poem.txt", inputStreamContentProvider, null)
+         .submit()
+         .thenAccept(res -> {
+             System.out.println(res.getStringBody());
+             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+             Assert.assertThat(res.getStringBody(), is("server received poetry"));
+             $.io.close(inputStreamContentProvider);
+             $.io.close(inputStream);
              phaser.arrive();
          });
 

@@ -2,6 +2,7 @@ package com.firefly.server.http2.router.handler.body;
 
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.codec.http2.model.MultiPartInputStreamParser;
 import com.firefly.server.http2.SimpleRequest;
@@ -62,16 +63,21 @@ public class HTTPBodyHandler implements Handler {
             return;
         }
 
-        long contentLength = request.getContentLength();
-        if (contentLength <= 0) { // no content
-            ctx.next();
-            return;
-        }
-
-        if (contentLength > configuration.getBodyBufferThreshold()) {
+        String transferEncoding = request.getFields().get(HttpHeader.TRANSFER_ENCODING);
+        if (HttpHeaderValue.CHUNKED.asString().equals(transferEncoding)) {
             httpBodyHandlerSPI.pipedStream = new FilePipedStream(configuration.getTempFilePath());
         } else {
-            httpBodyHandlerSPI.pipedStream = new ByteArrayPipedStream((int) contentLength);
+            long contentLength = request.getContentLength();
+            if (contentLength <= 0) { // no content
+                ctx.next();
+                return;
+            } else {
+                if (contentLength > configuration.getBodyBufferThreshold()) {
+                    httpBodyHandlerSPI.pipedStream = new FilePipedStream(configuration.getTempFilePath());
+                } else {
+                    httpBodyHandlerSPI.pipedStream = new ByteArrayPipedStream((int) contentLength);
+                }
+            }
         }
 
         ctx.content(buf -> {
@@ -88,8 +94,8 @@ public class HTTPBodyHandler implements Handler {
             }
         }).contentComplete(req -> {
             try {
-                httpBodyHandlerSPI.pipedStream.getOutputStream().close();
                 String contentType = MimeTypes.getContentTypeMIMEType(request.getFields().get(HttpHeader.CONTENT_TYPE));
+                httpBodyHandlerSPI.pipedStream.getOutputStream().close();
                 if ("application/x-www-form-urlencoded".equals(contentType)) {
                     try (InputStream inputStream = httpBodyHandlerSPI.pipedStream.getInputStream()) {
                         httpBodyHandlerSPI.urlEncodedMap.decode(IO.toString(inputStream, configuration.getCharset()),
