@@ -138,6 +138,14 @@ public interface $ {
                 return null;
             }
         }
+
+        static byte[] readBytes(InputStream in) {
+            try {
+                return IO.readBytes(in);
+            } catch (IOException e) {
+                return null;
+            }
+        }
     }
 
     interface thread {
