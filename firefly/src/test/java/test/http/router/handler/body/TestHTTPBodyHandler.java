@@ -3,14 +3,12 @@ package test.http.router.handler.body;
 import com.firefly.$;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.lang.URIUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Phaser;
 
@@ -68,20 +66,17 @@ public class TestHTTPBodyHandler {
 
         HTTP2ServerBuilder httpServer = $.httpServer();
         httpServer.router().post("/bigData").handler(ctx -> {
-            System.out.println("big data size: " + ctx.getContentLength());
+            System.out.println("receive big data size: " + ctx.getContentLength());
             Assert.assertThat((int) ctx.getContentLength(), is(data.length));
+            Assert.assertThat($.io.toString(ctx.getInputStream()), is(bigData.toString()));
+            $.io.close(ctx.getInputStream());
             ctx.end("server received big data");
             phaser.arrive();
         }).listen(host, port);
 
         $.httpClient().post(uri + "/bigData").put(HttpHeader.CONTENT_LENGTH, data.length + "")
-         .output(output -> {
-             try (HTTPOutputStream out = output) {
-                 out.write(ByteBuffer.wrap(data));
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }
-         }).submit()
+         .write(ByteBuffer.wrap(data))
+         .submit()
          .thenAccept(res -> {
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
              Assert.assertThat(res.getStringBody(), is("server received big data"));
