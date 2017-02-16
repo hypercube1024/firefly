@@ -1,10 +1,7 @@
 package test.http.router.handler.body;
 
 import com.firefly.$;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.InputStreamContentProvider;
-import com.firefly.codec.http2.model.MultiPartContentProvider;
-import com.firefly.codec.http2.model.StringContentProvider;
+import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
@@ -13,13 +10,17 @@ import org.junit.Test;
 import javax.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Phaser;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 
 /**
  * @author Pengtao Qiu
@@ -64,6 +65,29 @@ public class TestMultiPartContentProvider {
         String value = BufferUtils.toString(list);
         System.out.println(value);
         System.out.println(multiPartProvider.getLength());
+        Assert.assertThat(multiPartProvider.getLength(), lessThan(0L));
+    }
+
+    @Test
+    public void testPathContent() throws URISyntaxException, IOException {
+        Path path = Paths.get($.class.getResource("/poem.txt").toURI());
+        System.out.println(path.toAbsolutePath());
+        PathContentProvider pathContentProvider = new PathContentProvider(path);
+        MultiPartContentProvider multiPartProvider = new MultiPartContentProvider();
+        multiPartProvider.addFilePart("poetry", "poem.txt", pathContentProvider, null);
+
+        multiPartProvider.close();
+        multiPartProvider.setListener(() -> System.out.println("on content"));
+
+        List<ByteBuffer> list = new ArrayList<>();
+        for (ByteBuffer buf : multiPartProvider) {
+            list.add(buf);
+        }
+        String value = BufferUtils.toString(list);
+        System.out.println(value);
+
+        System.out.println(multiPartProvider.getLength());
+        Assert.assertThat(multiPartProvider.getLength(), greaterThan(0L));
     }
 
     @Test
