@@ -3,6 +3,8 @@ package com.firefly.server.http2.router.handler.session;
 import com.firefly.codec.http2.model.Cookie;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.time.Millisecond100Clock;
 
 import javax.servlet.http.HttpSession;
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Pengtao Qiu
@@ -19,6 +22,7 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
     private final LocalHTTPSessionConfiguration configuration;
     private final ConcurrentMap<String, HTTPSessionImpl> sessionMap;
     private final RoutingContext routingContext;
+    private final Scheduler scheduler;
     private boolean requestedSessionIdFromURL;
     private boolean requestedSessionIdFromCookie;
     private String requestedSessionId;
@@ -26,49 +30,49 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
 
     public HTTPSessionHandlerSPIImpl(ConcurrentMap<String, HTTPSessionImpl> sessionMap,
                                      RoutingContext routingContext,
+                                     Scheduler scheduler,
                                      LocalHTTPSessionConfiguration configuration) {
         this.sessionMap = sessionMap;
         this.routingContext = routingContext;
         this.configuration = configuration;
+        this.scheduler = scheduler;
         init();
     }
 
     private void init() {
-        if (!getHttpSessionFromCookie()) {
+        if (getHttpSessionFromCookie() == null) {
             getHttpSessionFromURL();
         }
     }
 
-    private boolean getHttpSessionFromURL() {
-        String uri = routingContext.getURI().getPath();
-        String prefix = configuration.getSessionIdPathParameterNamePrefix();
-        if (prefix != null) {
-            int s = uri.indexOf(prefix);
-            if (s >= 0) {
-                s += prefix.length();
-                int i = s;
-                while (i < uri.length()) {
-                    char c = uri.charAt(i);
-                    if (c == ';' || c == '#' || c == '?' || c == '/') {
-                        break;
-                    }
-                    i++;
-                }
-
-                requestedSessionId = uri.substring(s, i);
-                requestedSessionIdFromCookie = false;
-                requestedSessionIdFromURL = true;
-                initHttpSession();
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
+    private String getHttpSessionFromURL() {
+        if (requestedSessionId != null) {
+            return requestedSessionId;
         }
+
+        String param = routingContext.getURI().getParam();
+        if (StringUtils.hasText(param)) {
+            String prefix = configuration.getSessionIdParameterName() + "=";
+            if (param.length() > prefix.length()) {
+                int s = param.indexOf(prefix);
+                if (s >= 0) {
+                    s += prefix.length();
+                    requestedSessionId = param.substring(s);
+                    requestedSessionIdFromCookie = false;
+                    requestedSessionIdFromURL = true;
+                    requestHttpSession();
+                    return requestedSessionId;
+                }
+            }
+        }
+        return null;
     }
 
-    private boolean getHttpSessionFromCookie() {
+    private String getHttpSessionFromCookie() {
+        if (requestedSessionId != null) {
+            return requestedSessionId;
+        }
+
         List<Cookie> cookies = routingContext.getCookies();
         if (cookies != null && !cookies.isEmpty()) {
             Optional<Cookie> optional = cookies.stream()
@@ -78,32 +82,24 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
                 requestedSessionIdFromCookie = true;
                 requestedSessionIdFromURL = false;
                 requestedSessionId = optional.get().getValue();
-                initHttpSession();
-                return true;
-            } else {
-                return false;
+                requestHttpSession();
+                return requestedSessionId;
             }
-        } else {
-            return false;
         }
+        return null;
     }
 
 
-    private void initHttpSession() {
+    private void requestHttpSession() {
         httpSession = sessionMap.get(requestedSessionId);
         if (httpSession != null) {
-            if (httpSession.isInvalid()) {
+            if (httpSession.check()) {
+                httpSession.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
+                httpSession.setNewSession(false);
+                scheduleCheck(httpSession, httpSession.getRemainInactiveInterval());
+            } else {
                 httpSession = null;
                 sessionMap.remove(requestedSessionId);
-            } else {
-                long currentTime = Millisecond100Clock.currentTimeMillis();
-                if ((currentTime - httpSession.getLastAccessedTime()) > (httpSession.getMaxInactiveInterval() * 1000)) {
-                    httpSession = null;
-                    sessionMap.remove(requestedSessionId);
-                } else {
-                    httpSession.setLastAccessedTime(currentTime);
-                    httpSession.setNewSession(false);
-                }
             }
         }
     }
@@ -119,8 +115,10 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
             if (httpSession == null) {
                 String id = UUID.randomUUID().toString();
                 httpSession = new HTTPSessionImpl(id);
+                httpSession.setMaxInactiveInterval(configuration.getDefaultMaxInactiveInterval());
                 routingContext.addCookie(new Cookie(configuration.getSessionIdParameterName(), id));
                 sessionMap.put(id, httpSession);
+                scheduleCheck(httpSession, httpSession.getMaxInactiveInterval());
                 return httpSession;
             } else {
                 return httpSession;
@@ -128,6 +126,16 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
         } else {
             return httpSession;
         }
+    }
+
+    private void scheduleCheck(final HTTPSessionImpl session, final long remainInactiveInterval) {
+        scheduler.schedule(() -> {
+            if (!session.check()) {
+                sessionMap.remove(session.getId());
+            } else {
+                scheduleCheck(session, session.getRemainInactiveInterval());
+            }
+        }, remainInactiveInterval, TimeUnit.MILLISECONDS);
     }
 
     @Override

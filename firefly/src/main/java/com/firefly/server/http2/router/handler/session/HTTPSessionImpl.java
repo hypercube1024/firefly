@@ -1,5 +1,6 @@
 package com.firefly.server.http2.router.handler.session;
 
+import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.time.Millisecond100Clock;
 
@@ -10,13 +11,14 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Pengtao Qiu
  */
 public class HTTPSessionImpl implements HttpSession {
 
-    private int maxInactiveInterval;
+    private volatile int maxInactiveInterval;
     private final ConcurrentMap<String, Object> attributes = new ConcurrentHashMap<>();
     private final long createTime;
     private final String id;
@@ -146,5 +148,24 @@ public class HTTPSessionImpl implements HttpSession {
 
     public void setNewSession(boolean newSession) {
         this.newSession = newSession;
+    }
+
+    public boolean check() {
+        if (isInvalid()) {
+            return false;
+        } else {
+            long remainInactiveInterval = getRemainInactiveInterval();
+            if (remainInactiveInterval <= 0) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    public long getRemainInactiveInterval() {
+        long currentTime = Millisecond100Clock.currentTimeMillis();
+        long inactiveInterval = currentTime - getLastAccessedTime();
+        return getMaxInactiveInterval() * 1000 - inactiveInterval;
     }
 }
