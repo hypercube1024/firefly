@@ -17,6 +17,7 @@ import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.URIUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -194,6 +195,16 @@ public interface $ {
 
         static byte[] getBytes(String s, String charset) {
             return StringUtils.getBytes(s, charset);
+        }
+    }
+
+    interface uri {
+        static StringBuilder newURIBuilder(String scheme, String server, int port) {
+            return URIUtils.newURIBuilder(scheme, server, port);
+        }
+
+        static String newURI(String scheme, String server, int port, String path, String query) {
+            return URIUtils.newURI(scheme, server, port, path, query);
         }
     }
 }

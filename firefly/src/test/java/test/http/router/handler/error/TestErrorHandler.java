@@ -3,7 +3,6 @@ package test.http.router.handler.error;
 import com.firefly.$;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.server.http2.HTTP2ServerBuilder;
-import com.firefly.utils.lang.URIUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,7 +19,7 @@ public class TestErrorHandler {
     public void test() {
         String host = "localhost";
         int port = 8082;
-        StringBuilder uri = URIUtils.newURIBuilder("http", host, port);
+        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
         System.out.println(uri);
         Phaser phaser = new Phaser(3);
 
