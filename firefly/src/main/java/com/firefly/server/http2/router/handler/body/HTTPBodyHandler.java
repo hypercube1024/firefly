@@ -74,16 +74,6 @@ public class HTTPBodyHandler implements Handler {
             httpBodyHandlerSPI.pipedStream = new ByteArrayPipedStream((int) contentLength);
         }
 
-
-        String contentType = MimeTypes.getContentTypeMIMEType(request.getFields().get(HttpHeader.CONTENT_TYPE));
-        if ("multipart/form-data".equals(contentType)) {
-            httpBodyHandlerSPI.multiPartInputStreamParser = new MultiPartInputStreamParser(
-                    httpBodyHandlerSPI.getInputStream(),
-                    request.getFields().get(HttpHeader.CONTENT_TYPE),
-                    configuration.getMultipartConfigElement(),
-                    new File(configuration.getTempFilePath()));
-        }
-
         ctx.content(buf -> {
             if (log.isDebugEnabled()) {
                 log.debug("http body handler received content size -> {}", buf.remaining());
@@ -99,11 +89,18 @@ public class HTTPBodyHandler implements Handler {
         }).contentComplete(req -> {
             try {
                 httpBodyHandlerSPI.pipedStream.getOutputStream().close();
+                String contentType = MimeTypes.getContentTypeMIMEType(request.getFields().get(HttpHeader.CONTENT_TYPE));
                 if ("application/x-www-form-urlencoded".equals(contentType)) {
                     try (InputStream inputStream = httpBodyHandlerSPI.pipedStream.getInputStream()) {
                         httpBodyHandlerSPI.urlEncodedMap.decode(IO.toString(inputStream, configuration.getCharset()),
                                 Charset.forName(configuration.getCharset()));
                     }
+                } else if ("multipart/form-data".equals(contentType)) {
+                    httpBodyHandlerSPI.multiPartInputStreamParser = new MultiPartInputStreamParser(
+                            httpBodyHandlerSPI.getInputStream(),
+                            request.getFields().get(HttpHeader.CONTENT_TYPE),
+                            configuration.getMultipartConfigElement(),
+                            new File(configuration.getTempFilePath()));
                 }
             } catch (IOException e) {
                 log.error("http server ends receiving data exception", e);

@@ -66,6 +66,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         Promise<HTTPOutputStream> promise;
         Action1<HTTPOutputStream> output;
+        MultiPartContentProvider multiPartProvider;
 
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
@@ -129,6 +130,24 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         public RequestBuilder output(Promise<HTTPOutputStream> promise) {
             this.promise = promise;
+            return this;
+        }
+
+        MultiPartContentProvider multiPartProvider() {
+            if (multiPartProvider == null) {
+                multiPartProvider = new MultiPartContentProvider();
+                put(HttpHeader.CONTENT_TYPE, multiPartProvider.getContentType());
+            }
+            return multiPartProvider;
+        }
+
+        public RequestBuilder addFieldPart(String name, ContentProvider content, HttpFields fields) {
+            multiPartProvider().addFieldPart(name, content, fields);
+            return this;
+        }
+
+        public RequestBuilder addFilePart(String name, String fileName, ContentProvider content, HttpFields fields) {
+            multiPartProvider().addFilePart(name, fileName, content, fields);
             return this;
         }
 
@@ -413,6 +432,26 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     }
                 };
                 connection.send(r.request, p, handler);
+            } else if (r.multiPartProvider != null) {
+                IO.close(r.multiPartProvider);
+                r.multiPartProvider.setListener(() -> log.debug("multi part content listener"));
+                if (r.multiPartProvider.getLength() > 0) {
+                    r.put(HttpHeader.CONTENT_LENGTH, String.valueOf(r.multiPartProvider.getLength()));
+                }
+                Promise.Completable<HTTPOutputStream> p = new Promise.Completable<>();
+                connection.send(r.request, p, handler);
+                p.thenAccept(output -> {
+                    try (HTTPOutputStream out = output) {
+                        for (ByteBuffer buf : r.multiPartProvider) {
+                            out.write(buf);
+                        }
+                    } catch (IOException e) {
+                        log.error("SimpleHTTPClient writes data exception", e);
+                    }
+                }).exceptionally(t -> {
+                    log.error("SimpleHTTPClient gets output stream exception", t);
+                    return null;
+                });
             } else {
                 connection.send(r.request, handler);
             }
