@@ -85,10 +85,16 @@ public class HTTPBodyHandler implements Handler {
         }
 
         ctx.content(buf -> {
+            if (log.isDebugEnabled()) {
+                log.debug("http body handler received content size -> {}", buf.remaining());
+            }
             try {
                 httpBodyHandlerSPI.pipedStream.getOutputStream().write(BufferUtils.toArray(buf));
             } catch (IOException e) {
                 log.error("http server receives http body exception", e);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("http body handler wrote data to piped stream -> {}", buf.remaining());
             }
         }).contentComplete(req -> {
             try {

@@ -13,4 +13,9 @@ public class DisconnectionOutputEntry extends AbstractOutputEntry<Object> {
 		return OutputEntryType.DISCONNECTION;
 	}
 
+	@Override
+	public long remaining() {
+		return 0;
+	}
+
 }
