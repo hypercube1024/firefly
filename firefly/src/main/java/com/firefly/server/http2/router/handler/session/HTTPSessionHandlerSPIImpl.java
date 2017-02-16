@@ -11,7 +11,6 @@ import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,8 +18,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
 
-    private final LocalHTTPSessionConfiguration configuration;
-    private final ConcurrentMap<String, HTTPSessionImpl> sessionMap;
+    private final HTTPSessionConfiguration configuration;
+    private final SessionStore sessionStore;
     private final RoutingContext routingContext;
     private final Scheduler scheduler;
     private boolean requestedSessionIdFromURL;
@@ -28,11 +27,11 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
     private String requestedSessionId;
     private HTTPSessionImpl httpSession;
 
-    public HTTPSessionHandlerSPIImpl(ConcurrentMap<String, HTTPSessionImpl> sessionMap,
+    public HTTPSessionHandlerSPIImpl(SessionStore sessionStore,
                                      RoutingContext routingContext,
                                      Scheduler scheduler,
-                                     LocalHTTPSessionConfiguration configuration) {
-        this.sessionMap = sessionMap;
+                                     HTTPSessionConfiguration configuration) {
+        this.sessionStore = sessionStore;
         this.routingContext = routingContext;
         this.configuration = configuration;
         this.scheduler = scheduler;
@@ -91,7 +90,7 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
 
 
     private void requestHttpSession() {
-        httpSession = sessionMap.get(requestedSessionId);
+        httpSession = (HTTPSessionImpl) sessionStore.get(requestedSessionId);
         if (httpSession != null) {
             if (httpSession.check()) {
                 httpSession.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
@@ -99,7 +98,7 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
                 scheduleCheck(httpSession, httpSession.getRemainInactiveInterval());
             } else {
                 httpSession = null;
-                sessionMap.remove(requestedSessionId);
+                sessionStore.remove(requestedSessionId);
             }
         }
     }
@@ -117,7 +116,7 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
                 httpSession = new HTTPSessionImpl(id);
                 httpSession.setMaxInactiveInterval(configuration.getDefaultMaxInactiveInterval());
                 routingContext.addCookie(new Cookie(configuration.getSessionIdParameterName(), id));
-                sessionMap.put(id, httpSession);
+                sessionStore.put(id, httpSession);
                 scheduleCheck(httpSession, httpSession.getMaxInactiveInterval());
                 return httpSession;
             } else {
@@ -131,7 +130,7 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
     private void scheduleCheck(final HTTPSessionImpl session, final long remainInactiveInterval) {
         scheduler.schedule(() -> {
             if (!session.check()) {
-                sessionMap.remove(session.getId());
+                sessionStore.remove(session.getId());
             } else {
                 scheduleCheck(session, session.getRemainInactiveInterval());
             }
@@ -156,5 +155,10 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
     @Override
     public String getRequestedSessionId() {
         return requestedSessionId;
+    }
+
+    @Override
+    public int getSessionSize() {
+        return sessionStore.size();
     }
 }

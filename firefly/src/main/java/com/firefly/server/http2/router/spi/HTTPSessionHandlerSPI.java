@@ -19,4 +19,6 @@ public interface HTTPSessionHandlerSPI {
 
     String getRequestedSessionId();
 
+    int getSessionSize();
+
 }

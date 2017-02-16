@@ -3,7 +3,7 @@ package com.firefly.server.http2.router.handler.session;
 /**
  * @author Pengtao Qiu
  */
-public class LocalHTTPSessionConfiguration {
+public class HTTPSessionConfiguration {
 
     private String sessionIdParameterName = "jsessionid";
     private int defaultMaxInactiveInterval = 10 * 60; //unit second
