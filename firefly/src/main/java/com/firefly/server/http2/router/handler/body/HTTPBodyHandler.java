@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Pengtao Qiu
@@ -65,7 +66,7 @@ public class HTTPBodyHandler implements Handler {
 
         String transferEncoding = request.getFields().get(HttpHeader.TRANSFER_ENCODING);
         if (HttpHeaderValue.CHUNKED.asString().equals(transferEncoding)) {
-            httpBodyHandlerSPI.pipedStream = new FilePipedStream(configuration.getTempFilePath());
+            httpBodyHandlerSPI.pipedStream = new ByteArrayPipedStream(4 * 1024);
         } else {
             long contentLength = request.getContentLength();
             if (contentLength <= 0) { // no content
@@ -80,17 +81,30 @@ public class HTTPBodyHandler implements Handler {
             }
         }
 
+        AtomicLong chunkedEncodingContentLength = new AtomicLong();
         ctx.content(buf -> {
             if (log.isDebugEnabled()) {
                 log.debug("http body handler received content size -> {}", buf.remaining());
             }
+
             try {
-                httpBodyHandlerSPI.pipedStream.getOutputStream().write(BufferUtils.toArray(buf));
+                if (HttpHeaderValue.CHUNKED.asString().equals(transferEncoding)) {
+                    if (chunkedEncodingContentLength.addAndGet(buf.remaining()) > configuration.getBodyBufferThreshold()
+                            && httpBodyHandlerSPI.pipedStream instanceof ByteArrayPipedStream) {
+                        // chunked encoding content dump to temp file
+                        IO.close(httpBodyHandlerSPI.pipedStream.getOutputStream());
+                        FilePipedStream filePipedStream = new FilePipedStream(configuration.getTempFilePath());
+                        IO.copy(httpBodyHandlerSPI.pipedStream.getInputStream(), filePipedStream.getOutputStream());
+                        filePipedStream.getOutputStream().write(BufferUtils.toArray(buf));
+                        httpBodyHandlerSPI.pipedStream = filePipedStream;
+                    } else {
+                        httpBodyHandlerSPI.pipedStream.getOutputStream().write(BufferUtils.toArray(buf));
+                    }
+                } else {
+                    httpBodyHandlerSPI.pipedStream.getOutputStream().write(BufferUtils.toArray(buf));
+                }
             } catch (IOException e) {
                 log.error("http server receives http body exception", e);
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("http body handler wrote data to piped stream -> {}", buf.remaining());
             }
         }).contentComplete(req -> {
             try {

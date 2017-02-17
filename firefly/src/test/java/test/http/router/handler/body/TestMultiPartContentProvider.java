@@ -11,6 +11,7 @@ import javax.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,7 +64,7 @@ public class TestMultiPartContentProvider {
             list.add(buf);
         }
         String value = BufferUtils.toString(list);
-        System.out.println(value);
+        Assert.assertThat(value.length(), greaterThan(0));
         System.out.println(multiPartProvider.getLength());
         Assert.assertThat(multiPartProvider.getLength(), lessThan(0L));
     }
@@ -83,11 +84,9 @@ public class TestMultiPartContentProvider {
         for (ByteBuffer buf : multiPartProvider) {
             list.add(buf);
         }
-        String value = BufferUtils.toString(list);
-        System.out.println(value);
-
         System.out.println(multiPartProvider.getLength());
         Assert.assertThat(multiPartProvider.getLength(), greaterThan(0L));
+        Assert.assertThat(multiPartProvider.getLength(), is(BufferUtils.remaining(list)));
     }
 
     @Test
