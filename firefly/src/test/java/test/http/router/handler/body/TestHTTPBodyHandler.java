@@ -6,7 +6,6 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2ServerBuilder;
-import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
@@ -37,7 +36,7 @@ public class TestHTTPBodyHandler {
         for (int i = 0; i < dataSize; i++) {
             bigData.append(i);
         }
-        byte[] data = StringUtils.getBytes(bigData.toString());
+        byte[] data = $.string.getBytes(bigData.toString());
         System.out.println("data len: " + data.length);
 
         Phaser phaser = new Phaser(5);
@@ -94,7 +93,7 @@ public class TestHTTPBodyHandler {
         for (int i = 0; i < dataSize; i++) {
             bigData.append(i);
         }
-        byte[] data = StringUtils.getBytes(bigData.toString());
+        byte[] data = $.string.getBytes(bigData.toString());
         System.out.println("data len: " + data.length);
 
         Phaser phaser = new Phaser(3);

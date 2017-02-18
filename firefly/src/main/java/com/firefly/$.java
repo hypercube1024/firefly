@@ -202,12 +202,12 @@ public interface $ {
             return StringUtils.escapeXML(str);
         }
 
-        static byte[] getUtf8Bytes(String s) {
-            return StringUtils.getUtf8Bytes(s);
-        }
-
         static byte[] getBytes(String s, String charset) {
             return StringUtils.getBytes(s, charset);
+        }
+
+        static byte[] getBytes(String s) {
+            return StringUtils.getUtf8Bytes(s);
         }
     }
 
