@@ -1,6 +1,7 @@
 package test.http.router.handler.body;
 
 import com.firefly.$;
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
@@ -13,6 +14,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.Phaser;
 
@@ -124,6 +126,71 @@ public class TestHTTPBodyHandler {
          .thenAccept(res -> {
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
              Assert.assertThat(res.getStringBody(), is("server received big data"));
+             phaser.arrive();
+         });
+
+        phaser.arriveAndAwaitAdvance();
+        httpServer.stop();
+        $.httpClient().stop();
+    }
+
+    @Test
+    public void testPostForm() {
+        String host = "localhost";
+        int port = 8086;
+        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
+        System.out.println(uri);
+
+        Phaser phaser = new Phaser(3);
+
+        HTTP2ServerBuilder httpServer = $.httpServer();
+        httpServer.router().post("/content/form").handler(ctx -> {
+            Assert.assertThat(ctx.getParameter("name"), is("你的名字"));
+            Assert.assertThat(ctx.getParameter("intro"), is("我要送些东西给你 我的孩子 因为我们同是漂泊在世界的溪流中的"));
+            ctx.end("server received form data");
+            phaser.arrive();
+        }).listen(host, port);
+
+        $.httpClient().post(uri + "/content/form")
+         .putFormParam("name", "你的名字")
+         .putFormParam("intro", "我要送些东西给你 我的孩子 因为我们同是漂泊在世界的溪流中的")
+         .submit()
+         .thenAccept(res -> {
+             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+             Assert.assertThat(res.getStringBody(), is("server received form data"));
+             phaser.arrive();
+         });
+
+        phaser.arriveAndAwaitAdvance();
+        httpServer.stop();
+        $.httpClient().stop();
+    }
+
+    @Test
+    public void testQueryParam() {
+        String host = "localhost";
+        int port = 8087;
+        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
+        System.out.println(uri);
+
+        Phaser phaser = new Phaser(3);
+
+        HTTP2ServerBuilder httpServer = $.httpServer();
+        httpServer.router().get("/query").handler(ctx -> {
+            Assert.assertThat(ctx.getParameter("name"), is("你的名字"));
+            Assert.assertThat(ctx.getParameter("intro"), is("我要送些东西给你 我的孩子 因为我们同是漂泊在世界的溪流中的"));
+            ctx.end("server received form data");
+            phaser.arrive();
+        }).listen(host, port);
+
+        UrlEncoded enc = $.uri.encode();
+        enc.put("name", "你的名字");
+        enc.put("intro", "我要送些东西给你 我的孩子 因为我们同是漂泊在世界的溪流中的");
+        $.httpClient().get(uri + "/query?" + enc.encode(StandardCharsets.UTF_8, true))
+         .submit()
+         .thenAccept(res -> {
+             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+             Assert.assertThat(res.getStringBody(), is("server received form data"));
              phaser.arrive();
          });
 

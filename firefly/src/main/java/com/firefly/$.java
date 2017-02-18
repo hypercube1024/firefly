@@ -3,6 +3,7 @@ package com.firefly;
 import com.firefly.client.http2.HTTP2ClientSingleton;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
@@ -213,6 +214,10 @@ public interface $ {
 
         static String newURI(String scheme, String server, int port, String path, String query) {
             return URIUtils.newURI(scheme, server, port, path, query);
+        }
+
+        static UrlEncoded encode() {
+            return new UrlEncoded();
         }
     }
 }

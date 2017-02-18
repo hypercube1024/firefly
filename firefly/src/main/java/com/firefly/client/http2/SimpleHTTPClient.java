@@ -1,8 +1,10 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
@@ -67,6 +69,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         Promise<HTTPOutputStream> promise;
         Action1<HTTPOutputStream> output;
         MultiPartContentProvider multiPartProvider;
+        UrlEncoded formUrlEncoded;
 
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
@@ -148,6 +151,39 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         public RequestBuilder addFilePart(String name, String fileName, ContentProvider content, HttpFields fields) {
             multiPartProvider().addFilePart(name, fileName, content, fields);
+            return this;
+        }
+
+        UrlEncoded formUrlEncoded() {
+            if (formUrlEncoded == null) {
+                formUrlEncoded = new UrlEncoded();
+                put(HttpHeader.CONTENT_TYPE, "application/x-www-form-urlencoded");
+            }
+            return formUrlEncoded;
+        }
+
+        public RequestBuilder addFormParam(String name, String value) {
+            formUrlEncoded().add(name, value);
+            return this;
+        }
+
+        public RequestBuilder addFormParam(String name, List<String> values) {
+            formUrlEncoded().addValues(name, values);
+            return this;
+        }
+
+        public RequestBuilder putFormParam(String name, String value) {
+            formUrlEncoded().put(name, value);
+            return this;
+        }
+
+        public RequestBuilder putFormParam(String name, List<String> values) {
+            formUrlEncoded().putValues(name, values);
+            return this;
+        }
+
+        public RequestBuilder removeFormParam(String name) {
+            formUrlEncoded().remove(name);
             return this;
         }
 
@@ -452,6 +488,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     log.error("SimpleHTTPClient gets output stream exception", t);
                     return null;
                 });
+            } else if (r.formUrlEncoded != null) {
+                String body = r.formUrlEncoded.encode(Charset.forName(simpleHTTPClientConfiguration.getCharacterEncoding()), true);
+                byte[] content = StringUtils.getBytes(body, simpleHTTPClientConfiguration.getCharacterEncoding());
+                connection.send(r.request, ByteBuffer.wrap(content), handler);
             } else {
                 connection.send(r.request, handler);
             }
