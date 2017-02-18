@@ -14,6 +14,7 @@ import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.ThreadUtils;
+import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
@@ -24,6 +25,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -150,6 +155,40 @@ public interface $ {
             } catch (IOException e) {
                 return null;
             }
+        }
+    }
+
+    interface buffer {
+        static byte[] toArray(ByteBuffer buffer) {
+            return BufferUtils.toArray(buffer);
+        }
+
+        static String toString(ByteBuffer buffer) {
+            return BufferUtils.toUTF8String(buffer);
+        }
+
+        static String toString(ByteBuffer buffer, Charset charset) {
+            return BufferUtils.toString(buffer, charset);
+        }
+
+        static int normalizeBufferSize(int capacity) {
+            return BufferUtils.normalizeBufferSize(capacity);
+        }
+
+        static String toString(List<ByteBuffer> list) {
+            return BufferUtils.toString(list);
+        }
+
+        static String toString(List<ByteBuffer> list, String charset) {
+            return BufferUtils.toString(list, charset);
+        }
+
+        static List<ByteBuffer> split(ByteBuffer buffer, int maxSize) {
+            return BufferUtils.split(buffer, maxSize);
+        }
+
+        static long remaining(Collection<ByteBuffer> collection) {
+            return BufferUtils.remaining(collection);
         }
     }
 

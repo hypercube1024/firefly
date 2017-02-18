@@ -3,7 +3,6 @@ package test.http.router.handler.body;
 import com.firefly.$;
 import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.HTTP2ServerBuilder;
-import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -11,7 +10,6 @@ import javax.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,9 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Phaser;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.*;
 
 /**
  * @author Pengtao Qiu
@@ -41,7 +37,7 @@ public class TestMultiPartContentProvider {
         for (ByteBuffer buf : multiPartProvider) {
             list.add(buf);
         }
-        String value = BufferUtils.toString(list);
+        String value = $.buffer.toString(list);
         System.out.println(value);
         System.out.println(multiPartProvider.getLength());
 
@@ -63,7 +59,7 @@ public class TestMultiPartContentProvider {
         for (ByteBuffer buf : multiPartProvider) {
             list.add(buf);
         }
-        String value = BufferUtils.toString(list);
+        String value = $.buffer.toString(list);
         Assert.assertThat(value.length(), greaterThan(0));
         System.out.println(multiPartProvider.getLength());
         Assert.assertThat(multiPartProvider.getLength(), lessThan(0L));
@@ -86,7 +82,7 @@ public class TestMultiPartContentProvider {
         }
         System.out.println(multiPartProvider.getLength());
         Assert.assertThat(multiPartProvider.getLength(), greaterThan(0L));
-        Assert.assertThat(multiPartProvider.getLength(), is(BufferUtils.remaining(list)));
+        Assert.assertThat(multiPartProvider.getLength(), is($.buffer.remaining(list)));
     }
 
     @Test

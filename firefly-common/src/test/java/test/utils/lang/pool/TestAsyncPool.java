@@ -111,7 +111,7 @@ public class TestAsyncPool {
         BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(maxSize, () -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
             new Thread(() -> {
-                ThreadUtils.sleep(500L);
+                ThreadUtils.sleep(100L);
                 int x = i.incrementAndGet();
                 TestPooledObject obj = new TestPooledObject(x);
                 queue.offer(obj);
@@ -128,7 +128,7 @@ public class TestAsyncPool {
                 try {
                     TestPooledObject obj = queue.poll(5, TimeUnit.SECONDS);
                     if (obj != null) {
-                        ThreadUtils.sleep(500L);
+                        ThreadUtils.sleep(100L);
                         obj.closed = true;
                     }
                 } catch (InterruptedException e) {
@@ -152,7 +152,7 @@ public class TestAsyncPool {
         BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(8, () -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
             new Thread(() -> {
-                ThreadUtils.sleep(500L);
+                ThreadUtils.sleep(100L);
                 int x = i.incrementAndGet();
                 if (x % 3 == 0) {
                     completable.failed(new CommonRuntimeException("test create pooled object: " + x + " exception"));
@@ -182,7 +182,7 @@ public class TestAsyncPool {
                 .thenAccept(o -> {
                     System.out.println("get o: " + o.getObject().i + "| created object size: " + pool.getCreatedObjectSize());
                     new Thread(() -> {
-                        ThreadUtils.sleep(500L);
+                        ThreadUtils.sleep(100L);
                         phaser.arrive();
                         pool.release(o);
                     }).start();

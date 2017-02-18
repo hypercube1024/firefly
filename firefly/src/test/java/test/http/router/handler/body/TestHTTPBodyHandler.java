@@ -7,7 +7,6 @@ import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -109,7 +108,7 @@ public class TestHTTPBodyHandler {
         }).listen(host, port);
 
         // post big data using chunked encoding
-        List<ByteBuffer> buffers = BufferUtils.split(ByteBuffer.wrap(data), 4 * 1024);
+        List<ByteBuffer> buffers = $.buffer.split(ByteBuffer.wrap(data), 4 * 1024);
         Promise.Completable<HTTPOutputStream> promise = new Promise.Completable<>();
         promise.thenAccept(output -> {
             try (HTTPOutputStream out = output) {
