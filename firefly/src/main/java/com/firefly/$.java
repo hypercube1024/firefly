@@ -44,6 +44,10 @@ public interface $ {
         return HTTP2ClientSingleton.getInstance().httpClient();
     }
 
+    static HTTP2ClientSingleton httpClientSingleton() {
+        return HTTP2ClientSingleton.getInstance();
+    }
+
     /**
      * Create an new HTTP client instance
      *

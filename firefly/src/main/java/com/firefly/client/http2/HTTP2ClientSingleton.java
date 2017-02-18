@@ -1,9 +1,11 @@
 package com.firefly.client.http2;
 
+import com.firefly.utils.lang.AbstractLifeCycle;
+
 /**
  * @author Pengtao Qiu
  */
-public class HTTP2ClientSingleton {
+public class HTTP2ClientSingleton extends AbstractLifeCycle {
 
     private static HTTP2ClientSingleton ourInstance = new HTTP2ClientSingleton();
 
@@ -15,11 +17,10 @@ public class HTTP2ClientSingleton {
     private volatile SimpleHTTPClientConfiguration configuration;
 
     private HTTP2ClientSingleton() {
-        init();
+        start();
     }
 
-    public synchronized SimpleHTTPClient httpClient() {
-        init();
+    public SimpleHTTPClient httpClient() {
         return httpClient;
     }
 
@@ -28,19 +29,7 @@ public class HTTP2ClientSingleton {
         return this;
     }
 
-    private HTTP2ClientSingleton init() {
-        if (httpClient != null) {
-            if (httpClient.isStopped()) {
-                create();
-            }
-            return this;
-        } else {
-            create();
-            return this;
-        }
-    }
-
-    private void create() {
+    protected void init() {
         if (configuration != null) {
             httpClient = new SimpleHTTPClient(configuration);
         } else {
@@ -48,11 +37,10 @@ public class HTTP2ClientSingleton {
         }
     }
 
-    public synchronized HTTP2ClientSingleton destroy() {
+    protected void destroy() {
         if (httpClient != null) {
             httpClient.stop();
             httpClient = null;
         }
-        return this;
     }
 }
