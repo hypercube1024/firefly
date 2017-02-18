@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.*;
 /**
  * @author Pengtao Qiu
  */
-public class TestMultiPartContentProvider {
+public class TestMultiPartContentProvider extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() {
@@ -87,11 +87,6 @@ public class TestMultiPartContentProvider {
 
     @Test
     public void testMultiPart() {
-        String host = "localhost";
-        int port = 8084;
-        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
-        System.out.println(uri);
-
         Phaser phaser = new Phaser(5);
 
         HTTP2ServerBuilder httpServer = $.httpServer();

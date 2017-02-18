@@ -29,6 +29,7 @@ abstract public class AbstractSessionHandler extends AbstractLifeCycle implement
     public void handle(RoutingContext ctx) {
         HTTPSessionHandlerSPI sessionHandlerSPI = new HTTPSessionHandlerSPIImpl(sessionStore, ctx, scheduler, configuration);
         ctx.setHTTPSessionHandlerSPI(sessionHandlerSPI);
+        ctx.next();
     }
 
     @Override

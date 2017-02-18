@@ -21,15 +21,10 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author Pengtao Qiu
  */
-public class TestHTTPBodyHandler {
+public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
     @Test
     public void testPostData() {
-        String host = "localhost";
-        int port = 8083;
-        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
-        System.out.println(uri);
-
         StringBuilder bigData = new StringBuilder();
         int dataSize = 1024 * 1024;
         for (int i = 0; i < dataSize; i++) {
@@ -82,11 +77,6 @@ public class TestHTTPBodyHandler {
 
     @Test
     public void testPostBigDataUsingChunkedEncoding() {
-        String host = "localhost";
-        int port = 8085;
-        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
-        System.out.println(uri);
-
         StringBuilder bigData = new StringBuilder();
         int dataSize = 1024 * 1024;
         for (int i = 0; i < dataSize; i++) {
@@ -134,11 +124,6 @@ public class TestHTTPBodyHandler {
 
     @Test
     public void testPostForm() {
-        String host = "localhost";
-        int port = 8086;
-        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
-        System.out.println(uri);
-
         Phaser phaser = new Phaser(3);
 
         HTTP2ServerBuilder httpServer = $.httpServer();
@@ -166,11 +151,6 @@ public class TestHTTPBodyHandler {
 
     @Test
     public void testQueryParam() {
-        String host = "localhost";
-        int port = 8087;
-        StringBuilder uri = $.uri.newURIBuilder("http", host, port);
-        System.out.println(uri);
-
         Phaser phaser = new Phaser(3);
 
         HTTP2ServerBuilder httpServer = $.httpServer();
