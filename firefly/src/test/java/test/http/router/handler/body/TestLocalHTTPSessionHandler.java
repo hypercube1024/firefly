@@ -25,7 +25,8 @@ public class TestLocalHTTPSessionHandler extends AbstractHTTPHandlerTest {
         int maxGetSession = 3;
         Phaser phaser = new Phaser(1 + maxGetSession);
         HTTP2ServerBuilder httpServer = $.httpServer();
-        httpServer.router().path("*").handler(new LocalHTTPSessionHandler(new HTTPSessionConfiguration()))
+        LocalHTTPSessionHandler sessionHandler = new LocalHTTPSessionHandler(new HTTPSessionConfiguration());
+        httpServer.router().path("*").handler(sessionHandler)
                   .router().path("*").handler(new DefaultErrorResponseHandler())
                   .router().post("/session/:name")
                   .handler(ctx -> {
@@ -51,39 +52,31 @@ public class TestLocalHTTPSessionHandler extends AbstractHTTPHandlerTest {
                   })
                   .listen(host, port);
 
-        List<Cookie> c = $.httpClient().post(uri + "/session/foo").submit()
-                          .thenApply(res -> {
-                              List<Cookie> cookies = res.getCookies();
-                              System.out.println(res.getStatus());
-                              System.out.println(cookies);
-                              System.out.println(res.getStringBody());
-                              Assert.assertThat(res.getStringBody(), is("create session success"));
-                              return cookies;
-                          })
-                          .thenApply(cookies -> {
-                              for (int i = 0; i < maxGetSession; i++) {
-                                  $.httpClient().get(uri + "/session/foo").cookies(cookies).submit()
-                                   .thenAccept(res2 -> {
-                                       String sessionFoo = res2.getStringBody();
-                                       System.out.println(sessionFoo);
-                                       Assert.assertThat(sessionFoo, is("session value is bar"));
-                                       phaser.arrive();
-                                   });
-                              }
-                              return cookies;
-                          }).get();
-
-//        $.thread.sleep(4000);
-//        $.httpClient().get(uri + "/session/foo").cookies(c).submit()
-//         .thenAccept(res2 -> {
-//             String body = res2.getStringBody();
-//             System.out.println(body);
-//             Assert.assertThat(body, is("session is invalid"));
-//             phaser.arrive();
-//         });
+        $.httpClient().post(uri + "/session/foo").submit()
+         .thenApply(res -> {
+             List<Cookie> cookies = res.getCookies();
+             System.out.println(res.getStatus());
+             System.out.println(cookies);
+             System.out.println(res.getStringBody());
+             Assert.assertThat(res.getStringBody(), is("create session success"));
+             return cookies;
+         })
+         .thenApply(cookies -> {
+             for (int i = 0; i < maxGetSession; i++) {
+                 $.httpClient().get(uri + "/session/foo").cookies(cookies).submit()
+                  .thenAccept(res2 -> {
+                      String sessionFoo = res2.getStringBody();
+                      System.out.println(sessionFoo);
+                      Assert.assertThat(sessionFoo, is("session value is bar"));
+                      phaser.arrive();
+                  });
+             }
+             return cookies;
+         }).get();
 
         phaser.arriveAndAwaitAdvance();
         httpServer.stop();
         $.httpClient().stop();
+        sessionHandler.stop();
     }
 }
