@@ -3,6 +3,7 @@ package com.firefly.net.tcp.aio;
 import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.net.buffer.ThreadSafeIOBufferPool;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
@@ -48,6 +49,7 @@ public class AsynchronousTcpSession implements Session {
     private boolean isWriting = false;
     private final Queue<OutputEntry<?>> outputBuffer = new LinkedList<>();
     private final BufferSizePredictor bufferSizePredictor = new AdaptiveBufferSizePredictor();
+    private static final BufferPool bufferPool = new ThreadSafeIOBufferPool(false);
 
     AsynchronousTcpSession(int sessionId, Config config, EventManager eventManager,
                            AsynchronousSocketChannel socketChannel) {
@@ -63,11 +65,10 @@ public class AsynchronousTcpSession implements Session {
         if (!isOpen())
             return;
 
-        final int bufferSize = BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize());
-        final ByteBuffer buf = ByteBuffer.allocate(bufferSize);
+        final ByteBuffer buf = bufferPool.acquire(bufferSizePredictor.nextBufferSize());
 
         if (log.isDebugEnabled()) {
-            log.debug("the session {} buffer size is {}", getSessionId(), bufferSize);
+            log.debug("the session {} buffer size is {}", getSessionId(), buf.remaining());
         }
         socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, this,
                 new CompletionHandler<Integer, AsynchronousTcpSession>() {
@@ -97,12 +98,14 @@ public class AsynchronousTcpSession implements Session {
                         } catch (Throwable t) {
                             eventManager.executeExceptionTask(session, t);
                         } finally {
+                            bufferPool.release(buf);
                             _read();
                         }
                     }
 
                     @Override
                     public void failed(Throwable t, AsynchronousTcpSession session) {
+                        bufferPool.release(buf);
                         if (t instanceof InterruptedByTimeoutException) {
                             if (log.isDebugEnabled()) {
                                 log.debug("the session {} reading data is timeout.", getSessionId());

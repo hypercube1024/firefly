@@ -23,7 +23,7 @@ public class TestLocalHTTPSessionHandler extends AbstractHTTPHandlerTest {
     @Test
     public void test() throws Exception {
         int maxGetSession = 3;
-        Phaser phaser = new Phaser(1 + maxGetSession + 1);
+        Phaser phaser = new Phaser(1 + maxGetSession);
         HTTP2ServerBuilder httpServer = $.httpServer();
         httpServer.router().path("*").handler(new LocalHTTPSessionHandler(new HTTPSessionConfiguration()))
                   .router().path("*").handler(new DefaultErrorResponseHandler())
@@ -73,14 +73,14 @@ public class TestLocalHTTPSessionHandler extends AbstractHTTPHandlerTest {
                               return cookies;
                           }).get();
 
-        $.thread.sleep(3000);
-        $.httpClient().get(uri + "/session/foo").cookies(c).submit()
-         .thenAccept(res2 -> {
-             String body = res2.getStringBody();
-             System.out.println(body);
-             Assert.assertThat(body, is("session is invalid"));
-             phaser.arrive();
-         });
+//        $.thread.sleep(4000);
+//        $.httpClient().get(uri + "/session/foo").cookies(c).submit()
+//         .thenAccept(res2 -> {
+//             String body = res2.getStringBody();
+//             System.out.println(body);
+//             Assert.assertThat(body, is("session is invalid"));
+//             phaser.arrive();
+//         });
 
         phaser.arriveAndAwaitAdvance();
         httpServer.stop();

@@ -6,7 +6,15 @@ import java.nio.ByteBuffer;
 
 public class ThreadSafeIOBufferPool implements BufferPool {
 
-    private final ThreadLocal<BufferPool> safeBufferPool = ThreadLocal.withInitial(IOBufferPool::new);
+    private final ThreadLocal<BufferPool> safeBufferPool;
+
+    public ThreadSafeIOBufferPool() {
+        this(true);
+    }
+
+    public ThreadSafeIOBufferPool(boolean directBuffer) {
+        safeBufferPool = ThreadLocal.withInitial(() -> new IOBufferPool(directBuffer));
+    }
 
     @Override
     public final ByteBuffer acquire(int size) {
@@ -16,5 +24,10 @@ public class ThreadSafeIOBufferPool implements BufferPool {
     @Override
     public final void release(ByteBuffer buffer) {
         safeBufferPool.get().release(buffer);
+    }
+
+    @Override
+    public int size() {
+        return safeBufferPool.get().size();
     }
 }
