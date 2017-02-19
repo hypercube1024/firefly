@@ -1,4 +1,4 @@
-package test.http.router.handler.body;
+package test.http.router.handler;
 
 import com.firefly.$;
 import org.junit.Before;
@@ -7,9 +7,9 @@ import org.junit.Before;
  * @author Pengtao Qiu
  */
 abstract public class AbstractHTTPHandlerTest {
-    final String host = "localhost";
-    static int port = 8000;
-    String uri;
+    protected final String host = "localhost";
+    protected static int port = 8000;
+    protected String uri;
 
     @Before
     public void init() {

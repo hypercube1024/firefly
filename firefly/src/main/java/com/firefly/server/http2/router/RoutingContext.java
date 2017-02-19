@@ -5,6 +5,7 @@ import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
+import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
@@ -191,4 +192,13 @@ public interface RoutingContext extends Closeable {
     String getRequestedSessionId();
 
     void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI);
+
+    // Template API
+    void renderTemplate(String resourceName, Object scope);
+
+    void renderTemplate(String resourceName, Object[] scopes);
+
+    void renderTemplate(String resourceName, List<Object> scopes);
+
+    void setTemplateHandlerSPI(TemplateHandlerSPI templateHandlerSPI);
 }

@@ -5,6 +5,7 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import org.junit.Assert;
 import org.junit.Test;
+import test.http.router.handler.AbstractHTTPHandlerTest;
 
 import javax.servlet.http.Part;
 import java.io.IOException;

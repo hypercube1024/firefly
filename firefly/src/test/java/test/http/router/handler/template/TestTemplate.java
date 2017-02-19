@@ -1,6 +1,7 @@
-package test.http.router.handler.error;
+package test.http.router.handler.template;
 
 import com.firefly.$;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import org.junit.Assert;
@@ -14,28 +15,22 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author Pengtao Qiu
  */
-public class TestErrorHandler extends AbstractHTTPHandlerTest {
+public class TestTemplate extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() {
-        Phaser phaser = new Phaser(3);
+        Phaser phaser = new Phaser(2);
 
         HTTP2ServerBuilder httpServer = $.httpServer();
-        httpServer.router().get("/").handler(ctx -> ctx.write("hello world! ").next())
-                  .router().get("/").handler(ctx -> ctx.end("end message"))
-                  .listen(host, port);
+        httpServer.router().get("/example").handler(ctx -> {
+            ctx.put(HttpHeader.CONTENT_TYPE, "text/plain");
+            ctx.renderTemplate("template/example.mustache", new Example());
+        }).listen(host, port);
 
-        $.httpClient().get(uri + "/").submit()
+        $.httpClient().get(uri + "/example").submit()
          .thenAccept(res -> {
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("hello world! end message"));
-             System.out.println(res.getStringBody());
-             phaser.arrive();
-         });
-
-        $.httpClient().get(uri + "/hello").submit()
-         .thenAccept(res -> {
-             Assert.assertThat(res.getStatus(), is(HttpStatus.NOT_FOUND_404));
+             Assert.assertThat(res.getFields().get(HttpHeader.CONTENT_TYPE), is("text/plain"));
              System.out.println(res.getStringBody());
              phaser.arrive();
          });
@@ -44,4 +39,5 @@ public class TestErrorHandler extends AbstractHTTPHandlerTest {
         httpServer.stop();
         $.httpClient().stop();
     }
+
 }

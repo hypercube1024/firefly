@@ -9,6 +9,7 @@ import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.concurrent.Promise;
 import org.junit.Assert;
 import org.junit.Test;
+import test.http.router.handler.AbstractHTTPHandlerTest;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

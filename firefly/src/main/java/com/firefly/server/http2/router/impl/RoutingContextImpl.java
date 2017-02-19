@@ -6,6 +6,7 @@ import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
+import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
@@ -32,6 +33,7 @@ public class RoutingContextImpl implements RoutingContext {
     private volatile RouterManager.RouterMatchResult current;
     private volatile HTTPBodyHandlerSPI httpBodyHandlerSPI;
     private volatile HTTPSessionHandlerSPI httpSessionHandlerSPI;
+    private volatile TemplateHandlerSPI templateHandlerSPI;
     private volatile boolean asynchronousRead;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
@@ -285,5 +287,31 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI) {
         this.httpSessionHandlerSPI = httpSessionHandlerSPI;
+    }
+
+    @Override
+    public void renderTemplate(String resourceName, Object scope) {
+        if (templateHandlerSPI != null) {
+            templateHandlerSPI.renderTemplate(resourceName, scope);
+        }
+    }
+
+    @Override
+    public void renderTemplate(String resourceName, Object[] scopes) {
+        if (templateHandlerSPI != null) {
+            templateHandlerSPI.renderTemplate(resourceName, scopes);
+        }
+    }
+
+    @Override
+    public void renderTemplate(String resourceName, List<Object> scopes) {
+        if (templateHandlerSPI != null) {
+            templateHandlerSPI.renderTemplate(resourceName, scopes);
+        }
+    }
+
+    @Override
+    public void setTemplateHandlerSPI(TemplateHandlerSPI templateHandlerSPI) {
+        this.templateHandlerSPI = templateHandlerSPI;
     }
 }

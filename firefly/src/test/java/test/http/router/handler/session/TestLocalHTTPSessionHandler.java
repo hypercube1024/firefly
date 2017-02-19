@@ -1,4 +1,4 @@
-package test.http.router.handler.body;
+package test.http.router.handler.session;
 
 import com.firefly.$;
 import com.firefly.codec.http2.model.Cookie;
@@ -8,6 +8,7 @@ import com.firefly.server.http2.router.handler.session.HTTPSessionConfiguration;
 import com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler;
 import org.junit.Assert;
 import org.junit.Test;
+import test.http.router.handler.AbstractHTTPHandlerTest;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;
