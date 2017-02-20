@@ -1,6 +1,7 @@
 package com.firefly;
 
-import com.firefly.client.http2.HTTP2ClientSingleton;
+import com.firefly.client.http2.HTTPClientSingleton;
+import com.firefly.client.http2.HTTPsClientSingleton;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.encode.UrlEncoded;
@@ -47,19 +48,15 @@ public interface $ {
      * @return the HTTP client singleton instance.
      */
     static SimpleHTTPClient httpClient() {
-        return HTTP2ClientSingleton.getInstance().httpClient();
+        return HTTPClientSingleton.getInstance().httpClient();
     }
 
     static SimpleHTTPClient httpsClient() {
-        return HTTP2ClientSingleton.getInstance().httpsClient();
+        return HTTPsClientSingleton.getInstance().httpsClient();
     }
 
-    static SimpleHTTPClient httpsClient(SSLContextFactory sslContextFactory) {
-        return HTTP2ClientSingleton.getInstance().httpsClient(sslContextFactory);
-    }
-
-    static HTTP2ClientSingleton httpClientSingleton() {
-        return HTTP2ClientSingleton.getInstance();
+    static HTTPClientSingleton httpClientSingleton() {
+        return HTTPClientSingleton.getInstance();
     }
 
     /**

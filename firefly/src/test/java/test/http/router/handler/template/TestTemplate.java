@@ -10,6 +10,7 @@ import test.http.router.handler.AbstractHTTPHandlerTest;
 
 import java.util.concurrent.Phaser;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -31,6 +32,7 @@ public class TestTemplate extends AbstractHTTPHandlerTest {
          .thenAccept(res -> {
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
              Assert.assertThat(res.getFields().get(HttpHeader.CONTENT_TYPE), is("text/plain"));
+             Assert.assertThat(res.getStringBody().length(), greaterThan(0));
              System.out.println(res.getStringBody());
              phaser.arrive();
          });

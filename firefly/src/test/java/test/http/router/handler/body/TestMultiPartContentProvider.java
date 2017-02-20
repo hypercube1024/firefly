@@ -88,7 +88,7 @@ public class TestMultiPartContentProvider extends AbstractHTTPHandlerTest {
 
     @Test
     public void testMultiPart() {
-        Phaser phaser = new Phaser(5);
+        Phaser phaser = new Phaser(3);
 
         HTTP2ServerBuilder httpServer = $.httpServer();
         httpServer.router().post("/upload/string").handler(ctx -> {
@@ -109,7 +109,6 @@ public class TestMultiPartContentProvider extends AbstractHTTPHandlerTest {
                 e.printStackTrace();
             }
             ctx.end("server received multi part data");
-            phaser.arrive();
         }).router().post("/upload/poetry").handler(ctx -> {
             // upload poetry
             System.out.println(ctx.getFields());
@@ -124,7 +123,6 @@ public class TestMultiPartContentProvider extends AbstractHTTPHandlerTest {
                 e.printStackTrace();
             }
             ctx.end("server received poetry");
-            phaser.arrive();
         }).listen(host, port);
 
         $.httpClient().post(uri + "/upload/string")

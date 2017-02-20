@@ -1,6 +1,7 @@
 package test.http.router.handler;
 
 import com.firefly.$;
+import com.firefly.utils.RandomUtils;
 import org.junit.Before;
 
 /**
@@ -13,7 +14,7 @@ abstract public class AbstractHTTPHandlerTest {
 
     @Before
     public void init() {
-        port++;
+        port = (int)RandomUtils.random(3000, 65534);
         uri = $.uri.newURIBuilder("http", host, port).toString();
         System.out.println(uri);
     }
