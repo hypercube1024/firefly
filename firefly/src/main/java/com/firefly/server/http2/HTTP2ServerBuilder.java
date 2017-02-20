@@ -1,6 +1,7 @@
 package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.net.SSLContextFactory;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
@@ -14,6 +15,19 @@ public class HTTP2ServerBuilder {
     private SimpleHTTPServer server;
     private RouterManager routerManager;
     private Router currentRouter;
+
+    public HTTP2ServerBuilder httpsServer() {
+        SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
+        configuration.setSecureConnectionEnabled(true);
+        return httpServer(configuration, new HTTPBodyConfiguration());
+    }
+
+    public HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
+        SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
+        configuration.setSecureConnectionEnabled(true);
+        configuration.setSslContextFactory(sslContextFactory);
+        return httpServer(configuration, new HTTPBodyConfiguration());
+    }
 
     public HTTP2ServerBuilder httpServer() {
         return httpServer(new SimpleHTTPServerConfiguration(), new HTTPBodyConfiguration());

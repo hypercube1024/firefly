@@ -1,5 +1,6 @@
 package com.firefly.client.http2;
 
+import com.firefly.net.SSLContextFactory;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
 /**
@@ -17,10 +18,27 @@ public class HTTP2ClientSingleton extends AbstractLifeCycle {
     private volatile SimpleHTTPClientConfiguration configuration;
 
     private HTTP2ClientSingleton() {
-        start();
     }
 
     public SimpleHTTPClient httpClient() {
+        start();
+        return httpClient;
+    }
+
+    public SimpleHTTPClient httpsClient() {
+        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
+        configuration.setSecureConnectionEnabled(true);
+        config(configuration);
+        start();
+        return httpClient;
+    }
+
+    public SimpleHTTPClient httpsClient(SSLContextFactory sslContextFactory) {
+        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
+        configuration.setSecureConnectionEnabled(true);
+        configuration.setSslContextFactory(sslContextFactory);
+        config(configuration);
+        start();
         return httpClient;
     }
 

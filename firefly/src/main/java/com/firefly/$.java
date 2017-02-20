@@ -4,6 +4,7 @@ import com.firefly.client.http2.HTTP2ClientSingleton;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
@@ -47,6 +48,14 @@ public interface $ {
      */
     static SimpleHTTPClient httpClient() {
         return HTTP2ClientSingleton.getInstance().httpClient();
+    }
+
+    static SimpleHTTPClient httpsClient() {
+        return HTTP2ClientSingleton.getInstance().httpsClient();
+    }
+
+    static SimpleHTTPClient httpsClient(SSLContextFactory sslContextFactory) {
+        return HTTP2ClientSingleton.getInstance().httpsClient(sslContextFactory);
     }
 
     static HTTP2ClientSingleton httpClientSingleton() {
@@ -114,6 +123,14 @@ public interface $ {
     static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration,
                                          HTTPBodyConfiguration httpBodyConfiguration) {
         return new HTTP2ServerBuilder().httpServer(serverConfiguration, httpBodyConfiguration);
+    }
+
+    static HTTP2ServerBuilder httpsServer() {
+        return new HTTP2ServerBuilder().httpsServer();
+    }
+
+    static HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
+        return new HTTP2ServerBuilder().httpsServer(sslContextFactory);
     }
 
     static HTTP2ServerBuilder emptyHttpServer() {
