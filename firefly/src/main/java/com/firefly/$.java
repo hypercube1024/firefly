@@ -23,10 +23,7 @@ import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.URIUtils;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -169,6 +166,22 @@ public interface $ {
             } catch (IOException e) {
                 return null;
             }
+        }
+
+        static void copy(InputStream in, OutputStream out) throws IOException {
+            IO.copy(in, out);
+        }
+
+        static void copy(InputStream in, OutputStream out, long byteCount) throws IOException {
+            IO.copy(in, out, byteCount);
+        }
+
+        static void copy(Reader in, Writer out) throws IOException {
+            IO.copy(in, out);
+        }
+
+        static void copy(Reader in, Writer out, long byteCount) throws IOException {
+            IO.copy(in, out, byteCount);
         }
     }
 
