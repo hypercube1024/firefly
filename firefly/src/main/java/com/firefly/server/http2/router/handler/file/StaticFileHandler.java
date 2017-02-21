@@ -17,14 +17,14 @@ import java.util.List;
  */
 public class StaticFileHandler extends DefaultErrorResponseHandler {
 
-    private SitaticFileConfiguration configuration;
+    private StaticFileConfiguration configuration;
 
-    public StaticFileHandler(SitaticFileConfiguration configuration) {
+    public StaticFileHandler(StaticFileConfiguration configuration) {
         this.configuration = configuration;
     }
 
     public StaticFileHandler(String rootPath) {
-        this(new SitaticFileConfiguration());
+        this(new StaticFileConfiguration());
         configuration.setRootPath(rootPath);
     }
 

@@ -3,7 +3,7 @@ package com.firefly.server.http2.router.handler.file;
 /**
  * @author Pengtao Qiu
  */
-public class SitaticFileConfiguration {
+public class StaticFileConfiguration {
 
     private String rootPath;
     private int maxRangePart = 8;
