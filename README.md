@@ -66,7 +66,7 @@ Run and view
 ```
 http://localhost:8080/
 ```
-More detailed information, please refer to the [full document](http://www.fireflysource.com)
+More detailed information, please refer to the [full document](http://www.fireflysource.com/docs/http-server-and-client.html)
 
 #Contact information
 E-mail: qptkk@163.com  
