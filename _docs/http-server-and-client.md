@@ -41,7 +41,7 @@ Here’s a simple router example:
 ```java
 public class HelloHTTPServerAndClient {
     public static void main(String[] args) {
-        Phaser phaser = new Phaser(3);
+        Phaser phaser = new Phaser(2);
 
         HTTP2ServerBuilder httpServer = $.httpServer();
         httpServer.router().get("/").handler(ctx -> ctx.write("hello world! ").next())
