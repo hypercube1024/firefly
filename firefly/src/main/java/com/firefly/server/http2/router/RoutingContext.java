@@ -22,15 +22,21 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * A new RoutingContext(ctx) instance is created for each HTTP request.
+ * <p>
+ * You can visit the RoutingContext instance in the whole router chain. It provides HTTP request/response API and allows you to maintain arbitrary data that lives for the lifetime of the context. Contexts are discarded once they have been routed to the handler for the request.
+ * <p>
+ * The context also provides access to the Session, cookies and body for the request, given the correct handlers in the application.
+ *
  * @author Pengtao Qiu
  */
 public interface RoutingContext extends Closeable {
 
-    Object get(String key);
+    Object getAttribute(String key);
 
-    Object put(String key, Object value);
+    Object setAttribute(String key, Object value);
 
-    Object remove(String key);
+    Object removeAttribute(String key);
 
     ConcurrentHashMap<String, Object> getAttributes();
 

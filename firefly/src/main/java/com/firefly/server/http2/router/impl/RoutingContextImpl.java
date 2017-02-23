@@ -42,17 +42,17 @@ public class RoutingContextImpl implements RoutingContext {
     }
 
     @Override
-    public Object get(String key) {
+    public Object getAttribute(String key) {
         return request.get(key);
     }
 
     @Override
-    public Object put(String key, Object value) {
+    public Object setAttribute(String key, Object value) {
         return request.put(key, value);
     }
 
     @Override
-    public Object remove(String key) {
+    public Object removeAttribute(String key) {
         return request.remove(key);
     }
 
