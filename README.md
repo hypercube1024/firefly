@@ -50,6 +50,26 @@ Add maven dependency in your pom.xml.
 </dependency>
 ```
 
+Add log configuration file to the classpath.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<loggers xmlns="http://www.fireflysource.com/loggers"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
+    <logger>
+        <name>firefly-system</name>
+        <level>DEBUG</level>
+        <path>${log.path}</path>
+    </logger>
+
+    <logger>
+        <name>firefly-monitor</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+    </logger>
+</loggers>
+```
+
 Create a HTTP server in main function
 ```java
 public class HelloHTTPServer {

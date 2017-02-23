@@ -5,6 +5,8 @@ import com.firefly.client.http2.HTTPsClientSingleton;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.core.ApplicationContext;
+import com.firefly.core.XmlApplicationContext;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
@@ -96,6 +98,14 @@ public interface $ {
 
     static SimpleTcpServer createTCPServer(TcpServerConfiguration configuration) {
         return new SimpleTcpServer(configuration);
+    }
+
+    static ApplicationContext createApplicationContext() {
+        return new XmlApplicationContext();
+    }
+
+    static ApplicationContext createApplicationContext(String path) {
+        return new XmlApplicationContext(path);
     }
 
     /**
