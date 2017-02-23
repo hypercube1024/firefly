@@ -5,6 +5,15 @@ layout: document
 title: TCP server and client
 
 ---
+**Table of Contents**
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [AIO or NIO](#aio-or-nio)
+- [Writing TCP servers and clients](#writing-tcp-servers-and-clients)
+
+<!-- /TOC -->
+
+# AIO or NIO
 
 # Writing TCP servers and clients
 

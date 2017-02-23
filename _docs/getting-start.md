@@ -76,7 +76,7 @@ Add log configuration file to the classpath.
          xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
     <logger>
         <name>firefly-system</name>
-        <level>DEBUG</level>
+        <level>INFO</level>
         <path>${log.path}</path>
     </logger>
 

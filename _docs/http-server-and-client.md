@@ -70,7 +70,7 @@ The class $ provides primary API of Firefly, such as
 - I/O, string, json, thread ... utilities
 
 ## Route order
-By default routes are matched in the order they are added to the router.
+By default routes are matched in the order they are added to the router manager. **httpServer.router()** creates a router and adds it to the router manager.
 When a request arrives the router will step through each route and check if it matches, if it matches then the handler for that route will be called.
 
 ## Calling the next handler
