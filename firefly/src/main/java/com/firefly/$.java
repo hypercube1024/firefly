@@ -6,6 +6,7 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.core.ApplicationContext;
+import com.firefly.core.ApplicationContextSingleton;
 import com.firefly.core.XmlApplicationContext;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.tcp.SimpleTcpClient;
@@ -61,12 +62,17 @@ public interface $ {
     /**
      * Create an new HTTP client instance
      *
-     * @return new HTTP client instance
+     * @return an new HTTP client instance
      */
     static SimpleHTTPClient createHTTPClient() {
         return new SimpleHTTPClient();
     }
 
+    /**
+     * Create an new HTTP client instance
+     * @param configuration HTTP client configuration
+     * @return an new HTTP client instance
+     */
     static SimpleHTTPClient createHTTPClient(SimpleHTTPClientConfiguration configuration) {
         return new SimpleHTTPClient(configuration);
     }
@@ -74,28 +80,51 @@ public interface $ {
     /**
      * Create an new HTTP server instance
      *
-     * @return new HTTP server instance
+     * @return an new HTTP server instance
      */
     static SimpleHTTPServer createHTTPServer() {
         return new SimpleHTTPServer();
     }
 
+    /**
+     * Create an new HTTP server instance
+     * @param configuration HTTP server configuration
+     * @return an new HTTP server instance
+     */
     static SimpleHTTPServer createHTTPServer(SimpleHTTPServerConfiguration configuration) {
         return new SimpleHTTPServer(configuration);
     }
 
+    /**
+     * Create an new TCP client instance
+     * @return an new TCP client instance
+     */
     static SimpleTcpClient createTCPClient() {
         return new SimpleTcpClient();
     }
 
+    /**
+     * Create an new TCP client instance
+     * @param configuration TCP client configuration
+     * @return an new TCP client instance
+     */
     static SimpleTcpClient createTCPClient(TcpConfiguration configuration) {
         return new SimpleTcpClient(configuration);
     }
 
+    /**
+     * Create an new TCP server instance
+     * @return an new TCP server instance
+     */
     static SimpleTcpServer createTCPServer() {
         return new SimpleTcpServer();
     }
 
+    /**
+     * Create an new TCP server instance
+     * @param configuration TCP server configuration
+     * @return an new TCP server instance
+     */
     static SimpleTcpServer createTCPServer(TcpServerConfiguration configuration) {
         return new SimpleTcpServer(configuration);
     }
@@ -106,6 +135,28 @@ public interface $ {
 
     static ApplicationContext createApplicationContext(String path) {
         return new XmlApplicationContext(path);
+    }
+
+    /**
+     * Get bean from default application context. The default application context reads configuration firefly.xml in classpath.
+     *
+     * @param clazz the bean's Class object
+     * @param <T>   bean type
+     * @return A singleton bean instance by type
+     */
+    static <T> T getBean(Class<T> clazz) {
+        return ApplicationContextSingleton.getInstance().getApplicationContext().getBean(clazz);
+    }
+
+    /**
+     * Get bean from default application context. The default application context reads configuration firefly.xml in classpath.
+     *
+     * @param id  the bean's id
+     * @param <T> bean type
+     * @return A singleton bean instance by id
+     */
+    static <T> T getBean(String id) {
+        return ApplicationContextSingleton.getInstance().getApplicationContext().getBean(id);
     }
 
     /**
@@ -288,8 +339,8 @@ public interface $ {
     }
 
     interface uri {
-        static StringBuilder newURIBuilder(String scheme, String server, int port) {
-            return URIUtils.newURIBuilder(scheme, server, port);
+        static StringBuilder newURIBuilder(String schema, String server, int port) {
+            return URIUtils.newURIBuilder(schema, server, port);
         }
 
         static String newURI(String scheme, String server, int port, String path, String query) {
