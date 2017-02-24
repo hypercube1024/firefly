@@ -15,9 +15,8 @@ title: HTTP server and client
 	- [Routing Context](#routing-context)
 - [Capturing path parameters](#capturing-path-parameters)
 - [Routing by exact path](#routing-by-exact-path)
-- [Routing by paths that begin with something](#routing-by-paths-that-begin-with-something)
+- [Routing by paths with wildcard](#routing-by-paths-with-wildcard)
 - [Routing with regular expressions](#routing-with-regular-expressions)
-- [Capturing path parameters with regular expressions](#capturing-path-parameters-with-regular-expressions)
 - [Routing by HTTP method](#routing-by-http-method)
 - [Routing based on MIME type of request](#routing-based-on-mime-type-of-request)
 - [Routing based on MIME types acceptable by the client](#routing-based-on-mime-types-acceptable-by-the-client)
@@ -25,8 +24,7 @@ title: HTTP server and client
 - [Error handling](#error-handling)
 - [Handling sessions](#handling-sessions)
 - [Serving static resources](#serving-static-resources)
-- [CORS handling](#cors-handling)
-- [Template](#template)
+- [Rendering template](#rendering-template)
 
 <!-- /TOC -->
 
