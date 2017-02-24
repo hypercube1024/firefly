@@ -25,6 +25,7 @@ title: HTTP server and client
 - [Handling sessions](#handling-sessions)
 - [Serving static resources](#serving-static-resources)
 - [Rendering template](#rendering-template)
+- [Multipart file uploading](#multipart-file-uploading)
 
 <!-- /TOC -->
 
@@ -501,9 +502,54 @@ The **httpclient.jsonBody** puts the "Content-Type: application/json" header imp
 ```  
 
 # Error handling
+We provide default failure handler **com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler**  to handle some errors.
+
+```java
+public class ErrorHandlerDemo {
+    public static void main(String[] args) {
+        $.httpServer().router().get("/error")
+         .handler(ctx -> {
+             throw new CommonRuntimeException("perhaps some errors happen");
+         }).listen("localhost", 8080);
+    }
+}
+```
+
+Visit "http://localhost:8080/error" and view:
+
+```
+500 Server Error
+
+The server internal error.
+perhaps some errors happen
+
+powered by Firefly 4.0.21
+```
+
+As well as setting handlers to handle requests you can also set handlers to handle failures in routing. just like:
+
+```java
+$.httpServer().router().path("*")
+ .handler(ctx -> {
+  if (ctx.hasNext()) {
+    try {
+      ctx.next();
+    } catch (Exception e) {
+      // response some error information
+    }
+  } else {
+      // response 404
+  }
+})
+```
+
+Also you can extend **com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler** conveniently and sets some routing criteria to handle failure.
+
 
 # Handling sessions
 
 # Serving static resources
 
 # Rendering template
+
+# Multipart file uploading
