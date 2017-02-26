@@ -1,4 +1,4 @@
-# What is Firefly?
+# What is Firefly? [![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly)
 
 Firefly framework is a asynchronous java web framework. It helps you create a web application ***Easy*** and ***Quickly***. It provides MVC framework, asynchronous HTTP Server/Client, asynchronous TCP Server/Client and many other useful components for developing web applications, protocol servers, etc. That means you can easy deploy your web without any other java web containers, in short , it's containerless. It taps into the fullest potential of hardware using ***SEDA*** architecture, a highly customizable thread model.  
 
