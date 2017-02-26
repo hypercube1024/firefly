@@ -696,5 +696,74 @@ http://localhost:8080/static/poem.html
 ```
 
 # Rendering template
+Firefly includes dynamic page generation capabilities by including out of the box support for Mustache template engine. You can also easily add your own.
+
+The ideal template engine contains a list of requirements, like this:
+- Very little or no business logic in the templates
+- Composable components, not monolithic pages
+- Allows mock data within the template that is replaced at runtime
+- Works well with HTML5/CSS3 progressive enhancement
+
+Right now I am looking at mustache.js and its various server-side implementations as a possible solution to this. [Mustache.java](https://github.com/spullara/mustache.java) is a derivative of [mustache.js](http://mustache.github.io/mustache.5.html).
+
+```java
+public class TemplateDemo {
+    public static class Example {
+
+        List<Item> items() {
+            return Arrays.asList(
+                    new Item("Item 1", "$19.99", Arrays.asList(new Feature("New!"), new Feature("Awesome!"))),
+                    new Item("Item 2", "$29.99", Arrays.asList(new Feature("Old."), new Feature("Ugly.")))
+            );
+        }
+
+        static class Item {
+            Item(String name, String price, List<Feature> features) {
+                this.name = name;
+                this.price = price;
+                this.features = features;
+            }
+
+            String name, price;
+            List<Feature> features;
+        }
+
+        static class Feature {
+            Feature(String description) {
+                this.description = description;
+            }
+
+            String description;
+        }
+
+    }
+
+    public static void main(String[] args) {
+        $.httpServer().router().get("/example").handler(ctx -> {
+            ctx.put(HttpHeader.CONTENT_TYPE, "text/plain")
+               .renderTemplate("template/example.mustache", new Example());
+        }).listen("localhost", 8080);
+    }
+}
+```
+
+The Mustache template file is at "{classpath}/template/example.mustache".
+
+```mustache
+{% raw %}
+{{#items}}
+Name: {{name}}
+Price: {{price}}
+{{#features}}
+    Feature: {{description}}
+{{/features}}
+{{/items}}
+{% endraw %}
+```
+
+Run it and view:
+```
+http://localhost:8080/example
+```
 
 # Multipart file uploading

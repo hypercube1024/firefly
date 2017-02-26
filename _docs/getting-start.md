@@ -34,7 +34,7 @@ Some example events are:
 - some data has arrived on a socket
 - an HTTP server has received a request
 
-Firefly handles a lot of concurrency using just a small number of threads, so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.  
+Firefly handles a lot of concurrencies using just a small number of threads, so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.  
 
 With a conventional blocking API the calling thread might block when:
 - Thread.sleep()
