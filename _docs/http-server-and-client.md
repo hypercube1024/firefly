@@ -23,6 +23,8 @@ title: HTTP server and client
 - [Combining routing criteria](#combining-routing-criteria)
 - [Error handling](#error-handling)
 - [Handling sessions](#handling-sessions)
+	- [Local session store](#local-session-store)
+	- [Remote session store](#remote-session-store)
 - [Serving static resources](#serving-static-resources)
 - [Rendering template](#rendering-template)
 - [Multipart file uploading](#multipart-file-uploading)
@@ -547,8 +549,151 @@ Also you can extend **com.firefly.server.http2.router.handler.error.AbstractErro
 
 
 # Handling sessions
+Firefly uses session cookies to identify a session. The session cookie is temporary and will be deleted by your browser when it’s closed.
+
+We don’t put the actual data of your session in the session cookie - the cookie simply uses an identifier to look-up the actual session on the server. The identifier is a random UUID generated using a secure random, so it should be effectively unguessable.
+
+Cookies are passed across the wire in HTTP requests and responses so we recommend you to enable HTTPS when sessions are being used.
+
+## Local session store
+
+In this case, we use the local session store, sessions are stored locally in memory and only available in this instance.
+
+This store is appropriate if you have just a single Firefly instance of you are using sticky sessions in your application and have configured your load balancer to always route HTTP requests to the same Firefly instance.
+
+```java
+public class LocalSessionDemo {
+    public static void main(String[] args) throws Exception {
+        String host = "localhost";
+        int port = 8081;
+        String uri = "https://" + host + ":" + port;
+
+        int maxGetSession = 3;
+        Phaser phaser = new Phaser(1 + maxGetSession + 1);
+
+        HTTP2ServerBuilder httpsServer = $.httpsServer();
+        LocalHTTPSessionHandler sessionHandler = new LocalHTTPSessionHandler(new HTTPSessionConfiguration());
+        httpsServer.router().path("*").handler(sessionHandler)
+                   .router().path("*").handler(new DefaultErrorResponseHandler())
+                   .router().post("/session/:name")
+                   .handler(ctx -> {
+                       String name = ctx.getRouterParameter("name");
+                       System.out.println("the path param -> " + name);
+                       HttpSession session = ctx.getSession(true);
+                       session.setAttribute(name, "bar");
+                       // 1 second later, the session will expire
+                       session.setMaxInactiveInterval(1);
+                       ctx.end("create session success");
+                   })
+                   .router().get("/session/:name")
+                   .handler(ctx -> {
+                       HttpSession session = ctx.getSession();
+                       if (session != null) {
+                           ctx.end("session value is " + session.getAttribute("foo"));
+                       } else {
+                           ctx.end("session is invalid");
+                       }
+                   })
+                   .listen(host, port);
+
+        List<Cookie> c
+                = $.httpsClient().post(uri + "/session/foo").submit()
+                   .thenApply(res -> {
+                       List<Cookie> cookies = res.getCookies();
+                       System.out.println(res.getStatus());
+                       System.out.println(cookies);
+                       System.out.println(res.getStringBody());
+                       return cookies;
+                   })
+                   .thenApply(cookies -> {
+                       for (int i = 0; i < maxGetSession; i++) {
+                           $.httpsClient().get(uri + "/session/foo").cookies(cookies).submit()
+                            .thenAccept(res2 -> {
+                                String sessionFoo = res2.getStringBody();
+                                System.out.println(sessionFoo);
+                                phaser.arrive();
+                            });
+                       }
+                       return cookies;
+                   }).get();
+
+        $.thread.sleep(3000L); // the session expired
+        $.httpsClient().get(uri + "/session/foo").cookies(c).submit()
+         .thenAccept(res -> {
+             String sessionFoo = res.getStringBody();
+             System.out.println(sessionFoo);
+             phaser.arrive();
+         });
+
+        phaser.arriveAndAwaitAdvance();
+        httpsServer.stop();
+        $.httpsClient().stop();
+        sessionHandler.stop();
+    }
+}
+```
+
+In above example, we show how to use local session store and set session expired time, run it result:
+
+```
+the path param -> foo
+200
+[Cookie [name=jsessionid, value=2df1970e-62c4-4da6-9a7d-0fd874309f14, comment=null, domain=null, maxAge=-1, path=/, secure=false, version=0, isHttpOnly=false]]
+create session success
+session value is bar
+session value is bar
+session value is bar
+session is invalid
+```
+
+## Remote session store
+Usually we store session in a distributed map which is accessible across the Firefly cluster, such as Redis, Memcached and so on.
+
+Just two steps:
+- Implement "com.firefly.server.http2.router.handler.session.SessionStore", and store session in a remote map.
+- Extend "com.firefly.server.http2.router.handler.session.AbstractSessionHandler", and implement factory method "createSessionStore".
+
+```java
+public class RemoteHTTPSessionHandler extends AbstractSessionHandler {
+
+    public RemoteHTTPSessionHandler(HTTPSessionConfiguration configuration) {
+        super(configuration);
+    }
+
+    @Override
+    public SessionStore createSessionStore() {
+        return new RemoteSessionStore();
+    }
+
+}
+```
 
 # Serving static resources
+Firefly comes with an out of the box handler for serving static web resources so you can write static web servers very easily.
+
+To serve static resources such as .html, .css, .js or any other static resource, you use an instance of "StaticFileHandler".
+
+Any requests to paths handled by the static handler will result in files being served from a directory on the file system or from the classpath.
+
+In the following example all requests to paths starting with /static/ will get served from the classpath.
+
+```java
+public class StaticFileDemo {
+    public static void main(String[] args) throws Exception {
+        Path path = Paths.get(StaticFileDemo.class.getResource("/").toURI());
+        $.httpServer().router().get("/static/*")
+         .handler(new StaticFileHandler(path.toAbsolutePath().toString()))
+         .listen("localhost", 8080);
+    }
+}
+```
+
+For example, if there was a request with path "/static/poem.html" the static serve will look for a file in the directory "{classpath}/static/poem.html".
+
+You can find this demo in the project "firefly-example", run and view:
+```
+http://localhost:8080/static/poem.html
+```
 
 # Rendering template
 
