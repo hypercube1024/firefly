@@ -1,22 +1,21 @@
 package com.firefly.server.http2.router.handler.session;
 
-import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.time.Millisecond100Clock;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
+import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Pengtao Qiu
  */
-public class HTTPSessionImpl implements HttpSession {
+public class HTTPSessionImpl implements HttpSession, Serializable {
 
     private volatile int maxInactiveInterval;
     private final ConcurrentMap<String, Object> attributes = new ConcurrentHashMap<>();
