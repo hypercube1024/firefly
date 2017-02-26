@@ -20,6 +20,6 @@ public interface HTTPTunnelConnection extends HTTPConnection {
 
     void write(FileRegion file, Callback callback);
 
-    void content(Action1<ByteBuffer> content);
+    void receive(Action1<ByteBuffer> content);
 
 }

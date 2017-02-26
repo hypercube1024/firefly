@@ -43,13 +43,5 @@ public class TestAnnotationIoc {
 		Assert.assertThat(m.getNum(), is(3));
 		Assert.assertThat(true, is(m.isInitial()));
 	}
-
-	@Test
-	public void testSingle() {
-		AddService t = applicationContext.getBean("addService");
-		t.getI();
-		t.getI();
-		Assert.assertThat(t.getI(), greaterThan(0));
-	}
 	
 }

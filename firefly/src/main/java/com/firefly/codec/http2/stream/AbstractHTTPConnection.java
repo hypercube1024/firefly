@@ -66,6 +66,36 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     }
 
     @Override
+    public long getOpenTime() {
+        return tcpSession.getOpenTime();
+    }
+
+    @Override
+    public long getCloseTime() {
+        return tcpSession.getCloseTime();
+    }
+
+    @Override
+    public long getDuration() {
+        return tcpSession.getDuration();
+    }
+
+    @Override
+    public long getLastReadTime() {
+        return tcpSession.getLastReadTime();
+    }
+
+    @Override
+    public long getLastWrittenTime() {
+        return tcpSession.getLastWrittenTime();
+    }
+
+    @Override
+    public long getLastActiveTime() {
+        return tcpSession.getLastActiveTime();
+    }
+
+    @Override
     public long getReadBytes() {
         return tcpSession.getReadBytes();
     }
@@ -73,6 +103,11 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     @Override
     public long getWrittenBytes() {
         return tcpSession.getWrittenBytes();
+    }
+
+    @Override
+    public long getIdleTimeout() {
+        return tcpSession.getIdleTimeout();
     }
 
     @Override
@@ -86,13 +121,13 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     }
 
     @Override
-    public HTTPConnection closedListener(Action1<HTTPConnection> closedListener) {
+    public HTTPConnection close(Action1<HTTPConnection> closedListener) {
         this.closedListener = closedListener;
         return this;
     }
 
     @Override
-    public HTTPConnection exceptionListener(Action2<HTTPConnection, Throwable> exceptionListener) {
+    public HTTPConnection exception(Action2<HTTPConnection, Throwable> exceptionListener) {
         this.exceptionListener = exceptionListener;
         return this;
     }

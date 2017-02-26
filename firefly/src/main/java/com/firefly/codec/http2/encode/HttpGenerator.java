@@ -1,5 +1,6 @@
 package com.firefly.codec.http2.encode;
 
+import com.firefly.Version;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.HttpTokens.EndOfContent;
 import com.firefly.utils.StringUtils;
@@ -44,7 +45,16 @@ public class HttpGenerator {
         START, COMMITTED, COMPLETING, COMPLETING_1XX, END
     }
 
-    public enum Result {NEED_CHUNK, NEED_INFO, NEED_HEADER, NEED_CHUNK_TRAILER, FLUSH, CONTINUE, SHUTDOWN_OUT, DONE}
+    public enum Result {
+        NEED_CHUNK,             // Need a small chunk buffer of CHUNK_SIZE
+        NEED_INFO,              // Need the request/response metadata info
+        NEED_HEADER,            // Need a buffer to build HTTP headers into
+        NEED_CHUNK_TRAILER,     // Need a large chunk buffer for last chunk and trailers
+        FLUSH,                  // The buffers previously generated should be flushed
+        CONTINUE,               // Continue generating the message
+        SHUTDOWN_OUT,           // Need EOF to be signaled
+        DONE                    // Message generation complete
+    }
 
     // other statics
     public static final int CHUNK_SIZE = 12;
@@ -738,9 +748,9 @@ public class HttpGenerator {
     private static final byte[] TRANSFER_ENCODING_CHUNKED = StringUtils.getBytes("Transfer-Encoding: chunked\015\012");
     private static final byte[][] SEND = new byte[][]{
             new byte[0],
-            StringUtils.getBytes("Server: Firefly(4.x.x)\015\012"),
-            StringUtils.getBytes("X-Powered-By: Firefly(4.x.x)\015\012"),
-            StringUtils.getBytes("Server: Firefly(4.x.x)\015\012X-Powered-By: Firefly(4.x.x)\015\012")
+            StringUtils.getBytes("Server: Firefly(" + Version.value + ")\015\012"),
+            StringUtils.getBytes("X-Powered-By: Firefly(" + Version.value + ")\015\012"),
+            StringUtils.getBytes("Server: Firefly(" + Version.value + ")\015\012X-Powered-By: Firefly(" + Version.value + ")\015\012")
     };
 
     /* ------------------------------------------------------------------------------- */

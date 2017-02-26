@@ -14,7 +14,7 @@
 				<value type="java.lang.String">dfdf</value>
 				<ref bean="person"/>
 				<map>
-					<entry key="2.2" value="3.3"></entry>
+					<entry key="2.2" value="3.3"/>
 					<entry>
 						<key>
 							dddd
@@ -75,7 +75,7 @@
 	<bean id="mapService" class="test.component3.MapService">
 		<property name="map">
 			<map>
-				<entry key="1" value="www" ></entry>
+				<entry key="1" value="www"/>
 				<entry>
 					<key>ddd</key>
 					<value>sfsfsfsf</value>

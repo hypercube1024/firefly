@@ -2,6 +2,7 @@ package com.firefly.utils.log.file;
 
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.collection.Trie;
+import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
@@ -40,7 +41,7 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
         long lastFlushedTime = Millisecond100Clock.currentTimeMillis();
         while (true) {
             try {
-                for (LogItem logItem = null; (logItem = queue.poll(1000, TimeUnit.MILLISECONDS)) != null; ) {
+                for (LogItem logItem; (logItem = queue.poll(1000, TimeUnit.MILLISECONDS)) != null; ) {
                     Log log = LogFactory.getInstance().getLog(logItem.getName());
                     if (log instanceof FileLog) {
                         ((FileLog) log).write(logItem);
@@ -51,12 +52,8 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
                 lastFlushedTime = flushAllPerSecond(lastFlushedTime);
             } catch (Throwable e) {
                 System.err.println("flush exception, " + e.getMessage());
-                try {
-                    // avoid CPU exhausting
-                    Thread.sleep(2000L);
-                } catch (InterruptedException e1) {
-                    System.err.println("sleep exception, " + e1.getMessage());
-                }
+                // avoid CPU exhausting
+                ThreadUtils.sleep(1000L);
             }
 
             if (!start && queue.isEmpty()) {

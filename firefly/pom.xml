@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.0.20</version>
+        <version>4.0.21</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -29,10 +29,6 @@
                 <filtering>true</filtering>
                 <directory>src/test/resources</directory>
             </testResource>
-            <testResource>
-                <filtering>false</filtering>
-                <directory>src/test/appHome</directory>
-            </testResource>
         </testResources>
     </build>
 
@@ -40,10 +36,6 @@
         <dependency>
             <groupId>com.fireflysource</groupId>
             <artifactId>firefly-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fireflysource</groupId>
-            <artifactId>firefly-template</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fireflysource</groupId>
@@ -57,6 +49,11 @@
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <version>0.9.4</version>
         </dependency>
 
         <dependency>

@@ -27,15 +27,11 @@ public class LogFactory extends AbstractLifeCycle {
 		logTask = new FileLogTask(logTree);
 
 		LogConfigParser parser = new XmlLogConfigParser();
-		boolean success = parser.parse((fileLog) -> {
-			logTree.put(fileLog.getName(), fileLog);
-		});
+		boolean success = parser.parse((fileLog) -> logTree.put(fileLog.getName(), fileLog));
 
 		if (!success) {
 			parser = new PropertiesLogConfigParser();
-			success = parser.parse((fileLog) -> {
-				logTree.put(fileLog.getName(), fileLog);
-			});
+			success = parser.parse((fileLog) -> logTree.put(fileLog.getName(), fileLog));
 		}
 
 		if (!success) {

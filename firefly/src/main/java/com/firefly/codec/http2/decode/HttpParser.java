@@ -1300,6 +1300,9 @@ public class HttpParser {
 
                 case CONTENT: {
                     long content = _contentLength - _contentPosition;
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("parse http body, {}, {}, {}", content, _contentLength, _contentPosition);
+                    }
                     if (content == 0) {
                         setState(State.END);
                         return handleContentMessage();

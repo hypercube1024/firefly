@@ -147,7 +147,7 @@ public class MimeTypes {
                 __assumedEncodings.put(type.asString(), type.getCharsetString());
         }
 
-        String resourceName = "com/fireflysource/codec/http2/model/mime.properties";
+        String resourceName = "com/firefly/example/codec/http2/model/mime.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null) {
                 log.warn("Missing mime-type resource: {}", resourceName);
@@ -174,7 +174,7 @@ public class MimeTypes {
             log.warn(e.toString());
         }
 
-        resourceName = "com/fireflysource/codec/http2/model/encoding.properties";
+        resourceName = "com/firefly/example/codec/http2/model/encoding.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null)
                 log.warn("Missing encoding resource: {}", resourceName);
@@ -552,5 +552,30 @@ public class MimeTypes {
             return value;
         return builder.toString();
 
+    }
+
+    public static String getContentTypeMIMEType(String contentType) {
+        if (contentType != null) {
+            // parsing content-type
+            String[] strings = StringUtils.split(contentType, ';');
+            return strings[0];
+        } else {
+            return null;
+        }
+    }
+
+    public static List<String> getAcceptMIMETypes(String accept) {
+        if (accept != null) {
+            List<String> list = new ArrayList<>();
+            // parsing accept
+            String[] strings = StringUtils.split(accept, ',');
+            for (String string : strings) {
+                String[] s = StringUtils.split(string, ';');
+                list.add(s[0].trim());
+            }
+            return list;
+        } else {
+            return Collections.emptyList();
+        }
     }
 }

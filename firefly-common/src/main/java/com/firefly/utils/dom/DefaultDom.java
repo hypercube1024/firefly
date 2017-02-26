@@ -30,7 +30,7 @@ public class DefaultDom implements Dom {
     public Document getDocument(String file) {
         try (InputStream is = DefaultDom.class.getResourceAsStream("/" + file)) {
             if (is == null) {
-                return null;
+                throw new CommonRuntimeException("the configuration file: " + file + " is not found");
             }
             Document doc = db.parse(is);
             return doc;

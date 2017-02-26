@@ -5,6 +5,7 @@ import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.json.Json;
@@ -159,10 +160,10 @@ public class SimpleRequest {
     public List<Cookie> getCookies() {
         if (cookies == null) {
             String v = request.getFields().get(HttpHeader.COOKIE);
-            cookies = CookieParser.parseCookie(v);
-            return cookies;
-        } else {
-            return cookies;
+            if (StringUtils.hasText(v)) {
+                cookies = CookieParser.parseCookie(v);
+            }
         }
+        return cookies;
     }
 }

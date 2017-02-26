@@ -1,5 +1,6 @@
 package test.codec.http2.encode;
 
+import com.firefly.Version;
 import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.model.*;
 import com.firefly.utils.io.BufferUtils;
@@ -174,16 +175,16 @@ public class HttpGeneratorServerTest {
         head = BufferUtils.toString(header);
         BufferUtils.clear(header);
         assertThat(head, containsString("HTTP/1.1 200 OK"));
-        assertThat(head, containsString("Server: Firefly(4.x.x)"));
-        assertThat(head, containsString("X-Powered-By: Firefly(4.x.x)"));
+        assertThat(head, containsString("Server: Firefly(" + Version.value + ")"));
+        assertThat(head, containsString("X-Powered-By: Firefly(" + Version.value + ")"));
         gen.reset();
         gen.generateResponse(infoF, false, header, null, null, true);
         head = BufferUtils.toString(header);
         BufferUtils.clear(header);
         assertThat(head, containsString("HTTP/1.1 200 OK"));
-        assertThat(head, not(containsString("Server: Firefly(4.x.x)")));
+        assertThat(head, not(containsString("Server: Firefly(" + Version.value + ")")));
         assertThat(head, containsString("Server: SomeServer"));
-        assertThat(head, containsString("X-Powered-By: Firefly(4.x.x)"));
+        assertThat(head, containsString("X-Powered-By: Firefly(" + Version.value + ")"));
         assertThat(head, containsString("X-Powered-By: SomePower"));
         gen.reset();
 
@@ -192,16 +193,16 @@ public class HttpGeneratorServerTest {
         head = BufferUtils.toString(header);
         BufferUtils.clear(header);
         assertThat(head, containsString("HTTP/1.1 200 OK"));
-        assertThat(head, not(containsString("Server: Firefly(4.x.x)")));
-        assertThat(head, not(containsString("X-Powered-By: Firefly(4.x.x)")));
+        assertThat(head, not(containsString("Server: Firefly(" + Version.value + ")")));
+        assertThat(head, not(containsString("X-Powered-By: Firefly(" + Version.value + ")")));
         gen.reset();
         gen.generateResponse(infoF, false, header, null, null, true);
         head = BufferUtils.toString(header);
         BufferUtils.clear(header);
         assertThat(head, containsString("HTTP/1.1 200 OK"));
-        assertThat(head, not(containsString("Server: Firefly(4.x.x)")));
+        assertThat(head, not(containsString("Server: Firefly(" + Version.value + ")")));
         assertThat(head, containsString("Server: SomeServer"));
-        assertThat(head, not(containsString("X-Powered-By: Firefly(4.x.x)")));
+        assertThat(head, not(containsString("X-Powered-By: Firefly(" + Version.value + ")")));
         assertThat(head, containsString("X-Powered-By: SomePower"));
         gen.reset();
     }

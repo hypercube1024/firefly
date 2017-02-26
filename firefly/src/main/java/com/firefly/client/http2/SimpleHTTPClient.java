@@ -1,8 +1,10 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
@@ -66,6 +68,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         Promise<HTTPOutputStream> promise;
         Action1<HTTPOutputStream> output;
+        MultiPartContentProvider multiPartProvider;
+        UrlEncoded formUrlEncoded;
 
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
@@ -129,6 +133,57 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         public RequestBuilder output(Promise<HTTPOutputStream> promise) {
             this.promise = promise;
+            return this;
+        }
+
+        MultiPartContentProvider multiPartProvider() {
+            if (multiPartProvider == null) {
+                multiPartProvider = new MultiPartContentProvider();
+                put(HttpHeader.CONTENT_TYPE, multiPartProvider.getContentType());
+            }
+            return multiPartProvider;
+        }
+
+        public RequestBuilder addFieldPart(String name, ContentProvider content, HttpFields fields) {
+            multiPartProvider().addFieldPart(name, content, fields);
+            return this;
+        }
+
+        public RequestBuilder addFilePart(String name, String fileName, ContentProvider content, HttpFields fields) {
+            multiPartProvider().addFilePart(name, fileName, content, fields);
+            return this;
+        }
+
+        UrlEncoded formUrlEncoded() {
+            if (formUrlEncoded == null) {
+                formUrlEncoded = new UrlEncoded();
+                put(HttpHeader.CONTENT_TYPE, "application/x-www-form-urlencoded");
+            }
+            return formUrlEncoded;
+        }
+
+        public RequestBuilder addFormParam(String name, String value) {
+            formUrlEncoded().add(name, value);
+            return this;
+        }
+
+        public RequestBuilder addFormParam(String name, List<String> values) {
+            formUrlEncoded().addValues(name, values);
+            return this;
+        }
+
+        public RequestBuilder putFormParam(String name, String value) {
+            formUrlEncoded().put(name, value);
+            return this;
+        }
+
+        public RequestBuilder putFormParam(String name, List<String> values) {
+            formUrlEncoded().putValues(name, values);
+            return this;
+        }
+
+        public RequestBuilder removeFormParam(String name) {
+            formUrlEncoded().remove(name);
             return this;
         }
 
@@ -319,8 +374,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         AsynchronousPool<HTTPClientConnection> pool = getPool(r);
         pool.take().thenAccept(o -> {
             HTTPClientConnection connection = o.getObject();
-            connection.closedListener(conn -> pool.release(o))
-                      .exceptionListener((conn, exception) -> pool.release(o));
+            connection.close(conn -> pool.release(o))
+                      .exception((conn, exception) -> pool.release(o));
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
                 pool.release(o);
@@ -413,6 +468,30 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     }
                 };
                 connection.send(r.request, p, handler);
+            } else if (r.multiPartProvider != null) {
+                IO.close(r.multiPartProvider);
+                r.multiPartProvider.setListener(() -> log.debug("multi part content listener"));
+                if (r.multiPartProvider.getLength() > 0) {
+                    r.put(HttpHeader.CONTENT_LENGTH, String.valueOf(r.multiPartProvider.getLength()));
+                }
+                Promise.Completable<HTTPOutputStream> p = new Promise.Completable<>();
+                connection.send(r.request, p, handler);
+                p.thenAccept(output -> {
+                    try (HTTPOutputStream out = output) {
+                        for (ByteBuffer buf : r.multiPartProvider) {
+                            out.write(buf);
+                        }
+                    } catch (IOException e) {
+                        log.error("SimpleHTTPClient writes data exception", e);
+                    }
+                }).exceptionally(t -> {
+                    log.error("SimpleHTTPClient gets output stream exception", t);
+                    return null;
+                });
+            } else if (r.formUrlEncoded != null) {
+                String body = r.formUrlEncoded.encode(Charset.forName(simpleHTTPClientConfiguration.getCharacterEncoding()), true);
+                byte[] content = StringUtils.getBytes(body, simpleHTTPClientConfiguration.getCharacterEncoding());
+                connection.send(r.request, ByteBuffer.wrap(content), handler);
             } else {
                 connection.send(r.request, handler);
             }

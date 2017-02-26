@@ -1,18 +1,17 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.Connection;
+import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;
 
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-public interface TcpConnection {
+public interface TcpConnection extends Connection {
 
     TcpConnection receive(Action1<ByteBuffer> buffer);
-
-    TcpConnection exception(Action1<Throwable> exception);
 
     TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed);
 
@@ -50,31 +49,9 @@ public interface TcpConnection {
 
     TcpConnection write(FileRegion file);
 
-    Object getAttachment();
+    TcpConnection close(Action0 closeCallback);
 
-    void setAttachment(Object object);
-
-    int getSessionId();
-
-    long getOpenTime();
-
-    long getCloseTime();
-
-    long getDuration();
-
-    long getLastReadTime();
-
-    long getLastWrittenTime();
-
-    long getLastActiveTime();
-
-    long getReadBytes();
-
-    long getWrittenBytes();
-
-    TcpConnection closeCallback(Action0 closeCallback);
-
-    void close();
+    TcpConnection exception(Action1<Throwable> exception);
 
     void closeNow();
 
@@ -82,14 +59,6 @@ public interface TcpConnection {
 
     void shutdownInput();
 
-    int getState();
-
-    boolean isOpen();
-
-    InetSocketAddress getLocalAddress();
-
-    InetSocketAddress getRemoteAddress();
-
-    long getIdleTimeout();
+    Session.State getState();
 
 }
