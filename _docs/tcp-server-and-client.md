@@ -53,7 +53,9 @@ Here is table show the different of NIO, AIO, and BIO:
 </tbody>
 </table>
 
-The AIO provides good performance and scalability. Also, it's easy to use, so Firefly TCP server and client base on the AIO.
+The AIO provides good performance and scalability. Also, it's easy to use, so Firefly TCP framework just wraps AIO APIs simply and using a writing queue to avoid some common exceptions, such as "java.nio.channels.WritePendingException",  "java.nio.channels.AsynchronousCloseException" and so on.
+
+When the network card buffer is full, the user data will not send entirely. Firefly will retry to send data until the data is sent completely.
 
 
 # Writing TCP server and client
