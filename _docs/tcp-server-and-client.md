@@ -6,16 +6,57 @@ title: TCP server and client
 
 ---
 **Table of Contents**
+
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [AIO or NIO](#aio-or-nio)
-- [Writing TCP servers and clients](#writing-tcp-servers-and-clients)
+- [Writing TCP server and client](#writing-tcp-server-and-client)
 
 <!-- /TOC -->
 
 # AIO or NIO
 
-# Writing TCP servers and clients
+NIO bases on the Reactor pattern. When the socket flows readable or writable, the operating system will notify reference procedure, application of the current read into the buffer or write the operating system.
+
+Unlike NIO, when the read and write operation, can only directly call API read or write method. These two methods are asynchronous.  For a read operation, when the stream can be read,  the operating system will spread into the read buffer method and readable, and notify the application;  for a write operation, when the operating system will write transmission stream to write is completed, the operating system to inform application program.
+That can be understood as, read/write methods are asynchronous. After completion will take the initiative to call the callback function.
+
+Here is table show the different of NIO, AIO, and BIO:
+<table class="table table-striped table-hover ">
+<thead>
+<tr>
+  <th>#</th>
+  <th>NIO</th>
+  <th>AIO</th>
+  <th>BIO</th>
+</tr>
+</thead>
+<tbody>
+  <tr>
+    <td>Performance</td>
+    <td>good</td>
+    <td>good</td>
+    <td>poor scalability</td>
+  </tr>
+  <tr>
+    <td>Easy to use</td>
+    <td>complex</td>
+    <td>good</td>
+    <td>very good</td>
+  </tr>
+  <tr>
+    <td>Zero copy APIs</td>
+    <td>yes</td>
+    <td>no</td>
+    <td>no</td>
+  </tr>
+</tbody>
+</table>
+
+The AIO provides good performance and scalability. Also, it's easy to use, so Firefly TCP server and client base on the AIO.
+
+
+# Writing TCP server and client
 
 ```java
 @RunWith(Parameterized.class)

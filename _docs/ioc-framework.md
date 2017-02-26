@@ -6,4 +6,4 @@ title: IOC framework
 
 ---
 
-updating
+writing

@@ -6,4 +6,4 @@ title: Database access
 
 ---
 
-updating
+writing

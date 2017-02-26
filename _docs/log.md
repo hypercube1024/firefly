@@ -6,4 +6,4 @@ title: Log configuration
 
 ---
 
-updating
+writing

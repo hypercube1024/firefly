@@ -70,7 +70,7 @@ The class $ provides primary API of Firefly, such as
 - Creating application context
 - I/O, string, json, thread ... utilities
 
-It uses fluent style API to help you to build complex application.
+It uses fluent style API to help you to build a complex application.
 
 Chaining calls like this allows you to write code that’s a little bit less verbose. Of course, if you don’t like the fluent approach we don’t force you to do it that way, you can happily ignore it if you prefer and write your code using object-oriented (OO) style API. The following sections explain how to use them.
 
@@ -767,3 +767,70 @@ http://localhost:8080/example
 ```
 
 # Multipart file uploading
+
+```java
+public class MultipartDemo {
+    public static void main(String[] args) {
+        String host = "localhost";
+        int port = 8080;
+        String uri = "http://" + host + ":" + port;
+        Phaser phaser = new Phaser(3);
+
+        HTTP2ServerBuilder httpServer = $.httpServer();
+        httpServer.router().post("/upload/string").handler(ctx -> {
+            // small multi part data test case
+            Part test1 = ctx.getPart("test1");
+            Part test2 = ctx.getPart("test2");
+            try (InputStream input1 = test1.getInputStream();
+                 InputStream input2 = test2.getInputStream()) {
+                String value = $.io.toString(input1);
+                System.out.println(value);
+
+                String value2 = $.io.toString(input2);
+                System.out.println(value2);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ctx.end("server received multi part data");
+        }).router().post("/upload/poetry").handler(ctx -> {
+            // upload poetry
+            Part poetry = ctx.getPart("poetry");
+            System.out.println(poetry.getSubmittedFileName());
+            try (InputStream inputStream = $.class.getResourceAsStream("/poem.txt")) {
+                String poem = $.io.toString(inputStream);
+                System.out.println(poem);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ctx.end("server received poetry");
+        }).listen(host, port);
+
+        $.httpClient().post(uri + "/upload/string")
+         .addFieldPart("test1", new StringContentProvider("hello multi part1"), null)
+         .addFieldPart("test2", new StringContentProvider("hello multi part2"), null)
+         .submit()
+         .thenAccept(res -> {
+             System.out.println(res.getStringBody());
+             phaser.arrive();
+         });
+
+        InputStream inputStream = $.class.getResourceAsStream("/poem.txt");
+        InputStreamContentProvider inputStreamContentProvider = new InputStreamContentProvider(inputStream);
+        $.httpClient().post(uri + "/upload/poetry")
+         .addFilePart("poetry", "poem.txt", inputStreamContentProvider, null)
+         .submit()
+         .thenAccept(res -> {
+             System.out.println(res.getStringBody());
+             $.io.close(inputStreamContentProvider);
+             $.io.close(inputStream);
+             phaser.arrive();
+         });
+
+        phaser.arriveAndAwaitAdvance();
+        httpServer.stop();
+        $.httpClient().stop();
+    }
+}
+```
+
+The HTTP server uses the **ctx.getPart** to get content of multi-part format and the client uses the **httpclient.addFilePart** to upload content using multi-part format.
