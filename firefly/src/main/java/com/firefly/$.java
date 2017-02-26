@@ -161,13 +161,6 @@ public interface $ {
 
     /**
      * Use fluent API to create an new HTTP server instance.
-     * for example:
-     * <pre>
-     * $.httpServer()
-     * .router().get("/").handler(ctx -> ctx.write("hello world! ").next())
-     * .router().get("/").handler(ctx -> ctx.end("end message"))
-     * .listen("localhost", 8080);
-     * </pre>
      *
      * @return HTTP server builder API
      */
