@@ -13,26 +13,27 @@ Firefly core provides functionality for things like:
 
 # Event driven
 
-The Firefly APIs are largely event driven. This means that when things happen in Firefly that you are interested in, Firefly will call you by sending you events.
+The Firefly APIs are largely event-driven. It means that when things happen in Firefly that you are interested in, Firefly will call you by sending you events.
 
 Some example events are:
 - some data has arrived on a socket
 - an HTTP server has received a request
 
-Firefly handles a lot of concurrency using just a small number of threads, so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.  
+Firefly handles a lot of concurrencies using just a small number of threads, 
+so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.
 
 With a conventional blocking API the calling thread might block when:
 - Thread.sleep()
-- Waiting on a lock
+- Waiting on a Lock
 - Waiting on a mutex or monitor
-- Doing a long lived database operation and waiting for a result
+- Doing a long-lived database operation and waiting for a result
 - Call blocking I/O APIs
 
 In all the above cases, when your thread is waiting for a result it can’t do anything else - it’s effectively useless.
 
-This means that if you want a lot of concurrency using blocking APIs then you need a lot of threads to prevent your application grinding to a halt.
+It means that if you want a lot of concurrencies using blocking APIs, then you need a lot of threads to prevent your application grinding to a halt.
 
-Threads have overhead in terms of the memory they require (e.g. for their stack) and in context switching.
+Threads have overhead regarding the memory they require (e.g. for their stack) and in context switching.
 
 For the levels of concurrency required in many modern applications, a blocking approach just doesn’t scale.
 
