@@ -60,7 +60,7 @@ public class HelloHTTPServerAndClient {
 }
 ```
 
-It basically does the same thing as the HTTP server hello world example from the previous section,
+It does the same thing as the HTTP server hello world example from the previous section,
 but this time using two routers handle GET method and path '/'.
 
 ## Class $
@@ -68,15 +68,15 @@ The class $ provides primary API of Firefly, such as
 - Creating HTTP server and client
 - Creating TCP server and client
 - Creating application context
-- I/O, string, json, thread ... utilities
+- I/O, string, JSON, thread ... utilities
 
 It uses fluent style API to help you to build a complex application.
 
-Chaining calls like this allows you to write code that’s a little bit less verbose. Of course, if you don’t like the fluent approach we don’t force you to do it that way, you can happily ignore it if you prefer and write your code using object-oriented (OO) style API. The following sections explain how to use them.
+Chaining calls like this allow you to write code that’s a little bit less verbose. Of course, if you don’t like the fluent approach we don’t force you to do it that way, you can happily ignore it if you prefer and write your code using object-oriented (OO) style API. The following sections explain how to use them.
 
 ## Route order
 By default routes are matched in the order they are added to the router manager. **httpServer.router()** creates a router and adds it to the router manager.
-When a request arrives the router will step through each route and check if it matches, if it matches then the handler for that route will be called.
+When a request arrives, the router will step through each route and check if it matches then the handler for that route will be called.
 
 ## Calling the next handler
 If the handler subsequently calls **ctx.next()** the handler for the next matching route (if any) will be called. And so on.
@@ -91,7 +91,7 @@ A new RoutingContext(ctx) instance is created for each HTTP request.
 
 You can visit the RoutingContext instance in the whole router chain. It provides HTTP request/response API and allows you to maintain arbitrary data that lives for the lifetime of the context. Contexts are discarded once they have been routed to the handler for the request.
 
-The context also provides access to the Session, cookies and body for the request, given the correct handlers in the application.
+The context also provides access to the Session, cookies, and body for the request, given the correct handlers in the application.
 
 Here’s an example where one handler sets some data in the context data and a subsequent handler retrieves it:
 
@@ -146,15 +146,15 @@ public class CapturingPathParameterDemo {
     }
 }
 ```
-In the above example, if a GET request is made to path: "http://localhost:8080/good/fruit/3" then the route will match and type will receive the value "fruit" and id will receive the value "3".
+In the above example, if a GET request is made to path: "http://localhost:8080/good/fruit/3" then the type will receive the value "fruit" and id will receive the value "3".
 ```
 get good type: fruit, id: 3
 ```
 
 # Routing by exact path
-A route can be set-up to match the path from the request URI. In this case it will match any request which has a path that’s the same as the specified path.
+A route can be set-up to match the path from the request URI. In this case, it will match any request which has a path that’s the same as the specified path.
 
-In the following example the handler will be called for a request /product/tools/. We also ignore trailing slashes so it will be called for paths /product/tools and /product/tools/ too:
+In the following example, the handler will be called for a request /product/tools/. We also ignore trailing slashes, so it will be called for paths /product/tools and /product/tools/ too:
 ```java
 public class RoutingByExactPathDemo {
     public static void main(String[] args) {
@@ -260,7 +260,7 @@ the HTTP method: PUT
 the HTTP method: POST
 ```
 
-Calling **router.method** specifies a HTTP method to a router, like this:
+Calling **router.method** specifies an HTTP method to a router, like this:
 
 ```java
 public class RoutingBySpecifiedHTTPmethodDemo {
@@ -306,14 +306,14 @@ the HTTP method: POST
 the HTTP method: GET
 ```
 
-In the above example, the path "http://localhost:8080/get-or-post" only receives GET or POST method, the PUT request is not matched.
+In the above example, the path "http://localhost:8080/get-or-post" only receives GET or POST method. The PUT request is not matched.
 
 # Routing based on MIME type of request
 You can specify that a route will match against matching request MIME types using **router.consumes**.
 
 In this case, the request will contain a content-type header specifying the MIME type of the request body. This will be matched against the value specified in consumes.
 
-Basically, consumes is describing which MIME types the handler can consume.
+Basically, **router.consumes** is describing which MIME types the handler can consume.
 
 Matching can be done on exact MIME type matches:
 
@@ -370,7 +370,7 @@ public class RoutingByContentTypeDemo {
 }
 ```
 
-The router specifies content-type "application/json", that means the server can only handle json content, also you use the wildcard in the MIME type, run it result:
+The router specifies content-type "application/json", that means the server can only handle JSON content. Also, you use the wildcard in the MIME type, run it result:
 
 ```
 content type: application
@@ -379,17 +379,17 @@ update product: id[1], name[old book] success
 ```
 
 # Routing based on MIME types acceptable by the client
-The HTTP accept header is used to signify which MIME types of the response are acceptable to the client.
+The HTTP Accept header is used to signify which MIME types of the response are acceptable to the client.
 
 An accept header can have multiple MIME types separated by ‘,’.
 
-MIME types can also have a q value appended to them* which signifies a weighting to apply if more than one response MIME type is available matching the accept header. The q value is a number between 0 and 1.0. If omitted it defaults to 1.0.
+MIME types can also have a q value appended to them* which signifies a weighting to apply if more than one response MIME type is available matching the HTTP Accept header. The q value is a number between 0 and 1.0. If omitted it defaults to 1.0.
 
 For example, the following accept header signifies the client will accept a MIME type of only text/plain:
 ```
 Accept: text/plain
 ```
-With the following the client will accept text/plain or text/html with no preference.
+With the following, the client will accept text/plain or text/html with no preference.
 ```
 Accept: text/plain, text/html
 ```
@@ -441,7 +441,7 @@ public class RoutingByAcceptDemo {
 }
 ```
 
-In this case the route will match with any request with an accept header that matches application/json.
+In this case, the route will match with any request with an HTTP Accept header that matches application/json.
 
 Here are some examples of accept headers that will match:
 ```
@@ -557,7 +557,7 @@ Cookies are passed across the wire in HTTP requests and responses so we recommen
 
 ## Local session store
 
-In this case, we use the local session store, sessions are stored locally in memory and only available in this instance.
+In this case, we use the local session store. Sessions are stored locally in memory and only available in this instance.
 
 This store is appropriate if you have just a single Firefly instance of you are using sticky sessions in your application and have configured your load balancer to always route HTTP requests to the same Firefly instance.
 
@@ -647,7 +647,7 @@ session is invalid
 ```
 
 ## Remote session store
-Usually we store session in a distributed map which is accessible across the Firefly cluster, such as Redis, Memcached and so on.
+Usually, we store session in a distributed map which is accessible across the Firefly cluster, such as Redis, Memcached and so on.
 
 Just two steps:
 - Implement "com.firefly.server.http2.router.handler.session.SessionStore", and store session in a remote map.
@@ -675,7 +675,7 @@ To serve static resources such as .html, .css, .js or any other static resource,
 
 Any requests to paths handled by the static handler will result in files being served from a directory on the file system or from the classpath.
 
-In the following example all requests to paths starting with /static/ will get served from the classpath.
+In the following example, all requests to paths starting with /static/ will get served from the classpath.
 
 ```java
 public class StaticFileDemo {
@@ -688,7 +688,7 @@ public class StaticFileDemo {
 }
 ```
 
-For example, if there was a request with path "/static/poem.html" the static serve will look for a file in the directory "{classpath}/static/poem.html".
+For example, if there was a request with path "/static/poem.html" the StaticFileHandler will look for a file in the directory "{classpath}/static/poem.html".
 
 You can find this demo in the project "firefly-example", run and view:
 ```
@@ -833,4 +833,4 @@ public class MultipartDemo {
 }
 ```
 
-The HTTP server uses the **ctx.getPart** to get content of multi-part format and the client uses the **httpclient.addFilePart** to upload content using multi-part format.
+The HTTP server uses the **ctx.getPart** to get the content of multi-part format, and the client uses the **httpclient.addFilePart** to upload content using multi-part format.
