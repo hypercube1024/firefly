@@ -75,7 +75,7 @@ It uses fluent style API to help you to build a complex application.
 Chaining calls like this allow you to write code that’s a little bit less verbose. Of course, if you don’t like the fluent approach we don’t force you to do it that way, you can happily ignore it if you prefer and write your code using object-oriented (OO) style API. The following sections explain how to use them.
 
 ## Route order
-By default, routes are matched in the order they are added to the router manager. **httpServer.router()** creates a router and adds it to the router manager.
+By default, routes are matched in the order which they are added to the router manager. **httpServer.router()** creates a router and adds it to the router manager.
 When a request arrives, the router will step through each route and check if it matches then the handler for that route will be called.
 
 ## Calling the next handler
