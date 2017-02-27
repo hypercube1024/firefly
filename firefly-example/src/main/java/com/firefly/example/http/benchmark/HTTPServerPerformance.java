@@ -5,7 +5,7 @@ import com.firefly.codec.http2.model.HttpHeader;
 
 /**
  * ./ab -c15 -n1000000 -k http://127.0.0.1:4455/
- * OS X 10.12.3, java version "1.8.0_111"
+ * OS X 10.12.3, java version "1.8.0_111", log level INFO
  *
  *   Server Software:        Firefly(4.0.21)
      Server Hostname:        127.0.0.1
