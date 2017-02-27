@@ -75,7 +75,7 @@ It uses fluent style API to help you to build a complex application.
 Chaining calls like this allow you to write code that’s a little bit less verbose. Of course, if you don’t like the fluent approach we don’t force you to do it that way, you can happily ignore it if you prefer and write your code using object-oriented (OO) style API. The following sections explain how to use them.
 
 ## Route order
-By default routes are matched in the order they are added to the router manager. **httpServer.router()** creates a router and adds it to the router manager.
+By default, routes are matched in the order they are added to the router manager. **httpServer.router()** creates a router and adds it to the router manager.
 When a request arrives, the router will step through each route and check if it matches then the handler for that route will be called.
 
 ## Calling the next handler
@@ -93,7 +93,7 @@ You can visit the RoutingContext instance in the whole router chain. It provides
 
 The context also provides access to the Session, cookies, and body for the request, given the correct handlers in the application.
 
-Here’s an example where one handler sets some data in the context data and a subsequent handler retrieves it:
+Here’s an example where one handler sets some data in the context data, and a subsequent handler retrieves it:
 
 You can use the **ctx.setAttribute** to put any object, and **ctx.getAttribute** to retrieve any object from the context data.
 
@@ -146,7 +146,7 @@ public class CapturingPathParameterDemo {
     }
 }
 ```
-In the above example, if a GET request is made to path: "http://localhost:8080/good/fruit/3" then the type will receive the value "fruit" and id will receive the value "3".
+In the above example, if a GET request is made to the path: "http://localhost:8080/good/fruit/3" then the type will receive the value "fruit" and id will receive the value "3".
 ```
 get good type: fruit, id: 3
 ```
@@ -154,7 +154,7 @@ get good type: fruit, id: 3
 # Routing by exact path
 A route can be set-up to match the path from the request URI. In this case, it will match any request which has a path that’s the same as the specified path.
 
-In the following example, the handler will be called for a request /product/tools/. We also ignore trailing slashes, so it will be called for paths /product/tools and /product/tools/ too:
+In the following example, the handler will be called for a request /product/tools/. We also ignore trailing slashes so that it will be called for paths /product/tools and /product/tools/ too:
 ```java
 public class RoutingByExactPathDemo {
     public static void main(String[] args) {
@@ -528,7 +528,7 @@ perhaps some errors happen
 powered by Firefly 4.0.21
 ```
 
-As well as setting handlers to handle requests you can also set handlers to handle failures in routing. just like:
+As well as setting handlers to handle requests you can also set handlers to handle failures in routing. Just like:
 
 ```java
 $.httpServer().router().path("*")
@@ -553,7 +553,7 @@ Firefly uses session cookies to identify a session. The session cookie is tempor
 
 We don’t put the actual data of your session in the session cookie - the cookie simply uses an identifier to look-up the actual session on the server. The identifier is a random UUID generated using a secure random, so it should be effectively unguessable.
 
-Cookies are passed across the wire in HTTP requests and responses so we recommend you to enable HTTPS when sessions are being used.
+Cookies are passed across the wire in HTTP requests and responses, so we recommend you to enable HTTPS when sessions are being used.
 
 ## Local session store
 
