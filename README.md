@@ -54,7 +54,7 @@ Add maven dependency in your pom.xml.
 </dependency>
 ```
 
-Add log configuration file to the classpath.
+Add log configuration file "firefly-log.xml" to the classpath.
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <loggers xmlns="http://www.fireflysource.com/loggers"
@@ -91,6 +91,7 @@ Run and view
 http://localhost:8080/
 ```
 More detailed information, please refer to the [full document](http://www.fireflysource.com/docs/http-server-and-client.html)
+and [example project](https://github.com/hypercube1024/firefly/tree/master/firefly-example).
 
 #Contact information
 E-mail: qptkk@163.com  
