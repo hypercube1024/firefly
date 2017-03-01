@@ -4,45 +4,17 @@ import com.firefly.$;
 import com.firefly.codec.http2.model.HttpHeader;
 
 /**
- * ./ab -c15 -n1000000 -k http://127.0.0.1:4455/
  * OS X 10.12.3, java version "1.8.0_111", log level INFO
  *
- *   Server Software:        Firefly(4.0.21)
-     Server Hostname:        127.0.0.1
-     Server Port:            4455
-
-     Document Path:          /
-     Document Length:        12 bytes
-
-     Concurrency Level:      15
-     Time taken for tests:   15.935 seconds
-     Complete requests:      1000000
-     Failed requests:        0
-     Keep-Alive requests:    1000000
-     Total transferred:      131000000 bytes
-     HTML transferred:       12000000 bytes
-     Requests per second:    62754.12 [#/sec] (mean)
-     Time per request:       0.239 [ms] (mean)
-     Time per request:       0.016 [ms] (mean, across all concurrent requests)
-     Transfer rate:          8028.12 [Kbytes/sec] received
-
-     Connection Times (ms)
-     min  mean[+/-sd] median   max
-     Connect:        0    0   0.0      0       1
-     Processing:     0    0   0.1      0       4
-     Waiting:        0    0   0.0      0       4
-     Total:          0    0   0.1      0       4
-
-     Percentage of the requests served within a certain time (ms)
-     50%      0
-     66%      0
-     75%      0
-     80%      0
-     90%      0
-     95%      0
-     98%      0
-     99%      0
-     100%      4 (longest request)
+ * wrk -t8 -c32 -d60s http://127.0.0.1:4455/
+ * Running 1m test @ http://127.0.0.1:4455/
+ * 8 threads and 32 connections
+ * Thread Stats   Avg      Stdev     Max   +/- Stdev
+ * Latency   555.32us   88.19us   6.72ms   87.13%
+ * Req/Sec     7.21k   494.12     8.30k    76.91%
+ * 3449340 requests in 1.00m, 411.19MB read
+ * Requests/sec:  57393.23
+ * Transfer/sec:      6.84MB
  *
  * @author Pengtao Qiu
  */
@@ -50,9 +22,7 @@ public class HTTPServerPerformance {
     public static void main(String[] args) {
         $.httpServer()
          .router().get("/")
-         .handler(ctx -> ctx.put(HttpHeader.CONNECTION, "keep-alive")
-                            .put(HttpHeader.CONTENT_LENGTH, "12")
-                            .end("hello world!"))
+         .handler(ctx -> ctx.end("hello world!"))
          .listen("127.0.0.1", 4455);
     }
 }
