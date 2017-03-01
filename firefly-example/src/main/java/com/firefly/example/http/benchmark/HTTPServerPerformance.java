@@ -4,7 +4,9 @@ import com.firefly.$;
 import com.firefly.codec.http2.model.HttpHeader;
 
 /**
- * OS X 10.12.3, java version "1.8.0_111", log level INFO
+ * OS X 10.12.3, java version "1.8.0_111"
+ * log level: INFO
+ * JVM arguments: -XX:+UseG1GC -Xmx1024m -Xms1024m
  *
  * wrk -t8 -c32 -d60s http://127.0.0.1:4455/
  * Running 1m test @ http://127.0.0.1:4455/
