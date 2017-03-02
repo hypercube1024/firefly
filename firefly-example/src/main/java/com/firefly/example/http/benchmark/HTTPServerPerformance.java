@@ -21,7 +21,7 @@ import java.util.List;
  * 3449340 requests in 1.00m, 411.19MB read
  * Requests/sec:  57393.23
  * Transfer/sec:      6.84MB
- * 
+ *
  * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items
  * Running 1m test @ http://127.0.0.1:4455/items
  * 8 threads and 32 connections
