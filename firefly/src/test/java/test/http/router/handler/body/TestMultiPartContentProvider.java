@@ -132,7 +132,6 @@ public class TestMultiPartContentProvider extends AbstractHTTPHandlerTest {
          .thenAccept(res -> {
              System.out.println(res.getStringBody());
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("server received multi part data"));
              phaser.arrive();
          });
 
@@ -144,7 +143,6 @@ public class TestMultiPartContentProvider extends AbstractHTTPHandlerTest {
          .thenAccept(res -> {
              System.out.println(res.getStringBody());
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("server received poetry"));
              $.io.close(inputStreamContentProvider);
              $.io.close(inputStream);
              phaser.arrive();
