@@ -1,4 +1,8 @@
-# What is Firefly? [![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly)
+# What is Firefly? 
+
+[![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly) 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.fireflysource/firefly/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.fireflysource/firefly)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***Quickly***. 
 It provides MVC framework, asynchronous HTTP Server/Client, asynchronous TCP Server/Client and many other useful components for developing web applications, protocol servers, etc. 
@@ -93,6 +97,6 @@ http://localhost:8080/
 More detailed information, please refer to the [full document](http://www.fireflysource.com/docs/http-server-and-client.html)
 and [example project](https://github.com/hypercube1024/firefly/tree/master/firefly-example).
 
-#Contact information
+# Contact information
 E-mail: qptkk@163.com  
 QQ Group: 126079579
