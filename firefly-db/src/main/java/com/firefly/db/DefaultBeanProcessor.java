@@ -65,7 +65,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 
     @Override
     public <T> List<T> toBeanList(ResultSet rs, Class<T> type) throws SQLException {
-        List<T> results = new ArrayList<T>();
+        List<T> results = new ArrayList<>();
 
         if (!rs.next()) {
             return results;

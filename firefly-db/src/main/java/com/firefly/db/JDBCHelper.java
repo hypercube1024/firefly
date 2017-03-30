@@ -5,7 +5,9 @@ import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Func2;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import org.apache.commons.dbutils.BasicRowProcessor;
 import org.apache.commons.dbutils.BeanProcessor;
 import org.apache.commons.dbutils.QueryRunner;
@@ -21,28 +23,36 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class JDBCHelper {
+public class JDBCHelper extends AbstractLifeCycle {
 
     private final static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final DataSource dataSource;
     private final QueryRunner runner;
     private final DefaultBeanProcessor defaultBeanProcessor;
+    private final ExecutorService executorService;
 
     public JDBCHelper(DataSource dataSource) {
-        this(dataSource, getQueryRunner(dataSource, log.isDebugEnabled() || log.isTraceEnabled()),
-                new DefaultBeanProcessor());
+        this(dataSource, getQueryRunner(dataSource, log.isDebugEnabled() || log.isTraceEnabled()));
     }
 
     public JDBCHelper(DataSource dataSource, QueryRunner runner) {
-        this(dataSource, runner, new DefaultBeanProcessor());
+        this(dataSource, runner, new DefaultBeanProcessor(), null);
     }
 
-    public JDBCHelper(DataSource dataSource, QueryRunner runner, DefaultBeanProcessor defaultBeanProcessor) {
+    public JDBCHelper(DataSource dataSource, QueryRunner runner, DefaultBeanProcessor defaultBeanProcessor, ExecutorService executorService) {
         this.dataSource = dataSource;
         this.runner = runner;
         this.defaultBeanProcessor = defaultBeanProcessor;
+        if (executorService != null) {
+            this.executorService = executorService;
+        } else {
+            this.executorService = Executors.newFixedThreadPool(256, r -> new Thread(r, "firefly JDBC helper pool"));
+        }
+        start();
     }
 
     public static QueryRunner getQueryRunner(DataSource dataSource, boolean debugMode) {
@@ -388,4 +398,30 @@ public class JDBCHelper {
         return null;
     }
 
+    public <T> Promise.Completable<T> async(Func2<Connection, JDBCHelper, T> func) {
+        Promise.Completable<T> c = new Promise.Completable<>();
+        executorService.submit(() -> {
+            Connection connection = getConnection();
+            try {
+                c.succeeded(func.call(connection, this));
+            } catch (Throwable t) {
+                c.failed(t);
+            }
+        });
+        return c;
+    }
+
+    public <T> Promise.Completable<T> asyncTransaction(Func2<Connection, JDBCHelper, T> func) {
+        return async((conn, helper) -> executeTransaction(func));
+    }
+
+    @Override
+    protected void init() {
+
+    }
+
+    @Override
+    protected void destroy() {
+        executorService.shutdown();
+    }
 }
