@@ -24,7 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class JDBCHelper extends AbstractLifeCycle {
 
@@ -50,7 +52,10 @@ public class JDBCHelper extends AbstractLifeCycle {
         if (executorService != null) {
             this.executorService = executorService;
         } else {
-            this.executorService = Executors.newFixedThreadPool(256, r -> new Thread(r, "firefly JDBC helper pool"));
+            this.executorService = new ThreadPoolExecutor(16, 256,
+                    30L, TimeUnit.SECONDS,
+                    new LinkedTransferQueue<>(),
+                    r -> new Thread(r, "firefly JDBC helper pool"));
         }
         start();
     }

@@ -18,7 +18,9 @@ import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 import com.firefly.utils.StringUtils;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.ThreadUtils;
+import com.firefly.utils.function.Func0;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
@@ -70,6 +72,7 @@ public interface $ {
 
     /**
      * Create an new HTTP client instance
+     *
      * @param configuration HTTP client configuration
      * @return an new HTTP client instance
      */
@@ -88,6 +91,7 @@ public interface $ {
 
     /**
      * Create an new HTTP server instance
+     *
      * @param configuration HTTP server configuration
      * @return an new HTTP server instance
      */
@@ -97,6 +101,7 @@ public interface $ {
 
     /**
      * Create an new TCP client instance
+     *
      * @return an new TCP client instance
      */
     static SimpleTcpClient createTCPClient() {
@@ -105,6 +110,7 @@ public interface $ {
 
     /**
      * Create an new TCP client instance
+     *
      * @param configuration TCP client configuration
      * @return an new TCP client instance
      */
@@ -114,6 +120,7 @@ public interface $ {
 
     /**
      * Create an new TCP server instance
+     *
      * @return an new TCP server instance
      */
     static SimpleTcpServer createTCPServer() {
@@ -122,6 +129,7 @@ public interface $ {
 
     /**
      * Create an new TCP server instance
+     *
      * @param configuration TCP server configuration
      * @return an new TCP server instance
      */
@@ -157,6 +165,20 @@ public interface $ {
      */
     static <T> T getBean(String id) {
         return ApplicationContextSingleton.getInstance().getApplicationContext().getBean(id);
+    }
+
+    /**
+     * Run a blocking task in a shared thread pool.
+     * @param func the task with a return value
+     * @param <T> Return value type
+     * @return the task Completable future
+     */
+    static <T> Promise.Completable<T> async(Func0<T> func) {
+        return ApplicationContextSingleton.getInstance().async(func);
+    }
+
+    static void async(Runnable runnable) {
+        ApplicationContextSingleton.getInstance().async(runnable);
     }
 
     /**
