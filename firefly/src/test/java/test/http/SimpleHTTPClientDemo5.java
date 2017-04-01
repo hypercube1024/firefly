@@ -36,7 +36,7 @@ public class SimpleHTTPClientDemo5 {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();
-                client.get("https://login.taobao.com/")
+                client.get("https://www.taobao.com/")
                       .submit()
                       .thenApply(res -> res.getStringBody("GBK"))
                       .thenAccept(System.out::println)
