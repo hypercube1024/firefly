@@ -1,5 +1,6 @@
 package com.firefly.net.tcp.aio;
 
+import com.codahale.metrics.ScheduledReporter;
 import com.firefly.net.*;
 import com.firefly.net.event.DefaultEventManager;
 import com.firefly.net.exception.NetException;
@@ -30,6 +31,7 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
     private AtomicInteger id = new AtomicInteger();
     private AsynchronousTcpWorker worker;
     private AsynchronousChannelGroup group;
+    private ScheduledReporter reporter;
 
     public AsynchronousTcpServer() {
     }
@@ -118,6 +120,10 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
             log.info(config.toString());
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);
+            if (config.isMonitorEnable()) {
+                reporter = config.getReporterFactory().call();
+                reporter.start(10, TimeUnit.SECONDS);
+            }
         } catch (IOException e) {
             log.error("initialization server channel group error", e);
         }
@@ -127,6 +133,9 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
     protected void destroy() {
         if (group != null) {
             group.shutdown();
+        }
+        if (config.isMonitorEnable()) {
+            reporter.stop();
         }
         LogFactory.getInstance().stop();
         Millisecond100Clock.stop();
