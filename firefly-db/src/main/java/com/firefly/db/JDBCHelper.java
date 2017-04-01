@@ -108,7 +108,7 @@ public class JDBCHelper extends AbstractLifeCycle {
                                 }
                             }
                         }
-                        Timer timer = metrics.timer("JDBCHelper.sql:```" + sql + "```");
+                        Timer timer = metrics.timer("db.JDBCHelper.sql:```" + sql + "```");
                         Timer.Context context = timer.time();
                         Object ret;
                         try {
