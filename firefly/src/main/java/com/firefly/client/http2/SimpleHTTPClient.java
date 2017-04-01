@@ -1,5 +1,6 @@
 package com.firefly.client.http2;
 
+import com.codahale.metrics.*;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
@@ -39,6 +40,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     private final HTTP2Client http2Client;
     private final ConcurrentHashMap<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
     private final SimpleHTTPClientConfiguration simpleHTTPClientConfiguration;
+    private final Timer responseTimer;
+    private final Meter errorMeter;
 
     public SimpleHTTPClient() {
         this(new SimpleHTTPClientConfiguration());
@@ -47,6 +50,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
         this.simpleHTTPClientConfiguration = http2Configuration;
         http2Client = new HTTP2Client(http2Configuration);
+        MetricRegistry metrics = http2Configuration.getTcpConfiguration().getMetrics();
+        responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
+        errorMeter = metrics.meter("http2.SimpleHTTPClient.error.count");
+        metrics.register("http2.SimpleHTTPClient.error.ratio.1m", new RatioGauge() {
+            @Override
+            protected Ratio getRatio() {
+                return Ratio.of(errorMeter.getOneMinuteRate(), responseTimer.getOneMinuteRate());
+            }
+        });
         start();
     }
 
@@ -369,6 +381,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     protected void send(RequestBuilder r) {
+        Timer.Context resTimerCtx = responseTimer.time();
         AsynchronousPool<HTTPClientConnection> pool = getPool(r);
         pool.take().thenAccept(o -> {
             HTTPClientConnection connection = o.getObject();
@@ -418,6 +431,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         if (r.future != null) {
                             r.future.succeeded(r.simpleResponse);
                         }
+                        resTimerCtx.stop();
                         return true;
                     }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
                         pool.release(o);
@@ -436,6 +450,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         if (r.badMessage == null && r.future == null) {
                             IO.close(o.getObject());
                         }
+                        errorMeter.mark();
+                        resTimerCtx.stop();
                     }).earlyEOF((req, resp, outputStream, conn) -> {
                         pool.release(o);
                         log.debug("eafly EOF of the connection {} , released: {}",
@@ -453,6 +469,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         if (r.earlyEof == null && r.future == null) {
                             IO.close(o.getObject());
                         }
+                        errorMeter.mark();
+                        resTimerCtx.stop();
                     });
 
             if (r.requestBody != null && !r.requestBody.isEmpty()) {
@@ -484,6 +502,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     }
                 }).exceptionally(t -> {
                     log.error("SimpleHTTPClient gets output stream exception", t);
+                    resTimerCtx.stop();
+                    errorMeter.mark();
                     return null;
                 });
             } else if (r.formUrlEncoded != null) {
@@ -495,6 +515,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             }
         }).exceptionally(e -> {
             log.error("SimpleHTTPClient sends message exception", e);
+            resTimerCtx.stop();
+            errorMeter.mark();
             return null;
         });
     }
