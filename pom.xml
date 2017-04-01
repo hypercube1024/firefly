@@ -5,7 +5,7 @@
 
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-framework</artifactId>
-    <version>4.0.21</version>
+    <version>4.0.22</version>
     <packaging>pom</packaging>
 
 
@@ -77,7 +77,19 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.21</version>
+                <version>1.7.25</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>3.2.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.21.0-GA</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

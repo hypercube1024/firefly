@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractHTTPHandler implements Handler {
 
     protected static Logger log = LoggerFactory.getLogger("firefly-system");
-    private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
     protected final HTTP2Configuration config;
 
@@ -43,7 +42,6 @@ public abstract class AbstractHTTPHandler implements Handler {
     @Override
     public void sessionClosed(Session session) throws Throwable {
         log.info("session {} closed", session.getSessionId());
-        saveConnectionInfo(session);
         try {
             if (session.getAttachment() instanceof AbstractHTTPConnection) {
                 AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment();
@@ -64,10 +62,6 @@ public abstract class AbstractHTTPHandler implements Handler {
         } catch (Throwable t) {
             log.error("http2 conection close exception", t);
         }
-    }
-
-    public static void saveConnectionInfo(Session session) {
-        monitor.info("HTTP TcpSession: {}", session);
     }
 
 }

@@ -1,5 +1,6 @@
 package com.firefly.server.http2;
 
+import com.codahale.metrics.Meter;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
@@ -15,6 +16,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
     private Action3<Integer, String, SimpleRequest> badMessage;
     private Action1<SimpleRequest> earlyEof;
     private Action1<HTTPConnection> acceptConnection;
+    private Meter requestMeter;
     Action2<SimpleRequest, HTTPServerConnection> tunnel;
 
     public SimpleHTTPServer() {
@@ -23,6 +25,8 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 
     public SimpleHTTPServer(SimpleHTTPServerConfiguration configuration) {
         this.configuration = configuration;
+        requestMeter = this.configuration.getTcpConfiguration().getMetrics()
+                                         .meter("http2.SimpleHTTPServer.request.count");
     }
 
     public SimpleHTTPServer acceptHTTPTunnelConnection(Action2<SimpleRequest, HTTPServerConnection> tunnel) {
@@ -76,6 +80,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
                     if (headerComplete != null) {
                         headerComplete.call(r);
                     }
+                    requestMeter.mark();
                     return false;
                 }).content((buffer, request, response, out, connection) -> {
                     SimpleRequest r = (SimpleRequest) request.getAttachment();

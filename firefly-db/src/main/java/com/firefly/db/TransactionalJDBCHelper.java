@@ -1,5 +1,7 @@
 package com.firefly.db;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
 import com.firefly.utils.Assert;
 import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
@@ -21,7 +23,11 @@ public class TransactionalJDBCHelper {
     private final JDBCHelper jdbcHelper;
 
     public TransactionalJDBCHelper(DataSource dataSource) {
-        this(new JDBCHelper(dataSource, JDBCHelper.getQueryRunner(dataSource, log.isDebugEnabled() || log.isTraceEnabled())));
+        this(new JDBCHelper(dataSource));
+    }
+
+    public TransactionalJDBCHelper(DataSource dataSource, MetricRegistry metrics, ScheduledReporter reporter) {
+        this(new JDBCHelper(dataSource, metrics, reporter));
     }
 
     public TransactionalJDBCHelper(JDBCHelper jdbcHelper) {

@@ -1,5 +1,6 @@
 package test.http;
 
+import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
@@ -17,13 +18,19 @@ import java.util.concurrent.TimeUnit;
 public class SimpleHTTPClientDemo5 {
 
     public static void main5(String[] args) {
-        SimpleHTTPClientConfiguration httpConfiguration = new SimpleHTTPClientConfiguration();
-        httpConfiguration.setSecureConnectionEnabled(true);
-        SimpleHTTPClient client = new SimpleHTTPClient(httpConfiguration);
-        client.get("https://tls.ctf.network/")
-              .submit()
-              .thenApply(res -> res.getStringBody("UTF-8"))
-              .thenAccept(System.out::println);
+        for (int j = 0; j < 1000; j++) {
+            for (int i = 0; i < 25; i++) { // tls.ctf.network
+                long start = System.currentTimeMillis();
+                $.httpsClient().get("https://www.baidu.com/").submit()
+                 .thenApply(res -> res.getStringBody("UTF-8"))
+                 .thenAccept(System.out::println)
+                 .thenAccept(res -> {
+                     System.out.print("------------------------");
+                     System.out.println("time: " + (System.currentTimeMillis() - start));
+                 });
+            }
+            $.thread.sleep(5000L);
+        }
     }
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {

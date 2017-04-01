@@ -3,6 +3,7 @@ package test.ioc;
 import com.firefly.$;
 import com.firefly.core.ApplicationContext;
 import com.firefly.core.XmlApplicationContext;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.exception.CommonRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -37,11 +39,14 @@ public class TestXmlIoc {
     }
 
     @Test
-    public void testXmlInject() {
+    public void testXmlInject() throws ExecutionException, InterruptedException {
         Person person = $.getBean("person");
         Assert.assertThat(person.getName(), is("Jack"));
         PersonService personService = $.getBean("personService");
         Assert.assertThat(true, is(personService.isInitial()));
+
+        Promise.Completable<Person> c = $.async(() -> $.getBean("person"));
+        Assert.assertThat(c.get().getAge(), is(12));
 
         List<Object> l = personService.getTestList();
         Assert.assertThat(l.size(), greaterThan(0));

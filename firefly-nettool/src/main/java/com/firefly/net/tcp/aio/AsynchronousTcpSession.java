@@ -1,9 +1,11 @@
 package com.firefly.net.tcp.aio;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
 import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
-import com.firefly.net.buffer.ThreadSafeIOBufferPool;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
@@ -31,6 +33,8 @@ public class AsynchronousTcpSession implements Session {
 
     private final int sessionId;
     private final long openTime;
+    private final Counter activeCount;
+    private final Histogram duration;
     private long closeTime;
     private long lastReadTime;
     private long lastWrittenTime;
@@ -49,7 +53,6 @@ public class AsynchronousTcpSession implements Session {
     private boolean isWriting = false;
     private final Queue<OutputEntry<?>> outputBuffer = new LinkedList<>();
     private final BufferSizePredictor bufferSizePredictor = new AdaptiveBufferSizePredictor();
-    private static final BufferPool bufferPool = new ThreadSafeIOBufferPool(false);
 
     AsynchronousTcpSession(int sessionId, Config config, EventManager eventManager,
                            AsynchronousSocketChannel socketChannel) {
@@ -59,13 +62,17 @@ public class AsynchronousTcpSession implements Session {
         this.eventManager = eventManager;
         this.socketChannel = socketChannel;
         state = State.OPEN;
+        MetricRegistry metrics = config.getMetrics();
+        activeCount = metrics.counter("aio.AsynchronousTcpSession.activeCount");
+        activeCount.inc();
+        duration = metrics.histogram("aio.AsynchronousTcpSession.duration");
     }
 
     void _read() {
         if (!isOpen())
             return;
 
-        final ByteBuffer buf = bufferPool.acquire(bufferSizePredictor.nextBufferSize());
+        final ByteBuffer buf = ByteBuffer.allocate(BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize()));
 
         if (log.isDebugEnabled()) {
             log.debug("the session {} buffer size is {}", getSessionId(), buf.remaining());
@@ -91,21 +98,18 @@ public class AsynchronousTcpSession implements Session {
                         // Update the predictor.
                         session.bufferSizePredictor.previousReceivedBufferSize(currentReadBytes);
                         session.readBytes += currentReadBytes;
-
                         buf.flip();
                         try {
                             config.getDecoder().decode(buf, session);
                         } catch (Throwable t) {
                             eventManager.executeExceptionTask(session, t);
                         } finally {
-                            bufferPool.release(buf);
                             _read();
                         }
                     }
 
                     @Override
                     public void failed(Throwable t, AsynchronousTcpSession session) {
-                        bufferPool.release(buf);
                         if (t instanceof InterruptedByTimeoutException) {
                             if (log.isDebugEnabled()) {
                                 log.debug("the session {} reading data is timeout.", getSessionId());
@@ -123,21 +127,21 @@ public class AsynchronousTcpSession implements Session {
 
         private final OutputEntry<T> entry;
 
-        public OutputEntryCompletionHandler(OutputEntry<T> entry) {
+        OutputEntryCompletionHandler(OutputEntry<T> entry) {
             this.entry = entry;
         }
 
         @Override
-        public void completed(V currentWritenBytes, AsynchronousTcpSession session) {
+        public void completed(V currentWrittenBytes, AsynchronousTcpSession session) {
             if (log.isDebugEnabled()) {
                 log.debug("the session {} completed writing {} bytes, remaining {} bytes",
                         session.getSessionId(),
-                        currentWritenBytes, entry.remaining());
+                        currentWrittenBytes, entry.remaining());
             }
             if (entry.remaining() > 0) {
                 _write(entry);
             } else {
-                writingCompletedCallback(entry.getCallback(), currentWritenBytes.longValue());
+                writingCompletedCallback(entry.getCallback(), currentWrittenBytes.longValue());
             }
         }
 
@@ -147,21 +151,21 @@ public class AsynchronousTcpSession implements Session {
         }
 
 
-        private void writingCompletedCallback(Callback callback, long currentWritenBytes) {
+        private void writingCompletedCallback(Callback callback, long currentWrittenBytes) {
             lastWrittenTime = Millisecond100Clock.currentTimeMillis();
-            if (currentWritenBytes < 0) {
+            if (currentWrittenBytes < 0) {
                 if (log.isDebugEnabled()) {
-                    log.debug("the session {} output is closed, {}", getSessionId(), currentWritenBytes);
+                    log.debug("the session {} output is closed, {}", getSessionId(), currentWrittenBytes);
                 }
                 shutdownSocketChannel();
                 return;
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("the session {} writes {} bytes", getSessionId(), currentWritenBytes);
+                log.debug("the session {} writes {} bytes", getSessionId(), currentWrittenBytes);
             }
 
-            writtenBytes += currentWritenBytes;
+            writtenBytes += currentWrittenBytes;
             callback.succeeded();
 
             outputLock.lock();
@@ -332,6 +336,8 @@ public class AsynchronousTcpSession implements Session {
         }
         state = State.CLOSE;
         eventManager.executeCloseTask(this);
+        activeCount.dec();
+        duration.update(getDuration());
     }
 
     @Override
