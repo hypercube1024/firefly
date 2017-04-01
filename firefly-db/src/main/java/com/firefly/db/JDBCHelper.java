@@ -1,5 +1,9 @@
 package com.firefly.db;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
+import com.codahale.metrics.Slf4jReporter;
+import com.codahale.metrics.Timer;
 import com.firefly.db.DefaultBeanProcessor.Mapper;
 import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
@@ -20,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -32,23 +35,51 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     private final static Logger log = LoggerFactory.getLogger("firefly-system");
 
+    private final MetricRegistry metrics;
+    private final ScheduledReporter reporter;
     private final DataSource dataSource;
     private final QueryRunner runner;
     private final DefaultBeanProcessor defaultBeanProcessor;
     private final ExecutorService executorService;
+    private final boolean monitorEnable;
 
     public JDBCHelper(DataSource dataSource) {
-        this(dataSource, getQueryRunner(dataSource, log.isDebugEnabled() || log.isTraceEnabled()));
+        this(dataSource, null, null);
     }
 
-    public JDBCHelper(DataSource dataSource, QueryRunner runner) {
-        this(dataSource, runner, new DefaultBeanProcessor(), null);
+    public JDBCHelper(DataSource dataSource, MetricRegistry metrics, ScheduledReporter reporter) {
+        this(dataSource, new QueryRunner(dataSource), new DefaultBeanProcessor(),
+                null, true, metrics, reporter);
     }
 
-    public JDBCHelper(DataSource dataSource, QueryRunner runner, DefaultBeanProcessor defaultBeanProcessor, ExecutorService executorService) {
+    public JDBCHelper(DataSource dataSource, QueryRunner runner,
+                      DefaultBeanProcessor defaultBeanProcessor,
+                      ExecutorService executorService,
+                      boolean monitorEnable,
+                      MetricRegistry metrics,
+                      ScheduledReporter reporter) {
+        if (metrics != null) {
+            this.metrics = metrics;
+        } else {
+            this.metrics = new MetricRegistry();
+        }
+        if (reporter != null) {
+            this.reporter = reporter;
+        } else {
+            this.reporter = Slf4jReporter.forRegistry(this.metrics)
+                                         .outputTo(LoggerFactory.getLogger("firefly-monitor"))
+                                         .convertRatesTo(TimeUnit.SECONDS)
+                                         .convertDurationsTo(TimeUnit.MILLISECONDS)
+                                         .build();
+        }
         this.dataSource = dataSource;
-        this.runner = runner;
+        if (monitorEnable) {
+            this.runner = getMonitorQueryRunner(runner);
+        } else {
+            this.runner = runner;
+        }
         this.defaultBeanProcessor = defaultBeanProcessor;
+        this.monitorEnable = monitorEnable;
         if (executorService != null) {
             this.executorService = executorService;
         } else {
@@ -60,35 +91,44 @@ public class JDBCHelper extends AbstractLifeCycle {
         start();
     }
 
-    public static QueryRunner getQueryRunner(DataSource dataSource, boolean debugMode) {
-        if (debugMode) {
-            try {
-                QueryRunner queryRunner = new QueryRunner(dataSource);
-                return (QueryRunner) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(queryRunner,
-                        (handler, originalInstance, args) -> {
-                            if (args != null && args.length > 0) {
-                                String sql = null;
-                                String params = null;
-                                for (Object arg : args) {
-                                    if (arg instanceof String) {
-                                        sql = (String) arg;
-                                    }
-
-                                    if (arg instanceof Object[]) {
-                                        params = Arrays.toString((Object[]) arg);
-                                    }
+    private QueryRunner getMonitorQueryRunner(QueryRunner queryRunner) {
+        try {
+            return (QueryRunner) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(queryRunner,
+                    (handler, originalInstance, args) -> {
+                        String sql = "";
+                        if (args != null && args.length > 0) {
+                            for (Object arg : args) {
+                                if (arg instanceof String) {
+                                    sql = (String) arg;
                                 }
-                                log.debug("the method {} will execute SQL [ {} | {} ]", handler.method().getName(), sql, params);
                             }
-                            return handler.invoke(originalInstance, args);
-                        }, null);
-            } catch (Throwable t) {
-                log.error("create QueryRunner proxy exception", t);
-                return new QueryRunner(dataSource);
-            }
-        } else {
-            return new QueryRunner(dataSource);
+                        }
+                        Timer timer = metrics.timer("JDBCHelper.sql:[[[" + sql + "]]]");
+                        Timer.Context context = timer.time();
+                        Object ret;
+                        try {
+                            ret = handler.invoke(originalInstance, args);
+                        } finally {
+                            context.stop();
+                        }
+                        return ret;
+                    }, null);
+        } catch (Throwable t) {
+            log.error("create QueryRunner proxy exception", t);
+            return queryRunner;
         }
+    }
+
+    public boolean isMonitorEnable() {
+        return monitorEnable;
+    }
+
+    public MetricRegistry getMetrics() {
+        return metrics;
+    }
+
+    public ScheduledReporter getReporter() {
+        return reporter;
     }
 
     public DataSource getDataSource() {
@@ -422,11 +462,16 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     @Override
     protected void init() {
-
+        if (monitorEnable) {
+            reporter.start(10, TimeUnit.SECONDS);
+        }
     }
 
     @Override
     protected void destroy() {
         executorService.shutdown();
+        if (monitorEnable) {
+            reporter.stop();
+        }
     }
 }
