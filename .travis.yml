@@ -4,6 +4,7 @@ rvm:
 
 before_script:
  - bundle config disable_checksum_validation true
+ - rm -f /home/travis/.rvm/gems/ruby-2.3.3/gems/faraday-0.12.0/faraday-0.12.0.gem
  - chmod +x ./script/cibuild.sh # or do this locally and commit
 
 # Assume bundler is being used, therefore
