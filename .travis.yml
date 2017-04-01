@@ -3,6 +3,7 @@ rvm:
 - 2.3.3
 
 before_script:
+ - bundle config disable_checksum_validation true
  - chmod +x ./script/cibuild.sh # or do this locally and commit
 
 # Assume bundler is being used, therefore
