@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SimpleHTTPClient extends AbstractLifeCycle {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
-    private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
     private final HTTP2Client http2Client;
     private final ConcurrentHashMap<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
@@ -370,7 +369,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     protected void send(RequestBuilder r) {
-        long start = Millisecond100Clock.currentTimeMillis();
         AsynchronousPool<HTTPClientConnection> pool = getPool(r);
         pool.take().thenAccept(o -> {
             HTTPClientConnection connection = o.getObject();
@@ -495,8 +493,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             } else {
                 connection.send(r.request, handler);
             }
-            long end = Millisecond100Clock.currentTimeMillis();
-            monitor.info("SimpleHTTPClient take connection {} total time: {}", connection.getSessionId(), (end - start));
         }).exceptionally(e -> {
             log.error("SimpleHTTPClient sends message exception", e);
             return null;

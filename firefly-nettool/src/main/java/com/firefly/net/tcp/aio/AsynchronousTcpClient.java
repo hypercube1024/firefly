@@ -1,5 +1,7 @@
 package com.firefly.net.tcp.aio;
 
+import com.codahale.metrics.ScheduledReporter;
+import com.codahale.metrics.Timer;
 import com.firefly.net.*;
 import com.firefly.net.event.DefaultEventManager;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -22,12 +24,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
-    private static Logger monitor = LoggerFactory.getLogger("firefly-monitor");
 
     private Config config;
     private AtomicInteger sessionId = new AtomicInteger(0);
     private AsynchronousChannelGroup group;
     private AsynchronousTcpWorker worker;
+    private ScheduledReporter reporter;
 
     public AsynchronousTcpClient() {
     }
@@ -67,7 +69,8 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
     public void connect(String host, int port, int id) {
         start();
         try {
-            final long start = Millisecond100Clock.currentTimeMillis();
+            Timer timer = config.getMetrics().timer("AsynchronousTcpClient.connect:```" + host + ":" + port + "```");
+            Timer.Context context = timer.time();
             final AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(group);
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
@@ -77,8 +80,7 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
                 @Override
                 public void completed(Void result, Integer sessionId) {
                     worker.registerChannel(socketChannel, sessionId);
-                    long end = Millisecond100Clock.currentTimeMillis();
-                    monitor.info("AsynchronousTcpClient connection establishment time -> {}", (end - start));
+                    context.stop();
                 }
 
                 @Override
@@ -89,6 +91,7 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
                         log.error("session {} open exception", e, sessionId);
                     }
                     log.error("session {} connect error", t, sessionId);
+                    context.stop();
                 }
             });
         } catch (IOException e) {
@@ -107,6 +110,10 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
             log.info(config.toString());
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);
+            if (config.isMonitorEnable()) {
+                reporter = config.getReporterFactory().call();
+                reporter.start(10, TimeUnit.SECONDS);
+            }
         } catch (IOException e) {
             log.error("initialization client channel group error", e);
         }
@@ -116,6 +123,9 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
     protected void destroy() {
         if (group != null) {
             group.shutdown();
+        }
+        if (config.isMonitorEnable()) {
+            reporter.stop();
         }
         LogFactory.getInstance().stop();
         Millisecond100Clock.stop();

@@ -10,6 +10,7 @@ import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.apache.commons.dbutils.BasicRowProcessor;
@@ -45,6 +46,10 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public JDBCHelper(DataSource dataSource) {
         this(dataSource, null, null);
+    }
+
+    public JDBCHelper(DataSource dataSource, Func0<ScheduledReporter> reporterFactory) {
+        this(dataSource, new MetricRegistry(), reporterFactory.call());
     }
 
     public JDBCHelper(DataSource dataSource, MetricRegistry metrics, ScheduledReporter reporter) {
@@ -103,7 +108,7 @@ public class JDBCHelper extends AbstractLifeCycle {
                                 }
                             }
                         }
-                        Timer timer = metrics.timer("JDBCHelper.sql:[[[" + sql + "]]]");
+                        Timer timer = metrics.timer("JDBCHelper.sql:```" + sql + "```");
                         Timer.Context context = timer.time();
                         Object ret;
                         try {

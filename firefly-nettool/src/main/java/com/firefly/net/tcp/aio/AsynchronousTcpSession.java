@@ -1,5 +1,6 @@
 package com.firefly.net.tcp.aio;
 
+import com.codahale.metrics.Counter;
 import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
@@ -31,6 +32,7 @@ public class AsynchronousTcpSession implements Session {
 
     private final int sessionId;
     private final long openTime;
+    private final Counter activeCount;
     private long closeTime;
     private long lastReadTime;
     private long lastWrittenTime;
@@ -59,6 +61,8 @@ public class AsynchronousTcpSession implements Session {
         this.eventManager = eventManager;
         this.socketChannel = socketChannel;
         state = State.OPEN;
+        activeCount = config.getMetrics().counter("aio.session.activeCount");
+        activeCount.inc();
     }
 
     void _read() {
@@ -332,6 +336,7 @@ public class AsynchronousTcpSession implements Session {
         }
         state = State.CLOSE;
         eventManager.executeCloseTask(this);
+        activeCount.dec();
     }
 
     @Override
