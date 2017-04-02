@@ -1,6 +1,8 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.net.ByteBufferArrayOutputEntry;
+import com.firefly.net.ByteBufferOutputEntry;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.function.Action1;
@@ -53,6 +55,20 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
             tcpSession.close();
         }
         attachment = null;
+    }
+
+    public void writeEncryptMessage(Object message) throws IOException {
+        if (isEncrypted()) {
+            if (message instanceof ByteBufferArrayOutputEntry) {
+                ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) message;
+                sslSession.write(outputEntry.getData(), outputEntry.getCallback());
+            } else if (message instanceof ByteBufferOutputEntry) {
+                ByteBufferOutputEntry outputEntry = (ByteBufferOutputEntry) message;
+                sslSession.write(outputEntry.getData(), outputEntry.getCallback());
+            } else {
+                throw new IllegalArgumentException("the encoder must receive the ByteBufferOutputEntry and ByteBufferArrayOutputEntry, but this message type is " + message.getClass());
+            }
+        }
     }
 
     @Override
