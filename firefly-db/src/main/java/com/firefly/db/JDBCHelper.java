@@ -45,16 +45,16 @@ public class JDBCHelper extends AbstractLifeCycle {
     private final boolean monitorEnable;
 
     public JDBCHelper(DataSource dataSource) {
-        this(dataSource, null, null);
+        this(dataSource, null);
     }
 
     public JDBCHelper(DataSource dataSource, Func0<ScheduledReporter> reporterFactory) {
-        this(dataSource, new MetricRegistry(), reporterFactory.call());
+        this(dataSource, new MetricRegistry(), reporterFactory);
     }
 
-    public JDBCHelper(DataSource dataSource, MetricRegistry metrics, ScheduledReporter reporter) {
+    public JDBCHelper(DataSource dataSource, MetricRegistry metrics, Func0<ScheduledReporter> reporterFactory) {
         this(dataSource, new QueryRunner(dataSource), new DefaultBeanProcessor(),
-                null, true, metrics, reporter);
+                null, true, metrics, reporterFactory);
     }
 
     public JDBCHelper(DataSource dataSource, QueryRunner runner,
@@ -62,14 +62,14 @@ public class JDBCHelper extends AbstractLifeCycle {
                       ExecutorService executorService,
                       boolean monitorEnable,
                       MetricRegistry metrics,
-                      ScheduledReporter reporter) {
+                      Func0<ScheduledReporter> reporterFactory) {
         if (metrics != null) {
             this.metrics = metrics;
         } else {
             this.metrics = new MetricRegistry();
         }
-        if (reporter != null) {
-            this.reporter = reporter;
+        if (reporterFactory != null) {
+            this.reporter = reporterFactory.call();
         } else {
             this.reporter = Slf4jReporter.forRegistry(this.metrics)
                                          .outputTo(LoggerFactory.getLogger("firefly-monitor"))
