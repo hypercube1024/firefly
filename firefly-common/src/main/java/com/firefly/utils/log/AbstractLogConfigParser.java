@@ -8,14 +8,14 @@ import java.nio.charset.Charset;
 
 public abstract class AbstractLogConfigParser implements LogConfigParser {
 
-    protected FileLog createLog(String name, String level, String path, boolean console, int maxFileSize, Charset charset) {
+    protected FileLog createLog(String name, String level, String path, boolean console, long maxFileSize, Charset charset) {
         FileLog fileLog = new FileLog();
         fileLog.setName(name);
         fileLog.setLevel(LogLevel.fromName(level));
         fileLog.setMaxFileSize(maxFileSize);
         fileLog.setCharset(charset);
 
-        boolean createLogDirectorySuccess = false;
+        boolean createLogDirectorySuccess;
         if (VerifyUtils.isNotEmpty(path)) {
             File file = new File(path);
             createLogDirectorySuccess = createLogDirectory(file);

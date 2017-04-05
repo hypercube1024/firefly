@@ -20,7 +20,7 @@ public class FileLog implements Log, Closeable {
     private String name;
     private boolean consoleOutput;
     private boolean fileOutput;
-    private int maxFileSize;
+    private long maxFileSize;
     private Charset charset = LogConfigParser.DEFAULT_CHARSET;
 
     private LogOutputStream output = new LogOutputStream();
@@ -192,11 +192,11 @@ public class FileLog implements Log, Closeable {
         this.name = name;
     }
 
-    public int getMaxFileSize() {
+    public long getMaxFileSize() {
         return maxFileSize;
     }
 
-    public void setMaxFileSize(int maxFileSize) {
+    public void setMaxFileSize(long maxFileSize) {
         this.maxFileSize = maxFileSize;
     }
 
