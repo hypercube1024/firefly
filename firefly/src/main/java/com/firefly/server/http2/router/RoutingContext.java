@@ -181,8 +181,6 @@ public interface RoutingContext extends Closeable {
 
     JsonArray getJsonArrayBody();
 
-    void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI);
-
 
     // HTTP session API
     HttpSession getSession();
@@ -197,8 +195,6 @@ public interface RoutingContext extends Closeable {
 
     String getRequestedSessionId();
 
-    void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI);
-
     // Template API
     void renderTemplate(String resourceName, Object scope);
 
@@ -206,5 +202,4 @@ public interface RoutingContext extends Closeable {
 
     void renderTemplate(String resourceName, List<Object> scopes);
 
-    void setTemplateHandlerSPI(TemplateHandlerSPI templateHandlerSPI);
 }

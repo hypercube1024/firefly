@@ -150,6 +150,10 @@ public class RouterManagerImpl implements RouterManager {
         return new RouterImpl(idGenerator.getAndIncrement(), this);
     }
 
+    public Router registerLast() {
+        return new RouterImpl(Integer.MAX_VALUE, this);
+    }
+
     @Override
     public void accept(SimpleRequest request) {
         String method = request.getMethod();

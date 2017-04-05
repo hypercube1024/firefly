@@ -3,7 +3,6 @@ package com.firefly.server.http2.router;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyHandler;
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler;
-import com.firefly.server.http2.router.handler.template.MustacheTemplateHandler;
 import com.firefly.server.http2.router.impl.RouterManagerImpl;
 
 import java.util.Map;
@@ -68,14 +67,15 @@ public interface RouterManager extends RequestAcceptor {
     }
 
     static RouterManager create(HTTPBodyConfiguration configuration) {
-        RouterManager routerManager = new RouterManagerImpl();
+        RouterManagerImpl routerManager = new RouterManagerImpl();
         routerManager.register().path("*").handler(new HTTPBodyHandler(configuration));
-        routerManager.register().path("*").handler(new MustacheTemplateHandler());
-        routerManager.register().path("*").handler(new DefaultErrorResponseHandler());
+        routerManager.registerLast().path("*").handler(new DefaultErrorResponseHandler());
         return routerManager;
     }
 
     static RouterManager createEmpty() {
-        return new RouterManagerImpl();
+        RouterManagerImpl routerManager = new RouterManagerImpl();
+        routerManager.registerLast().path("*").handler(new DefaultErrorResponseHandler());
+        return routerManager;
     }
 }
