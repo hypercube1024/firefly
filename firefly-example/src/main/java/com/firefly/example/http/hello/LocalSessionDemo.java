@@ -20,7 +20,7 @@ public class LocalSessionDemo {
         String uri = "https://" + host + ":" + port;
 
         int maxGetSession = 3;
-        Phaser phaser = new Phaser(1 + maxGetSession + 1);
+        Phaser phaser = new Phaser(1 + maxGetSession + 2);
 
         HTTP2ServerBuilder httpsServer = $.httpsServer();
         LocalHTTPSessionHandler sessionHandler = new LocalHTTPSessionHandler(new HTTPSessionConfiguration());
@@ -46,26 +46,32 @@ public class LocalSessionDemo {
                    })
                    .listen(host, port);
 
-        List<Cookie> c
-                = $.httpsClient().post(uri + "/session/foo").submit()
-                   .thenApply(res -> {
-                       List<Cookie> cookies = res.getCookies();
-                       System.out.println(res.getStatus());
-                       System.out.println(cookies);
-                       System.out.println(res.getStringBody());
-                       return cookies;
-                   })
-                   .thenApply(cookies -> {
-                       for (int i = 0; i < maxGetSession; i++) {
-                           $.httpsClient().get(uri + "/session/foo").cookies(cookies).submit()
-                            .thenAccept(res2 -> {
-                                String sessionFoo = res2.getStringBody();
-                                System.out.println(sessionFoo);
-                                phaser.arrive();
-                            });
-                       }
-                       return cookies;
-                   }).get();
+        List<Cookie> c = $.httpsClient().post(uri + "/session/foo").submit()
+                          .thenApply(res -> {
+                              List<Cookie> cookies = res.getCookies();
+                              System.out.println(res.getStatus());
+                              System.out.println(cookies);
+                              System.out.println(res.getStringBody());
+                              return cookies;
+                          })
+                          .thenApply(cookies -> {
+                              for (int i = 0; i < maxGetSession; i++) {
+                                  $.httpsClient().get(uri + "/session/foo").cookies(cookies).submit()
+                                   .thenAccept(res2 -> {
+                                       String sessionFoo = res2.getStringBody();
+                                       System.out.println(sessionFoo);
+                                       phaser.arrive();
+                                   });
+                              }
+                              return cookies;
+                          }).get();
+
+        $.httpsClient().get(uri + "/resource-not-found").submit()
+         .thenAccept(res -> {
+             System.out.println(res.getStatus());
+             System.out.println(res.getStringBody());
+             phaser.arrive();
+         });
 
         $.thread.sleep(3000L); // the session expired
         $.httpsClient().get(uri + "/session/foo").cookies(c).submit()
