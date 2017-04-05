@@ -43,7 +43,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
         if (data == null || !data.hasRemaining())
             return;
 
-        if (!commited) {
+        if (!committed) {
             commit(false);
         }
 
@@ -64,8 +64,8 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
     public synchronized void writeFrame(Frame frame) {
         switch (frame.getType()) {
             case DATA:
-                if (!commited)
-                    throw new IllegalStateException("the output stream is not commited");
+                if (!committed)
+                    throw new IllegalStateException("the output stream is not committed");
 
                 DataFrame dataFrame = (DataFrame) frame;
                 if (isChunked) {
@@ -151,7 +151,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
             return;
 
         log.debug("http2 output stream is closing");
-        if (!commited) {
+        if (!committed) {
             commit(true);
         } else {
             if (isChunked) {
@@ -167,7 +167,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
         if (closed)
             return;
 
-        if (commited)
+        if (committed)
             return;
 
         // does use chunked encoding or content length ?
@@ -194,7 +194,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
             log.debug("stream {} commits the header frame {}", stream.getId(), headersFrame);
         }
 
-        commited = true;
+        committed = true;
         writeFrame(headersFrame);
     }
 

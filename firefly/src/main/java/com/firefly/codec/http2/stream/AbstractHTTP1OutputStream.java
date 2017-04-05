@@ -23,7 +23,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
         if (closed)
             return;
 
-        if (commited)
+        if (committed)
             return;
 
         final HttpGenerator generator = getHttpGenerator();
@@ -37,7 +37,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             if (data != null) {
                 tcpSession.encode(data);
             }
-            commited = true;
+            committed = true;
         } else {
             generateHTTPMessageExceptionally(generatorResult, generator.getState());
         }
@@ -55,7 +55,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
         final Session tcpSession = getSession();
         HttpGenerator.Result generatorResult;
 
-        if (!commited) {
+        if (!committed) {
             commit(data);
         } else {
             if (generator.isChunking()) {
@@ -90,7 +90,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             final Session tcpSession = getSession();
             HttpGenerator.Result generatorResult;
 
-            if (!commited) {
+            if (!committed) {
                 ByteBuffer header = getHeaderByteBuffer();
                 generatorResult = generate(info, header, null, null, true);
                 if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMPLETING) {
@@ -99,7 +99,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
                 } else {
                     generateHTTPMessageExceptionally(generatorResult, generator.getState());
                 }
-                commited = true;
+                committed = true;
             } else {
                 if (generator.isChunking()) {
                     log.debug("http1 output stream is generating chunk");

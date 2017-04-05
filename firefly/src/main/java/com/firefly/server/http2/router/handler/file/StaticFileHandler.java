@@ -50,7 +50,7 @@ public class StaticFileHandler extends DefaultErrorResponseHandler {
                 } catch (FileNotFoundException e) {
                     render(ctx, HttpStatus.NOT_FOUND_404, null);
                 } catch (IOException e) {
-                    if (ctx.getResponse().isCommited()) {
+                    if (ctx.getResponse().isCommitted()) {
                         render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
                     }
                 }
@@ -82,7 +82,7 @@ public class StaticFileHandler extends DefaultErrorResponseHandler {
                         } catch (FileNotFoundException e) {
                             render(ctx, HttpStatus.NOT_FOUND_404, null);
                         } catch (IOException e) {
-                            if (ctx.getResponse().isCommited()) {
+                            if (ctx.getResponse().isCommitted()) {
                                 render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
                             }
                         }
@@ -146,7 +146,7 @@ public class StaticFileHandler extends DefaultErrorResponseHandler {
                             if (in != null) {
                                 IO.close(in);
                             }
-                            if (ctx.getResponse().isCommited()) {
+                            if (ctx.getResponse().isCommitted()) {
                                 render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
                             }
                         }

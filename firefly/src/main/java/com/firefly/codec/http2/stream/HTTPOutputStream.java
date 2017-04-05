@@ -20,7 +20,7 @@ public abstract class HTTPOutputStream extends OutputStream {
 	protected final boolean clientMode;
 	protected final MetaData info;
 	protected boolean closed;
-	protected boolean commited;
+	protected boolean committed;
 	
 	public HTTPOutputStream(MetaData info, boolean clientMode) {
 		this.info = info;
@@ -31,8 +31,8 @@ public abstract class HTTPOutputStream extends OutputStream {
 		return closed;
 	}
 
-	public synchronized boolean isCommited() {
-		return commited;
+	public synchronized boolean isCommitted() {
+		return committed;
 	}
 	
 	@Override
@@ -51,7 +51,7 @@ public abstract class HTTPOutputStream extends OutputStream {
 		}
 
 		try {
-			if (!commited) {
+			if (!committed) {
 				long contentLength = BufferUtils.remaining(data);
 				info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
 			}
