@@ -21,6 +21,7 @@ title: HTTP server and client
 - [Routing based on MIME types acceptable by the client](#routing-based-on-mime-types-acceptable-by-the-client)
 - [Combining routing criteria](#combining-routing-criteria)
 - [Error handling](#error-handling)
+	- [Custom error handling](#custom-error-handling)
 - [Handling sessions](#handling-sessions)
 	- [Local session store](#local-session-store)
 	- [Remote session store](#remote-session-store)
@@ -525,27 +526,70 @@ Visit "http://localhost:8080/error" and view:
 The server internal error.
 perhaps some errors happen
 
-powered by Firefly 4.0.21
+powered by Firefly 4.0.23
 ```
 
-As well as setting handlers to handle requests you can also set handlers to handle failures in routing. Just like:
+## Custom error handling
+Also you can extend **com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler** and add the SPI configuration instead of the default error handler.
 
+For example.
 ```java
-$.httpServer().router().path("*")
- .handler(ctx -> {
-  if (ctx.hasNext()) {
-    try {
-      ctx.next();
-    } catch (Exception e) {
-      // response some error information
+public class DefaultErrorResponseHandler extends AbstractErrorResponseHandler {
+
+    @Override
+    public void render(RoutingContext ctx, int status, Throwable t) {
+        HttpStatus.Code code = HttpStatus.getCode(status);
+        String title = status + " " + (code != null ? code.getMessage() : "error");
+        String content;
+        switch (code) {
+            case NOT_FOUND: {
+                content = "Custom error handler. The resource " + ctx.getURI().getPath() + " is not found";
+            }
+            break;
+            case INTERNAL_SERVER_ERROR: {
+                content = "Custom error handler. The server internal error. <br/>" + (t != null ? t.getMessage() : "");
+            }
+            break;
+            default: {
+                content = title + "<br/>" + (t != null ? t.getMessage() : "");
+            }
+            break;
+        }
+        ctx.setStatus(status).put(HttpHeader.CONTENT_TYPE, "text/html")
+           .write("<!DOCTYPE html>")
+           .write("<html>")
+           .write("<head>")
+           .write("<title>")
+           .write(title)
+           .write("</title>")
+           .write("</head>")
+           .write("<body>")
+           .write("<h1> " + title + " </h1>")
+           .write("<p>" + content + "</p>")
+           .write("<hr/>")
+           .write("<footer><em>powered by Firefly " + Version.value + "</em></footer>")
+           .write("</body>")
+           .end("</html>");
     }
-  } else {
-      // response 404
-  }
-})
+}
 ```
 
-Also you can extend **com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler** conveniently and sets some routing criteria to handle failure.
+The SPI configuration file **com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler** at **${classpath}/META-INF/services**.
+```
+com.firefly.example.error.handler.DefaultErrorResponseHandler
+```
+
+Visit "http://localhost:8080/error" and view:
+
+```
+500 Server Error
+
+Custom error handler. The server internal error.
+perhaps some errors happen
+
+powered by Firefly 4.0.23
+```
+
 
 
 # Handling sessions
@@ -798,7 +842,7 @@ public class TemplateSPIImpl implements TemplateHandlerSPI {
 }
 ```
 
-Create an new file "com.firefly.server.http2.router.spi.TemplateHandlerSPI" at ${classpath}/META-INF/services and add the class name in this file.
+Create an new file **com.firefly.server.http2.router.spi.TemplateHandlerSPI** at **${classpath}/META-INF/services** and add the class name in this file.
 ```
 com.firefly.example.template.spi.TemplateSPIImpl
 ```
