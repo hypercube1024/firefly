@@ -121,7 +121,7 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);
             if (config.isMonitorEnable()) {
-                reporter = config.getReporterFactory().call();
+                reporter = config.getReporterFactory().call(config.getMetrics());
                 reporter.start(10, TimeUnit.SECONDS);
             }
         } catch (IOException e) {
