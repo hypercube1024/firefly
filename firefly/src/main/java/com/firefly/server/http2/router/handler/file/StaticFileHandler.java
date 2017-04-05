@@ -2,8 +2,10 @@ package com.firefly.server.http2.router.handler.file;
 
 import com.firefly.codec.http2.model.*;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.RoutingContext;
-import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler;
+import com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler;
+import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
@@ -16,17 +18,20 @@ import java.util.List;
 /**
  * @author Pengtao Qiu
  */
-public class StaticFileHandler extends DefaultErrorResponseHandler {
+public class StaticFileHandler implements Handler {
 
     private StaticFileConfiguration configuration;
+    private AbstractErrorResponseHandler errorResponseHandler;
 
     public StaticFileHandler(StaticFileConfiguration configuration) {
         this.configuration = configuration;
+        errorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().getHandler();
     }
 
     public StaticFileHandler(String rootPath) {
         this(new StaticFileConfiguration());
         configuration.setRootPath(rootPath);
+        errorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().getHandler();
     }
 
     @Override
@@ -48,10 +53,10 @@ public class StaticFileHandler extends DefaultErrorResponseHandler {
                      BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
                     IO.copy(in, out, contentLength);
                 } catch (FileNotFoundException e) {
-                    render(ctx, HttpStatus.NOT_FOUND_404, null);
+                    errorResponseHandler.render(ctx, HttpStatus.NOT_FOUND_404, null);
                 } catch (IOException e) {
                     if (ctx.getResponse().isCommitted()) {
-                        render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
+                        errorResponseHandler.render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
                     }
                 }
             } else {
@@ -61,7 +66,7 @@ public class StaticFileHandler extends DefaultErrorResponseHandler {
                 if (ranges == null || ranges.size() == 0) {
                     // if there are no satisfiable ranges, send 416 response
                     ctx.put(HttpHeader.CONTENT_RANGE, InclusiveByteRange.to416HeaderRangeString(contentLength));
-                    render(ctx, HttpStatus.RANGE_NOT_SATISFIABLE_416, null);
+                    errorResponseHandler.render(ctx, HttpStatus.RANGE_NOT_SATISFIABLE_416, null);
                 } else {
                     //  if there is only a single valid range (must be satisfiable
                     //  since were here now), send that range with a 206 response
@@ -80,10 +85,10 @@ public class StaticFileHandler extends DefaultErrorResponseHandler {
                              OutputStream out = ctx.getResponse().getOutputStream()) {
                             fileRegion.transferTo(Callback.NOOP, (buf, callback, count) -> out.write(BufferUtils.toArray(buf)));
                         } catch (FileNotFoundException e) {
-                            render(ctx, HttpStatus.NOT_FOUND_404, null);
+                            errorResponseHandler.render(ctx, HttpStatus.NOT_FOUND_404, null);
                         } catch (IOException e) {
                             if (ctx.getResponse().isCommitted()) {
-                                render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
+                                errorResponseHandler.render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
                             }
                         }
                     } else {
@@ -147,14 +152,14 @@ public class StaticFileHandler extends DefaultErrorResponseHandler {
                                 IO.close(in);
                             }
                             if (ctx.getResponse().isCommitted()) {
-                                render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
+                                errorResponseHandler.render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, e);
                             }
                         }
                     }
                 }
             }
         } else {
-            render(ctx, HttpStatus.NOT_FOUND_404, null);
+            errorResponseHandler.render(ctx, HttpStatus.NOT_FOUND_404, null);
         }
     }
 
