@@ -44,7 +44,7 @@ public class FileLog implements Log, Closeable {
         private BufferedOutputStream bufferedOutputStream;
 
         private String currentDate = LogFactory.DAY_DATE_FORMAT.format(new Date());
-        private int writeSize;
+        private long writeSize;
         private int currentBakIndex;
 
         public void write(String str, Date date) {
@@ -87,7 +87,7 @@ public class FileLog implements Log, Closeable {
                 File file = new File(path, getLogFileName(newDate));
                 bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
                 currentDate = newDate;
-                writeSize = (int) file.length();
+                writeSize = file.length();
                 System.out.println("get new log buffer, the file path is " + file.getAbsolutePath() + " and the size is " + file.length());
                 return true;
             } catch (IOException e) {
@@ -104,7 +104,7 @@ public class FileLog implements Log, Closeable {
             return getLogFileName(date) + "." + index + ".bak";
         }
 
-        private boolean createNewLogFile(String date, int currentWriteSize) {
+        private boolean createNewLogFile(String date, long currentWriteSize) {
             boolean ret;
             try {
                 Path logPath = Paths.get(path, getLogFileName(date));
@@ -140,7 +140,7 @@ public class FileLog implements Log, Closeable {
             return ret;
         }
 
-        private boolean initializeBufferedWriter(String newDate, int currentWriteSize) {
+        private boolean initializeBufferedWriter(String newDate, long currentWriteSize) {
             if (createNewLogFile(newDate, currentWriteSize)) {
                 close();
                 return createNewBufferedOutputStream(newDate);
