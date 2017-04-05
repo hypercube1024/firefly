@@ -72,10 +72,4 @@ public interface RouterManager extends RequestAcceptor {
         routerManager.registerLast().path("*").handler(DefaultErrorResponseHandlerLoader.getInstance().getHandler());
         return routerManager;
     }
-
-    static RouterManager createEmpty() {
-        RouterManagerImpl routerManager = new RouterManagerImpl();
-        routerManager.registerLast().path("*").handler(DefaultErrorResponseHandlerLoader.getInstance().getHandler());
-        return routerManager;
-    }
 }
