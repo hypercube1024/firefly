@@ -1,7 +1,6 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.codec.http2.encode.HttpGenerator;
-import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.net.Session;
 import com.firefly.utils.io.BufferUtils;
@@ -13,32 +12,6 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 
     public AbstractHTTP1OutputStream(MetaData info, boolean clientMode) {
         super(info, clientMode);
-    }
-
-    @Override
-    public synchronized void writeWithContentLength(ByteBuffer[] data) throws IOException {
-        try {
-            long contentLength = 0;
-            for (ByteBuffer buf : data) {
-                contentLength += buf.remaining();
-            }
-            info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
-            for (ByteBuffer buf : data) {
-                write(buf);
-            }
-        } finally {
-            close();
-        }
-    }
-
-    @Override
-    public synchronized void writeWithContentLength(ByteBuffer data) throws IOException {
-        try {
-            info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
-            write(data);
-        } finally {
-            close();
-        }
     }
 
     @Override
