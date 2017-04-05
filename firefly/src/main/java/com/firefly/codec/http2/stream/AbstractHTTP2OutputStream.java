@@ -1,5 +1,6 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.Version;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.DisconnectFrame;
 import com.firefly.codec.http2.frame.Frame;
@@ -17,6 +18,9 @@ import java.util.LinkedList;
 abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
+
+    public static final String X_POWERED_BY_VALUE = "Firefly " + Version.value;
+    public static final String SERVER_VALUE = "Firefly " + Version.value;
 
     protected boolean isChunked;
     private long size;
@@ -185,8 +189,8 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
             log.debug("is stream {} using chunked encoding ? {}", getStream().getId(), isChunked);
         }
 
-        info.getFields().put(HttpHeader.X_POWERED_BY, "Firefly 4.0");
-        info.getFields().put(HttpHeader.SERVER, "Firefly 4.0");
+        info.getFields().put(HttpHeader.X_POWERED_BY, X_POWERED_BY_VALUE);
+        info.getFields().put(HttpHeader.SERVER, SERVER_VALUE);
 
         final Stream stream = getStream();
         final HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, endStream);
