@@ -5,7 +5,6 @@ layout: document
 title: HTTP server and client
 
 ---
-**Table of Contents**
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [Basic concepts](#basic-concepts)
@@ -27,6 +26,7 @@ title: HTTP server and client
 	- [Remote session store](#remote-session-store)
 - [Serving static resources](#serving-static-resources)
 - [Rendering template](#rendering-template)
+	- [Custom template renderer](#custom-template-renderer)
 - [Multipart file uploading](#multipart-file-uploading)
 
 <!-- /TOC -->
@@ -761,10 +761,67 @@ Price: {{price}}
 {% endraw %}
 ```
 
-Run it and view:
+Run it and view.
 ```
 http://localhost:8080/example
 ```
+The result.
+```
+Name: Item 1
+Price: $19.99
+    Feature: New!
+    Feature: Awesome!
+Name: Item 2
+Price: $29.99
+    Feature: Old.
+    Feature: Ugly.
+```
+
+## Custom template renderer
+You can use the other template engine instead of the Mustache. The first, implement the TemplateHandlerSPI interface.
+```java
+public class TemplateSPIImpl implements TemplateHandlerSPI {
+    @Override
+    public void renderTemplate(RoutingContext ctx, String resourceName, Object scope) {
+        ctx.end("test template spi demo");
+    }
+
+    @Override
+    public void renderTemplate(RoutingContext ctx, String resourceName, Object[] scopes) {
+        ctx.end("test template spi demo");
+    }
+
+    @Override
+    public void renderTemplate(RoutingContext ctx, String resourceName, List<Object> scopes) {
+        ctx.end("test template spi demo");
+    }
+}
+```
+
+Create an new file "com.firefly.server.http2.router.spi.TemplateHandlerSPI" at ${classpath}/META-INF/services and add the class name in this file.
+```
+com.firefly.example.template.spi.TemplateSPIImpl
+```
+
+Create main method.
+```java
+public static void main(String[] args) {
+		$.httpServer().router().get("/example").handler(ctx -> {
+				ctx.put(HttpHeader.CONTENT_TYPE, "text/plain")
+					 .renderTemplate("template/example.mustache", new Example());
+		}).listen("localhost", 8080);
+}
+```
+Run it and view.
+```
+http://localhost:8080/example
+```
+
+The result.
+```
+test template spi demo
+```
+
 
 # Multipart file uploading
 
