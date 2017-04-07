@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileFilter;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -35,7 +35,7 @@ public class AnnotationBeanReader extends AbstractBeanReader {
     }
 
     public AnnotationBeanReader(String file) {
-        beanDefinitions = new ArrayList<BeanDefinition>();
+        beanDefinitions = new ArrayList<>();
         Config config = ConfigReader.getInstance().load(file);
         for (String pack : config.getPaths()) {
             log.info("componentPath [{}]", pack);
@@ -49,78 +49,72 @@ public class AnnotationBeanReader extends AbstractBeanReader {
         URL url = AnnotationBeanReader.class.getClassLoader().getResource(packageDirName);
         if (url == null) {
             error(packageName + " can not be found");
-        }
-        log.debug("URL -> {}", url.toString());
-        String protocol = url.getProtocol();
-        if ("file".equals(protocol)) {
-            parseFile(url, packageDirName);
-        } else if ("jar".equals(protocol)) {
-            parseJar(url, packageDirName);
+        } else {
+            log.debug("URL -> {}", url.toString());
+            String protocol = url.getProtocol();
+            if ("file".equals(protocol)) {
+                parseFile(url, packageDirName);
+            } else if ("jar".equals(protocol)) {
+                parseJar(url, packageDirName);
+            }
         }
     }
 
     private void parseFile(URL url, final String packageDirName) {
-        File path = null;
         try {
-            path = new File(url.toURI());
+            File path = new File(url.toURI());
+            path.listFiles(file -> {
+                String name = file.getName();
+                if (name.endsWith(".class") && !name.contains("$")) {
+                    parseClass(packageDirName.replace('/', '.') + "." + name.substring(0, file.getName().length() - 6));
+                } else if (file.isDirectory()) {
+                    try {
+                        parseFile(file.toURI().toURL(), packageDirName + "/" + name);
+                    } catch (Throwable t) {
+                        log.error("parse file error", t);
+                    }
+                }
+                return false;
+            });
         } catch (Throwable t) {
             log.error("parse file error", t);
         }
-        path.listFiles((File file) -> {
-            String name = file.getName();
-            if (name.endsWith(".class") && !name.contains("$")) {
-                parseClass(packageDirName.replace('/', '.') + "."
-                        + name.substring(0, file.getName().length() - 6));
-            } else if (file.isDirectory()) {
-                try {
-                    parseFile(file.toURI().toURL(), packageDirName + "/"
-                            + name);
-                } catch (Throwable t) {
-                    log.error("parse file error", t);
-                }
-            }
-            return false;
-        });
     }
 
     private void parseJar(URL url, String packageDirName) {
-        Enumeration<JarEntry> entries = null;
         try {
-            entries = ((JarURLConnection) url.openConnection()).getJarFile()
-                    .entries();
-        } catch (Throwable t) {
+            Enumeration<JarEntry> entries = ((JarURLConnection) url.openConnection()).getJarFile().entries();
+            while (entries.hasMoreElements()) {
+                String name = entries.nextElement().getName();
+                if (!name.endsWith(".class") || name.contains("$") || !name.startsWith(packageDirName + "/")) {
+                    continue;
+                }
+                parseClass(name.substring(0, name.length() - 6).replace('/', '.'));
+            }
+        } catch (IOException t) {
             log.error("parse jar error", t);
         }
-        while (entries.hasMoreElements()) {
-            String name = entries.nextElement().getName();
-            if (!name.endsWith(".class") || name.contains("$")
-                    || !name.startsWith(packageDirName + "/"))
-                continue;
-            parseClass(name.substring(0, name.length() - 6).replace('/', '.'));
-        }
-
     }
 
     private void parseClass(String className) {
-        Class<?> c = null;
         try {
-            c = AnnotationBeanReader.class.getClassLoader()
-                    .loadClass(className);
+            Class<?> c = AnnotationBeanReader.class.getClassLoader().loadClass(className);
+            BeanDefinition beanDefinition = getBeanDefinition(c);
+            if (beanDefinition != null) {
+                beanDefinitions.add(beanDefinition);
+            }
         } catch (Throwable t) {
             log.error("parse class error", t);
         }
-
-        BeanDefinition beanDefinition = getBeanDefinition(c);
-        if (beanDefinition != null)
-            beanDefinitions.add(beanDefinition);
     }
 
     protected BeanDefinition getBeanDefinition(Class<?> c) {
         if (c.isAnnotationPresent(Component.class)) {
             log.info("classes [{}]", c.getName());
             return componentParser(c);
-        } else
+        } else {
             return null;
+        }
     }
 
     protected BeanDefinition componentParser(Class<?> c) {
