@@ -34,7 +34,7 @@ public class RoutingContextImpl implements RoutingContext {
     private volatile RouterManager.RouterMatchResult current;
     private volatile HTTPBodyHandlerSPI httpBodyHandlerSPI;
     private volatile HTTPSessionHandlerSPI httpSessionHandlerSPI;
-    private TemplateHandlerSPI templateHandlerSPI = TemplateHandlerSPILoader.getInstance().getTemplateHandlerSPI();
+    private final TemplateHandlerSPI templateHandlerSPI = TemplateHandlerSPILoader.getInstance().getTemplateHandlerSPI();
     private volatile boolean asynchronousRead;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
@@ -290,22 +290,16 @@ public class RoutingContextImpl implements RoutingContext {
 
     @Override
     public void renderTemplate(String resourceName, Object scope) {
-        if (templateHandlerSPI != null) {
-            templateHandlerSPI.renderTemplate(this, resourceName, scope);
-        }
+        templateHandlerSPI.renderTemplate(this, resourceName, scope);
     }
 
     @Override
     public void renderTemplate(String resourceName, Object[] scopes) {
-        if (templateHandlerSPI != null) {
-            templateHandlerSPI.renderTemplate(this, resourceName, scopes);
-        }
+        templateHandlerSPI.renderTemplate(this, resourceName, scopes);
     }
 
     @Override
     public void renderTemplate(String resourceName, List<Object> scopes) {
-        if (templateHandlerSPI != null) {
-            templateHandlerSPI.renderTemplate(this, resourceName, scopes);
-        }
+        templateHandlerSPI.renderTemplate(this, resourceName, scopes);
     }
 }
