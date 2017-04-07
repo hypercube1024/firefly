@@ -23,15 +23,15 @@ public abstract class ReflectUtils {
 	public static ProxyFactory defaultFieldProxy = FieldProxyFactoryUsingJavassist.INSTANCE;
 	public static ProxyFactory defaultMethodProxy = MethodProxyFactoryUsingJavassist.INSTANCE;
 
-	public static interface BeanMethodFilter {
-		public boolean accept(String propertyName, Method method);
+	public interface BeanMethodFilter {
+		boolean accept(String propertyName, Method method);
 	}
 
-	public static interface BeanFieldFilter {
-		public boolean accept(String propertyName, Field field);
+	public interface BeanFieldFilter {
+		boolean accept(String propertyName, Field field);
 	}
 
-	public static interface MethodProxy {
+	public interface MethodProxy {
 
 		Method method();
 
@@ -47,7 +47,7 @@ public abstract class ReflectUtils {
 		Object invoke(Object obj, Object... args);
 	}
 
-	public static interface FieldProxy {
+	public interface FieldProxy {
 
 		Field field();
 
@@ -56,7 +56,7 @@ public abstract class ReflectUtils {
 		void set(Object obj, Object value);
 	}
 
-	public static interface ArrayProxy {
+	public interface ArrayProxy {
 		int size(Object array);
 
 		Object get(Object array, int index);
@@ -64,7 +64,7 @@ public abstract class ReflectUtils {
 		void set(Object array, int index, Object value);
 	}
 
-	public static interface ProxyFactory {
+	public interface ProxyFactory {
 		ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable;
 
 		FieldProxy getFieldProxy(Field field) throws Throwable;
@@ -147,7 +147,7 @@ public abstract class ReflectUtils {
 	 */
 	public static String[] getInterfaceNames(Class<?> c) {
 		Class<?>[] interfaces = c.getInterfaces();
-		List<String> names = new ArrayList<String>();
+		List<String> names = new ArrayList<>();
 		for (Class<?> i : interfaces) {
 			names.add(i.getName());
 		}
@@ -170,11 +170,11 @@ public abstract class ReflectUtils {
 	}
 
 	public static Map<String, Method> getSetterMethods(Class<?> clazz) {
-		return setterCache.get(clazz, (key) -> { return getSetterMethods(key, null);});
+		return setterCache.get(clazz, (key) -> getSetterMethods(key, null));
 	}
 
 	public static Map<String, Method> getSetterMethods(Class<?> clazz, BeanMethodFilter filter) {
-		Map<String, Method> setMethodMap = new HashMap<String, Method>();
+		Map<String, Method> setMethodMap = new HashMap<>();
 		Method[] methods = clazz.getMethods();
 
 		for (Method method : methods) {
@@ -198,11 +198,11 @@ public abstract class ReflectUtils {
 	}
 
 	public static Map<String, Method> getGetterMethods(Class<?> clazz) {
-		return getterCache.get(clazz, (key) -> { return getGetterMethods(key, null);});
+		return getterCache.get(clazz, (key) -> getGetterMethods(key, null));
 	}
 
 	public static Map<String, Method> getGetterMethods(Class<?> clazz, BeanMethodFilter filter) {
-		Map<String, Method> getMethodMap = new HashMap<String, Method>();
+		Map<String, Method> getMethodMap = new HashMap<>();
 		Method[] methods = clazz.getMethods();
 		for (int i = 0; i < methods.length; i++) {
 			Method method = methods[i];
@@ -234,11 +234,11 @@ public abstract class ReflectUtils {
 	}
 
 	public static Map<String, Field> getFields(Class<?> clazz) {
-		return propertyCache.get(clazz, (key) -> { return getFields(key, null);});
+		return propertyCache.get(clazz, (key) -> getFields(key, null));
 	}
 
 	public static Map<String, Field> getFields(Class<?> clazz, BeanFieldFilter filter) {
-		Map<String, Field> fieldMap = new HashMap<String, Field>();
+		Map<String, Field> fieldMap = new HashMap<>();
 		Field[] fields = clazz.getFields();
 		for (Field field : fields) {
 			field.setAccessible(true);

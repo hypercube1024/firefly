@@ -17,30 +17,13 @@ import com.firefly.utils.StringUtils;
 
 public class FieldProxyFactoryUsingJavassist extends AbstractFieldProxyFactory {
 	
-	private static final Map<Field, FieldProxy> fieldCache = new ConcurrentReferenceHashMap<>(256);
+
 	public static final FieldProxyFactoryUsingJavassist INSTANCE = new FieldProxyFactoryUsingJavassist();
 
 	private FieldProxyFactoryUsingJavassist() {}
 	
-	@Override
-	public FieldProxy getFieldProxy(Field field) throws Throwable {
-		FieldProxy ret = fieldCache.get(field);
-		if(ret != null)
-			return ret;
-		
-		synchronized(fieldCache) {
-			ret = fieldCache.get(field);
-			if(ret != null)
-				return ret;
-			
-			ret = _getFieldProxy(field);
-			fieldCache.put(field, ret);
-			return ret;
-		}
-	}
-	
 	@SuppressWarnings("unchecked")
-	private FieldProxy _getFieldProxy(Field field) throws Throwable {
+	protected FieldProxy _getFieldProxy(Field field) throws Throwable {
 //		long start = System.currentTimeMillis();
 		ClassPool classPool = ClassPool.getDefault();
 		classPool.insertClassPath(new ClassClassPath(FieldProxy.class));

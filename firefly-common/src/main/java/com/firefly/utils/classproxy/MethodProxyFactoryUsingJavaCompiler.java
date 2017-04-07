@@ -11,31 +11,13 @@ import com.firefly.utils.StringUtils;
 
 public class MethodProxyFactoryUsingJavaCompiler extends AbstractMethodProxyFactory {
 
-	private static final Map<Method, MethodProxy> methodCache = new ConcurrentReferenceHashMap<>(256);
 	public static final MethodProxyFactoryUsingJavaCompiler INSTANCE = new MethodProxyFactoryUsingJavaCompiler();
 	
 	private MethodProxyFactoryUsingJavaCompiler() {
 		
 	}
 	
-	@Override
-	public MethodProxy getMethodProxy(Method method) throws Throwable {
-		MethodProxy ret = methodCache.get(method);
-		if(ret != null)
-			return ret;
-		
-		synchronized(methodCache) {
-			ret = methodCache.get(method);
-			if(ret != null)
-				return ret;
-		
-			ret = _getMethodProxy(method);
-			methodCache.put(method, ret);
-			return ret;
-		}
-	}
-	
-	private MethodProxy _getMethodProxy(Method method) throws Throwable {
+	protected MethodProxy _getMethodProxy(Method method) throws Throwable {
 //		long start = System.currentTimeMillis();
 		String packageName = "com.firefly.utils";
 		String className = "MethodReflectionProxy" + UUID.randomUUID().toString().replace("-", "");

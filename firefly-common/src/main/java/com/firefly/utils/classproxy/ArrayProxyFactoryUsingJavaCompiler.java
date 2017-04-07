@@ -1,43 +1,21 @@
 package com.firefly.utils.classproxy;
 
-import java.util.Map;
-import java.util.UUID;
-
 import com.firefly.utils.CompilerUtils;
 import com.firefly.utils.ReflectUtils.ArrayProxy;
-import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.StringUtils;
+
+import java.util.UUID;
 
 public class ArrayProxyFactoryUsingJavaCompiler extends AbstractArrayProxyFactory {
 	
-	private static final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentReferenceHashMap<>(256);
+
 	public static final ArrayProxyFactoryUsingJavaCompiler INSTANCE = new ArrayProxyFactoryUsingJavaCompiler();
 	
 	private ArrayProxyFactoryUsingJavaCompiler(){
 		
 	}
 	
-	@Override
-	public ArrayProxy getArrayProxy(Class<?> clazz) throws Throwable {
-		if(!clazz.isArray())
-			throw new IllegalArgumentException("type error, it's not array");
-			
-		ArrayProxy ret = arrayCache.get(clazz);
-		if(ret != null)
-			return ret;
-		
-		synchronized(arrayCache) {
-			ret = arrayCache.get(clazz);
-			if(ret != null)
-				return ret;
-			
-			ret = _getArrayProxy(clazz);
-			arrayCache.put(clazz, ret);
-			return ret;
-		}
-	}
-	
-	private ArrayProxy _getArrayProxy(Class<?> clazz) throws Throwable {
+	protected ArrayProxy _getArrayProxy(Class<?> clazz) throws Throwable {
 //		long start = System.currentTimeMillis();
 		
 		String packageName = "com.firefly.utils";
@@ -46,7 +24,7 @@ public class ArrayProxyFactoryUsingJavaCompiler extends AbstractArrayProxyFactor
 //		System.out.println(completeClassName);
 		
 		Class<?> componentType = clazz.getComponentType();
-		String v = null;
+		String v;
 		if(componentType.isPrimitive()) {
 			v = StringUtils.replace("(({})value).{}Value()", primitiveWrapMap.get(componentType), componentType.getCanonicalName());
 		} else {
