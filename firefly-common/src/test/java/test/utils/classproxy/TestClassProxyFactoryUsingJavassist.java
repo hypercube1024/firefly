@@ -1,18 +1,23 @@
 package test.utils.classproxy;
 
-import static org.hamcrest.Matchers.is;
-
-import java.lang.reflect.Method;
-
+import com.firefly.utils.classproxy.ClassProxyFactory;
+import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import com.firefly.utils.ReflectUtils.MethodProxy;
-import com.firefly.utils.classproxy.ClassProxy;
-import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
-import com.firefly.utils.classproxy.MethodFilter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
+import static org.hamcrest.Matchers.is;
+
+@RunWith(Parameterized.class)
 public class TestClassProxyFactoryUsingJavassist {
+
+    @Parameterized.Parameter
+    public Run r;
 
     public static class Fee {
         protected void testProtected() {
@@ -36,11 +41,31 @@ public class TestClassProxyFactoryUsingJavassist {
         }
     }
 
+    static class Run {
+        ClassProxyFactory classProxyFactory;
+        String name;
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Run> data() {
+        List<Run> list = new ArrayList<>();
+        Run run = new Run();
+        run.classProxyFactory = ClassProxyFactoryUsingJavassist.INSTANCE;
+        run.name = "javassist proxy factory";
+        list.add(run);
+        return list;
+    }
+
     @Test
     public void test() throws Throwable {
         Fee origin = new Fee();
 
-        Fee fee = (Fee) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(origin,
+        Fee fee = (Fee) r.classProxyFactory.createProxy(origin,
                 (handler, originalInstance, args) -> {
                     System.out.println("intercept method 1: " + handler.method().getName() + "|" + originalInstance.getClass().getCanonicalName());
                     if (handler.method().getName().equals("testInt")) {
@@ -57,7 +82,7 @@ public class TestClassProxyFactoryUsingJavassist {
         Assert.assertThat(fee.hello(), is("hello fee intercept 1"));
         Assert.assertThat(fee.testInt(25), is(1));
 
-        Fee fee2 = (Fee) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(fee,
+        Fee fee2 = (Fee) r.classProxyFactory.createProxy(fee,
                 (handler, originalInstance, args) -> {
                     System.out.println("intercept method 2: " + handler.method().getName() + "|" + originalInstance.getClass().getCanonicalName());
                     if (handler.method().getName().equals("testInt")) {
@@ -80,7 +105,7 @@ public class TestClassProxyFactoryUsingJavassist {
     public void testFilter() throws Throwable {
         Fee origin = new Fee();
 
-        Fee fee = (Fee) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(origin,
+        Fee fee = (Fee) r.classProxyFactory.createProxy(origin,
                 (handler, originalInstance, args) -> {
                     System.out.println("filter method 1: " + handler.method().getName() + "|" + originalInstance.getClass().getCanonicalName());
                     if (handler.method().getName().equals("testInt")) {
@@ -98,7 +123,7 @@ public class TestClassProxyFactoryUsingJavassist {
         Assert.assertThat(fee.testInt(25), is(25));
     }
 
-    public static void main(String[] args) throws Throwable {
-        new TestClassProxyFactoryUsingJavassist().test();
-    }
+//    public static void main(String[] args) throws Throwable {
+//        new TestClassProxyFactoryUsingJavassist().test();
+//    }
 }
