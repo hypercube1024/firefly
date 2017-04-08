@@ -10,7 +10,6 @@ import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 /**
  * @author Pengtao Qiu
@@ -34,14 +33,9 @@ public class TestByteBuddy {
     }
 
     public static ReflectUtils.MethodProxy _getMethodProxy(Method method) {
-        String packageName = "com.firefly.utils";
-        String className = "ByteBuddyMethodReflectionProxy" + UUID.randomUUID().toString().replace("-", "");
-        String completeClassName = packageName + "." + className;
-
         try {
             ByteBuddy b = new ByteBuddy(ClassFileVersion.JAVA_V8);
             return b.subclass(ReflectUtils.MethodProxy.class)
-                    .name(completeClassName)
                     .defineMethod("method", Method.class, Visibility.PUBLIC)
                     .intercept(FixedValue.value(method))
                     .defineMethod("invoke", Object.class, Visibility.PUBLIC)
