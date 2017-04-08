@@ -98,7 +98,7 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     private QueryRunner getMonitorQueryRunner(QueryRunner queryRunner) {
         try {
-            return (QueryRunner) JavassistClassProxyFactory.INSTANCE.createProxy(queryRunner,
+            return JavassistClassProxyFactory.INSTANCE.createProxy(queryRunner,
                     (handler, originalInstance, args) -> {
                         String sql = "";
                         if (args != null && args.length > 0) {

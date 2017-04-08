@@ -65,7 +65,7 @@ public class TestClassProxy {
     public void test() throws Throwable {
         Fee origin = new Fee();
 
-        Fee fee = (Fee) r.classProxyFactory.createProxy(origin,
+        Fee fee = r.classProxyFactory.createProxy(origin,
                 (handler, originalInstance, args) -> {
                     System.out.println("intercept method 1: " + handler.method().getName() + "|" + originalInstance.getClass().getCanonicalName());
                     if (handler.method().getName().equals("testInt")) {
@@ -82,7 +82,7 @@ public class TestClassProxy {
         Assert.assertThat(fee.hello(), is("hello fee intercept 1"));
         Assert.assertThat(fee.testInt(25), is(1));
 
-        Fee fee2 = (Fee) r.classProxyFactory.createProxy(fee,
+        Fee fee2 = r.classProxyFactory.createProxy(fee,
                 (handler, originalInstance, args) -> {
                     System.out.println("intercept method 2: " + handler.method().getName() + "|" + originalInstance.getClass().getCanonicalName());
                     if (handler.method().getName().equals("testInt")) {
@@ -105,7 +105,7 @@ public class TestClassProxy {
     public void testFilter() throws Throwable {
         Fee origin = new Fee();
 
-        Fee fee = (Fee) r.classProxyFactory.createProxy(origin,
+        Fee fee = r.classProxyFactory.createProxy(origin,
                 (handler, originalInstance, args) -> {
                     System.out.println("filter method 1: " + handler.method().getName() + "|" + originalInstance.getClass().getCanonicalName());
                     if (handler.method().getName().equals("testInt")) {

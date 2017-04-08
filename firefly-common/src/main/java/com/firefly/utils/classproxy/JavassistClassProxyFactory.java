@@ -24,7 +24,7 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public Object createProxy(Object instance, ClassProxy proxy, MethodFilter filter) throws Throwable {
+    public <T> T createProxy(T instance, ClassProxy proxy, MethodFilter filter) throws Throwable {
         ClassPool classPool = ClassPool.getDefault();
         classPool.insertClassPath(new ClassClassPath(ClassProxyFactory.class));
 
@@ -122,11 +122,10 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
                         + ");\n";
             }
             str += "}";
-//			System.out.println(str);
             cc.addMethod(CtMethod.make(str, cc));
         }
 
         // generate proxy instance
-        return cc.toClass(classLoader, null).getConstructor(ClassProxy.class, clazz, MethodProxy[].class).newInstance(proxy, instance, methodProxies);
+        return (T)cc.toClass(classLoader, null).getConstructor(ClassProxy.class, clazz, MethodProxy[].class).newInstance(proxy, instance, methodProxies);
     }
 }

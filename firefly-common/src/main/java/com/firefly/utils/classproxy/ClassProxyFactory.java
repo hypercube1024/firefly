@@ -1,5 +1,5 @@
 package com.firefly.utils.classproxy;
 
 public interface ClassProxyFactory {
-    Object createProxy(Object instance, ClassProxy proxy, MethodFilter method) throws Throwable;
+    <T> T createProxy(T instance, ClassProxy proxy, MethodFilter method) throws Throwable;
 }
