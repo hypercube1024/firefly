@@ -76,7 +76,5 @@ public class TestByteBuddy {
         System.out.println(getter.method());
         System.out.println(setter.invoke(bar, "hello world"));
         System.out.println(getter.invoke(bar));
-//        setter.invoke(bar, "hello");
-//        System.out.println(getter.invoke(bar));
     }
 }
