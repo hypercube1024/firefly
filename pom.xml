@@ -91,12 +91,6 @@
                 <artifactId>javassist</artifactId>
                 <version>3.21.0-GA</version>
             </dependency>
-
-            <dependency>
-                <groupId>net.bytebuddy</groupId>
-                <artifactId>byte-buddy</artifactId>
-                <version>1.6.12</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
