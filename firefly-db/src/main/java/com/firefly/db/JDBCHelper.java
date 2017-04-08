@@ -8,9 +8,8 @@ import com.firefly.db.DefaultBeanProcessor.Mapper;
 import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.JavassistClassProxyFactory;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -99,7 +98,7 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     private QueryRunner getMonitorQueryRunner(QueryRunner queryRunner) {
         try {
-            return (QueryRunner) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(queryRunner,
+            return (QueryRunner) JavassistClassProxyFactory.INSTANCE.createProxy(queryRunner,
                     (handler, originalInstance, args) -> {
                         String sql = "";
                         if (args != null && args.length > 0) {

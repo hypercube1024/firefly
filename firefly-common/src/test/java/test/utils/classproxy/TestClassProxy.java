@@ -1,7 +1,7 @@
 package test.utils.classproxy;
 
 import com.firefly.utils.classproxy.ClassProxyFactory;
-import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.JavassistClassProxyFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +14,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.is;
 
 @RunWith(Parameterized.class)
-public class TestClassProxyFactoryUsingJavassist {
+public class TestClassProxy {
 
     @Parameterized.Parameter
     public Run r;
@@ -55,7 +55,7 @@ public class TestClassProxyFactoryUsingJavassist {
     public static Collection<Run> data() {
         List<Run> list = new ArrayList<>();
         Run run = new Run();
-        run.classProxyFactory = ClassProxyFactoryUsingJavassist.INSTANCE;
+        run.classProxyFactory = JavassistClassProxyFactory.INSTANCE;
         run.name = "javassist proxy factory";
         list.add(run);
         return list;
@@ -123,7 +123,4 @@ public class TestClassProxyFactoryUsingJavassist {
         Assert.assertThat(fee.testInt(25), is(25));
     }
 
-//    public static void main(String[] args) throws Throwable {
-//        new TestClassProxyFactoryUsingJavassist().test();
-//    }
 }

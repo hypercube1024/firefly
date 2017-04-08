@@ -10,16 +10,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ClassProxyFactoryUsingJavassist implements ClassProxyFactory {
+public class JavassistClassProxyFactory implements ClassProxyFactory {
 
-    public static final ClassProxyFactoryUsingJavassist INSTANCE = new ClassProxyFactoryUsingJavassist();
+    public static final JavassistClassProxyFactory INSTANCE = new JavassistClassProxyFactory();
     public static ClassLoader classLoader;
 
     static {
         classLoader = Thread.currentThread().getContextClassLoader();
     }
 
-    private ClassProxyFactoryUsingJavassist() {
+    private JavassistClassProxyFactory() {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -73,7 +73,7 @@ public class ClassProxyFactoryUsingJavassist implements ClassProxyFactory {
         MethodProxy[] methodProxies = new MethodProxy[methods.length];
         for (int i = 0; i < methods.length; i++) {
             Method m = methods[i];
-            methodProxies[i] = MethodProxyFactoryUsingJavassist.INSTANCE.getMethodProxy(m);
+            methodProxies[i] = JavassistReflectionProxyFactory.INSTANCE.getMethodProxy(m);
             String parameterArray = "Object[] args = new Object[]{";
             String str = "public " + m.getReturnType().getCanonicalName() + " " + m.getName() + "(";
             Class[] parameters = m.getParameterTypes();
