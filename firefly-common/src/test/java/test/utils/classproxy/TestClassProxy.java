@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -38,6 +39,22 @@ public class TestClassProxy {
 
         public String hello() {
             return "hello fee";
+        }
+    }
+
+    public static class NonJavaBean {
+        String hello;
+
+        public NonJavaBean(String hello) {
+            this.hello = hello;
+        }
+
+        public String getHello() {
+            return hello;
+        }
+
+        public void setHello(String hello) {
+            this.hello = hello;
         }
     }
 
@@ -121,6 +138,15 @@ public class TestClassProxy {
         System.out.println(fee.getClass().getCanonicalName());
         Assert.assertThat(fee.hello(), is("hello fee filter 1"));
         Assert.assertThat(fee.testInt(25), is(25));
+    }
+
+    @Test(expected = InvocationTargetException.class)
+    public void testNonJavaBean() throws Throwable {
+        NonJavaBean x = new NonJavaBean("test");
+        NonJavaBean y = r.classProxyFactory.createProxy(x,
+                (handler, originalInstance, args) -> "no java bean",
+                method -> method.getName().equals("getHello"));
+        System.out.println(y.getHello());
     }
 
 }
