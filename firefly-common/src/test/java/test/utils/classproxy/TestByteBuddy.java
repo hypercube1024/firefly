@@ -8,11 +8,8 @@ import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.FixedValue;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
-import net.bytebuddy.implementation.MethodDelegation;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.UUID;
 
 /**
