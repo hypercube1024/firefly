@@ -7,7 +7,6 @@ import com.firefly.core.support.annotation.AnnotationBeanReader;
 import com.firefly.core.support.xml.*;
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.ReflectUtils.BeanMethodFilter;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import org.slf4j.Logger;
@@ -19,8 +18,6 @@ import java.util.*;
 
 /**
  * The core application context mixed XML and annotation bean management
- *
- * @author JJ Xu &amp; Alvin Qiu
  */
 public class XmlApplicationContext extends AbstractApplicationContext {
 
@@ -36,20 +33,18 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 
     @Override
     protected List<BeanDefinition> getBeanDefinitions(String file) {
-        List<BeanDefinition> list1 = new AnnotationBeanReader(file)
-                .loadBeanDefinitions();
-        List<BeanDefinition> list2 = new XmlBeanReader(file)
-                .loadBeanDefinitions();
-        if (list1 != null && list2 != null) {
+        List<BeanDefinition> annotationBeanDefs = new AnnotationBeanReader(file).loadBeanDefinitions();
+        List<BeanDefinition> xmlBeanDefs = new XmlBeanReader(file).loadBeanDefinitions();
+        if (annotationBeanDefs != null && xmlBeanDefs != null) {
             log.debug("mixed bean");
-            list1.addAll(list2);
-            return list1;
-        } else if (list1 != null) {
+            annotationBeanDefs.addAll(xmlBeanDefs);
+            return annotationBeanDefs;
+        } else if (annotationBeanDefs != null) {
             log.debug("annotation bean");
-            return list1;
-        } else if (list2 != null) {
+            return annotationBeanDefs;
+        } else if (xmlBeanDefs != null) {
             log.debug("xml bean");
-            return list2;
+            return xmlBeanDefs;
         }
         return null;
     }
@@ -75,12 +70,12 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 
             String[] keys = beanDef.getInterfaceNames();
             for (String k : keys) {
-                instance = map.get(beanDef);
+                instance = map.get(k);
                 if (instance != null) {
                     return instance;
                 }
             }
-            return instance;
+            return null;
         }
     }
 
@@ -108,7 +103,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 
             if (instance != null) {
                 final Object obj = instance;
-                ReflectUtils.getSetterMethods(clazz, (String propertyName, Method method) -> {
+                ReflectUtils.getSetterMethods(clazz, (propertyName, method) -> {
                     XmlManagedNode value = beanDefinition.getProperties().get(propertyName);
                     if (value != null) {
                         try {
@@ -134,7 +129,7 @@ public class XmlApplicationContext extends AbstractApplicationContext {
     private Object getInjectArg(XmlManagedNode value, Class<?> parameterType) {
         if (value instanceof ManagedValue) {
             ManagedValue managedValue = (ManagedValue) value;
-            String typeName = null;
+            String typeName;
             if (parameterType == null) {
                 typeName = VerifyUtils.isEmpty(managedValue.getTypeName()) ? null
                         : managedValue.getTypeName();
@@ -176,19 +171,22 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         if (VerifyUtils.isNotEmpty(values.getTypeName())) {
             try {
                 collection = (Collection<Object>) XmlApplicationContext.class
-                        .getClassLoader().loadClass(values.getTypeName())
+                        .getClassLoader()
+                        .loadClass(values.getTypeName())
                         .newInstance();
             } catch (Throwable t) {
                 log.error("list inject error", t);
             }
         } else {
-            collection = (setterParamType == null ? new ArrayList<Object>()
+            collection = (setterParamType == null ? new ArrayList<>()
                     : ConvertUtils.getCollectionObj(setterParamType));
         }
 
-        for (XmlManagedNode item : values) {
-            Object listValue = getInjectArg(item, null);
-            collection.add(listValue);
+        if (collection != null) {
+            for (XmlManagedNode item : values) {
+                Object listValue = getInjectArg(item, null);
+                collection.add(listValue);
+            }
         }
         return collection;
     }
@@ -209,29 +207,28 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         if (VerifyUtils.isNotEmpty(values.getTypeName())) {
             try {
                 m = (Map<Object, Object>) XmlApplicationContext.class.getClassLoader()
-                        .loadClass(values.getTypeName())
-                        .newInstance();
+                                                                     .loadClass(values.getTypeName())
+                                                                     .newInstance();
             } catch (Throwable t) {
                 log.error("map inject error", t);
             }
         } else {
             m = (setterParamType == null ? new HashMap<>() : ConvertUtils.getMapObj(setterParamType));
-            log.debug("map ret [{}]", m.getClass().getName());
+            if (m != null && log.isDebugEnabled()) {
+                log.debug("map ret [{}]", m.getClass().getName());
+            }
         }
-        for (XmlManagedNode o : values.keySet()) {
-            Object k = getInjectArg(o, null);
-            Object v = getInjectArg(values.get(o), null);
-            m.put(k, v);
+
+        if (m != null) {
+            for (XmlManagedNode o : values.keySet()) {
+                Object k = getInjectArg(o, null);
+                Object v = getInjectArg(values.get(o), null);
+                m.put(k, v);
+            }
         }
         return m;
     }
 
-    /**
-     * annotation injecting
-     *
-     * @param beanDef
-     * @return
-     */
     private Object annotationInject(BeanDefinition beanDef) {
         Object instance = getInstance(beanDef);
         if (instance == null) {
