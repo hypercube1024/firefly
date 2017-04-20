@@ -18,7 +18,7 @@ public class Brainfuck {
         public Op(OpT _op, int _v) {
             op = _op;
             v = _v;
-            loop = new ArrayList<Op>();
+            loop = new ArrayList<>();
         }
 
         public Op(OpT _op, List<Op> _l) {
@@ -81,7 +81,7 @@ public class Brainfuck {
         }
 
         private List<Op> parse(CharacterIterator it) {
-            List<Op> res = new ArrayList<Op>();
+            List<Op> res = new ArrayList<>();
             while (it.hasNext()) {
                 switch (it.next()) {
                     case '+':
