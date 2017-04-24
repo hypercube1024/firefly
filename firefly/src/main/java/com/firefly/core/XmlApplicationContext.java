@@ -1,6 +1,9 @@
 package com.firefly.core;
 
+import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
+import com.firefly.annotation.Proxies;
+import com.firefly.annotation.Proxy;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanReader;
@@ -9,12 +12,16 @@ import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.classproxy.ClassProxy;
+import com.firefly.utils.classproxy.JavassistClassProxyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The core application context mixed XML and annotation bean management
@@ -97,6 +104,8 @@ public class XmlApplicationContext extends AbstractApplicationContext {
                     }
                     instance = beanDefinition.getConstructor().newInstance(constructorParameters.toArray());
                 }
+
+                instance = createProxy(clazz, instance);
             } catch (Throwable t) {
                 log.error("object initiate error", t);
             }
@@ -123,6 +132,48 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         } else {
             return instance;
         }
+    }
+
+    private Object createProxy(Class<?> clazz, Object srcObject) throws Throwable {
+        Object instance = srcObject;
+        List<Proxy> proxies = new ArrayList<>();
+        for (Annotation annotation : clazz.getAnnotations()) {
+            if (annotation.annotationType().equals(Proxy.class)) {
+                proxies.add((Proxy) annotation);
+            } else if (annotation.annotationType().equals(Proxies.class)) {
+                proxies.addAll(Arrays.asList(((Proxies) annotation).value()));
+            } else {
+                Proxy[] p = annotation.annotationType().getAnnotationsByType(Proxy.class);
+                if (p != null && p.length > 0) {
+                    proxies.addAll(Arrays.asList(annotation.annotationType().getAnnotationsByType(Proxy.class)));
+                }
+            }
+        }
+
+        if (!proxies.isEmpty()) {
+            for (Proxy p : proxies) {
+                if (!Arrays.asList(p.proxyClass().getInterfaces()).contains(ClassProxy.class)) {
+                    continue;
+                }
+
+                String key;
+                if (p.proxyClass().getAnnotation(Component.class) != null) {
+                    String id = p.proxyClass().getAnnotation(Component.class).value();
+                    if (StringUtils.hasText(id)) {
+                        key = id;
+                    } else {
+                        key = p.proxyClass().getName();
+                    }
+                } else {
+                    key = p.proxyClass().getName();
+                }
+                BeanDefinition b = findBeanDefinition(key);
+                if (b != null) {
+                    instance = JavassistClassProxyFactory.INSTANCE.createProxy(instance, (ClassProxy) inject(b), null);
+                }
+            }
+        }
+        return instance;
     }
 
     @SuppressWarnings("unchecked")
@@ -235,6 +286,11 @@ public class XmlApplicationContext extends AbstractApplicationContext {
             AnnotationBeanDefinition beanDefinition = (AnnotationBeanDefinition) beanDef;
             // constructor injecting
             instance = constructorInject(beanDefinition);
+            try {
+                instance = createProxy(instance.getClass(), instance);
+            } catch (Throwable t) {
+                log.error("create proxy exception", t);
+            }
             beanDefinition.setInjectedInstance(instance);
             fieldInject(beanDefinition, instance);
             methodInject(beanDefinition, instance);
@@ -252,6 +308,8 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         Object instance = null;
         try {
             instance = beanDefinition.getConstructor().newInstance(p);
+
+
         } catch (Throwable t) {
             log.error("constructor injecting error", t);
         }
