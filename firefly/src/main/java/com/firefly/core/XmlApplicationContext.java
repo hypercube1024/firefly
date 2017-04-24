@@ -127,6 +127,9 @@ public class XmlApplicationContext extends AbstractApplicationContext {
                 error("initialize XML bean exception, the instance is null");
             }
 
+            fieldInject(beanDefinition, instance);
+            methodInject(beanDefinition, instance);
+
             addObjectToContext(beanDefinition, instance);
             return instance;
         } else {

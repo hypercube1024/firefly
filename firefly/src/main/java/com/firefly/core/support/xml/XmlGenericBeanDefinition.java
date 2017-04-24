@@ -1,6 +1,7 @@
 package com.firefly.core.support.xml;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +23,8 @@ public class XmlGenericBeanDefinition implements XmlBeanDefinition {
     private Constructor<?> constructor;
     private Method initMethod;
     private Method destroyedMethod;
+    private List<Field> injectFields;
+    private List<Method> injectMethods;
 
     @Override
     public String getId() {
@@ -101,5 +104,25 @@ public class XmlGenericBeanDefinition implements XmlBeanDefinition {
     @Override
     public void setDestroyedMethod(Method destroyedMethod) {
         this.destroyedMethod = destroyedMethod;
+    }
+
+    @Override
+    public List<Field> getInjectFields() {
+        return injectFields;
+    }
+
+    @Override
+    public void setInjectFields(List<Field> injectFields) {
+        this.injectFields = injectFields;
+    }
+
+    @Override
+    public List<Method> getInjectMethods() {
+        return injectMethods;
+    }
+
+    @Override
+    public void setInjectMethods(List<Method> injectMethods) {
+        this.injectMethods = injectMethods;
     }
 }

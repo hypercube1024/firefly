@@ -1,9 +1,6 @@
 package com.firefly.core.support.annotation;
 
 import com.firefly.annotation.Component;
-import com.firefly.annotation.DestroyedMethod;
-import com.firefly.annotation.InitialMethod;
-import com.firefly.annotation.Inject;
 import com.firefly.core.support.AbstractBeanReader;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.utils.ReflectUtils;
@@ -12,15 +9,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.jar.JarEntry;
+
+import static com.firefly.core.support.annotation.AnnotationBeanUtils.*;
 
 /**
  * Annotation Bean processor
@@ -122,68 +117,12 @@ public class AnnotationBeanReader extends AbstractBeanReader {
         annotationBeanDefinition.setClassName(c.getName());
         annotationBeanDefinition.setId(c.getAnnotation(Component.class).value());
         annotationBeanDefinition.setInterfaceNames(ReflectUtils.getInterfaceNames(c));
-        annotationBeanDefinition.setInjectFields(getInjectField(c));
-        annotationBeanDefinition.setInjectMethods(getInjectMethod(c));
+        annotationBeanDefinition.setInjectFields(getInjectFields(c));
+        annotationBeanDefinition.setInjectMethods(getInjectMethods(c));
         annotationBeanDefinition.setConstructor(getInjectConstructor(c));
         annotationBeanDefinition.setInitMethod(getInitMethod(c));
         annotationBeanDefinition.setDestroyedMethod(getDestroyedMethod(c));
         return annotationBeanDefinition;
-    }
-
-    protected Method getDestroyedMethod(Class<?> c) {
-        Method[] methods = c.getDeclaredMethods();
-        for (Method m : methods) {
-            if (m.isAnnotationPresent(DestroyedMethod.class)) {
-                return m;
-            }
-        }
-        return null;
-    }
-
-    protected Method getInitMethod(Class<?> c) {
-        Method[] methods = c.getDeclaredMethods();
-        for (Method m : methods) {
-            if (m.isAnnotationPresent(InitialMethod.class)) {
-                return m;
-            }
-        }
-        return null;
-    }
-
-    protected Constructor<?> getInjectConstructor(Class<?> c) {
-        for (Constructor<?> constructor : c.getConstructors()) {
-            if (constructor.getAnnotation(Inject.class) != null) {
-                return constructor;
-            }
-        }
-        try {
-            return c.getConstructor(new Class<?>[0]);
-        } catch (Throwable t) {
-            log.error("gets non-parameter constructor error", t);
-            return null;
-        }
-    }
-
-    protected List<Field> getInjectField(Class<?> c) {
-        Field[] fields = c.getDeclaredFields();
-        List<Field> list = new ArrayList<>();
-        for (Field field : fields) {
-            if (field.getAnnotation(Inject.class) != null) {
-                list.add(field);
-            }
-        }
-        return list;
-    }
-
-    protected List<Method> getInjectMethod(Class<?> c) {
-        Method[] methods = c.getDeclaredMethods();
-        List<Method> list = new ArrayList<>();
-        for (Method m : methods) {
-            if (m.isAnnotationPresent(Inject.class)) {
-                list.add(m);
-            }
-        }
-        return list;
     }
 
 }
