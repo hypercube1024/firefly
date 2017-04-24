@@ -69,7 +69,7 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
     public void connect(String host, int port, int id) {
         start();
         try {
-            Timer timer = config.getMetrics().timer("AsynchronousTcpClient.connect:```" + host + ":" + port + "```");
+            Timer timer = config.getMetrics().timer("aio.AsynchronousTcpClient.connect:```" + host + ":" + port + "```");
             Timer.Context context = timer.time();
             final AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(group);
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
@@ -111,7 +111,7 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);
             if (config.isMonitorEnable()) {
-                reporter = config.getReporterFactory().call();
+                reporter = config.getReporterFactory().call(config.getMetrics());
                 reporter.start(10, TimeUnit.SECONDS);
             }
         } catch (IOException e) {

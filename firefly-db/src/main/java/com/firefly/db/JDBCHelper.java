@@ -8,9 +8,9 @@ import com.firefly.db.DefaultBeanProcessor.Mapper;
 import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.classproxy.ClassProxyFactoryUsingJavassist;
+import com.firefly.utils.classproxy.JavassistClassProxyFactory;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.function.Func0;
+import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.apache.commons.dbutils.BasicRowProcessor;
@@ -45,16 +45,16 @@ public class JDBCHelper extends AbstractLifeCycle {
     private final boolean monitorEnable;
 
     public JDBCHelper(DataSource dataSource) {
-        this(dataSource, null, null);
+        this(dataSource, null);
     }
 
-    public JDBCHelper(DataSource dataSource, Func0<ScheduledReporter> reporterFactory) {
-        this(dataSource, new MetricRegistry(), reporterFactory.call());
+    public JDBCHelper(DataSource dataSource, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
+        this(dataSource, new MetricRegistry(), reporterFactory);
     }
 
-    public JDBCHelper(DataSource dataSource, MetricRegistry metrics, ScheduledReporter reporter) {
+    public JDBCHelper(DataSource dataSource, MetricRegistry metrics, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
         this(dataSource, new QueryRunner(dataSource), new DefaultBeanProcessor(),
-                null, true, metrics, reporter);
+                null, true, metrics, reporterFactory);
     }
 
     public JDBCHelper(DataSource dataSource, QueryRunner runner,
@@ -62,14 +62,14 @@ public class JDBCHelper extends AbstractLifeCycle {
                       ExecutorService executorService,
                       boolean monitorEnable,
                       MetricRegistry metrics,
-                      ScheduledReporter reporter) {
+                      Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
         if (metrics != null) {
             this.metrics = metrics;
         } else {
             this.metrics = new MetricRegistry();
         }
-        if (reporter != null) {
-            this.reporter = reporter;
+        if (reporterFactory != null) {
+            this.reporter = reporterFactory.call(this.metrics);
         } else {
             this.reporter = Slf4jReporter.forRegistry(this.metrics)
                                          .outputTo(LoggerFactory.getLogger("firefly-monitor"))
@@ -98,7 +98,7 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     private QueryRunner getMonitorQueryRunner(QueryRunner queryRunner) {
         try {
-            return (QueryRunner) ClassProxyFactoryUsingJavassist.INSTANCE.createProxy(queryRunner,
+            return JavassistClassProxyFactory.INSTANCE.createProxy(queryRunner,
                     (handler, originalInstance, args) -> {
                         String sql = "";
                         if (args != null && args.length > 0) {

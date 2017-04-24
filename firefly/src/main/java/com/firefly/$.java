@@ -203,14 +203,6 @@ public interface $ {
         return new HTTP2ServerBuilder().httpsServer(sslContextFactory);
     }
 
-    static HTTP2ServerBuilder emptyHttpServer() {
-        return new HTTP2ServerBuilder().emptyHttpServer();
-    }
-
-    static HTTP2ServerBuilder emptyHttpServer(SimpleHTTPServerConfiguration serverConfiguration) {
-        return new HTTP2ServerBuilder().emptyHttpServer(serverConfiguration);
-    }
-
     interface io {
         static void close(Closeable closeable) {
             IO.close(closeable);

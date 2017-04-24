@@ -17,7 +17,7 @@ public class MetricsDemo {
         while (true) {
             User user = jdbcHelper.queryById(User.class, 3);
             System.out.println(user);
-            ThreadUtils.sleep(2000L);
+            ThreadUtils.sleep(1000L);
         }
     }
 

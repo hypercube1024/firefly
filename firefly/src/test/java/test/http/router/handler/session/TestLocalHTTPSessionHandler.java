@@ -3,7 +3,6 @@ package test.http.router.handler.session;
 import com.firefly.$;
 import com.firefly.codec.http2.model.Cookie;
 import com.firefly.server.http2.HTTP2ServerBuilder;
-import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler;
 import com.firefly.server.http2.router.handler.session.HTTPSessionConfiguration;
 import com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler;
 import org.junit.Assert;
@@ -28,7 +27,6 @@ public class TestLocalHTTPSessionHandler extends AbstractHTTPHandlerTest {
         HTTP2ServerBuilder httpsServer = $.httpsServer();
         LocalHTTPSessionHandler sessionHandler = new LocalHTTPSessionHandler(new HTTPSessionConfiguration());
         httpsServer.router().path("*").handler(sessionHandler)
-                   .router().path("*").handler(new DefaultErrorResponseHandler())
                    .router().post("/session/:name")
                    .handler(ctx -> {
                        String name = ctx.getRouterParameter("name");

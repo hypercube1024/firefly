@@ -22,8 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritePendingException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HTTPClientConnection {
@@ -268,18 +267,16 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
     @Override
     public void send(MetaData.Request request, ByteBuffer buffer, ClientHTTPHandler handler) {
-        try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
-            if (buffer != null) {
-                output.writeWithContentLength(buffer);
-            }
-        } catch (IOException e) {
-            generator.reset();
-            log.error("client generates the HTTP message exception", e);
-        }
+        send(request, Collections.singleton(buffer), handler);
     }
 
     @Override
     public void send(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler) {
+        send(request, Arrays.asList(buffers), handler);
+    }
+
+    @Override
+    public void send(MetaData.Request request, Collection<ByteBuffer> buffers, ClientHTTPHandler handler) {
         try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
             if (buffers != null) {
                 output.writeWithContentLength(buffers);

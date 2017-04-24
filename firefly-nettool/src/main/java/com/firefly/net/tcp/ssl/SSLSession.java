@@ -66,11 +66,11 @@ public class SSLSession implements Closeable {
 
     private final SslHandler sslHandler;
 
-    public SSLSession(SSLContextFactory factory, boolean clientMode, Session session, SSLEventHandler sslEventHandler) throws Throwable {
+    public SSLSession(SSLContextFactory factory, boolean clientMode, Session session, SSLEventHandler sslEventHandler) throws IOException {
         this(factory.createSSLEngine(clientMode), session, sslEventHandler);
     }
 
-    private SSLSession(SSLEngine sslEngine, Session session, SSLEventHandler sslEventHandler) throws Throwable {
+    private SSLSession(SSLEngine sslEngine, Session session, SSLEventHandler sslEventHandler) throws IOException {
         this.session = session;
         this.sslEventHandler = sslEventHandler;
         this.sslEngine = sslEngine;
@@ -399,7 +399,7 @@ public class SSLSession implements Closeable {
         return getOutAppBuffer();
     }
 
-    public int write(ByteBuffer[] outputBuffers, Callback callback) throws Throwable {
+    public int write(ByteBuffer[] outputBuffers, Callback callback) throws IOException {
         int ret = 0;
         CountingCallback countingCallback = new CountingCallback(callback, outputBuffers.length);
         for (ByteBuffer outputBuffer : outputBuffers) {

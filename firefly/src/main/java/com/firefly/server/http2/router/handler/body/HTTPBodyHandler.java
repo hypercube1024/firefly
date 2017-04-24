@@ -8,6 +8,7 @@ import com.firefly.codec.http2.model.MultiPartInputStreamParser;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.RoutingContext;
+import com.firefly.server.http2.router.impl.RoutingContextImpl;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.ByteArrayPipedStream;
@@ -48,7 +49,8 @@ public class HTTPBodyHandler implements Handler {
     }
 
     @Override
-    public void handle(RoutingContext ctx) {
+    public void handle(RoutingContext context) {
+        RoutingContextImpl ctx = (RoutingContextImpl) context;
         SimpleRequest request = ctx.getRequest();
         HTTPBodyHandlerSPIImpl httpBodyHandlerSPI = new HTTPBodyHandlerSPIImpl();
         httpBodyHandlerSPI.urlEncodedMap = new UrlEncoded();

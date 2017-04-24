@@ -15,9 +15,8 @@ import java.util.Map;
 import com.firefly.utils.lang.annotation.Name;
 
 /**
- * TYPE Utilities. Provides various static utiltiy methods for manipulating
+ * TYPE Utilities. Provides various static utility methods for manipulating
  * types and their string representations.
- *
  */
 public class TypeUtils {
 
@@ -187,7 +186,7 @@ public class TypeUtils {
 
 			Constructor<?> c = type.getConstructor(java.lang.String.class);
 			return c.newInstance(value);
-		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException x) {
+		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException ignored) {
 
 		} catch (InvocationTargetException x) {
 			if (x.getTargetException() instanceof Error)
@@ -462,7 +461,7 @@ public class TypeUtils {
 				args_with_opts = ArrayUtils.addToArray(arg, new Object[] {}, Object.class);
 			try {
 				return method.invoke(obj, args_with_opts);
-			} catch (IllegalAccessException | IllegalArgumentException e) {
+			} catch (IllegalAccessException | IllegalArgumentException ignored) {
 			}
 		}
 
@@ -477,7 +476,7 @@ public class TypeUtils {
 
 			try {
 				return constructor.newInstance(arguments);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException ignored) {
 
 			}
 		}
@@ -519,7 +518,7 @@ public class TypeUtils {
 					return constructor.newInstance(swizzled);
 				}
 
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException ignored) {
 
 			}
 		}
@@ -536,7 +535,7 @@ public class TypeUtils {
 		if (o == null)
 			return false;
 		if (o instanceof Boolean)
-			return ((Boolean) o).booleanValue();
+			return (Boolean) o;
 		return Boolean.parseBoolean(o.toString());
 	}
 
@@ -550,7 +549,7 @@ public class TypeUtils {
 		if (o == null)
 			return false;
 		if (o instanceof Boolean)
-			return !((Boolean) o).booleanValue();
+			return !(Boolean) o;
 		return "false".equalsIgnoreCase(o.toString());
 	}
 }

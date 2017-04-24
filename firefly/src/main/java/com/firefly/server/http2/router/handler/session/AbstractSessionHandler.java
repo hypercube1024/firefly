@@ -2,6 +2,7 @@ package com.firefly.server.http2.router.handler.session;
 
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.RoutingContext;
+import com.firefly.server.http2.router.impl.RoutingContextImpl;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
@@ -26,7 +27,8 @@ abstract public class AbstractSessionHandler extends AbstractLifeCycle implement
     abstract public SessionStore createSessionStore();
 
     @Override
-    public void handle(RoutingContext ctx) {
+    public void handle(RoutingContext context) {
+        RoutingContextImpl ctx = (RoutingContextImpl) context;
         HTTPSessionHandlerSPI sessionHandlerSPI = new HTTPSessionHandlerSPIImpl(sessionStore, ctx, scheduler, configuration);
         ctx.setHTTPSessionHandlerSPI(sessionHandlerSPI);
         ctx.next();

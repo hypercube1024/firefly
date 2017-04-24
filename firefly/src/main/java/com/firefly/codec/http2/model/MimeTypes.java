@@ -147,7 +147,7 @@ public class MimeTypes {
                 __assumedEncodings.put(type.asString(), type.getCharsetString());
         }
 
-        String resourceName = "com/firefly/example/codec/http2/model/mime.properties";
+        String resourceName = "com/firefly/codec/http2/model/mime.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null) {
                 log.warn("Missing mime-type resource: {}", resourceName);
@@ -174,7 +174,7 @@ public class MimeTypes {
             log.warn(e.toString());
         }
 
-        resourceName = "com/firefly/example/codec/http2/model/encoding.properties";
+        resourceName = "com/firefly/codec/http2/model/encoding.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null)
                 log.warn("Missing encoding resource: {}", resourceName);

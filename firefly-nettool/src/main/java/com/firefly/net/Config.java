@@ -4,6 +4,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
 import com.firefly.utils.function.Func0;
+import com.firefly.utils.function.Func1;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
@@ -26,11 +27,11 @@ public class Config {
 
     private boolean monitorEnable = true;
     private MetricRegistry metrics = new MetricRegistry();
-    private Func0<ScheduledReporter> reporterFactory = () -> Slf4jReporter.forRegistry(this.metrics)
-                                                                          .outputTo(LoggerFactory.getLogger("firefly-monitor"))
-                                                                          .convertRatesTo(TimeUnit.SECONDS)
-                                                                          .convertDurationsTo(TimeUnit.MILLISECONDS)
-                                                                          .build();
+    private Func1<MetricRegistry, ScheduledReporter> reporterFactory = m -> Slf4jReporter.forRegistry(m)
+                                                                                         .outputTo(LoggerFactory.getLogger("firefly-monitor"))
+                                                                                         .convertRatesTo(TimeUnit.SECONDS)
+                                                                                         .convertDurationsTo(TimeUnit.MILLISECONDS)
+                                                                                         .build();
 
     /**
      * The max I/O idle time, the default value is 10 seconds.
@@ -123,11 +124,11 @@ public class Config {
         this.metrics = metrics;
     }
 
-    public Func0<ScheduledReporter> getReporterFactory() {
+    public Func1<MetricRegistry, ScheduledReporter> getReporterFactory() {
         return reporterFactory;
     }
 
-    public void setReporterFactory(Func0<ScheduledReporter> reporterFactory) {
+    public void setReporterFactory(Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
         this.reporterFactory = reporterFactory;
     }
 

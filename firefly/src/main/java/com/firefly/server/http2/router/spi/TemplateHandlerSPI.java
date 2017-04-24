@@ -1,5 +1,7 @@
 package com.firefly.server.http2.router.spi;
 
+import com.firefly.server.http2.router.RoutingContext;
+
 import java.util.List;
 
 /**
@@ -7,10 +9,10 @@ import java.util.List;
  */
 public interface TemplateHandlerSPI {
 
-    void renderTemplate(String resourceName, Object scope);
+    void renderTemplate(RoutingContext ctx, String resourceName, Object scope);
 
-    void renderTemplate(String resourceName, Object[] scopes);
+    void renderTemplate(RoutingContext ctx, String resourceName, Object[] scopes);
 
-    void renderTemplate(String resourceName, List<Object> scopes);
+    void renderTemplate(RoutingContext ctx, String resourceName, List<Object> scopes);
 
 }

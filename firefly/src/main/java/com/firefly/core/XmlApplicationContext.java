@@ -1,26 +1,30 @@
 package com.firefly.core;
 
+import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
+import com.firefly.annotation.Proxies;
+import com.firefly.annotation.Proxy;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanDefinition;
 import com.firefly.core.support.annotation.AnnotationBeanReader;
 import com.firefly.core.support.xml.*;
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.ReflectUtils.BeanMethodFilter;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.classproxy.ClassProxy;
+import com.firefly.utils.classproxy.JavassistClassProxyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The core application context mixed XML and annotation bean management
- *
- * @author JJ Xu &amp; Alvin Qiu
  */
 public class XmlApplicationContext extends AbstractApplicationContext {
 
@@ -36,20 +40,18 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 
     @Override
     protected List<BeanDefinition> getBeanDefinitions(String file) {
-        List<BeanDefinition> list1 = new AnnotationBeanReader(file)
-                .loadBeanDefinitions();
-        List<BeanDefinition> list2 = new XmlBeanReader(file)
-                .loadBeanDefinitions();
-        if (list1 != null && list2 != null) {
+        List<BeanDefinition> annotationBeanDefs = new AnnotationBeanReader(file).loadBeanDefinitions();
+        List<BeanDefinition> xmlBeanDefs = new XmlBeanReader(file).loadBeanDefinitions();
+        if (annotationBeanDefs != null && xmlBeanDefs != null) {
             log.debug("mixed bean");
-            list1.addAll(list2);
-            return list1;
-        } else if (list1 != null) {
+            annotationBeanDefs.addAll(xmlBeanDefs);
+            return annotationBeanDefs;
+        } else if (annotationBeanDefs != null) {
             log.debug("annotation bean");
-            return list1;
-        } else if (list2 != null) {
+            return annotationBeanDefs;
+        } else if (xmlBeanDefs != null) {
             log.debug("xml bean");
-            return list2;
+            return xmlBeanDefs;
         }
         return null;
     }
@@ -75,12 +77,12 @@ public class XmlApplicationContext extends AbstractApplicationContext {
 
             String[] keys = beanDef.getInterfaceNames();
             for (String k : keys) {
-                instance = map.get(beanDef);
+                instance = map.get(k);
                 if (instance != null) {
                     return instance;
                 }
             }
-            return instance;
+            return null;
         }
     }
 
@@ -102,13 +104,15 @@ public class XmlApplicationContext extends AbstractApplicationContext {
                     }
                     instance = beanDefinition.getConstructor().newInstance(constructorParameters.toArray());
                 }
+
+                instance = createProxy(clazz, instance);
             } catch (Throwable t) {
                 log.error("object initiate error", t);
             }
 
             if (instance != null) {
                 final Object obj = instance;
-                ReflectUtils.getSetterMethods(clazz, (String propertyName, Method method) -> {
+                ReflectUtils.getSetterMethods(clazz, (propertyName, method) -> {
                     XmlManagedNode value = beanDefinition.getProperties().get(propertyName);
                     if (value != null) {
                         try {
@@ -123,6 +127,9 @@ public class XmlApplicationContext extends AbstractApplicationContext {
                 error("initialize XML bean exception, the instance is null");
             }
 
+            fieldInject(beanDefinition, instance);
+            methodInject(beanDefinition, instance);
+
             addObjectToContext(beanDefinition, instance);
             return instance;
         } else {
@@ -130,11 +137,53 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         }
     }
 
+    private Object createProxy(Class<?> clazz, Object srcObject) throws Throwable {
+        Object instance = srcObject;
+        List<Proxy> proxies = new ArrayList<>();
+        for (Annotation annotation : clazz.getAnnotations()) {
+            if (annotation.annotationType().equals(Proxy.class)) {
+                proxies.add((Proxy) annotation);
+            } else if (annotation.annotationType().equals(Proxies.class)) {
+                proxies.addAll(Arrays.asList(((Proxies) annotation).value()));
+            } else {
+                Proxy[] p = annotation.annotationType().getAnnotationsByType(Proxy.class);
+                if (p != null && p.length > 0) {
+                    proxies.addAll(Arrays.asList(annotation.annotationType().getAnnotationsByType(Proxy.class)));
+                }
+            }
+        }
+
+        if (!proxies.isEmpty()) {
+            for (Proxy p : proxies) {
+                if (!Arrays.asList(p.proxyClass().getInterfaces()).contains(ClassProxy.class)) {
+                    continue;
+                }
+
+                String key;
+                if (p.proxyClass().getAnnotation(Component.class) != null) {
+                    String id = p.proxyClass().getAnnotation(Component.class).value();
+                    if (StringUtils.hasText(id)) {
+                        key = id;
+                    } else {
+                        key = p.proxyClass().getName();
+                    }
+                } else {
+                    key = p.proxyClass().getName();
+                }
+                BeanDefinition b = findBeanDefinition(key);
+                if (b != null) {
+                    instance = JavassistClassProxyFactory.INSTANCE.createProxy(instance, (ClassProxy) inject(b), null);
+                }
+            }
+        }
+        return instance;
+    }
+
     @SuppressWarnings("unchecked")
     private Object getInjectArg(XmlManagedNode value, Class<?> parameterType) {
         if (value instanceof ManagedValue) {
             ManagedValue managedValue = (ManagedValue) value;
-            String typeName = null;
+            String typeName;
             if (parameterType == null) {
                 typeName = VerifyUtils.isEmpty(managedValue.getTypeName()) ? null
                         : managedValue.getTypeName();
@@ -176,19 +225,22 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         if (VerifyUtils.isNotEmpty(values.getTypeName())) {
             try {
                 collection = (Collection<Object>) XmlApplicationContext.class
-                        .getClassLoader().loadClass(values.getTypeName())
+                        .getClassLoader()
+                        .loadClass(values.getTypeName())
                         .newInstance();
             } catch (Throwable t) {
                 log.error("list inject error", t);
             }
         } else {
-            collection = (setterParamType == null ? new ArrayList<Object>()
+            collection = (setterParamType == null ? new ArrayList<>()
                     : ConvertUtils.getCollectionObj(setterParamType));
         }
 
-        for (XmlManagedNode item : values) {
-            Object listValue = getInjectArg(item, null);
-            collection.add(listValue);
+        if (collection != null) {
+            for (XmlManagedNode item : values) {
+                Object listValue = getInjectArg(item, null);
+                collection.add(listValue);
+            }
         }
         return collection;
     }
@@ -209,36 +261,39 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         if (VerifyUtils.isNotEmpty(values.getTypeName())) {
             try {
                 m = (Map<Object, Object>) XmlApplicationContext.class.getClassLoader()
-                        .loadClass(values.getTypeName())
-                        .newInstance();
+                                                                     .loadClass(values.getTypeName())
+                                                                     .newInstance();
             } catch (Throwable t) {
                 log.error("map inject error", t);
             }
         } else {
             m = (setterParamType == null ? new HashMap<>() : ConvertUtils.getMapObj(setterParamType));
-            log.debug("map ret [{}]", m.getClass().getName());
+            if (m != null && log.isDebugEnabled()) {
+                log.debug("map ret [{}]", m.getClass().getName());
+            }
         }
-        for (XmlManagedNode o : values.keySet()) {
-            Object k = getInjectArg(o, null);
-            Object v = getInjectArg(values.get(o), null);
-            m.put(k, v);
+
+        if (m != null) {
+            for (XmlManagedNode o : values.keySet()) {
+                Object k = getInjectArg(o, null);
+                Object v = getInjectArg(values.get(o), null);
+                m.put(k, v);
+            }
         }
         return m;
     }
 
-    /**
-     * annotation injecting
-     *
-     * @param beanDef
-     * @return
-     */
     private Object annotationInject(BeanDefinition beanDef) {
         Object instance = getInstance(beanDef);
         if (instance == null) {
             AnnotationBeanDefinition beanDefinition = (AnnotationBeanDefinition) beanDef;
             // constructor injecting
             instance = constructorInject(beanDefinition);
-            beanDefinition.setInjectedInstance(instance);
+            try {
+                instance = createProxy(instance.getClass(), instance);
+            } catch (Throwable t) {
+                log.error("create proxy exception", t);
+            }
             fieldInject(beanDefinition, instance);
             methodInject(beanDefinition, instance);
             addObjectToContext(beanDefinition, instance);
@@ -255,6 +310,8 @@ public class XmlApplicationContext extends AbstractApplicationContext {
         Object instance = null;
         try {
             instance = beanDefinition.getConstructor().newInstance(p);
+
+
         } catch (Throwable t) {
             log.error("constructor injecting error", t);
         }

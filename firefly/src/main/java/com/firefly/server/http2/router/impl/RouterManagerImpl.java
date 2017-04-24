@@ -94,12 +94,10 @@ public class RouterManagerImpl implements RouterManager {
             return Collections.emptyNavigableSet();
         } else {
             NavigableSet<RouterMatchResult> ret = new TreeSet<>();
-            filtered.entrySet()
-                    .forEach(e -> {
-                        Router router = e.getKey();
-                        Map<String, String> routerParam = routerParameters.get(router);
-                        ret.add(new RouterMatchResult(router, routerParam, e.getValue()));
-                    });
+            filtered.forEach((router, value) -> {
+                Map<String, String> routerParam = routerParameters.get(router);
+                ret.add(new RouterMatchResult(router, routerParam, value));
+            });
             return ret;
         }
     }
@@ -148,6 +146,10 @@ public class RouterManagerImpl implements RouterManager {
     @Override
     public Router register() {
         return new RouterImpl(idGenerator.getAndIncrement(), this);
+    }
+
+    public Router registerLast() {
+        return new RouterImpl(Integer.MAX_VALUE, this);
     }
 
     @Override

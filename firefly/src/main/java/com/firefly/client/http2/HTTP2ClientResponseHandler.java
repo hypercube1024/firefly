@@ -120,7 +120,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
         public ClientHttp2OutputStream(MetaData info, boolean endStream, Stream stream) {
             super(info, true);
-            commited = true;
+            committed = true;
             this.stream = stream;
             if (endStream) {
                 isChunked = false;

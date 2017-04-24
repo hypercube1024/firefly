@@ -1,7 +1,6 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.codec.http2.encode.HttpGenerator;
-import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.net.Session;
 import com.firefly.utils.io.BufferUtils;
@@ -16,32 +15,6 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
     }
 
     @Override
-    public synchronized void writeWithContentLength(ByteBuffer[] data) throws IOException {
-        try {
-            long contentLength = 0;
-            for (ByteBuffer buf : data) {
-                contentLength += buf.remaining();
-            }
-            info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(contentLength));
-            for (ByteBuffer buf : data) {
-                write(buf);
-            }
-        } finally {
-            close();
-        }
-    }
-
-    @Override
-    public synchronized void writeWithContentLength(ByteBuffer data) throws IOException {
-        try {
-            info.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
-            write(data);
-        } finally {
-            close();
-        }
-    }
-
-    @Override
     public void commit() throws IOException {
         commit(null);
     }
@@ -50,7 +23,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
         if (closed)
             return;
 
-        if (commited)
+        if (committed)
             return;
 
         final HttpGenerator generator = getHttpGenerator();
@@ -64,7 +37,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             if (data != null) {
                 tcpSession.encode(data);
             }
-            commited = true;
+            committed = true;
         } else {
             generateHTTPMessageExceptionally(generatorResult, generator.getState());
         }
@@ -82,7 +55,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
         final Session tcpSession = getSession();
         HttpGenerator.Result generatorResult;
 
-        if (!commited) {
+        if (!committed) {
             commit(data);
         } else {
             if (generator.isChunking()) {
@@ -117,7 +90,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             final Session tcpSession = getSession();
             HttpGenerator.Result generatorResult;
 
-            if (!commited) {
+            if (!committed) {
                 ByteBuffer header = getHeaderByteBuffer();
                 generatorResult = generate(info, header, null, null, true);
                 if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMPLETING) {
@@ -126,7 +99,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
                 } else {
                     generateHTTPMessageExceptionally(generatorResult, generator.getState());
                 }
-                commited = true;
+                committed = true;
             } else {
                 if (generator.isChunking()) {
                     log.debug("http1 output stream is generating chunk");

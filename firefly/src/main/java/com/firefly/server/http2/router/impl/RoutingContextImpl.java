@@ -4,6 +4,7 @@ import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
+import com.firefly.server.http2.router.handler.template.TemplateHandlerSPILoader;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
@@ -33,7 +34,7 @@ public class RoutingContextImpl implements RoutingContext {
     private volatile RouterManager.RouterMatchResult current;
     private volatile HTTPBodyHandlerSPI httpBodyHandlerSPI;
     private volatile HTTPSessionHandlerSPI httpSessionHandlerSPI;
-    private volatile TemplateHandlerSPI templateHandlerSPI;
+    private final TemplateHandlerSPI templateHandlerSPI = TemplateHandlerSPILoader.getInstance().getTemplateHandlerSPI();
     private volatile boolean asynchronousRead;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
@@ -236,7 +237,6 @@ public class RoutingContextImpl implements RoutingContext {
         }
     }
 
-    @Override
     public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {
         this.httpBodyHandlerSPI = httpBodyHandlerSPI;
     }
@@ -284,34 +284,22 @@ public class RoutingContextImpl implements RoutingContext {
         }
     }
 
-    @Override
     public void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI) {
         this.httpSessionHandlerSPI = httpSessionHandlerSPI;
     }
 
     @Override
     public void renderTemplate(String resourceName, Object scope) {
-        if (templateHandlerSPI != null) {
-            templateHandlerSPI.renderTemplate(resourceName, scope);
-        }
+        templateHandlerSPI.renderTemplate(this, resourceName, scope);
     }
 
     @Override
     public void renderTemplate(String resourceName, Object[] scopes) {
-        if (templateHandlerSPI != null) {
-            templateHandlerSPI.renderTemplate(resourceName, scopes);
-        }
+        templateHandlerSPI.renderTemplate(this, resourceName, scopes);
     }
 
     @Override
     public void renderTemplate(String resourceName, List<Object> scopes) {
-        if (templateHandlerSPI != null) {
-            templateHandlerSPI.renderTemplate(resourceName, scopes);
-        }
-    }
-
-    @Override
-    public void setTemplateHandlerSPI(TemplateHandlerSPI templateHandlerSPI) {
-        this.templateHandlerSPI = templateHandlerSPI;
+        templateHandlerSPI.renderTemplate(this, resourceName, scopes);
     }
 }

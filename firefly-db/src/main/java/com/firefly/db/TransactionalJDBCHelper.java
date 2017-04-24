@@ -23,11 +23,15 @@ public class TransactionalJDBCHelper {
     private final JDBCHelper jdbcHelper;
 
     public TransactionalJDBCHelper(DataSource dataSource) {
-        this(new JDBCHelper(dataSource));
+        this(dataSource, null);
     }
 
-    public TransactionalJDBCHelper(DataSource dataSource, MetricRegistry metrics, ScheduledReporter reporter) {
-        this(new JDBCHelper(dataSource, metrics, reporter));
+    public TransactionalJDBCHelper(DataSource dataSource, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
+        this(dataSource, new MetricRegistry(), reporterFactory);
+    }
+
+    public TransactionalJDBCHelper(DataSource dataSource, MetricRegistry metrics, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
+        this(new JDBCHelper(dataSource, metrics, reporterFactory));
     }
 
     public TransactionalJDBCHelper(JDBCHelper jdbcHelper) {
