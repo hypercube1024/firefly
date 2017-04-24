@@ -18,7 +18,8 @@ public class TestProxy {
     @Test
     public void test() {
         NameService nameService = ctx.getBean(NameService.class);
-        System.out.println(nameService.getName("hello"));
-        Assert.assertThat(nameService.getName("hello"), is("name: (p2,(p1,(p3,(p3,(p2,(p1,hello,p1),p2),p3),p3),p1),p2)"));
+        String name = nameService.getName("hello");
+        System.out.println("exit: " + name);
+        Assert.assertThat(name, is("name: (p2,(p1,(p3,(p4,(p3,(p2,(p1,hello,p1),p2),p3),p4),p3),p1),p2)"));
     }
 }
