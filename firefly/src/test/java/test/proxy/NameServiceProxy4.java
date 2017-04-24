@@ -1,5 +1,6 @@
 package test.proxy;
 
+import com.firefly.annotation.Inject;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.classproxy.ClassProxy;
 
