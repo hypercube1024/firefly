@@ -13,8 +13,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.firefly.core.support.annotation.AnnotationBeanUtils.getInjectFields;
-import static com.firefly.core.support.annotation.AnnotationBeanUtils.getInjectMethods;
+import static com.firefly.core.support.annotation.AnnotationBeanUtils.*;
 import static com.firefly.core.support.xml.parse.XmlNodeConstants.*;
 
 public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodeParser {
@@ -45,6 +44,8 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
             } catch (NoSuchMethodException | SecurityException e) {
                 error("the initial method " + initMethod + " not found");
             }
+        } else {
+            xmlBeanDefinition.setInitMethod(getInitMethod(clazz));
         }
 
         String destroyedMethod = ele.getAttribute(DESTORY_METHOD_ATTRIBUTE);
@@ -55,6 +56,8 @@ public class BeanNodeParser extends AbstractXmlNodeParser implements XmlNodePars
             } catch (NoSuchMethodException | SecurityException e) {
                 error("the initial method " + initMethod + " not found");
             }
+        } else {
+            xmlBeanDefinition.setDestroyedMethod(getDestroyedMethod(clazz));
         }
 
         xmlBeanDefinition.setInjectFields(getInjectFields(clazz));
