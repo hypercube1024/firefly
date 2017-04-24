@@ -12,7 +12,6 @@ public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
     private List<Field> fields;
     private List<Method> methods;
     private Constructor<?> constructor;
-    private Object injectedInstance;
     private Method initMethod;
     private Method destroyedMethod;
 
@@ -74,16 +73,6 @@ public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
     @Override
     public void setConstructor(Constructor<?> constructor) {
         this.constructor = constructor;
-    }
-
-    @Override
-    public Object getInjectedInstance() {
-        return injectedInstance;
-    }
-
-    @Override
-    public void setInjectedInstance(Object injectedInstance) {
-        this.injectedInstance = injectedInstance;
     }
 
     @Override

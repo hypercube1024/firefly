@@ -291,7 +291,6 @@ public class XmlApplicationContext extends AbstractApplicationContext {
             } catch (Throwable t) {
                 log.error("create proxy exception", t);
             }
-            beanDefinition.setInjectedInstance(instance);
             fieldInject(beanDefinition, instance);
             methodInject(beanDefinition, instance);
             addObjectToContext(beanDefinition, instance);
