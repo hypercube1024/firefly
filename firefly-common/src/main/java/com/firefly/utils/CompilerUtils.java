@@ -9,22 +9,21 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CompilerUtils {
-    private static final Map<String, JavaFileObject> output = new ConcurrentHashMap<>();
-    public static ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
-    private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, JavaFileObject> output = new ConcurrentHashMap<>();
+    private static ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
+    private static final ConcurrentHashMap<String, Class<?>> classCache = new ConcurrentHashMap<>();
 
     public static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-    public static Class<?> compileSource(String completeClassName, String source) throws Throwable {
+    public static Class<?> compileSource(String completeClassName, String source) throws IOException {
         boolean result;
-        try (JavaFileManager fileManager = CompilerUtils.getStringSourceJavaFileManager(compiler, null, null, Charset.forName("UTF-8"))) {
-            CompilationTask task = compiler.getTask(null, fileManager, null, null, null, Arrays.asList(new JavaSourceFromString(completeClassName, source)));
+        try (JavaFileManager fileManager = getStringSourceJavaFileManager(compiler, null, null, Charset.forName("UTF-8"))) {
+            CompilationTask task = compiler.getTask(null, fileManager, null, null, null, Collections.singletonList(new JavaSourceFromString(completeClassName, source)));
             result = task.call();
         }
 
@@ -34,19 +33,15 @@ public class CompilerUtils {
         return getClassByName(completeClassName);
     }
 
-    public static Class<?> getClassByName(String name) throws ClassNotFoundException {
-        Class<?> ret = classCache.get(name);
-        if (ret != null)
-            return ret;
+    public static Class<?> getClassByName(String name) {
+        return classCache.computeIfAbsent(name, CompilerUtils::getClass);
+    }
 
-        synchronized (classCache) {
-            ret = classCache.get(name);
-            if (ret != null)
-                return ret;
-
-            ret = Class.forName(name, false, classLoader);
-            classCache.put(name, ret);
-            return ret;
+    private static Class<?> getClass(String name) {
+        try {
+            return Class.forName(name, false, classLoader);
+        } catch (ClassNotFoundException e) {
+            throw new CommonRuntimeException(e);
         }
     }
 
@@ -54,9 +49,7 @@ public class CompilerUtils {
 
         return new ForwardingJavaFileManager<StandardJavaFileManager>(compiler.getStandardFileManager(diagnosticListener, locale, charset)) {
             @Override
-            public JavaFileObject getJavaFileForOutput(Location location,
-                                                       String className, Kind kind, FileObject sibling)
-                    throws IOException {
+            public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind, FileObject sibling) throws IOException {
                 JavaFileObject jfo = new ByteJavaObject(className, kind);
                 output.put(className, jfo);
                 return jfo;
@@ -98,21 +91,17 @@ public class CompilerUtils {
         }
 
         @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors)
-                throws IOException, IllegalStateException,
-                UnsupportedOperationException {
+        public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException, IllegalStateException, UnsupportedOperationException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public InputStream openInputStream() throws IOException,
-                IllegalStateException, UnsupportedOperationException {
+        public InputStream openInputStream() throws IOException, IllegalStateException, UnsupportedOperationException {
             return new ByteArrayInputStream(baos.toByteArray());
         }
 
         @Override
-        public OutputStream openOutputStream() throws IOException,
-                IllegalStateException, UnsupportedOperationException {
+        public OutputStream openOutputStream() throws IOException, IllegalStateException, UnsupportedOperationException {
             return baos = new ByteArrayOutputStream();
         }
     }
