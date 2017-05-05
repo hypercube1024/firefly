@@ -153,12 +153,7 @@ public class HTTPSessionImpl implements HttpSession, Serializable {
         if (isInvalid()) {
             return false;
         } else {
-            long remainInactiveInterval = getRemainInactiveInterval();
-            if (remainInactiveInterval <= 0) {
-                return false;
-            } else {
-                return true;
-            }
+            return getRemainInactiveInterval() > 0;
         }
     }
 

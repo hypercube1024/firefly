@@ -2,6 +2,7 @@ package com.firefly.codec.http2.encode;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import com.firefly.codec.http2.frame.Frame;
@@ -14,6 +15,6 @@ public class PrefaceGenerator extends FrameGenerator {
 
 	@Override
 	public List<ByteBuffer> generate(Frame frame) {
-		return Arrays.asList(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));
+		return Collections.singletonList(ByteBuffer.wrap(PrefaceFrame.PREFACE_BYTES));
 	}
 }
