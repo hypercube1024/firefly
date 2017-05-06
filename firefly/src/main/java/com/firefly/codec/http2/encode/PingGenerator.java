@@ -2,6 +2,7 @@ package com.firefly.codec.http2.encode;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import com.firefly.codec.http2.frame.Flags;
@@ -18,7 +19,7 @@ public class PingGenerator extends FrameGenerator {
 	@Override
 	public List<ByteBuffer> generate(Frame frame) {
 		PingFrame pingFrame = (PingFrame) frame;
-		return Arrays.asList(generatePing(pingFrame.getPayload(), pingFrame.isReply()));
+		return Collections.singletonList(generatePing(pingFrame.getPayload(), pingFrame.isReply()));
 	}
 
 	public ByteBuffer generatePing(byte[] payload, boolean reply) {

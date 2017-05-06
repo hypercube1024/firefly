@@ -131,7 +131,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
 
         boolean delim = false;
         for (Map.Entry<String, List<String>> entry : map.entrySet()) {
-            String key = entry.getKey().toString();
+            String key = entry.getKey();
             List<String> list = entry.getValue();
             int s = list.size();
 
@@ -151,10 +151,9 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
                     result.append(encodeString(key, charset));
 
                     if (val != null) {
-                        String str = val.toString();
-                        if (str.length() > 0) {
+                        if (val.length() > 0) {
                             result.append('=');
-                            result.append(encodeString(str, charset));
+                            result.append(encodeString(val, charset));
                         } else if (equalsForNullValue)
                             result.append('=');
                     } else if (equalsForNullValue)

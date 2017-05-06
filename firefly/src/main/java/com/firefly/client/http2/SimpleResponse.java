@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class SimpleResponse {
@@ -48,6 +49,10 @@ public class SimpleResponse {
 
     public String getReason() {
         return response.getReason();
+    }
+
+    public Supplier<HttpFields> getTrailerSupplier() {
+        return response.getTrailerSupplier();
     }
 
     public void forEach(Consumer<? super HttpField> action) {

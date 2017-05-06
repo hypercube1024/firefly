@@ -14,13 +14,11 @@ import java.util.List;
 
 public class DefaultDom implements Dom {
 
-    private DocumentBuilderFactory dbf;
     private DocumentBuilder db;
 
     public DefaultDom() {
-        dbf = DocumentBuilderFactory.newInstance();
         try {
-            db = dbf.newDocumentBuilder();
+            db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new CommonRuntimeException(e);
         }

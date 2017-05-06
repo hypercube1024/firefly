@@ -75,13 +75,7 @@ public final class ThreadLocalRandom extends Random {
     /**
      * The actual ThreadLocal
      */
-    private static final ThreadLocal<ThreadLocalRandom> localRandom =
-        new ThreadLocal<ThreadLocalRandom>() {
-            @Override
-            protected ThreadLocalRandom initialValue() {
-                return new ThreadLocalRandom();
-            }
-    };
+    private static final ThreadLocal<ThreadLocalRandom> localRandom = ThreadLocal.withInitial(ThreadLocalRandom::new);
 
 
     /**

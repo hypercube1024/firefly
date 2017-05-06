@@ -1847,6 +1847,35 @@ public class HttpParserTest {
         Assert.assertEquals(null, _bad);
     }
 
+    @Test
+    public void testResponseChunkParseTrailer() throws Exception {
+        ByteBuffer buffer = BufferUtils.toBuffer(
+                "HTTP/1.1 200 OK\r\n" +
+                        "Content-Type: text/plain\r\n" +
+                        "Transfer-Encoding: chunked\r\n" +
+                        "Server: Firefly(4.0.23)\r\n" +
+                        "X-Powered-By: Firefly(4.0.23)\r\n" +
+                        "\r\n" +
+                        "C\r\n" +
+                        "trailer test\r\n" +
+                        "0\r\n" +
+                        "Foo: s0\r\n" +
+                        "Bar: s00\r\n" +
+                        "\r\n");
+
+        HttpParser.ResponseHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        while (!parser.isState(State.END)) {
+            System.out.println(parser.getState());
+            parser.parseNext(buffer);
+        }
+        Assert.assertEquals("HTTP/1.1", _methodOrVersion);
+        Assert.assertEquals("200", _uriOrStatus);
+        Assert.assertEquals("OK", _versionOrReason);
+        Assert.assertEquals("trailer test", _content);
+        System.out.println(_trailers);
+    }
+
     @Before
     public void init() {
         _bad = null;

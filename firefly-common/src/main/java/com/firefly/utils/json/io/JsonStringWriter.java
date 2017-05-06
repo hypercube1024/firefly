@@ -53,9 +53,9 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 	public static String escapeSpecialCharacter(char ch) {
 		if(SPECIAL_CHARACTER.contains(ch)) {
 			String hexStr = Integer.toHexString(ch);
-			String padding = "";
+			StringBuilder padding = new StringBuilder();
 			for (int j = hexStr.length(); j < 4; j++) {
-				padding += "0";
+				padding.append("0");
 			}
 			return "\\u" + padding + hexStr;
 		}

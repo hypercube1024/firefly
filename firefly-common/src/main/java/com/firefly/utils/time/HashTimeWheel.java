@@ -1,9 +1,9 @@
 package com.firefly.utils.time;
 
 import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class HashTimeWheel extends AbstractLifeCycle {
@@ -50,7 +50,7 @@ public class HashTimeWheel extends AbstractLifeCycle {
         return new Future(this, index, task);
     }
 
-    private final boolean remove(TimerTask task, int index) {
+    private boolean remove(TimerTask task, int index) {
         return timerSlots[index].remove(task);
     }
 
@@ -62,22 +62,10 @@ public class HashTimeWheel extends AbstractLifeCycle {
                 int currentSlotTemp = currentSlot;
                 ConcurrentLinkedQueue<TimerTask> timerSlot = timerSlots[currentSlotTemp++];
                 currentSlotTemp %= timerSlots.length;
-
-                for (Iterator<TimerTask> iterator = timerSlot.iterator(); iterator
-                        .hasNext(); ) {
-                    if (iterator.next().runTask())
-                        iterator.remove();
-                }
-
-                try {
-                    Thread.sleep(interval);
-                } catch (InterruptedException e) {
-                    System.err.println("sleep exception, " + e.getMessage());
-                }
-
+                timerSlot.removeIf(TimerTask::runTask);
+                ThreadUtils.sleep(interval);
                 currentSlot = currentSlotTemp;
             }
-
         }
 
     }

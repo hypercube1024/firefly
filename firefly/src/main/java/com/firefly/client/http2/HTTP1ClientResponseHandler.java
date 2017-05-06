@@ -1,10 +1,7 @@
 package com.firefly.client.http2;
 
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +18,7 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
     protected MetaData.Request request;
     protected HTTPOutputStream outputStream;
     protected final ClientHTTPHandler clientHTTPHandler;
+    protected HttpFields trailer;
 
     HTTP1ClientResponseHandler(ClientHTTPHandler clientHTTPHandler) {
         this.clientHTTPHandler = clientHTTPHandler;
@@ -70,6 +68,15 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
         return clientHTTPHandler.contentComplete(request, response, outputStream, connection);
     }
 
+    @Override
+    public void parsedTrailer(HttpField field) {
+        if (trailer == null) {
+            trailer = new HttpFields();
+            response.setTrailerSupplier(() -> trailer);
+        }
+        trailer.add(field);
+    }
+
     protected boolean http1MessageComplete() {
         try {
             return clientHTTPHandler.messageComplete(request, response, outputStream, connection);
@@ -105,8 +112,7 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
                     }
                     break;
                 default:
-                    throw new IllegalStateException(
-                            "client response does not support the http version " + connection.getHttpVersion());
+                    throw new IllegalStateException("client response does not support the http version " + connection.getHttpVersion());
             }
 
         }

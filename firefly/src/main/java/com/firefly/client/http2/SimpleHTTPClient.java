@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 public class SimpleHTTPClient extends AbstractLifeCycle {
 
@@ -117,6 +118,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         public RequestBuilder add(HttpField field) {
             request.getFields().add(field);
+            return this;
+        }
+
+        public Supplier<HttpFields> getTrailerSupplier() {
+            return request.getTrailerSupplier();
+        }
+
+        public RequestBuilder setTrailerSupplier(Supplier<HttpFields> trailers) {
+            request.setTrailerSupplier(trailers);
             return this;
         }
 

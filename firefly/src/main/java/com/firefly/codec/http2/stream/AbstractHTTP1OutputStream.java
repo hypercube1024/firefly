@@ -103,15 +103,13 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             } else {
                 if (generator.isChunking()) {
                     log.debug("http1 output stream is generating chunk");
-                    ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
-                    generatorResult = generate(null, null, chunk, null, true);
+                    generatorResult = generate(null, null, null, null, true);
                     if (generatorResult == HttpGenerator.Result.CONTINUE && generator.getState() == HttpGenerator.State.COMPLETING) {
-                        generatorResult = generate(null, null, chunk, null, true);
-                        if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMPLETING) {
-                            tcpSession.encode(chunk);
-                            generateLastData(generator);
-                        } else {
-                            generateHTTPMessageExceptionally(generatorResult, generator.getState());
+                        generatorResult = generate(null, null, null, null, true);
+                        if (generatorResult == HttpGenerator.Result.NEED_CHUNK && generator.getState() == HttpGenerator.State.COMPLETING) {
+                            generateLastChunk(generator, tcpSession);
+                        } else if (generatorResult == HttpGenerator.Result.NEED_CHUNK_TRAILER && generator.getState() == HttpGenerator.State.COMPLETING) {
+                            generateTrailer(generator, tcpSession);
                         }
                     } else {
                         generateHTTPMessageExceptionally(generatorResult, generator.getState());
@@ -130,9 +128,30 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
         }
     }
 
+    private void generateLastChunk(HttpGenerator generator, Session tcpSession) throws IOException {
+        ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
+        HttpGenerator.Result generatorResult = generate(null, null, chunk, null, true);
+        if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMPLETING) {
+            tcpSession.encode(chunk);
+            generateLastData(generator);
+        } else {
+            generateHTTPMessageExceptionally(generatorResult, generator.getState());
+        }
+    }
+
+    private void generateTrailer(HttpGenerator generator, Session tcpSession) throws IOException {
+        ByteBuffer trailer = getTrailerByteBuffer();
+        HttpGenerator.Result generatorResult = generate(null, null, trailer, null, true);
+        if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMPLETING) {
+            tcpSession.encode(trailer);
+            generateLastData(generator);
+        } else {
+            generateHTTPMessageExceptionally(generatorResult, generator.getState());
+        }
+    }
+
     private void generateLastData(HttpGenerator generator) throws IOException {
-        HttpGenerator.Result generatorResult;
-        generatorResult = generate(null, null, null, null, true);
+        HttpGenerator.Result generatorResult = generate(null, null, null, null, true);
         if (generator.getState() == HttpGenerator.State.END) {
             if (generatorResult == HttpGenerator.Result.DONE) {
                 generateHTTPMessageSuccessfully();
@@ -157,6 +176,8 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
     }
 
     abstract protected ByteBuffer getHeaderByteBuffer();
+
+    abstract protected ByteBuffer getTrailerByteBuffer();
 
     abstract protected Session getSession();
 

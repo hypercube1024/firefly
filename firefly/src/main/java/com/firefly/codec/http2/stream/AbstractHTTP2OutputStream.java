@@ -5,7 +5,9 @@ import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.DisconnectFrame;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.HeadersFrame;
+import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.concurrent.Callback;
 import org.slf4j.Logger;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
+import java.util.function.Supplier;
 
 abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
 
@@ -99,10 +102,18 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
                 if (isChunked) {
                     if (currentDataFrame != null) {
                         if (!currentDataFrame.isEndStream()) {
-                            DataFrame theLastDataFrame = new DataFrame(currentDataFrame.getStreamId(),
-                                    currentDataFrame.getData(), true);
-                            writeDataFrame(theLastDataFrame);
-                            currentDataFrame = null;
+                            final Supplier<HttpFields> trailers = info.getTrailerSupplier();
+
+                            if (trailers == null) {
+                                DataFrame theLastDataFrame = new DataFrame(currentDataFrame.getStreamId(), currentDataFrame.getData(), true);
+                                writeDataFrame(theLastDataFrame);
+                                currentDataFrame = null;
+                            } else {
+                                DataFrame theLastDataFrame = new DataFrame(currentDataFrame.getStreamId(), currentDataFrame.getData(), false);
+                                writeDataFrame(theLastDataFrame);
+                                currentDataFrame = null;
+                                writeTrailer();
+                            }
                         } else {
                             throw new IllegalStateException("the end data stream is cached");
                         }
@@ -189,17 +200,38 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
             log.debug("is stream {} using chunked encoding ? {}", getStream().getId(), isChunked);
         }
 
-        info.getFields().put(HttpHeader.X_POWERED_BY, X_POWERED_BY_VALUE);
-        info.getFields().put(HttpHeader.SERVER, SERVER_VALUE);
-
+        final Supplier<HttpFields> trailers = info.getTrailerSupplier();
         final Stream stream = getStream();
-        final HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, endStream);
-        if (log.isDebugEnabled()) {
-            log.debug("stream {} commits the header frame {}", stream.getId(), headersFrame);
-        }
-
         committed = true;
-        writeFrame(headersFrame);
+
+        if (trailers == null) {
+            HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, endStream);
+            if (log.isDebugEnabled()) {
+                log.debug("stream {} commits the header frame {}", stream.getId(), headersFrame);
+            }
+            writeFrame(headersFrame);
+        } else {
+            HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, false);
+            if (log.isDebugEnabled()) {
+                log.debug("stream {} commits the header frame {}", stream.getId(), headersFrame);
+            }
+            writeFrame(headersFrame);
+
+            if (endStream) {
+                writeTrailer();
+            }
+        }
+    }
+
+    private void writeTrailer() {
+        final Supplier<HttpFields> trailers = info.getTrailerSupplier();
+        final Stream stream = getStream();
+        MetaData trailerMetaData = new MetaData(info.getHttpVersion(), trailers.get());
+        HeadersFrame trailer = new HeadersFrame(stream.getId(), trailerMetaData, null, true);
+        if (log.isDebugEnabled()) {
+            log.debug("stream {} write the trailer frame {}", stream.getId(), trailer);
+        }
+        writeFrame(trailer);
     }
 
     private class FrameCallback implements Callback {
