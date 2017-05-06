@@ -54,19 +54,9 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
             if (headersFrame.isEndStream()) {
                 final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
                 final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
-
-                String trailerName = response.getFields().get(HttpHeader.TRAILER);
-                if (VerifyUtils.isNotEmpty(trailerName)) {
-                    if (headersFrame.getMetaData().getFields().containsKey(trailerName)) {
-                        response.getFields().add(trailerName, headersFrame.getMetaData().getFields().get(trailerName));
-                        handler.messageComplete(request, response, output, connection);
-                    } else {
-                        throw new IllegalArgumentException(
-                                "the stream " + stream.getId() + " received illegal meta data");
-                    }
-                } else {
-                    throw new IllegalArgumentException("the stream " + stream.getId() + " received illegal meta data");
-                }
+                response.setTrailerSupplier(() -> headersFrame.getMetaData().getFields());
+                handler.contentComplete(request, response, output, connection);
+                handler.messageComplete(request, response, output, connection);
             } else {
                 throw new IllegalArgumentException("the stream " + stream.getId() + " received illegal meta data");
             }

@@ -16,6 +16,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class SimpleRequest {
 
@@ -65,6 +66,10 @@ public class SimpleRequest {
 
     public String getURIString() {
         return request.getURIString();
+    }
+
+    public Supplier<HttpFields> getTrailerSupplier() {
+        return request.getTrailerSupplier();
     }
 
     public void forEach(Consumer<? super HttpField> action) {

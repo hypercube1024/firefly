@@ -12,6 +12,7 @@ import java.io.*;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class SimpleResponse implements Closeable {
 
@@ -56,6 +57,14 @@ public class SimpleResponse implements Closeable {
 
     public void forEach(Consumer<? super HttpField> action) {
         response.forEach(action);
+    }
+
+    public Supplier<HttpFields> getTrailerSupplier() {
+        return response.getTrailerSupplier();
+    }
+
+    public void setTrailerSupplier(Supplier<HttpFields> trailers) {
+        response.setTrailerSupplier(trailers);
     }
 
     public Spliterator<HttpField> spliterator() {

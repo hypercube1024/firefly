@@ -981,9 +981,7 @@ public class StringUtils {
                 case POST_DATA:
                     if (',' == ch) {
                         state = CsvSplitState.PRE_DATA;
-                        continue;
                     }
-                    continue;
             }
         }
 
@@ -1007,7 +1005,7 @@ public class StringUtils {
         return list;
     }
 
-    public static final boolean isAlpha(String value) {
+    public static boolean isAlpha(String value) {
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {

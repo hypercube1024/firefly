@@ -227,7 +227,12 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
         @Override
         protected ByteBuffer getHeaderByteBuffer() {
-            return BufferUtils.allocate(connection.getHTTP2Configuration().getMaxRequestHeadLength());
+            return BufferUtils.allocate(connection.getHTTP2Configuration().getMaxResponseHeadLength());
+        }
+
+        @Override
+        protected ByteBuffer getTrailerByteBuffer() {
+            return BufferUtils.allocate(connection.getHTTP2Configuration().getMaxResponseTrailerLength());
         }
 
         @Override

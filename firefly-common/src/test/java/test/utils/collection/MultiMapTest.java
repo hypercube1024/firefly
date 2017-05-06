@@ -100,9 +100,6 @@ public class MultiMapTest {
 		assertValues(mm, key, "gzip", "jar", "pack200");
 	}
 
-	/**
-	 * Tests {@link MultiMap#putValues(String, String...)}
-	 */
 	@Test
 	public void testPutValues_StringArray() {
 		MultiMap<String> mm = new MultiMap<>();
@@ -115,9 +112,6 @@ public class MultiMapTest {
 		assertValues(mm, key, "gzip", "jar", "pack200");
 	}
 
-	/**
-	 * Tests {@link MultiMap#putValues(String, String...)}
-	 */
 	@Test
 	public void testPutValues_VarArgs() {
 		MultiMap<String> mm = new MultiMap<>();
