@@ -21,7 +21,9 @@ public class HTTP2Configuration {
     private int maxConcurrentStreams = -1;
     private int maxHeaderBlockFragment = 0;
     private int maxRequestHeadLength = 4 * 1024;
+    private int maxRequestTrailerLength = 4 * 1024;
     private int maxResponseHeadLength = 4 * 1024;
+    private int maxResponseTrailerLength = 4 * 1024;
     private String characterEncoding = "UTF-8";
 
     public com.firefly.net.Config getTcpConfiguration() {
@@ -102,6 +104,22 @@ public class HTTP2Configuration {
 
     public void setMaxResponseHeadLength(int maxResponseHeadLength) {
         this.maxResponseHeadLength = maxResponseHeadLength;
+    }
+
+    public int getMaxRequestTrailerLength() {
+        return maxRequestTrailerLength;
+    }
+
+    public void setMaxRequestTrailerLength(int maxRequestTrailerLength) {
+        this.maxRequestTrailerLength = maxRequestTrailerLength;
+    }
+
+    public int getMaxResponseTrailerLength() {
+        return maxResponseTrailerLength;
+    }
+
+    public void setMaxResponseTrailerLength(int maxResponseTrailerLength) {
+        this.maxResponseTrailerLength = maxResponseTrailerLength;
     }
 
     public String getCharacterEncoding() {

@@ -8,10 +8,11 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
@@ -27,8 +28,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
     @Override
     public Listener onNewStream(final Stream stream, final HeadersFrame headersFrame) {
         if (!headersFrame.getMetaData().isRequest()) {
-            throw new IllegalArgumentException(
-                    "the stream " + stream.getId() + " received meta data that is not request type");
+            throw new IllegalArgumentException("the stream " + stream.getId() + " received meta data that is not request type");
         }
 
         if (log.isDebugEnabled()) {
@@ -38,6 +38,16 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         final MetaData.Request request = (MetaData.Request) headersFrame.getMetaData();
         final MetaData.Response response = new HTTPServerResponse();
         final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(response, false) {
+
+            @Override
+            protected synchronized void commit(final boolean endStream) throws IOException {
+                if (!committed) {
+                    info.getFields().put(HttpHeader.X_POWERED_BY, X_POWERED_BY_VALUE);
+                    info.getFields().put(HttpHeader.SERVER, SERVER_VALUE);
+                }
+
+                super.commit(endStream);
+            }
 
             @Override
             protected Stream getStream() {
@@ -70,20 +80,9 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
                     log.debug("the stream {} received the end frame {}", stream.getId(), endHeaderframe);
                 }
                 if (endHeaderframe.isEndStream()) {
-                    String trailerName = request.getFields().get(HttpHeader.TRAILER);
-                    if (VerifyUtils.isNotEmpty(trailerName)) {
-                        if (endHeaderframe.getMetaData().getFields().containsKey(trailerName)) {
-                            request.getFields().add(trailerName,
-                                    endHeaderframe.getMetaData().getFields().get(trailerName));
-                            serverHTTPHandler.messageComplete(request, response, output, connection);
-                        } else {
-                            throw new IllegalArgumentException(
-                                    "the stream " + stream.getId() + " received illegal meta data");
-                        }
-                    } else {
-                        throw new IllegalArgumentException(
-                                "the stream " + stream.getId() + " received illegal meta data");
-                    }
+                    request.setTrailerSupplier(() -> endHeaderframe.getMetaData().getFields());
+                    serverHTTPHandler.contentComplete(request, response, output, connection);
+                    serverHTTPHandler.messageComplete(request, response, output, connection);
                 } else {
                     throw new IllegalArgumentException("the stream " + stream.getId() + " received illegal meta data");
                 }

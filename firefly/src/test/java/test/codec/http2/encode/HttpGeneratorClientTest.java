@@ -185,8 +185,13 @@ public class HttpGeneratorClientTest {
         out += BufferUtils.toString(content1);
         BufferUtils.clear(content1);
 
-        result = gen.generateResponse(null, false, null, chunk, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
         Assert.assertEquals(HttpGenerator.Result.CONTINUE, result);
+        Assert.assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+        Assert.assertTrue(gen.isChunking());
+
+        result = gen.generateResponse(null, false, null, null, null, true);
+        Assert.assertEquals(HttpGenerator.Result.NEED_CHUNK, result);
         Assert.assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
         Assert.assertTrue(gen.isChunking());
 
@@ -251,8 +256,13 @@ public class HttpGeneratorClientTest {
         out += BufferUtils.toString(content1);
         BufferUtils.clear(content1);
 
-        result = gen.generateResponse(null, false, null, chunk, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
         Assert.assertEquals(HttpGenerator.Result.CONTINUE, result);
+        Assert.assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+        Assert.assertTrue(gen.isChunking());
+
+        result = gen.generateResponse(null, false, null, null, null, true);
+        Assert.assertEquals(HttpGenerator.Result.NEED_CHUNK_TRAILER, result);
         Assert.assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
         Assert.assertTrue(gen.isChunking());
 
@@ -262,11 +272,9 @@ public class HttpGeneratorClientTest {
         out += BufferUtils.toString(trailer);
         BufferUtils.clear(trailer);
 
-        result = gen.generateResponse(null, false, null, trailer, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
         Assert.assertEquals(HttpGenerator.Result.DONE, result);
         Assert.assertEquals(HttpGenerator.State.END, gen.getState());
-        out += BufferUtils.toString(trailer);
-        BufferUtils.clear(trailer);
 
         System.out.println(out);
     }

@@ -76,6 +76,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         }
 
         @Override
+        public void parsedTrailer(HttpField field) {
+            writing.get().parsedTrailer(field);
+        }
+
+        @Override
         public boolean messageComplete() {
             if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
                 log.debug("client received the 100 Continue response");
@@ -329,6 +334,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         @Override
         protected ByteBuffer getHeaderByteBuffer() {
             return BufferUtils.allocate(connection.getHTTP2Configuration().getMaxRequestHeadLength());
+        }
+
+        @Override
+        protected ByteBuffer getTrailerByteBuffer() {
+            return BufferUtils.allocate(connection.getHTTP2Configuration().getMaxRequestTrailerLength());
         }
 
         @Override

@@ -17,6 +17,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
     protected HTTP1ServerConnection connection;
     protected HTTP1ServerResponseOutputStream outputStream;
     protected final ServerHTTPHandler serverHTTPHandler;
+    protected HttpFields trailer;
 
     HTTP1ServerRequestHandler(ServerHTTPHandler serverHTTPHandler) {
         this.serverHTTPHandler = serverHTTPHandler;
@@ -69,6 +70,15 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
     @Override
     public boolean contentComplete() {
         return serverHTTPHandler.contentComplete(request, response, outputStream, connection);
+    }
+
+    @Override
+    public void parsedTrailer(HttpField field) {
+        if (trailer == null) {
+            trailer = new HttpFields();
+            request.setTrailerSupplier(() -> trailer);
+        }
+        trailer.add(field);
     }
 
     @Override
