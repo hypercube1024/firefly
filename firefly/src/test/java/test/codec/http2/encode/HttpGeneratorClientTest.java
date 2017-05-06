@@ -12,6 +12,8 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
+import static org.junit.Assert.assertEquals;
+
 public class HttpGeneratorClientTest {
     public final static String[] connect = {null, "keep-alive", "close"};
 
@@ -149,8 +151,7 @@ public class HttpGeneratorClientTest {
         ByteBuffer content1 = BufferUtils.toBuffer("The quick brown fox jumped over the lazy dog.");
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, content0, false);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, content0, false);
         Assert.assertEquals(HttpGenerator.Result.NEED_INFO, result);
         Assert.assertEquals(HttpGenerator.State.START, gen.getState());
 
@@ -209,6 +210,65 @@ public class HttpGeneratorClientTest {
 
         Assert.assertEquals(58, gen.getContentPrepared());
 
+    }
+
+    @Test
+    public void testTrailer() throws Exception {
+        String out;
+        ByteBuffer header = BufferUtils.allocate(4096);
+        ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
+        ByteBuffer trailer = BufferUtils.allocate(4096);
+        ByteBuffer content0 = BufferUtils.toBuffer("Hello World. ");
+        ByteBuffer content1 = BufferUtils.toBuffer("The quick brown fox jumped over the lazy dog.");
+        HttpGenerator gen = new HttpGenerator();
+
+        Info info = new Info("POST", "/index.html");
+        info.getFields().add("Host", "something");
+        info.getFields().add("User-Agent", "test");
+
+        info.setTrailerSupplier(() -> {
+            HttpFields t = new HttpFields();
+            t.add("Foo", "1");
+            t.add("Bar", "bar2");
+            return t;
+        });
+
+        HttpGenerator.Result result = gen.generateRequest(info, header, null, content0, false);
+        Assert.assertEquals(HttpGenerator.Result.FLUSH, result);
+        Assert.assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
+        Assert.assertTrue(gen.isChunking());
+        out = BufferUtils.toString(header);
+        BufferUtils.clear(header);
+        out += BufferUtils.toString(content0);
+        BufferUtils.clear(content0);
+
+        result = gen.generateRequest(null, null, chunk, content1, false);
+        Assert.assertEquals(HttpGenerator.Result.FLUSH, result);
+        Assert.assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
+        Assert.assertTrue(gen.isChunking());
+        out += BufferUtils.toString(chunk);
+        BufferUtils.clear(chunk);
+        out += BufferUtils.toString(content1);
+        BufferUtils.clear(content1);
+
+        result = gen.generateResponse(null, false, null, chunk, null, true);
+        Assert.assertEquals(HttpGenerator.Result.CONTINUE, result);
+        Assert.assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+        Assert.assertTrue(gen.isChunking());
+
+        result = gen.generateResponse(null, false, null, trailer, null, true);
+        assertEquals(HttpGenerator.Result.FLUSH, result);
+        assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+        out += BufferUtils.toString(trailer);
+        BufferUtils.clear(trailer);
+
+        result = gen.generateResponse(null, false, null, trailer, null, true);
+        Assert.assertEquals(HttpGenerator.Result.DONE, result);
+        Assert.assertEquals(HttpGenerator.State.END, gen.getState());
+        out += BufferUtils.toString(trailer);
+        BufferUtils.clear(trailer);
+
+        System.out.println(out);
     }
 
     @Test
