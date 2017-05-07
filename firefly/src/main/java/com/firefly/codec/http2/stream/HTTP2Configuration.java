@@ -25,6 +25,7 @@ public class HTTP2Configuration {
     private int maxResponseHeadLength = 4 * 1024;
     private int maxResponseTrailerLength = 4 * 1024;
     private String characterEncoding = "UTF-8";
+    private String protocol; // HTTP/2.0, HTTP/1.1
 
     public com.firefly.net.Config getTcpConfiguration() {
         return tcpConfiguration;
@@ -146,4 +147,11 @@ public class HTTP2Configuration {
         this.sslContextFactory = sslContextFactory;
     }
 
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
 }

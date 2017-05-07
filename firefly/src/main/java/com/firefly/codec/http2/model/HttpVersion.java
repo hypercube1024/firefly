@@ -9,7 +9,7 @@ import com.firefly.utils.collection.Trie;
 public enum HttpVersion {
 	HTTP_0_9("HTTP/0.9", 9), HTTP_1_0("HTTP/1.0", 10), HTTP_1_1("HTTP/1.1", 11), HTTP_2("HTTP/2.0", 20);
 
-	public final static Trie<HttpVersion> CACHE = new ArrayTrie<HttpVersion>();
+	public final static Trie<HttpVersion> CACHE = new ArrayTrie<>();
 
 	static {
 		for (HttpVersion version : HttpVersion.values())

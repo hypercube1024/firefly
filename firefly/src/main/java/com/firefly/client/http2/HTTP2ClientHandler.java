@@ -1,9 +1,11 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
+import com.firefly.utils.StringUtils;
 
 import java.util.Map;
 
@@ -36,7 +38,27 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
                 }
             }));
         } else {
-            initializeHTTP1ClientConnection(session, context, null);
+            if (!StringUtils.hasText(config.getProtocol())) {
+                initializeHTTP1ClientConnection(session, context, null);
+            } else {
+                HttpVersion httpVersion = HttpVersion.fromString(config.getProtocol());
+                if (httpVersion == null) {
+                    throw new IllegalArgumentException("the protocol " + config.getProtocol() + " is not support.");
+                }
+                switch (httpVersion) {
+                    case HTTP_1_1: {
+                        initializeHTTP1ClientConnection(session, context, null);
+                    }
+                    break;
+                    case HTTP_2: {
+                        initializeHTTP2ClientConnection(session, context, null);
+                    }
+                    break;
+                    default:
+                        throw new IllegalArgumentException("the protocol " + config.getProtocol() + " is not support.");
+                }
+            }
+
         }
     }
 

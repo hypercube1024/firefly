@@ -19,9 +19,14 @@ import java.util.List;
 public class SelfSignedCertificateOpenSSLContextFactory extends AbstractOpenSSLContextFactory {
 
     private SelfSignedCertificate selfSignedCertificate;
-    private List<String> supportedProtocols = Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1");
+    private List<String> supportedProtocols;
 
     public SelfSignedCertificateOpenSSLContextFactory() {
+        this(Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1"));
+    }
+
+    public SelfSignedCertificateOpenSSLContextFactory(List<String> supportedProtocols) {
+        this.supportedProtocols = supportedProtocols;
         try {
             selfSignedCertificate = new SelfSignedCertificate("www.fireflysource.com");
         } catch (CertificateException e) {

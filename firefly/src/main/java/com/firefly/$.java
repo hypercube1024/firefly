@@ -190,6 +190,10 @@ public interface $ {
         return new HTTP2ServerBuilder().httpServer();
     }
 
+    static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration) {
+        return httpServer(serverConfiguration, new HTTPBodyConfiguration());
+    }
+
     static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration,
                                          HTTPBodyConfiguration httpBodyConfiguration) {
         return new HTTP2ServerBuilder().httpServer(serverConfiguration, httpBodyConfiguration);
