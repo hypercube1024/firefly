@@ -11,7 +11,7 @@ public class DirectHTTP2ClientDemo {
          .post("http://localhost:2242/cleartextHttp2")
          .body("post data")
          .submit().thenAccept(res -> {
-            System.out.println(res);
+            System.out.println(res.getStatus() + " " + res.getReason() + " " + res.getHttpVersion().asString());
             System.out.println(res.getFields());
             System.out.println(res.getStringBody());
         });
