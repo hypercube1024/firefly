@@ -55,11 +55,11 @@ public interface $ {
     /**
      * The singleton HTTP client to send all requests.
      * The HTTP client manages HTTP connection in the BoundedAsynchronousPool automatically.
-     * The protocol is HTTP 2.0.
+     * The protocol is plaintext HTTP 2.0.
      *
      * @return the HTTP client singleton instance.
      */
-    static SimpleHTTPClient cleartextHTTP2Client() {
+    static SimpleHTTPClient plaintextHTTP2Client() {
         return ClearTextHTTP2ClientSingleton.getInstance().httpClient();
     }
 
@@ -102,7 +102,7 @@ public interface $ {
         return new HTTP2ServerBuilder().httpServer();
     }
 
-    static HTTP2ServerBuilder cleartextHTTP2Server() {
+    static HTTP2ServerBuilder plaintextHTTP2Server() {
         SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
         configuration.setProtocol(HttpVersion.HTTP_2.asString());
         return httpServer(configuration);

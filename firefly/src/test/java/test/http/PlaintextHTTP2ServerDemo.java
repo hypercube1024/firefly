@@ -5,13 +5,13 @@ import com.firefly.$;
 /**
  * @author Pengtao Qiu
  */
-public class DirectHTTP2ServerDemo {
+public class PlaintextHTTP2ServerDemo {
     public static void main(String[] args) {
-        $.cleartextHTTP2Server().router().post("/cleartextHttp2").handler(ctx -> {
+        $.plaintextHTTP2Server().router().post("/plaintextHttp2").handler(ctx -> {
             System.out.println(ctx.getURI().toString());
             System.out.println(ctx.getFields());
             System.out.println(ctx.getStringBody());
-            ctx.end("test cleartext http2");
+            ctx.end("test plaintext http2");
         }).listen("localhost", 2242);
     }
 }
