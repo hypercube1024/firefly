@@ -1,10 +1,8 @@
 package com.firefly;
 
-import com.firefly.client.http2.HTTPClientSingleton;
-import com.firefly.client.http2.HTTPsClientSingleton;
-import com.firefly.client.http2.SimpleHTTPClient;
-import com.firefly.client.http2.SimpleHTTPClientConfiguration;
+import com.firefly.client.http2.*;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.core.ApplicationContext;
 import com.firefly.core.ApplicationContextSingleton;
 import com.firefly.core.XmlApplicationContext;
@@ -44,8 +42,9 @@ public interface $ {
 
 
     /**
-     * Use the singleton HTTP client to send all requests.
-     * The HTTP client automatically manages HTTP connection in the BoundedAsynchronousPool.
+     * The singleton HTTP client to send all requests.
+     * The HTTP client manages HTTP connection in the BoundedAsynchronousPool automatically.
+     * The default protocol is HTTP 1.1.
      *
      * @return the HTTP client singleton instance.
      */
@@ -53,12 +52,26 @@ public interface $ {
         return HTTPClientSingleton.getInstance().httpClient();
     }
 
-    static SimpleHTTPClient httpsClient() {
-        return HTTPsClientSingleton.getInstance().httpsClient();
+    /**
+     * The singleton HTTP client to send all requests.
+     * The HTTP client manages HTTP connection in the BoundedAsynchronousPool automatically.
+     * The protocol is HTTP 2.0.
+     *
+     * @return the HTTP client singleton instance.
+     */
+    static SimpleHTTPClient cleartextHTTP2Client() {
+        return ClearTextHTTP2ClientSingleton.getInstance().httpClient();
     }
 
-    static HTTPClientSingleton httpClientSingleton() {
-        return HTTPClientSingleton.getInstance();
+    /**
+     * The singleton HTTPs client to send all requests.
+     * The HTTPs client manages HTTP connection in the BoundedAsynchronousPool automatically.
+     * It uses ALPN to determine HTTP 1.1 or HTTP 2.0 protocol.
+     *
+     * @return the HTTPs client singleton instance.
+     */
+    static SimpleHTTPClient httpsClient() {
+        return HTTPsClientSingleton.getInstance().httpsClient();
     }
 
     /**
@@ -78,6 +91,38 @@ public interface $ {
      */
     static SimpleHTTPClient createHTTPClient(SimpleHTTPClientConfiguration configuration) {
         return new SimpleHTTPClient(configuration);
+    }
+
+    /**
+     * Use fluent API to create an new HTTP server instance.
+     *
+     * @return HTTP server builder API
+     */
+    static HTTP2ServerBuilder httpServer() {
+        return new HTTP2ServerBuilder().httpServer();
+    }
+
+    static HTTP2ServerBuilder cleartextHTTP2Server() {
+        SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
+        configuration.setProtocol(HttpVersion.HTTP_2.asString());
+        return httpServer(configuration);
+    }
+
+    static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration) {
+        return httpServer(serverConfiguration, new HTTPBodyConfiguration());
+    }
+
+    static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration,
+                                         HTTPBodyConfiguration httpBodyConfiguration) {
+        return new HTTP2ServerBuilder().httpServer(serverConfiguration, httpBodyConfiguration);
+    }
+
+    static HTTP2ServerBuilder httpsServer() {
+        return new HTTP2ServerBuilder().httpsServer();
+    }
+
+    static HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
+        return new HTTP2ServerBuilder().httpsServer(sslContextFactory);
     }
 
     /**
@@ -179,32 +224,6 @@ public interface $ {
 
     static void async(Runnable runnable) {
         ApplicationContextSingleton.getInstance().async(runnable);
-    }
-
-    /**
-     * Use fluent API to create an new HTTP server instance.
-     *
-     * @return HTTP server builder API
-     */
-    static HTTP2ServerBuilder httpServer() {
-        return new HTTP2ServerBuilder().httpServer();
-    }
-
-    static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration) {
-        return httpServer(serverConfiguration, new HTTPBodyConfiguration());
-    }
-
-    static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration,
-                                         HTTPBodyConfiguration httpBodyConfiguration) {
-        return new HTTP2ServerBuilder().httpServer(serverConfiguration, httpBodyConfiguration);
-    }
-
-    static HTTP2ServerBuilder httpsServer() {
-        return new HTTP2ServerBuilder().httpsServer();
-    }
-
-    static HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
-        return new HTTP2ServerBuilder().httpsServer(sslContextFactory);
     }
 
     interface io {
