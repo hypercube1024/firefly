@@ -60,7 +60,7 @@ public interface $ {
      * @return the HTTP client singleton instance.
      */
     static SimpleHTTPClient plaintextHTTP2Client() {
-        return ClearTextHTTP2ClientSingleton.getInstance().httpClient();
+        return PlaintextHTTP2ClientSingleton.getInstance().httpClient();
     }
 
     /**

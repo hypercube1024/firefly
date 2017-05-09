@@ -6,17 +6,17 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 /**
  * @author Pengtao Qiu
  */
-public class ClearTextHTTP2ClientSingleton extends AbstractLifeCycle {
+public class PlaintextHTTP2ClientSingleton extends AbstractLifeCycle {
 
-    private static ClearTextHTTP2ClientSingleton ourInstance = new ClearTextHTTP2ClientSingleton();
+    private static PlaintextHTTP2ClientSingleton ourInstance = new PlaintextHTTP2ClientSingleton();
 
-    public static ClearTextHTTP2ClientSingleton getInstance() {
+    public static PlaintextHTTP2ClientSingleton getInstance() {
         return ourInstance;
     }
 
     private SimpleHTTPClient httpClient;
 
-    private ClearTextHTTP2ClientSingleton() {
+    private PlaintextHTTP2ClientSingleton() {
         start();
     }
 
