@@ -1,5 +1,7 @@
 package com.firefly.utils.json;
 
+import com.firefly.utils.StringUtils;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -27,35 +29,75 @@ public class JsonObject extends HashMap<String, Object> {
 	}
 	
 	public byte getByte(String key) {
-		return Byte.parseByte(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return Byte.parseByte(str);
+		} else {
+			return 0;
+		}
 	}
 	
 	public short getShort(String key) {
-		return Short.parseShort(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return Short.parseShort(str);
+		} else {
+			return 0;
+		}
 	}
 	
 	public int getInteger(String key) {
-		return Integer.parseInt(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return Integer.parseInt(str);
+		} else {
+			return 0;
+		}
 	}
 	
 	public long getLong(String key) {
-		return Long.parseLong(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return Long.parseLong(str);
+		} else {
+			return 0;
+		}
 	}
 	
 	public float getFloat(String key) {
-		return Float.parseFloat(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return Float.parseFloat(str);
+		} else {
+			return 0;
+		}
 	}
 	
 	public double getDouble(String key) {
-		return Double.parseDouble(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return Double.parseDouble(str);
+		} else {
+			return 0;
+		}
 	}
 	
 	public BigInteger getBigInteger(String key) {
-		return new BigInteger(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return new BigInteger(str);
+		} else {
+			return null;
+		}
 	}
 	
 	public BigDecimal getBigDecimal(String key) {
-		return new BigDecimal(getString(key));
+		String str = getString(key);
+		if (StringUtils.hasText(str)) {
+			return new BigDecimal(str);
+		} else {
+			return null;
+		}
 	}
 	
 	public boolean getBoolean(String key) {
