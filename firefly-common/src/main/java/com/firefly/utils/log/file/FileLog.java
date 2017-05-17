@@ -210,6 +210,7 @@ public class FileLog implements Log, Closeable {
 
     private void add(String str, String level, Throwable throwable, Object... objs) {
         LogItem item = new LogItem();
+        item.setRequestId(requestId.get());
         item.setLevel(level);
         item.setName(name);
         item.setContent(str);

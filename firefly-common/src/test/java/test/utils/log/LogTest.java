@@ -15,6 +15,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
+import static org.hamcrest.Matchers.is;
+
 public class LogTest {
 
     private static final Log log = LogFactory.getInstance().getLog("firefly-common");
@@ -33,6 +35,8 @@ public class LogTest {
     private static final Log testMaxSize = LogFactory.getInstance().getLog("test.max.size");
     private static final Log testGBK = LogFactory.getInstance().getLog("test.gbk");
 
+    private static final Log testRequestId = LogFactory.getInstance().getLog("test-request-id");
+
     @Before
     public void init() {
         deleteLog(log2);
@@ -42,6 +46,7 @@ public class LogTest {
         deleteLog(log6);
         deleteLog(logFoo);
         deleteLog(logBar);
+        deleteLog(testRequestId);
     }
 
     private void deleteLog(Log log) {
@@ -101,6 +106,10 @@ public class LogTest {
 
         logFoo.info("testFoo");
         logBar.info("testBar");
+
+        Log.requestId.set("hello_req_id");
+        testRequestId.info("oooooooooo");
+        testRequestId.info("bbbbbbbbbb");
 
         try {
             Thread.sleep(2000L);
@@ -211,6 +220,12 @@ public class LogTest {
                         break;
                 }
 
+            }, "UTF-8");
+
+
+            FileUtils.read(getFile(testRequestId), (text, num) -> {
+                String[] data = StringUtils.split(text, '\t');
+                Assert.assertThat(data[0].endsWith("hello_req_id"), is(true));
             }, "UTF-8");
         } catch (IOException e) {
             e.printStackTrace();
