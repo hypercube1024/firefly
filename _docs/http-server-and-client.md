@@ -526,7 +526,7 @@ Visit "http://localhost:8080/error" and view:
 The server internal error.
 perhaps some errors happen
 
-powered by Firefly 4.0.23
+powered by Firefly {{ site.data.global.releaseVersion }}
 ```
 
 ## Custom error handling
@@ -587,7 +587,7 @@ Visit "http://localhost:8080/error" and view:
 Custom error handler. The server internal error.
 perhaps some errors happen
 
-powered by Firefly 4.0.23
+powered by Firefly {{ site.data.global.releaseVersion }}
 ```
 
 
