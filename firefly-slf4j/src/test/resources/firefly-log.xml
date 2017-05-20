@@ -3,15 +3,10 @@
          xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
 
     <logger>
-        <name>firefly-system</name>
-        <level>DEBUG</level>
+        <name>firefly-common</name>
+        <level>${log.level}</level>
         <path>${log.path}</path>
-    </logger>
-
-    <logger>
-        <name>firefly-monitor</name>
-        <level>INFO</level>
-        <path>${log.path}</path>
+        <enable-console>true</enable-console>
     </logger>
 
 </loggers>

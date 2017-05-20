@@ -85,4 +85,9 @@
         <charset>GBK</charset>
     </logger>
 
+    <logger>
+        <name>test-request-id</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+    </logger>
 </loggers>

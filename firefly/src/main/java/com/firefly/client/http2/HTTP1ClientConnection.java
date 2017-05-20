@@ -188,7 +188,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     @Override
     public void upgradeHTTP2(final MetaData.Request request, final SettingsFrame settings,
                              final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler) {
-        upgradeHTTP2WithCleartext(request, settings,
+        upgradePlaintextHTTP2(request, settings,
                 promise, new HTTP2ClientResponseHandler.ClientStreamPromise(request,
                         new Promise.Adapter<>(), true),
                 new HTTP2ClientResponseHandler(request, handler, this), new Listener.Adapter() {
@@ -206,9 +206,9 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                 }, handler);
     }
 
-    public void upgradeHTTP2WithCleartext(MetaData.Request request, SettingsFrame settings,
-                                          final Promise<HTTPClientConnection> promise, final Promise<Stream> initStream,
-                                          final Stream.Listener initStreamListener, final Listener listener, final ClientHTTPHandler handler) {
+    public void upgradePlaintextHTTP2(MetaData.Request request, SettingsFrame settings,
+                                      final Promise<HTTPClientConnection> promise, final Promise<Stream> initStream,
+                                      final Stream.Listener initStreamListener, final Listener listener, final ClientHTTPHandler handler) {
         if (isEncrypted()) {
             throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
         }
