@@ -66,13 +66,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>4.0.22</version>
+    <version>{{ site.data.global.releaseVersion }}</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>4.0.22</version>
+    <version>{{ site.data.global.releaseVersion }}</version>
 </dependency>
 ```
 
