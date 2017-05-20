@@ -107,7 +107,7 @@ public class LogTest {
         logFoo.info("testFoo");
         logBar.info("testBar");
 
-        Log.requestId.set("hello_req_id");
+        Log.mdc.put("reqId","hello_req_id");
         testRequestId.info("oooooooooo");
         testRequestId.info("bbbbbbbbbb");
 
@@ -225,7 +225,7 @@ public class LogTest {
 
             FileUtils.read(getFile(testRequestId), (text, num) -> {
                 String[] data = StringUtils.split(text, '\t');
-                Assert.assertThat(data[0].endsWith("hello_req_id"), is(true));
+                Assert.assertThat(data[0].contains("hello_req_id"), is(true));
             }, "UTF-8");
         } catch (IOException e) {
             e.printStackTrace();

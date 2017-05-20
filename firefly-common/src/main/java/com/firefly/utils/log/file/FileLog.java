@@ -26,15 +26,12 @@ public class FileLog implements Log, Closeable {
     private LogOutputStream output = new LogOutputStream();
 
     void write(LogItem logItem) {
-        Date date = new Date();
-        logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(date));
         if (consoleOutput) {
             System.out.println(logItem.toString());
         }
 
         if (fileOutput) {
-            logItem.setDate(SafeSimpleDateFormat.defaultDateFormat.format(date));
-            output.write(logItem.toString(), date);
+            output.write(logItem.toString(), logItem.getDate());
         }
     }
 
@@ -210,12 +207,13 @@ public class FileLog implements Log, Closeable {
 
     private void add(String str, String level, Throwable throwable, Object... objs) {
         LogItem item = new LogItem();
-        item.setRequestId(requestId.get());
         item.setLevel(level);
         item.setName(name);
         item.setContent(str);
         item.setObjs(objs);
         item.setThrowable(throwable);
+        item.setDate(new Date());
+        item.setMdcData(mdc.getCopyOfContextMap());
         if (stackTrace) {
             item.setStackTraceElement(getStackTraceElement());
         }

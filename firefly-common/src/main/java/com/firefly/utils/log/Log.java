@@ -2,7 +2,7 @@ package com.firefly.utils.log;
 
 public interface Log {
 
-    ThreadLocal<String> requestId = new ThreadLocal<>();
+    MappedDiagnosticContext mdc = new MappedDiagnosticContext();
 
     String CL = "\r\n";
 

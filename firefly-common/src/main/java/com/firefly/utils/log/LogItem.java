@@ -1,25 +1,22 @@
 package com.firefly.utils.log;
 
 import com.firefly.utils.StringUtils;
+import com.firefly.utils.time.SafeSimpleDateFormat;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Date;
+import java.util.Map;
 
 public class LogItem {
 
-    private String name, content, date, level, requestId;
+    private String name, content, level;
     private Object[] objs;
     private Throwable throwable;
     private StackTraceElement stackTraceElement;
     private String logStr;
-
-    public void setThrowable(Throwable throwable) {
-        this.throwable = throwable;
-    }
-
-    public void setObjs(Object[] objs) {
-        this.objs = objs;
-    }
+    private Map<String, String> mdcData;
+    private Date date;
 
     public String getName() {
         return name;
@@ -27,6 +24,10 @@ public class LogItem {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getContent() {
+        return content;
     }
 
     public void setContent(String content) {
@@ -41,8 +42,20 @@ public class LogItem {
         this.level = level;
     }
 
-    public void setDate(String date) {
-        this.date = date;
+    public Object[] getObjs() {
+        return objs;
+    }
+
+    public void setObjs(Object[] objs) {
+        this.objs = objs;
+    }
+
+    public Throwable getThrowable() {
+        return throwable;
+    }
+
+    public void setThrowable(Throwable throwable) {
+        this.throwable = throwable;
     }
 
     public StackTraceElement getStackTraceElement() {
@@ -53,8 +66,20 @@ public class LogItem {
         this.stackTraceElement = stackTraceElement;
     }
 
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
+    public Map<String, String> getMdcData() {
+        return mdcData;
+    }
+
+    public void setMdcData(Map<String, String> mdcData) {
+        this.mdcData = mdcData;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
     }
 
     @Override
@@ -72,17 +97,17 @@ public class LogItem {
                 content += str.toString();
             }
 
-            logStr = level + ", " + date;
+            logStr = level + ", " + SafeSimpleDateFormat.defaultDateFormat.format(date);
 
-            if (requestId != null) {
-                logStr += ", " + requestId;
+            if (mdcData != null && !mdcData.isEmpty()) {
+                logStr += ", " + mdcData;
             }
 
             if (stackTraceElement != null) {
                 logStr += ", " + stackTraceElement;
             }
 
-            logStr += "\t" + content;
+            logStr += ",\t" + content;
         }
         return logStr;
     }
