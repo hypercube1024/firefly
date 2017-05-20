@@ -121,7 +121,7 @@ public class TestTypeUtils {
     @Test
     public void testGetLocationOfClass() throws Exception {
         // Classes from maven dependencies
-        Assert.assertThat(TypeUtils.getLocationOfClass(Assert.class).toASCIIString(), Matchers.containsString("repository/"));
+        Assert.assertThat(TypeUtils.getLocationOfClass(Assert.class).toASCIIString(), Matchers.containsString("repository"));
 
         // Class from project dependencies
         Assert.assertThat(TypeUtils.getLocationOfClass(TypeUtils.class).toASCIIString(), Matchers.containsString("/classes/"));
