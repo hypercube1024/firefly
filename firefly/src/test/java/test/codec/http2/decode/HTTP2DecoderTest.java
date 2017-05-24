@@ -74,7 +74,7 @@ public class HTTP2DecoderTest {
 						System.out.println("on new stread headers: " + frame.getMetaData().toString());
 						
 						Assert.assertThat(stream.getId(), is(5));
-						Assert.assertThat(frame.getMetaData().getVersion(), is(HttpVersion.HTTP_2));
+						Assert.assertThat(frame.getMetaData().getHttpVersion(), is(HttpVersion.HTTP_2));
 						Assert.assertThat(frame.getMetaData().getFields().get("User-Agent"), is("Firefly Client 1.0"));
 						Assert.assertThat(frame.getMetaData().getFields().get(HttpHeader.CONTENT_LENGTH), is("72"));
 						
@@ -205,7 +205,7 @@ public class HTTP2DecoderTest {
 						System.out.println("on new stread headers: " + frame.getMetaData().toString());
 						
 						Assert.assertThat(stream.getId(), is(5));
-						Assert.assertThat(frame.getMetaData().getVersion(), is(HttpVersion.HTTP_2));
+						Assert.assertThat(frame.getMetaData().getHttpVersion(), is(HttpVersion.HTTP_2));
 						Assert.assertThat(frame.getMetaData().getFields().get("User-Agent"), is("Firefly Client 1.0"));
 						
 						MetaData.Request request = (MetaData.Request) frame.getMetaData();

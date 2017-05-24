@@ -1,273 +1,259 @@
 package com.firefly.db;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
+import com.firefly.utils.Assert;
+import com.firefly.utils.function.Func1;
+import com.firefly.utils.function.Func2;
+import org.apache.commons.dbutils.BeanProcessor;
+import org.apache.commons.dbutils.ResultSetHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
-import javax.sql.DataSource;
-
-import org.apache.commons.dbutils.BeanProcessor;
-import org.apache.commons.dbutils.ResultSetHandler;
-
-import com.firefly.utils.Assert;
-import com.firefly.utils.function.Func1;
-import com.firefly.utils.function.Func2;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class TransactionalJDBCHelper {
 
-	private final static Log log = LogFactory.getInstance().getLog("firefly-system");
+    private final static Logger log = LoggerFactory.getLogger("firefly-system");
 
-	private static final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
-	private final JDBCHelper jdbcHelper;
+    private final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
+    private final JDBCHelper jdbcHelper;
 
-	public TransactionalJDBCHelper(DataSource dataSource) {
-		this(new JDBCHelper(dataSource,
-				JDBCHelper.getQueryRunner(dataSource, log.isDebugEnabled() || log.isTraceEnabled())));
-	}
+    public TransactionalJDBCHelper(DataSource dataSource) {
+        this(dataSource, null);
+    }
 
-	public TransactionalJDBCHelper(JDBCHelper jdbcHelper) {
-		this.jdbcHelper = jdbcHelper;
-	}
+    public TransactionalJDBCHelper(DataSource dataSource, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
+        this(dataSource, new MetricRegistry(), reporterFactory);
+    }
 
-	public JDBCHelper getJdbcHelper() {
-		return jdbcHelper;
-	}
+    public TransactionalJDBCHelper(DataSource dataSource, MetricRegistry metrics, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
+        this(new JDBCHelper(dataSource, metrics, reporterFactory));
+    }
 
-	public <T> T queryForSingleColumn(String sql, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.queryForSingleColumn(connection, sql, params);
-		});
-	}
+    public TransactionalJDBCHelper(JDBCHelper jdbcHelper) {
+        this.jdbcHelper = jdbcHelper;
+    }
 
-	public <T> T queryForObject(String sql, Class<T> t, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.queryForObject(connection, sql, t, params);
-		});
-	}
+    public JDBCHelper getJdbcHelper() {
+        return jdbcHelper;
+    }
 
-	public <T> T queryForObject(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.queryForObject(connection, sql, t, beanProcessor, params);
-		});
-	}
+    public <T> T queryForSingleColumn(String sql, Object... params) {
+        return _executeTransaction((connection, helper) -> helper.queryForSingleColumn(connection, sql, params));
+    }
 
-	public <T> T queryById(Class<T> t, Object id) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.queryById(connection, t, id);
-		});
-	}
+    public <T> T queryForObject(String sql, Class<T> t, Object... params) {
+        return _executeTransaction((connection, helper) -> helper.queryForObject(connection, sql, t, params));
+    }
 
-	public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.queryForBeanMap(connection, sql, t, params);
-		});
-	}
+    public <T> T queryForObject(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+        return _executeTransaction((connection, helper) -> helper.queryForObject(connection, sql, t, beanProcessor, params));
+    }
 
-	public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, BeanProcessor beanProcessor, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			String columnName = helper.getDefaultBeanProcessor().getIdColumnName(t);
-			Assert.notNull(columnName);
+    public <T> T queryById(Class<T> t, Object id) {
+        return _executeTransaction((connection, helper) -> helper.queryById(connection, t, id));
+    }
 
-			return helper.queryForBeanMap(connection, sql, t, columnName, beanProcessor, params);
-		});
-	}
+    public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, Object... params) {
+        return _executeTransaction((connection, helper) -> helper.queryForBeanMap(connection, sql, t, params));
+    }
 
-	public <T> List<T> queryForList(String sql, Class<T> t, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.queryForList(connection, sql, t, params);
-		});
-	}
+    public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, BeanProcessor beanProcessor, Object... params) {
+        return _executeTransaction((connection, helper) -> {
+            String columnName = helper.getDefaultBeanProcessor().getIdColumnName(t);
+            Assert.notNull(columnName);
 
-	public <T> List<T> queryForList(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.queryForList(connection, sql, t, beanProcessor, params);
-		});
-	}
+            return helper.queryForBeanMap(connection, sql, t, columnName, beanProcessor, params);
+        });
+    }
 
-	public int update(String sql, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.update(connection, sql, params);
-		});
-	}
+    public <T> List<T> queryForList(String sql, Class<T> t, Object... params) {
+        return _executeTransaction((connection, helper) -> helper.queryForList(connection, sql, t, params));
+    }
 
-	public int updateObject(Object object) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.updateObject(connection, object);
-		});
-	}
+    public <T> List<T> queryForList(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
+        return _executeTransaction((connection, helper) -> helper.queryForList(connection, sql, t, beanProcessor, params));
+    }
 
-	public <T> T insert(String sql, Object... params) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.insert(connection, sql, params);
-		});
-	}
+    public int update(String sql, Object... params) {
+        Integer ret = _executeTransaction((connection, helper) -> helper.update(connection, sql, params));
+        return ret != null ? ret : -1;
+    }
 
-	public <T> T insertObject(Object object) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.insertObject(connection, object);
-		});
-	}
+    public int updateObject(Object object) {
+        Integer ret = _executeTransaction((connection, helper) -> helper.updateObject(connection, object));
+        return ret != null ? ret : -1;
+    }
 
-	public int deleteById(Class<?> t, Object id) {
-		return _executeTransaction((connection, helper) -> {
-			return helper.deleteById(connection, t, id);
-		});
-	}
+    public <T> T insert(String sql, Object... params) {
+        return _executeTransaction((connection, helper) -> helper.insert(connection, sql, params));
+    }
 
-	public int[] batch(String sql, Object[][] params) {
-		return _executeTransaction((connection, helper) -> {
-			int[] ret = null;
-			try {
-				ret = helper.getRunner().batch(connection, sql, params);
-			} catch (Exception e) {
-				rollback();
-				log.error("batch exception", e);
-			}
-			return ret;
-		});
-	}
+    public <T> T insertObject(Object object) {
+        return _executeTransaction((connection, helper) -> helper.insertObject(connection, object));
+    }
 
-	public <T> T insertBatch(String sql, ResultSetHandler<T> rsh, Object[][] params) {
-		return _executeTransaction((connection, helper) -> {
-			T ret = null;
-			try {
-				ret = helper.getRunner().insertBatch(connection, sql, rsh, params);
-			} catch (Exception e) {
-				rollback();
-				log.error("insert batch exception", e);
-			}
-			return ret;
-		});
-	}
+    public int deleteById(Class<?> t, Object id) {
+        Integer ret = _executeTransaction((connection, helper) -> helper.deleteById(connection, t, id));
+        return ret != null ? ret : -1;
+    }
 
-	public <T> T executeTransaction(Func1<TransactionalJDBCHelper, T> func) {
-		beginTransaction();
-		try {
-			T ret = func.call(this);
-			commit();
-			return ret;
-		} catch (Throwable t) {
-			rollback();
-			log.error("the transaction exception", t);
-		} finally {
-			endTransaction();
-		}
-		return null;
-	}
+    public int[] batch(String sql, Object[][] params) {
+        return _executeTransaction((connection, helper) -> {
+            int[] ret;
+            try {
+                ret = helper.getRunner().batch(connection, sql, params);
+            } catch (Exception e) {
+                log.error("batch exception", e);
+                throw new DBException(e);
+            }
+            return ret;
+        });
+    }
 
-	private <T> T _executeTransaction(Func2<Connection, JDBCHelper, T> func) {
-		beginTransaction();
-		try {
-			T ret = func.call(getConnection(), jdbcHelper);
-			commit();
-			return ret;
-		} catch (Throwable t) {
-			rollback();
-			log.error("the transaction exception", t);
-		} finally {
-			endTransaction();
-		}
-		return null;
-	}
+    public <T> T insertBatch(String sql, ResultSetHandler<T> rsh, Object[][] params) {
+        return _executeTransaction((connection, helper) -> {
+            T ret;
+            try {
+                ret = helper.getRunner().insertBatch(connection, sql, rsh, params);
+            } catch (Exception e) {
+                log.error("insert batch exception", e);
+                throw new DBException(e);
+            }
+            return ret;
+        });
+    }
 
-	private void beginTransaction() {
-		getTransaction().beginTransaction();
-	}
+    public <T> T executeTransaction(Func1<TransactionalJDBCHelper, T> func) {
+        beginTransaction();
+        try {
+            T ret = func.call(this);
+            commit();
+            return ret;
+        } catch (Throwable t) {
+            rollback();
+            log.error("the transaction exception", t);
+        } finally {
+            endTransaction();
+        }
+        return null;
+    }
 
-	public Connection getConnection() {
-		return getTransaction().getConnection();
-	}
+    private <T> T _executeTransaction(Func2<Connection, JDBCHelper, T> func) {
+        beginTransaction();
+        try {
+            T ret = func.call(getConnection(), jdbcHelper);
+            commit();
+            return ret;
+        } catch (Throwable t) {
+            rollback();
+            log.error("the transaction exception", t);
+        } finally {
+            endTransaction();
+        }
+        return null;
+    }
 
-	public void commit() {
-		getTransaction().commit();
-	}
+    private void beginTransaction() {
+        getTransaction().beginTransaction();
+    }
 
-	public void rollback() {
-		getTransaction().rollback();
-	}
+    public Connection getConnection() {
+        return getTransaction().getConnection();
+    }
 
-	private void endTransaction() {
-		getTransaction().endTransaction();
-	}
+    public void commit() {
+        getTransaction().commit();
+    }
 
-	private Transaction getTransaction() {
-		Transaction t = transaction.get();
-		if (t == null) {
-			t = new Transaction();
-			transaction.set(t);
-		}
-		return t;
-	}
+    public void rollback() {
+        getTransaction().rollback();
+    }
 
-	enum Status {
-		INIT, START, COMMIT, ROLLBACK, END
-	}
+    private void endTransaction() {
+        getTransaction().endTransaction();
+    }
 
-	class Transaction {
-		private Connection connection;
-		private Status status = Status.INIT;
-		private int count = 0;
+    private Transaction getTransaction() {
+        Transaction t = transaction.get();
+        if (t == null) {
+            t = new Transaction();
+            transaction.set(t);
+        }
+        return t;
+    }
 
-		synchronized void beginTransaction() {
-			if (status == Status.INIT) {
-				connection = jdbcHelper.getConnection();
-				jdbcHelper.setAutoCommit(connection, false);
-				status = Status.START;
-			}
-			count++;
-			log.debug("begin transaction {}", count);
-		}
+    enum Status {
+        INIT, START, COMMIT, ROLLBACK, END
+    }
 
-		synchronized Connection getConnection() {
-			check();
-			return connection;
-		}
+    class Transaction {
+        private Connection connection;
+        private Status status = Status.INIT;
+        private int count = 0;
 
-		synchronized void rollback() {
-			check();
-			status = Status.ROLLBACK;
-		}
+        synchronized void beginTransaction() {
+            if (status == Status.INIT) {
+                connection = jdbcHelper.getConnection();
+                jdbcHelper.setAutoCommit(connection, false);
+                status = Status.START;
+            }
+            count++;
+            log.debug("begin transaction {}", count);
+        }
 
-		synchronized void commit() {
-			check();
-			if (status != Status.ROLLBACK) {
-				status = Status.COMMIT;
-			}
-		}
+        synchronized Connection getConnection() {
+            check();
+            return connection;
+        }
 
-		private synchronized void check() {
-			if (status == Status.INIT) {
-				throw new IllegalStateException("The transaction has not started, " + status);
-			}
-			if (status == Status.END) {
-				throw new IllegalStateException("The transaction has ended, " + status);
-			}
-		}
+        synchronized void rollback() {
+            check();
+            status = Status.ROLLBACK;
+        }
 
-		synchronized void endTransaction() {
-			count--;
-			if (count == 0) {
-				switch (status) {
-				case START:
-				case COMMIT:
-					jdbcHelper.commit(connection);
-					break;
-				case ROLLBACK:
-					jdbcHelper.rollback(connection);
-					break;
-				default:
-					break;
-				}
+        synchronized void commit() {
+            check();
+            if (status != Status.ROLLBACK) {
+                status = Status.COMMIT;
+            }
+        }
 
-				jdbcHelper.close(connection);
-				transaction.set(null);
-				status = Status.END;
-			}
-			log.debug("end transaction {}", count);
-		}
+        private synchronized void check() {
+            if (status == Status.INIT) {
+                throw new IllegalStateException("The transaction has not started, " + status);
+            }
+            if (status == Status.END) {
+                throw new IllegalStateException("The transaction has ended, " + status);
+            }
+        }
 
-	}
+        synchronized void endTransaction() {
+            count--;
+            if (count == 0) {
+                switch (status) {
+                    case START:
+                    case COMMIT:
+                        jdbcHelper.commit(connection);
+                        break;
+                    case ROLLBACK:
+                        jdbcHelper.rollback(connection);
+                        break;
+                    default:
+                        break;
+                }
+
+                jdbcHelper.close(connection);
+                transaction.set(null);
+                status = Status.END;
+            }
+            log.debug("end transaction {}", count);
+        }
+
+    }
 
 }

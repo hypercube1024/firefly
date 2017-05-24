@@ -1,90 +1,48 @@
 package com.firefly.utils.json;
 
-import java.io.IOException;
-
+import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.json.io.JsonStringReader;
 import com.firefly.utils.json.io.JsonStringWriter;
 import com.firefly.utils.json.parser.GeneralJSONObjectStateMacine;
 import com.firefly.utils.json.parser.ParserStateMachine;
 import com.firefly.utils.json.serializer.SerialStateMachine;
 
+import java.io.IOException;
 
 public abstract class Json {
-	public static String toJson(Object obj) {
-		String ret = null;
-		JsonWriter writer = null;
-		try {
-			writer = new JsonStringWriter();
-			SerialStateMachine.toJson(obj, writer);
-			ret = writer.toString();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if(writer != null)
-				try {
-					writer.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		}
-		return ret;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <T> T toObject(String json, Class<T> clazz) {
-		JsonReader reader = null;
-		T ret = null;
-		try {
-			reader = new JsonStringReader(json);
-			ret = (T) ParserStateMachine.toObject(reader, clazz);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if(reader != null)
-				try {
-					reader.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		}
-		return ret;
-	}
-	
-	public static JsonObject toJsonObject(String json) {
-		JsonReader reader = null;
-		JsonObject ret = null;
-		try {
-			reader = new JsonStringReader(json);
-			ret = GeneralJSONObjectStateMacine.toJsonObject(reader);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if(reader != null)
-				try {
-					reader.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		}
-		return ret;
-	}
-	
-	public static JsonArray toJsonArray(String json) {
-		JsonReader reader = null;
-		JsonArray ret = null;
-		try {
-			reader = new JsonStringReader(json);
-			ret = GeneralJSONObjectStateMacine.toJsonArray(reader);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if(reader != null)
-				try {
-					reader.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		}
-		return ret;
-	}
+
+    public static String toJson(Object obj) {
+        try (JsonWriter writer = new JsonStringWriter()) {
+            SerialStateMachine.toJson(obj, writer);
+            return writer.toString();
+        } catch (IOException e) {
+            throw new CommonRuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T toObject(String json, Class<T> clazz) {
+        try (JsonReader reader = new JsonStringReader(json)) {
+            return (T) ParserStateMachine.toObject(reader, clazz);
+        } catch (IOException e) {
+            throw new CommonRuntimeException(e);
+        }
+    }
+
+    public static JsonObject toJsonObject(String json) {
+        try (JsonReader reader = new JsonStringReader(json)) {
+            return GeneralJSONObjectStateMacine.toJsonObject(reader);
+        } catch (IOException e) {
+            throw new CommonRuntimeException(e);
+        }
+    }
+
+    public static JsonArray toJsonArray(String json) {
+        try (JsonReader reader = new JsonStringReader(json)) {
+            return GeneralJSONObjectStateMacine.toJsonArray(reader);
+        } catch (IOException e) {
+            throw new CommonRuntimeException(e);
+        }
+    }
+
 }

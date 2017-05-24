@@ -1,5 +1,13 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.http2.frame.*;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.IdleTimeout;
+import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.concurrent.Scheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.WritePendingException;
@@ -9,23 +17,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.ErrorCode;
-import com.firefly.codec.http2.frame.Frame;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PushPromiseFrame;
-import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.IdleTimeout;
-import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final AtomicReference<ConcurrentMap<String, Object>> attributes = new AtomicReference<>();
 	private final AtomicReference<CloseState> closeState = new AtomicReference<>(CloseState.NOT_CLOSED);

@@ -1,16 +1,16 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-
 public abstract class AbstractFlowControlStrategy implements FlowControlStrategy {
-	protected static Log log = LogFactory.getInstance().getLog("firefly-system");
+	protected static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	private final AtomicLong sessionStall = new AtomicLong();
 	private final AtomicLong sessionStallTime = new AtomicLong();

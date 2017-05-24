@@ -31,9 +31,7 @@ abstract public class CookieGenerator {
 		if (cookie == null) {
 			throw new IllegalArgumentException("the cookie is null");
 		} else {
-			StringBuilder sb = new StringBuilder();
-			sb.append(cookie.getName()).append('=').append(cookie.getValue());
-			return sb.toString();
+			return cookie.getName() + '=' + cookie.getValue();
 		}
 	}
 

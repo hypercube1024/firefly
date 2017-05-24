@@ -15,4 +15,9 @@ public class ByteBufferOutputEntry extends AbstractOutputEntry<ByteBuffer> {
 		return OutputEntryType.BYTE_BUFFER;
 	}
 
+	@Override
+	public long remaining() {
+		return data.remaining();
+	}
+
 }

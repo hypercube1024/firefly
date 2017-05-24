@@ -172,7 +172,7 @@ public class IOUtils {
         } catch (CharacterCodingException x) {
             // Substitution is always enabled,
             // so this shouldn't happen
-            // TODO
+            System.err.println("character coding exception, " + x.getMessage());
         }
     }
 }

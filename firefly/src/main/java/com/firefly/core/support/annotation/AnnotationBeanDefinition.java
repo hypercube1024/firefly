@@ -16,8 +16,4 @@ public interface AnnotationBeanDefinition extends BeanDefinition {
 
 	void setInjectMethods(List<Method> methods);
 	
-	Object getInjectedInstance();
-	
-	void setInjectedInstance(Object object);
-	
 }

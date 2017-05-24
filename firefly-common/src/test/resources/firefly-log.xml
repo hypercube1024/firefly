@@ -1,73 +1,93 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <loggers xmlns="http://www.fireflysource.com/loggers" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
+         xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
 
-	<logger>
-		<name>firefly-common</name>
-		<level>${log.level}</level>
-		<path>${log.path}</path>
-		<enable-console>true</enable-console>
-	</logger>
+    <logger>
+        <name>firefly-common</name>
+        <level>${log.level}</level>
+        <path>${log.path}</path>
+        <enable-console>true</enable-console>
+    </logger>
 
-	<logger>
-		<name>test-TRACE</name>
-		<level>TRACE</level>
-		<path>${log.path}</path>
-		<enable-console>true</enable-console>
-	</logger>
+    <logger>
+        <name>test-TRACE</name>
+        <level>TRACE</level>
+        <path>${log.path}</path>
+        <enable-console>true</enable-console>
+    </logger>
 
-	<logger>
-		<name>test-DEBUG</name>
-		<level>DEBUG</level>
-		<path>${log.path}</path>
-		<enable-console>true</enable-console>
-	</logger>
+    <logger>
+        <name>test-DEBUG</name>
+        <level>DEBUG</level>
+        <path>${log.path}</path>
+        <enable-console>true</enable-console>
+    </logger>
 
-	<logger>
-		<name>test-ERROR</name>
-		<level>ERROR</level>
-		<path>${log.path}</path>
-		<enable-console>true</enable-console>
-	</logger>
-	
-	<logger>
-		<name>test-WARN</name>
-		<level>WARN</level>
-		<path>${log.path}</path>
-		<enable-console>false</enable-console>
-	</logger>
-	
-	<logger>
-		<name>test-INFO</name>
-		<level>INFO</level>
-		<path>${log.path}</path>
-		<enable-console>false</enable-console>
-	</logger>
-	
-	<logger>
-		<name>test-console</name>
-		<level>INFO</level>
-		<enable-console>true</enable-console>
-	</logger>
-	
-	<logger>
-		<name>firefly-system</name>
-		<level>INFO</level>
-		<enable-console>true</enable-console>
-	</logger>
-	
-	<logger>
-		<name>test.utils.log.foo</name>
-		<level>INFO</level>
-		<path>${log.path}</path>
-		<enable-console>true</enable-console>
-	</logger>
-	
-	<logger>
-		<name>test.utils.log.foo.bar</name>
-		<level>INFO</level>
-		<path>${log.path}</path>
-		<enable-console>true</enable-console>
-	</logger>
+    <logger>
+        <name>test-ERROR</name>
+        <level>ERROR</level>
+        <path>${log.path}</path>
+        <enable-console>true</enable-console>
+    </logger>
 
+    <logger>
+        <name>test-WARN</name>
+        <level>WARN</level>
+        <path>${log.path}</path>
+        <enable-console>false</enable-console>
+    </logger>
+
+    <logger>
+        <name>test-INFO</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <enable-console>false</enable-console>
+    </logger>
+
+    <logger>
+        <name>test-console</name>
+        <level>INFO</level>
+        <enable-console>true</enable-console>
+    </logger>
+
+    <logger>
+        <name>firefly-system</name>
+        <level>INFO</level>
+        <enable-console>true</enable-console>
+    </logger>
+
+    <logger>
+        <name>test.utils.log.foo</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <enable-console>true</enable-console>
+    </logger>
+
+    <logger>
+        <name>test.utils.log.foo.bar</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <enable-console>true</enable-console>
+    </logger>
+
+    <logger>
+        <name>test.max.size</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <max-file-size>300</max-file-size>
+        <charset>UTF-8</charset>
+    </logger>
+
+    <logger>
+        <name>test.gbk</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <charset>GBK</charset>
+    </logger>
+
+    <logger>
+        <name>test-request-id</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+    </logger>
 </loggers>

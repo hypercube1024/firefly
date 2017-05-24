@@ -1,15 +1,6 @@
 package test.codec.http2;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.GoAwayFrame;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PingFrame;
-import com.firefly.codec.http2.frame.PushPromiseFrame;
-import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
@@ -19,12 +10,15 @@ import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class HTTP2ServerDemo {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public static void main(String[] args) {
 		final HTTP2Configuration http2Configuration = new HTTP2Configuration();

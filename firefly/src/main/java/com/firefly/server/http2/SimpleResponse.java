@@ -1,167 +1,228 @@
 package com.firefly.server.http2;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-
-import com.firefly.codec.http2.model.Cookie;
-import com.firefly.codec.http2.model.CookieGenerator;
-import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.http2.stream.BufferedHTTPOutputStream;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.io.IO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class SimpleResponse implements Closeable {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-	Response response;
-	HTTPOutputStream output;
-	PrintWriter printWriter;
-	BufferedHTTPOutputStream bufferedOutputStream;
-	int bufferSize = 8 * 1024;
-	String characterEncoding = "UTF-8";
-	boolean asynchronous;
+    Response response;
+    HTTPOutputStream output;
+    PrintWriter printWriter;
+    BufferedHTTPOutputStream bufferedOutputStream;
+    int bufferSize = 8 * 1024;
+    String characterEncoding = "UTF-8";
+    boolean asynchronous;
 
-	public SimpleResponse(Response response, HTTPOutputStream output) {
-		this.output = output;
-		this.response = response;
-	}
+    public SimpleResponse(Response response, HTTPOutputStream output) {
+        this.output = output;
+        this.response = response;
+    }
 
-	public Response getResponse() {
-		return response;
-	}
+    public HttpVersion getHttpVersion() {
+        return response.getHttpVersion();
+    }
 
-	public boolean isAsynchronous() {
-		return asynchronous;
-	}
+    public HttpFields getFields() {
+        return response.getFields();
+    }
 
-	public void setAsynchronous(boolean asynchronous) {
-		this.asynchronous = asynchronous;
-	}
+    public long getContentLength() {
+        return response.getContentLength();
+    }
 
-	public void addCookie(Cookie cookie) {
-		response.getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
-	}
+    public Iterator<HttpField> iterator() {
+        return response.iterator();
+    }
 
-	public OutputStream getOutputStream() {
-		if (printWriter != null) {
-			throw new IllegalStateException("the response has used print writer");
-		}
+    public int getStatus() {
+        return response.getStatus();
+    }
 
-		if (bufferedOutputStream == null) {
-			bufferedOutputStream = new BufferedHTTPOutputStream();
-			return bufferedOutputStream;
-		} else {
-			return bufferedOutputStream;
-		}
-	}
+    public String getReason() {
+        return response.getReason();
+    }
 
-	public PrintWriter getPrintWriter() {
-		if (bufferedOutputStream != null) {
-			throw new IllegalStateException("the response has used output stream");
-		}
-		if (printWriter == null) {
-			try {
-				printWriter = new PrintWriter(
-						new OutputStreamWriter(new BufferedHTTPOutputStream(), characterEncoding));
-			} catch (UnsupportedEncodingException e) {
-				log.error("create print writer exception", e);
-			}
-			return printWriter;
-		} else {
-			return printWriter;
-		}
-	}
+    public void forEach(Consumer<? super HttpField> action) {
+        response.forEach(action);
+    }
 
-	public String getCharacterEncoding() {
-		return characterEncoding;
-	}
+    public Supplier<HttpFields> getTrailerSupplier() {
+        return response.getTrailerSupplier();
+    }
 
-	public void setCharacterEncoding(String characterEncoding) {
-		this.characterEncoding = characterEncoding;
-	}
+    public void setTrailerSupplier(Supplier<HttpFields> trailers) {
+        response.setTrailerSupplier(trailers);
+    }
 
-	public int getBufferSize() {
-		return bufferSize;
-	}
+    public Spliterator<HttpField> spliterator() {
+        return response.spliterator();
+    }
 
-	public void setBufferSize(int bufferSize) {
-		this.bufferSize = bufferSize;
-	}
+    public Response getResponse() {
+        return response;
+    }
 
-	public boolean isClosed() {
-		return output.isClosed();
-	}
+    public boolean isAsynchronous() {
+        return asynchronous;
+    }
 
-	public void close() throws IOException {
-		if (bufferedOutputStream != null) {
-			bufferedOutputStream.close();
-		} else if (printWriter != null) {
-			printWriter.close();
-		}
-	}
+    public void setAsynchronous(boolean asynchronous) {
+        this.asynchronous = asynchronous;
+    }
 
-	public void flush() throws IOException {
-		if (bufferedOutputStream != null) {
-			bufferedOutputStream.flush();
-		} else if (printWriter != null) {
-			printWriter.flush();
-		}
-	}
+    public synchronized OutputStream getOutputStream() {
+        if (printWriter != null) {
+            throw new IllegalStateException("the response has used print writer");
+        }
 
-	private class BufferedHTTPOutputStream extends OutputStream {
+        if (bufferedOutputStream == null) {
+            bufferedOutputStream = new BufferedHTTPOutputStream(output, bufferSize);
+            return bufferedOutputStream;
+        } else {
+            return bufferedOutputStream;
+        }
+    }
 
-		private byte[] buf = new byte[bufferSize];
-		private int count;
+    public synchronized PrintWriter getPrintWriter() {
+        if (bufferedOutputStream != null) {
+            throw new IllegalStateException("the response has used output stream");
+        }
+        if (printWriter == null) {
+            try {
+                printWriter = new PrintWriter(new OutputStreamWriter(new BufferedHTTPOutputStream(output, bufferSize), characterEncoding));
+            } catch (UnsupportedEncodingException e) {
+                log.error("create print writer exception", e);
+            }
+            return printWriter;
+        } else {
+            return printWriter;
+        }
+    }
 
-		@Override
-		public synchronized void write(int b) throws IOException {
-			if (count >= buf.length) {
-				flush();
-			}
-			buf[count++] = (byte) b;
-		}
 
-		@Override
-		public synchronized void write(byte[] array, int offset, int length) throws IOException {
-			if (array == null || array.length == 0 || length <= 0) {
-				return;
-			}
+    public String getCharacterEncoding() {
+        return characterEncoding;
+    }
 
-			if (offset < 0) {
-				throw new IllegalArgumentException("the offset is less than 0");
-			}
+    public void setCharacterEncoding(String characterEncoding) {
+        this.characterEncoding = characterEncoding;
+    }
 
-			if (length >= buf.length) {
-				flush();
-				output.write(array, offset, length);
-				return;
-			}
-			if (length > buf.length - count) {
-				flush();
-			}
-			System.arraycopy(array, offset, buf, count, length);
-			count += length;
-		}
+    public int getBufferSize() {
+        return bufferSize;
+    }
 
-		@Override
-		public synchronized void flush() throws IOException {
-			if (count > 0) {
-				output.write(buf, 0, count);
-				count = 0;
-				buf = new byte[bufferSize];
-			}
-		}
+    public void setBufferSize(int bufferSize) {
+        this.bufferSize = bufferSize;
+    }
 
-		@Override
-		public synchronized void close() throws IOException {
-			flush();
-			output.close();
-		}
-	}
+    public boolean isClosed() {
+        return output.isClosed();
+    }
+
+    public synchronized void close() throws IOException {
+        if (bufferedOutputStream != null) {
+            bufferedOutputStream.close();
+        } else if (printWriter != null) {
+            printWriter.close();
+        } else {
+            getOutputStream().close();
+        }
+    }
+
+    public synchronized void flush() throws IOException {
+        if (bufferedOutputStream != null) {
+            bufferedOutputStream.flush();
+        } else if (printWriter != null) {
+            printWriter.flush();
+        }
+    }
+
+    public boolean isCommitted() {
+        return output != null && output.isCommitted();
+    }
+
+
+    public SimpleResponse setStatus(int status) {
+        response.setStatus(status);
+        return this;
+    }
+
+    public SimpleResponse setReason(String reason) {
+        response.setReason(reason);
+        return this;
+    }
+
+    public SimpleResponse setHttpVersion(HttpVersion httpVersion) {
+        response.setHttpVersion(httpVersion);
+        return this;
+    }
+
+    public SimpleResponse put(HttpHeader header, String value) {
+        getFields().put(header, value);
+        return this;
+    }
+
+    public SimpleResponse put(String header, String value) {
+        getFields().put(header, value);
+        return this;
+    }
+
+    public SimpleResponse add(HttpHeader header, String value) {
+        getFields().add(header, value);
+        return this;
+    }
+
+    public SimpleResponse add(String name, String value) {
+        getFields().add(name, value);
+        return this;
+    }
+    public SimpleResponse addCookie(Cookie cookie) {
+        response.getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
+        return this;
+    }
+
+    public SimpleResponse write(String value) {
+        getPrintWriter().print(value);
+        return this;
+    }
+
+    public SimpleResponse end(String value) {
+        return write(value).end();
+    }
+
+    public SimpleResponse end() {
+        IO.close(this);
+        return this;
+    }
+
+    public SimpleResponse write(byte[] b, int off, int len) {
+        try {
+            getOutputStream().write(b, off, len);
+        } catch (IOException e) {
+            log.error("write data exception", e);
+        }
+        return this;
+    }
+
+    public SimpleResponse write(byte[] b) {
+        return write(b, 0, b.length);
+    }
+
+    public SimpleResponse end(byte[] b) {
+        return write(b).end();
+    }
 }

@@ -2,52 +2,27 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 
+/**
+ * @author Pengtao Qiu
+ */
 public class SimpleHTTPClientConfiguration extends HTTP2Configuration {
 
-	private int initPoolSize = 1;
-	private int maxPoolSize = 8;
-	private int takeConnectionTimeout = 3 * 1000;
-	private int cleanupInterval = 15 * 1000;
-	private int cleanupInitialDelay = 5 * 1000;
+    private int poolSize = 16;
+    private long connectTimeout = 5000L;
 
-	public int getInitPoolSize() {
-		return initPoolSize;
-	}
+    public int getPoolSize() {
+        return poolSize;
+    }
 
-	public void setInitPoolSize(int initPoolSize) {
-		this.initPoolSize = initPoolSize;
-	}
+    public void setPoolSize(int poolSize) {
+        this.poolSize = poolSize;
+    }
 
-	public int getMaxPoolSize() {
-		return maxPoolSize;
-	}
+    public long getConnectTimeout() {
+        return connectTimeout;
+    }
 
-	public void setMaxPoolSize(int maxPoolSize) {
-		this.maxPoolSize = maxPoolSize;
-	}
-
-	public int getTakeConnectionTimeout() {
-		return takeConnectionTimeout;
-	}
-
-	public void setTakeConnectionTimeout(int takeConnectionTimeout) {
-		this.takeConnectionTimeout = takeConnectionTimeout;
-	}
-
-	public int getCleanupInterval() {
-		return cleanupInterval;
-	}
-
-	public void setCleanupInterval(int cleanupInterval) {
-		this.cleanupInterval = cleanupInterval;
-	}
-
-	public int getCleanupInitialDelay() {
-		return cleanupInitialDelay;
-	}
-
-	public void setCleanupInitialDelay(int cleanupInitialDelay) {
-		this.cleanupInitialDelay = cleanupInitialDelay;
-	}
-
+    public void setConnectTimeout(long connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
 }

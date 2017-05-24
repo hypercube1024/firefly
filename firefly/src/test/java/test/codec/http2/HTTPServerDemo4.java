@@ -43,7 +43,7 @@ public class HTTPServerDemo4 {
 
 					if (uri.getPath().equals("/test")) {
 						response.setStatus(200);
-						response.setHttpVersion(request.getVersion());
+						response.setHttpVersion(request.getHttpVersion());
 						response.getFields().add(HttpHeader.CONNECTION, HttpHeaderValue.KEEP_ALIVE);
 						try (HTTPOutputStream output = outputStream) {
 							output.writeWithContentLength(BufferUtils.toBuffer(data, StandardCharsets.UTF_8));

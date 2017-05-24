@@ -1,15 +1,15 @@
 package com.firefly.server.http2;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.net.DecoderChain;
 import com.firefly.net.Session;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
 
 public class HTTP2ServerDecoder extends DecoderChain {
 	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	@Override
 	public void decode(ByteBuffer buffer, Session session) throws Throwable {

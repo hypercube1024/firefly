@@ -1,22 +1,20 @@
 package test.ioc;
 
-import static org.hamcrest.Matchers.is;
-
+import com.firefly.core.ApplicationContext;
+import com.firefly.core.XmlApplicationContext;
+import com.firefly.core.support.exception.BeanDefinitionParsingException;
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import test.mixed.Food;
 import test.mixed.FoodService;
 import test.mixed.FoodService2;
 
-import com.firefly.core.ApplicationContext;
-import com.firefly.core.XmlApplicationContext;
-import com.firefly.core.support.exception.BeanDefinitionParsingException;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import static org.hamcrest.Matchers.is;
 
 public class TestMixIoc {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public static ApplicationContext applicationContext = new XmlApplicationContext("mixed-config.xml");
 
 	@Test
@@ -26,7 +24,7 @@ public class TestMixIoc {
 		log.debug(food.getName());
 		Assert.assertThat(food.getPrice(), is(5.3));
 		
-		FoodService foodService = applicationContext.getBean(FoodService.class);
+		FoodService foodService = applicationContext.getBean("foodService");
 		food = foodService.getFood("strawberry");
 		log.debug(food.getName());
 		Assert.assertThat(food.getPrice(), is(10.00));

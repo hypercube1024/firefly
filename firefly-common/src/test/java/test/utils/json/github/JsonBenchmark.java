@@ -22,7 +22,7 @@ public class JsonBenchmark {
         media.setDuration(18000000);
         media.setSize(58982400);
         media.setBitrate(262144);
-        media.setPersons(Arrays.asList(new String[]{"Bill Gates", "Steve Jobs"}));
+        media.setPersons(Arrays.asList("Bill Gates", "Steve Jobs"));
         media.setPlayer(Player.JAVA);
         media.setCopyright(null);
 
@@ -64,7 +64,7 @@ public class JsonBenchmark {
     
     public static void main(String[] args) throws Throwable {
     	init();
-    	final int times = 1000 * 1000 * 1;
+    	final int times = 1000 * 1000 * 2;
     	long fastjsonTotal = 0L;
     	long fireflyTotal = 0L;
     	fastjsonTotal += fastjsonParserTest(times);

@@ -1,16 +1,12 @@
 package com.firefly.codec.http2.hpack;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.hpack.HpackContext.Entry;
-import com.firefly.codec.http2.model.BadMessageException;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
 
 /**
  * Hpack Decoder
@@ -19,216 +15,213 @@ import com.firefly.utils.log.LogFactory;
  * </p>
  */
 public class HpackDecoder {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
-	public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 = new HttpField.LongValueHttpField(
-			HttpHeader.CONTENT_LENGTH, 0L);
+    public static final Logger log = LoggerFactory.getLogger("firefly-system");
+    public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 =
+            new HttpField.LongValueHttpField(HttpHeader.CONTENT_LENGTH, 0L);
 
-	private final HpackContext _context;
-	private final MetaDataBuilder _builder;
-	private int _localMaxDynamicTableSize;
+    private final HpackContext _context;
+    private final MetaDataBuilder _builder;
+    private int _localMaxDynamicTableSize;
 
-	/**
-	 * @param localMaxDynamicTableSize
-	 *            The maximum allowed size of the local dynamic header field
-	 *            table.
-	 * @param maxHeaderSize
-	 *            The maximum allowed size of a headers block, expressed as
-	 *            total of all name and value characters, plus 32 per field
-	 */
-	public HpackDecoder(int localMaxDynamicTableSize, int maxHeaderSize) {
-		_context = new HpackContext(localMaxDynamicTableSize);
-		_localMaxDynamicTableSize = localMaxDynamicTableSize;
-		_builder = new MetaDataBuilder(maxHeaderSize);
-	}
+    /**
+     * @param localMaxDynamicTableSize The maximum allowed size of the local dynamic header field table.
+     * @param maxHeaderSize            The maximum allowed size of a headers block, expressed as total of all name and value characters, plus 32 per field
+     */
+    public HpackDecoder(int localMaxDynamicTableSize, int maxHeaderSize) {
+        _context = new HpackContext(localMaxDynamicTableSize);
+        _localMaxDynamicTableSize = localMaxDynamicTableSize;
+        _builder = new MetaDataBuilder(maxHeaderSize);
+    }
 
-	public HpackContext getHpackContext() {
-		return _context;
-	}
+    public HpackContext getHpackContext() {
+        return _context;
+    }
 
-	public void setLocalMaxDynamicTableSize(int localMaxdynamciTableSize) {
-		_localMaxDynamicTableSize = localMaxdynamciTableSize;
-	}
+    public void setLocalMaxDynamicTableSize(int localMaxdynamciTableSize) {
+        _localMaxDynamicTableSize = localMaxdynamciTableSize;
+    }
 
-	public MetaData decode(ByteBuffer buffer) {
-		if (log.isDebugEnabled())
-			log.debug(String.format("CtxTbl[%x] decoding %d octets", _context.hashCode(), buffer.remaining()));
+    public MetaData decode(ByteBuffer buffer) {
+        if (log.isDebugEnabled())
+            log.debug(String.format("CtxTbl[%x] decoding %d octets", _context.hashCode(), buffer.remaining()));
 
-		// If the buffer is big, don't even think about decoding it
-		if (buffer.remaining() > _builder.getMaxSize())
-			throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431,
-					"Header frame size " + buffer.remaining() + ">" + _builder.getMaxSize());
+        // If the buffer is big, don't even think about decoding it
+        if (buffer.remaining() > _builder.getMaxSize())
+            throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431, "Header frame size " + buffer.remaining() + ">" + _builder.getMaxSize());
 
-		while (buffer.hasRemaining()) {
-			if (log.isDebugEnabled() && buffer.hasArray()) {
-				int l = Math.min(buffer.remaining(), 32);
-				log.debug("decode {}{}",
-						TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + buffer.position(), l),
-						l < buffer.remaining() ? "..." : "");
-			}
+        while (buffer.hasRemaining()) {
+            if (log.isDebugEnabled() && buffer.hasArray()) {
+                int l = Math.min(buffer.remaining(), 32);
+                log.debug("decode {}{}",
+                        TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + buffer.position(), l),
+                        l < buffer.remaining() ? "..." : "");
+            }
 
-			byte b = buffer.get();
-			if (b < 0) {
-				// 7.1 indexed if the high bit is set
-				int index = NBitInteger.decode(buffer, 7);
-				Entry entry = _context.get(index);
-				if (entry == null) {
-					throw new BadMessageException("Unknown index " + index);
-				} else if (entry.isStatic()) {
-					if (log.isDebugEnabled())
-						log.debug("decode IdxStatic {}", entry);
-					// emit field
-					_builder.emit(entry.getHttpField());
+            byte b = buffer.get();
+            if (b < 0) {
+                // 7.1 indexed if the high bit is set
+                int index = NBitInteger.decode(buffer, 7);
+                Entry entry = _context.get(index);
+                if (entry == null) {
+                    throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Unknown index " + index);
+                } else if (entry.isStatic()) {
+                    if (log.isDebugEnabled())
+                        log.debug("decode IdxStatic {}", entry);
+                    // emit field
+                    _builder.emit(entry.getHttpField());
 
-					// TODO copy and add to reference set if there is room
-					// _context.add(entry.getHttpField());
-				} else {
-					if (log.isDebugEnabled())
-						log.debug("decode Idx {}", entry);
-					// emit
-					_builder.emit(entry.getHttpField());
-				}
-			} else {
-				// look at the first nibble in detail
-				byte f = (byte) ((b & 0xF0) >> 4);
-				String name;
-				HttpHeader header;
-				String value;
+                    // TODO copy and add to reference set if there is room
+                    // _context.add(entry.getHttpField());
+                } else {
+                    if (log.isDebugEnabled())
+                        log.debug("decode Idx {}", entry);
+                    // emit
+                    _builder.emit(entry.getHttpField());
+                }
+            } else {
+                // look at the first nibble in detail
+                byte f = (byte) ((b & 0xF0) >> 4);
+                String name;
+                HttpHeader header;
+                String value;
 
-				boolean indexed;
-				int name_index;
+                boolean indexed;
+                int name_index;
 
-				switch (f) {
-				case 2: // 7.3
-				case 3: // 7.3
-					// change table size
-					int size = NBitInteger.decode(buffer, 5);
-					if (log.isDebugEnabled())
-						log.debug("decode resize=" + size);
-					if (size > _localMaxDynamicTableSize)
-						throw new IllegalArgumentException();
-					_context.resize(size);
-					continue;
+                switch (f) {
+                    case 2: // 7.3
+                    case 3: // 7.3
+                        // change table size
+                        int size = NBitInteger.decode(buffer, 5);
+                        if (log.isDebugEnabled())
+                            log.debug("decode resize=" + size);
+                        if (size > _localMaxDynamicTableSize)
+                            throw new IllegalArgumentException();
+                        _context.resize(size);
+                        continue;
 
-				case 0: // 7.2.2
-				case 1: // 7.2.3
-					indexed = false;
-					name_index = NBitInteger.decode(buffer, 4);
-					break;
+                    case 0: // 7.2.2
+                    case 1: // 7.2.3
+                        indexed = false;
+                        name_index = NBitInteger.decode(buffer, 4);
+                        break;
 
-				case 4: // 7.2.1
-				case 5: // 7.2.1
-				case 6: // 7.2.1
-				case 7: // 7.2.1
-					indexed = true;
-					name_index = NBitInteger.decode(buffer, 6);
-					break;
+                    case 4: // 7.2.1
+                    case 5: // 7.2.1
+                    case 6: // 7.2.1
+                    case 7: // 7.2.1
+                        indexed = true;
+                        name_index = NBitInteger.decode(buffer, 6);
+                        break;
 
-				default:
-					throw new IllegalStateException();
-				}
+                    default:
+                        throw new IllegalStateException();
+                }
 
-				boolean huffmanName = false;
+                boolean huffmanName = false;
 
-				// decode the name
-				if (name_index > 0) {
-					Entry name_entry = _context.get(name_index);
-					name = name_entry.getHttpField().getName();
-					header = name_entry.getHttpField().getHeader();
-				} else {
-					huffmanName = (buffer.get() & 0x80) == 0x80;
-					int length = NBitInteger.decode(buffer, 7);
-					_builder.checkSize(length, huffmanName);
-					if (huffmanName)
-						name = Huffman.decode(buffer, length);
-					else
-						name = toASCIIString(buffer, length);
-					for (int i = 0; i < name.length(); i++) {
-						char c = name.charAt(i);
-						if (c >= 'A' && c <= 'Z') {
-							throw new BadMessageException(400, "Uppercase header name");
-						}
-					}
-					header = HttpHeader.CACHE.get(name);
-				}
+                // decode the name
+                if (name_index > 0) {
+                    Entry name_entry = _context.get(name_index);
+                    name = name_entry.getHttpField().getName();
+                    header = name_entry.getHttpField().getHeader();
+                } else {
+                    huffmanName = (buffer.get() & 0x80) == 0x80;
+                    int length = NBitInteger.decode(buffer, 7);
+                    _builder.checkSize(length, huffmanName);
+                    if (huffmanName)
+                        name = Huffman.decode(buffer, length);
+                    else
+                        name = toASCIIString(buffer, length);
+                    for (int i = 0; i < name.length(); i++) {
+                        char c = name.charAt(i);
+                        if (c >= 'A' && c <= 'Z') {
+                            throw new BadMessageException(400, "Uppercase header name");
+                        }
+                    }
+                    header = HttpHeader.CACHE.get(name);
+                }
 
-				// decode the value
-				boolean huffmanValue = (buffer.get() & 0x80) == 0x80;
-				int length = NBitInteger.decode(buffer, 7);
-				_builder.checkSize(length, huffmanValue);
-				if (huffmanValue)
-					value = Huffman.decode(buffer, length);
-				else
-					value = toASCIIString(buffer, length);
+                // decode the value
+                boolean huffmanValue = (buffer.get() & 0x80) == 0x80;
+                int length = NBitInteger.decode(buffer, 7);
+                _builder.checkSize(length, huffmanValue);
+                if (huffmanValue)
+                    value = Huffman.decode(buffer, length);
+                else
+                    value = toASCIIString(buffer, length);
 
-				// Make the new field
-				HttpField field;
-				if (header == null) {
-					// just make a normal field and bypass header name lookup
-					field = new HttpField(null, name, value);
-				} else {
-					// might be worthwhile to create a value HttpField if it is
-					// indexed
-					// and/or of a type that may be looked up multiple times.
-					switch (header) {
-					case C_STATUS:
-						if (indexed)
-							field = new HttpField.IntValueHttpField(header, name, value);
-						else
-							field = new HttpField(header, name, value);
-						break;
+                // Make the new field
+                HttpField field;
+                if (header == null) {
+                    // just make a normal field and bypass header name lookup
+                    field = new HttpField(null, name, value);
+                } else {
+                    // might be worthwhile to create a value HttpField if it is indexed
+                    // and/or of a type that may be looked up multiple times.
+                    switch (header) {
+                        case C_STATUS:
+                            if (indexed)
+                                field = new HttpField.IntValueHttpField(header, name, value);
+                            else
+                                field = new HttpField(header, name, value);
+                            break;
 
-					case C_AUTHORITY:
-						field = new AuthorityHttpField(value);
-						break;
+                        case C_AUTHORITY:
+                            field = new AuthorityHttpField(value);
+                            break;
 
-					case CONTENT_LENGTH:
-						if ("0".equals(value))
-							field = CONTENT_LENGTH_0;
-						else
-							field = new HttpField.LongValueHttpField(header, name, value);
-						break;
+                        case CONTENT_LENGTH:
+                            if ("0".equals(value))
+                                field = CONTENT_LENGTH_0;
+                            else
+                                field = new HttpField.LongValueHttpField(header, name, value);
+                            break;
 
-					default:
-						field = new HttpField(header, name, value);
-						break;
-					}
-				}
+                        default:
+                            field = new HttpField(header, name, value);
+                            break;
+                    }
+                }
 
-				if (log.isDebugEnabled()) {
-					log.debug("decoded '{}' by {}/{}/{}", field,
-							name_index > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"),
-							huffmanValue ? "HuffVal" : "LitVal", indexed ? "Idx" : "");
-				}
+                if (log.isDebugEnabled()) {
+                    log.debug("decoded '{}' by {}/{}/{}",
+                            field,
+                            name_index > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"),
+                            huffmanValue ? "HuffVal" : "LitVal",
+                            indexed ? "Idx" : "");
+                }
 
-				// emit the field
-				_builder.emit(field);
+                // emit the field
+                _builder.emit(field);
 
-				// if indexed
-				if (indexed) {
-					// add to dynamic table
-					_context.add(field);
-				}
+                // if indexed
+                if (indexed) {
+                    // add to dynamic table
+                    if (_context.add(field) == null)
+                        throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431, "Indexed field value too large");
+                }
 
-			}
-		}
+            }
+        }
 
-		return _builder.build();
-	}
+        return _builder.build();
+    }
 
-	public static String toASCIIString(ByteBuffer buffer, int length) {
-		StringBuilder builder = new StringBuilder(length);
-		int position = buffer.position();
-		int start = buffer.arrayOffset() + position;
-		int end = start + length;
-		buffer.position(position + length);
-		byte[] array = buffer.array();
-		for (int i = start; i < end; i++)
-			builder.append((char) (0x7f & array[i]));
-		return builder.toString();
-	}
+    public static String toASCIIString(ByteBuffer buffer, int length) {
+        StringBuilder builder = new StringBuilder(length);
+        int position = buffer.position();
+        int start = buffer.arrayOffset() + position;
+        int end = start + length;
+        buffer.position(position + length);
+        byte[] array = buffer.array();
+        for (int i = start; i < end; i++)
+            builder.append((char) (0x7f & array[i]));
+        return builder.toString();
+    }
 
-	@Override
-	public String toString() {
-		return String.format("HpackDecoder@%x{%s}", hashCode(), _context);
-	}
+    @Override
+    public String toString() {
+        return String.format("HpackDecoder@%x{%s}", hashCode(), _context);
+    }
 }

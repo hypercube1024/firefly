@@ -7,92 +7,94 @@ import java.util.List;
 
 public class AnnotatedBeanDefinition implements AnnotationBeanDefinition {
 
-	private String id, className;
-	private String[] names;
-	private List<Field> fields;
-	private List<Method> methods;
-	private Constructor<?> constructor;
-	private Object injectedInstance;
-	private Method initMethod;
+    private String id;
+    private String className;
+    private String[] interfaceNames;
+    private List<Field> injectFields;
+    private List<Method> injectMethods;
+    private Constructor<?> constructor;
+    private Method initMethod;
+    private Method destroyedMethod;
 
-	@Override
-	public List<Field> getInjectFields() {
-		return fields;
-	}
+    @Override
+    public String getId() {
+        return id;
+    }
 
-	@Override
-	public List<Method> getInjectMethods() {
-		return methods;
-	}
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	@Override
-	public String[] getInterfaceNames() {
-		return names;
-	}
+    @Override
+    public String getClassName() {
+        return className;
+    }
 
-	@Override
-	public void setInjectFields(List<Field> fields) {
-		this.fields = fields;
-	}
+    @Override
+    public void setClassName(String className) {
+        this.className = className;
+    }
 
-	@Override
-	public void setInjectMethods(List<Method> methods) {
-		this.methods = methods;
-	}
+    @Override
+    public String[] getInterfaceNames() {
+        return interfaceNames;
+    }
 
-	@Override
-	public void setInterfaceNames(String[] names) {
-		this.names = names;
-	}
+    @Override
+    public void setInterfaceNames(String[] interfaceNames) {
+        this.interfaceNames = interfaceNames;
+    }
 
-	@Override
-	public String getClassName() {
-		return className;
-	}
+    @Override
+    public List<Field> getInjectFields() {
+        return injectFields;
+    }
 
-	@Override
-	public String getId() {
-		return id;
-	}
+    @Override
+    public void setInjectFields(List<Field> injectFields) {
+        this.injectFields = injectFields;
+    }
 
-	@Override
-	public void setClassName(String className) {
-		this.className = className;
-	}
+    @Override
+    public List<Method> getInjectMethods() {
+        return injectMethods;
+    }
 
-	@Override
-	public void setId(String id) {
-		this.id = id;
-	}
+    @Override
+    public void setInjectMethods(List<Method> injectMethods) {
+        this.injectMethods = injectMethods;
+    }
 
-	@Override
-	public Constructor<?> getConstructor() {
-		return constructor;
-	}
+    @Override
+    public Constructor<?> getConstructor() {
+        return constructor;
+    }
 
-	@Override
-	public void setConstructor(Constructor<?> constructor) {
-		this.constructor = constructor;
-	}
+    @Override
+    public void setConstructor(Constructor<?> constructor) {
+        this.constructor = constructor;
+    }
 
-	@Override
-	public Object getInjectedInstance() {
-		return injectedInstance;
-	}
+    @Override
+    public Method getInitMethod() {
+        return initMethod;
+    }
 
-	@Override
-	public void setInjectedInstance(Object injectedInstance) {
-		this.injectedInstance = injectedInstance;
-	}
-	
-	@Override
-	public Method getInitMethod() {
-		return initMethod;
-	}
+    @Override
+    public void setInitMethod(Method initMethod) {
+        this.initMethod = initMethod;
+    }
 
-	@Override
-	public void setInitMethod(Method initMethod) {
-		this.initMethod = initMethod;
-	}
+    @Override
+    public Method getDestroyedMethod() {
+        return destroyedMethod;
+    }
+
+    @Override
+    public void setDestroyedMethod(Method destroyedMethod) {
+        this.destroyedMethod = destroyedMethod;
+    }
+
 
 }

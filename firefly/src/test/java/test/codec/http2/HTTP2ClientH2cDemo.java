@@ -1,26 +1,10 @@
 package test.codec.http2;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import com.firefly.client.http2.ClientHTTPHandler;
-import com.firefly.client.http2.HTTP1ClientConnection;
-import com.firefly.client.http2.HTTP2Client;
-import com.firefly.client.http2.HTTP2ClientConnection;
-import com.firefly.client.http2.HTTPClientConnection;
-import com.firefly.client.http2.HTTPClientRequest;
+import com.firefly.client.http2.*;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.model.HostPortHttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpScheme;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session;
@@ -29,12 +13,18 @@ import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class HTTP2ClientH2cDemo {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public static void main(String[] args)
 			throws InterruptedException, ExecutionException, UnsupportedEncodingException {
@@ -58,7 +48,7 @@ public class HTTP2ClientH2cDemo {
 
 			FuturePromise<HTTPClientConnection> http2promise = new FuturePromise<>();
 			FuturePromise<Stream> initStream = new FuturePromise<>();
-			httpConnection.upgradeHTTP2WithCleartext(request, settingsFrame, http2promise, initStream,
+			httpConnection.upgradePlaintextHTTP2(request, settingsFrame, http2promise, initStream,
 					new Stream.Listener.Adapter() {
 						@Override
 						public void onHeaders(Stream stream, HeadersFrame frame) {

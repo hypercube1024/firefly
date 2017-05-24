@@ -3,38 +3,36 @@ package com.firefly.utils.time;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
 public class TimeProvider extends AbstractLifeCycle {
-	private final long interval;
-	private volatile long current = System.currentTimeMillis();
 
-	public TimeProvider(long interval) {
-		this.interval = interval;
-	}
+    private final long interval;
+    private volatile long current = System.currentTimeMillis();
 
-	public long currentTimeMillis() {
-		return current;
-	}
+    public TimeProvider(long interval) {
+        this.interval = interval;
+    }
 
-	@Override
-	protected void init() {
-		start = true;
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (start) {
-					try {
-						Thread.sleep(interval);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					current = System.currentTimeMillis();
-				}
-			}
-		}, "filefly time provider " + interval + "ms").start();
-	}
+    public long currentTimeMillis() {
+        return current;
+    }
 
-	@Override
-	protected void destroy() {
-		start = false;
-	}
+    @Override
+    protected void init() {
+        start = true;
+        new Thread(() -> {
+            while (start) {
+                try {
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    System.err.println("sleep exception, " + e.getMessage());
+                }
+                current = System.currentTimeMillis();
+            }
+        }, "filefly time provider " + interval + "ms").start();
+    }
+
+    @Override
+    protected void destroy() {
+        start = false;
+    }
 
 }

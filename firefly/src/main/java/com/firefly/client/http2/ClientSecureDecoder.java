@@ -1,17 +1,17 @@
 package com.firefly.client.http2;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.DecoderChain;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
 
 public class ClientSecureDecoder extends DecoderChain {
 
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 
 	public ClientSecureDecoder(DecoderChain next) {
 		super(next);

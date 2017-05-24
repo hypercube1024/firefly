@@ -1,28 +1,26 @@
 package test.ioc;
 
-import static org.hamcrest.Matchers.is;
+import com.firefly.core.ApplicationContext;
+import com.firefly.core.XmlApplicationContext;
+import org.junit.Assert;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import test.mixed.FoodRepository;
+import test.mixed.FoodService;
+import test.mixed.impl.FoodConstructorTestService;
+import test.mixed.impl.FoodRepositoryImpl;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import test.mixed.FoodRepository;
-import test.mixed.FoodService;
-import test.mixed.impl.FoodConstructorTestService;
-import test.mixed.impl.FoodRepositoryImpl;
-
-import com.firefly.core.ApplicationContext;
-import com.firefly.core.XmlApplicationContext;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import static org.hamcrest.Matchers.is;
 
 public class TestConstructorsIoc {
 	
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+	private static Logger log = LoggerFactory.getLogger("firefly-system");
 	public static ApplicationContext applicationContext = new XmlApplicationContext("mixed-constructor.xml");
 	
 	@Test

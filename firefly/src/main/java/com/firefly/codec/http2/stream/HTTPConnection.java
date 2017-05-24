@@ -1,30 +1,23 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.net.Connection;
+import com.firefly.utils.function.Action1;
+import com.firefly.utils.function.Action2;
+
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 
-import com.firefly.codec.http2.model.HttpVersion;
+public interface HTTPConnection extends Connection {
 
-public interface HTTPConnection extends Closeable {
+    HttpVersion getHttpVersion();
 
-	public HttpVersion getHttpVersion();
+    boolean isEncrypted();
 
-	public Object getAttachment();
+    ConnectionType getConnectionType();
 
-	public void setAttachment(Object attachment);
+    HTTPConnection close(Action1<HTTPConnection> closedCallback);
 
-	public boolean isOpen();
-
-	public boolean isEncrypted();
-
-	public int getSessionId();
-
-	public long getReadBytes();
-
-	public long getWrittenBytes();
-
-	public InetSocketAddress getLocalAddress();
-
-	public InetSocketAddress getRemoteAddress();
+    HTTPConnection exception(Action2<HTTPConnection, Throwable> exception);
 
 }

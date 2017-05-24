@@ -1,80 +1,98 @@
 package com.firefly.net.buffer;
 
+import com.firefly.net.BufferPool;
+import com.firefly.utils.io.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 
-import com.firefly.net.ReceiveBufferPool;
-import com.firefly.utils.io.BufferUtils;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+public class IOBufferPool implements BufferPool {
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-public class IOBufferPool implements ReceiveBufferPool {
-	private static Log log = LogFactory.getInstance().getLog("firefly-system");
+    private static final int POOL_SIZE = 8;
 
-	private static final int POOL_SIZE = 8;
+    @SuppressWarnings("unchecked")
+    private final SoftReference<ByteBuffer>[] pool = new SoftReference[POOL_SIZE];
+    private final boolean directBuffer;
 
-	@SuppressWarnings("unchecked")
-	private final SoftReference<ByteBuffer>[] pool = new SoftReference[POOL_SIZE];
+    public IOBufferPool() {
+        this(true);
+    }
 
-	@Override
-	public final ByteBuffer acquire(int size) {
-		final SoftReference<ByteBuffer>[] pool = this.pool;
-		for (int i = 0; i < POOL_SIZE; i++) {
-			SoftReference<ByteBuffer> ref = pool[i];
-			if (ref == null) {
-				continue;
-			}
+    public IOBufferPool(boolean directBuffer) {
+        this.directBuffer = directBuffer;
+    }
 
-			ByteBuffer buf = ref.get();
-			if (buf == null) {
-				pool[i] = null;
-				continue;
-			}
+    @Override
+    public ByteBuffer acquire(int size) {
+        for (int i = 0; i < POOL_SIZE; i++) {
+            SoftReference<ByteBuffer> ref = pool[i];
+            if (ref == null) {
+                continue;
+            }
 
-			if (buf.capacity() < size) {
-				continue;
-			}
+            ByteBuffer buf = ref.get();
+            if (buf == null) {
+                pool[i] = null;
+                continue;
+            }
 
-			pool[i] = null;
+            if (buf.capacity() >= size) {
+                pool[i] = null;
+                buf.clear();
+                return buf;
+            }
+        }
 
-			buf.clear();
-			return buf;
-		}
-		
-		int allocateSize = BufferUtils.normalizeBufferSize(size);
-		log.debug("acquire read size: {}", allocateSize);
+        int allocateSize = BufferUtils.normalizeBufferSize(size);
+        log.debug("acquire buffer size: {}", allocateSize);
+        return directBuffer ? ByteBuffer.allocateDirect(allocateSize) : ByteBuffer.allocate(allocateSize);
+    }
 
-		ByteBuffer buf = ByteBuffer.allocateDirect(allocateSize);
-		buf.clear();
-		return buf;
-	}
+    @Override
+    public void release(ByteBuffer buffer) {
+        for (int i = 0; i < POOL_SIZE; i++) {
+            SoftReference<ByteBuffer> ref = pool[i];
+            if (ref == null || ref.get() == null) {
+                pool[i] = new SoftReference<>(buffer);
+                return;
+            }
+        }
 
-	@Override
-	public final void release(ByteBuffer buffer) {
-		final SoftReference<ByteBuffer>[] pool = this.pool;
-		for (int i = 0; i < POOL_SIZE; i++) {
-			SoftReference<ByteBuffer> ref = pool[i];
-			if (ref == null || ref.get() == null) {
-				pool[i] = new SoftReference<ByteBuffer>(buffer);
-				return;
-			}
-		}
+        // pool is full - replace one
+        final int capacity = buffer.capacity();
+        for (int i = 0; i < POOL_SIZE; i++) {
+            SoftReference<ByteBuffer> ref = pool[i];
+            if (ref == null) {
+                pool[i] = new SoftReference<>(buffer);
+                return;
+            } else {
+                ByteBuffer pooled = ref.get();
+                if (pooled == null) {
+                    pool[i] = new SoftReference<>(buffer);
+                    return;
+                } else {
+                    if (pooled.capacity() < capacity) {
+                        pool[i] = new SoftReference<>(buffer);
+                        return;
+                    }
+                }
+            }
+        }
+    }
 
-		// pool is full - replace one
-		final int capacity = buffer.capacity();
-		for (int i = 0; i < POOL_SIZE; i++) {
-			SoftReference<ByteBuffer> ref = pool[i];
-			ByteBuffer pooled = ref.get();
-			if (pooled == null) {
-				pool[i] = null;
-				continue;
-			}
-
-			if (pooled.capacity() < capacity) {
-				pool[i] = new SoftReference<ByteBuffer>(buffer);
-				return;
-			}
-		}
-	}
+    @Override
+    public int size() {
+        int count = 0;
+        for (int i = 0; i < POOL_SIZE; i++) {
+            SoftReference<ByteBuffer> ref = pool[i];
+            if (ref != null && ref.get() != null) {
+                count++;
+            }
+        }
+        return count;
+    }
 
 }
