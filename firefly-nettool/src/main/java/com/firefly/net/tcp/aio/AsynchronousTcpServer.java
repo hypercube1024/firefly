@@ -17,8 +17,8 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -113,10 +113,14 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
             throw new NetException("server configuration is null");
 
         try {
-            group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(config.getAsynchronousCorePoolSize(),
-                    config.getAsynchronousMaximumPoolSize(), config.getAsynchronousPoolKeepAliveTime(),
-                    TimeUnit.MILLISECONDS,
-                    new LinkedTransferQueue<>(), r -> new Thread(r, "firefly asynchronous server thread")));
+            group = AsynchronousChannelGroup.withThreadPool(new ForkJoinPool
+                    (config.getAsynchronousCorePoolSize(),
+                            pool -> {
+                                ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+                                worker.setName("firefly-aio-server-thread" + worker.getPoolIndex());
+                                return worker;
+                            },
+                            null, true));
             log.info(config.toString());
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);
