@@ -1,10 +1,9 @@
 package com.firefly.server.http2.router.handler.template;
 
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
+import com.firefly.utils.ServiceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ServiceLoader;
 
 /**
  * @author Pengtao Qiu
@@ -22,14 +21,7 @@ public class TemplateHandlerSPILoader {
     private TemplateHandlerSPI templateHandlerSPI;
 
     private TemplateHandlerSPILoader() {
-        ServiceLoader<TemplateHandlerSPI> serviceLoader = ServiceLoader.load(TemplateHandlerSPI.class);
-        for(TemplateHandlerSPI s : serviceLoader) {
-            templateHandlerSPI = s;
-            log.info("load TemplateHandlerSPI, implement class -> {}", s.getClass().getName());
-        }
-        if (templateHandlerSPI == null) {
-            templateHandlerSPI = new MustacheTemplateHandlerSPIImpl();
-        }
+        templateHandlerSPI = ServiceUtils.loadService(TemplateHandlerSPI.class, new MustacheTemplateHandlerSPIImpl());
         log.info("load TemplateHandlerSPI, selected -> {}", templateHandlerSPI.getClass().getName());
     }
 
