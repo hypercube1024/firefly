@@ -21,7 +21,7 @@ public class ObjectParser implements Parser {
         parserMetaInfos = DecodeCompiler.compile(clazz);
         max = parserMetaInfos.length - 1;
         if (max >= 8) {
-            map = new HashMap<String, ParserMetaInfo>();
+            map = new HashMap<>();
             for (ParserMetaInfo parserMetaInfo : parserMetaInfos) {
                 map.put(parserMetaInfo.getPropertyNameString(), parserMetaInfo);
             }
@@ -37,7 +37,7 @@ public class ObjectParser implements Parser {
         if (!reader.isObject())
             throw new JsonException("json string is not object format");
 
-        Object obj = null;
+        Object obj;
         try {
             obj = clazz.newInstance();
         } catch (Throwable e) {

@@ -16,8 +16,8 @@ public class JsonBenchmark {
     public static final ObjectMapper mapper = new ObjectMapper();
 
     public static MediaContent createRecord() {
-        String url = "http://javaone.com/keynote.mpg";
-//    	String url = "testURL";
+//        String url = "http://javaone.com/keynote.mpg";
+        String url = "testURL";
 
         MediaContent record = new MediaContent();
         Media media = new Media();
@@ -54,36 +54,53 @@ public class JsonBenchmark {
 
     public static void main(String[] args) throws Throwable {
         final int times = 1000 * 1000 * 2;
+
         System.out.println("warm up start");
-        warmUp(times / 10);
+        benchmark(times / 10);
         System.out.println("warm up end");
         System.out.println("=======================");
         System.out.println();
         System.out.println();
 
-        fastjsonParserTest(times);
-        fireflyJsonParserTest(times);
-        jacksonJsonParserTest(times);
-
-        System.out.println();
-        System.out.println();
-        fastjsonSerializerTest(times);
-        fireflyJsonSerializerTest(times);
-        jacksonJsonSerializerTest(times);
-
+        System.out.println("benchmark start");
+        benchmark(times);
+        System.out.println("benchmark end");
+        System.out.println("=======================");
     }
 
-    public static void warmUp(final int times) {
-        fireflyJsonSerializerTest(times);
-        fireflyJsonParserTest(times);
-//        fireflyJsonParserWithoutObjectbindTest(times);
+    public static void benchmark(final int times) {
+        long fireflyTotal = 0;
+        fireflyTotal += fireflyJsonSerializerTest(times);
+        fireflyTotal += fireflyJsonParserTest(times);
+        long fireflyMapParser = fireflyJsonParserWithoutObjectbindTest(times);
 
-        fastjsonSerializerTest(times);
-        fastjsonSerializerTest(times);
-//        fastjsonParserWithoutObjectbindTest(times);
+        long fastjsonTotal = 0;
+        fastjsonTotal += fastjsonSerializerTest(times);
+        fastjsonTotal += fastjsonParserTest(times);
+        long fastjsonMapParser = fastjsonParserWithoutObjectbindTest(times);
 
-        jacksonJsonSerializerTest(times);
-        jacksonJsonParserTest(times);
+        long jacksonTotal = 0;
+        jacksonTotal += jacksonJsonSerializerTest(times);
+        jacksonTotal += jacksonJsonParserTest(times);
+
+        System.out.println();
+        System.out.println("total time: ");
+        System.out.println("firefly: " + fireflyTotal + "ms");
+        System.out.println("fastjson: " + fastjsonTotal + "ms");
+        System.out.println("jackson: " + jacksonTotal + "ms");
+        System.out.println();
+        System.out.println("map parser time:");
+        System.out.println("firefly: " + fireflyMapParser + "ms");
+        System.out.println("fastjson: " + fastjsonMapParser + "ms");
+    }
+
+    public static void printResult(String name, String json, long total, int times) {
+        double qps = times / (total / 1000.00);
+        System.out.println();
+        System.out.println(name + " : ");
+        System.out.println(json);
+        System.out.println("time: " + total + "ms, qps: " + qps + "op/s");
+        System.out.println("====================================");
     }
 
     public static long serializerTest(int times, String name, Func1<MediaContent, String> func1) {
@@ -95,11 +112,7 @@ public class JsonBenchmark {
         }
         long end = System.currentTimeMillis();
         long total = end - start;
-        double qps = times / (total / 1000.00);
-        System.out.println(name + " serializer: ");
-        System.out.println(json);
-        System.out.println("time: " + total + "ms, qps: " + qps + "op/s");
-        System.out.println("====================================");
+        printResult(name + " serializer", json, total, times);
         return total;
     }
 
@@ -113,16 +126,12 @@ public class JsonBenchmark {
         }
         long end = System.currentTimeMillis();
         long total = end - start;
-        double qps = times / (total / 1000.00);
-        System.out.println(name + " parser: ");
-        System.out.println(r);
-        System.out.println("time: " + total + "ms, qps: " + qps + "op/s");
-        System.out.println("====================================");
+        printResult(name + " parser", json, total, times);
         return total;
     }
 
-    public static void jacksonJsonSerializerTest(final int times) {
-        serializerTest(times, "jackson", record -> {
+    public static long jacksonJsonSerializerTest(final int times) {
+        return serializerTest(times, "jackson", record -> {
             try {
                 return mapper.writeValueAsString(record);
             } catch (JsonProcessingException e) {
@@ -132,8 +141,8 @@ public class JsonBenchmark {
         });
     }
 
-    public static void jacksonJsonParserTest(final int times) {
-        parserTest(times, "jackson", json -> {
+    public static long jacksonJsonParserTest(final int times) {
+        return parserTest(times, "jackson", json -> {
             try {
                 return mapper.readValue(json, MediaContent.class);
             } catch (IOException e) {
@@ -143,12 +152,12 @@ public class JsonBenchmark {
         });
     }
 
-    public static void fireflyJsonSerializerTest(final int times) {
-        serializerTest(times, "firefly-json", Json::toJson);
+    public static long fireflyJsonSerializerTest(final int times) {
+        return serializerTest(times, "firefly-json", Json::toJson);
     }
 
-    public static void fireflyJsonParserTest(final int times) {
-        parserTest(times, "firefly-json", json -> Json.toObject(json, MediaContent.class));
+    public static long fireflyJsonParserTest(final int times) {
+        return parserTest(times, "firefly-json", json -> Json.toObject(json, MediaContent.class));
     }
 
     public static long fireflyJsonParserWithoutObjectbindTest(final int times) {
@@ -160,17 +169,17 @@ public class JsonBenchmark {
             r = Json.toJsonObject(json);
         }
         long end = System.currentTimeMillis();
-        System.out.println("firefly json parser without object bind: " + (end - start));
-        System.out.println(r);
-        return end - start;
+        long total = end - start;
+        printResult("firefly map parser", json, total, times);
+        return total;
     }
 
-    public static void fastjsonSerializerTest(final int times) {
-        serializerTest(times, "fastjson", JSON::toJSONString);
+    public static long fastjsonSerializerTest(final int times) {
+        return serializerTest(times, "fastjson", JSON::toJSONString);
     }
 
-    public static void fastjsonParserTest(final int times) {
-        parserTest(times, "fastjson", json -> JSON.parseObject(json, MediaContent.class));
+    public static long fastjsonParserTest(final int times) {
+        return parserTest(times, "fastjson", json -> JSON.parseObject(json, MediaContent.class));
     }
 
     public static long fastjsonParserWithoutObjectbindTest(final int times) {
@@ -182,9 +191,9 @@ public class JsonBenchmark {
             r = JSON.parseObject(json);
         }
         long end = System.currentTimeMillis();
-        System.out.println("fastjson parser without object bind: " + (end - start));
-        System.out.println(r);
-        return end - start;
+        long total = end - start;
+        printResult("fastjson map parser", json, total, times);
+        return total;
     }
 
 }
