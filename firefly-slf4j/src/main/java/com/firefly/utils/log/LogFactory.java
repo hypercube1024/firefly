@@ -9,78 +9,63 @@ import com.firefly.utils.time.Millisecond100Clock;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
 public class LogFactory extends AbstractLifeCycle {
-	
-	public static final SafeSimpleDateFormat DAY_DATE_FORMAT = new SafeSimpleDateFormat("yyyy-MM-dd");
 
-	private final Trie<Log> logTree = new TreeTrie<>();
-	private final LogTask logTask;
+    public static final SafeSimpleDateFormat DAY_DATE_FORMAT = new SafeSimpleDateFormat("yyyy-MM-dd");
 
-	private static class Holder {
-		private static LogFactory instance = new LogFactory();
-	}
+    private final Trie<Log> logTree = new TreeTrie<>();
+    private final LogTask logTask;
 
-	public static LogFactory getInstance() {
-		return Holder.instance;
-	}
+    private static class Holder {
+        private static LogFactory instance = new LogFactory();
+    }
 
-	private LogFactory() {
-		logTask = new FileLogTask(logTree);
+    public static LogFactory getInstance() {
+        return Holder.instance;
+    }
 
-		LogConfigParser parser = new XmlLogConfigParser();
-		boolean success = parser.parse((fileLog) -> logTree.put(fileLog.getName(), fileLog));
+    private LogFactory() {
+        logTask = new FileLogTask(logTree);
 
-		if (!success) {
-			parser = new PropertiesLogConfigParser();
-			success = parser.parse((fileLog) -> logTree.put(fileLog.getName(), fileLog));
-		}
+        LogConfigParser parser = new XmlLogConfigParser();
+        boolean success = parser.parse((fileLog) -> logTree.put(fileLog.getName(), fileLog));
 
-		if (!success) {
-			System.out.println("log configuration parsing failure!");
-		}
+        if (!success) {
+            System.out.println("log configuration parsing failure!");
+        }
 
-		if (logTree.get(LogConfigParser.DEFAULT_LOG_NAME) == null) {
-			FileLog fileLog = parser.createDefaultLog();
-			logTree.put(fileLog.getName(), fileLog);
-		}
+        if (logTree.get(LogConfigParser.DEFAULT_LOG_NAME) == null) {
+            FileLog fileLog = parser.createDefaultLog();
+            logTree.put(fileLog.getName(), fileLog);
+        }
 
-		start();
-	}
+        start();
+    }
 
-	public void flushAll() {
-		for (String key : logTree.keySet()) {
-			Log log = logTree.get(key);
-			if (log instanceof FileLog) {
-				((FileLog) log).flush();
-			}
-		}
-	}
-
-	public Log getLog(Class<?> clazz) {
+    public Log getLog(Class<?> clazz) {
 		return getLog(clazz.getName());
-	}
+    }
 
-	public Log getLog(String name) {
-		Log log = logTree.getBest(name);
-		if (log != null) {
-			return log;
-		} else {
-			return logTree.get(LogConfigParser.DEFAULT_LOG_NAME);
-		}
-	}
+    public Log getLog(String name) {
+        Log log = logTree.getBest(name);
+        if (log == null) {
+            log = logTree.get(LogConfigParser.DEFAULT_LOG_NAME);
+        }
+        return new ClassNameLogWrap(log, name);
+    }
 
-	public LogTask getLogTask() {
-		return logTask;
-	}
+    public LogTask getLogTask() {
+        return logTask;
+    }
 
-	@Override
-	protected void init() {
-		logTask.start();
-	}
+    @Override
+    protected void init() {
+        logTask.start();
+    }
 
-	@Override
-	protected void destroy() {
-		logTask.stop();
-		Millisecond100Clock.stop();
-	}
+    @Override
+    protected void destroy() {
+        logTask.stop();
+        Millisecond100Clock.stop();
+    }
 
 }

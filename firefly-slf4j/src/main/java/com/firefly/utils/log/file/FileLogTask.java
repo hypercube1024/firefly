@@ -4,10 +4,7 @@ import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.log.LogItem;
-import com.firefly.utils.log.LogTask;
+import com.firefly.utils.log.*;
 import com.firefly.utils.time.Millisecond100Clock;
 
 import java.util.concurrent.BlockingQueue;
@@ -29,11 +26,31 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
         // flush all log buffer per one second
         long timeDifference = Millisecond100Clock.currentTimeMillis() - lastFlushedTime;
         if (timeDifference > 1000) {
-            LogFactory.getInstance().flushAll();
+            flushAll();
             return Millisecond100Clock.currentTimeMillis();
         } else {
             return lastFlushedTime;
         }
+    }
+
+    public void flushAll() {
+        for (String key : logTree.keySet()) {
+            FileLog fileLog = getFileLog(key);
+            if (fileLog != null) {
+                fileLog.flush();
+            }
+        }
+    }
+
+    private FileLog getFileLog(String name) {
+        Log log = LogFactory.getInstance().getLog(name);
+        if (log instanceof ClassNameLogWrap) {
+            ClassNameLogWrap classNameLogWrap = (ClassNameLogWrap) log;
+            if (classNameLogWrap.getLog() instanceof FileLog) {
+                return (FileLog) classNameLogWrap.getLog();
+            }
+        }
+        return null;
     }
 
     @Override
@@ -42,9 +59,9 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
         while (true) {
             try {
                 for (LogItem logItem; (logItem = queue.poll(1000, TimeUnit.MILLISECONDS)) != null; ) {
-                    Log log = LogFactory.getInstance().getLog(logItem.getName());
-                    if (log instanceof FileLog) {
-                        ((FileLog) log).write(logItem);
+                    FileLog fileLog = getFileLog(logItem.getName());
+                    if (fileLog != null) {
+                        fileLog.write(logItem);
                     }
                     lastFlushedTime = flushAllPerSecond(lastFlushedTime);
                 }
@@ -58,9 +75,9 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
 
             if (!start && queue.isEmpty()) {
                 for (String key : logTree.keySet()) {
-                    Log log = logTree.get(key);
-                    if (log instanceof FileLog) {
-                        ((FileLog) log).close();
+                    FileLog fileLog = getFileLog(key);
+                    if (fileLog != null) {
+                        fileLog.close();
                     }
                 }
                 break;

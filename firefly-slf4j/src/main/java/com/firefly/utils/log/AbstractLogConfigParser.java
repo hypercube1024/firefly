@@ -1,5 +1,6 @@
 package com.firefly.utils.log;
 
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.file.FileLog;
 
@@ -8,7 +9,13 @@ import java.nio.charset.Charset;
 
 public abstract class AbstractLogConfigParser implements LogConfigParser {
 
-    protected FileLog createLog(String name, String level, String path, boolean console, long maxFileSize, Charset charset) {
+    protected FileLog createLog(String name,
+                                String level,
+                                String path,
+                                boolean console,
+                                long maxFileSize,
+                                Charset charset,
+                                String logFormatter) {
         FileLog fileLog = new FileLog();
         fileLog.setName(name);
         fileLog.setLevel(LogLevel.fromName(level));
@@ -48,6 +55,16 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
             System.err.println("create log directory is failure");
         }
 
+        if (StringUtils.hasText(logFormatter)) {
+            try {
+                Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(logFormatter);
+                fileLog.setLogFormatter((LogFormatter) clazz.newInstance());
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                e.printStackTrace();
+                fileLog.setLogFormatter(new DefaultLogFormatter());
+            }
+        }
+
         System.out.println("initialize log " + fileLog.toString());
         return fileLog;
     }
@@ -62,7 +79,14 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
 
     @Override
     public FileLog createDefaultLog() {
-        return createLog(DEFAULT_LOG_NAME, DEFAULT_LOG_LEVEL, null, false, DEFAULT_MAX_FILE_SIZE, DEFAULT_CHARSET);
+        return createLog(
+                DEFAULT_LOG_NAME,
+                DEFAULT_LOG_LEVEL,
+                null,
+                false,
+                DEFAULT_MAX_FILE_SIZE,
+                DEFAULT_CHARSET,
+                DEFAULT_LOG_FORMATTER);
     }
 
 }

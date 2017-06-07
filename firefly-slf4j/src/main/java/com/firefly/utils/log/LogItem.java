@@ -10,13 +10,17 @@ import java.util.Map;
 
 public class LogItem {
 
-    private String name, content, level;
+    private String name;
+    private String className;
+    private String content;
+    private String level;
     private Object[] objs;
     private Throwable throwable;
     private StackTraceElement stackTraceElement;
     private String logStr;
     private Map<String, String> mdcData;
     private Date date;
+    private String threadName;
 
     public String getName() {
         return name;
@@ -24,6 +28,14 @@ public class LogItem {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public String getContent() {
@@ -82,6 +94,14 @@ public class LogItem {
         this.date = date;
     }
 
+    public String getThreadName() {
+        return threadName;
+    }
+
+    public void setThreadName(String threadName) {
+        this.threadName = threadName;
+    }
+
     @Override
     public String toString() {
         if (logStr == null) {
@@ -101,6 +121,10 @@ public class LogItem {
 
             if (mdcData != null && !mdcData.isEmpty()) {
                 logStr += ", " + mdcData;
+            }
+
+            if (StringUtils.hasText(className)) {
+                logStr += ", " + className;
             }
 
             if (stackTraceElement != null) {

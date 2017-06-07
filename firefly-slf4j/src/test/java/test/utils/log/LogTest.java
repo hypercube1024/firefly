@@ -2,6 +2,7 @@ package test.utils.log;
 
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.FileUtils;
+import com.firefly.utils.log.ClassNameLogWrap;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
 import com.firefly.utils.log.file.FileLog;
@@ -56,13 +57,15 @@ public class LogTest {
     }
 
     private File getFile(Log log) {
-        if (log instanceof FileLog) {
-            FileLog fileLog = (FileLog) log;
-            File file = new File(fileLog.getPath(), fileLog.getName() + "." + LogFactory.DAY_DATE_FORMAT.format(new Date()) + ".txt");
-            if (file.exists())
-                return file;
-            else
-                return null;
+        if (log instanceof ClassNameLogWrap) {
+            ClassNameLogWrap classNameLogWrap = (ClassNameLogWrap) log;
+            if (classNameLogWrap.getLog() instanceof FileLog) {
+                FileLog fileLog = (FileLog) classNameLogWrap.getLog();
+                File file = new File(fileLog.getPath(), fileLog.getName() + "." + LogFactory.DAY_DATE_FORMAT.format(new Date()) + ".txt");
+                if (file.exists()) {
+                    return file;
+                }
+            }
         }
         return null;
     }

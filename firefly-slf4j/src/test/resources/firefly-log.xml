@@ -10,13 +10,6 @@
     </logger>
 
     <logger>
-        <name>firefly-common</name>
-        <level>${log.level}</level>
-        <path>${log.path}</path>
-        <enable-console>true</enable-console>
-    </logger>
-
-    <logger>
         <name>test-TRACE</name>
         <level>TRACE</level>
         <path>${log.path}</path>
@@ -98,4 +91,11 @@
         <path>${log.path}</path>
     </logger>
 
+    <logger>
+        <name>org.firefly.slf4j</name>
+        <level>${log.level}</level>
+        <path>${log.path}</path>
+        <enable-console>true</enable-console>
+        <formatter>org.firefly.slf4j.CustomLogFormatter</formatter>
+    </logger>
 </loggers>
