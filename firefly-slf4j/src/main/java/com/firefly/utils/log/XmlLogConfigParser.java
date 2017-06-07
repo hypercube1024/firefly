@@ -1,16 +1,15 @@
 package com.firefly.utils.log;
 
-import java.nio.charset.Charset;
-import java.util.List;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
 import com.firefly.utils.ConvertUtils;
 import com.firefly.utils.dom.DefaultDom;
 import com.firefly.utils.dom.Dom;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.log.file.FileLog;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import java.nio.charset.Charset;
+import java.util.List;
 
 public class XmlLogConfigParser extends AbstractLogConfigParser {
 

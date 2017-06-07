@@ -1,7 +1,6 @@
 package com.firefly.utils.log.file;
 
 import com.firefly.utils.log.*;
-import com.firefly.utils.time.SafeSimpleDateFormat;
 
 import java.io.*;
 import java.nio.charset.Charset;

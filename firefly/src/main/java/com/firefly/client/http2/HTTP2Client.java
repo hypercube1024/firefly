@@ -1,16 +1,14 @@
 package com.firefly.client.http2;
 
-import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.http2.stream.ShutdownHelper;
 import com.firefly.net.Client;
 import com.firefly.net.DecoderChain;
 import com.firefly.net.EncoderChain;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,9 +77,7 @@ public class HTTP2Client extends AbstractLifeCycle {
         if (client != null) {
             client.stop();
         }
-        AbstractHTTP2Connection.stopScheduler();
-        LogFactory.getInstance().stop();
-        Millisecond100Clock.stop();
+        ShutdownHelper.destroy();
     }
 
 }

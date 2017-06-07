@@ -1,37 +1,16 @@
 package com.firefly.net.tcp.aio;
 
-import com.codahale.metrics.ScheduledReporter;
 import com.firefly.net.*;
-import com.firefly.net.event.DefaultEventManager;
-import com.firefly.net.exception.NetException;
-import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
-import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinWorkerThread;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.firefly.net.tcp.TcpPerformanceParameter.BACKLOG;
 
-public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
-
-    private static Logger log = LoggerFactory.getLogger("firefly-system");
-    private Config config;
-    private AtomicInteger id = new AtomicInteger();
-    private AsynchronousTcpWorker worker;
-    private AsynchronousChannelGroup group;
-    private ScheduledReporter reporter;
+public class AsynchronousTcpServer extends AbstractTcpLifeCycle implements Server {
 
     public AsynchronousTcpServer() {
     }
@@ -80,7 +59,7 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
     }
 
     private void listen(final AsynchronousServerSocketChannel serverSocketChannel) {
-        serverSocketChannel.accept(id.getAndIncrement(), new CompletionHandler<AsynchronousSocketChannel, Integer>() {
+        serverSocketChannel.accept(sessionId.getAndIncrement(), new CompletionHandler<AsynchronousSocketChannel, Integer>() {
 
             @Override
             public void completed(AsynchronousSocketChannel socketChannel, Integer sessionId) {
@@ -108,41 +87,7 @@ public class AsynchronousTcpServer extends AbstractLifeCycle implements Server {
     }
 
     @Override
-    protected void init() {
-        if (config == null)
-            throw new NetException("server configuration is null");
-
-        try {
-            group = AsynchronousChannelGroup.withThreadPool(new ForkJoinPool
-                    (config.getAsynchronousCorePoolSize(),
-                            pool -> {
-                                ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
-                                worker.setName("firefly-aio-server-thread" + worker.getPoolIndex());
-                                return worker;
-                            },
-                            null, true));
-            log.info(config.toString());
-            EventManager eventManager = new DefaultEventManager(config);
-            worker = new AsynchronousTcpWorker(config, eventManager);
-            if (config.isMonitorEnable()) {
-                reporter = config.getReporterFactory().call(config.getMetrics());
-                reporter.start(10, TimeUnit.SECONDS);
-            }
-        } catch (IOException e) {
-            log.error("initialization server channel group error", e);
-        }
+    protected String getThreadName() {
+        return "firefly-aio-tcp-server";
     }
-
-    @Override
-    protected void destroy() {
-        if (group != null) {
-            group.shutdown();
-        }
-        if (config.isMonitorEnable()) {
-            reporter.stop();
-        }
-        LogFactory.getInstance().stop();
-        Millisecond100Clock.stop();
-    }
-
 }

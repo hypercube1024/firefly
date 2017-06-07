@@ -91,6 +91,17 @@
                 <artifactId>javassist</artifactId>
                 <version>3.21.0-GA</version>
             </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-tcnative-boringssl-static</artifactId>
+                <version>2.0.1.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>4.1.11.Final</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

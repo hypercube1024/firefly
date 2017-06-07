@@ -1,16 +1,15 @@
 package test.utils.log;
 
-import static org.hamcrest.Matchers.*;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.utils.collection.TreeTrie;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogConfigParser;
 import com.firefly.utils.log.PropertiesLogConfigParser;
 import com.firefly.utils.log.XmlLogConfigParser;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
 
 public class LogParserTest {
 
