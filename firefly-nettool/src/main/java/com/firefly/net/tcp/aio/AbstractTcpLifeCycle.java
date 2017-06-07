@@ -72,7 +72,7 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
         try {
             iLoggerFactory.getClass().getDeclaredMethod("stop").invoke(iLoggerFactory);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         Millisecond100Clock.stop();
     }
