@@ -15,18 +15,6 @@ public class CustomLogFormatter implements LogFormatter {
 
     @Override
     public String format(LogItem logItem) {
-        String content = StringUtils.replace(logItem.getContent(), logItem.getObjs());
-        if (logItem.getThrowable() != null) {
-            StringWriter str = new StringWriter();
-            try (PrintWriter out = new PrintWriter(str)) {
-                out.println();
-                out.println("$err_start");
-                logItem.getThrowable().printStackTrace(out);
-                out.println("$err_end");
-            }
-            content += str.toString();
-        }
-
         String logStr = logItem.getLevel() + " >>> " + SafeSimpleDateFormat.defaultDateFormat.format(logItem.getDate());
 
         if (logItem.getMdcData() != null && !logItem.getMdcData().isEmpty()) {
@@ -41,7 +29,7 @@ public class CustomLogFormatter implements LogFormatter {
             logStr += " >>> " + logItem.getThreadName();
         }
 
-        logStr += " --->>> " + content;
+        logStr += " --->>> " + logItem.renderContentTemplate();
         return logStr;
     }
 

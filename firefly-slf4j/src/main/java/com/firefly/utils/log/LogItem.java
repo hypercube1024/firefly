@@ -102,21 +102,24 @@ public class LogItem {
         this.threadName = threadName;
     }
 
+    public String renderContentTemplate() {
+        String ret = StringUtils.replace(content, objs);
+        if (throwable != null) {
+            StringWriter str = new StringWriter();
+            try (PrintWriter out = new PrintWriter(str)) {
+                out.println();
+                out.println("$err_start");
+                throwable.printStackTrace(out);
+                out.println("$err_end");
+            }
+            ret += str.toString();
+        }
+        return ret;
+    }
+
     @Override
     public String toString() {
         if (logStr == null) {
-            content = StringUtils.replace(content, objs);
-            if (throwable != null) {
-                StringWriter str = new StringWriter();
-                try (PrintWriter out = new PrintWriter(str)) {
-                    out.println();
-                    out.println("$err_start");
-                    throwable.printStackTrace(out);
-                    out.println("$err_end");
-                }
-                content += str.toString();
-            }
-
             logStr = level + ", " + SafeSimpleDateFormat.defaultDateFormat.format(date);
 
             if (mdcData != null && !mdcData.isEmpty()) {
@@ -131,7 +134,7 @@ public class LogItem {
                 logStr += ", " + stackTraceElement;
             }
 
-            logStr += ",\t" + content;
+            logStr += ",\t" + renderContentTemplate();
         }
         return logStr;
     }
