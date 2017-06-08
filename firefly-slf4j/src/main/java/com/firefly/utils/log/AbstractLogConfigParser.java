@@ -9,25 +9,19 @@ import java.nio.charset.Charset;
 
 public abstract class AbstractLogConfigParser implements LogConfigParser {
 
-    protected FileLog createLog(String name,
-                                String level,
-                                String path,
-                                boolean console,
-                                long maxFileSize,
-                                Charset charset,
-                                String logFormatter) {
+    protected FileLog createLog(Configuration c) {
         FileLog fileLog = new FileLog();
-        fileLog.setName(name);
-        fileLog.setLevel(LogLevel.fromName(level));
-        fileLog.setMaxFileSize(maxFileSize);
-        fileLog.setCharset(charset);
+        fileLog.setName(c.getName());
+        fileLog.setLevel(LogLevel.fromName(c.getLevel()));
+        fileLog.setMaxFileSize(c.getMaxFileSize());
+        fileLog.setCharset(Charset.forName(c.getCharset()));
 
         boolean createLogDirectorySuccess;
-        if (VerifyUtils.isNotEmpty(path)) {
-            File file = new File(path);
+        if (VerifyUtils.isNotEmpty(c.getPath())) {
+            File file = new File(c.getPath());
             createLogDirectorySuccess = createLogDirectory(file);
             if (createLogDirectorySuccess) {
-                fileLog.setPath(path);
+                fileLog.setPath(c.getPath());
                 fileLog.setFileOutput(true);
             } else {
                 createLogDirectorySuccess = createLogDirectory(DEFAULT_LOG_DIRECTORY);
@@ -49,15 +43,15 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
         }
 
         if (createLogDirectorySuccess) {
-            fileLog.setConsoleOutput(console);
+            fileLog.setConsoleOutput(c.isConsole());
         } else {
             fileLog.setConsoleOutput(true);
             System.err.println("create log directory is failure");
         }
 
-        if (StringUtils.hasText(logFormatter)) {
+        if (StringUtils.hasText(c.getFormatter())) {
             try {
-                Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(logFormatter);
+                Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getFormatter());
                 fileLog.setLogFormatter((LogFormatter) clazz.newInstance());
             } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                 e.printStackTrace();
@@ -79,14 +73,15 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
 
     @Override
     public FileLog createDefaultLog() {
-        return createLog(
-                DEFAULT_LOG_NAME,
-                DEFAULT_LOG_LEVEL,
-                null,
-                false,
-                DEFAULT_MAX_FILE_SIZE,
-                DEFAULT_CHARSET,
-                DEFAULT_LOG_FORMATTER);
+        Configuration c = new Configuration();
+        c.setName(DEFAULT_LOG_NAME);
+        c.setLevel(DEFAULT_LOG_LEVEL);
+        c.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
+        c.setConsole(false);
+        c.setMaxFileSize(DEFAULT_MAX_FILE_SIZE);
+        c.setCharset(DEFAULT_CHARSET.name());
+        c.setFormatter(DEFAULT_LOG_FORMATTER);
+        return createLog(c);
     }
 
 }

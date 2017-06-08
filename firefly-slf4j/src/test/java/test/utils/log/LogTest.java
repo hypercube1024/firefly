@@ -33,9 +33,6 @@ public class LogTest {
     private static final Log logFoo = LogFactory.getInstance().getLog(Foo.class);
     private static final Log logBar = LogFactory.getInstance().getLog(Bar.class);
 
-    private static final Log testMaxSize = LogFactory.getInstance().getLog("test.max.size");
-    private static final Log testGBK = LogFactory.getInstance().getLog("test.gbk");
-
     private static final Log testRequestId = LogFactory.getInstance().getLog("test-request-id");
 
     @Before
@@ -236,17 +233,7 @@ public class LogTest {
         LogFactory.getInstance().stop();
     }
 
-    public static void main(String[] args) throws Throwable {
-        long data = 0;
-        while (true) {
-            testMaxSize.info("test 测试 {} data {}", "log", data);
-			testGBK.info("测试中文gbk");
-            data++;
-            Thread.sleep(1000);
-        }
-    }
-
-    public static void main2(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         try {
             log.info("test {} aa {}", "log1", 2);
             log.info("test {} bb {}", "log1", 2);

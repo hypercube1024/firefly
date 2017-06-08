@@ -8,7 +8,6 @@ import com.firefly.utils.log.file.FileLog;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.nio.charset.Charset;
 import java.util.List;
 
 public class XmlLogConfigParser extends AbstractLogConfigParser {
@@ -26,17 +25,18 @@ public class XmlLogConfigParser extends AbstractLogConfigParser {
             return false;
         } else {
             for (Element e : loggerList) {
-                String name = dom.getTextValueByTagName(e, "name", DEFAULT_LOG_NAME);
-                String level = dom.getTextValueByTagName(e, "level", DEFAULT_LOG_LEVEL);
-                String path = dom.getTextValueByTagName(e, "path", DEFAULT_LOG_DIRECTORY.getAbsolutePath());
-                boolean consoleEnabled = ConvertUtils.convert(dom.getTextValueByTagName(e, "enable-console"), DEFAULT_CONSOLE_ENABLED);
-                long maxFileSize = ConvertUtils.convert(dom.getTextValueByTagName(e, "max-file-size"), DEFAULT_MAX_FILE_SIZE);
-                if (maxFileSize < 1024 * 1024 * 10) {
+                Configuration c = new Configuration();
+                c.setName(dom.getTextValueByTagName(e, "name", DEFAULT_LOG_NAME));
+                c.setLevel(dom.getTextValueByTagName(e, "level", DEFAULT_LOG_LEVEL));
+                c.setPath(dom.getTextValueByTagName(e, "path", DEFAULT_LOG_DIRECTORY.getAbsolutePath()));
+                c.setConsole(ConvertUtils.convert(dom.getTextValueByTagName(e, "enable-console"), DEFAULT_CONSOLE_ENABLED));
+                c.setMaxFileSize(ConvertUtils.convert(dom.getTextValueByTagName(e, "max-file-size"), DEFAULT_MAX_FILE_SIZE));
+                if (c.getMaxFileSize() < 1024 * 1024 * 10) {
                     System.err.println("the max log file less than 10MB, please set a larger file size");
                 }
-                String charset = dom.getTextValueByTagName(e, "charset", DEFAULT_CHARSET.name());
-                String logFormatter = dom.getTextValueByTagName(e, "formatter", DEFAULT_LOG_FORMATTER);
-                action.call(createLog(name, level, path, consoleEnabled, maxFileSize, Charset.forName(charset), logFormatter));
+                c.setCharset(dom.getTextValueByTagName(e, "charset", DEFAULT_CHARSET.name()));
+                c.setFormatter(dom.getTextValueByTagName(e, "formatter", DEFAULT_LOG_FORMATTER));
+                action.call(createLog(c));
             }
         }
         return true;

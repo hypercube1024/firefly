@@ -13,8 +13,10 @@ import java.util.concurrent.TimeUnit;
 
 public class FileLogTask extends AbstractLifeCycle implements LogTask {
 
+    public static final long maxLogFlushInterval = Long.getLong("maxLogFlushInterval", 1000L);
+
     private BlockingQueue<LogItem> queue = new LinkedTransferQueue<>();
-    private Thread thread = new Thread(this, "firefly log thread");
+    private Thread thread = new Thread(this, "firefly asynchronous log thread");
     private final Trie<Log> logTree;
 
     public FileLogTask(Trie<Log> logTree) {
@@ -25,7 +27,7 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
     private long flushAllPerSecond(final long lastFlushedTime) {
         // flush all log buffer per one second
         long timeDifference = Millisecond100Clock.currentTimeMillis() - lastFlushedTime;
-        if (timeDifference > 1000) {
+        if (timeDifference > maxLogFlushInterval) {
             flushAll();
             return Millisecond100Clock.currentTimeMillis();
         } else {
@@ -58,7 +60,7 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
         long lastFlushedTime = Millisecond100Clock.currentTimeMillis();
         while (true) {
             try {
-                for (LogItem logItem; (logItem = queue.poll(1000, TimeUnit.MILLISECONDS)) != null; ) {
+                for (LogItem logItem; (logItem = queue.poll(maxLogFlushInterval, TimeUnit.MILLISECONDS)) != null; ) {
                     FileLog fileLog = getFileLog(logItem.getName());
                     if (fileLog != null) {
                         fileLog.write(logItem);
