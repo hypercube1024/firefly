@@ -12,6 +12,7 @@
                 <element name="enable-console" type="string" minOccurs="0" maxOccurs="1" default="false"/>
                 <element name="max-file-size" type="string" minOccurs="0" maxOccurs="1" default="209715200"/>
                 <element name="charset" type="string" minOccurs="0" maxOccurs="1" default="UTF-8"/>
+                <element name="formatter" type="string" minOccurs="0" maxOccurs="1" default="com.firefly.utils.log.DefaultLogFormatter"/>
             </sequence>
         </complexType>
     </element>
