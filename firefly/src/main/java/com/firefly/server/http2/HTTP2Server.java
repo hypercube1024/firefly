@@ -1,14 +1,12 @@
 package com.firefly.server.http2;
 
-import com.firefly.codec.http2.stream.AbstractHTTP2Connection;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.http2.stream.ShutdownHelper;
 import com.firefly.net.DecoderChain;
 import com.firefly.net.EncoderChain;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
 
 public class HTTP2Server extends AbstractLifeCycle {
 
@@ -73,9 +71,7 @@ public class HTTP2Server extends AbstractLifeCycle {
         if (server != null) {
             server.stop();
         }
-        AbstractHTTP2Connection.stopScheduler();
-        LogFactory.getInstance().stop();
-        Millisecond100Clock.stop();
+        ShutdownHelper.destroy();
     }
 
 }

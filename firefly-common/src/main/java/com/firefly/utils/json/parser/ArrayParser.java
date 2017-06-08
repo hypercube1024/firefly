@@ -16,7 +16,14 @@ public class ArrayParser implements Parser {
 
     private ParserMetaInfo elementMetaInfo;
 
+    public ArrayParser() {
+    }
+
     public ArrayParser(Class<?> clazz) {
+        init(clazz);
+    }
+
+    public void init(Class<?> clazz) {
         elementMetaInfo = new ParserMetaInfo();
         elementMetaInfo.setType(clazz);
         elementMetaInfo.setParser(ParserStateMachine.getParser(clazz, null));
@@ -33,7 +40,7 @@ public class ArrayParser implements Parser {
         if (reader.isEmptyArray())
             return Array.newInstance(elementMetaInfo.getType(), 0);
 
-        List<Object> obj = new ArrayList<Object>();
+        List<Object> obj = new ArrayList<>();
 
         for (; ; ) {
             obj.add(elementMetaInfo.getValue(reader));
