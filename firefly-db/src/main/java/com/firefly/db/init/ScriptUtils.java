@@ -13,8 +13,6 @@ import com.firefly.utils.Assert;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.EncodedResource;
 import com.firefly.utils.io.Resource;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

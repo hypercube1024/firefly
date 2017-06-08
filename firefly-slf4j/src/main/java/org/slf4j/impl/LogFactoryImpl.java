@@ -30,4 +30,8 @@ public class LogFactoryImpl implements ILoggerFactory {
 		}
 	}
 
+	public void stop() {
+		LogFactory.getInstance().stop();
+	}
+
 }

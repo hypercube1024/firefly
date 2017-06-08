@@ -1,7 +1,6 @@
 package com.firefly.utils.log.file;
 
 import com.firefly.utils.log.*;
-import com.firefly.utils.time.SafeSimpleDateFormat;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -22,16 +21,17 @@ public class FileLog implements Log, Closeable {
     private boolean fileOutput;
     private long maxFileSize;
     private Charset charset = LogConfigParser.DEFAULT_CHARSET;
+    private LogFormatter logFormatter;
 
     private LogOutputStream output = new LogOutputStream();
 
     void write(LogItem logItem) {
         if (consoleOutput) {
-            System.out.println(logItem.toString());
+            System.out.println(logFormatter.format(logItem));
         }
 
         if (fileOutput) {
-            output.write(logItem.toString(), logItem.getDate());
+            output.write(logFormatter.format(logItem), logItem.getDate());
         }
     }
 
@@ -156,8 +156,16 @@ public class FileLog implements Log, Closeable {
         output.close();
     }
 
+    public boolean isConsoleOutput() {
+        return consoleOutput;
+    }
+
     public void setConsoleOutput(boolean consoleOutput) {
         this.consoleOutput = consoleOutput;
+    }
+
+    public boolean isFileOutput() {
+        return fileOutput;
     }
 
     public void setFileOutput(boolean fileOutput) {
@@ -205,6 +213,14 @@ public class FileLog implements Log, Closeable {
         this.charset = charset;
     }
 
+    public LogFormatter getLogFormatter() {
+        return logFormatter;
+    }
+
+    public void setLogFormatter(LogFormatter logFormatter) {
+        this.logFormatter = logFormatter;
+    }
+
     private void add(String str, String level, Throwable throwable, Object... objs) {
         LogItem item = new LogItem();
         item.setLevel(level);
@@ -214,6 +230,8 @@ public class FileLog implements Log, Closeable {
         item.setThrowable(throwable);
         item.setDate(new Date());
         item.setMdcData(mdc.getCopyOfContextMap());
+        item.setClassName(ClassNameLogWrap.name.get());
+        item.setThreadName(Thread.currentThread().getName());
         if (stackTrace) {
             item.setStackTraceElement(getStackTraceElement());
         }
@@ -360,6 +378,7 @@ public class FileLog implements Log, Closeable {
                 ", fileOutput=" + fileOutput +
                 ", maxFileSize=" + maxFileSize +
                 ", charset=" + charset +
+                ", logFormatter=" + logFormatter.getClass().getName() +
                 '}';
     }
 

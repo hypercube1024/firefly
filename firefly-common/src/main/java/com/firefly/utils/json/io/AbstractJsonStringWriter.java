@@ -8,11 +8,11 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
 
 	protected char buf[];
 	protected int count;
-	protected final static ThreadLocal<SoftReference<char[]>> bufLocal = new ThreadLocal<SoftReference<char[]>>();
+	protected final static ThreadLocal<SoftReference<char[]>> bufLocal = new ThreadLocal<>();
 	public static final char[] NULL = "null".toCharArray();
+	public static final char[] MIN_SHORT_VALUE = "-32768".toCharArray();
 	public static final char[] MIN_INT_VALUE = "-2147483648".toCharArray();
-	public static final char[] MIN_LONG_VALUE = "-9223372036854775808"
-			.toCharArray();
+	public static final char[] MIN_LONG_VALUE = "-9223372036854775808".toCharArray();
 	public static final char[] TRUE_VALUE = "true".toCharArray();
 	public static final char[] FALSE_VALUE = "false".toCharArray();
 
@@ -30,8 +30,7 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
 
 	public AbstractJsonStringWriter(int initialSize) {
 		if (initialSize < 0) {
-			throw new IllegalArgumentException("Negative initial size: "
-					+ initialSize);
+			throw new IllegalArgumentException("Negative initial size: " + initialSize);
 		}
 		buf = new char[initialSize];
 	}

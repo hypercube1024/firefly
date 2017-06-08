@@ -1,14 +1,12 @@
 package com.firefly.utils;
 
+import com.firefly.utils.classproxy.JavaReflectionProxyFactory;
 import com.firefly.utils.classproxy.JavassistReflectionProxyFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ReflectUtils {
@@ -17,7 +15,7 @@ public abstract class ReflectUtils {
     private static final ConcurrentHashMap<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<>(256);
     private static final ConcurrentHashMap<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<>(256);
 
-    public static ProxyFactory defaultProxyFactory = JavassistReflectionProxyFactory.INSTANCE;
+    public static ProxyFactory defaultProxyFactory = ServiceUtils.loadService(ProxyFactory.class, JavaReflectionProxyFactory.INSTANCE);
 
     public interface BeanMethodFilter {
         boolean accept(String propertyName, Method method);

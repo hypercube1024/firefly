@@ -1,9 +1,9 @@
 package test.utils.log;
 
-import java.util.concurrent.Phaser;
-
 import com.firefly.utils.log.Log;
 import com.firefly.utils.log.LogFactory;
+
+import java.util.concurrent.Phaser;
 
 public class LogBenchmark {
 

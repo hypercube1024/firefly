@@ -9,9 +9,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Created by Pengtao Qiu on 2016/11/1.
- */
 public class TestPath {
     public static void main(String[] args) throws IOException {
         String logPath = "/Users/bjhl/Develop/logs";

@@ -3,7 +3,6 @@ package com.firefly.net;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
-import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func1;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +14,6 @@ public class Config {
 
     // asynchronous I/O thread pool settings
     private int asynchronousCorePoolSize = Runtime.getRuntime().availableProcessors();
-    private int asynchronousMaximumPoolSize = Runtime.getRuntime().availableProcessors() * 2;
     private int asynchronousPoolKeepAliveTime = 15 * 1000;
 
     private String serverName = "firefly-server";
@@ -92,14 +90,6 @@ public class Config {
         this.handler = handler;
     }
 
-    public int getAsynchronousMaximumPoolSize() {
-        return asynchronousMaximumPoolSize;
-    }
-
-    public void setAsynchronousMaximumPoolSize(int asynchronousMaximumPoolSize) {
-        this.asynchronousMaximumPoolSize = asynchronousMaximumPoolSize;
-    }
-
     public int getAsynchronousCorePoolSize() {
         return asynchronousCorePoolSize;
     }
@@ -142,8 +132,10 @@ public class Config {
 
     @Override
     public String toString() {
-        return "Asynchronous TCP configuration [timeout=" + timeout + ", asynchronousCorePoolSize="
-                + asynchronousCorePoolSize + ", asynchronousMaximumPoolSize=" + asynchronousMaximumPoolSize
-                + ", asynchronousPoolKeepAliveTime=" + asynchronousPoolKeepAliveTime + "]";
+        return "Config{" +
+                "timeout=" + timeout +
+                ", asynchronousCorePoolSize=" + asynchronousCorePoolSize +
+                ", asynchronousPoolKeepAliveTime=" + asynchronousPoolKeepAliveTime +
+                '}';
     }
 }

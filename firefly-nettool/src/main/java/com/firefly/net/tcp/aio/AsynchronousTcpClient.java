@@ -1,35 +1,15 @@
 package com.firefly.net.tcp.aio;
 
-import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Timer;
 import com.firefly.net.*;
-import com.firefly.net.event.DefaultEventManager;
-import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.log.LogFactory;
-import com.firefly.utils.time.Millisecond100Clock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
-import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
-
-    private static Logger log = LoggerFactory.getLogger("firefly-system");
-
-    private Config config;
-    private AtomicInteger sessionId = new AtomicInteger(0);
-    private AsynchronousChannelGroup group;
-    private AsynchronousTcpWorker worker;
-    private ScheduledReporter reporter;
+public class AsynchronousTcpClient extends AbstractTcpLifeCycle implements Client {
 
     public AsynchronousTcpClient() {
     }
@@ -100,35 +80,7 @@ public class AsynchronousTcpClient extends AbstractLifeCycle implements Client {
     }
 
     @Override
-    protected void init() {
-        try {
-            group = AsynchronousChannelGroup.withThreadPool(new ThreadPoolExecutor(config.getAsynchronousCorePoolSize(),
-                    config.getAsynchronousMaximumPoolSize(), config.getAsynchronousPoolKeepAliveTime(),
-                    TimeUnit.MILLISECONDS,
-                    new LinkedTransferQueue<>(),
-                    (r) -> new Thread(r, "firefly asynchronous client thread")));
-            log.info(config.toString());
-            EventManager eventManager = new DefaultEventManager(config);
-            worker = new AsynchronousTcpWorker(config, eventManager);
-            if (config.isMonitorEnable()) {
-                reporter = config.getReporterFactory().call(config.getMetrics());
-                reporter.start(10, TimeUnit.SECONDS);
-            }
-        } catch (IOException e) {
-            log.error("initialization client channel group error", e);
-        }
+    protected String getThreadName() {
+        return "firefly-aio-tcp-client";
     }
-
-    @Override
-    protected void destroy() {
-        if (group != null) {
-            group.shutdown();
-        }
-        if (config.isMonitorEnable()) {
-            reporter.stop();
-        }
-        LogFactory.getInstance().stop();
-        Millisecond100Clock.stop();
-    }
-
 }

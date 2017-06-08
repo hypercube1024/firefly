@@ -6,7 +6,7 @@ import org.slf4j.MDC;
 
 public class Slf4jImplDemo {
 
-    private static final Logger logger = LoggerFactory.getLogger("firefly-common");
+    private static final Logger logger = LoggerFactory.getLogger(Slf4jImplDemo.class);
 
     public static void main(String[] args) {
         MDC.put("reqId", "hello req");

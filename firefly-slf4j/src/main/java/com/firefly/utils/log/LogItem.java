@@ -10,13 +10,17 @@ import java.util.Map;
 
 public class LogItem {
 
-    private String name, content, level;
+    private String name;
+    private String className;
+    private String content;
+    private String level;
     private Object[] objs;
     private Throwable throwable;
     private StackTraceElement stackTraceElement;
     private String logStr;
     private Map<String, String> mdcData;
     private Date date;
+    private String threadName;
 
     public String getName() {
         return name;
@@ -24,6 +28,14 @@ public class LogItem {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public String getContent() {
@@ -82,32 +94,47 @@ public class LogItem {
         this.date = date;
     }
 
+    public String getThreadName() {
+        return threadName;
+    }
+
+    public void setThreadName(String threadName) {
+        this.threadName = threadName;
+    }
+
+    public String renderContentTemplate() {
+        String ret = StringUtils.replace(content, objs);
+        if (throwable != null) {
+            StringWriter str = new StringWriter();
+            try (PrintWriter out = new PrintWriter(str)) {
+                out.println();
+                out.println("$err_start");
+                throwable.printStackTrace(out);
+                out.println("$err_end");
+            }
+            ret += str.toString();
+        }
+        return ret;
+    }
+
     @Override
     public String toString() {
         if (logStr == null) {
-            content = StringUtils.replace(content, objs);
-            if (throwable != null) {
-                StringWriter str = new StringWriter();
-                try (PrintWriter out = new PrintWriter(str)) {
-                    out.println();
-                    out.println("$err_start");
-                    throwable.printStackTrace(out);
-                    out.println("$err_end");
-                }
-                content += str.toString();
-            }
-
             logStr = level + ", " + SafeSimpleDateFormat.defaultDateFormat.format(date);
 
             if (mdcData != null && !mdcData.isEmpty()) {
                 logStr += ", " + mdcData;
             }
 
+            if (StringUtils.hasText(className)) {
+                logStr += ", " + className;
+            }
+
             if (stackTraceElement != null) {
                 logStr += ", " + stackTraceElement;
             }
 
-            logStr += ",\t" + content;
+            logStr += ",\t" + renderContentTemplate();
         }
         return logStr;
     }
