@@ -5,9 +5,6 @@ import com.firefly.utils.log.LogFormatter;
 import com.firefly.utils.log.LogItem;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 /**
  * @author Pengtao Qiu
  */
