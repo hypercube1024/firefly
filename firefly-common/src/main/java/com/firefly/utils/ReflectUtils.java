@@ -5,11 +5,14 @@ import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.lang.GenericTypeReference;
 import com.firefly.utils.lang.bean.FieldGenericTypeBind;
+import com.firefly.utils.lang.bean.GenericArrayTypeImpl;
 import com.firefly.utils.lang.bean.MethodGenericTypeBind;
+import com.firefly.utils.lang.bean.ParameterizedTypeImpl;
 
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public abstract class ReflectUtils {
 
@@ -347,24 +350,26 @@ public abstract class ReflectUtils {
             replacedType = convertParameterizedType((ParameterizedType) erasureType, genericNameTypeMap);
         } else if (erasureType instanceof TypeVariable) {
             replacedType = genericNameTypeMap.get(((TypeVariable) erasureType).getName());
+        } else if (erasureType instanceof GenericArrayType) {
+            replacedType = convertGenericArrayType((GenericArrayType) erasureType, genericNameTypeMap);
         } else {
             replacedType = erasureType;
         }
         return replacedType;
     }
 
+    private static GenericArrayTypeImpl convertGenericArrayType(GenericArrayType genericArrayType, Map<String, Type> genericNameTypeMap) {
+        GenericArrayTypeImpl replacedType = new GenericArrayTypeImpl();
+        replacedType.setGenericComponentType(getBindType(genericArrayType.getGenericComponentType(), genericNameTypeMap));
+        return replacedType;
+    }
+
     private static ParameterizedTypeImpl convertParameterizedType(ParameterizedType parameterizedType, Map<String, Type> genericNameTypeMap) {
         ParameterizedTypeImpl replacedType = new ParameterizedTypeImpl();
-        List<Type> actualTypeArguments = new ArrayList<>();
-        for (Type actualType : parameterizedType.getActualTypeArguments()) {
-            Type bindType = genericNameTypeMap.get(actualType.getTypeName());
-            if (bindType != null) {
-                actualTypeArguments.add(bindType);
-            } else {
-                actualTypeArguments.add(actualType);
-            }
-        }
-        replacedType.setActualTypeArguments(actualTypeArguments.toArray(EMPTY_TYPE_ARRAY));
+        replacedType.setActualTypeArguments(Arrays.stream(parameterizedType.getActualTypeArguments())
+                                                  .map(actualType -> getBindType(actualType, genericNameTypeMap))
+                                                  .collect(Collectors.toList())
+                                                  .toArray(EMPTY_TYPE_ARRAY));
         replacedType.setRawType(parameterizedType.getRawType());
         replacedType.setOwnerType(parameterizedType.getOwnerType());
         return replacedType;
@@ -393,52 +398,6 @@ public abstract class ReflectUtils {
         Type[] types = parameterizedType.getActualTypeArguments();
         for (int i = 0; i < types.length; i++) {
             genericNameTypeMap.put(typeVariables[i].getName(), types[i]);
-        }
-    }
-
-    private static class ParameterizedTypeImpl implements ParameterizedType {
-
-        private Type rawType;
-        private Type[] actualTypeArguments;
-        private Type ownerType;
-
-        @Override
-        public Type[] getActualTypeArguments() {
-            return actualTypeArguments;
-        }
-
-        @Override
-        public Type getRawType() {
-            return rawType;
-        }
-
-        @Override
-        public Type getOwnerType() {
-            return ownerType;
-        }
-
-        public void setRawType(Type rawType) {
-            this.rawType = rawType;
-        }
-
-        public void setActualTypeArguments(Type[] actualTypeArguments) {
-            this.actualTypeArguments = actualTypeArguments;
-        }
-
-        public void setOwnerType(Type ownerType) {
-            this.ownerType = ownerType;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder str = new StringBuilder();
-            str.append(rawType.getTypeName()).append('<');
-            for (Type t : actualTypeArguments) {
-                str.append(t.getTypeName()).append(", ");
-            }
-            str.delete(str.length() - 2, str.length());
-            str.append('>');
-            return str.toString();
         }
     }
 
