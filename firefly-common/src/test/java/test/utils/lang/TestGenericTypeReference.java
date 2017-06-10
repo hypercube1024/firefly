@@ -119,6 +119,8 @@ public class TestGenericTypeReference {
     };
     public static GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par.Sar<Integer>> sarRef = new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par.Sar<Integer>>() {
     };
+    public static GenericTypeReference<Request<Foo[], String, Foo[]>> arrayRef = new GenericTypeReference<Request<Foo[], String, Foo[]>>() {
+    };
 
     @Test
     public void test() throws Exception {
@@ -245,6 +247,25 @@ public class TestGenericTypeReference {
         System.out.println(parameterizedType.getTypeName());
         Assert.assertThat(parameterizedType.getTypeName(), is("java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<test.utils.lang.TestGenericTypeReference$Foo>>>"));
         Assert.assertThat(extInfo.getMethodType(), is(MethodType.SETTER));
+    }
+
+    @Test
+    public void testGenericArray() {
+        Map<String, MethodGenericTypeBind> setterMap = ReflectUtils.getGenericBeanSetterMethods(arrayRef);
+        MethodGenericTypeBind data = setterMap.get("data");
+        System.out.println(data.getType().getClass());
+        System.out.println(data.getType().getTypeName());
+        Class<?> clazz = (Class<?>) data.getType();
+        Assert.assertThat(clazz.isArray(), is(true));
+        Assert.assertThat(clazz.getComponentType() == Foo.class, is(true));
+
+        MethodGenericTypeBind extInfo = setterMap.get("extInfo");
+        System.out.println(extInfo.getType().getClass());
+        ParameterizedType parameterizedType = (ParameterizedType) extInfo.getType();
+        System.out.println(parameterizedType.getActualTypeArguments()[1].getClass());
+        clazz = (Class<?>) parameterizedType.getActualTypeArguments()[1];
+        Assert.assertThat(clazz.isArray(), is(true));
+        Assert.assertThat(clazz.getComponentType() == Foo.class, is(true));
     }
 
 }

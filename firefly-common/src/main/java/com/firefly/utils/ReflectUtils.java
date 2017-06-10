@@ -168,16 +168,18 @@ public abstract class ReflectUtils {
 
         for (Method method : methods) {
             method.setAccessible(true);
-            if (method.getName().length() < 4
-                    || !method.getName().startsWith("set")
-                    || Modifier.isStatic(method.getModifiers())
-                    || !method.getReturnType().equals(Void.TYPE)
-                    || method.getParameterTypes().length != 1)
-                continue;
+
+            if (Modifier.isStatic(method.getModifiers())) continue;
+            if (Modifier.isAbstract(method.getModifiers())) continue;
+            if (method.getName().length() < 4) continue;
+            if (!method.getName().startsWith("set")) continue;
+            if (!method.getReturnType().equals(Void.TYPE)) continue;
+            if (method.getParameterTypes().length != 1) continue;
 
             String propertyName = getPropertyName(method);
-            if (filter == null || filter.accept(propertyName, method))
+            if (filter == null || filter.accept(propertyName, method)) {
                 setMethodMap.put(propertyName, method);
+            }
         }
         return setMethodMap;
     }
@@ -208,8 +210,9 @@ public abstract class ReflectUtils {
             if (methodName.length() < index + 1) continue;
 
             String propertyName = getPropertyName(method);
-            if (filter == null || filter.accept(propertyName, method))
+            if (filter == null || filter.accept(propertyName, method)) {
                 getMethodMap.put(propertyName, method);
+            }
         }
         return getMethodMap;
     }

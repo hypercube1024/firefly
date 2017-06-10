@@ -1,17 +1,21 @@
 package com.firefly.utils.json.compiler;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Set;
-import java.util.TreeSet;
-
 import com.firefly.utils.json.annotation.DateFormat;
 import com.firefly.utils.json.annotation.Transient;
 import com.firefly.utils.json.serializer.SerialStateMachine;
 import com.firefly.utils.json.support.FieldInvoke;
 import com.firefly.utils.json.support.MethodInvoke;
 import com.firefly.utils.json.support.SerializerMetaInfo;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Set;
+import java.util.TreeSet;
+
+import static com.firefly.utils.ReflectUtils.getPropertyName;
+import static com.firefly.utils.json.support.PropertyUtils.getDateFormat;
+import static com.firefly.utils.json.support.PropertyUtils.isTransientField;
 
 public class EncodeCompiler {
 	
@@ -23,7 +27,7 @@ public class EncodeCompiler {
 		
 		for (Method method : clazz.getMethods()) {
 			method.setAccessible(true);
-			String methodName = method.getName();
+			String propertyName = getPropertyName(method);
 			
 			if (method.getDeclaringClass().equals(Object.class)) continue;
 			if (method.getName().length() < 3) continue;
@@ -33,54 +37,13 @@ public class EncodeCompiler {
             if (method.getParameterTypes().length != 0) continue;
             if (method.getReturnType() == void.class) continue;
             if (method.isAnnotationPresent(Transient.class)) continue;
-
-            String propertyName;
-			if (methodName.charAt(0) == 'g') { // start with 'get'
-				if (methodName.length() < 4)
-					continue;
-
-				if(Character.isUpperCase(methodName.charAt(3))) {
-					propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-				} else {
-					propertyName = methodName.substring(3);
-				}
-			} else { // start with 'is'
-				if (methodName.length() < 3)
-					continue;
-
-				if(Character.isUpperCase(methodName.charAt(2))) {
-					propertyName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
-				} else {
-					propertyName = methodName.substring(2);
-				}
-			}
-			
-			Field field = null;
-			try {
-				field = clazz.getDeclaredField(propertyName);
-			} catch (Throwable t) {
-				System.err.println("get declared field exception, " + t.getMessage());
-			}
-
-			if (field != null
-					&& (Modifier.isTransient(field.getModifiers())
-					|| field.isAnnotationPresent(Transient.class)))
-				continue;
+			if (isTransientField(propertyName, clazz)) continue;
 
 			Class<?> fieldClazz = method.getReturnType();
 			SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
 			fieldMetaInfo.setPropertyName(propertyName, false);
 			fieldMetaInfo.setPropertyInvoke(new MethodInvoke(method));
-			
-			DateFormat d = null;
-			if(field != null) {
-				d = field.getAnnotation(DateFormat.class);
-			}
-			if(d == null) {
-				d = method.getAnnotation(DateFormat.class);
-			}
-			
-			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializer(fieldClazz, d));
+			fieldMetaInfo.setSerializer(SerialStateMachine.getSerializer(fieldClazz, getDateFormat(propertyName, clazz, method)));
 			fieldSet.add(fieldMetaInfo);
 		}
 		
