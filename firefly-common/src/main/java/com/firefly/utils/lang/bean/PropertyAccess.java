@@ -9,6 +9,8 @@ import java.lang.reflect.Type;
  */
 public interface PropertyAccess {
 
+    String getName();
+
     Type getType();
 
     void setValue(Object instance, Object value);
