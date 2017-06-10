@@ -15,7 +15,7 @@ public interface PropertyAccess {
 
     void setValue(Object instance, Object value);
 
-    <T> T getValue(Object instance);
+    Object getValue(Object instance);
 
     Field getField();
 

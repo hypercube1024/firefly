@@ -3,17 +3,14 @@ package com.firefly.utils;
 import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.lang.GenericTypeReference;
-import com.firefly.utils.lang.bean.FieldGenericTypeBind;
-import com.firefly.utils.lang.bean.GenericArrayTypeImpl;
-import com.firefly.utils.lang.bean.MethodGenericTypeBind;
-import com.firefly.utils.lang.bean.ParameterizedTypeImpl;
+import com.firefly.utils.lang.bean.*;
 
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.firefly.utils.ReflectUtils.getFields;
+import static com.firefly.utils.ReflectUtils.*;
 
 /**
  * @author Pengtao Qiu
@@ -25,6 +22,47 @@ abstract public class BeanUtils {
     private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericGetterCache = new ConcurrentHashMap<>(256);
     private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericSetterCache = new ConcurrentHashMap<>(256);
     private static final ConcurrentHashMap<String, Map<String, FieldGenericTypeBind>> genericPropertyCache = new ConcurrentHashMap<>(256);
+    private static final ConcurrentHashMap<String, Map<String, PropertyAccess>> genericBeanAccessCache = new ConcurrentHashMap<>(256);
+
+    public static Map<String, PropertyAccess> getBeanAccess(GenericTypeReference genericTypeReference) {
+        return genericBeanAccessCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> {
+            Map<String, FieldGenericTypeBind> fields = getGenericBeanFields(genericTypeReference);
+            Map<String, MethodGenericTypeBind> getters = getGenericBeanGetterMethods(genericTypeReference);
+            Map<String, MethodGenericTypeBind> setters = getGenericBeanSetterMethods(genericTypeReference);
+            Set<String> properties = new HashSet<>();
+            properties.addAll(fields.keySet());
+            properties.addAll(getters.keySet());
+            properties.addAll(setters.keySet());
+
+            Map<String, PropertyAccess> map = new HashMap<>();
+            properties.forEach(name -> {
+                PropertyAccessImpl propertyAccess = new PropertyAccessImpl();
+                propertyAccess.setName(name);
+                FieldGenericTypeBind fieldGenericTypeBind = fields.get(name);
+                if (fieldGenericTypeBind != null) {
+                    propertyAccess.setField(fieldGenericTypeBind.getField());
+                    propertyAccess.setFieldProxy(getFieldProxy(fieldGenericTypeBind.getField()));
+                    propertyAccess.setType(fieldGenericTypeBind.getType());
+                }
+
+                MethodGenericTypeBind getter = getters.get(name);
+                if (getter != null) {
+                    propertyAccess.setGetterMethod(getter.getMethod());
+                    propertyAccess.setGetterMethodProxy(getMethodProxy(getter.getMethod()));
+                    propertyAccess.setType(getter.getType());
+                }
+
+                MethodGenericTypeBind setter = setters.get(name);
+                if (setter != null) {
+                    propertyAccess.setSetterMethod(setter.getMethod());
+                    propertyAccess.setSetterMethodProxy(getMethodProxy(setter.getMethod()));
+                    propertyAccess.setType(setter.getType());
+                }
+                map.put(name, propertyAccess);
+            });
+            return map;
+        });
+    }
 
     public static Map<String, MethodGenericTypeBind> getGenericBeanGetterMethods(GenericTypeReference genericTypeReference) {
         return genericGetterCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> getGenericBeanGetterMethods(genericTypeReference, null));

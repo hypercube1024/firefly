@@ -113,6 +113,10 @@ public class TestGenericTypeReference {
         }
     }
 
+    public static class SubReq extends Request<String, Integer, String> {
+
+    }
+
     @Test
     public void test() throws Exception {
         ParameterizedType type = (ParameterizedType) new GenericTypeReference<Request<Map<String, Foo>, String, Integer>>() {
@@ -160,7 +164,5 @@ public class TestGenericTypeReference {
         System.out.println(type);
         Assert.assertThat(type == Foo.class, is(true));
     }
-
-
 
 }
