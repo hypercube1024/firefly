@@ -1,10 +1,11 @@
 package com.firefly.utils;
 
 import com.firefly.utils.classproxy.JavassistReflectionProxyFactory;
+import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.lang.GenericTypeReference;
-import com.firefly.utils.lang.bean.BeanTypeBind;
 import com.firefly.utils.lang.bean.FieldGenericTypeBind;
+import com.firefly.utils.lang.bean.MethodGenericTypeBind;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -256,58 +257,71 @@ public abstract class ReflectUtils {
         }
     }
 
-    public static Map<String, FieldGenericTypeBind> getGenericBeanFields(GenericTypeReference genericTypeReference, BeanFieldFilter filter) {
-        Type type = genericTypeReference.getType();
-        if (type instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) type;
-            Map<String, Field> fieldMap = getFields((Class<?>) parameterizedType.getRawType(), filter);
+    public static Map<String, MethodGenericTypeBind> getGenericBeanGetterMethods(GenericTypeReference genericTypeReference,
+                                                                                 BeanMethodFilter filter) {
+        return getGenericBeanMethods(genericTypeReference.getType(), filter,
+                ReflectUtils::getGetterMethods,
+                Method::getGenericReturnType);
+    }
 
-            if (fieldMap == null || fieldMap.isEmpty()) {
-                return Collections.emptyMap();
+    public static Map<String, MethodGenericTypeBind> getGenericBeanSetterMethods(GenericTypeReference genericTypeReference,
+                                                                                 BeanMethodFilter filter) {
+        return getGenericBeanMethods(genericTypeReference.getType(), filter,
+                ReflectUtils::getSetterMethods,
+                method -> method.getGenericParameterTypes()[0]);
+    }
+
+    public static Map<String, MethodGenericTypeBind> getGenericBeanMethods(Type type,
+                                                                           BeanMethodFilter filter,
+                                                                           Func2<Class<?>, BeanMethodFilter, Map<String, Method>> getMethodMap,
+                                                                           Func1<Method, Type> getType) {
+        Class<?> rawClass = type instanceof ParameterizedType
+                ? (Class<?>) ((ParameterizedType) type).getRawType()
+                : (Class<?>) type;
+        Map<String, Method> methodMap = getMethodMap.call(rawClass, filter);
+        if (methodMap == null || methodMap.isEmpty()) {
+            return Collections.emptyMap();
+        } else {
+            Map<String, MethodGenericTypeBind> genericTypeBindMap = new HashMap<>();
+            if (type instanceof ParameterizedType) {
+                Map<String, Type> genericNameTypeMap = createGenericNameTypeMap((ParameterizedType) type);
+                methodMap.forEach((name, method) -> bindMethodType(name, method, getBindType(getType.call(method), genericNameTypeMap), genericTypeBindMap));
+                return genericTypeBindMap;
             } else {
-                Map<String, Type> genericNameTypeMap = createGenericNameTypeMap(parameterizedType);
-                Map<String, FieldGenericTypeBind> genericTypeBindMap = new HashMap<>();
-                fieldMap.forEach((name, field) -> {
-                    Type fieldType = field.getGenericType();
-                    if (fieldType instanceof ParameterizedType) {
-                        ParameterizedType parameterizedFieldType = (ParameterizedType) fieldType;
-
-                        ParameterizedTypeImpl replacedFieldType = new ParameterizedTypeImpl();
-                        List<Type> actualTypeArguments = new ArrayList<>();
-                        for (Type actualType : parameterizedFieldType.getActualTypeArguments()) {
-                            Type bindType = genericNameTypeMap.get(actualType.getTypeName());
-                            if (bindType != null) {
-                                actualTypeArguments.add(bindType);
-                            } else {
-                                actualTypeArguments.add(actualType);
-                            }
-                        }
-                        replacedFieldType.setActualTypeArguments(actualTypeArguments.toArray(EMPTY_TYPE_ARRAY));
-                        replacedFieldType.setRawType(parameterizedFieldType.getRawType());
-                        replacedFieldType.setOwnerType(parameterizedFieldType.getOwnerType());
-                        bindFieldType(name, field, replacedFieldType, genericTypeBindMap);
-                    } else if (fieldType instanceof TypeVariable) {
-                        TypeVariable variable = (TypeVariable) fieldType;
-                        bindFieldType(name, field, genericNameTypeMap.get(variable.getName()), genericTypeBindMap);
-                    } else {
-                        bindFieldType(name, field, fieldType, genericTypeBindMap);
-                    }
-                });
+                methodMap.forEach((name, method) -> bindMethodType(name, method, getType.call(method), genericTypeBindMap));
                 return genericTypeBindMap;
             }
-        } else {
-            return getGenericBeanFields((Class<?>) type, filter);
         }
     }
 
-    public static Map<String, FieldGenericTypeBind> getGenericBeanFields(Class<?> clazz, BeanFieldFilter filter) {
-        Map<String, Field> fieldMap = getFields(clazz, filter);
+    private static void bindMethodType(String name, Method method, Type type, Map<String, MethodGenericTypeBind> genericTypeBindMap) {
+        MethodGenericTypeBind bind = new MethodGenericTypeBind();
+        bind.setMethod(method);
+        bind.setType(type);
+        genericTypeBindMap.put(name, bind);
+    }
+
+    public static Map<String, FieldGenericTypeBind> getGenericBeanFields(GenericTypeReference genericTypeReference, BeanFieldFilter filter) {
+        return getGenericBeanFields(genericTypeReference.getType(), filter);
+    }
+
+    public static Map<String, FieldGenericTypeBind> getGenericBeanFields(Type type, BeanFieldFilter filter) {
+        Class<?> rawClass = type instanceof ParameterizedType
+                ? (Class<?>) ((ParameterizedType) type).getRawType()
+                : (Class<?>) type;
+        Map<String, Field> fieldMap = getFields(rawClass, filter);
         if (fieldMap == null || fieldMap.isEmpty()) {
             return Collections.emptyMap();
         } else {
             Map<String, FieldGenericTypeBind> genericTypeBindMap = new HashMap<>();
-            fieldMap.forEach((name, field) -> bindFieldType(name, field, field.getGenericType(), genericTypeBindMap));
-            return genericTypeBindMap;
+            if (type instanceof ParameterizedType) {
+                Map<String, Type> genericNameTypeMap = createGenericNameTypeMap((ParameterizedType) type);
+                fieldMap.forEach((name, field) -> bindFieldType(name, field, getBindType(field.getGenericType(), genericNameTypeMap), genericTypeBindMap));
+                return genericTypeBindMap;
+            } else {
+                fieldMap.forEach((name, field) -> bindFieldType(name, field, field.getGenericType(), genericTypeBindMap));
+                return genericTypeBindMap;
+            }
         }
     }
 
@@ -316,6 +330,35 @@ public abstract class ReflectUtils {
         bind.setField(field);
         bind.setType(type);
         genericTypeBindMap.put(name, bind);
+    }
+
+    private static Type getBindType(Type erasureType, Map<String, Type> genericNameTypeMap) {
+        Type replacedType;
+        if (erasureType instanceof ParameterizedType) {
+            replacedType = convertParameterizedType((ParameterizedType) erasureType, genericNameTypeMap);
+        } else if (erasureType instanceof TypeVariable) {
+            replacedType = genericNameTypeMap.get(((TypeVariable) erasureType).getName());
+        } else {
+            replacedType = erasureType;
+        }
+        return replacedType;
+    }
+
+    private static ParameterizedTypeImpl convertParameterizedType(ParameterizedType parameterizedType, Map<String, Type> genericNameTypeMap) {
+        ParameterizedTypeImpl replacedType = new ParameterizedTypeImpl();
+        List<Type> actualTypeArguments = new ArrayList<>();
+        for (Type actualType : parameterizedType.getActualTypeArguments()) {
+            Type bindType = genericNameTypeMap.get(actualType.getTypeName());
+            if (bindType != null) {
+                actualTypeArguments.add(bindType);
+            } else {
+                actualTypeArguments.add(actualType);
+            }
+        }
+        replacedType.setActualTypeArguments(actualTypeArguments.toArray(EMPTY_TYPE_ARRAY));
+        replacedType.setRawType(parameterizedType.getRawType());
+        replacedType.setOwnerType(parameterizedType.getOwnerType());
+        return replacedType;
     }
 
     private static Map<String, Type> createGenericNameTypeMap(ParameterizedType parameterizedType) {

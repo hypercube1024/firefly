@@ -18,6 +18,14 @@ public class MethodGenericTypeBind extends BeanTypeBind {
         this.method = method;
     }
 
+    public MethodType getMethodType() {
+        if (method.getName().startsWith("set")) {
+            return MethodType.SETTER;
+        } else {
+            return MethodType.GETTER;
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

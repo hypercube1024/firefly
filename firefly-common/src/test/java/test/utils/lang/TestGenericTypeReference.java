@@ -3,6 +3,8 @@ package test.utils.lang;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.lang.GenericTypeReference;
 import com.firefly.utils.lang.bean.FieldGenericTypeBind;
+import com.firefly.utils.lang.bean.MethodGenericTypeBind;
+import com.firefly.utils.lang.bean.MethodType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -135,7 +137,7 @@ public class TestGenericTypeReference {
     }
 
     @Test
-    public void test3() throws Exception {
+    public void testFieldType() throws Exception {
         Map<String, FieldGenericTypeBind> map = ReflectUtils.getGenericBeanFields(
                 new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>>() {
                 }, null);
@@ -175,6 +177,46 @@ public class TestGenericTypeReference {
         System.out.println(parameterizedType.getOwnerType());
         Assert.assertThat(parameterizedType.getTypeName(), is("java.util.List<java.lang.String>"));
         Assert.assertThat(parameterizedType.getOwnerType(), nullValue());
+
+
+        map = ReflectUtils.getGenericBeanFields(
+                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Car<List<String>>>() {
+                }, null);
+        FieldGenericTypeBind car = map.get("car");
+        parameterizedType = (ParameterizedType) car.getType();
+        System.out.println(parameterizedType.getTypeName());
+        System.out.println(parameterizedType.getOwnerType());
+        Assert.assertThat(parameterizedType.getTypeName(), is("java.util.List<java.lang.String>"));
+        Assert.assertThat(parameterizedType.getOwnerType(), nullValue());
+
+        map = ReflectUtils.getGenericBeanFields(
+                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par>() {
+                }, null);
+        FieldGenericTypeBind par = map.get("par");
+        Class<?> clazz = (Class<?>) par.getType();
+        System.out.println(clazz.getTypeName());
+        Assert.assertThat(clazz.getTypeName(), is("java.lang.String"));
+    }
+
+    @Test
+    public void testMethodType() {
+        Map<String, MethodGenericTypeBind> getterMap = ReflectUtils.getGenericBeanGetterMethods(
+                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>>() {
+                }, null);
+        MethodGenericTypeBind extInfo = getterMap.get("extInfo");
+        ParameterizedType parameterizedType = (ParameterizedType) extInfo.getType();
+        System.out.println(parameterizedType.getTypeName());
+        Assert.assertThat(parameterizedType.getTypeName(), is("java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<test.utils.lang.TestGenericTypeReference$Foo>>>"));
+        Assert.assertThat(extInfo.getMethodType(), is(MethodType.GETTER));
+
+        Map<String, MethodGenericTypeBind> setterMap = ReflectUtils.getGenericBeanSetterMethods(
+                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>>() {
+                }, null);
+        extInfo = setterMap.get("extInfo");
+        parameterizedType = (ParameterizedType) extInfo.getType();
+        System.out.println(parameterizedType.getTypeName());
+        Assert.assertThat(parameterizedType.getTypeName(), is("java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<test.utils.lang.TestGenericTypeReference$Foo>>>"));
+        Assert.assertThat(extInfo.getMethodType(), is(MethodType.SETTER));
     }
 
 }
