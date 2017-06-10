@@ -19,6 +19,10 @@ public abstract class ReflectUtils {
     private static final ConcurrentHashMap<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<>(256);
     private static final ConcurrentHashMap<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<>(256);
 
+    private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericGetterCache = new ConcurrentHashMap<>(256);
+    private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericSetterCache = new ConcurrentHashMap<>(256);
+    private static final ConcurrentHashMap<String, Map<String, FieldGenericTypeBind>> genericPropertyCache = new ConcurrentHashMap<>(256);
+
     public static ProxyFactory defaultProxyFactory = ServiceUtils.loadService(ProxyFactory.class, JavassistReflectionProxyFactory.INSTANCE);
 
     public interface BeanMethodFilter {
@@ -189,32 +193,24 @@ public abstract class ReflectUtils {
     public static Map<String, Method> getGetterMethods(Class<?> clazz, BeanMethodFilter filter) {
         Map<String, Method> getMethodMap = new HashMap<>();
         Method[] methods = clazz.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
+        for (Method method : methods) {
             method.setAccessible(true);
-            String methodName = method.getName();
 
-            if (Modifier.isStatic(method.getModifiers()))
-                continue;
-            if (Modifier.isAbstract(method.getModifiers()))
-                continue;
-            if (method.getName().equals("getClass"))
-                continue;
-            if (!(method.getName().startsWith("is") || method.getName().startsWith("get")))
-                continue;
-            if (method.getParameterTypes().length != 0)
-                continue;
-            if (method.getReturnType() == void.class)
-                continue;
+            if (Modifier.isStatic(method.getModifiers())) continue;
+            if (Modifier.isAbstract(method.getModifiers())) continue;
+            if (method.getName().equals("getClass")) continue;
+            if (!(method.getName().startsWith("is") || method.getName().startsWith("get"))) continue;
+            if (method.getParameterTypes().length != 0) continue;
+            if (method.getReturnType() == void.class) continue;
+
+            String methodName = method.getName();
             int index = (methodName.charAt(0) == 'i' ? 2 : 3);
-            if (methodName.length() < index + 1)
-                continue;
+            if (methodName.length() < index + 1) continue;
 
             String propertyName = getPropertyName(method);
             if (filter == null || filter.accept(propertyName, method))
                 getMethodMap.put(propertyName, method);
         }
-
         return getMethodMap;
     }
 
@@ -227,8 +223,7 @@ public abstract class ReflectUtils {
         Field[] fields = clazz.getFields();
         for (Field field : fields) {
             field.setAccessible(true);
-            if (Modifier.isStatic(field.getModifiers()))
-                continue;
+            if (Modifier.isStatic(field.getModifiers())) continue;
 
             String propertyName = field.getName();
             if (filter == null || filter.accept(propertyName, field))
@@ -243,8 +238,7 @@ public abstract class ReflectUtils {
 
         for (Map.Entry<String, Method> entry : setterMethodMap.entrySet()) {
             Method getter = getterMethodMap.get(entry.getKey());
-            if (getter == null)
-                continue;
+            if (getter == null) continue;
 
             try {
                 Object obj = getter.invoke(src);
@@ -257,11 +251,19 @@ public abstract class ReflectUtils {
         }
     }
 
+    public static Map<String, MethodGenericTypeBind> getGenericBeanGetterMethods(GenericTypeReference genericTypeReference) {
+        return genericGetterCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> getGenericBeanGetterMethods(genericTypeReference, null));
+    }
+
     public static Map<String, MethodGenericTypeBind> getGenericBeanGetterMethods(GenericTypeReference genericTypeReference,
                                                                                  BeanMethodFilter filter) {
         return getGenericBeanMethods(genericTypeReference.getType(), filter,
                 ReflectUtils::getGetterMethods,
                 Method::getGenericReturnType);
+    }
+
+    public static Map<String, MethodGenericTypeBind> getGenericBeanSetterMethods(GenericTypeReference genericTypeReference) {
+        return genericSetterCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> getGenericBeanSetterMethods(genericTypeReference, null));
     }
 
     public static Map<String, MethodGenericTypeBind> getGenericBeanSetterMethods(GenericTypeReference genericTypeReference,
@@ -299,6 +301,10 @@ public abstract class ReflectUtils {
         bind.setMethod(method);
         bind.setType(type);
         genericTypeBindMap.put(name, bind);
+    }
+
+    public static Map<String, FieldGenericTypeBind> getGenericBeanFields(GenericTypeReference genericTypeReference) {
+        return genericPropertyCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> getGenericBeanFields(genericTypeReference, null));
     }
 
     public static Map<String, FieldGenericTypeBind> getGenericBeanFields(GenericTypeReference genericTypeReference, BeanFieldFilter filter) {

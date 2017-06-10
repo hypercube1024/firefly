@@ -73,6 +73,27 @@ public class TestGenericTypeReference {
 
         public class Par {
             public R par;
+
+            public class Sar<U> {
+                private U sar;
+                private List<T> list;
+
+                public U getSar() {
+                    return sar;
+                }
+
+                public void setSar(U sar) {
+                    this.sar = sar;
+                }
+
+                public List<T> getList() {
+                    return list;
+                }
+
+                public void setList(List<T> list) {
+                    this.list = list;
+                }
+            }
         }
     }
 
@@ -87,6 +108,17 @@ public class TestGenericTypeReference {
             this.foo = foo;
         }
     }
+
+    public static GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>> reqRef = new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>>() {
+    };
+    public static GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Bar<List<String>>> barRef = new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Bar<List<String>>>() {
+    };
+    public static GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Car<List<Integer>>> carRef = new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Car<List<Integer>>>() {
+    };
+    public static GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par> parRef = new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par>() {
+    };
+    public static GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par.Sar<Integer>> sarRef = new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par.Sar<Integer>>() {
+    };
 
     @Test
     public void test() throws Exception {
@@ -138,9 +170,7 @@ public class TestGenericTypeReference {
 
     @Test
     public void testFieldType() throws Exception {
-        Map<String, FieldGenericTypeBind> map = ReflectUtils.getGenericBeanFields(
-                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>>() {
-                }, null);
+        Map<String, FieldGenericTypeBind> map = ReflectUtils.getGenericBeanFields(reqRef);
 
         FieldGenericTypeBind extInfo = map.get("attrs");
         System.out.println(extInfo.getField().getName());
@@ -160,9 +190,7 @@ public class TestGenericTypeReference {
 
     @Test
     public void testNestedClass() throws Exception {
-        Map<String, FieldGenericTypeBind> map = ReflectUtils.getGenericBeanFields(
-                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Bar<List<String>>>() {
-                }, null);
+        Map<String, FieldGenericTypeBind> map = ReflectUtils.getGenericBeanFields(barRef);
 
         FieldGenericTypeBind barMaps = map.get("maps");
         ParameterizedType parameterizedType = (ParameterizedType) barMaps.getType();
@@ -179,39 +207,39 @@ public class TestGenericTypeReference {
         Assert.assertThat(parameterizedType.getOwnerType(), nullValue());
 
 
-        map = ReflectUtils.getGenericBeanFields(
-                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Car<List<String>>>() {
-                }, null);
+        map = ReflectUtils.getGenericBeanFields(carRef);
         FieldGenericTypeBind car = map.get("car");
         parameterizedType = (ParameterizedType) car.getType();
         System.out.println(parameterizedType.getTypeName());
         System.out.println(parameterizedType.getOwnerType());
-        Assert.assertThat(parameterizedType.getTypeName(), is("java.util.List<java.lang.String>"));
+        Assert.assertThat(parameterizedType.getTypeName(), is("java.util.List<java.lang.Integer>"));
         Assert.assertThat(parameterizedType.getOwnerType(), nullValue());
 
-        map = ReflectUtils.getGenericBeanFields(
-                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>.Par>() {
-                }, null);
+        map = ReflectUtils.getGenericBeanFields(parRef);
         FieldGenericTypeBind par = map.get("par");
         Class<?> clazz = (Class<?>) par.getType();
         System.out.println(clazz.getTypeName());
         Assert.assertThat(clazz.getTypeName(), is("java.lang.String"));
+
+        Map<String, MethodGenericTypeBind> getterMap = ReflectUtils.getGenericBeanGetterMethods(sarRef);
+        MethodGenericTypeBind list = getterMap.get("list");
+        System.out.println(list.getType().getTypeName());
+        Assert.assertThat(list.getType().getTypeName(), is("java.util.List<java.util.Map<java.lang.String, test.utils.lang.TestGenericTypeReference$Foo>>"));
+
+        MethodGenericTypeBind sar = getterMap.get("sar");
+        Assert.assertThat(sar.getType().getTypeName(), is("java.lang.Integer"));
     }
 
     @Test
     public void testMethodType() {
-        Map<String, MethodGenericTypeBind> getterMap = ReflectUtils.getGenericBeanGetterMethods(
-                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>>() {
-                }, null);
+        Map<String, MethodGenericTypeBind> getterMap = ReflectUtils.getGenericBeanGetterMethods(reqRef);
         MethodGenericTypeBind extInfo = getterMap.get("extInfo");
         ParameterizedType parameterizedType = (ParameterizedType) extInfo.getType();
         System.out.println(parameterizedType.getTypeName());
         Assert.assertThat(parameterizedType.getTypeName(), is("java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<test.utils.lang.TestGenericTypeReference$Foo>>>"));
         Assert.assertThat(extInfo.getMethodType(), is(MethodType.GETTER));
 
-        Map<String, MethodGenericTypeBind> setterMap = ReflectUtils.getGenericBeanSetterMethods(
-                new GenericTypeReference<Request<Map<String, Foo>, String, Map<String, List<Foo>>>>() {
-                }, null);
+        Map<String, MethodGenericTypeBind> setterMap = ReflectUtils.getGenericBeanSetterMethods(reqRef);
         extInfo = setterMap.get("extInfo");
         parameterizedType = (ParameterizedType) extInfo.getType();
         System.out.println(parameterizedType.getTypeName());
