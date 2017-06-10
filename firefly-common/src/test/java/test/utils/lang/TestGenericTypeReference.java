@@ -219,13 +219,7 @@ public class TestGenericTypeReference {
         Assert.assertThat(parameterizedType.getOwnerType(), nullValue());
 
 
-        map = ReflectUtils.getGenericBeanFields(carRef);
-        FieldGenericTypeBind car = map.get("car");
-        parameterizedType = (ParameterizedType) car.getType();
-        System.out.println(parameterizedType.getTypeName());
-        System.out.println(parameterizedType.getOwnerType());
-        Assert.assertThat(parameterizedType.getTypeName(), is("java.util.List<java.lang.Integer>"));
-        Assert.assertThat(parameterizedType.getOwnerType(), nullValue());
+
 
         map = ReflectUtils.getGenericBeanFields(parRef);
         FieldGenericTypeBind par = map.get("par");
@@ -233,6 +227,11 @@ public class TestGenericTypeReference {
         System.out.println(clazz.getTypeName());
         Assert.assertThat(clazz.getTypeName(), is("java.lang.String"));
 
+
+    }
+
+    @Test
+    public void testOwnType() {
         Map<String, MethodGenericTypeBind> getterMap = ReflectUtils.getGenericBeanGetterMethods(sarRef);
         MethodGenericTypeBind list = getterMap.get("list");
         System.out.println(list.getType().getTypeName());
@@ -240,6 +239,17 @@ public class TestGenericTypeReference {
 
         MethodGenericTypeBind sar = getterMap.get("sar");
         Assert.assertThat(sar.getType().getTypeName(), is("java.lang.Integer"));
+    }
+
+    @Test
+    public void testOverrideOwnType() {
+        Map<String, FieldGenericTypeBind> map = ReflectUtils.getGenericBeanFields(carRef);
+        FieldGenericTypeBind car = map.get("car");
+        ParameterizedType parameterizedType = (ParameterizedType) car.getType();
+        System.out.println(parameterizedType.getTypeName());
+        System.out.println(parameterizedType.getOwnerType());
+        Assert.assertThat(parameterizedType.getTypeName(), is("java.util.List<java.lang.Integer>"));
+        Assert.assertThat(parameterizedType.getOwnerType(), nullValue());
     }
 
     @Test

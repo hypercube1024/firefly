@@ -279,7 +279,7 @@ public abstract class ReflectUtils {
                 method -> method.getGenericParameterTypes()[0]);
     }
 
-    public static Map<String, MethodGenericTypeBind> getGenericBeanMethods(Type type,
+    private static Map<String, MethodGenericTypeBind> getGenericBeanMethods(Type type,
                                                                            BeanMethodFilter filter,
                                                                            Func2<Class<?>, BeanMethodFilter, Map<String, Method>> getMethodMap,
                                                                            Func1<Method, Type> getType) {
@@ -317,7 +317,7 @@ public abstract class ReflectUtils {
         return getGenericBeanFields(genericTypeReference.getType(), filter);
     }
 
-    public static Map<String, FieldGenericTypeBind> getGenericBeanFields(Type type, BeanFieldFilter filter) {
+    private static Map<String, FieldGenericTypeBind> getGenericBeanFields(Type type, BeanFieldFilter filter) {
         Class<?> rawClass = type instanceof ParameterizedType
                 ? (Class<?>) ((ParameterizedType) type).getRawType()
                 : (Class<?>) type;
@@ -376,27 +376,30 @@ public abstract class ReflectUtils {
     }
 
     private static Map<String, Type> createGenericNameTypeMap(ParameterizedType parameterizedType) {
-        Map<String, Type> genericNameTypeMap = new HashMap<>();
-        Class<?> rawType = (Class<?>) parameterizedType.getRawType();
-
-        Type ownType = parameterizedType.getOwnerType();
-        while (ownType != null) {
+        List<Type> types = new ArrayList<>();
+        types.add(parameterizedType);
+        for (Type ownType = parameterizedType.getOwnerType(); ownType != null; ) {
+            types.add(ownType);
             if (ownType instanceof ParameterizedType) {
-                ParameterizedType ownParameterizedType = (ParameterizedType) ownType;
-                _buildGenericNameTypeMap((Class<?>) ownParameterizedType.getRawType(), ownParameterizedType, genericNameTypeMap);
-                ownType = ownParameterizedType.getOwnerType();
+                ownType = ((ParameterizedType) ownType).getOwnerType();
             } else {
                 break;
             }
         }
-        _buildGenericNameTypeMap(rawType, parameterizedType, genericNameTypeMap);
+        Collections.reverse(types);
+
+        Map<String, Type> genericNameTypeMap = new HashMap<>();
+        types.stream()
+             .filter(type -> type instanceof ParameterizedType)
+             .map(type -> (ParameterizedType) type)
+             .forEach(paramType -> _buildGenericNameTypeMap((Class<?>) paramType.getRawType(), paramType, genericNameTypeMap));
         return genericNameTypeMap;
     }
 
     private static void _buildGenericNameTypeMap(Class<?> rawType, ParameterizedType parameterizedType, Map<String, Type> genericNameTypeMap) {
         TypeVariable[] typeVariables = rawType.getTypeParameters();
         Type[] types = parameterizedType.getActualTypeArguments();
-        for (int i = 0; i < types.length; i++) {
+        for (int i = 0; i < typeVariables.length; i++) {
             genericNameTypeMap.put(typeVariables[i].getName(), types[i]);
         }
     }
