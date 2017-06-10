@@ -2,9 +2,7 @@ package com.firefly.utils.lang.bean;
 
 import com.firefly.utils.ReflectUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 
 /**
  * @author Pengtao Qiu
@@ -44,12 +42,13 @@ public class PropertyAccessImpl implements PropertyAccess {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object getValue(Object instance) {
+    public <T> T getValue(Object instance) {
         if (getterMethodProxy != null) {
-            return getterMethodProxy.invoke(instance);
+            return (T) getterMethodProxy.invoke(instance);
         } else if (fieldProxy != null) {
-            return fieldProxy.get(instance);
+            return (T) fieldProxy.get(instance);
         } else {
             return null;
         }

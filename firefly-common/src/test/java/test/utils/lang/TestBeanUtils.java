@@ -4,11 +4,14 @@ import com.firefly.utils.lang.GenericTypeReference;
 import com.firefly.utils.lang.bean.FieldGenericTypeBind;
 import com.firefly.utils.lang.bean.MethodGenericTypeBind;
 import com.firefly.utils.lang.bean.MethodType;
+import com.firefly.utils.lang.bean.PropertyAccess;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +23,40 @@ import static org.hamcrest.Matchers.nullValue;
  * @author Pengtao Qiu
  */
 public class TestBeanUtils {
+
+    public static class Store<T, R> {
+        private List<T> products;
+        private R manager;
+
+        public List<T> getProducts() {
+            return products;
+        }
+
+        public void setProducts(List<T> products) {
+            this.products = products;
+        }
+
+        public R getManager() {
+            return manager;
+        }
+
+        public void setManager(R manager) {
+            this.manager = manager;
+        }
+    }
+
+    public static class Person<T> {
+        public String name;
+        private Map<String, T> info;
+
+        public Map<String, T> getInfo() {
+            return info;
+        }
+
+        public void setInfo(Map<String, T> info) {
+            this.info = info;
+        }
+    }
 
     static GenericTypeReference<TestGenericTypeReference.Request<Map<String, TestGenericTypeReference.Foo>, String, Map<String, List<TestGenericTypeReference.Foo>>>> reqRef = new GenericTypeReference<TestGenericTypeReference.Request<Map<String, TestGenericTypeReference.Foo>, String, Map<String, List<TestGenericTypeReference.Foo>>>>() {
     };
@@ -150,5 +187,37 @@ public class TestBeanUtils {
         System.out.println(genericArrayType.getGenericComponentType().getTypeName());
         System.out.println(genericArrayType.getGenericComponentType().getClass());
         Assert.assertThat(genericArrayType.getGenericComponentType().getTypeName(), is("test.utils.lang.TestGenericTypeReference$Foo[][]"));
+    }
+
+    @Test
+    public void testBeanAccess() {
+        Store<Map<String, String>, Person<String>> storeInstance = new Store<>();
+        Map<String, PropertyAccess> store = getBeanAccess(new GenericTypeReference<Store<Map<String, String>, Person<String>>>() {});
+
+        PropertyAccess products = store.get("products");
+        System.out.println(products.getType().getTypeName());
+
+        List<Map<String, String>> productList = new ArrayList<>();
+        Map<String, String> product = new HashMap<>();
+        product.put("name", "bike");
+        product.put("type", "vehicle");
+        product.put("price", "1000.00");
+        productList.add(product);
+
+        product = new HashMap<>();
+        product.put("name", "car");
+        product.put("type", "vehicle");
+        product.put("price", "500000.00");
+        productList.add(product);
+
+        products.setValue(storeInstance, productList);
+
+        System.out.println(storeInstance.getProducts().size());
+        Assert.assertThat(storeInstance.getProducts().size(), is(2));
+
+        List<Map<String, String>> productList2 = products.getValue(storeInstance);
+        Assert.assertThat(productList2.size(), is(2));
+        Assert.assertThat(productList2.get(0).get("name"), is("bike"));
+
     }
 }
