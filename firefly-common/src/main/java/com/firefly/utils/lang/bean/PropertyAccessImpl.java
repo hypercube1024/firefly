@@ -1,5 +1,6 @@
 package com.firefly.utils.lang.bean;
 
+import com.firefly.utils.BeanUtils;
 import com.firefly.utils.ReflectUtils;
 
 import java.lang.reflect.Field;
@@ -36,7 +37,17 @@ public class PropertyAccessImpl implements PropertyAccess {
     }
 
     @Override
-    public void setValue(Object instance, Object value) {
+    public Class<?> extractClass() {
+        return BeanUtils.extractClass(type);
+    }
+
+    @Override
+    public boolean isArray() {
+        return BeanUtils.isArray(type);
+    }
+
+    @Override
+    public <T> void setValue(Object instance, T value) {
         if (setterMethodProxy != null) {
             setterMethodProxy.invoke(instance, value);
         } else if (fieldProxy != null) {

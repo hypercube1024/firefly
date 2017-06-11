@@ -13,9 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ReflectUtils {
 
-    private static final ConcurrentHashMap<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<>(256);
+    private static final ConcurrentHashMap<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<>();
 
     public static ProxyFactory defaultProxyFactory = ServiceUtils.loadService(ProxyFactory.class, JavassistReflectionProxyFactory.INSTANCE);
 

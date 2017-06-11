@@ -19,10 +19,10 @@ abstract public class BeanUtils {
 
     public static final Type[] EMPTY_TYPE_ARRAY = new Type[0];
 
-    private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericGetterCache = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericSetterCache = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<String, Map<String, FieldGenericTypeBind>> genericPropertyCache = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<String, Map<String, PropertyAccess>> genericBeanAccessCache = new ConcurrentHashMap<>(256);
+    private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericGetterCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericSetterCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Map<String, FieldGenericTypeBind>> genericPropertyCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Map<String, PropertyAccess>> genericBeanAccessCache = new ConcurrentHashMap<>();
 
     public static boolean isArray(Type type) {
         if (type instanceof Class<?>) {

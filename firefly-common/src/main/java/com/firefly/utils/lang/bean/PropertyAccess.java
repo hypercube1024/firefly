@@ -13,7 +13,11 @@ public interface PropertyAccess {
 
     Type getType();
 
-    void setValue(Object instance, Object value);
+    Class<?> extractClass();
+
+    boolean isArray();
+
+    <T> void setValue(Object instance, T value);
 
     <T> T getValue(Object instance);
 

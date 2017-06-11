@@ -231,6 +231,7 @@ public class TestBeanUtils {
 
         PropertyAccess products = store.get("products");
         System.out.println(products.getType().getTypeName());
+        Assert.assertThat(products.extractClass() == List.class, is(true));
 
         List<Map<String, String>> productList = new ArrayList<>();
         Map<String, String> product = new HashMap<>();
@@ -254,5 +255,17 @@ public class TestBeanUtils {
         Assert.assertThat(productList2.size(), is(2));
         Assert.assertThat(productList2.get(0).get("name"), is("bike"));
 
+
+        PropertyAccess manager = store.get("manager");
+        Assert.assertThat(manager.extractClass() == Person.class, is(true));
+
+        Person<String> person = new Person<>();
+        person.name = "Pengtao Qiu";
+        person.setInfo(new HashMap<>());
+        person.getInfo().put("favorite food", "Sauteed beef shreds with chilli");
+        person.getInfo().put("keyboard", "Keyclick mechanical keyboard");
+        manager.setValue(storeInstance, person);
+        Assert.assertThat(storeInstance.getManager().name, is("Pengtao Qiu"));
+        Assert.assertThat(storeInstance.getManager().getInfo().get("keyboard"), is("Keyclick mechanical keyboard"));
     }
 }
