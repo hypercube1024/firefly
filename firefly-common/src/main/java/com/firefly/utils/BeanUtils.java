@@ -24,6 +24,41 @@ abstract public class BeanUtils {
     private static final ConcurrentHashMap<String, Map<String, FieldGenericTypeBind>> genericPropertyCache = new ConcurrentHashMap<>(256);
     private static final ConcurrentHashMap<String, Map<String, PropertyAccess>> genericBeanAccessCache = new ConcurrentHashMap<>(256);
 
+    public static boolean isArray(Type type) {
+        if (type instanceof Class<?>) {
+            return ((Class<?>) type).isArray();
+        } else if (type instanceof ParameterizedType) {
+            return isArray(((ParameterizedType) type).getRawType());
+        } else {
+            return type instanceof GenericArrayType;
+        }
+    }
+
+    public static Class<?> getComponentType(Type type) {
+        if (type instanceof Class<?>) {
+            return ((Class<?>) type).getComponentType();
+        } else if (type instanceof ParameterizedType) {
+            return getComponentType(((ParameterizedType) type).getRawType());
+        } else if (type instanceof GenericArrayType) {
+            return extractClass((GenericArrayType) type);
+        } else {
+            return null;
+        }
+    }
+
+    public static Class<?> extractClass(GenericArrayType genericArrayType) {
+        Type componentType = genericArrayType.getGenericComponentType();
+        if (componentType instanceof Class<?>) {
+            return (Class<?>) componentType;
+        } else if (componentType instanceof ParameterizedType) {
+            return (Class<?>) ((ParameterizedType) componentType).getRawType();
+        } else if (componentType instanceof GenericArrayType) {
+            return Array.newInstance(extractClass((GenericArrayType) componentType), 0).getClass();
+        } else {
+            return null;
+        }
+    }
+
     public static Map<String, PropertyAccess> getBeanAccess(GenericTypeReference genericTypeReference) {
         return genericBeanAccessCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> {
             Map<String, FieldGenericTypeBind> fields = getGenericBeanFields(genericTypeReference);
