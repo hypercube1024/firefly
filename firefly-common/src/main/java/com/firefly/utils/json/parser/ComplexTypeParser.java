@@ -10,7 +10,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
-import static com.firefly.utils.BeanUtils.extractClass;
+import static com.firefly.utils.BeanUtils.extractGenericArrayClass;
 
 public abstract class ComplexTypeParser implements Parser {
 
@@ -52,7 +52,7 @@ public abstract class ComplexTypeParser implements Parser {
             elementMetaInfo.setType(eleClass);
             elementMetaInfo.setParser(ParserStateMachine.getParser(eleClass, null));
         } else if (elementType instanceof GenericArrayType) {
-            Class<?> rawClass = extractClass((GenericArrayType) elementType);
+            Class<?> rawClass = extractGenericArrayClass((GenericArrayType) elementType);
             elementMetaInfo = new ParserMetaInfo();
             elementMetaInfo.setType(rawClass);
             elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, null));

@@ -40,22 +40,36 @@ abstract public class BeanUtils {
         } else if (type instanceof ParameterizedType) {
             return getComponentType(((ParameterizedType) type).getRawType());
         } else if (type instanceof GenericArrayType) {
-            return extractClass((GenericArrayType) type);
+            return extractGenericArrayClass((GenericArrayType) type);
         } else {
             return null;
         }
     }
 
-    public static Class<?> extractClass(GenericArrayType genericArrayType) {
+    public static Class<?> extractGenericArrayClass(GenericArrayType genericArrayType) {
         Type componentType = genericArrayType.getGenericComponentType();
         if (componentType instanceof Class<?>) {
             return (Class<?>) componentType;
         } else if (componentType instanceof ParameterizedType) {
             return (Class<?>) ((ParameterizedType) componentType).getRawType();
         } else if (componentType instanceof GenericArrayType) {
-            return Array.newInstance(extractClass((GenericArrayType) componentType), 0).getClass();
+            return Array.newInstance(extractGenericArrayClass((GenericArrayType) componentType), 0).getClass();
         } else {
             return null;
+        }
+    }
+
+    public static Class<?> extractClass(Type type) {
+        if (isArray(type)) {
+            return getComponentType(type);
+        } else {
+            if (type instanceof Class<?>) {
+                return (Class<?>) type;
+            } else if (type instanceof ParameterizedType) {
+                return extractClass(((ParameterizedType) type).getRawType());
+            } else {
+                return null;
+            }
         }
     }
 

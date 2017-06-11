@@ -201,7 +201,26 @@ public class TestBeanUtils {
         };
         System.out.println(personRef.getType());
         System.out.println(personRef.getType().getClass());
-        Assert.assertThat(extractClass((GenericArrayType) personRef.getType()) == Person[][][].class, is(true));
+        Assert.assertThat(extractGenericArrayClass((GenericArrayType) personRef.getType()) == Person[][][].class, is(true));
+    }
+
+    @Test
+    public void testExtractClass() {
+        GenericTypeReference<Person<Foo>> personRef = new GenericTypeReference<Person<Foo>>() {
+        };
+        Assert.assertThat(extractClass(personRef.getType()) == Person.class, is(true));
+
+        GenericTypeReference<Foo> fooRef = new GenericTypeReference<Foo>() {
+        };
+        Assert.assertThat(extractClass(fooRef.getType()) == Foo.class, is(true));
+
+        GenericTypeReference<Person<String>[]> personRef2 = new GenericTypeReference<Person<String>[]>() {
+        };
+        Assert.assertThat(extractClass(personRef2.getType()) == Person.class, is(true));
+
+        GenericTypeReference<Person<String>[][]> personRef3 = new GenericTypeReference<Person<String>[][]>() {
+        };
+        Assert.assertThat(extractClass(personRef3.getType()) == Person[].class, is(true));
     }
 
     @Test
