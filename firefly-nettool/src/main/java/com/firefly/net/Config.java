@@ -1,12 +1,6 @@
 package com.firefly.net;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
-import com.firefly.utils.function.Func1;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
+import com.firefly.utils.ServiceUtils;
 
 public class Config {
 
@@ -24,12 +18,7 @@ public class Config {
     private Handler handler;
 
     private boolean monitorEnable = true;
-    private MetricRegistry metrics = new MetricRegistry();
-    private Func1<MetricRegistry, ScheduledReporter> reporterFactory = m -> Slf4jReporter.forRegistry(m)
-                                                                                         .outputTo(LoggerFactory.getLogger("firefly-monitor"))
-                                                                                         .convertRatesTo(TimeUnit.SECONDS)
-                                                                                         .convertDurationsTo(TimeUnit.MILLISECONDS)
-                                                                                         .build();
+    private MetricReporterFactory metricReporterFactory = ServiceUtils.loadService(MetricReporterFactory.class, new DefaultMetricReporterFactory());
 
     /**
      * The max I/O idle time, the default value is 10 seconds.
@@ -106,20 +95,12 @@ public class Config {
         this.asynchronousPoolKeepAliveTime = asynchronousPoolKeepAliveTime;
     }
 
-    public MetricRegistry getMetrics() {
-        return metrics;
+    public MetricReporterFactory getMetricReporterFactory() {
+        return metricReporterFactory;
     }
 
-    public void setMetrics(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    public Func1<MetricRegistry, ScheduledReporter> getReporterFactory() {
-        return reporterFactory;
-    }
-
-    public void setReporterFactory(Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
-        this.reporterFactory = reporterFactory;
+    public void setMetricReporterFactory(MetricReporterFactory metricReporterFactory) {
+        this.metricReporterFactory = metricReporterFactory;
     }
 
     public boolean isMonitorEnable() {

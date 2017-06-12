@@ -1,11 +1,9 @@
 package com.firefly.net.tcp.ssl;
 
-import com.firefly.net.BufferPool;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.net.SSLEventHandler;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
-import com.firefly.net.buffer.ThreadSafeIOBufferPool;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
@@ -25,8 +23,6 @@ import java.util.List;
 public class SSLSession implements Closeable {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
-
-    private static final BufferPool bufferPool = new ThreadSafeIOBufferPool();
 
     private final Session session;
     private final SSLEngine sslEngine;
@@ -142,13 +138,9 @@ public class SSLSession implements Closeable {
                 List<ByteBuffer> inNetBuffers = BufferUtils.split(inNetBuffer, netSize);
                 for (ByteBuffer net : inNetBuffers) {
                     //FIXME using direct buffer avoid netty ByteBufAllocator bug
-                    ByteBuffer directTmpBuffer = bufferPool.acquire(net.remaining());
-                    try {
-                        directTmpBuffer.put(net.slice()).flip();
-                        result = sslEngine.unwrap(directTmpBuffer, outAppBuffer);
-                    } finally {
-                        bufferPool.release(directTmpBuffer);
-                    }
+                    ByteBuffer directTmpBuffer = ByteBuffer.allocateDirect(net.remaining());
+                    directTmpBuffer.put(net.slice()).flip();
+                    result = sslEngine.unwrap(directTmpBuffer, outAppBuffer);
 
                     int consumed = result.bytesConsumed();
                     inNetBuffer.position(inNetBuffer.position() + consumed);
@@ -350,17 +342,14 @@ public class SSLSession implements Closeable {
                 }
 
                 //FIXME using direct buffer avoid netty ByteBufAllocator bug
-                ByteBuffer directTmpBuffer = bufferPool.acquire(net.remaining());
-                try {
-                    directTmpBuffer.put(net.slice()).flip();
-                    result = sslEngine.unwrap(directTmpBuffer, outAppBuffer);
-                } finally {
-                    bufferPool.release(directTmpBuffer);
-                }
+                ByteBuffer directTmpBuffer = ByteBuffer.allocateDirect(net.remaining());
+                directTmpBuffer.put(net.slice()).flip();
+                result = sslEngine.unwrap(directTmpBuffer, outAppBuffer);
 
                 int consumed = result.bytesConsumed();
                 inNetBuffer.position(inNetBuffer.position() + consumed);
                 net.position(net.position() + consumed);
+
                 if (log.isDebugEnabled()) {
                     log.debug("SSL session {} unwrap, status -> {}, in -> {}, out -> {}, temp -> {}, consumed -> {}",
                             session.getSessionId(), result.getStatus(), inNetBuffer.remaining(), outAppBuffer.remaining(),
@@ -433,14 +422,9 @@ public class SSLSession implements Closeable {
                 SSLEngineResult result;
 
                 //FIXME using direct buffer avoid netty ByteBufAllocator bug
-                ByteBuffer directTmpBuffer = bufferPool.acquire(outputBuffer.remaining());
-                try {
-                    directTmpBuffer.put(outputBuffer.slice()).flip();
-                    result = sslEngine.wrap(directTmpBuffer, writeBuf);
-                } finally {
-                    bufferPool.release(directTmpBuffer);
-                }
-
+                ByteBuffer directTmpBuffer = ByteBuffer.allocateDirect(outputBuffer.remaining());
+                directTmpBuffer.put(outputBuffer.slice()).flip();
+                result = sslEngine.wrap(directTmpBuffer, writeBuf);
                 ret += result.bytesConsumed();
 
                 switch (result.getStatus()) {

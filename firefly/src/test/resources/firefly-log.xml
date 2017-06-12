@@ -14,4 +14,10 @@
         <path>${log.path}</path>
     </logger>
 
+    <logger>
+        <name>test.http</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+    </logger>
+
 </loggers>

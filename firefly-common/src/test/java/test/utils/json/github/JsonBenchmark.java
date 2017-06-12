@@ -70,30 +70,42 @@ public class JsonBenchmark {
     }
 
     public static void benchmark(final int times) {
-        long fireflySerializer, fireflyJsonParser, fireflyMapParser;
+        long fireflySerializer, fireflyJsonParser, fireflyJsonNodeParser;
         fireflySerializer = fireflyJsonSerializerTest(times);
         fireflyJsonParser = fireflyJsonParserTest(times);
-        fireflyMapParser = fireflyJsonParserWithoutObjectbindTest(times);
+        fireflyJsonNodeParser = fireflyJsonParserWithoutObjectbindTest(times);
 
-        long fastjsonSerializer, fastjsonParser, fastjsonMapParser;
+        long fastjsonSerializer, fastjsonParser, fastjsonJsonNodeParser;
         fastjsonSerializer = fastjsonSerializerTest(times);
         fastjsonParser = fastjsonParserTest(times);
-        fastjsonMapParser = fastjsonParserWithoutObjectbindTest(times);
+        fastjsonJsonNodeParser = fastjsonParserWithoutObjectbindTest(times);
 
-        long jacksonJsonSerializer, jacksonJsonParser, jacksonMapParser;
+        long jacksonJsonSerializer, jacksonJsonParser, jacksonJsonNodeParser;
         jacksonJsonSerializer = jacksonJsonSerializerTest(times);
         jacksonJsonParser = jacksonJsonParserTest(times);
-        jacksonMapParser = jacksonParserWithoutObjectbindTest(times);
+        jacksonJsonNodeParser = jacksonParserWithoutObjectbindTest(times);
 
         System.out.println();
         System.out.println("total time: ");
-        System.out.println("firefly: " + (fireflySerializer + fireflyJsonParser + fireflyMapParser) + "ms");
-        System.out.println("fastjson: " + (fastjsonSerializer + fastjsonParser + fastjsonMapParser) + "ms");
-        System.out.println("jackson: " + (jacksonJsonSerializer + jacksonJsonParser + jacksonMapParser) + "ms");
+        System.out.println("firefly: " + (fireflySerializer + fireflyJsonParser + fireflyJsonNodeParser) + "ms");
+        System.out.println("fastjson: " + (fastjsonSerializer + fastjsonParser + fastjsonJsonNodeParser) + "ms");
+        System.out.println("jackson: " + (jacksonJsonSerializer + jacksonJsonParser + jacksonJsonNodeParser) + "ms");
         System.out.println();
-        System.out.println("parser time:");
+        System.out.println("parse json to common json node time:");
+        System.out.println("firefly: " + fireflyJsonNodeParser + "ms");
+        System.out.println("fastjson: " + fastjsonJsonNodeParser + "ms");
+        System.out.println("jackson: " + jacksonJsonNodeParser + "ms");
+        System.out.println();
+        System.out.println("json object bind time:");
         System.out.println("firefly: " + fireflyJsonParser + "ms");
         System.out.println("fastjson: " + fastjsonParser + "ms");
+        System.out.println("jackson: " + jacksonJsonParser + "ms");
+        System.out.println();
+        System.out.println("json serialized time:");
+        System.out.println("firefly: " + fireflySerializer + "ms");
+        System.out.println("fastjson: " + fastjsonSerializer + "ms");
+        System.out.println("jackson: " + jacksonJsonSerializer + "ms");
+        System.out.println();
     }
 
     public static void printResult(String name, String json, long total, int times) {

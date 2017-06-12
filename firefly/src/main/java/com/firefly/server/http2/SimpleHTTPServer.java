@@ -25,7 +25,9 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
 
     public SimpleHTTPServer(SimpleHTTPServerConfiguration configuration) {
         this.configuration = configuration;
-        requestMeter = this.configuration.getTcpConfiguration().getMetrics()
+        requestMeter = this.configuration.getTcpConfiguration()
+                                         .getMetricReporterFactory()
+                                         .getMetricRegistry()
                                          .meter("http2.SimpleHTTPServer.request.count");
     }
 

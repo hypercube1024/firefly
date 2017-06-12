@@ -62,7 +62,7 @@ public class AsynchronousTcpSession implements Session {
         this.eventManager = eventManager;
         this.socketChannel = socketChannel;
         state = State.OPEN;
-        MetricRegistry metrics = config.getMetrics();
+        MetricRegistry metrics = config.getMetricReporterFactory().getMetricRegistry();
         activeCount = metrics.counter("aio.AsynchronousTcpSession.activeCount");
         activeCount.inc();
         duration = metrics.histogram("aio.AsynchronousTcpSession.duration");

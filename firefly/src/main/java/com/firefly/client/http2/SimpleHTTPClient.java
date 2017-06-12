@@ -51,7 +51,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
         this.simpleHTTPClientConfiguration = http2Configuration;
         http2Client = new HTTP2Client(http2Configuration);
-        MetricRegistry metrics = http2Configuration.getTcpConfiguration().getMetrics();
+        MetricRegistry metrics = http2Configuration.getTcpConfiguration()
+                                                   .getMetricReporterFactory()
+                                                   .getMetricRegistry();
         responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
         errorMeter = metrics.meter("http2.SimpleHTTPClient.error.count");
         metrics.register("http2.SimpleHTTPClient.error.ratio.1m", new RatioGauge() {

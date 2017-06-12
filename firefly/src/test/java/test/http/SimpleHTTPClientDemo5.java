@@ -4,8 +4,9 @@ import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.io.BufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
@@ -16,6 +17,8 @@ import java.util.concurrent.TimeUnit;
  * @author Pengtao Qiu
  */
 public class SimpleHTTPClientDemo5 {
+
+    private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
     public static void main5(String[] args) {
         for (int j = 0; j < 1000; j++) {
@@ -40,10 +43,17 @@ public class SimpleHTTPClientDemo5 {
                 $.httpsClient().get("https://login.taobao.com/")
                  .submit()
                  .thenApply(res -> res.getStringBody("GBK"))
-                 .thenAccept(System.out::println)
                  .thenAccept(v -> {
-                     System.out.print("------------------------");
-                     System.out.println("time: " + (System.currentTimeMillis() - start));
+                     System.out.println("----login time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
+                     log.info("----------------> login body -> {}", v);
+                 });
+
+                $.httpsClient().get("https://www.taobao.com/")
+                 .submit()
+                 .thenApply(res -> res.getStringBody("UTF-8"))
+                 .thenAccept(v ->{
+                     System.out.println("----index time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
+                     log.info("----------------> index body -> {}", v);
                  });
             }
             Thread.sleep(5000L);

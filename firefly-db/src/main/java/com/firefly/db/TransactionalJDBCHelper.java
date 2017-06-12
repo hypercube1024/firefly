@@ -1,7 +1,5 @@
 package com.firefly.db;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
 import com.firefly.utils.Assert;
 import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
@@ -26,12 +24,8 @@ public class TransactionalJDBCHelper {
         this(dataSource, null);
     }
 
-    public TransactionalJDBCHelper(DataSource dataSource, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
-        this(dataSource, new MetricRegistry(), reporterFactory);
-    }
-
-    public TransactionalJDBCHelper(DataSource dataSource, MetricRegistry metrics, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
-        this(new JDBCHelper(dataSource, metrics, reporterFactory));
+    public TransactionalJDBCHelper(DataSource dataSource, MetricReporterFactory metricReporterFactory) {
+        this(new JDBCHelper(dataSource, metricReporterFactory));
     }
 
     public TransactionalJDBCHelper(JDBCHelper jdbcHelper) {
