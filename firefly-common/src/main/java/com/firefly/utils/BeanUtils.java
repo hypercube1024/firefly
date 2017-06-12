@@ -23,6 +23,7 @@ abstract public class BeanUtils {
     private static final ConcurrentHashMap<String, Map<String, MethodGenericTypeBind>> genericSetterCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Map<String, FieldGenericTypeBind>> genericPropertyCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Map<String, PropertyAccess>> genericBeanAccessCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Class<?>, Map<String, PropertyAccess>> classBeanAccessCache = new ConcurrentHashMap<>();
 
     public static boolean isArray(Type type) {
         if (type instanceof Class<?>) {
@@ -73,44 +74,59 @@ abstract public class BeanUtils {
         }
     }
 
+    public static Map<String, PropertyAccess> getBeanAccess(Class<?> clazz) {
+        return classBeanAccessCache.computeIfAbsent(clazz, k -> {
+            Map<String, FieldGenericTypeBind> fields = getGenericBeanFields(clazz, null);
+            Map<String, MethodGenericTypeBind> getters = getGenericBeanMethods(clazz, null, ReflectUtils::getGetterMethods, Method::getGenericReturnType);
+            Map<String, MethodGenericTypeBind> setters = getGenericBeanMethods(clazz, null, ReflectUtils::getSetterMethods, method -> method.getGenericParameterTypes()[0]);
+            return createPropertyAccessMap(fields, getters, setters);
+        });
+    }
+
     public static Map<String, PropertyAccess> getBeanAccess(GenericTypeReference genericTypeReference) {
         return genericBeanAccessCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> {
             Map<String, FieldGenericTypeBind> fields = getGenericBeanFields(genericTypeReference);
             Map<String, MethodGenericTypeBind> getters = getGenericBeanGetterMethods(genericTypeReference);
             Map<String, MethodGenericTypeBind> setters = getGenericBeanSetterMethods(genericTypeReference);
-            Set<String> properties = new HashSet<>();
-            properties.addAll(fields.keySet());
-            properties.addAll(getters.keySet());
-            properties.addAll(setters.keySet());
-
-            Map<String, PropertyAccess> map = new HashMap<>();
-            properties.forEach(name -> {
-                PropertyAccessImpl propertyAccess = new PropertyAccessImpl();
-                propertyAccess.setName(name);
-                FieldGenericTypeBind fieldGenericTypeBind = fields.get(name);
-                if (fieldGenericTypeBind != null) {
-                    propertyAccess.setField(fieldGenericTypeBind.getField());
-                    propertyAccess.setFieldProxy(getFieldProxy(fieldGenericTypeBind.getField()));
-                    propertyAccess.setType(fieldGenericTypeBind.getType());
-                }
-
-                MethodGenericTypeBind getter = getters.get(name);
-                if (getter != null) {
-                    propertyAccess.setGetterMethod(getter.getMethod());
-                    propertyAccess.setGetterMethodProxy(getMethodProxy(getter.getMethod()));
-                    propertyAccess.setType(getter.getType());
-                }
-
-                MethodGenericTypeBind setter = setters.get(name);
-                if (setter != null) {
-                    propertyAccess.setSetterMethod(setter.getMethod());
-                    propertyAccess.setSetterMethodProxy(getMethodProxy(setter.getMethod()));
-                    propertyAccess.setType(setter.getType());
-                }
-                map.put(name, propertyAccess);
-            });
-            return map;
+            return createPropertyAccessMap(fields, getters, setters);
         });
+    }
+
+    private static Map<String, PropertyAccess> createPropertyAccessMap(Map<String, FieldGenericTypeBind> fields,
+                                                                       Map<String, MethodGenericTypeBind> getters,
+                                                                       Map<String, MethodGenericTypeBind> setters) {
+        Set<String> properties = new HashSet<>();
+        properties.addAll(fields.keySet());
+        properties.addAll(getters.keySet());
+        properties.addAll(setters.keySet());
+
+        Map<String, PropertyAccess> map = new HashMap<>();
+        properties.forEach(name -> {
+            PropertyAccessImpl propertyAccess = new PropertyAccessImpl();
+            propertyAccess.setName(name);
+            FieldGenericTypeBind fieldGenericTypeBind = fields.get(name);
+            if (fieldGenericTypeBind != null) {
+                propertyAccess.setField(fieldGenericTypeBind.getField());
+                propertyAccess.setFieldProxy(getFieldProxy(fieldGenericTypeBind.getField()));
+                propertyAccess.setType(fieldGenericTypeBind.getType());
+            }
+
+            MethodGenericTypeBind getter = getters.get(name);
+            if (getter != null) {
+                propertyAccess.setGetterMethod(getter.getMethod());
+                propertyAccess.setGetterMethodProxy(getMethodProxy(getter.getMethod()));
+                propertyAccess.setType(getter.getType());
+            }
+
+            MethodGenericTypeBind setter = setters.get(name);
+            if (setter != null) {
+                propertyAccess.setSetterMethod(setter.getMethod());
+                propertyAccess.setSetterMethodProxy(getMethodProxy(setter.getMethod()));
+                propertyAccess.setType(setter.getType());
+            }
+            map.put(name, propertyAccess);
+        });
+        return map;
     }
 
     public static Map<String, MethodGenericTypeBind> getGenericBeanGetterMethods(GenericTypeReference genericTypeReference) {

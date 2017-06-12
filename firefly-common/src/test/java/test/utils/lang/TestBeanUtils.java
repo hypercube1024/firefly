@@ -224,7 +224,7 @@ public class TestBeanUtils {
     }
 
     @Test
-    public void testBeanAccess() {
+    public void testGenericBeanAccess() {
         Store<Map<String, String>, Person<String>> storeInstance = new Store<>();
         Map<String, PropertyAccess> store = getBeanAccess(new GenericTypeReference<Store<Map<String, String>, Person<String>>>() {
         });
@@ -267,5 +267,18 @@ public class TestBeanUtils {
         manager.setValue(storeInstance, person);
         Assert.assertThat(storeInstance.getManager().name, is("Pengtao Qiu"));
         Assert.assertThat(storeInstance.getManager().getInfo().get("keyboard"), is("Keyclick mechanical keyboard"));
+    }
+
+    @Test
+    public void testClassBeanAccess() {
+        Store<String, Person<String>> storeInstance = new Store<>();
+        Map<String, PropertyAccess> store = getBeanAccess(storeInstance.getClass());
+
+        PropertyAccess manager = store.get("manager");
+        Assert.assertThat(manager.getType().getTypeName(), is("R"));
+
+        Map<String, PropertyAccess> foo = getBeanAccess(Foo.class);
+        PropertyAccess f = foo.get("foo");
+        Assert.assertThat(f.getType().getTypeName(), is("java.lang.String"));
     }
 }
