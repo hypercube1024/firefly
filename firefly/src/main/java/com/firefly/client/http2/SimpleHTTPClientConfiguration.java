@@ -8,7 +8,7 @@ import com.firefly.codec.http2.stream.HTTP2Configuration;
 public class SimpleHTTPClientConfiguration extends HTTP2Configuration {
 
     private int poolSize = 64;
-    private long connectTimeout = 10000L;
+    private long connectTimeout = 30 * 1000L;
 
     public int getPoolSize() {
         return poolSize;
