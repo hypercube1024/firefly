@@ -113,13 +113,7 @@ public class ParserStateMachine {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T toObject(JsonReader reader, Class<?> clazz) throws IOException {
-        Parser parser = getParser(clazz, clazz, null);
-        return (T) parser.convertTo(reader, clazz);
-    }
-
-    private static Parser getTimeParser(Class<?> clazz, DateFormat dateFormat) {
+    public static Parser getTimeParser(Class<?> clazz, DateFormat dateFormat) {
         if (clazz == Date.class) {
             if (dateFormat != null) {
                 switch (dateFormat.type()) {
@@ -134,4 +128,11 @@ public class ParserStateMachine {
         }
         throw new JsonException("not support date type -> " + clazz.getTypeName());
     }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T toObject(JsonReader reader, Class<?> clazz, Type type) throws IOException {
+        Parser parser = getParser(clazz, type, null);
+        return (T) parser.convertTo(reader, clazz);
+    }
+
 }
