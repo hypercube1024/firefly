@@ -69,54 +69,21 @@ public class ParserStateMachine {
     public static Parser getParser(Class<?> clazz, Type type, DateFormat dateFormat) {
         lock.lock();
         try {
-            if (dateFormat != null) {
-                if (clazz == Date.class) {
-                    return getTimeParser(clazz, dateFormat);
-                } else if (Collection.class.isAssignableFrom(clazz)) {
-                    // TODO
-                    return null;
-                } else if (clazz.isArray()) {
-                    // TODO
-                    return null;
-                } else if (Map.class.isAssignableFrom(clazz)) {
-                    // TODO
-                    return null;
-                } else {
-                    throw new JsonException(clazz.getTypeName() + " does not support date format annotation");
-                }
+            if (dateFormat != null && clazz == Date.class) {
+                return getTimeParser(clazz, dateFormat);
             } else {
                 Parser ret = PARSER_MAP.get(type.getTypeName());
                 if (ret == null) {
                     if (clazz.isEnum()) {
-                        ret = new EnumParser(clazz);
-                        PARSER_MAP.put(clazz.getTypeName(), ret);
+                        ret = getEnumParser(clazz);
                     } else if (Collection.class.isAssignableFrom(clazz)) {
-                        ParameterizedType parameterizedType = (ParameterizedType) type;
-                        CollectionParser collectionParser = new CollectionParser();
-                        PARSER_MAP.put(type.getTypeName(), collectionParser);
-                        ret = collectionParser;
-                        collectionParser.init(parameterizedType.getActualTypeArguments()[0]);
+                        ret = getCollectionParser(type);
                     } else if (Map.class.isAssignableFrom(clazz)) {
-                        ParameterizedType parameterizedType = (ParameterizedType) type;
-                        MapParser mapParser = new MapParser();
-                        PARSER_MAP.put(type.getTypeName(), mapParser);
-                        ret = mapParser;
-                        mapParser.init(parameterizedType.getActualTypeArguments()[1]);
+                        ret = getMapParser(type);
                     } else if (clazz.isArray()) {
-                        Class<?> elementClass = clazz.getComponentType();
-                        ArrayParser arrayParser = new ArrayParser();
-                        PARSER_MAP.put(type.getTypeName(), arrayParser);
-                        ret = arrayParser;
-                        if (type instanceof GenericArrayType) {
-                            arrayParser.init(elementClass, ((GenericArrayType) type).getGenericComponentType());
-                        } else if (type instanceof Class<?>) {
-                            arrayParser.init(elementClass, elementClass);
-                        }
+                        ret = getArrayParser(clazz, type);
                     } else {
-                        ObjectParser objectParser = new ObjectParser();
-                        PARSER_MAP.put(type.getTypeName(), objectParser);
-                        ret = objectParser;
-                        objectParser.init(clazz, type);
+                        ret = getObjectParser(clazz, type);
                     }
                 }
                 return ret;
@@ -126,7 +93,57 @@ public class ParserStateMachine {
         }
     }
 
-    public static Parser getTimeParser(Class<?> clazz, DateFormat dateFormat) {
+    private static Parser getEnumParser(Class<?> clazz) {
+        Parser ret;
+        ret = new EnumParser(clazz);
+        PARSER_MAP.put(clazz.getTypeName(), ret);
+        return ret;
+    }
+
+    private static Parser getObjectParser(Class<?> clazz, Type type) {
+        Parser ret;
+        ObjectParser objectParser = new ObjectParser();
+        PARSER_MAP.put(type.getTypeName(), objectParser);
+        ret = objectParser;
+        objectParser.init(clazz, type);
+        return ret;
+    }
+
+    private static Parser getArrayParser(Class<?> clazz, Type type) {
+        Parser ret;
+        Class<?> elementClass = clazz.getComponentType();
+        ArrayParser arrayParser = new ArrayParser();
+        PARSER_MAP.put(type.getTypeName(), arrayParser);
+        ret = arrayParser;
+        if (type instanceof GenericArrayType) {
+            arrayParser.init(elementClass, ((GenericArrayType) type).getGenericComponentType());
+        } else if (type instanceof Class<?>) {
+            arrayParser.init(elementClass, elementClass);
+        }
+        return ret;
+    }
+
+    private static Parser getMapParser(Type type) {
+        Parser ret;
+        ParameterizedType parameterizedType = (ParameterizedType) type;
+        MapParser mapParser = new MapParser();
+        PARSER_MAP.put(type.getTypeName(), mapParser);
+        ret = mapParser;
+        mapParser.init(parameterizedType.getActualTypeArguments()[1]);
+        return ret;
+    }
+
+    private static Parser getCollectionParser(Type type) {
+        Parser ret;
+        ParameterizedType parameterizedType = (ParameterizedType) type;
+        CollectionParser collectionParser = new CollectionParser();
+        PARSER_MAP.put(type.getTypeName(), collectionParser);
+        ret = collectionParser;
+        collectionParser.init(parameterizedType.getActualTypeArguments()[0]);
+        return ret;
+    }
+
+    private static Parser getTimeParser(Class<?> clazz, DateFormat dateFormat) {
         if (clazz == Date.class) {
             if (dateFormat == null) {
                 return PARSER_MAP.get(Date.class.getTypeName());

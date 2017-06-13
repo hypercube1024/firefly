@@ -79,46 +79,41 @@ abstract public class SerialStateMachine {
     public static Serializer getSerializer(Class<?> clazz, DateFormat dateFormat) {
         lock.lock();
         try {
-            Serializer ret = SERIAL_MAP.get(clazz);
-            if (dateFormat != null) {
-                if (clazz == Date.class || Date.class.isAssignableFrom(clazz)) {
-                    ret = getTimeSerializer(clazz, dateFormat);
-                } else if (Collection.class.isAssignableFrom(clazz)) {
+            if (dateFormat != null && (clazz == Date.class || Date.class.isAssignableFrom(clazz))) {
+                return getTimeSerializer(clazz, dateFormat);
+            } else {
+                Serializer ret = SERIAL_MAP.get(clazz);
+                if (ret == null) {
+                    if (clazz.isEnum()) {
+                        ret = new EnumSerializer(clazz);
+                    } else if (Map.class.isAssignableFrom(clazz)) {
+                        ret = MAP;
+                    } else if (Collection.class.isAssignableFrom(clazz)) {
+                        ret = COLLECTION;
+                    } else if (clazz.isArray()) {
+                        ret = ARRAY;
+                    } else if (clazz.equals(Object.class)) {
+                        ret = DYNAMIC;
+                    } else {
+                        ret = clazz.isAnnotationPresent(CircularReferenceCheck.class) ? new ObjectSerializer() : new ObjectNoCheckSerializer();
+                    }
 
-                } else if (clazz.isArray()) {
+                    SERIAL_MAP.put(clazz, ret);
 
-                } else if (Map.class.isAssignableFrom(clazz)) {
-
+                    if (ret instanceof ObjectNoCheckSerializer) {
+                        ((ObjectNoCheckSerializer) ret).init(clazz);
+                    } else if (ret instanceof ObjectSerializer) {
+                        ((ObjectSerializer) ret).init(clazz);
+                    }
                 }
-            } else if (ret == null) {
-                if (clazz.isEnum())
-                    ret = new EnumSerializer(clazz);
-                else if (Map.class.isAssignableFrom(clazz))
-                    ret = MAP;
-                else if (Collection.class.isAssignableFrom(clazz))
-                    ret = COLLECTION;
-                else if (clazz.isArray())
-                    ret = ARRAY;
-                else if (clazz.equals(Object.class))
-                    ret = DYNAMIC;
-                else
-                    ret = clazz.isAnnotationPresent(CircularReferenceCheck.class) ? new ObjectSerializer() : new ObjectNoCheckSerializer();
-
-                SERIAL_MAP.put(clazz, ret);
-
-                if (ret instanceof ObjectNoCheckSerializer) {
-                    ((ObjectNoCheckSerializer) ret).init(clazz);
-                } else if (ret instanceof ObjectSerializer) {
-                    ((ObjectSerializer) ret).init(clazz);
-                }
+                return ret;
             }
-            return ret;
         } finally {
             lock.unlock();
         }
     }
 
-    public static Serializer getTimeSerializer(Class<?> clazz, DateFormat dateFormat) {
+    private static Serializer getTimeSerializer(Class<?> clazz, DateFormat dateFormat) {
         if ((clazz == Date.class || Date.class.isAssignableFrom(clazz))) {
             if (dateFormat == null) {
                 return new DateSerializer();
