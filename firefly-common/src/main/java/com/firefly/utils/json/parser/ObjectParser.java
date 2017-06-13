@@ -7,6 +7,7 @@ import com.firefly.utils.json.compiler.DecodeCompiler;
 import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.support.ParserMetaInfo;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,8 +18,8 @@ public class ObjectParser implements Parser {
     private Map<String, ParserMetaInfo> map;
     private boolean useMap;
 
-    public void init(Class<?> clazz) {
-        parserMetaInfos = DecodeCompiler.compile(clazz);
+    public void init(Class<?> clazz, Type type) {
+        parserMetaInfos = DecodeCompiler.compile(clazz, type);
         max = parserMetaInfos.length - 1;
         if (max >= 8) {
             map = new HashMap<>();

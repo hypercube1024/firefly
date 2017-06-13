@@ -10,10 +10,6 @@ import java.util.Collection;
 
 public class CollectionParser extends ComplexTypeParser {
 
-    public CollectionParser(Type elementType) {
-        super(elementType);
-    }
-
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {

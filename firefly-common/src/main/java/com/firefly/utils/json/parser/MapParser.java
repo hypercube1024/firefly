@@ -10,10 +10,6 @@ import java.util.Map;
 
 public class MapParser extends ComplexTypeParser {
 
-    public MapParser(Type elementType) {
-        super(elementType);
-    }
-
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {

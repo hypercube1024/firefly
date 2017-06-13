@@ -16,7 +16,7 @@ public abstract class ComplexTypeParser implements Parser {
 
     protected ParserMetaInfo elementMetaInfo;
 
-    protected ComplexTypeParser(Type elementType) {
+    public void init(Type elementType) {
         if (elementType instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType) elementType;
             Class<?> rawClass = (Class<?>) (pt.getRawType());
@@ -24,38 +24,38 @@ public abstract class ComplexTypeParser implements Parser {
 
             if (Collection.class.isAssignableFrom(rawClass)) {
                 Type[] types2 = pt.getActualTypeArguments();
-                if (types2.length != 1)
+                if (types2.length != 1) {
                     throw new JsonException("collection actual type args length not equals 1");
+                }
 
-                Type eleType = types2[0];
                 elementMetaInfo.setExtractedType(getImplClass(rawClass));
-                elementMetaInfo.setParser(new CollectionParser(eleType));
+                elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, elementType, null));
             } else if (Map.class.isAssignableFrom(rawClass)) {
                 Type[] types2 = pt.getActualTypeArguments();
                 if (types2.length != 2)
                     throw new JsonException("map actual type args length not equals 2");
 
                 Type key = types2[0];
-                if (!((key instanceof Class) && key == String.class))
+                if (!((key instanceof Class) && key == String.class)) {
                     throw new JsonException("map key type not string");
+                }
 
-                Type eleType = types2[1];
                 elementMetaInfo.setExtractedType(getImplClass(rawClass));
-                elementMetaInfo.setParser(new MapParser(eleType));
+                elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, elementType, null));
             } else {
                 elementMetaInfo.setExtractedType(rawClass);
-                elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, null));
+                elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, elementType, null));
             }
-        } else if (elementType instanceof Class) {
+        } else if (elementType instanceof Class<?>) {
             Class<?> eleClass = (Class<?>) elementType;
             elementMetaInfo = new ParserMetaInfo();
             elementMetaInfo.setExtractedType(eleClass);
-            elementMetaInfo.setParser(ParserStateMachine.getParser(eleClass, null));
+            elementMetaInfo.setParser(ParserStateMachine.getParser(eleClass, elementType, null));
         } else if (elementType instanceof GenericArrayType) {
             Class<?> rawClass = extractGenericArrayClass((GenericArrayType) elementType);
             elementMetaInfo = new ParserMetaInfo();
             elementMetaInfo.setExtractedType(rawClass);
-            elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, null));
+            elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, elementType, null));
         } else {
             throw new JsonException("mot support type " + elementType);
         }

@@ -9,6 +9,7 @@ import com.firefly.utils.json.support.ParserMetaInfo;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,13 +21,13 @@ public class ArrayParser implements Parser {
     }
 
     public ArrayParser(Class<?> clazz) {
-        init(clazz);
+        init(clazz, clazz);
     }
 
-    public void init(Class<?> clazz) {
+    public void init(Class<?> clazz, Type type) {
         elementMetaInfo = new ParserMetaInfo();
         elementMetaInfo.setExtractedType(clazz);
-        elementMetaInfo.setParser(ParserStateMachine.getParser(clazz, null));
+        elementMetaInfo.setParser(ParserStateMachine.getParser(clazz, type, null));
     }
 
     @Override
