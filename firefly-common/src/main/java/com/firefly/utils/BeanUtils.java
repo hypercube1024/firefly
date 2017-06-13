@@ -75,21 +75,18 @@ abstract public class BeanUtils {
     }
 
     public static Map<String, PropertyAccess> getBeanAccess(Class<?> clazz) {
-        return classBeanAccessCache.computeIfAbsent(clazz, k -> {
-            Map<String, FieldGenericTypeBind> fields = getGenericBeanFields(clazz, null);
-            Map<String, MethodGenericTypeBind> getters = getGenericBeanMethods(clazz, null, ReflectUtils::getGetterMethods, Method::getGenericReturnType);
-            Map<String, MethodGenericTypeBind> setters = getGenericBeanMethods(clazz, null, ReflectUtils::getSetterMethods, method -> method.getGenericParameterTypes()[0]);
-            return createPropertyAccessMap(fields, getters, setters);
-        });
+        return classBeanAccessCache.computeIfAbsent(clazz, k -> getBeanAccessByType(clazz));
     }
 
     public static Map<String, PropertyAccess> getBeanAccess(GenericTypeReference genericTypeReference) {
-        return genericBeanAccessCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> {
-            Map<String, FieldGenericTypeBind> fields = getGenericBeanFields(genericTypeReference);
-            Map<String, MethodGenericTypeBind> getters = getGenericBeanGetterMethods(genericTypeReference);
-            Map<String, MethodGenericTypeBind> setters = getGenericBeanSetterMethods(genericTypeReference);
-            return createPropertyAccessMap(fields, getters, setters);
-        });
+        return genericBeanAccessCache.computeIfAbsent(genericTypeReference.getType().getTypeName(), k -> getBeanAccessByType(genericTypeReference.getType()));
+    }
+
+    public static Map<String, PropertyAccess> getBeanAccessByType(Type type) {
+        Map<String, FieldGenericTypeBind> fields = getGenericBeanFields(type, null);
+        Map<String, MethodGenericTypeBind> getters = getGenericBeanMethods(type, null, ReflectUtils::getGetterMethods, Method::getGenericReturnType);
+        Map<String, MethodGenericTypeBind> setters = getGenericBeanMethods(type, null, ReflectUtils::getSetterMethods, method -> method.getGenericParameterTypes()[0]);
+        return createPropertyAccessMap(fields, getters, setters);
     }
 
     private static Map<String, PropertyAccess> createPropertyAccessMap(Map<String, FieldGenericTypeBind> fields,
