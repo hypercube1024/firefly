@@ -69,8 +69,21 @@ public class ParserStateMachine {
     public static Parser getParser(Class<?> clazz, Type type, DateFormat dateFormat) {
         lock.lock();
         try {
-            if (dateFormat != null && clazz == Date.class) {
-                return getTimeParser(clazz, dateFormat);
+            if (dateFormat != null) {
+                if (clazz == Date.class) {
+                    return getTimeParser(clazz, dateFormat);
+                } else if (Collection.class.isAssignableFrom(clazz)) {
+                    // TODO
+                    return null;
+                } else if (clazz.isArray()) {
+                    // TODO
+                    return null;
+                } else if (Map.class.isAssignableFrom(clazz)) {
+                    // TODO
+                    return null;
+                } else {
+                    throw new JsonException(clazz.getTypeName() + " does not support date format annotation");
+                }
             } else {
                 Parser ret = PARSER_MAP.get(type.getTypeName());
                 if (ret == null) {
@@ -115,15 +128,13 @@ public class ParserStateMachine {
 
     public static Parser getTimeParser(Class<?> clazz, DateFormat dateFormat) {
         if (clazz == Date.class) {
-            if (dateFormat != null) {
-                switch (dateFormat.type()) {
-                    case DATE_PATTERN_STRING:
-                        return new DateParser(dateFormat.value());
-                    case TIMESTAMP:
-                        return TIMESTAMP;
-                }
-            } else {
+            if (dateFormat == null) {
                 return PARSER_MAP.get(Date.class.getTypeName());
+            } else switch (dateFormat.type()) {
+                case DATE_PATTERN_STRING:
+                    return new DateParser(dateFormat.value());
+                case TIMESTAMP:
+                    return TIMESTAMP;
             }
         }
         throw new JsonException("not support date type -> " + clazz.getTypeName());

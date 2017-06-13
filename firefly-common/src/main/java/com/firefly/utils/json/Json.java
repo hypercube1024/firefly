@@ -11,6 +11,8 @@ import com.firefly.utils.lang.GenericTypeReference;
 
 import java.io.IOException;
 
+import static com.firefly.utils.json.parser.ComplexTypeParser.getImplClass;
+
 public abstract class Json {
 
     public static String toJson(Object obj) {
@@ -34,7 +36,8 @@ public abstract class Json {
     @SuppressWarnings("unchecked")
     public static <T> T toObject(String json, GenericTypeReference<T> typeReference) {
         try (JsonReader reader = new JsonStringReader(json)) {
-            return (T) ParserStateMachine.toObject(reader, BeanUtils.extractClass(typeReference.getType()), typeReference.getType());
+            Class<?> extractedClass = BeanUtils.extractClass(typeReference.getType());
+            return (T) ParserStateMachine.toObject(reader, getImplClass(extractedClass), typeReference.getType());
         } catch (IOException e) {
             throw new CommonRuntimeException(e);
         }

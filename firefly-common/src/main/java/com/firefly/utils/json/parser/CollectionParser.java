@@ -5,7 +5,6 @@ import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.exception.JsonException;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.Collection;
 
 public class CollectionParser extends ComplexTypeParser {
@@ -19,15 +18,16 @@ public class CollectionParser extends ComplexTypeParser {
         if (!reader.isArray())
             throw new JsonException("json string is not array format");
 
-        Collection obj = null;
+        Collection obj;
         try {
             obj = (Collection) clazz.newInstance();
         } catch (Throwable e) {
             throw new CommonRuntimeException(e);
         }
 
-        if (reader.isEmptyArray())
+        if (reader.isEmptyArray()) {
             return obj;
+        }
 
         for (; ; ) {
             obj.add(elementMetaInfo.getValue(reader));

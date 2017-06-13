@@ -4,6 +4,8 @@ import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.json.io.JsonStringWriter;
+import com.firefly.utils.lang.GenericTypeReference;
+import com.firefly.utils.lang.Pair;
 import com.firefly.utils.time.SafeSimpleDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,6 +16,7 @@ import test.utils.json.github.MediaContent;
 import test.utils.json.github.Player;
 import test.utils.json.github.Size;
 
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -565,6 +568,82 @@ public class TestParser {
             this.date2 = date2;
         }
 
+    }
+
+    @Test
+    public void testGenericCollection() {
+        List<User> users = createUserList();
+        String json = Json.toJson(users);
+        System.out.println(json);
+        List<User> userBind = Json.toObject(json, new GenericTypeReference<List<User>>() {
+        });
+        Assert.assertThat(userBind.size(), is(3));
+        for (int i = 0; i < userBind.size(); i++) {
+            Assert.assertThat(userBind.get(i).getName(), is("user" + i));
+        }
+
+        List<List<List<User>>> list = Arrays.asList(Arrays.asList(createUserList()), Arrays.asList(createUserList()));
+        json = Json.toJson(list);
+        System.out.println(json);
+        List<List<List<User>>> listBind = Json.toObject(json, new GenericTypeReference<List<List<List<User>>>>() {
+        });
+        Assert.assertThat(listBind.size(), is(2));
+        for (int i = 0; i < listBind.size(); i++) {
+            Assert.assertThat(listBind.get(i).size(), is(1));
+
+            for (int j = 0; j < listBind.get(i).size(); j++) {
+                Assert.assertThat(listBind.get(i).get(j).size(), is(3));
+
+                for (int k = 0; k < listBind.get(i).get(j).size(); k++) {
+                    Assert.assertThat(listBind.get(i).get(j).get(k).getName(), is("user" + k));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testGenericMap() {
+        Map<String, List<User>> map = new HashMap<>();
+        map.put("list0", createUserList());
+        map.put("list1", createUserList());
+        String json = Json.toJson(map);
+        System.out.println(json);
+
+        Map<String, List<User>> mapBind = Json.toObject(json, new GenericTypeReference<Map<String, List<User>>>() {
+        });
+        for (int i = 0; i < mapBind.size(); i++) {
+            Assert.assertThat(mapBind.get("list" + i).size(), is(3));
+
+            for (int j = 0; j < mapBind.get("list" + i).size(); j++) {
+                Assert.assertThat(mapBind.get("list" + i).get(j).getName(), is("user" + j));
+            }
+        }
+    }
+
+    @Test
+    public void testGenericObject() {
+        Pair<String, User> pair = new Pair<>();
+        pair.first = "test";
+        pair.second = new User();
+        pair.second.setId(10L);
+        pair.second.setName("pair user");
+        String json = Json.toJson(pair);
+        System.out.println(json);
+
+        Pair<String, User> pairBind = Json.toObject(json, new GenericTypeReference<Pair<String, User>>() {
+        });
+        Assert.assertThat(pairBind.first, is("test"));
+        Assert.assertThat(pairBind.second.getId(), is(10L));
+        Assert.assertThat(pairBind.second.getName(), is("pair user"));
+
+        User user = new User();
+        user.setId(20L);
+        user.setName("Pengtao Qiu");
+        json = Json.toJson(user);
+
+        User userBind = Json.toObject(json, new GenericTypeReference<User>() {
+        });
+        Assert.assertThat(userBind.getName(), is("Pengtao Qiu"));
     }
 
 }
