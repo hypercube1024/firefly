@@ -25,7 +25,7 @@ public class ArrayParser implements Parser {
 
     public void init(Class<?> clazz) {
         elementMetaInfo = new ParserMetaInfo();
-        elementMetaInfo.setType(clazz);
+        elementMetaInfo.setExtractedType(clazz);
         elementMetaInfo.setParser(ParserStateMachine.getParser(clazz, null));
     }
 
@@ -38,7 +38,7 @@ public class ArrayParser implements Parser {
             throw new JsonException("json string is not array format");
 
         if (reader.isEmptyArray())
-            return Array.newInstance(elementMetaInfo.getType(), 0);
+            return Array.newInstance(elementMetaInfo.getExtractedType(), 0);
 
         List<Object> obj = new ArrayList<>();
 
@@ -55,7 +55,7 @@ public class ArrayParser implements Parser {
     }
 
     public Object copyOf(List<Object> list) {
-        Object ret = Array.newInstance(elementMetaInfo.getType(), list.size());
+        Object ret = Array.newInstance(elementMetaInfo.getExtractedType(), list.size());
         for (int i = 0; i < list.size(); i++) {
             try {
                 ReflectUtils.arraySet(ret, i, list.get(i));

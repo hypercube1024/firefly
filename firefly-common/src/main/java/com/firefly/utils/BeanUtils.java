@@ -62,7 +62,8 @@ abstract public class BeanUtils {
 
     public static Class<?> extractClass(Type type) {
         if (isArray(type)) {
-            return getComponentType(type);
+            Class<?> componentType = getComponentType(type);
+            return Array.newInstance(componentType, 0).getClass();
         } else {
             if (type instanceof Class<?>) {
                 return (Class<?>) type;

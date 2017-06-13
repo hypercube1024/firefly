@@ -28,7 +28,7 @@ public abstract class ComplexTypeParser implements Parser {
                     throw new JsonException("collection actual type args length not equals 1");
 
                 Type eleType = types2[0];
-                elementMetaInfo.setType(getImplClass(rawClass));
+                elementMetaInfo.setExtractedType(getImplClass(rawClass));
                 elementMetaInfo.setParser(new CollectionParser(eleType));
             } else if (Map.class.isAssignableFrom(rawClass)) {
                 Type[] types2 = pt.getActualTypeArguments();
@@ -40,21 +40,21 @@ public abstract class ComplexTypeParser implements Parser {
                     throw new JsonException("map key type not string");
 
                 Type eleType = types2[1];
-                elementMetaInfo.setType(getImplClass(rawClass));
+                elementMetaInfo.setExtractedType(getImplClass(rawClass));
                 elementMetaInfo.setParser(new MapParser(eleType));
             } else {
-                elementMetaInfo.setType(rawClass);
+                elementMetaInfo.setExtractedType(rawClass);
                 elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, null));
             }
         } else if (elementType instanceof Class) {
             Class<?> eleClass = (Class<?>) elementType;
             elementMetaInfo = new ParserMetaInfo();
-            elementMetaInfo.setType(eleClass);
+            elementMetaInfo.setExtractedType(eleClass);
             elementMetaInfo.setParser(ParserStateMachine.getParser(eleClass, null));
         } else if (elementType instanceof GenericArrayType) {
             Class<?> rawClass = extractGenericArrayClass((GenericArrayType) elementType);
             elementMetaInfo = new ParserMetaInfo();
-            elementMetaInfo.setType(rawClass);
+            elementMetaInfo.setExtractedType(rawClass);
             elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, null));
         } else {
             throw new JsonException("mot support type " + elementType);

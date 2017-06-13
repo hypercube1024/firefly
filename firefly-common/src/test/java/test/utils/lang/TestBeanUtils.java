@@ -216,11 +216,11 @@ public class TestBeanUtils {
 
         GenericTypeReference<Person<String>[]> personRef2 = new GenericTypeReference<Person<String>[]>() {
         };
-        Assert.assertThat(extractClass(personRef2.getType()) == Person.class, is(true));
+        Assert.assertThat(extractClass(personRef2.getType()) == Person[].class, is(true));
 
         GenericTypeReference<Person<String>[][]> personRef3 = new GenericTypeReference<Person<String>[][]>() {
         };
-        Assert.assertThat(extractClass(personRef3.getType()) == Person[].class, is(true));
+        Assert.assertThat(extractClass(personRef3.getType()) == Person[][].class, is(true));
     }
 
     @Test

@@ -1,16 +1,18 @@
 package com.firefly.utils.json.support;
 
+import com.firefly.utils.lang.bean.PropertyAccess;
+
 public class MetaInfo implements Comparable<MetaInfo> {
-	protected PropertyInvoke propertyInvoke;
+	protected PropertyAccess propertyAccess;
 	protected char[] propertyName;
 	protected String propertyNameString;
 
-	public PropertyInvoke getPropertyInvoke() {
-		return propertyInvoke;
+	public PropertyAccess getPropertyAccess() {
+		return propertyAccess;
 	}
 
-	public void setPropertyInvoke(PropertyInvoke propertyInvoke) {
-		this.propertyInvoke = propertyInvoke;
+	public void setPropertyAccess(PropertyAccess propertyAccess) {
+		this.propertyAccess = propertyAccess;
 	}
 
 	public char[] getPropertyName() {
