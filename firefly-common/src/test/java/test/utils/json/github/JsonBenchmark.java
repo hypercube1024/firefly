@@ -57,7 +57,7 @@ public class JsonBenchmark {
         final int times = 1000 * 1000 * 2;
 
         System.out.println("warm up start");
-        benchmark(times / 10);
+        benchmark(times / 2);
         System.out.println("warm up end");
         System.out.println("=======================");
         System.out.println();
