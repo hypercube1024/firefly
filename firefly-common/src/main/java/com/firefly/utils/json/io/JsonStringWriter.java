@@ -274,16 +274,11 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
         buf[count++] = ARRAY_PRE;
         for (int i = 0; ; i++) {
             if (array[i]) {
-                buf[count++] = 't';
-                buf[count++] = 'r';
-                buf[count++] = 'u';
-                buf[count++] = 'e';
+                System.arraycopy(TRUE_VALUE, 0, buf, count, 4);
+                count += 4;
             } else {
-                buf[count++] = 'f';
-                buf[count++] = 'a';
-                buf[count++] = 'l';
-                buf[count++] = 's';
-                buf[count++] = 'e';
+                System.arraycopy(FALSE_VALUE, 0, buf, count, 5);
+                count += 5;
             }
             if (i == iMax) {
                 buf[count++] = ARRAY_SUF;
