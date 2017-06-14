@@ -1,17 +1,31 @@
 package com.firefly.utils.json.io;
 
-import com.firefly.utils.collection.ConcurrentLinkedHashMap;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.lang.ArrayUtils;
 
+import java.lang.ref.SoftReference;
 import java.util.*;
 
 import static com.firefly.utils.json.JsonStringSymbol.*;
 
 public class JsonStringWriter extends AbstractJsonStringWriter {
 
-    private static final int maxCacheSize = Integer.getInteger("com.fireflysource.utils.json.writer.string.cache", 1024);
-    private static final ConcurrentLinkedHashMap<String, char[]> escapedJsonStringCache = new ConcurrentLinkedHashMap<>(true, maxCacheSize);
+    private static final ThreadLocal<SoftReference<LRUHashMap<String, char[]>>> escapedJsonStringCache =
+            ThreadLocal.withInitial(() -> new SoftReference<LRUHashMap<String, char[]>>(new LRUHashMap<>()));
+
+    private static class LRUHashMap<K, V> extends LinkedHashMap<K, V> {
+
+        private static final int maxCacheSize = Integer.getInteger("com.fireflysource.utils.json.writer.string.cache", 128);
+
+        LRUHashMap() {
+            super(maxCacheSize, 0.75f, true);
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            return size() > maxCacheSize;
+        }
+    }
 
     public static Map<Character, char[]> SPECIAL_CHARACTER = new HashMap<Character, char[]>() {{
         for (int i = 0; i <= 0x1f; i++) {
@@ -67,8 +81,39 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
         return chars;
     }
 
+    private static char[] getCachedJsonString(String value) {
+        SoftReference<LRUHashMap<String, char[]>> softReference = escapedJsonStringCache.get();
+        if (softReference != null) {
+            LRUHashMap<String, char[]> map = softReference.get();
+            if (map != null) {
+                return map.get(value);
+            }
+        }
+        return null;
+    }
+
+    private static void putJsonStringToCache(String value, char[] chars) {
+        SoftReference<LRUHashMap<String, char[]>> softReference = escapedJsonStringCache.get();
+        if (softReference == null) {
+            LRUHashMap<String, char[]> map = new LRUHashMap<>();
+            map.put(value, chars);
+            softReference = new SoftReference<>(map);
+            escapedJsonStringCache.set(softReference);
+        } else {
+            LRUHashMap<String, char[]> map = softReference.get();
+            if (map == null) {
+                map = new LRUHashMap<>();
+                map.put(value, chars);
+                softReference = new SoftReference<>(map);
+                escapedJsonStringCache.set(softReference);
+            } else {
+                map.put(value, chars);
+            }
+        }
+    }
+
     public static char[] escapeJsonString(String value) {
-        char[] chars = escapedJsonStringCache.get(value);
+        char[] chars = getCachedJsonString(value);
         if (chars == null) {
             if (hasSpecialChar(value)) {
                 StringBuilder stringBuilder = new StringBuilder();
@@ -82,10 +127,10 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
                     }
                 }
                 chars = stringBuilder.toString().toCharArray();
-                escapedJsonStringCache.put(value, chars);
+                putJsonStringToCache(value, chars);
             } else {
                 chars = value.toCharArray();
-                escapedJsonStringCache.put(value, chars);
+                putJsonStringToCache(value, chars);
             }
         }
         return chars;

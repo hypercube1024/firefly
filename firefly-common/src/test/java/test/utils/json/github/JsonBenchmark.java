@@ -23,7 +23,7 @@ public class JsonBenchmark {
         MediaContent record = new MediaContent();
         Media media = new Media();
         media.setUri(url);
-        media.setTitle("Javaone Keynote");
+        media.setTitle("Javaone Keynote \t Pengtao Qiu \r\n 2017-01-01");
         media.setWidth(640);
         media.setHeight(480);
         media.setFormat("video/mpg4");
@@ -69,6 +69,26 @@ public class JsonBenchmark {
         System.out.println("=======================");
     }
 
+    public static void analyze(final int times) {
+        long fireflySerializer, fireflyJsonParser, fireflyJsonNodeParser;
+        fireflySerializer = fireflyJsonSerializerTest(times);
+        fireflyJsonParser = fireflyJsonParserTest(times);
+        fireflyJsonNodeParser = fireflyJsonParserWithoutObjectbindTest(times);
+
+        System.out.println();
+        System.out.println("total time: ");
+        System.out.println("firefly: " + (fireflySerializer + fireflyJsonParser + fireflyJsonNodeParser) + "ms");
+        System.out.println();
+        System.out.println("parsing (tree node)  time:");
+        System.out.println("firefly: " + fireflyJsonNodeParser + "ms");
+        System.out.println();
+        System.out.println("parsing (object bind) time:");
+        System.out.println("firefly: " + fireflyJsonParser + "ms");
+        System.out.println();
+        System.out.println("serializing time:");
+        System.out.println("firefly: " + fireflySerializer + "ms");
+    }
+
     public static void benchmark(final int times) {
         long fireflySerializer, fireflyJsonParser, fireflyJsonNodeParser;
         fireflySerializer = fireflyJsonSerializerTest(times);
@@ -91,17 +111,17 @@ public class JsonBenchmark {
         System.out.println("fastjson: " + (fastjsonSerializer + fastjsonParser + fastjsonJsonNodeParser) + "ms");
         System.out.println("jackson: " + (jacksonJsonSerializer + jacksonJsonParser + jacksonJsonNodeParser) + "ms");
         System.out.println();
-        System.out.println("parsed(tree node)  time:");
+        System.out.println("parsing (tree node)  time:");
         System.out.println("firefly: " + fireflyJsonNodeParser + "ms");
         System.out.println("fastjson: " + fastjsonJsonNodeParser + "ms");
         System.out.println("jackson: " + jacksonJsonNodeParser + "ms");
         System.out.println();
-        System.out.println("parsed(object bind) time:");
+        System.out.println("parsing (object bind) time:");
         System.out.println("firefly: " + fireflyJsonParser + "ms");
         System.out.println("fastjson: " + fastjsonParser + "ms");
         System.out.println("jackson: " + jacksonJsonParser + "ms");
         System.out.println();
-        System.out.println("serialized time:");
+        System.out.println("serializing time:");
         System.out.println("firefly: " + fireflySerializer + "ms");
         System.out.println("fastjson: " + fastjsonSerializer + "ms");
         System.out.println("jackson: " + jacksonJsonSerializer + "ms");
