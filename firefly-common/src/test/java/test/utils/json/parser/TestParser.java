@@ -41,11 +41,11 @@ public class TestParser {
 
         char ch = (char) 31, ch1 = (char) 1, ch2 = (char) 0, ch3 = (char) 15, ch4 = (char) 16;
 
-        Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch), is("\\u001f"));
-        Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch1), is("\\u0001"));
-        Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch2), is("\\u0000"));
-        Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch3), is("\\u000f"));
-        Assert.assertThat(JsonStringWriter.escapeSpecialCharacter(ch4), is("\\u0010"));
+        Assert.assertThat(String.valueOf(JsonStringWriter.toHexUnicode(ch)), is("\\u001f"));
+        Assert.assertThat(String.valueOf(JsonStringWriter.toHexUnicode(ch1)), is("\\u0001"));
+        Assert.assertThat(String.valueOf(JsonStringWriter.toHexUnicode(ch2)), is("\\u0000"));
+        Assert.assertThat(String.valueOf(JsonStringWriter.toHexUnicode(ch3)), is("\\u000f"));
+        Assert.assertThat(String.valueOf(JsonStringWriter.toHexUnicode(ch4)), is("\\u0010"));
 
         SimpleObj i = new SimpleObj();
         i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com" + String.valueOf(ch1) + String.valueOf(ch2)

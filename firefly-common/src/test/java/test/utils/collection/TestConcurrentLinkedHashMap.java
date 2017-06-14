@@ -36,7 +36,7 @@ public class TestConcurrentLinkedHashMap {
 	@Test
 	public void testMaxEntries() {
 		
-		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<String, String>(true, 33, listener);
+		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<>(true, 33, listener);
 		System.out.println(map.getConcurrencyLevel() + "|" + map.getSegmentMask() + "|" + map.getSegmentShift());
 		for (int i = 0; i < 100; i++) {
 			map.put("" + i, "v" + i);
@@ -48,7 +48,7 @@ public class TestConcurrentLinkedHashMap {
 	
 	@Test
 	public void testLeastRecentlyUsed() {
-		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<String, String>(true, 33, listener);
+		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<>(true, 33, listener);
 		System.out.println(map.getConcurrencyLevel() + "|" + map.getSegmentMask() + "|" + map.getSegmentShift());
 		for (int i = 0; i < 100; i++) {
 			if(i > 75)
@@ -60,12 +60,12 @@ public class TestConcurrentLinkedHashMap {
 	
 	@Test
 	public void testConcurrentLevel() {
-		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<String, String>(true, 200, listener, 200);
+		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<>(true, 200, listener, 200);
 		Assert.assertThat(map.getConcurrencyLevel(), is(256));
 	}
 	
 	public static void main(String[] args) {
-		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<String, String>(true, 33, listener);
+		ConcurrentLinkedHashMap<String, String> map = new ConcurrentLinkedHashMap<>(true, 33, listener);
 		System.out.println(map.getConcurrencyLevel() + "|" + map.getSegmentMask() + "|" + map.getSegmentShift());
 		for (int i = 0; i < 100; i++) {
 			map.put("key" + i, "v" + i);
