@@ -582,7 +582,7 @@ public class TestParser {
             Assert.assertThat(userBind.get(i).getName(), is("user" + i));
         }
 
-        List<List<List<User>>> list = Arrays.asList(Arrays.asList(createUserList()), Arrays.asList(createUserList()));
+        List<List<List<User>>> list = Arrays.asList(Collections.singletonList(createUserList()), Collections.singletonList(createUserList()));
         json = Json.toJson(list);
         System.out.println(json);
         List<List<List<User>>> listBind = Json.toObject(json, new GenericTypeReference<List<List<List<User>>>>() {

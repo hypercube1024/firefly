@@ -15,6 +15,7 @@ import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
+import com.firefly.utils.BeanUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.ThreadUtils;
@@ -24,7 +25,9 @@ import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.GenericTypeReference;
 import com.firefly.utils.lang.URIUtils;
+import com.firefly.utils.lang.bean.PropertyAccess;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -214,8 +217,9 @@ public interface $ {
 
     /**
      * Run a blocking task in a shared thread pool.
+     *
      * @param func the task with a return value
-     * @param <T> Return value type
+     * @param <T>  Return value type
      * @return the task Completable future
      */
     static <T> Promise.Completable<T> async(Func0<T> func) {
@@ -325,6 +329,10 @@ public interface $ {
             return Json.toObject(json, clazz);
         }
 
+        static <T> T parse(String json, GenericTypeReference<T> typeReference) {
+            return Json.toObject(json, typeReference);
+        }
+
         static JsonObject parseToObject(String json) {
             return Json.toJsonObject(json);
         }
@@ -379,6 +387,20 @@ public interface $ {
 
         static UrlEncoded encode() {
             return new UrlEncoded();
+        }
+    }
+
+    interface javabean {
+        static Map<String, PropertyAccess> getBeanAccess(GenericTypeReference genericTypeReference) {
+            return BeanUtils.getBeanAccess(genericTypeReference);
+        }
+
+        static Map<String, PropertyAccess> getBeanAccess(Class<?> clazz) {
+            return BeanUtils.getBeanAccess(clazz);
+        }
+
+        static void copyBean(Object src, Object dest) {
+            BeanUtils.copyBean(src, dest);
         }
     }
 }

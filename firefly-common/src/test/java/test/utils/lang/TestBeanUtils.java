@@ -60,6 +60,51 @@ public class TestBeanUtils {
         }
     }
 
+    public static class Fish {
+        public String name;
+        private double weight;
+        public Integer type;
+
+        public double getWeight() {
+            return weight;
+        }
+
+        public void setWeight(double weight) {
+            this.weight = weight;
+        }
+    }
+
+    public static class Truck {
+        private String name;
+        private int modelNumber;
+        private int type;
+        public Double weight;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getModelNumber() {
+            return modelNumber;
+        }
+
+        public void setModelNumber(int modelNumber) {
+            this.modelNumber = modelNumber;
+        }
+
+        public int getType() {
+            return type;
+        }
+
+        public void setType(int type) {
+            this.type = type;
+        }
+    }
+
     @Test
     public void testFieldType() throws Exception {
         Map<String, FieldGenericTypeBind> map = getGenericBeanFields(
@@ -280,5 +325,23 @@ public class TestBeanUtils {
         Map<String, PropertyAccess> foo = getBeanAccess(Foo.class);
         PropertyAccess f = foo.get("foo");
         Assert.assertThat(f.getType().getTypeName(), is("java.lang.String"));
+    }
+
+    @Test
+    public void testBeanCopy() {
+        Fish fish = new Fish();
+        fish.name = "crucian";
+        fish.setWeight(3.3);
+
+        Truck truck = new Truck();
+        truck.name = "Dong Feng";
+        truck.setType(3);
+        truck.setModelNumber(20);
+
+        copyBean(fish, truck);
+        Assert.assertThat(truck.getName(), is("crucian"));
+        Assert.assertThat(truck.weight, is(3.3));
+        Assert.assertThat(truck.getType(), is(3));
+        Assert.assertThat(truck.getModelNumber(), is(20));
     }
 }

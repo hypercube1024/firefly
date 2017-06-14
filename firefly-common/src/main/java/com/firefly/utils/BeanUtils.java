@@ -75,6 +75,24 @@ abstract public class BeanUtils {
         }
     }
 
+    public static void copyBean(Object src, Object dest) {
+        Map<String, PropertyAccess> srcProperties = getBeanAccess(src.getClass());
+        Map<String, PropertyAccess> destProperties = getBeanAccess(dest.getClass());
+        srcProperties.forEach((name, srcPropertyAccess) -> {
+            PropertyAccess destPropertyAccess = destProperties.get(name);
+            if (destPropertyAccess != null) {
+                try {
+                    Object srcValue = srcPropertyAccess.getValue(src);
+                    if (srcValue != null) {
+                        destPropertyAccess.setValue(dest, srcValue);
+                    }
+                } catch (Throwable t) {
+                    System.err.println("copy java bean exception " + t.getMessage());
+                }
+            }
+        });
+    }
+
     public static Map<String, PropertyAccess> getBeanAccess(Class<?> clazz) {
         return classBeanAccessCache.computeIfAbsent(clazz, k -> getBeanAccessByType(clazz));
     }
