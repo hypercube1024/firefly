@@ -3,63 +3,148 @@ package com.firefly.utils.json.io;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.lang.ArrayUtils;
 
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
+import java.lang.ref.SoftReference;
+import java.util.*;
 
 import static com.firefly.utils.json.JsonStringSymbol.*;
 
 public class JsonStringWriter extends AbstractJsonStringWriter {
 
-    public static Set<Character> SPECIAL_CHARACTER = new HashSet<Character>() {{
+    private static final ThreadLocal<SoftReference<LRUHashMap<String, char[]>>> escapedJsonStringCache =
+            ThreadLocal.withInitial(() -> new SoftReference<LRUHashMap<String, char[]>>(new LRUHashMap<>()));
+
+    private static class LRUHashMap<K, V> extends LinkedHashMap<K, V> {
+
+        private static final int maxCacheSize = Integer.getInteger("com.fireflysource.utils.json.writer.string.cache", 128);
+
+        LRUHashMap() {
+            super(maxCacheSize, 0.75f, true);
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            return size() > maxCacheSize;
+        }
+    }
+
+    public static Map<Character, char[]> SPECIAL_CHARACTER = new HashMap<Character, char[]>() {{
         for (int i = 0; i <= 0x1f; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
         for (int i = 0x7f; i <= 0x9f; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
-        add((char) 0x00ad);
+        put((char) 0x00ad, toHexUnicode((char) 0x00ad));
         for (int i = 0x0600; i <= 0x0604; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
-        add((char) 0x070f);
-        add((char) 0x17b4);
-        add((char) 0x17b5);
+        put((char) 0x070f, toHexUnicode((char) 0x070f));
+        put((char) 0x17b4, toHexUnicode((char) 0x17b4));
+        put((char) 0x17b5, toHexUnicode((char) 0x17b5));
         for (int i = 0x200c; i <= 0x200f; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
         for (int i = 0x2028; i <= 0x202f; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
         for (int i = 0x2060; i <= 0x206f; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
-        add((char) 0xfeff);
+        put((char) 0xfeff, toHexUnicode((char) 0xfeff));
         for (int i = 0xff01; i <= 0xff0f; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
         for (int i = 0xfff0; i <= 0xffff; i++) {
-            add((char) i);
+            put((char) i, toHexUnicode((char) i));
         }
+
+        put('\b', new char[]{'\\', 'b'});
+        put('\n', new char[]{'\\', 'n'});
+        put('\r', new char[]{'\\', 'r'});
+        put('\f', new char[]{'\\', 'f'});
+        put('\\', new char[]{'\\', '\\'});
+        put('/', new char[]{'\\', '/'});
+        put('"', new char[]{'\\', '"'});
+        put('\t', new char[]{'\\', 't'});
     }};
 
-    /**
-     * This method is used to filter some special characters.
-     *
-     * @param ch be tested character
-     * @return A escaped string, if the value equals null, it represents the character dosen't need escape.
-     */
-    public static String escapeSpecialCharacter(char ch) {
-        if (SPECIAL_CHARACTER.contains(ch)) {
-            String hexStr = Integer.toHexString(ch);
-            StringBuilder padding = new StringBuilder();
-            for (int j = hexStr.length(); j < 4; j++) {
-                padding.append("0");
+    public static char[] toHexUnicode(char ch) {
+        char[] chars = new char[6];
+        chars[0] = '\\';
+        chars[1] = 'u';
+        int index = 2;
+        String hexStr = Integer.toHexString(ch);
+        for (int j = hexStr.length(); j < 4; j++) {
+            chars[index++] = '0';
+        }
+        hexStr.getChars(0, hexStr.length(), chars, index);
+        return chars;
+    }
+
+    private static char[] getCachedJsonString(String value) {
+        SoftReference<LRUHashMap<String, char[]>> softReference = escapedJsonStringCache.get();
+        if (softReference != null) {
+            LRUHashMap<String, char[]> map = softReference.get();
+            if (map != null) {
+                return map.get(value);
             }
-            return "\\u" + padding + hexStr;
         }
         return null;
+    }
+
+    private static void putJsonStringToCache(String value, char[] chars) {
+        SoftReference<LRUHashMap<String, char[]>> softReference = escapedJsonStringCache.get();
+        if (softReference == null) {
+            LRUHashMap<String, char[]> map = new LRUHashMap<>();
+            map.put(value, chars);
+            softReference = new SoftReference<>(map);
+            escapedJsonStringCache.set(softReference);
+        } else {
+            LRUHashMap<String, char[]> map = softReference.get();
+            if (map == null) {
+                map = new LRUHashMap<>();
+                map.put(value, chars);
+                softReference = new SoftReference<>(map);
+                escapedJsonStringCache.set(softReference);
+            } else {
+                map.put(value, chars);
+            }
+        }
+    }
+
+    public static char[] escapeJsonString(String value) {
+        char[] chars = getCachedJsonString(value);
+        if (chars == null) {
+            if (hasSpecialChar(value)) {
+                try (JsonStringWriter writer = new JsonStringWriter()) {
+                    for (int i = 0; i < value.length(); i++) {
+                        char ch = value.charAt(i);
+                        char[] s = SPECIAL_CHARACTER.get(ch);
+                        if (s != null) {
+                            writer.write(s);
+                        } else {
+                            writer.write(ch);
+                        }
+                    }
+                    chars = new char[writer.count];
+                    System.arraycopy(writer.buf, 0, chars, 0, writer.count);
+                }
+                putJsonStringToCache(value, chars);
+            } else {
+                chars = value.toCharArray();
+                putJsonStringToCache(value, chars);
+            }
+        }
+        return chars;
+    }
+
+    private static boolean hasSpecialChar(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (SPECIAL_CHARACTER.containsKey(value.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Deque<Object> deque = new LinkedList<>();
@@ -79,73 +164,23 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
         deque.removeFirst();
     }
 
-    private void write(char ch, boolean needExpand) {
-        if (needExpand)
-            write(ch);
-        else
-            buf[count++] = ch;
-    }
-
-    private void writeJsonStringValue(String value) {
-        boolean needExpand = false;
+    private void writeCharsWithQuote(char[] chars) {
         buf[count++] = QUOTE;
-        for (int i = 0; i < value.length(); i++) {
-            char ch = value.charAt(i);
-            switch (ch) {
-                case '\b':
-                    write('\\', needExpand);
-                    write('b', needExpand);
-                    break;
-                case '\n':
-                    write('\\', needExpand);
-                    write('n', needExpand);
-                    break;
-                case '\r':
-                    write('\\', needExpand);
-                    write('r', needExpand);
-                    break;
-                case '\f':
-                    write('\\', needExpand);
-                    write('f', needExpand);
-                    break;
-                case '\\':
-                    write('\\', needExpand);
-                    write('\\', needExpand);
-                    break;
-                case '/':
-                    write('\\', needExpand);
-                    write('/', needExpand);
-                    break;
-                case '"':
-                    write('\\', needExpand);
-                    write('"', needExpand);
-                    break;
-                case '\t':
-                    write('\\', needExpand);
-                    write('t', needExpand);
-                    break;
-
-                default:
-                    String hexStr = escapeSpecialCharacter(ch);
-                    if (hexStr == null) {
-                        write(ch, needExpand);
-                    } else {
-                        needExpand = true;
-                        write(hexStr);
-                    }
-                    break;
-            }
-        }
-        write(QUOTE, needExpand);
+        int len = chars.length;
+        int newcount = count + len;
+        System.arraycopy(chars, 0, buf, count, len);
+        count = newcount;
+        buf[count++] = QUOTE;
     }
 
     @Override
     public void writeStringWithQuote(String value) {
-        int newCount = count + value.length() * 2 + 2;
+        char[] escapedValue = escapeJsonString(value);
+        int newCount = count + escapedValue.length + 2;
         if (newCount > buf.length) {
             expandCapacity(newCount);
         }
-        writeJsonStringValue(value);
+        writeCharsWithQuote(escapedValue);
     }
 
     @Override
@@ -157,10 +192,14 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
             return;
         }
 
+        char[][] escapedChars = new char[array.length][];
         int iMax = arrayLen - 1;
         int totalSize = 2;
-        for (String str : array) {
-            totalSize += str.length() * 2 + 2 + 1;
+        for (int i = 0; i < array.length; i++) {
+            String str = array[i];
+            char[] escapedValue = escapeJsonString(str);
+            escapedChars[i] = escapedValue;
+            totalSize += escapedValue.length + 2 + 1;
         }
 
         int newCount = count + totalSize;
@@ -170,7 +209,7 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 
         buf[count++] = ARRAY_PRE;
         for (int i = 0; ; ++i) {
-            writeJsonStringValue(array[i]);
+            writeCharsWithQuote(escapedChars[i]);
             if (i == iMax) {
                 buf[count++] = ARRAY_SUF;
                 return;
@@ -283,16 +322,11 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
         buf[count++] = ARRAY_PRE;
         for (int i = 0; ; i++) {
             if (array[i]) {
-                buf[count++] = 't';
-                buf[count++] = 'r';
-                buf[count++] = 'u';
-                buf[count++] = 'e';
+                System.arraycopy(TRUE_VALUE, 0, buf, count, 4);
+                count += 4;
             } else {
-                buf[count++] = 'f';
-                buf[count++] = 'a';
-                buf[count++] = 'l';
-                buf[count++] = 's';
-                buf[count++] = 'e';
+                System.arraycopy(FALSE_VALUE, 0, buf, count, 5);
+                count += 5;
             }
             if (i == iMax) {
                 buf[count++] = ARRAY_SUF;

@@ -1,6 +1,7 @@
 package com.firefly.utils.concurrent;
 
 import com.firefly.utils.function.Action0;
+import com.firefly.utils.function.Func0;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -83,6 +84,12 @@ public class Locker {
     public void lock(Action0 action0) {
         try (Lock lock = lock()) {
             action0.call();
+        }
+    }
+
+    public <T> T lock(Func0<T> func0) {
+        try (Lock lock = lock()) {
+            return func0.call();
         }
     }
 }

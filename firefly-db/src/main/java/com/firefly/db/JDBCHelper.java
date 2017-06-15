@@ -2,15 +2,14 @@ package com.firefly.db;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
 import com.codahale.metrics.Timer;
 import com.firefly.db.DefaultBeanProcessor.Mapper;
 import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.ServiceUtils;
 import com.firefly.utils.classproxy.JavassistClassProxyFactory;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.apache.commons.dbutils.BasicRowProcessor;
@@ -36,47 +35,39 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     private final static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private final MetricRegistry metrics;
-    private final ScheduledReporter reporter;
     private final DataSource dataSource;
     private final QueryRunner runner;
     private final DefaultBeanProcessor defaultBeanProcessor;
     private final ExecutorService executorService;
     private final boolean monitorEnable;
+    private final MetricReporterFactory metricReporterFactory;
 
     public JDBCHelper(DataSource dataSource) {
         this(dataSource, null);
     }
 
-    public JDBCHelper(DataSource dataSource, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
-        this(dataSource, new MetricRegistry(), reporterFactory);
+    public JDBCHelper(DataSource dataSource, MetricReporterFactory metricReporterFactory) {
+        this(dataSource,
+                new QueryRunner(dataSource),
+                new DefaultBeanProcessor(),
+                null,
+                true,
+                metricReporterFactory);
     }
 
-    public JDBCHelper(DataSource dataSource, MetricRegistry metrics, Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
-        this(dataSource, new QueryRunner(dataSource), new DefaultBeanProcessor(),
-                null, true, metrics, reporterFactory);
-    }
-
-    public JDBCHelper(DataSource dataSource, QueryRunner runner,
+    public JDBCHelper(DataSource dataSource,
+                      QueryRunner runner,
                       DefaultBeanProcessor defaultBeanProcessor,
                       ExecutorService executorService,
                       boolean monitorEnable,
-                      MetricRegistry metrics,
-                      Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
-        if (metrics != null) {
-            this.metrics = metrics;
+                      MetricReporterFactory metricReporterFactory) {
+
+        if (metricReporterFactory != null) {
+            this.metricReporterFactory = metricReporterFactory;
         } else {
-            this.metrics = new MetricRegistry();
+            this.metricReporterFactory = ServiceUtils.loadService(MetricReporterFactory.class, new DefaultMetricReporterFactory());
         }
-        if (reporterFactory != null) {
-            this.reporter = reporterFactory.call(this.metrics);
-        } else {
-            this.reporter = Slf4jReporter.forRegistry(this.metrics)
-                                         .outputTo(LoggerFactory.getLogger("firefly-monitor"))
-                                         .convertRatesTo(TimeUnit.SECONDS)
-                                         .convertDurationsTo(TimeUnit.MILLISECONDS)
-                                         .build();
-        }
+
         this.dataSource = dataSource;
         if (monitorEnable) {
             this.runner = getMonitorQueryRunner(runner);
@@ -91,7 +82,7 @@ public class JDBCHelper extends AbstractLifeCycle {
             this.executorService = new ThreadPoolExecutor(16, 256,
                     30L, TimeUnit.SECONDS,
                     new LinkedTransferQueue<>(),
-                    r -> new Thread(r, "firefly JDBC helper pool"));
+                    r -> new Thread(r, "firefly-JDBC-helper"));
         }
         start();
     }
@@ -108,7 +99,7 @@ public class JDBCHelper extends AbstractLifeCycle {
                                 }
                             }
                         }
-                        Timer timer = metrics.timer("db.JDBCHelper.sql:```" + sql + "```");
+                        Timer timer = getMetrics().timer("db.JDBCHelper.sql:```" + sql + "```");
                         Timer.Context context = timer.time();
                         Object ret;
                         try {
@@ -129,11 +120,11 @@ public class JDBCHelper extends AbstractLifeCycle {
     }
 
     public MetricRegistry getMetrics() {
-        return metrics;
+        return metricReporterFactory.getMetricRegistry();
     }
 
     public ScheduledReporter getReporter() {
-        return reporter;
+        return metricReporterFactory.getScheduledReporter();
     }
 
     public DataSource getDataSource() {
@@ -468,15 +459,27 @@ public class JDBCHelper extends AbstractLifeCycle {
     @Override
     protected void init() {
         if (monitorEnable) {
-            reporter.start(10, TimeUnit.SECONDS);
+            try {
+                getReporter().start(10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.error("start metric reporter exception -> {}", e.getMessage());
+            }
         }
     }
 
     @Override
     protected void destroy() {
-        executorService.shutdown();
+        try {
+            executorService.shutdown();
+        } catch (Exception e) {
+            log.error("jdbc helper thread pool shutdown exception -> {}", e.getMessage());
+        }
         if (monitorEnable) {
-            reporter.stop();
+            try {
+                getReporter().stop();
+            } catch (Exception e) {
+                log.error("stop metric reporter exception -> {}", e.getMessage());
+            }
         }
     }
 }

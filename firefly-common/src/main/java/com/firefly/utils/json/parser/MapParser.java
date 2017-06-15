@@ -5,14 +5,9 @@ import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.exception.JsonException;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.Map;
 
 public class MapParser extends ComplexTypeParser {
-
-    public MapParser(Type elementType) {
-        super(elementType);
-    }
 
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -23,15 +18,16 @@ public class MapParser extends ComplexTypeParser {
         if (!reader.isObject())
             throw new JsonException("json string is not object format");
 
-        Map obj = null;
+        Map obj;
         try {
             obj = (Map) clazz.newInstance();
         } catch (Throwable e) {
             throw new CommonRuntimeException(e);
         }
 
-        if (reader.isEmptyObject())
+        if (reader.isEmptyObject()) {
             return obj;
+        }
 
         for (; ; ) {
             String key = reader.readString();

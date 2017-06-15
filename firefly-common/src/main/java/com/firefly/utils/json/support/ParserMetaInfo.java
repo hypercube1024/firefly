@@ -5,16 +5,17 @@ import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 
 public class ParserMetaInfo extends MetaInfo {
 
-    private Class<?> type;
+    private Class<?> extractedType;
     private Parser parser;
 
     public void invoke(Object obj, JsonReader reader) {
         try {
-            propertyInvoke.set(obj, getValue(reader));
+            propertyAccess.setValue(obj, getValue(reader));
         } catch (Throwable e) {
             throw new CommonRuntimeException(e);
         }
@@ -26,19 +27,19 @@ public class ParserMetaInfo extends MetaInfo {
     }
 
     public Object getValue(JsonReader reader) throws IOException {
-        return parser.convertTo(reader, type);
+        return parser.convertTo(reader, extractedType);
     }
 
     public boolean equals(char[] field) {
         return Arrays.equals(propertyName, field);
     }
 
-    public Class<?> getType() {
-        return type;
+    public Class<?> getExtractedType() {
+        return extractedType;
     }
 
-    public void setType(Class<?> type) {
-        this.type = type;
+    public void setExtractedType(Class<?> extractedType) {
+        this.extractedType = extractedType;
     }
 
     public Parser getParser() {

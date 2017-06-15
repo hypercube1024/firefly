@@ -46,7 +46,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
         @Override
         public void earlyEOF() {
-            HTTP1ClientResponseHandler h = writing.get();
+            HTTP1ClientResponseHandler h = writing.getAndSet(null);
             if (h != null) {
                 h.earlyEOF();
             } else {
@@ -93,7 +93,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
         @Override
         public void badMessage(int status, String reason) {
-            HTTP1ClientResponseHandler h = writing.get();
+            HTTP1ClientResponseHandler h = writing.getAndSet(null);
             if (h != null) {
                 h.badMessage(status, reason);
             } else {

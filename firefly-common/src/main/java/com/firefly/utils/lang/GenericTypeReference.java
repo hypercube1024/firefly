@@ -1,7 +1,5 @@
 package com.firefly.utils.lang;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
@@ -28,7 +26,6 @@ import java.lang.reflect.Type;
 public abstract class GenericTypeReference<T> implements Comparable<GenericTypeReference<T>> {
 
     protected final Type type;
-    private volatile Constructor<?> constructor;
 
     protected GenericTypeReference() {
         Type superClass = getClass().getGenericSuperclass();
@@ -48,25 +45,6 @@ public abstract class GenericTypeReference<T> implements Comparable<GenericTypeR
 
     public Type getType() {
         return type;
-    }
-
-    /**
-     * Instantiates a new instance of {@code T} using the default, no-arg
-     * constructor.
-     */
-    @SuppressWarnings("unchecked")
-    public T newInstance() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        if (constructor == null) {
-            constructor = getRawType().getConstructor();
-        }
-        return (T) constructor.newInstance();
-    }
-
-    @SuppressWarnings("unchecked")
-    public Class<T> getRawType() {
-        return type instanceof Class<?>
-                ? (Class<T>) type
-                : (Class<T>) ((ParameterizedType) type).getRawType();
     }
 
     /**

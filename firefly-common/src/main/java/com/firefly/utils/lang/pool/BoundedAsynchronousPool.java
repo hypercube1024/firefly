@@ -86,7 +86,6 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         } else {
             // the queue is empty
             int availableSize = maxSize - getCreatedObjectSize();
-//            System.out.println("available object size -> " + availableSize);
             if (availableSize > 0) {
                 return createObject();
             } else {
@@ -179,10 +178,14 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     @Override
     protected void destroy() {
-        PooledObject<T> t;
-        while ((t = queue.poll()) != null) {
-            t.prepareTake();
-            destroyObject(t);
+        try {
+            PooledObject<T> t;
+            while ((t = queue.poll()) != null) {
+                t.prepareTake();
+                destroyObject(t);
+            }
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
         }
         if (service != null) {
             service.shutdown();

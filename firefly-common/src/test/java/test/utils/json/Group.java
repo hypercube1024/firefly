@@ -6,7 +6,7 @@ import java.util.List;
 public class Group {
 	private Long id;
 	private String name;
-	private List<User> users = new ArrayList<User>();
+	private List<User> users = new ArrayList<>();
 	private String[] types;
 
 	public String[] getTypes() {

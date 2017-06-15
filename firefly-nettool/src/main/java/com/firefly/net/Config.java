@@ -1,20 +1,16 @@
 package com.firefly.net;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
-import com.firefly.utils.function.Func1;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
+import com.firefly.utils.ServiceUtils;
 
 public class Config {
 
-    private int timeout = 30 * 1000;
+    public static final int defaultTimeout = Integer.getInteger("com.firefly.net.defaultTimeout", 30 * 1000);
+    public static final int defaultPoolSize = Integer.getInteger("com.firefly.net.defaultPoolSize", Runtime.getRuntime().availableProcessors() * 2);
 
-    // asynchronous I/O thread pool settings
-    private int asynchronousCorePoolSize = Runtime.getRuntime().availableProcessors();
-    private int asynchronousPoolKeepAliveTime = 15 * 1000;
+    private int timeout = defaultTimeout;
+
+    // asynchronous I/O fork join pool size
+    private int asynchronousCorePoolSize = defaultPoolSize;
 
     private String serverName = "firefly-server";
     private String clientName = "firefly-client";
@@ -24,12 +20,7 @@ public class Config {
     private Handler handler;
 
     private boolean monitorEnable = true;
-    private MetricRegistry metrics = new MetricRegistry();
-    private Func1<MetricRegistry, ScheduledReporter> reporterFactory = m -> Slf4jReporter.forRegistry(m)
-                                                                                         .outputTo(LoggerFactory.getLogger("firefly-monitor"))
-                                                                                         .convertRatesTo(TimeUnit.SECONDS)
-                                                                                         .convertDurationsTo(TimeUnit.MILLISECONDS)
-                                                                                         .build();
+    private MetricReporterFactory metricReporterFactory = ServiceUtils.loadService(MetricReporterFactory.class, new DefaultMetricReporterFactory());
 
     /**
      * The max I/O idle time, the default value is 10 seconds.
@@ -98,28 +89,12 @@ public class Config {
         this.asynchronousCorePoolSize = asynchronousCorePoolSize;
     }
 
-    public int getAsynchronousPoolKeepAliveTime() {
-        return asynchronousPoolKeepAliveTime;
+    public MetricReporterFactory getMetricReporterFactory() {
+        return metricReporterFactory;
     }
 
-    public void setAsynchronousPoolKeepAliveTime(int asynchronousPoolKeepAliveTime) {
-        this.asynchronousPoolKeepAliveTime = asynchronousPoolKeepAliveTime;
-    }
-
-    public MetricRegistry getMetrics() {
-        return metrics;
-    }
-
-    public void setMetrics(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    public Func1<MetricRegistry, ScheduledReporter> getReporterFactory() {
-        return reporterFactory;
-    }
-
-    public void setReporterFactory(Func1<MetricRegistry, ScheduledReporter> reporterFactory) {
-        this.reporterFactory = reporterFactory;
+    public void setMetricReporterFactory(MetricReporterFactory metricReporterFactory) {
+        this.metricReporterFactory = metricReporterFactory;
     }
 
     public boolean isMonitorEnable() {
@@ -132,10 +107,9 @@ public class Config {
 
     @Override
     public String toString() {
-        return "Config{" +
+        return "Firefly asynchronous TCP configuration {" +
                 "timeout=" + timeout +
                 ", asynchronousCorePoolSize=" + asynchronousCorePoolSize +
-                ", asynchronousPoolKeepAliveTime=" + asynchronousPoolKeepAliveTime +
                 '}';
     }
 }

@@ -51,7 +51,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
         this.simpleHTTPClientConfiguration = http2Configuration;
         http2Client = new HTTP2Client(http2Configuration);
-        MetricRegistry metrics = http2Configuration.getTcpConfiguration().getMetrics();
+        MetricRegistry metrics = http2Configuration.getTcpConfiguration()
+                                                   .getMetricReporterFactory()
+                                                   .getMetricRegistry();
         responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
         errorMeter = metrics.meter("http2.SimpleHTTPClient.error.count");
         metrics.register("http2.SimpleHTTPClient.error.ratio.1m", new RatioGauge() {
@@ -431,56 +433,65 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         }
                         return false;
                     }).messageComplete((req, resp, outputStream, conn) -> {
-                        pool.release(o);
-                        log.debug("complete request of the connection {} , released: {}",
-                                connection.getSessionId(),
-                                o.isReleased());
-                        if (r.messageComplete != null) {
-                            r.messageComplete.call(resp);
+                        try {
+                            if (r.messageComplete != null) {
+                                r.messageComplete.call(resp);
+                            }
+                            if (r.future != null) {
+                                r.future.succeeded(r.simpleResponse);
+                            }
+                            resTimerCtx.stop();
+                            return true;
+                        } finally {
+                            pool.release(o);
+                            log.debug("complete request of the connection {} , released: {}",
+                                    connection.getSessionId(),
+                                    o.isReleased());
                         }
-                        if (r.future != null) {
-                            r.future.succeeded(r.simpleResponse);
-                        }
-                        resTimerCtx.stop();
-                        return true;
                     }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
-                        pool.release(o);
-                        log.debug("bad message of the connection {} , released: {}",
-                                connection.getSessionId(),
-                                o.isReleased());
-                        if (r.badMessage != null) {
-                            r.badMessage.call(errCode, reason, resp);
-                        }
-                        if (r.future != null) {
-                            if (r.simpleResponse == null) {
-                                r.simpleResponse = new SimpleResponse(resp);
+                        try {
+                            if (r.badMessage != null) {
+                                r.badMessage.call(errCode, reason, resp);
                             }
-                            r.future.failed(new BadMessageException(errCode, reason));
+                            if (r.future != null) {
+                                if (r.simpleResponse == null) {
+                                    r.simpleResponse = new SimpleResponse(resp);
+                                }
+                                r.future.failed(new BadMessageException(errCode, reason));
+                            }
+                            if (r.badMessage == null && r.future == null) {
+                                IO.close(o.getObject());
+                            }
+                            errorMeter.mark();
+                            resTimerCtx.stop();
+                        } finally {
+                            pool.release(o);
+                            log.debug("bad message of the connection {} , released: {}",
+                                    connection.getSessionId(),
+                                    o.isReleased());
                         }
-                        if (r.badMessage == null && r.future == null) {
-                            IO.close(o.getObject());
-                        }
-                        errorMeter.mark();
-                        resTimerCtx.stop();
                     }).earlyEOF((req, resp, outputStream, conn) -> {
-                        pool.release(o);
-                        log.debug("eafly EOF of the connection {} , released: {}",
-                                connection.getSessionId(),
-                                o.isReleased());
-                        if (r.earlyEof != null) {
-                            r.earlyEof.call(resp);
-                        }
-                        if (r.future != null) {
-                            if (r.simpleResponse == null) {
-                                r.simpleResponse = new SimpleResponse(resp);
+                        try {
+                            if (r.earlyEof != null) {
+                                r.earlyEof.call(resp);
                             }
-                            r.future.failed(new EofException("early eof"));
+                            if (r.future != null) {
+                                if (r.simpleResponse == null) {
+                                    r.simpleResponse = new SimpleResponse(resp);
+                                }
+                                r.future.failed(new EofException("early eof"));
+                            }
+                            if (r.earlyEof == null && r.future == null) {
+                                IO.close(o.getObject());
+                            }
+                            errorMeter.mark();
+                            resTimerCtx.stop();
+                        } finally {
+                            pool.release(o);
+                            log.debug("eafly EOF of the connection {} , released: {}",
+                                    connection.getSessionId(),
+                                    o.isReleased());
                         }
-                        if (r.earlyEof == null && r.future == null) {
-                            IO.close(o.getObject());
-                        }
-                        errorMeter.mark();
-                        resTimerCtx.stop();
                     });
 
             if (r.requestBody != null && !r.requestBody.isEmpty()) {

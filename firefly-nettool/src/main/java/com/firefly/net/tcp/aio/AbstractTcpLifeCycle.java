@@ -41,19 +41,21 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
 
         try {
             group = AsynchronousChannelGroup.withThreadPool(new ForkJoinPool
-                    (config.getAsynchronousCorePoolSize(),
-                            pool -> {
-                                ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
-                                worker.setName(getThreadName() + worker.getPoolIndex());
-                                return worker;
-                            },
-                            null, true));
+                    (config.getAsynchronousCorePoolSize(), pool -> {
+                        ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+                        worker.setName(getThreadName() + worker.getPoolIndex());
+                        return worker;
+                    }, null, true));
             log.info(config.toString());
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);
             if (config.isMonitorEnable()) {
-                reporter = config.getReporterFactory().call(config.getMetrics());
-                reporter.start(10, TimeUnit.SECONDS);
+                reporter = config.getMetricReporterFactory().getScheduledReporter();
+                try {
+                    reporter.start(10, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    log.error("start metric reporter exception -> {}", e.getMessage());
+                }
             }
         } catch (IOException e) {
             log.error("initialization server channel group error", e);
@@ -63,10 +65,18 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
     @Override
     protected void destroy() {
         if (group != null) {
-            group.shutdown();
+            try {
+                group.shutdown();
+            } catch (Exception e) {
+                log.error("aio tcp thread group shutdown exception -> {}", e.getMessage());
+            }
         }
         if (config.isMonitorEnable()) {
-            reporter.stop();
+            try {
+                reporter.stop();
+            } catch (Exception e) {
+                log.error("stop metric reporter exception -> {}", e.getMessage());
+            }
         }
         ILoggerFactory iLoggerFactory = LoggerFactory.getILoggerFactory();
         try {
