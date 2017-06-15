@@ -4,11 +4,13 @@ import com.firefly.utils.ServiceUtils;
 
 public class Config {
 
-    private int timeout = 30 * 1000;
+    public static final int defaultTimeout = Integer.getInteger("com.firefly.net.defaultTimeout", 30 * 1000);
+    public static final int defaultPoolSize = Integer.getInteger("com.firefly.net.defaultPoolSize", Runtime.getRuntime().availableProcessors() * 2);
 
-    // asynchronous I/O thread pool settings
-    private int asynchronousCorePoolSize = Runtime.getRuntime().availableProcessors();
-    private int asynchronousPoolKeepAliveTime = 15 * 1000;
+    private int timeout = defaultTimeout;
+
+    // asynchronous I/O fork join pool size
+    private int asynchronousCorePoolSize = defaultPoolSize;
 
     private String serverName = "firefly-server";
     private String clientName = "firefly-client";
@@ -87,14 +89,6 @@ public class Config {
         this.asynchronousCorePoolSize = asynchronousCorePoolSize;
     }
 
-    public int getAsynchronousPoolKeepAliveTime() {
-        return asynchronousPoolKeepAliveTime;
-    }
-
-    public void setAsynchronousPoolKeepAliveTime(int asynchronousPoolKeepAliveTime) {
-        this.asynchronousPoolKeepAliveTime = asynchronousPoolKeepAliveTime;
-    }
-
     public MetricReporterFactory getMetricReporterFactory() {
         return metricReporterFactory;
     }
@@ -113,10 +107,9 @@ public class Config {
 
     @Override
     public String toString() {
-        return "Config{" +
+        return "Firefly asynchronous TCP configuration {" +
                 "timeout=" + timeout +
                 ", asynchronousCorePoolSize=" + asynchronousCorePoolSize +
-                ", asynchronousPoolKeepAliveTime=" + asynchronousPoolKeepAliveTime +
                 '}';
     }
 }

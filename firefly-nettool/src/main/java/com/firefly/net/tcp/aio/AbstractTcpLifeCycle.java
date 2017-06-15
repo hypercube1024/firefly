@@ -41,13 +41,11 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
 
         try {
             group = AsynchronousChannelGroup.withThreadPool(new ForkJoinPool
-                    (config.getAsynchronousCorePoolSize(),
-                            pool -> {
-                                ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
-                                worker.setName(getThreadName() + worker.getPoolIndex());
-                                return worker;
-                            },
-                            null, true));
+                    (config.getAsynchronousCorePoolSize(), pool -> {
+                        ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+                        worker.setName(getThreadName() + worker.getPoolIndex());
+                        return worker;
+                    }, null, true));
             log.info(config.toString());
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);
