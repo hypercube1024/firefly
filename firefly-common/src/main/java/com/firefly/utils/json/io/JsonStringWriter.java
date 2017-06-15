@@ -116,17 +116,19 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
         char[] chars = getCachedJsonString(value);
         if (chars == null) {
             if (hasSpecialChar(value)) {
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int i = 0; i < value.length(); i++) {
-                    char ch = value.charAt(i);
-                    char[] s = SPECIAL_CHARACTER.get(ch);
-                    if (s != null) {
-                        stringBuilder.append(s);
-                    } else {
-                        stringBuilder.append(ch);
+                try (JsonStringWriter writer = new JsonStringWriter()) {
+                    for (int i = 0; i < value.length(); i++) {
+                        char ch = value.charAt(i);
+                        char[] s = SPECIAL_CHARACTER.get(ch);
+                        if (s != null) {
+                            writer.write(s);
+                        } else {
+                            writer.write(ch);
+                        }
                     }
+                    chars = new char[writer.count];
+                    System.arraycopy(writer.buf, 0, chars, 0, writer.count);
                 }
-                chars = stringBuilder.toString().toCharArray();
                 putJsonStringToCache(value, chars);
             } else {
                 chars = value.toCharArray();
@@ -190,12 +192,13 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
             return;
         }
 
-        List<char[]> escapedChars = new ArrayList<>(array.length);
+        char[][] escapedChars = new char[array.length][];
         int iMax = arrayLen - 1;
         int totalSize = 2;
-        for (String str : array) {
+        for (int i = 0; i < array.length; i++) {
+            String str = array[i];
             char[] escapedValue = escapeJsonString(str);
-            escapedChars.add(escapedValue);
+            escapedChars[i] = escapedValue;
             totalSize += escapedValue.length + 2 + 1;
         }
 
@@ -206,7 +209,7 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 
         buf[count++] = ARRAY_PRE;
         for (int i = 0; ; ++i) {
-            writeCharsWithQuote(escapedChars.get(i));
+            writeCharsWithQuote(escapedChars[i]);
             if (i == iMax) {
                 buf[count++] = ARRAY_SUF;
                 return;

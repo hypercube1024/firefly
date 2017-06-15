@@ -165,19 +165,20 @@ public class JsonStringReader extends JsonReader {
     public boolean readBoolean() {
         boolean ret = false;
 
-        if (isNull())
-            return ret;
+        if (isNull()) {
+            return false;
+        }
 
         char ch = readAndSkipBlank();
         boolean isString = (ch == '"');
-        if (isString)
+        if (isString) {
             ch = readAndSkipBlank();
-
-        if (ch == 't' && 'r' == read() && 'u' == read() && 'e' == read())
+        }
+        if (ch == 't' && 'r' == read() && 'u' == read() && 'e' == read()) {
             ret = true;
-        else if (ch == 'f' && 'a' == read() && 'l' == read() && 's' == read() && 'e' == read())
+        } else if (ch == 'f' && 'a' == read() && 'l' == read() && 's' == read() && 'e' == read()) {
             ret = false;
-
+        }
         if (isString) {
             ch = readAndSkipBlank();
             if (ch != '"')
@@ -189,58 +190,20 @@ public class JsonStringReader extends JsonReader {
 
     @Override
     public int readInt() {
-        int value = 0;
-
-        if (isNull())
-            return value;
-
-        char ch = readAndSkipBlank();
-        boolean isString = (ch == '"');
-        if (isString)
-            ch = readAndSkipBlank();
-        boolean negative = (ch == '-');
-
-        if (!negative) {
-            if (VerifyUtils.isDigit(ch))
-                value = (value << 3) + (value << 1) + (ch - '0');
-            else
-                throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
-        }
-
-        for (; ; ) {
-            ch = (char) read();
-            if (VerifyUtils.isDigit(ch))
-                value = (value << 3) + (value << 1) + (ch - '0');
-            else {
-                if (isString) {
-                    if (ch == '"')
-                        break;
-                } else {
-                    if (isEndFlag(ch)) {
-                        pos--;
-                        break;
-                    } else
-                        throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
-                }
-            }
-
-            if (pos >= limit)
-                break;
-        }
-        return negative ? -value : value;
+        return (int) readLong();
     }
 
     @Override
     public long readLong() {
         long value = 0;
-
-        if (isNull())
+        if (isNull()) {
             return value;
-
+        }
         char ch = readAndSkipBlank();
         boolean isString = (ch == '"');
-        if (isString)
+        if (isString) {
             ch = readAndSkipBlank();
+        }
         boolean negative = (ch == '-');
 
         if (!negative) {
@@ -267,8 +230,9 @@ public class JsonStringReader extends JsonReader {
                 }
             }
 
-            if (pos >= limit)
+            if (pos >= limit) {
                 break;
+            }
         }
         return negative ? -value : value;
     }
@@ -302,21 +266,20 @@ public class JsonStringReader extends JsonReader {
         start = start + startBlankLength;
         int end = pos - endBlankLength;
         int len = end - start;
-//		System.out.println("str len --> " + len + "|" + start + "|" + new String(chars, start, len));
         return new String(chars, start, len);
     }
 
     @Override
     public BigInteger readBigInteger() {
         String value = "0";
-
-        if (isNull())
+        if (isNull()) {
             return new BigInteger(value);
-
+        }
         char ch = readAndSkipBlank();
         boolean isString = (ch == '"');
-        if (isString)
+        if (isString) {
             ch = readAndSkipBlank();
+        }
         pos--;
 
         int start = pos;
@@ -341,16 +304,15 @@ public class JsonStringReader extends JsonReader {
     @Override
     public BigDecimal readBigDecimal() {
         String value = "0.0";
-
-        if (isNull())
+        if (isNull()) {
             return new BigDecimal(value);
-
+        }
         char ch = readAndSkipBlank();
         boolean isString = (ch == '"');
-        if (isString)
+        if (isString) {
             ch = readAndSkipBlank();
+        }
         pos--;
-
         int start = pos;
         for (; ; ) {
             ch = (char) read();
@@ -373,16 +335,15 @@ public class JsonStringReader extends JsonReader {
     @Override
     public double readDouble() {
         double value = 0.0;
-
-        if (isNull())
+        if (isNull()) {
             return value;
-
+        }
         char ch = readAndSkipBlank();
         boolean isString = (ch == '"');
-        if (isString)
+        if (isString) {
             ch = readAndSkipBlank();
+        }
         pos--;
-
         int start = pos;
         for (; ; ) {
             ch = (char) read();
@@ -405,16 +366,15 @@ public class JsonStringReader extends JsonReader {
     @Override
     public float readFloat() {
         float value = 0.0F;
-
-        if (isNull())
+        if (isNull()) {
             return value;
-
+        }
         char ch = readAndSkipBlank();
         boolean isString = (ch == '"');
-        if (isString)
+        if (isString) {
             ch = readAndSkipBlank();
+        }
         pos--;
-
         int start = pos;
         for (; ; ) {
             ch = (char) read();
@@ -436,9 +396,9 @@ public class JsonStringReader extends JsonReader {
 
     @Override
     public char[] readField(char[] chs) {
-        if (!isString())
+        if (!isString()) {
             throw new JsonException("read field error, the position is " + pos);
-
+        }
         int cur = pos;
         int len = chs.length;
         boolean skip = true;
@@ -459,7 +419,7 @@ public class JsonStringReader extends JsonReader {
             pos = cur + 1;
             return null;
         } else {
-            char[] field = null;
+            char[] field;
             int start = pos;
             for (; ; ) {
                 char c = (char) read();
@@ -475,9 +435,9 @@ public class JsonStringReader extends JsonReader {
 
     @Override
     public char[] readChars() {
-        if (!isString())
+        if (!isString()) {
             throw new JsonException("read field error, the position is " + pos);
-
+        }
         int start = pos;
         for (; ; ) {
             char c = (char) read();
@@ -494,7 +454,7 @@ public class JsonStringReader extends JsonReader {
     public void skipValue() {
         char ch = readAndSkipBlank();
         switch (ch) {
-            case '"': // 跳过字符串
+            case '"': // skip string
                 for (; ; ) {
                     ch = (char) read();
                     if (ch == '"')
@@ -503,7 +463,7 @@ public class JsonStringReader extends JsonReader {
                         pos++;
                 }
                 break;
-            case '[': // 跳过数组
+            case '[': // skip array
                 for (; ; ) {
                     if (isEmptyArray())
                         break;
@@ -517,7 +477,7 @@ public class JsonStringReader extends JsonReader {
                         throw new JsonException("json string array format error, the position is " + pos);
                 }
                 break;
-            case '{': // 跳过对象
+            case '{': // skip object
                 for (; ; ) {
                     if (isEmptyObject())
                         break;
@@ -536,7 +496,7 @@ public class JsonStringReader extends JsonReader {
                 }
                 break;
 
-            default: // 跳过数字或者null
+            default: // skip number or null
                 for (; ; ) {
                     ch = (char) read();
                     if (isEndFlag(ch)) {
@@ -550,72 +510,67 @@ public class JsonStringReader extends JsonReader {
 
     @Override
     public String readString() {
-        if (isNull())
+        if (isNull()) {
             return null;
-
-        if (!isString())
+        }
+        if (!isString()) {
             throw new JsonException("read string error, the position is " + pos);
+        }
 
-        JsonStringWriter writer = new JsonStringWriter();
-        String ret;
-
-        int cur = pos;
-        int len;
-        for (; ; ) {
-            char ch = chars[cur++];
-            if (ch == '"') {
-                len = cur - pos - 1;
-                writer.write(chars, pos, len);
-                pos = cur;
-                break;
-            } else if (ch == '\\') {
-                char c0 = chars[cur++];
-                len = cur - 2 - pos;
-                writer.write(chars, pos, len);
-                switch (c0) {
-                    case 'b':
-                        writer.write('\b');
-                        break;
-                    case 'n':
-                        writer.write('\n');
-                        break;
-                    case 'r':
-                        writer.write('\r');
-                        break;
-                    case 'f':
-                        writer.write('\f');
-                        break;
-                    case '\\':
-                        writer.write('\\');
-                        break;
-                    case '/':
-                        writer.write('/');
-                        break;
-                    case '"':
-                        writer.write('"');
-                        break;
-                    case 't':
-                        writer.write('\t');
-                        break;
-                    case 'u': // unicode char parse
-                        char[] controlChars = new char[4];
-                        for (int i = 0; i < controlChars.length; i++) {
-                            controlChars[i] = chars[cur++];
-                        }
-                        char tmp = (char) Integer.parseInt(String.valueOf(controlChars), 16);
-                        writer.write(tmp);
-                        break;
+        try (JsonStringWriter writer = new JsonStringWriter()) {
+            int cur = pos;
+            int len;
+            for (; ; ) {
+                char ch = chars[cur++];
+                if (ch == '"') {
+                    len = cur - pos - 1;
+                    writer.write(chars, pos, len);
+                    pos = cur;
+                    break;
+                } else if (ch == '\\') {
+                    char c0 = chars[cur++];
+                    len = cur - 2 - pos;
+                    writer.write(chars, pos, len);
+                    switch (c0) {
+                        case 'b':
+                            writer.write('\b');
+                            break;
+                        case 'n':
+                            writer.write('\n');
+                            break;
+                        case 'r':
+                            writer.write('\r');
+                            break;
+                        case 'f':
+                            writer.write('\f');
+                            break;
+                        case '\\':
+                            writer.write('\\');
+                            break;
+                        case '/':
+                            writer.write('/');
+                            break;
+                        case '"':
+                            writer.write('"');
+                            break;
+                        case 't':
+                            writer.write('\t');
+                            break;
+                        case 'u': // unicode char parse
+                            char[] controlChars = new char[4];
+                            for (int i = 0; i < controlChars.length; i++) {
+                                controlChars[i] = chars[cur++];
+                            }
+                            char tmp = (char) Integer.parseInt(String.valueOf(controlChars), 16);
+                            writer.write(tmp);
+                            break;
+                    }
+                    pos = cur;
                 }
-                pos = cur;
-            }
 
+            }
+            return writer.toString();
         }
-        try {
-            ret = writer.toString();
-        } finally {
-            writer.close();
-        }
-        return ret;
     }
 
     @Override

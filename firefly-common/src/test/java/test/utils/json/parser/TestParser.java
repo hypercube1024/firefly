@@ -16,10 +16,11 @@ import test.utils.json.github.MediaContent;
 import test.utils.json.github.Player;
 import test.utils.json.github.Size;
 
-import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -28,12 +29,24 @@ public class TestParser {
 
     @Test
     public void testStr() {
-        SimpleObj i = new SimpleObj();
-        i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com");
-        String jsonStr = Json.toJson(i);
-        System.out.println(jsonStr);
-        SimpleObj i2 = Json.toObject(jsonStr, SimpleObj.class);
-        Assert.assertThat(i2.getName(), is("PengtaoQiu\nAlvin\nhttp://fireflysource.com"));
+        List<CompletableFuture<SimpleObj>> futures = new ArrayList<>();
+        for (int j = 0; j < 200; j++) {
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                SimpleObj i = new SimpleObj();
+                i.setName("PengtaoQiu\nAlvin\nhttp://fireflysource.com");
+                String jsonStr = Json.toJson(i);
+                System.out.println(jsonStr);
+                SimpleObj i2 = Json.toObject(jsonStr, SimpleObj.class);
+                return i2;
+            }));
+        }
+        futures.forEach(future -> {
+            try {
+                Assert.assertThat(future.get().getName(), is("PengtaoQiu\nAlvin\nhttp://fireflysource.com"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Test

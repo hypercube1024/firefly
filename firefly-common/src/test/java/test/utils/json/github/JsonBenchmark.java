@@ -111,7 +111,7 @@ public class JsonBenchmark {
         System.out.println("fastjson: " + (fastjsonSerializer + fastjsonParser + fastjsonJsonNodeParser) + "ms");
         System.out.println("jackson: " + (jacksonJsonSerializer + jacksonJsonParser + jacksonJsonNodeParser) + "ms");
         System.out.println();
-        System.out.println("parsing (tree node)  time:");
+        System.out.println("parsing (tree node) time:");
         System.out.println("firefly: " + fireflyJsonNodeParser + "ms");
         System.out.println("fastjson: " + fastjsonJsonNodeParser + "ms");
         System.out.println("jackson: " + jacksonJsonNodeParser + "ms");
