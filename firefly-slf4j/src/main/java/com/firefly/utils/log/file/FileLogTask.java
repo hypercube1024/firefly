@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class FileLogTask extends AbstractLifeCycle implements LogTask {
 
-    public static final long maxLogFlushInterval = Long.getLong("maxLogFlushInterval", 1000L);
+    public static final long maxLogFlushInterval = Long.getLong("com.firefly.utils.log.file.maxLogFlushInterval", 1000L);
 
     private BlockingQueue<LogItem> queue = new LinkedTransferQueue<>();
     private Thread thread = new Thread(this, "firefly asynchronous log thread");
