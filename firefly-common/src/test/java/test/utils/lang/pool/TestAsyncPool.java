@@ -15,9 +15,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.*;
 
 /**
  * @author Pengtao Qiu
@@ -140,8 +138,8 @@ public class TestAsyncPool {
 
         int number = 100;
         takeObjectTest(pool, number);
-        Assert.assertThat(pool.size(), is(maxSize));
-        Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
+        Assert.assertThat(pool.size(), lessThanOrEqualTo(maxSize));
+        Assert.assertThat(pool.size(), lessThanOrEqualTo(pool.getCreatedObjectSize()));
         System.out.println(pool.size());
         start.set(false);
         pool.stop();
@@ -170,7 +168,7 @@ public class TestAsyncPool {
 
         int number = 100;
         takeObjectTest(pool, number);
-        Assert.assertThat(pool.size(), is(6));
+        Assert.assertThat(pool.size(), lessThan(8));
         Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(pool.size()));
         System.out.println(pool.size());
         pool.stop();
