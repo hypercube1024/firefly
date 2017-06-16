@@ -13,6 +13,7 @@ import java.util.*;
 abstract public class AbstractApplicationContext implements ApplicationContext {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
+
     protected Map<String, Object> map = new HashMap<>();
     protected Set<String> errorMemo = new HashSet<>();
     protected List<BeanDefinition> beanDefinitions;
@@ -25,7 +26,7 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
 
     public AbstractApplicationContext(String file) {
         beanDefinitions = getBeanDefinitions(file);
-        check(); // Conflicts check
+        beanDefinitionCheck(); // Conflicts check
         addObjectToContext();
         if (!initMethods.isEmpty()) {
             initMethods.forEach(pair -> {
@@ -68,28 +69,28 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
     }
 
     /**
-     * Conflicts check 1.More than two components have the same id 2.The one of
-     * two components that have the same class name or interface name dosen't
-     * set id. 3.Two components have the same class name or interface name and
-     * different id, save memo. When the component is injecting by type, throw a
-     * exception.
+     * Bean definition conflict check
      */
-    protected void check() {
+    protected void beanDefinitionCheck() {
         for (int i = 0; i < beanDefinitions.size(); i++) {
             for (int j = i + 1; j < beanDefinitions.size(); j++) {
-                log.debug("check bean " + i + "|" + j);
                 BeanDefinition b1 = beanDefinitions.get(i);
                 BeanDefinition b2 = beanDefinitions.get(j);
 
-                if (VerifyUtils.isNotEmpty(b1.getId()) && VerifyUtils.isNotEmpty(b2.getId())
+                // Two components' id are equal
+                if (VerifyUtils.isNotEmpty(b1.getId())
+                        && VerifyUtils.isNotEmpty(b2.getId())
                         && b1.getId().equals(b2.getId())) {
-                    error("bean " + b1.getClassName() + " and bean " + b2.getClassName() + " have duplicate id ");
+                    error(b1.getClassName() + " and " + b2.getClassName() + "'s id are duplicated ");
                 }
 
                 if (b1.getClassName().equals(b2.getClassName())) {
+                    // Two components' class name are equal, but one of them does not set id.
                     if (VerifyUtils.isEmpty(b1.getId()) || VerifyUtils.isEmpty(b2.getId())) {
                         error("class " + b1.getClassName() + " duplicate definition");
                     } else {
+                        // Their id are different, save them to memo.
+                        // When the component is injecting by type, throw an exception.
                         errorMemo.add(b1.getClassName());
                     }
                 }
@@ -97,9 +98,12 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
                 for (String iname1 : b1.getInterfaceNames()) {
                     for (String iname2 : b2.getInterfaceNames()) {
                         if (iname1.equals(iname2)) {
+                            // Two components' interface name are equal, but one of them does not set id.
                             if (VerifyUtils.isEmpty(b1.getId()) || VerifyUtils.isEmpty(b2.getId())) {
                                 error("class " + b1.getClassName() + " duplicate definition");
                             } else {
+                                // Their id are different, save them to memo.
+                                // When the component is injecting by type, throw an exception.
                                 errorMemo.add(iname1);
                             }
                         }
@@ -110,9 +114,14 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
         }
     }
 
+    /**
+     * Type injecting check.
+     *
+     * @param key bean name
+     */
     protected void check(String key) {
         if (errorMemo.contains(key)) {
-            error(key + " auto inject failure!");
+            error(key + " auto inject failure! More the one bean are found");
         }
     }
 
