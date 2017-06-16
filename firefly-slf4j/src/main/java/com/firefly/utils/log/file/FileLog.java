@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public class FileLog implements Log, Closeable {
 
-    private static final boolean stackTrace = Boolean.getBoolean("debugMode");
+    private static final boolean stackTrace = Boolean.getBoolean("com.firefly.utils.log.file.debugMode");
 
     private LogLevel level;
     private String path;
