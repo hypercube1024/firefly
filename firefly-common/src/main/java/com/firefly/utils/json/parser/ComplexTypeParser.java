@@ -57,7 +57,7 @@ public abstract class ComplexTypeParser implements Parser {
             elementMetaInfo.setExtractedType(rawClass);
             elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, elementType, null));
         } else {
-            throw new JsonException("mot support type " + elementType);
+            throw new JsonException("not support type " + elementType);
         }
     }
 

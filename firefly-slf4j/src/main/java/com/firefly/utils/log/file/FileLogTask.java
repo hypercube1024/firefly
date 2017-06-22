@@ -70,7 +70,7 @@ public class FileLogTask extends AbstractLifeCycle implements LogTask {
 
                 lastFlushedTime = flushAllPerSecond(lastFlushedTime);
             } catch (Throwable e) {
-                System.err.println("flush exception, " + e.getMessage());
+                System.err.println("write log exception, " + e.getMessage());
                 // avoid CPU exhausting
                 ThreadUtils.sleep(1000L);
             }
