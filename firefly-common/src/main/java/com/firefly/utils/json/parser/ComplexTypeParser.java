@@ -4,10 +4,7 @@ import com.firefly.utils.json.Parser;
 import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.support.ParserMetaInfo;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.*;
 
 import static com.firefly.utils.BeanUtils.extractGenericArrayClass;
@@ -56,6 +53,8 @@ public abstract class ComplexTypeParser implements Parser {
             elementMetaInfo = new ParserMetaInfo();
             elementMetaInfo.setExtractedType(rawClass);
             elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, elementType, null));
+        } else if (elementType instanceof WildcardType) {
+            init(((WildcardType) elementType).getUpperBounds()[0]);
         } else {
             throw new JsonException("not support type " + elementType);
         }
