@@ -2,6 +2,7 @@ package com.firefly.server.http2.router.spi;
 
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.GenericTypeReference;
 
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
@@ -34,6 +35,8 @@ public interface HTTPBodyHandlerSPI {
     String getStringBody();
 
     <T> T getJsonBody(Class<T> clazz);
+
+    <T> T getJsonBody(GenericTypeReference<T> typeReference);
 
     JsonObject getJsonObjectBody();
 

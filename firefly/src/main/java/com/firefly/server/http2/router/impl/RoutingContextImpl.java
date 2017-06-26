@@ -11,6 +11,7 @@ import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.GenericTypeReference;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
@@ -216,6 +217,15 @@ public class RoutingContextImpl implements RoutingContext {
             return request.getJsonBody(clazz);
         } else {
             return httpBodyHandlerSPI.getJsonBody(clazz);
+        }
+    }
+
+    @Override
+    public <T> T getJsonBody(GenericTypeReference<T> typeReference) {
+        if (httpBodyHandlerSPI == null) {
+            return request.getJsonBody(typeReference);
+        } else {
+            return httpBodyHandlerSPI.getJsonBody(typeReference);
         }
     }
 

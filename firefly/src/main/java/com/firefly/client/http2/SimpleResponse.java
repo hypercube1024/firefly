@@ -6,6 +6,7 @@ import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.GenericTypeReference;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -82,6 +83,10 @@ public class SimpleResponse {
         } else {
             return stringBody;
         }
+    }
+
+    public <T> T getJsonBody(GenericTypeReference<T> typeReference) {
+        return Json.toObject(getStringBody(), typeReference);
     }
 
     public <T> T getJsonBody(Class<T> clazz) {

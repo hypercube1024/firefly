@@ -11,9 +11,13 @@ import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.GenericTypeReference;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Spliterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -152,6 +156,10 @@ public class SimpleRequest {
 
     public <T> T getJsonBody(Class<T> clazz) {
         return Json.toObject(getStringBody(), clazz);
+    }
+
+    public <T> T getJsonBody(GenericTypeReference<T> typeReference) {
+        return Json.toObject(getStringBody(), typeReference);
     }
 
     public JsonObject getJsonObjectBody() {
