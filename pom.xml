@@ -243,7 +243,7 @@
 
             <distributionManagement>
                 <snapshotRepository>
-                    <id>ossrh</id>
+                    <id>sonatype_snapshots</id>
                     <url>https://oss.sonatype.org/content/repositories/snapshots</url>
                 </snapshotRepository>
                 <repository>
@@ -252,5 +252,6 @@
                 </repository>
             </distributionManagement>
         </profile>
+
     </profiles>
 </project>

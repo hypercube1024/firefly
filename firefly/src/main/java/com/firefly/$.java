@@ -30,6 +30,7 @@ import com.firefly.utils.lang.URIUtils;
 import com.firefly.utils.lang.bean.PropertyAccess;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -49,7 +50,7 @@ public interface $ {
      * The HTTP client manages HTTP connection in the BoundedAsynchronousPool automatically.
      * The default protocol is HTTP 1.1.
      *
-     * @return the HTTP client singleton instance.
+     * @return HTTP client singleton instance.
      */
     static SimpleHTTPClient httpClient() {
         return HTTPClientSingleton.getInstance().httpClient();
@@ -60,7 +61,7 @@ public interface $ {
      * The HTTP client manages HTTP connection in the BoundedAsynchronousPool automatically.
      * The protocol is plaintext HTTP 2.0.
      *
-     * @return the HTTP client singleton instance.
+     * @return HTTP client singleton instance.
      */
     static SimpleHTTPClient plaintextHTTP2Client() {
         return PlaintextHTTP2ClientSingleton.getInstance().httpClient();
@@ -71,7 +72,7 @@ public interface $ {
      * The HTTPs client manages HTTP connection in the BoundedAsynchronousPool automatically.
      * It uses ALPN to determine HTTP 1.1 or HTTP 2.0 protocol.
      *
-     * @return the HTTPs client singleton instance.
+     * @return HTTPs client singleton instance.
      */
     static SimpleHTTPClient httpsClient() {
         return HTTPsClientSingleton.getInstance().httpsClient();
@@ -80,7 +81,7 @@ public interface $ {
     /**
      * Create an new HTTP client instance
      *
-     * @return an new HTTP client instance
+     * @return An new HTTP client instance
      */
     static SimpleHTTPClient createHTTPClient() {
         return new SimpleHTTPClient();
@@ -90,7 +91,7 @@ public interface $ {
      * Create an new HTTP client instance
      *
      * @param configuration HTTP client configuration
-     * @return an new HTTP client instance
+     * @return An new HTTP client instance
      */
     static SimpleHTTPClient createHTTPClient(SimpleHTTPClientConfiguration configuration) {
         return new SimpleHTTPClient(configuration);
@@ -131,7 +132,7 @@ public interface $ {
     /**
      * Create an new HTTP server instance
      *
-     * @return an new HTTP server instance
+     * @return An new HTTP server instance
      */
     static SimpleHTTPServer createHTTPServer() {
         return new SimpleHTTPServer();
@@ -141,7 +142,7 @@ public interface $ {
      * Create an new HTTP server instance
      *
      * @param configuration HTTP server configuration
-     * @return an new HTTP server instance
+     * @return An new HTTP server instance
      */
     static SimpleHTTPServer createHTTPServer(SimpleHTTPServerConfiguration configuration) {
         return new SimpleHTTPServer(configuration);
@@ -150,7 +151,7 @@ public interface $ {
     /**
      * Create an new TCP client instance
      *
-     * @return an new TCP client instance
+     * @return An new TCP client instance
      */
     static SimpleTcpClient createTCPClient() {
         return new SimpleTcpClient();
@@ -160,7 +161,7 @@ public interface $ {
      * Create an new TCP client instance
      *
      * @param configuration TCP client configuration
-     * @return an new TCP client instance
+     * @return An new TCP client instance
      */
     static SimpleTcpClient createTCPClient(TcpConfiguration configuration) {
         return new SimpleTcpClient(configuration);
@@ -185,6 +186,11 @@ public interface $ {
         return new SimpleTcpServer(configuration);
     }
 
+    /**
+     * Create default application context. The default application context reads configuration firefly.xml in classpath.
+     *
+     * @return Default application context
+     */
     static ApplicationContext createApplicationContext() {
         return new XmlApplicationContext();
     }
@@ -197,7 +203,7 @@ public interface $ {
      * Get bean from default application context. The default application context reads configuration firefly.xml in classpath.
      *
      * @param clazz the bean's Class object
-     * @param <T>   bean type
+     * @param <T>   Bean type
      * @return A singleton bean instance by type
      */
     static <T> T getBean(Class<T> clazz) {
@@ -216,6 +222,26 @@ public interface $ {
     }
 
     /**
+     * Get all beans by type. The default application context reads configuration firefly.xml in classpath.
+     *
+     * @param clazz Bean's class object
+     * @param <T>   Bean type
+     * @return All beans are derived from type
+     */
+    static <T> Collection<T> getBeans(Class<T> clazz) {
+        return ApplicationContextSingleton.getInstance().getApplicationContext().getBeans(clazz);
+    }
+
+    /**
+     * Get all managed beans. The default application context reads configuration firefly.xml in classpath.
+     *
+     * @return The unmodifiable map of all beans
+     */
+    static Map<String, Object> getBeanMap() {
+        return ApplicationContextSingleton.getInstance().getApplicationContext().getBeanMap();
+    }
+
+    /**
      * Run a blocking task in a shared thread pool.
      *
      * @param func the task with a return value
@@ -224,10 +250,6 @@ public interface $ {
      */
     static <T> Promise.Completable<T> async(Func0<T> func) {
         return ApplicationContextSingleton.getInstance().async(func);
-    }
-
-    static void async(Runnable runnable) {
-        ApplicationContextSingleton.getInstance().async(runnable);
     }
 
     interface io {
@@ -331,6 +353,10 @@ public interface $ {
 
         static <T> T parse(String json, GenericTypeReference<T> typeReference) {
             return Json.toObject(json, typeReference);
+        }
+
+        static <T> T parse(String json, Type type) {
+            return Json.toObject(json, type);
         }
 
         static JsonObject parseToObject(String json) {

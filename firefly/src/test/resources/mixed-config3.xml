@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.fireflysource.com/beans"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-	<bean id="orange" class="test.mixed.Food">
-		<property name="name" value="orange"></property>
-		<property name="price" value="3.52"></property>
-	</bean>
+    <bean id="orange" class="test.mixed.Food">
+        <property name="name" value="orange"/>
+        <property name="price" value="3.52"/>
+    </bean>
 
 </beans>

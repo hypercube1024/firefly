@@ -10,6 +10,7 @@ import com.firefly.utils.json.serializer.SerialStateMachine;
 import com.firefly.utils.lang.GenericTypeReference;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 import static com.firefly.utils.json.parser.ComplexTypeParser.getImplClass;
 
@@ -33,11 +34,15 @@ public abstract class Json {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T toObject(String json, GenericTypeReference<T> typeReference) {
+        return toObject(json, typeReference.getType());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T toObject(String json, Type type) {
         try (JsonReader reader = new JsonStringReader(json)) {
-            Class<?> extractedClass = BeanUtils.extractClass(typeReference.getType());
-            return (T) ParserStateMachine.toObject(reader, getImplClass(extractedClass), typeReference.getType());
+            Class<?> extractedClass = BeanUtils.extractClass(type);
+            return (T) ParserStateMachine.toObject(reader, getImplClass(extractedClass), type);
         } catch (IOException e) {
             throw new CommonRuntimeException(e);
         }

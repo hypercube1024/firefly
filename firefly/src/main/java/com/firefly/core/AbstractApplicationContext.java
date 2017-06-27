@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 abstract public class AbstractApplicationContext implements ApplicationContext {
 
@@ -29,25 +30,22 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
         beanDefinitionCheck(); // Conflicts check
         addObjectToContext();
         if (!initMethods.isEmpty()) {
-            initMethods.forEach(pair -> {
-                try {
-                    pair.first.invoke(pair.second);
-                } catch (Exception e) {
-                    error("invoke initial method error, " + e.getMessage());
-                }
-            });
+            invokeMethods(initMethods);
         }
         if (!destroyedMethods.isEmpty()) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                destroyedMethods.forEach(pair -> {
-                    try {
-                        pair.first.invoke(pair.second);
-                    } catch (Exception e) {
-                        log.error("invoke destroyed method exception", e);
-                    }
-                });
-            }, "the firefly shutdown thead"));
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> invokeMethods(destroyedMethods), "the firefly shutdown thread"));
         }
+        map = Collections.unmodifiableMap(map);
+    }
+
+    protected void invokeMethods(List<Pair<Method, Object>> methods) {
+        methods.forEach(pair -> {
+            try {
+                pair.first.invoke(pair.second);
+            } catch (Exception e) {
+                log.error("invoke method exception", e);
+            }
+        });
     }
 
     private void addObjectToContext() {
@@ -66,6 +64,20 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
     @Override
     public <T> T getBean(String id) {
         return (T) map.get(id);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Collection<T> getBeans(Class<T> clazz) {
+        Set<?> list = map.values().stream()
+                         .filter(v -> clazz.isAssignableFrom(v.getClass()))
+                         .collect(Collectors.toSet());
+        return (Set<T>) list;
+    }
+
+    @Override
+    public Map<String, Object> getBeanMap() {
+        return map;
     }
 
     /**
