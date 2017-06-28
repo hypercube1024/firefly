@@ -88,6 +88,6 @@ public class AsynchronousTcpServer extends AbstractTcpLifeCycle implements Serve
 
     @Override
     protected String getThreadName() {
-        return "firefly-aio-tcp-server";
+        return "firefly-aio-tcp-server-";
     }
 }

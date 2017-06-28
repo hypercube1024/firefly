@@ -8,6 +8,7 @@ import com.firefly.utils.lang.GenericTypeReference
 /**
  * @author Pengtao Qiu
  */
+typealias firefly = `$`
 private typealias json = `$`.json
 
 object Json {

@@ -1,7 +1,6 @@
-package com.firefly.kotlin.ext
+package com.firefly.kotlin.ext.common
 
 import com.firefly.kotlin.ext.annotation.NoArg
-import com.firefly.kotlin.ext.common.Json
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -23,9 +22,16 @@ class TestFireflyCommonWrap {
         println(str)
         val foo: Foo<List<String>> = Json.parse(str)
         println("parsed result -> ${foo.name}, ${foo.age}, ${foo.data}")
-        assertEquals(foo.name, "Fuck")
-        assertEquals(foo.age, 20)
-        assertEquals(foo.data?.size, 2)
+        assertEquals("Fuck", foo.name)
+        assertEquals(20, foo.age)
+        assertEquals(2, foo.data?.size)
+    }
+
+    @Test
+    fun testNameResolver() {
+        val name = KotlinNameResolver.name { }
+        println(name)
+        assertEquals("com.firefly.kotlin.ext.common.TestFireflyCommonWrap", name)
     }
 }
 

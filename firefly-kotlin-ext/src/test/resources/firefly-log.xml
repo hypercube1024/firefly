@@ -6,18 +6,22 @@
         <name>firefly-system</name>
         <level>DEBUG</level>
         <path>${log.path}</path>
+        <formatter>com.firefly.kotlin.ext.KotlinTestLogFormatter</formatter>
     </logger>
 
     <logger>
         <name>firefly-monitor</name>
         <level>INFO</level>
         <path>${log.path}</path>
+        <formatter>com.firefly.kotlin.ext.KotlinTestLogFormatter</formatter>
     </logger>
 
     <logger>
         <name>com.firefly.kotlin.ext</name>
         <level>DEBUG</level>
         <path>${log.path}</path>
+        <enable-console>true</enable-console>
+        <formatter>com.firefly.kotlin.ext.KotlinTestLogFormatter</formatter>
     </logger>
 
 </loggers>
