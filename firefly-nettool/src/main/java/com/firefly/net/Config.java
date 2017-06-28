@@ -5,7 +5,7 @@ import com.firefly.utils.ServiceUtils;
 public class Config {
 
     public static final int defaultTimeout = Integer.getInteger("com.firefly.net.defaultTimeout", 30 * 1000);
-    public static final int defaultPoolSize = Integer.getInteger("com.firefly.net.defaultPoolSize", Runtime.getRuntime().availableProcessors() * 2);
+    public static final int defaultPoolSize = Integer.getInteger("com.firefly.net.defaultPoolSize", Runtime.getRuntime().availableProcessors());
 
     private int timeout = defaultTimeout;
 

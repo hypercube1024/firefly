@@ -90,10 +90,18 @@
                     <compilerPlugins>
                         <!-- Or "jpa" for JPA support -->
                         <plugin>no-arg</plugin>
+                        <plugin>all-open</plugin>
                     </compilerPlugins>
 
                     <pluginOptions>
                         <option>no-arg:annotation=com.firefly.kotlin.ext.annotation.NoArg</option>
+                        <option>no-arg:annotation=com.firefly.annotation.Component</option>
+                        <option>no-arg:annotation=com.firefly.annotation.Proxies</option>
+                        <option>no-arg:annotation=com.firefly.annotation.Proxy</option>
+
+                        <option>all-open:annotation=com.firefly.annotation.Component</option>
+                        <option>all-open:annotation=com.firefly.annotation.Proxies</option>
+                        <option>all-open:annotation=com.firefly.annotation.Proxy</option>
                     </pluginOptions>
                 </configuration>
                 <executions>
@@ -127,6 +135,11 @@
                     <dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-noarg</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-allopen</artifactId>
                         <version>${kotlin.version}</version>
                     </dependency>
                 </dependencies>
