@@ -1,6 +1,8 @@
 package com.firefly.kotlin.ext.http
 
-import com.firefly.codec.http2.model.HttpMethod.*
+import com.firefly.codec.http2.model.HttpHeader.SERVER
+import com.firefly.codec.http2.model.HttpMethod.POST
+import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.log.Log
 
@@ -25,6 +27,16 @@ fun main(args: Array<String>) {
             path = "/product/:type/:id"
 
             asyncHandler {
+                statusLine {
+                    status = OK.code
+                    reason = OK.message
+                }
+
+                header {
+                    "My-Header" to "Ohh nice"
+                    SERVER to "Firefly kotlin server DSL"
+                }
+
                 val type = getRouterParameter("type")
                 val id = getRouterParameter("id")
                 log.info("req type: $type, id: $id")
@@ -46,6 +58,8 @@ fun main(args: Array<String>) {
             httpMethod = POST
             path = "/product"
             consumes = "application/json"
+
+            log.info("setup router ($httpMethod, $path, $consumes)")
 
             asyncHandler {
                 val product = getJsonBody<Request<Product>>()

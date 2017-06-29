@@ -1,10 +1,6 @@
 package com.firefly.kotlin.ext.http
 
-import com.firefly.client.http2.SimpleHTTPClient
-import com.firefly.client.http2.SimpleResponse
-import com.firefly.codec.http2.model.HttpHeader
-import com.firefly.codec.http2.model.HttpMethod
-import com.firefly.codec.http2.model.MimeTypes
+import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.server.http2.HTTP2ServerBuilder
@@ -15,15 +11,16 @@ import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
-import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.launch
 import java.net.InetAddress
 
 /**
+ * Firefly HTTP server extensions
+ *
  * @author Pengtao Qiu
  */
 
-// HTTP server extension
+// HTTP server extensions
 
 fun HTTP2ServerBuilder.asyncHandler(handler: suspend RoutingContext.() -> Unit): HTTP2ServerBuilder = this.handler {
     it.response.isAsynchronous = true
@@ -49,6 +46,11 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Jso
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
 
+fun RoutingContext.header(block: HeaderWrap.() -> Unit): Unit = block.invoke(HeaderWrap(this))
+
+fun RoutingContext.statusLine(block: StatusLineWrap.() -> Unit): Unit = block.invoke(StatusLineWrap(this))
+
+
 // HTTP server DSL
 
 interface HttpServerLifecycle {
@@ -61,58 +63,102 @@ interface HttpServerLifecycle {
     fun listen(): Unit
 }
 
-class RouterWrap(private val router: Router,
-                 var method: String = HttpMethod.GET.asString(),
-                 var path: String? = null,
-                 var regexPath: String? = null,
-                 var paths: List<String>? = null,
-                 var consumes: String? = null,
-                 var produces: String? = null) {
+class StatusLineWrap(private val ctx: RoutingContext) {
+    var status: Int = HttpStatus.OK_200
+        set(value) {
+            ctx.setStatus(value)
+            field = value
+        }
 
-    private var isSetup: Boolean = false
+    var reason: String = HttpStatus.Code.OK.message
+        set(value) {
+            ctx.setReason(value)
+            field = value
+        }
+
+    var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
+        set(value) {
+            ctx.setHttpVersion(value)
+            field = value
+        }
+}
+
+class HeaderWrap(private val ctx: RoutingContext) {
+
+    infix fun String.to(value: String): Unit {
+        ctx.put(this, value)
+    }
+
+    infix fun HttpHeader.to(value: String): Unit {
+        ctx.put(this, value)
+    }
+}
+
+class RouterWrap(private val router: Router) {
+
+    var method: String = HttpMethod.GET.asString()
+        set(value) {
+            router.method(value)
+            field = value
+        }
 
     var httpMethod: HttpMethod = HttpMethod.GET
         set(value) {
-            method = value.asString()
+            router.method(value)
+            field = value
         }
 
+    var path: String? = null
+        set(value) {
+            if (value != null) {
+                router.path(value)
+                field = value
+            }
+        }
+
+    var regexPath: String? = null
+        set(value) {
+            if (value != null) {
+                router.pathRegex(value)
+                field = value
+            }
+        }
+
+    var paths: List<String>? = null
+        set(value) {
+            value?.forEach {
+                router.path(it)
+            }
+            field = value
+        }
+
+    var consumes: String? = null
+        set(value) {
+            if (value != null) {
+                router.consumes(value)
+                field = value
+            }
+        }
+
+    var produces: String? = null
+        set(value) {
+            if (value != null) {
+                router.produces(value)
+                field = value
+            }
+        }
+
+    init {
+        router.method(method)
+    }
+
     fun asyncHandler(handler: suspend RoutingContext.() -> Unit): Unit {
-        setup()
         router.asyncHandler(handler)
     }
 
     fun handler(handler: RoutingContext.() -> Unit): Unit {
-        setup()
         router.handler(handler)
     }
-
-    private fun setup() {
-        if (!isSetup) {
-            router.method(method)
-
-            if (path != null) {
-                router.path(path)
-            }
-
-            if (regexPath != null) {
-                router.pathRegex(regexPath)
-            }
-
-            paths?.forEach {
-                router.path(it)
-            }
-
-            if (consumes != null) {
-                router.consumes(consumes)
-            }
-
-            if (produces != null) {
-                router.produces(produces)
-            }
-            isSetup = true
-        }
-    }
-
 }
 
 class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
@@ -144,11 +190,3 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
 
     fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)
 }
-
-// HTTP client extension
-
-inline fun <reified T : Any> SimpleResponse.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
-
-inline fun <reified T : Any> SimpleResponse.getJsonBody(): T = Json.parse(stringBody)
-
-suspend fun SimpleHTTPClient.RequestBuilder.asyncSubmit(): SimpleResponse = submit().await()
