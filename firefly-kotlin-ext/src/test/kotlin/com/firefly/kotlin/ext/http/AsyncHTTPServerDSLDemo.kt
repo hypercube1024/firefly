@@ -43,8 +43,8 @@ fun main(args: Array<String>) {
 
     server.addRouters {
         router {
-            path = "/product"
             httpMethod = POST
+            path = "/product"
             consumes = "application/json"
 
             asyncHandler {
