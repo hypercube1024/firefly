@@ -22,4 +22,9 @@ fun main(args: Array<String>): Unit = runBlocking {
     val product = firefly.httpClient().get("$host/product/fuck/3")
             .asyncSubmit().getJsonBody<Response<Product>>()
     log.info("product -> $product")
+
+    val postResponse = firefly.httpClient().post("$host/product")
+            .jsonBody(Request("mmp product", Product("Oooo", "mmp")))
+            .asyncSubmit().getJsonBody<Response<String>>()
+    log.info("mmp -> $postResponse")
 }

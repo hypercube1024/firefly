@@ -1,6 +1,5 @@
 package com.firefly.kotlin.ext.http
 
-import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.log.Log
 
@@ -23,8 +22,3 @@ fun main(args: Array<String>) {
     }.listen("localhost", 8080)
 }
 
-@NoArg
-data class Response<T>(var msg: String, var code: Int, var data: T? = null)
-
-@NoArg
-data class Product(var id: String, var type: String)
