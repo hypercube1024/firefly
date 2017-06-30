@@ -3,6 +3,7 @@ package com.firefly.kotlin.ext.http
 import com.firefly.codec.http2.model.HttpField
 import com.firefly.codec.http2.model.HttpHeader.SERVER
 import com.firefly.codec.http2.model.HttpMethod.GET
+import com.firefly.codec.http2.model.HttpStatus.Code.UNAUTHORIZED
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.example.Response
 import com.firefly.utils.RandomUtils
@@ -40,6 +41,20 @@ class TestServerDSL {
                 }
             }
 
+            router {
+                httpMethod = GET
+                path = "/test/statusLine"
+
+                asyncHandler {
+                    statusLine {
+                        status = UNAUTHORIZED.code
+                        reason = UNAUTHORIZED.message
+                    }
+
+                    end("Forbid access")
+                }
+            }
+
         }.listen(host, port)
 
         val client = firefly.httpClient()
@@ -49,5 +64,10 @@ class TestServerDSL {
         assertEquals("Ohh nice", r0.fields["My-Header"])
         assertEquals("Firefly kotlin DSL server", r0.fields[SERVER])
         assertEquals("Crane .....", r0.trailerSupplier.get()["You-are-trailer"])
+
+        val r1 = client.get("$url/test/statusLine").asyncSubmit()
+        assertEquals(UNAUTHORIZED.code, r1.status)
+        assertEquals(UNAUTHORIZED.message, r1.reason)
+        assertEquals("Forbid access", r1.stringBody)
     }
 }
