@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 /**
  * @author Pengtao Qiu
  */
-class TestFireflyCommonWrap {
+class TestCommonExtension {
 
     @Test
     fun testJsonParser() {
@@ -31,7 +31,7 @@ class TestFireflyCommonWrap {
     fun testNameResolver() {
         val name = KotlinNameResolver.name { }
         println(name)
-        assertEquals("com.firefly.kotlin.ext.common.TestFireflyCommonWrap", name)
+        assertEquals("com.firefly.kotlin.ext.common.TestCommonExtension", name)
     }
 }
 
