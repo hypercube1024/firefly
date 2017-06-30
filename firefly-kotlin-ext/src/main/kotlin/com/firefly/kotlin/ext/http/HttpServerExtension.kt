@@ -75,6 +75,11 @@ class StatusLineBlock(private val ctx: RoutingContext) {
             ctx.setHttpVersion(value)
             field = value
         }
+
+    override fun toString(): String {
+        return "StatusLineBlock(status=$status, reason='$reason', httpVersion=$httpVersion)"
+    }
+
 }
 
 interface HttpFieldOperator {
@@ -106,6 +111,9 @@ class HeaderBlock(private val ctx: RoutingContext) : HttpFieldOperator {
         ctx.response.fields.add(this)
     }
 
+    override fun toString(): String {
+        return "HeaderBlock(httpFields=${ctx.response.fields})"
+    }
 }
 
 fun RoutingContext.trailer(block: TrailerBlock.() -> Unit): Unit = block.invoke(TrailerBlock(this))
@@ -131,9 +139,14 @@ class TrailerBlock(private val ctx: RoutingContext) : Supplier<HttpFields>, Http
     override operator fun HttpField.unaryPlus(): Unit {
         httpFields.add(this)
     }
+
+    override fun toString(): String {
+        return "TrailerBlock(httpFields=$httpFields)"
+    }
+
 }
 
-class RouterWrap(private val router: Router) {
+class RouterBlock(private val router: Router) {
 
     var method: String = HttpMethod.GET.asString()
         set(value) {
@@ -196,6 +209,11 @@ class RouterWrap(private val router: Router) {
     fun handler(handler: RoutingContext.() -> Unit): Unit {
         router.handler(handler)
     }
+
+    override fun toString(): String {
+        return "RouterBlock(method='$method', methods=$methods, httpMethod=$httpMethod, httpMethods=$httpMethods, path='$path', regexPath='$regexPath', paths=$paths, consumes='$consumes', produces='$produces')"
+    }
+
 }
 
 interface HttpServerLifecycle {
@@ -231,8 +249,8 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
 
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
-    fun router(block: RouterWrap.() -> Unit): Unit {
-        block.invoke(RouterWrap(routerManager.register()))
+    fun router(block: RouterBlock.() -> Unit): Unit {
+        block.invoke(RouterBlock(routerManager.register()))
     }
 
     fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)
