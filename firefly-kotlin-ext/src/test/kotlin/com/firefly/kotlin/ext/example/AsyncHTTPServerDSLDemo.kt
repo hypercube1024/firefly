@@ -8,6 +8,7 @@ import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.debug
 
 /**
  * Asynchronous HTTP server DSL examples
@@ -50,7 +51,7 @@ fun main(args: Array<String>) {
 
                 val type = getRouterParameter("type")
                 val id = getRouterParameter("id")
-                log.info("req type: $type, id: $id")
+                log.debug { "req type: $type, id: $id" }
                 writeJson(Response("ok", 200, Product(id, type))).end()
             }
         }
@@ -70,7 +71,7 @@ fun main(args: Array<String>) {
             path = "/product"
             consumes = "application/json"
 
-            log.info("setup router ($httpMethod, $path, $consumes)")
+            log.debug { "setup router ($httpMethod, $path, $consumes)" }
 
             asyncHandler {
                 val product = getJsonBody<Request<Product>>()
