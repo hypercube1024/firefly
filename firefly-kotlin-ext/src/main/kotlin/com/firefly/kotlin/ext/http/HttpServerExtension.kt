@@ -97,22 +97,24 @@ interface HttpFieldOperator {
  */
 fun RoutingContext.header(block: HeaderBlock.() -> Unit): Unit = block.invoke(HeaderBlock(this))
 
-class HeaderBlock(private val ctx: RoutingContext) : HttpFieldOperator {
+class HeaderBlock(ctx: RoutingContext) : HttpFieldOperator {
+
+    val httpFields: HttpFields = ctx.response.fields
 
     override infix fun String.to(value: String): Unit {
-        ctx.put(this, value)
+        httpFields.put(this, value)
     }
 
     override infix fun HttpHeader.to(value: String): Unit {
-        ctx.put(this, value)
+        httpFields.put(this, value)
     }
 
     override operator fun HttpField.unaryPlus(): Unit {
-        ctx.response.fields.add(this)
+        httpFields.add(this)
     }
 
     override fun toString(): String {
-        return "HeaderBlock(httpFields=${ctx.response.fields})"
+        return "HeaderBlock(httpFields=$httpFields)"
     }
 }
 
