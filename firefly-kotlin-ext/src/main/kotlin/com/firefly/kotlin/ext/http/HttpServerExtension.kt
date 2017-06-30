@@ -116,9 +116,14 @@ class HeaderBlock(private val ctx: RoutingContext) : HttpFieldOperator {
     }
 }
 
+/**
+ * Response HTTP trailer block
+ *
+ * @param block HTTP trailer statement
+ */
 fun RoutingContext.trailer(block: TrailerBlock.() -> Unit): Unit = block.invoke(TrailerBlock(this))
 
-class TrailerBlock(private val ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperator {
+class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperator {
 
     val httpFields: HttpFields = HttpFields()
 

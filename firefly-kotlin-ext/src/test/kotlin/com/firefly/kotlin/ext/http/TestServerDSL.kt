@@ -63,7 +63,7 @@ class TestServerDSL {
         assertEquals("test add", r0.fields["Add-My-Header"])
         assertEquals("Ohh nice", r0.fields["My-Header"])
         assertEquals("Firefly kotlin DSL server", r0.fields[SERVER])
-        assertEquals("Crane .....", r0.trailerSupplier.get()["You-are-trailer"])
+        assertEquals("Crane .....", r0.getTrailer()["You-are-trailer"])
 
         val r1 = client.get("$url/test/statusLine").asyncSubmit()
         assertEquals(UNAUTHORIZED.code, r1.status)
