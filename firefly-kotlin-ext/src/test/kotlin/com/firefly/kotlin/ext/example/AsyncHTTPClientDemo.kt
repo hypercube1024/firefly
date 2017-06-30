@@ -22,8 +22,8 @@ fun main(args: Array<String>): Unit = runBlocking {
     log.info("msg -> $msg")
 
     val fuck = firefly.httpClient().get("${host}/product/fuck/3")
-            .asyncSubmit().getJsonBody<Response<Product>>()
-    log.info("product -> $fuck")
+            .asyncSubmit()
+    log.info("product -> ${fuck.trailerSupplier.get()["You-are-trailer"]}")
 
     val duck = firefly.httpClient().post("${host}/product/duck/33")
             .asyncSubmit().getJsonBody<Response<Product>>()
