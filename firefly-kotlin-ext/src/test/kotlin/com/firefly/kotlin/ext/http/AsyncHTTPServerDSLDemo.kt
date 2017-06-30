@@ -1,12 +1,16 @@
 package com.firefly.kotlin.ext.http
 
+import com.firefly.codec.http2.model.HttpField
 import com.firefly.codec.http2.model.HttpHeader.SERVER
+import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpMethod.POST
 import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.log.Log
 
 /**
+ * Asynchronous HTTP server DSL examples
+ *
  * @author Pengtao Qiu
  */
 
@@ -24,6 +28,7 @@ data class Product(var id: String, var type: String)
 fun main(args: Array<String>) {
     val server = HttpServer {
         router {
+            httpMethods = listOf(GET, POST)
             path = "/product/:type/:id"
 
             asyncHandler {
@@ -34,7 +39,12 @@ fun main(args: Array<String>) {
 
                 header {
                     "My-Header" to "Ohh nice"
-                    SERVER to "Firefly kotlin server DSL"
+                    SERVER to "Firefly kotlin DSL server"
+                    +HttpField("Add-My-Header", "test add")
+                }
+
+                trailer {
+                    "You-are-trailer" to "Crane ....."
                 }
 
                 val type = getRouterParameter("type")

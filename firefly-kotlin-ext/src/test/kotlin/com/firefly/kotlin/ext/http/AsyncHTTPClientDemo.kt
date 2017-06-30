@@ -5,7 +5,7 @@ import com.firefly.kotlin.ext.log.Log
 import kotlinx.coroutines.experimental.runBlocking
 
 /**
- * HTTP asynchronous wait example
+ * HTTP client asynchronous wait example
  *
  * @author Pengtao Qiu
  */
@@ -19,12 +19,22 @@ fun main(args: Array<String>): Unit = runBlocking {
             .asyncSubmit().getJsonBody<Response<String>>()
     log.info("msg -> $msg")
 
-    val product = firefly.httpClient().get("$host/product/fuck/3")
+    val fuck = firefly.httpClient().get("$host/product/fuck/3")
             .asyncSubmit().getJsonBody<Response<Product>>()
-    log.info("product -> $product")
+    log.info("product -> $fuck")
+
+    val duck = firefly.httpClient().post("$host/product/duck/33")
+            .asyncSubmit().getJsonBody<Response<Product>>()
+    log.info("duck -> $duck")
 
     val postResponse = firefly.httpClient().post("$host/product")
             .jsonBody(Request("mmp product", Product("Oooo", "mmp")))
             .asyncSubmit().getJsonBody<Response<String>>()
     log.info("mmp -> $postResponse")
+
+    val getResponse = firefly.httpClient().get("$host/product")
+            .jsonBody(Request("mmp get product", Product("Error", "mmp")))
+            .asyncSubmit().stringBody
+    log.info("error -> $getResponse")
+
 }

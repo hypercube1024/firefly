@@ -13,6 +13,7 @@ import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
 import kotlinx.coroutines.experimental.launch
 import java.net.InetAddress
+import java.util.function.Supplier
 
 /**
  * Firefly HTTP server extensions
@@ -20,7 +21,7 @@ import java.net.InetAddress
  * @author Pengtao Qiu
  */
 
-// HTTP server extensions
+// HTTP server API extensions
 
 fun HTTP2ServerBuilder.asyncHandler(handler: suspend RoutingContext.() -> Unit): HTTP2ServerBuilder = this.handler {
     it.response.isAsynchronous = true
@@ -46,24 +47,17 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Jso
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
 
-fun RoutingContext.header(block: HeaderWrap.() -> Unit): Unit = block.invoke(HeaderWrap(this))
-
-fun RoutingContext.statusLine(block: StatusLineWrap.() -> Unit): Unit = block.invoke(StatusLineWrap(this))
-
 
 // HTTP server DSL
 
-interface HttpServerLifecycle {
-    fun stop(): Unit
+/**
+ * Response status line block
+ *
+ * @param block Response status line statement
+ */
+fun RoutingContext.statusLine(block: StatusLineBlock.() -> Unit): Unit = block.invoke(StatusLineBlock(this))
 
-    fun listen(host: String, port: Int): Unit
-
-    fun listen(port: Int): Unit
-
-    fun listen(): Unit
-}
-
-class StatusLineWrap(private val ctx: RoutingContext) {
+class StatusLineBlock(private val ctx: RoutingContext) {
     var status: Int = HttpStatus.OK_200
         set(value) {
             ctx.setStatus(value)
@@ -83,14 +77,59 @@ class StatusLineWrap(private val ctx: RoutingContext) {
         }
 }
 
-class HeaderWrap(private val ctx: RoutingContext) {
+interface HttpFieldOperator {
+    infix fun String.to(value: String): Unit
 
-    infix fun String.to(value: String): Unit {
+    infix fun HttpHeader.to(value: String): Unit
+
+    operator fun HttpField.unaryPlus(): Unit
+}
+
+/**
+ * Response HTTP header block
+ *
+ * @param block HTTP header statement
+ */
+fun RoutingContext.header(block: HeaderBlock.() -> Unit): Unit = block.invoke(HeaderBlock(this))
+
+class HeaderBlock(private val ctx: RoutingContext) : HttpFieldOperator {
+
+    override infix fun String.to(value: String): Unit {
         ctx.put(this, value)
     }
 
-    infix fun HttpHeader.to(value: String): Unit {
+    override infix fun HttpHeader.to(value: String): Unit {
         ctx.put(this, value)
+    }
+
+    override operator fun HttpField.unaryPlus(): Unit {
+        ctx.response.fields.add(this)
+    }
+
+}
+
+fun RoutingContext.trailer(block: TrailerBlock.() -> Unit): Unit = block.invoke(TrailerBlock(this))
+
+class TrailerBlock(private val ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperator {
+
+    val httpFields: HttpFields = HttpFields()
+
+    init {
+        ctx.response.trailerSupplier = this
+    }
+
+    override fun get(): HttpFields = httpFields
+
+    override infix fun String.to(value: String): Unit {
+        httpFields.put(this, value)
+    }
+
+    override infix fun HttpHeader.to(value: String): Unit {
+        httpFields.put(this, value)
+    }
+
+    override operator fun HttpField.unaryPlus(): Unit {
+        httpFields.add(this)
     }
 }
 
@@ -102,55 +141,53 @@ class RouterWrap(private val router: Router) {
             field = value
         }
 
+    var methods: List<String> = listOf(HttpMethod.GET.asString(), HttpMethod.POST.asString())
+        set(value) {
+            value.forEach { router.method(it) }
+            field = value
+        }
+
     var httpMethod: HttpMethod = HttpMethod.GET
         set(value) {
             router.method(value)
             field = value
         }
 
-    var path: String? = null
+    var httpMethods: List<HttpMethod> = listOf(HttpMethod.GET, HttpMethod.POST)
         set(value) {
-            if (value != null) {
-                router.path(value)
-                field = value
-            }
-        }
-
-    var regexPath: String? = null
-        set(value) {
-            if (value != null) {
-                router.pathRegex(value)
-                field = value
-            }
-        }
-
-    var paths: List<String>? = null
-        set(value) {
-            value?.forEach {
-                router.path(it)
-            }
+            httpMethods.forEach { router.method(it) }
             field = value
         }
 
-    var consumes: String? = null
+    var path: String = ""
         set(value) {
-            if (value != null) {
-                router.consumes(value)
-                field = value
-            }
+            router.path(value)
+            field = value
         }
 
-    var produces: String? = null
+    var regexPath: String = ""
         set(value) {
-            if (value != null) {
-                router.produces(value)
-                field = value
-            }
+            router.pathRegex(value)
+            field = value
         }
 
-    init {
-        router.method(method)
-    }
+    var paths: List<String> = listOf()
+        set(value) {
+            value.forEach { router.path(it) }
+            field = value
+        }
+
+    var consumes: String = ""
+        set(value) {
+            router.consumes(value)
+            field = value
+        }
+
+    var produces: String = ""
+        set(value) {
+            router.produces(value)
+            field = value
+        }
 
     fun asyncHandler(handler: suspend RoutingContext.() -> Unit): Unit {
         router.asyncHandler(handler)
@@ -159,6 +196,16 @@ class RouterWrap(private val router: Router) {
     fun handler(handler: RoutingContext.() -> Unit): Unit {
         router.handler(handler)
     }
+}
+
+interface HttpServerLifecycle {
+    fun stop(): Unit
+
+    fun listen(host: String, port: Int): Unit
+
+    fun listen(port: Int): Unit
+
+    fun listen(): Unit
 }
 
 class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
