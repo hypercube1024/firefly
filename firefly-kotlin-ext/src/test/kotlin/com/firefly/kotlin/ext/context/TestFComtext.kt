@@ -17,5 +17,11 @@ class TestFContext {
         assertEquals(1, services.size)
         assertEquals("fuck!~ aHa", services.single().fuck())
     }
+
+    @Test
+    fun testInject() {
+        val service = Context.getBean<PigService>()
+        assertEquals("fuck!~ aHa", service.woo())
+    }
 }
 
