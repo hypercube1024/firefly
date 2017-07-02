@@ -1,124 +1,124 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.fireflysource.com/beans"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
-	
-	<import resource="testImport.xml"/>
-	
-	<bean id="personService" class="test.component3.PersonService" init-method="init">
-		<property name="person" ref="person"/>
-		<property name="testList">
-			<list>
-				<value type="int">123</value>
-				<ref bean="person2"/>
-				<value type="java.lang.String">dfdf</value>
-				<ref bean="person"/>
-				<map>
-					<entry key="2.2" value="3.3"/>
-					<entry>
-						<key>
-							dddd
-						</key>
-						<value>
-							<array>
-								<value>11</value>
-								<value>12</value>
-								<value>11.5</value>
-							</array>
-						</value>
-					</entry>
-				</map>
-			</list>
-		</property>
-		<property name="testList2">
-			<list>
-				<value type="java.lang.String">a1</value>
-				<value type="java.lang.String">a2</value>
-			</list>
-		</property>
-	</bean>
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-	<bean id="collectionService3" class="test.component3.CollectionService">
-		<property name="strArray">
-			<array>
-				<value>str1</value>
-				<value>str2</value>
-				<value type="java.lang.String" >3</value>
-			</array>
-		</property>
-	</bean>
+    <import resource="testImport.xml"/>
 
-	<bean id="collectionService4" class="test.component3.CollectionService">
-		<property name="intArray">
-			<array>
-				<value>1022</value>
-				<value>1032</value>
-				<value>1042</value>
-			</array>
-		</property>
-	</bean>
+    <bean id="personService" class="test.component3.PersonService" init-method="init">
+        <property name="person" ref="person"/>
+        <property name="testList">
+            <list>
+                <value type="int">123</value>
+                <ref bean="person2"/>
+                <value type="java.lang.String">dfdf</value>
+                <ref bean="person"/>
+                <map>
+                    <entry key="2.2" value="3.3"/>
+                    <entry>
+                        <key>
+                            dddd
+                        </key>
+                        <value>
+                            <array>
+                                <value>11</value>
+                                <value>12</value>
+                                <value>11.5</value>
+                            </array>
+                        </value>
+                    </entry>
+                </map>
+            </list>
+        </property>
+        <property name="testList2">
+            <list>
+                <value type="java.lang.String">a1</value>
+                <value type="java.lang.String">a2</value>
+            </list>
+        </property>
+    </bean>
 
-	<bean id="collectionService5" class="test.component3.CollectionService">
-		<property name="objArray">
-			<array>
-				<value>1022</value>
-				<value>1032</value>
-				<value>dddddd</value>
-				<array>
-					<ref bean="person2" />
-					<value>10000000000</value>
-				</array>
-			</array>
-		</property>
-	</bean>
+    <bean id="collectionService3" class="test.component3.CollectionService">
+        <property name="strArray">
+            <array>
+                <value>str1</value>
+                <value>str2</value>
+                <value type="java.lang.String">3</value>
+            </array>
+        </property>
+    </bean>
 
-	<bean id="mapService" class="test.component3.MapService">
-		<property name="map">
-			<map>
-				<entry key="1" value="www"/>
-				<entry>
-					<key>ddd</key>
-					<value>sfsfsfsf</value>
-				</entry>
-				<entry>
-					<key>
-						<ref bean="person" />
-					</key>
-					<value>ssss</value>
-				</entry>
-				<entry>
-					<key>
-						<list>
-							<value>sssss</value>
-						</list>
-					</key>
-					<value>234444444</value>
-				</entry>
-				<entry>
-					<key>
-						<array>
-							<value>sssss</value>
-							<value>sssss3</value>
-							<value>sssss4</value>
-						</array>
-					</key>
-					<value>
-						<map>
-							<entry>
-								<key>ssss</key>
-								<value>
-									<list>
-										<value>12345</value>
-										<value>67890</value>
-										<ref bean="person" />
-									</list>
-								</value>
-							</entry>
-						</map>
-					</value>
-				</entry>
-			</map>
-		</property>
-	</bean>
+    <bean id="collectionService4" class="test.component3.CollectionService">
+        <property name="intArray">
+            <array>
+                <value>1022</value>
+                <value>1032</value>
+                <value>1042</value>
+            </array>
+        </property>
+    </bean>
+
+    <bean id="collectionService5" class="test.component3.CollectionService">
+        <property name="objArray">
+            <array>
+                <value>1022</value>
+                <value>1032</value>
+                <value>dddddd</value>
+                <array>
+                    <ref bean="person2"/>
+                    <value>10000000000</value>
+                </array>
+            </array>
+        </property>
+    </bean>
+
+    <bean id="mapService" class="test.component3.MapService">
+        <property name="map">
+            <map>
+                <entry key="1" value="www"/>
+                <entry>
+                    <key>ddd</key>
+                    <value>sfsfsfsf</value>
+                </entry>
+                <entry>
+                    <key>
+                        <ref bean="person"/>
+                    </key>
+                    <value>ssss</value>
+                </entry>
+                <entry>
+                    <key>
+                        <list>
+                            <value>sssss</value>
+                        </list>
+                    </key>
+                    <value>234444444</value>
+                </entry>
+                <entry>
+                    <key>
+                        <array>
+                            <value>sssss</value>
+                            <value>sssss3</value>
+                            <value>sssss4</value>
+                        </array>
+                    </key>
+                    <value>
+                        <map>
+                            <entry>
+                                <key>ssss</key>
+                                <value>
+                                    <list>
+                                        <value>12345</value>
+                                        <value>67890</value>
+                                        <ref bean="person"/>
+                                    </list>
+                                </value>
+                            </entry>
+                        </map>
+                    </value>
+                </entry>
+            </map>
+        </property>
+    </bean>
 
 </beans>
