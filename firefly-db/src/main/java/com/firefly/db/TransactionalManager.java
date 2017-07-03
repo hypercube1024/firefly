@@ -15,4 +15,6 @@ public interface TransactionalManager {
     void rollback();
 
     void endTransaction();
+
+    boolean isTransactionBegin();
 }

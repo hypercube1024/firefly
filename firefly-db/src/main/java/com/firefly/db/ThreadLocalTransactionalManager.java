@@ -28,23 +28,51 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
 
     @Override
     public Connection getConnection() {
-        return getTransaction().getConnection();
+        if (isTransactionBegin()) {
+            return getTransaction().getConnection();
+        } else {
+            return getConnectionFromDataSource();
+        }
     }
 
     @Override
     public void commit() {
+        checkTransactionBegin();
         getTransaction().commit();
     }
 
     @Override
     public void rollback() {
+        checkTransactionBegin();
         getTransaction().rollback();
     }
 
     @Override
     public void endTransaction() {
+        checkTransactionBegin();
         getTransaction().endTransaction();
     }
+
+    @Override
+    public boolean isTransactionBegin() {
+        return transaction.get() != null;
+    }
+
+    private void checkTransactionBegin() {
+        if (!isTransactionBegin()) {
+            throw new DBException("the transaction is not begin");
+        }
+    }
+
+    private Connection getConnectionFromDataSource() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            log.error("get connection exception", e);
+            throw new DBException(e);
+        }
+    }
+
 
     private Transaction getTransaction() {
         Transaction t = transaction.get();
@@ -114,7 +142,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
                     default:
                         break;
                 }
-
+                setAutoCommit(connection, true);
                 close(connection);
                 transaction.set(null);
                 status = Status.END;
@@ -122,16 +150,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
             log.debug("end transaction {}", count);
         }
 
-        private Connection getConnectionFromDataSource() {
-            try {
-                return dataSource.getConnection();
-            } catch (SQLException e) {
-                log.error("get connection exception", e);
-                throw new DBException(e);
-            }
-        }
-
-        public void setAutoCommit(Connection connection, boolean autoCommit) {
+        private void setAutoCommit(Connection connection, boolean autoCommit) {
             try {
                 connection.setAutoCommit(autoCommit);
             } catch (SQLException e) {
@@ -139,7 +158,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
             }
         }
 
-        public void rollback(Connection connection) {
+        private void rollback(Connection connection) {
             try {
                 connection.rollback();
             } catch (SQLException e) {
@@ -148,7 +167,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
             }
         }
 
-        public void commit(Connection connection) {
+        private void commit(Connection connection) {
             try {
                 connection.commit();
             } catch (SQLException e) {
@@ -156,7 +175,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
             }
         }
 
-        public void close(Connection connection) {
+        private void close(Connection connection) {
             try {
                 connection.close();
             } catch (SQLException e) {

@@ -452,6 +452,18 @@ public class JDBCHelper extends AbstractLifeCycle {
         return c;
     }
 
+    public <T> Promise.Completable<T> async(Connection connection, Func2<Connection, JDBCHelper, T> func) {
+        Promise.Completable<T> c = new Promise.Completable<>();
+        executorService.submit(() -> {
+            try {
+                c.succeeded(func.call(connection, this));
+            } catch (Throwable t) {
+                c.failed(t);
+            }
+        });
+        return c;
+    }
+
     public <T> Promise.Completable<T> asyncTransaction(Func2<Connection, JDBCHelper, T> func) {
         return async((conn, helper) -> executeTransaction(func));
     }
