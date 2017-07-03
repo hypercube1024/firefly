@@ -17,23 +17,28 @@ public class TransactionalJDBCHelper {
 
     private final static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
     private final JDBCHelper jdbcHelper;
+    private final TransactionalManager transactionalManager;
 
     public TransactionalJDBCHelper(DataSource dataSource) {
-        this(dataSource, null);
+        this(dataSource, null, new ThreadLocalTransactionalManager(dataSource));
     }
 
-    public TransactionalJDBCHelper(DataSource dataSource, MetricReporterFactory metricReporterFactory) {
-        this(new JDBCHelper(dataSource, metricReporterFactory));
+    public TransactionalJDBCHelper(DataSource dataSource, MetricReporterFactory metricReporterFactory, TransactionalManager transactionalManager) {
+        this(new JDBCHelper(dataSource, metricReporterFactory), transactionalManager);
     }
 
-    public TransactionalJDBCHelper(JDBCHelper jdbcHelper) {
+    public TransactionalJDBCHelper(JDBCHelper jdbcHelper, TransactionalManager transactionalManager) {
         this.jdbcHelper = jdbcHelper;
+        this.transactionalManager = transactionalManager;
     }
 
     public JDBCHelper getJdbcHelper() {
         return jdbcHelper;
+    }
+
+    public TransactionalManager getTransactionalManager() {
+        return transactionalManager;
     }
 
     public <T> T queryForSingleColumn(String sql, Object... params) {
@@ -123,131 +128,34 @@ public class TransactionalJDBCHelper {
     }
 
     public <T> T executeTransaction(Func1<TransactionalJDBCHelper, T> func) {
-        beginTransaction();
+        transactionalManager.beginTransaction();
         try {
             T ret = func.call(this);
-            commit();
+            transactionalManager.commit();
             return ret;
         } catch (Throwable t) {
-            rollback();
+            transactionalManager.rollback();
             log.error("the transaction exception", t);
+            return null;
         } finally {
-            endTransaction();
+            transactionalManager.endTransaction();
         }
-        return null;
     }
 
     private <T> T _executeTransaction(Func2<Connection, JDBCHelper, T> func) {
-        beginTransaction();
+        transactionalManager.beginTransaction();
         try {
-            T ret = func.call(getConnection(), jdbcHelper);
-            commit();
+            T ret = func.call(transactionalManager.getConnection(), jdbcHelper);
+            transactionalManager.commit();
             return ret;
         } catch (Throwable t) {
-            rollback();
+            transactionalManager.rollback();
             log.error("the transaction exception", t);
+            return null;
         } finally {
-            endTransaction();
+            transactionalManager.endTransaction();
         }
-        return null;
     }
 
-    private void beginTransaction() {
-        getTransaction().beginTransaction();
-    }
-
-    public Connection getConnection() {
-        return getTransaction().getConnection();
-    }
-
-    public void commit() {
-        getTransaction().commit();
-    }
-
-    public void rollback() {
-        getTransaction().rollback();
-    }
-
-    private void endTransaction() {
-        getTransaction().endTransaction();
-    }
-
-    private Transaction getTransaction() {
-        Transaction t = transaction.get();
-        if (t == null) {
-            t = new Transaction();
-            transaction.set(t);
-        }
-        return t;
-    }
-
-    enum Status {
-        INIT, START, COMMIT, ROLLBACK, END
-    }
-
-    class Transaction {
-        private Connection connection;
-        private Status status = Status.INIT;
-        private int count = 0;
-
-        synchronized void beginTransaction() {
-            if (status == Status.INIT) {
-                connection = jdbcHelper.getConnection();
-                jdbcHelper.setAutoCommit(connection, false);
-                status = Status.START;
-            }
-            count++;
-            log.debug("begin transaction {}", count);
-        }
-
-        synchronized Connection getConnection() {
-            check();
-            return connection;
-        }
-
-        synchronized void rollback() {
-            check();
-            status = Status.ROLLBACK;
-        }
-
-        synchronized void commit() {
-            check();
-            if (status != Status.ROLLBACK) {
-                status = Status.COMMIT;
-            }
-        }
-
-        private synchronized void check() {
-            if (status == Status.INIT) {
-                throw new IllegalStateException("The transaction has not started, " + status);
-            }
-            if (status == Status.END) {
-                throw new IllegalStateException("The transaction has ended, " + status);
-            }
-        }
-
-        synchronized void endTransaction() {
-            count--;
-            if (count == 0) {
-                switch (status) {
-                    case START:
-                    case COMMIT:
-                        jdbcHelper.commit(connection);
-                        break;
-                    case ROLLBACK:
-                        jdbcHelper.rollback(connection);
-                        break;
-                    default:
-                        break;
-                }
-
-                jdbcHelper.close(connection);
-                transaction.set(null);
-                status = Status.END;
-            }
-            log.debug("end transaction {}", count);
-        }
-
-    }
 
 }

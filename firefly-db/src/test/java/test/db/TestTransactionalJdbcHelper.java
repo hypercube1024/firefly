@@ -74,7 +74,7 @@ public class TestTransactionalJdbcHelper {
 
             User user1 = helper.queryById(User.class, id);
             Assert.assertThat(user1.getName(), is("apple"));
-            helper.rollback();
+            helper.getTransactionalManager().rollback();
             return 0;
         });
 
@@ -106,7 +106,7 @@ public class TestTransactionalJdbcHelper {
                 user1 = helper.queryById(User.class, 1L);
                 System.out.println(user1);
                 Assert.assertThat(user1.getName(), is("apple"));
-                helper.rollback();
+                helper.getTransactionalManager().rollback();
                 return 0;
             });
             Assert.assertThat(r, is(0));
