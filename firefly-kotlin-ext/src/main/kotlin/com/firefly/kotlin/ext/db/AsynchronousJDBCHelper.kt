@@ -10,6 +10,8 @@ import java.sql.SQLException
 import javax.sql.DataSource
 
 /**
+ * Asynchronous JDBC helper executes SQL using coroutine
+ *
  * @author Pengtao Qiu
  */
 private val log = Log.getLogger("firefly-system")
@@ -86,7 +88,20 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalManage
         }
     }
 
-    suspend fun <T> executeTransaction
+    suspend fun <T> executeTransaction(func: suspend (AsynchronousJDBCHelper) -> T): T? {
+        transactionalManager.beginTransaction()
+        try {
+            val ret = func.invoke(this)
+            transactionalManager.commit()
+            return ret
+        } catch (t: Throwable) {
+            transactionalManager.rollback()
+            log.error("the transaction exception", t)
+            return null
+        } finally {
+            transactionalManager.endTransaction()
+        }
+    }
 
     suspend fun <T> executeSQL(func: (Connection, JDBCHelper) -> T): T? {
         if (transactionalManager.isTransactionBegin) {
@@ -112,7 +127,6 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalManage
                 log.error("execute SQL exception", e)
                 throw DBException(e)
             }
-
         }
     }
 
