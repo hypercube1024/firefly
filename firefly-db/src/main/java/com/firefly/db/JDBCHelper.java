@@ -15,6 +15,7 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 import org.apache.commons.dbutils.BasicRowProcessor;
 import org.apache.commons.dbutils.BeanProcessor;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -352,6 +353,30 @@ public class JDBCHelper extends AbstractLifeCycle {
             }
         }
         return ret;
+    }
+
+    public <T, R> R insertObjectBatch(Connection connection, ResultSetHandler<R> rsh, Class<T> t, List<T> list) {
+        SQLMapper sqlMapper = defaultBeanProcessor.generateInsertSQL(t);
+        Assert.notNull(sqlMapper, "the sql mapper must not be null");
+        Assert.notEmpty(sqlMapper.propertyMap, "the property map must not be empty");
+
+        Object[][] params = new Object[list.size()][sqlMapper.propertyMap.size()];
+        for (int i = 0; i < list.size(); i++) {
+            Object object = list.get(i);
+            final int j = i;
+            sqlMapper.propertyMap.forEach((property, index) -> {
+                try {
+                    params[j][index] = ReflectUtils.get(object, property);
+                } catch (Throwable ignored) {
+                }
+            });
+        }
+        try {
+            return getRunner().insertBatch(connection, sqlMapper.sql, rsh, params);
+        } catch (SQLException e) {
+            log.error("insert batch exception", e);
+            throw new DBException(e);
+        }
     }
 
     public <T> T insert(Connection connection, String sql, Object... params) {

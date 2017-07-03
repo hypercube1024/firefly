@@ -57,6 +57,16 @@
             <artifactId>kotlin-test-junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -98,10 +108,12 @@
                         <option>no-arg:annotation=com.firefly.annotation.Component</option>
                         <option>no-arg:annotation=com.firefly.annotation.Proxies</option>
                         <option>no-arg:annotation=com.firefly.annotation.Proxy</option>
+                        <option>no-arg:annotation=com.firefly.db.annotation.Table</option>
 
                         <option>all-open:annotation=com.firefly.annotation.Component</option>
                         <option>all-open:annotation=com.firefly.annotation.Proxies</option>
                         <option>all-open:annotation=com.firefly.annotation.Proxy</option>
+                        <option>all-open:annotation=com.firefly.db.annotation.Table</option>
                     </pluginOptions>
                 </configuration>
                 <executions>

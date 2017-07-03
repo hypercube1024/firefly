@@ -112,6 +112,18 @@
                 <artifactId>compiler</artifactId>
                 <version>0.9.4</version>
             </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>2.6.3</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>1.4.196</version>
+                <scope>test</scope>
+            </dependency>
 
             <!-- kotlin lib -->
             <dependency>

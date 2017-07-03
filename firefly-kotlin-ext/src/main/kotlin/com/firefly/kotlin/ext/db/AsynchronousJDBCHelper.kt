@@ -5,6 +5,7 @@ import com.firefly.kotlin.ext.log.Log
 import com.firefly.utils.Assert
 import kotlinx.coroutines.experimental.future.await
 import org.apache.commons.dbutils.BeanProcessor
+import org.apache.commons.dbutils.ResultSetHandler
 import java.sql.Connection
 import java.sql.SQLException
 import javax.sql.DataSource
@@ -16,7 +17,7 @@ import javax.sql.DataSource
  */
 private val log = Log.getLogger("firefly-system")
 
-class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalManager: TransactionalManager) {
+open class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalManager: TransactionalManager) {
 
     constructor(dataSource: DataSource) : this(dataSource, null, ThreadLocalTransactionalManager(dataSource))
 
@@ -63,17 +64,32 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalManage
         helper.update(connection, sql, *params)
     } ?: -1
 
-    suspend fun updateObject(obj: Any) = executeSQL { connection, helper ->
+    suspend fun <T> updateObject(obj: T) = executeSQL { connection, helper ->
         helper.updateObject(connection, obj)
     } ?: -1
 
-    suspend fun <T> insert(sql: String, vararg params: Any) = executeSQL { connection, helper ->
-        helper.insert<T>(connection, sql, *params)
+    suspend fun <R> insert(sql: String, vararg params: Any) = executeSQL { connection, helper ->
+        helper.insert<R>(connection, sql, *params)
     }
 
-    suspend fun <T> insertObject(obj: Any) = executeSQL { connection, helper ->
-        helper.insertObject<T>(connection, obj)
+    suspend fun <T, R> insertObject(obj: T) = executeSQL { connection, helper ->
+        helper.insertObject<R>(connection, obj)
     }
+
+    suspend inline fun <reified T, R> insertObjectBatch(list: List<T>, rsh: ResultSetHandler<R>) = executeSQL { connection, helper ->
+        helper.insertObjectBatch(connection, rsh, T::class.java, list)
+    }
+
+    suspend inline fun <reified T, reified R> insertObjectBatch(list: List<T>) = insertObjectBatch(list, ResultSetHandler<List<R>> { rs ->
+        val ret = mutableListOf<R>()
+        while (rs.next()) {
+            val element = rs.getObject(1)
+            if (element is R) {
+                ret.add(element)
+            }
+        }
+        ret
+    })
 
     suspend inline fun <reified T> deleteById(id: Any) = executeSQL { connection, helper ->
         helper.deleteById(connection, T::class.java, id)
