@@ -45,17 +45,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         return new HttpParser(requestHandler, config.getMaxRequestHeadLength());
     }
 
-    @Override
-    protected HttpGenerator initHttpGenerator() {
-        return new HttpGenerator(true, true);
-    }
-
     HttpParser getParser() {
         return parser;
-    }
-
-    HttpGenerator getGenerator() {
-        return generator;
     }
 
     SSLSession getSSLSession() {
@@ -121,10 +112,12 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         }
 
         private final HTTP1ServerConnection connection;
+        private final HttpGenerator httpGenerator;
 
         HTTP1ServerResponseOutputStream(MetaData.Response response, HTTP1ServerConnection connection) {
             super(response, false);
             this.connection = connection;
+            httpGenerator = new HttpGenerator(true, true);
         }
 
         HTTP1ServerConnection getHTTP1ServerConnection() {
@@ -142,10 +135,10 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     log.debug("the server session {} sends 101 switching protocols successfully",
                             getSession().getSessionId());
                 } else {
-                    generateHTTPMessageExceptionally(result, gen.getState());
+                    generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.DONE, HttpGenerator.State.END);
                 }
             } else {
-                generateHTTPMessageExceptionally(result, gen.getState());
+                generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMPLETING);
             }
         }
 
@@ -160,10 +153,10 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.START) {
                     log.debug("the server session {} sends 100 continue successfully", getSession().getSessionId());
                 } else {
-                    generateHTTPMessageExceptionally(result, gen.getState());
+                    generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.DONE, HttpGenerator.State.START);
                 }
             } else {
-                generateHTTPMessageExceptionally(result, gen.getState());
+                generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMPLETING_1XX);
             }
 
         }
@@ -177,8 +170,6 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
             String requestConnectionValue = request.getFields().get(HttpHeader.CONNECTION);
             String responseConnectionValue = response.getFields().get(HttpHeader.CONNECTION);
-
-            connection.getGenerator().reset();
 
             switch (request.getHttpVersion()) {
                 case HTTP_1_0:
@@ -208,20 +199,17 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     }
                     break;
                 default:
-                    throw new IllegalStateException(
-                            "server response does not support the http version " + connection.getHttpVersion());
+                    throw new IllegalStateException("server response does not support the http version " + connection.getHttpVersion());
             }
 
         }
 
         @Override
-        protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult,
-                                                        HttpGenerator.State generatorState) {
-            if (log.isDebugEnabled()) {
-                log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult,
-                        generatorState);
-            }
-            connection.getGenerator().reset();
+        protected void generateHTTPMessageExceptionally(HttpGenerator.Result actualResult,
+                                                        HttpGenerator.State actualState,
+                                                        HttpGenerator.Result expectedResult,
+                                                        HttpGenerator.State expectedState) {
+            log.error("http1 generator error, actual: [{}, {}], expected: [{}, {}]", actualResult, actualState, expectedResult, expectedState);
             throw new IllegalStateException("server generates http message exception.");
         }
 
@@ -242,7 +230,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
         @Override
         protected HttpGenerator getHttpGenerator() {
-            return connection.getGenerator();
+            return httpGenerator;
         }
 
     }
