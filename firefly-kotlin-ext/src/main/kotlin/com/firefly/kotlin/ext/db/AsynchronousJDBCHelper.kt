@@ -1,6 +1,7 @@
 package com.firefly.kotlin.ext.db
 
 import com.firefly.db.*
+import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.utils.Assert
 import kotlinx.coroutines.experimental.future.await
@@ -147,3 +148,6 @@ open class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalM
     }
 
 }
+
+suspend fun <T> asyncTransaction(jdbcHelperName: String = "asynchronousJDBCHelper", func: suspend (AsynchronousJDBCHelper) -> T): T?
+        = Context.getBean<AsynchronousJDBCHelper>(jdbcHelperName).executeTransaction(func)
