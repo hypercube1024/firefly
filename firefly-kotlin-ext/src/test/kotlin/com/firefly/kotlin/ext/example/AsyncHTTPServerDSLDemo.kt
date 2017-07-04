@@ -8,7 +8,11 @@ import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
-import com.firefly.kotlin.ext.log.debug
+import com.firefly.kotlin.ext.log.info
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.runBlocking
+import java.util.concurrent.TimeUnit
 
 /**
  * Asynchronous HTTP server DSL examples
@@ -17,6 +21,8 @@ import com.firefly.kotlin.ext.log.debug
  */
 
 private val log = Log.getLogger { }
+
+private val threadLocal = ThreadLocal<String>()
 
 @NoArg
 data class Response<T>(var msg: String, var code: Int, var data: T? = null)
@@ -51,7 +57,7 @@ fun main(args: Array<String>) {
 
                 val type = getRouterParameter("type")
                 val id = getRouterParameter("id")
-                log.debug { "req type: $type, id: $id" }
+                log.info { "req type: $type, id: $id" }
 
                 writeJson(Response("ok", 200, Product(id, type))).end()
             }
@@ -64,6 +70,36 @@ fun main(args: Array<String>) {
                 writeJson(Response<String>("fuck xxx", 33)).end()
             }
         }
+
+        router {
+            path = "/threadLocal/delay"
+            httpMethod = GET
+
+            asyncHandler {
+                threadLocal.set("reqId1")
+                log.info("delay -> ${threadLocal.get()}, ${it[Job]}")
+                delay(10, TimeUnit.SECONDS)
+                threadLocal.set(null)
+                end("reqId -> ${threadLocal.get()}, ${it[Job]}")
+            }
+        }
+
+        router {
+            path = "/otherReq"
+            httpMethod = GET
+
+            asyncHandler {
+                log.info("other req, async handler -> ${threadLocal.get()}, ${it[Job]}")
+                runBlocking(it) {
+                    log.info("other req, new coroutine with handler context -> ${threadLocal.get()}, ${it[Job]}")
+                }
+
+                runBlocking {
+                    log.info("other req, new coroutine 2 -> ${threadLocal.get()}, ${it[Job]}")
+                }
+                end("other reqId -> ${threadLocal.get()}, ${it[Job]}")
+            }
+        }
     }
 
     server.addRouters {
@@ -72,7 +108,7 @@ fun main(args: Array<String>) {
             path = "/product"
             consumes = "application/json"
 
-            log.debug { "setup router ($this)" }
+            log.info { "setup router ($this)" }
 
             asyncHandler {
                 val product = getJsonBody<Request<Product>>()

@@ -9,7 +9,7 @@ import kotlin.coroutines.experimental.CoroutineContext
  */
 object AsyncPool : CoroutineDispatcher() {
 
-    val defaultPoolSize = Integer.getInteger("com.firefly.kotlin.common.async.defaultPoolSize", Runtime.getRuntime().availableProcessors())
+    val defaultPoolSize: Int = Integer.getInteger("com.firefly.kotlin.common.async.defaultPoolSize", Runtime.getRuntime().availableProcessors())
 
     private val pool: ForkJoinPool = ForkJoinPool(defaultPoolSize, { pool ->
         val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)

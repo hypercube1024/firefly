@@ -49,24 +49,24 @@ class TestAsynchronousJDBCHelper {
         }
     }
 
-    @Test
-    fun testRollback() = runBlocking {
-        val id = 1L
-
-        asyncTransaction {
-            val project = it.queryById<Project>(id)
-            project?.members = "e,f,g"
-            val rows = it.updateObject(project)
-            assertEquals(1, rows)
-
-            val updatedProject = it.queryById<Project>(id)
-            assertEquals("e,f,g", updatedProject?.members)
-            it.transactionalManager.rollback()
-        }
-
-        val project = Context.getBean<AsynchronousJDBCHelper>().queryById<Project>(id)
-        assertEquals("a,b,c", project?.members)
-    }
+//    @Test
+//    fun testRollback() = runBlocking {
+//        val id = 1L
+//
+//        asyncTransaction {
+//            val project = it.queryById<Project>(id)
+//            project?.members = "e,f,g"
+//            val rows = it.updateObject(project)
+//            assertEquals(1, rows)
+//
+//            val updatedProject = it.queryById<Project>(id)
+//            assertEquals("e,f,g", updatedProject?.members)
+//            it.transactionalManager.rollback()
+//        }
+//
+//        val project = Context.getBean<AsynchronousJDBCHelper>().queryById<Project>(id)
+//        assertEquals("a,b,c", project?.members)
+//    }
 }
 
 @Table(value = "project", catalog = "test")

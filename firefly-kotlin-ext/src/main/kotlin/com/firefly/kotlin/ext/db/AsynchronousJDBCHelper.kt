@@ -1,14 +1,14 @@
 package com.firefly.kotlin.ext.db
 
-import com.firefly.db.*
-import com.firefly.kotlin.ext.context.Context
+import com.firefly.db.DBException
+import com.firefly.db.JDBCHelper
+import com.firefly.db.MetricReporterFactory
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.utils.Assert
 import kotlinx.coroutines.experimental.future.await
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.ResultSetHandler
 import java.sql.Connection
-import java.sql.SQLException
 import javax.sql.DataSource
 
 /**
@@ -18,16 +18,12 @@ import javax.sql.DataSource
  */
 private val log = Log.getLogger("firefly-system")
 
-open class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalManager: TransactionalManager) {
+open class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper) {
 
-    constructor(dataSource: DataSource) : this(dataSource, ThreadLocalTransactionalManager(dataSource))
-
-    constructor(dataSource: DataSource,
-                transactionalManager: TransactionalManager) : this(dataSource, null, transactionalManager)
+    constructor(dataSource: DataSource) : this(dataSource, null)
 
     constructor(dataSource: DataSource,
-                metricReporterFactory: MetricReporterFactory?,
-                transactionalManager: TransactionalManager) : this(JDBCHelper(dataSource, metricReporterFactory), transactionalManager)
+                metricReporterFactory: MetricReporterFactory?) : this(JDBCHelper(dataSource, metricReporterFactory))
 
     suspend fun <T> queryForSingleColumn(sql: String, vararg params: Any) = executeSQL { connection, helper ->
         helper.queryForSingleColumn<T>(connection, sql, *params)
@@ -108,49 +104,11 @@ open class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalM
         }
     }
 
-    suspend fun <T> executeTransaction(func: suspend (AsynchronousJDBCHelper) -> T): T? {
-        transactionalManager.beginTransaction()
-        try {
-            val ret = func.invoke(this)
-            transactionalManager.commit()
-            return ret
-        } catch (t: Throwable) {
-            transactionalManager.rollback()
-            log.error("the transaction exception", t)
-            return null
-        } finally {
-            transactionalManager.endTransaction()
-        }
-    }
-
     suspend fun <T> executeSQL(func: (Connection, JDBCHelper) -> T): T? {
-        if (transactionalManager.isTransactionBegin) {
-            transactionalManager.beginTransaction()
-            try {
-                val ret = jdbcHelper.async(transactionalManager.connection, func).await()
-                transactionalManager.commit()
-                return ret
-            } catch (t: Throwable) {
-                transactionalManager.rollback()
-                log.error("the transaction exception", t)
-                return null
-            } finally {
-                transactionalManager.endTransaction()
-            }
-        } else {
-            try {
-                transactionalManager.connection.use { connection ->
-                    jdbcHelper.setAutoCommit(connection, true)
-                    return jdbcHelper.async(connection, func).await()
-                }
-            } catch (e: SQLException) {
-                log.error("execute SQL exception", e)
-                throw DBException(e)
-            }
+        val r: T? = jdbcHelper.connection.use {
+            jdbcHelper.async(it, func).await()
         }
+        return r
     }
 
 }
-
-suspend fun <T> asyncTransaction(jdbcHelperName: String = "asynchronousJDBCHelper", func: suspend (AsynchronousJDBCHelper) -> T): T?
-        = Context.getBean<AsynchronousJDBCHelper>(jdbcHelperName).executeTransaction(func)
