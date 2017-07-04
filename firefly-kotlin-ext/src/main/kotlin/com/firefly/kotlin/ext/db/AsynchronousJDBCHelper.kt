@@ -20,7 +20,10 @@ private val log = Log.getLogger("firefly-system")
 
 open class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper, val transactionalManager: TransactionalManager) {
 
-    constructor(dataSource: DataSource) : this(dataSource, null, ThreadLocalTransactionalManager(dataSource))
+    constructor(dataSource: DataSource) : this(dataSource, ThreadLocalTransactionalManager(dataSource))
+
+    constructor(dataSource: DataSource,
+                transactionalManager: TransactionalManager) : this(dataSource, null, transactionalManager)
 
     constructor(dataSource: DataSource,
                 metricReporterFactory: MetricReporterFactory?,
