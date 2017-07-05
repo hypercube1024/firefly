@@ -44,15 +44,15 @@ public class JDBCHelper extends AbstractLifeCycle {
     private final MetricReporterFactory metricReporterFactory;
 
     public JDBCHelper(DataSource dataSource) {
-        this(dataSource, null);
+        this(dataSource, false, null);
     }
 
-    public JDBCHelper(DataSource dataSource, MetricReporterFactory metricReporterFactory) {
+    public JDBCHelper(DataSource dataSource, boolean monitorEnable, MetricReporterFactory metricReporterFactory) {
         this(dataSource,
                 new QueryRunner(dataSource),
                 new DefaultBeanProcessor(),
                 null,
-                true,
+                monitorEnable,
                 metricReporterFactory);
     }
 
@@ -464,19 +464,6 @@ public class JDBCHelper extends AbstractLifeCycle {
         return null;
     }
 
-    public <T> Promise.Completable<T> async(Func2<Connection, JDBCHelper, T> func) {
-        Promise.Completable<T> c = new Promise.Completable<>();
-        executorService.submit(() -> {
-            Connection connection = getConnection();
-            try {
-                c.succeeded(func.call(connection, this));
-            } catch (Throwable t) {
-                c.failed(t);
-            }
-        });
-        return c;
-    }
-
     public <T> Promise.Completable<T> async(Connection connection, Func2<Connection, JDBCHelper, T> func) {
         Promise.Completable<T> c = new Promise.Completable<>();
         executorService.submit(() -> {
@@ -489,8 +476,28 @@ public class JDBCHelper extends AbstractLifeCycle {
         return c;
     }
 
+    public Promise.Completable<Connection> asyncGetConnection() {
+        Promise.Completable<Connection> c = new Promise.Completable<>();
+        executorService.submit(() -> {
+            try {
+                c.succeeded(getConnection());
+            } catch (Throwable t) {
+                c.failed(t);
+            }
+        });
+        return c;
+    }
+
     public <T> Promise.Completable<T> asyncTransaction(Func2<Connection, JDBCHelper, T> func) {
-        return async((conn, helper) -> executeTransaction(func));
+        Promise.Completable<T> c = new Promise.Completable<>();
+        executorService.submit(() -> {
+            try {
+                c.succeeded(executeTransaction(func));
+            } catch (Throwable t) {
+                c.failed(t);
+            }
+        });
+        return c;
     }
 
     @Override

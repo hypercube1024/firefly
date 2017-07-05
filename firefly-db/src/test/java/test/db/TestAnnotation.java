@@ -135,7 +135,7 @@ public class TestAnnotation {
 
     @Test
     public void testAsync() throws Exception {
-        Promise.Completable<List<User>> completable = jdbcHelper.async((conn, helper) -> {
+        Promise.Completable<List<User>> completable = jdbcHelper.async(jdbcHelper.getConnection(), (conn, helper) -> {
             List<User> users = new ArrayList<>();
             for (long i = 1; i <= size; i++) {
                 User user = helper.queryById(User.class, i);

@@ -22,11 +22,11 @@ public class TransactionalJDBCHelper {
     protected final TransactionalManager transactionalManager;
 
     public TransactionalJDBCHelper(DataSource dataSource) {
-        this(dataSource, null, new ThreadLocalTransactionalManager(dataSource));
+        this(dataSource, false, null, new ThreadLocalTransactionalManager(dataSource));
     }
 
-    public TransactionalJDBCHelper(DataSource dataSource, MetricReporterFactory metricReporterFactory, TransactionalManager transactionalManager) {
-        this(new JDBCHelper(dataSource, metricReporterFactory), transactionalManager);
+    public TransactionalJDBCHelper(DataSource dataSource, boolean monitorEnable, MetricReporterFactory metricReporterFactory, TransactionalManager transactionalManager) {
+        this(new JDBCHelper(dataSource, monitorEnable, metricReporterFactory), transactionalManager);
     }
 
     public TransactionalJDBCHelper(JDBCHelper jdbcHelper, TransactionalManager transactionalManager) {

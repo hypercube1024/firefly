@@ -15,15 +15,17 @@ import kotlin.test.assertEquals
  */
 class TestAsynchronousJDBCHelper {
     private val size = 20
+    private lateinit var jdbcHelper: AsynchronousJDBCHelper
 
     @Before
     fun setup() = runBlocking {
-        val jdbcHelper = Context.getBean<AsynchronousJDBCHelper>()
-        jdbcHelper.update("drop schema if exists test")
-        jdbcHelper.update("create schema test")
-        jdbcHelper.update("set mode MySQL")
+        jdbcHelper = Context.getBean<AsynchronousJDBCHelper>()
+        jdbcHelper.transaction {
+            it.update("drop schema if exists test")
+            it.update("create schema test")
+            it.update("set mode MySQL")
 
-        val createTable = """
+            val createTable = """
             CREATE TABLE `test`.`project` (
             `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
             `name` VARCHAR(64) NOT NULL,
@@ -31,42 +33,54 @@ class TestAsynchronousJDBCHelper {
             `members` VARCHAR(255),
             `status` INT NOT NULL
             )"""
-        jdbcHelper.update(createTable)
+            it.update(createTable)
 
-        val list = (1..size).mapTo(mutableListOf<Project>()) { Project(null, "project_$it", "comment_$it", "a,b,c", 1) }
-        val idList = jdbcHelper.insertObjectBatch<Project, Long>(list)
-        println("id list -> $idList")
+            val list = (1..size).mapTo(mutableListOf<Project>()) { Project(null, "project_$it", "comment_$it", "a,b,c", 1) }
+            val idList = it.insertObjectBatch<Project, Long>(list)
+            println("id list -> $idList")
+        }
+        Unit
     }
 
     @Test
     fun test() = runBlocking {
-        val jdbcHelper = Context.getBean<AsynchronousJDBCHelper>()
-        for (i in 1L..size) {
-            val project = jdbcHelper.queryById<Project>(i)
-            assertEquals(i, project?.id)
-            assertEquals("project_$i", project?.name)
-            assertEquals("comment_$i", project?.comment)
+        jdbcHelper.executeSQL {
+            getConnection().use {
+                for (i in 1L..size) {
+                    val project = it.queryById<Project>(i)
+                    assertEquals(i, project?.id)
+                    assertEquals("project_$i", project?.name)
+                    assertEquals("comment_$i", project?.comment)
+                }
+            }
         }
+        Unit
     }
 
-//    @Test
-//    fun testRollback() = runBlocking {
-//        val id = 1L
-//
-//        asyncTransaction {
-//            val project = it.queryById<Project>(id)
-//            project?.members = "e,f,g"
-//            val rows = it.updateObject(project)
-//            assertEquals(1, rows)
-//
-//            val updatedProject = it.queryById<Project>(id)
-//            assertEquals("e,f,g", updatedProject?.members)
-//            it.transactionalManager.rollback()
-//        }
-//
-//        val project = Context.getBean<AsynchronousJDBCHelper>().queryById<Project>(id)
-//        assertEquals("a,b,c", project?.members)
-//    }
+    @Test
+    fun testRollback() = runBlocking {
+        val id = 1L
+
+        jdbcHelper.transaction {
+            val project = it.queryById<Project>(id)
+            project?.members = "e,f,g"
+            val rows = it.updateObject(project)
+            assertEquals(1, rows)
+
+            val updatedProject = it.queryById<Project>(id)
+            assertEquals("e,f,g", updatedProject?.members)
+            it.rollback()
+        }
+
+        jdbcHelper.executeSQL {
+            getConnection().use {
+                val project = it.queryById<Project>(id)
+                assertEquals("a,b,c", project?.members)
+            }
+        }
+
+        Unit
+    }
 }
 
 @Table(value = "project", catalog = "test")
