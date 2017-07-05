@@ -50,7 +50,6 @@
         <dependency>
             <groupId>commons-dbutils</groupId>
             <artifactId>commons-dbutils</artifactId>
-            <version>1.6</version>
         </dependency>
 
         <dependency>

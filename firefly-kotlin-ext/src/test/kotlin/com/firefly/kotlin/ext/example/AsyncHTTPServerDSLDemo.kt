@@ -76,11 +76,13 @@ fun main(args: Array<String>) {
             httpMethod = GET
 
             asyncHandler {
-                threadLocal.set("reqId1")
-                log.info("delay -> ${threadLocal.get()}, ${it[Job]}")
-                delay(10, TimeUnit.SECONDS)
-                threadLocal.set(null)
-                end("reqId -> ${threadLocal.get()}, ${it[Job]}")
+                threadLocal.set("reqId_001")
+                log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+
+                delay(10, TimeUnit.SECONDS) // simulate I/O wait
+                threadLocal.set(null) // clean thread local variable
+
+                end("${uri.path} -> var:  ${threadLocal.get()}, job: ${it[Job]}")
             }
         }
 
@@ -89,15 +91,15 @@ fun main(args: Array<String>) {
             httpMethod = GET
 
             asyncHandler {
-                log.info("other req, async handler -> ${threadLocal.get()}, ${it[Job]}")
+                log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
                 runBlocking(it) {
-                    log.info("other req, new coroutine with handler context -> ${threadLocal.get()}, ${it[Job]}")
+                    log.info("${uri.path}, new coroutine 1 -> var: ${threadLocal.get()}, job: ${it[Job]}")
                 }
 
                 runBlocking {
-                    log.info("other req, new coroutine 2 -> ${threadLocal.get()}, ${it[Job]}")
+                    log.info("${uri.path}, new coroutine 2 -> var: ${threadLocal.get()}, job: ${it[Job]}")
                 }
-                end("other reqId -> ${threadLocal.get()}, ${it[Job]}")
+                end("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
             }
         }
     }
