@@ -32,15 +32,15 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper) {
         helper.queryForSingleColumn<T>(connection, sql, *params)
     }
 
-    suspend inline fun <reified T> Connection.queryForObject(sql: String, vararg params: Any) = executeSQL(this) { connection, helper ->
+    suspend inline fun <reified T> Connection.queryForObject(sql: String, vararg params: Any): T? = executeSQL(this) { connection, helper ->
         helper.queryForObject<T>(connection, sql, T::class.java, *params)
     }
 
-    suspend inline fun <reified T> Connection.queryForObject(sql: String, beanProcessor: BeanProcessor, vararg params: Any) = executeSQL(this) { connection, helper ->
+    suspend inline fun <reified T> Connection.queryForObject(sql: String, beanProcessor: BeanProcessor, vararg params: Any): T? = executeSQL(this) { connection, helper ->
         helper.queryForObject<T>(connection, sql, T::class.java, beanProcessor, *params)
     }
 
-    suspend inline fun <reified T> Connection.queryById(id: Any) = executeSQL(this) { connection, helper ->
+    suspend inline fun <reified T> Connection.queryById(id: Any): T? = executeSQL(this) { connection, helper ->
         helper.queryById<T>(connection, T::class.java, id)
     }
 
@@ -63,27 +63,27 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper) {
         helper.queryForList<T>(connection, sql, T::class.java, beanProcessor, *params)
     } ?: listOf()
 
-    suspend fun Connection.update(sql: String, vararg params: Any) = executeSQL(this) { connection, helper ->
+    suspend fun Connection.update(sql: String, vararg params: Any): Int = executeSQL(this) { connection, helper ->
         helper.update(connection, sql, *params)
     } ?: -1
 
-    suspend fun <T> Connection.updateObject(obj: T) = executeSQL(this) { connection, helper ->
+    suspend fun <T> Connection.updateObject(obj: T): Int = executeSQL(this) { connection, helper ->
         helper.updateObject(connection, obj)
     } ?: -1
 
-    suspend fun <R> Connection.insert(sql: String, vararg params: Any) = executeSQL(this) { connection, helper ->
+    suspend fun <R> Connection.insert(sql: String, vararg params: Any): R? = executeSQL(this) { connection, helper ->
         helper.insert<R>(connection, sql, *params)
     }
 
-    suspend fun <T, R> Connection.insertObject(obj: T) = executeSQL(this) { connection, helper ->
+    suspend fun <T, R> Connection.insertObject(obj: T): R? = executeSQL(this) { connection, helper ->
         helper.insertObject<R>(connection, obj)
     }
 
-    suspend inline fun <reified T, R> Connection.insertObjectBatch(list: List<T>, rsh: ResultSetHandler<R>) = executeSQL(this) { connection, helper ->
+    suspend inline fun <reified T, R> Connection.insertObjectBatch(list: List<T>, rsh: ResultSetHandler<R>): R? = executeSQL(this) { connection, helper ->
         helper.insertObjectBatch(connection, rsh, T::class.java, list)
     }
 
-    suspend inline fun <reified T, reified R> Connection.insertObjectBatch(list: List<T>) = insertObjectBatch(list, ResultSetHandler<List<R>> { rs ->
+    suspend inline fun <reified T, reified R> Connection.insertObjectBatch(list: List<T>): List<R> = insertObjectBatch(list, ResultSetHandler<List<R>> { rs ->
         val ret = mutableListOf<R>()
         while (rs.next()) {
             val element = rs.getObject(1)
@@ -92,13 +92,13 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper) {
             }
         }
         ret
-    })
+    }) ?: listOf()
 
-    suspend inline fun <reified T> Connection.deleteById(id: Any) = executeSQL(this) { connection, helper ->
+    suspend inline fun <reified T> Connection.deleteById(id: Any): Int = executeSQL(this) { connection, helper ->
         helper.deleteById(connection, T::class.java, id)
     } ?: -1
 
-    suspend fun Connection.batch(sql: String, params: Array<Array<Any>>) = executeSQL(this) { connection, helper ->
+    suspend fun Connection.batch(sql: String, params: Array<Array<Any>>): IntArray? = executeSQL(this) { connection, helper ->
         try {
             helper.runner.batch(connection, sql, params)
         } catch (e: Exception) {
@@ -107,13 +107,25 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper) {
         }
     }
 
-    suspend fun <T> executeSQL(connection: Connection, func: (Connection, JDBCHelper) -> T): T? {
+    suspend fun <R> executeSQL(connection: Connection, func: (Connection, JDBCHelper) -> R?): R? {
         return jdbcHelper.async(connection, func).await()
     }
 
     suspend fun getConnection(): Connection = jdbcHelper.asyncGetConnection().await()
 
-    suspend fun <T> transaction(func: suspend AsynchronousJDBCHelper.(Connection) -> T?): T? {
+    suspend fun <R> Connection.safeUse(block: suspend (Connection) -> R?): R? {
+        try {
+            return block(this)
+        } catch (e: Throwable) {
+            throw e
+        } finally {
+            run(NonCancellable) {
+                close()
+            }
+        }
+    }
+
+    suspend fun <R> transaction(func: suspend AsynchronousJDBCHelper.(Connection) -> R?): R? {
         val connection = getConnection()
         try {
             connection.autoCommit = false
@@ -130,6 +142,6 @@ class AsynchronousJDBCHelper(val jdbcHelper: JDBCHelper) {
         }
     }
 
-    suspend fun <T> executeSQL(func: suspend AsynchronousJDBCHelper.() -> T?): T? = func.invoke(this)
+    suspend fun <R> executeSQL(func: suspend AsynchronousJDBCHelper.() -> R?): R? = func.invoke(this)
 
 }

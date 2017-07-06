@@ -15,11 +15,10 @@ import kotlin.test.assertEquals
  */
 class TestAsynchronousJDBCHelper {
     private val size = 20
-    private lateinit var jdbcHelper: AsynchronousJDBCHelper
+    private val jdbcHelper = Context.getBean<AsynchronousJDBCHelper>()
 
     @Before
     fun setup() = runBlocking {
-        jdbcHelper = Context.getBean<AsynchronousJDBCHelper>()
         jdbcHelper.transaction {
             it.update("drop schema if exists test")
             it.update("create schema test")
@@ -35,7 +34,9 @@ class TestAsynchronousJDBCHelper {
             )"""
             it.update(createTable)
 
-            val list = (1..size).mapTo(mutableListOf<Project>()) { Project(null, "project_$it", "comment_$it", "a,b,c", 1) }
+            val list = (1..size).mapTo(mutableListOf<Project>()) {
+                Project(null, "project_$it", "comment_$it", "a,b,c", 1)
+            }
             val idList = it.insertObjectBatch<Project, Long>(list)
             println("id list -> $idList")
         }
@@ -45,7 +46,7 @@ class TestAsynchronousJDBCHelper {
     @Test
     fun test() = runBlocking {
         jdbcHelper.executeSQL {
-            getConnection().use {
+            getConnection().safeUse {
                 for (i in 1L..size) {
                     val project = it.queryById<Project>(i)
                     assertEquals(i, project?.id)
@@ -73,12 +74,11 @@ class TestAsynchronousJDBCHelper {
         }
 
         jdbcHelper.executeSQL {
-            getConnection().use {
+            getConnection().safeUse {
                 val project = it.queryById<Project>(id)
                 assertEquals("a,b,c", project?.members)
             }
         }
-
         Unit
     }
 }
