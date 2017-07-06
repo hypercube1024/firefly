@@ -142,7 +142,7 @@ public class TestAsyncPool {
 
         int poolSize = pool.size();
         Assert.assertThat(poolSize, lessThanOrEqualTo(maxSize));
-        Assert.assertThat(poolSize, lessThanOrEqualTo(pool.getCreatedObjectSize()));
+        Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(maxSize));
         System.out.println(poolSize);
         start.set(false);
         pool.stop();
@@ -174,7 +174,7 @@ public class TestAsyncPool {
 
         int poolSize = pool.size();
         Assert.assertThat(poolSize, lessThan(8));
-        Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(poolSize));
+        Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(8));
         System.out.println(poolSize);
         pool.stop();
     }
