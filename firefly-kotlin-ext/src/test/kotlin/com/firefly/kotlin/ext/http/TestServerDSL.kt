@@ -23,7 +23,7 @@ class TestServerDSL {
     fun testDSL(): Unit = runBlocking {
         val host = "localhost"
         val port = RandomUtils.random(3000, 65534).toInt()
-        val url = "http://$host:$port"
+
         HttpServer {
             router {
                 httpMethod = GET
@@ -77,6 +77,7 @@ class TestServerDSL {
 
         }.listen(host, port)
 
+        val url = "http://$host:$port"
         val client = firefly.httpClient()
 
         val r0 = client.get("$url/test/headerAndTrailer").asyncSubmit()

@@ -226,9 +226,9 @@ class RouterBlock(private val router: Router) {
         try {
             return block(this)
         } catch (e: Exception) {
-            closed = true
             try {
                 run(NonCancellable) {
+                    closed = true
                     this?.close()
                 }
             } catch (closeException: Exception) {
