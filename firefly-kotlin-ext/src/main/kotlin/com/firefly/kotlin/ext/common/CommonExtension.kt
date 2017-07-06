@@ -21,4 +21,3 @@ object Json {
     inline fun <reified T : Any> parse(str: String): T = json.parse(str, object : GenericTypeReference<T>() {})
 }
 
-

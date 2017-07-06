@@ -1,14 +1,17 @@
 package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.HttpField
-import com.firefly.codec.http2.model.HttpHeader.SERVER
+import com.firefly.codec.http2.model.HttpHeader.*
 import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpStatus.Code.UNAUTHORIZED
+import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.example.Response
 import com.firefly.utils.RandomUtils
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
+import java.nio.charset.StandardCharsets
+import java.util.zip.GZIPOutputStream
 import kotlin.test.assertEquals
 
 /**
@@ -55,6 +58,23 @@ class TestServerDSL {
                 }
             }
 
+            router {
+                httpMethod = GET
+                path = "/test/gzipMsg"
+
+                asyncHandler {
+
+                    header {
+                        CONTENT_TYPE to MimeTypes.Type.TEXT_PLAIN_UTF_8.asString()
+                        CONTENT_ENCODING to "gzip"
+                    }
+
+                    GZIPOutputStream(response.outputStream).safeUse {
+                        it.write("gzip msg".toByteArray(StandardCharsets.UTF_8))
+                    }
+                }
+            }
+
         }.listen(host, port)
 
         val client = firefly.httpClient()
@@ -69,5 +89,8 @@ class TestServerDSL {
         assertEquals(UNAUTHORIZED.code, r1.status)
         assertEquals(UNAUTHORIZED.message, r1.reason)
         assertEquals("Forbid access", r1.stringBody)
+
+        val r2 = client.get("$url/test/gzipMsg").asyncSubmit()
+        assertEquals("gzip msg", r2.stringBody)
     }
 }

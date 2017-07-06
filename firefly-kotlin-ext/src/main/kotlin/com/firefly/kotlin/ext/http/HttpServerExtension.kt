@@ -11,7 +11,10 @@ import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
+import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.run
+import java.io.Closeable
 import java.net.InetAddress
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.CoroutineContext
@@ -56,7 +59,7 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringB
  *
  * @param block Response status line statement
  */
-fun RoutingContext.statusLine(block: StatusLineBlock.() -> Unit): Unit = block.invoke(StatusLineBlock(this))
+inline fun RoutingContext.statusLine(block: StatusLineBlock.() -> Unit): Unit = block.invoke(StatusLineBlock(this))
 
 class StatusLineBlock(private val ctx: RoutingContext) {
     var status: Int = HttpStatus.OK_200
@@ -96,7 +99,7 @@ interface HttpFieldOperator {
  *
  * @param block HTTP header statement
  */
-fun RoutingContext.header(block: HeaderBlock.() -> Unit): Unit = block.invoke(HeaderBlock(this))
+inline fun RoutingContext.header(block: HeaderBlock.() -> Unit): Unit = block.invoke(HeaderBlock(this))
 
 class HeaderBlock(ctx: RoutingContext) : HttpFieldOperator {
 
@@ -124,7 +127,7 @@ class HeaderBlock(ctx: RoutingContext) : HttpFieldOperator {
  *
  * @param block HTTP trailer statement
  */
-fun RoutingContext.trailer(block: TrailerBlock.() -> Unit): Unit = block.invoke(TrailerBlock(this))
+inline fun RoutingContext.trailer(block: TrailerBlock.() -> Unit): Unit = block.invoke(TrailerBlock(this))
 
 class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperator {
 
@@ -218,6 +221,28 @@ class RouterBlock(private val router: Router) {
         router.handler(handler)
     }
 
+    suspend fun <T : Closeable?, R> T.safeUse(block: (T) -> R): R {
+        var closed = false
+        try {
+            return block(this)
+        } catch (e: Exception) {
+            closed = true
+            try {
+                run(NonCancellable) {
+                    this?.close()
+                }
+            } catch (closeException: Exception) {
+            }
+            throw e
+        } finally {
+            if (!closed) {
+                run(NonCancellable) {
+                    this?.close()
+                }
+            }
+        }
+    }
+
     override fun toString(): String {
         return "RouterBlock(method='$method', methods=$methods, httpMethod=$httpMethod, httpMethods=$httpMethods, path='$path', regexPath='$regexPath', paths=$paths, consumes='$consumes', produces='$produces')"
     }
@@ -257,9 +282,9 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
 
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
-    fun router(block: RouterBlock.() -> Unit): Unit {
+    inline fun router(block: RouterBlock.() -> Unit): Unit {
         block.invoke(RouterBlock(routerManager.register()))
     }
 
-    fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)
+    inline fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)
 }
