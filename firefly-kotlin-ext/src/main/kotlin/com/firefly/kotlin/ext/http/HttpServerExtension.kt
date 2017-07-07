@@ -221,7 +221,7 @@ class RouterBlock(private val router: Router) {
         router.handler(handler)
     }
 
-    suspend fun <T : Closeable?, R> T.safeUse(block: (T) -> R): R {
+    suspend fun <T : Closeable?, R> T.safeUse(block: suspend (T) -> R): R {
         var closed = false
         try {
             return block(this)
