@@ -22,7 +22,7 @@ public class SelfSignedCertificateOpenSSLContextFactory extends AbstractOpenSSLC
     private List<String> supportedProtocols;
 
     public SelfSignedCertificateOpenSSLContextFactory() {
-        this(Arrays.asList("h2", "h2-17", "h2-16", "h2-15", "h2-14", "http/1.1"));
+        this(Arrays.asList("h2", "http/1.1"));
     }
 
     public SelfSignedCertificateOpenSSLContextFactory(List<String> supportedProtocols) {

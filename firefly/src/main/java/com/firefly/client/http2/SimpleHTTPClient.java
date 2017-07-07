@@ -383,8 +383,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             RequestBuilder req = new RequestBuilder();
             req.host = url.getHost();
             req.port = url.getPort() < 0 ? url.getDefaultPort() : url.getPort();
-            req.request = new MetaData.Request(method, new HttpURI(url.toURI()), HttpVersion.HTTP_1_1,
-                    new HttpFields());
+            HttpURI httpURI = new HttpURI(url.toURI());
+            if (!StringUtils.hasText(httpURI.getPath().trim())) {
+                httpURI.setPath("/");
+            }
+            req.request = new MetaData.Request(method, httpURI, HttpVersion.HTTP_1_1, new HttpFields());
             return req;
         } catch (URISyntaxException e) {
             log.error("url exception", e);

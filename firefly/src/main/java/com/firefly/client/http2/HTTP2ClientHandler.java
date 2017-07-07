@@ -31,10 +31,20 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
         if (config.isSecureConnectionEnabled()) {
             session.attachObject(new SSLSession(config.getSslContextFactory(), true, session, sslSession -> {
                 log.debug("client session {} SSL handshake finished", session.getSessionId());
-                if ("http/1.1".equals(sslSession.applicationProtocol())) {
-                    initializeHTTP1ClientConnection(session, context, sslSession);
+                String protocol = sslSession.applicationProtocol();
+                if (StringUtils.hasText(protocol)) {
+                    switch (protocol) {
+                        case "http/1.1":
+                            initializeHTTP1ClientConnection(session, context, sslSession);
+                            break;
+                        case "h2":
+                            initializeHTTP2ClientConnection(session, context, sslSession);
+                            break;
+                        default:
+                            throw new IllegalStateException("SSL negotiate failure, the protocol " + protocol + " is not supported");
+                    }
                 } else {
-                    initializeHTTP2ClientConnection(session, context, sslSession);
+                    throw new IllegalStateException("SSL negotiate exception, the protocol is null");
                 }
             }));
         } else {
