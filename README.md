@@ -78,7 +78,7 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-Create a HTTP server in main function
+Create a HTTP server (Java version)
 ```java
 public class HelloHTTPServer {
     public static void main(String[] args) {
@@ -89,13 +89,56 @@ public class HelloHTTPServer {
 }
 ```
 
-Run and view
+Create a HTTP client (Java version)
+```java
+public class HelloHTTPClient {
+    public static void main(String[] args){
+        $.httpClient().get("http://localhost:8080/").submit()
+         .thenAccept(res -> System.out.println(res.getStringBody()));
+    }
+}
+```
 
+Firefly also supports to create HTTP server/client using Kotlin DSL.  
+
+Add maven dependency in your pom.xml
+```xml
+<dependency>
+    <groupId>com.fireflysource</groupId>
+    <artifactId>firefly-kotlin-ext</artifactId>
+    <version>4.3.0</version>
+</dependency>
 ```
-http://localhost:8080/
+
+Create a HTTP server (Kotlin DSL version)
+```kotlin
+fun main(args: Array<String>) {
+    HttpServer {
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/"
+
+            asyncHandler {
+                end("hello world!")
+            }
+        }
+    }.listen("localhost", 8080)
+}
 ```
-More detailed information, please refer to the [full document](http://www.fireflysource.com/docs/http-server-and-client.html)
-and [example project](https://github.com/hypercube1024/firefly/tree/master/firefly-example).
+
+Create a HTTP client (Kotlin coroutine asynchronous client)
+```kotlin
+fun main(args: Array<String>): Unit = runBlocking {
+    val msg = firefly.httpClient().get("http://localhost:8080").asyncSubmit().stringBody
+    println(msg)
+}
+```
+
+More detailed information, please refer to the 
+* [HTTP server/client document (Java version)](http://www.fireflysource.com/docs/http-server-and-client.html)
+* [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example)
+* [HTTP server/client document (Kotlin version)](http://www.fireflysource.com/docs/http-server-and-client-kotlin-ext.html)
+* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-kotlin-ext/src/test/kotlin/com/firefly/kotlin/ext/example)
 
 # Contact information
 E-mail: qptkk@163.com  

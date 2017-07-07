@@ -18,6 +18,8 @@ private val log = Log.getLogger { }
 private val host = "http://localhost:8080"
 
 fun main(args: Array<String>): Unit = runBlocking {
+    firefly.httpClient().get("http://localhost:8080").asyncSubmit().stringBody
+
     val msg = firefly.httpClient().get("$host/jsonMsg")
             .asyncSubmit().getJsonBody<Response<String>>()
     log.info { "msg -> $msg" }
