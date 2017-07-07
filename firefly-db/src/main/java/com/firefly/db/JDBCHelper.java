@@ -15,6 +15,7 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 import org.apache.commons.dbutils.BasicRowProcessor;
 import org.apache.commons.dbutils.BeanProcessor;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -43,15 +44,15 @@ public class JDBCHelper extends AbstractLifeCycle {
     private final MetricReporterFactory metricReporterFactory;
 
     public JDBCHelper(DataSource dataSource) {
-        this(dataSource, null);
+        this(dataSource, false, null);
     }
 
-    public JDBCHelper(DataSource dataSource, MetricReporterFactory metricReporterFactory) {
+    public JDBCHelper(DataSource dataSource, boolean monitorEnable, MetricReporterFactory metricReporterFactory) {
         this(dataSource,
                 new QueryRunner(dataSource),
                 new DefaultBeanProcessor(),
                 null,
-                true,
+                monitorEnable,
                 metricReporterFactory);
     }
 
@@ -354,6 +355,30 @@ public class JDBCHelper extends AbstractLifeCycle {
         return ret;
     }
 
+    public <T, R> R insertObjectBatch(Connection connection, ResultSetHandler<R> rsh, Class<T> t, List<T> list) {
+        SQLMapper sqlMapper = defaultBeanProcessor.generateInsertSQL(t);
+        Assert.notNull(sqlMapper, "the sql mapper must not be null");
+        Assert.notEmpty(sqlMapper.propertyMap, "the property map must not be empty");
+
+        Object[][] params = new Object[list.size()][sqlMapper.propertyMap.size()];
+        for (int i = 0; i < list.size(); i++) {
+            Object object = list.get(i);
+            final int j = i;
+            sqlMapper.propertyMap.forEach((property, index) -> {
+                try {
+                    params[j][index] = ReflectUtils.get(object, property);
+                } catch (Throwable ignored) {
+                }
+            });
+        }
+        try {
+            return getRunner().insertBatch(connection, sqlMapper.sql, rsh, params);
+        } catch (SQLException e) {
+            log.error("insert batch exception", e);
+            throw new DBException(e);
+        }
+    }
+
     public <T> T insert(Connection connection, String sql, Object... params) {
         try {
             return runner.insert(connection, sql, new ScalarHandler<T>(), params);
@@ -439,10 +464,9 @@ public class JDBCHelper extends AbstractLifeCycle {
         return null;
     }
 
-    public <T> Promise.Completable<T> async(Func2<Connection, JDBCHelper, T> func) {
+    public <T> Promise.Completable<T> async(Connection connection, Func2<Connection, JDBCHelper, T> func) {
         Promise.Completable<T> c = new Promise.Completable<>();
         executorService.submit(() -> {
-            Connection connection = getConnection();
             try {
                 c.succeeded(func.call(connection, this));
             } catch (Throwable t) {
@@ -452,8 +476,28 @@ public class JDBCHelper extends AbstractLifeCycle {
         return c;
     }
 
+    public Promise.Completable<Connection> asyncGetConnection() {
+        Promise.Completable<Connection> c = new Promise.Completable<>();
+        executorService.submit(() -> {
+            try {
+                c.succeeded(getConnection());
+            } catch (Throwable t) {
+                c.failed(t);
+            }
+        });
+        return c;
+    }
+
     public <T> Promise.Completable<T> asyncTransaction(Func2<Connection, JDBCHelper, T> func) {
-        return async((conn, helper) -> executeTransaction(func));
+        Promise.Completable<T> c = new Promise.Completable<>();
+        executorService.submit(() -> {
+            try {
+                c.succeeded(executeTransaction(func));
+            } catch (Throwable t) {
+                c.failed(t);
+            }
+        });
+        return c;
     }
 
     @Override

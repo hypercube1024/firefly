@@ -6,12 +6,12 @@
     <packaging>jar</packaging>
 
     <name>firefly-db</name>
-    <url>http://maven.apache.org</url>
+    <url>http://www.fireflysource.com</url>
 
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.2.0</version>
+        <version>4.3.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -50,7 +50,6 @@
         <dependency>
             <groupId>commons-dbutils</groupId>
             <artifactId>commons-dbutils</artifactId>
-            <version>1.6</version>
         </dependency>
 
         <dependency>
@@ -61,13 +60,11 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>2.5.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.191</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

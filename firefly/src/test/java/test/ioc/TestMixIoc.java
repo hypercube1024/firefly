@@ -11,47 +11,58 @@ import test.mixed.Food;
 import test.mixed.FoodService;
 import test.mixed.FoodService2;
 
+import java.util.Collection;
+import java.util.List;
+
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 
 public class TestMixIoc {
-	private static Logger log = LoggerFactory.getLogger("firefly-system");
-	public static ApplicationContext applicationContext = new XmlApplicationContext("mixed-config.xml");
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
+    public static ApplicationContext applicationContext = new XmlApplicationContext("mixed-config.xml");
 
-	@Test
-	public void testInject() {
-		FoodService2 foodService2 = applicationContext.getBean("foodService2");
-		Food food = foodService2.getFood("apple");
-		log.debug(food.getName());
-		Assert.assertThat(food.getPrice(), is(5.3));
-		
-		FoodService foodService = applicationContext.getBean("foodService");
-		food = foodService.getFood("strawberry");
-		log.debug(food.getName());
-		Assert.assertThat(food.getPrice(), is(10.00));
-	}
+    @Test
+    public void testBeanQuery() {
+        Collection<Food> foods = applicationContext.getBeans(Food.class);
+        Assert.assertThat(foods.size(), greaterThanOrEqualTo(4));
+        System.out.println(foods);
+    }
 
-	@Test(expected = BeanDefinitionParsingException.class)
-	public void testErrorConfig1() {
-		new XmlApplicationContext("error-config1.xml");
-	}
+    @Test
+    public void testInject() {
+        FoodService2 foodService2 = applicationContext.getBean("foodService2");
+        Food food = foodService2.getFood("apple");
+        log.debug(food.getName());
+        Assert.assertThat(food.getPrice(), is(5.3));
 
-	@Test(expected = BeanDefinitionParsingException.class)
-	public void testErrorConfig2() {
-		new XmlApplicationContext("error-config2.xml");
-	}
+        FoodService foodService = applicationContext.getBean("foodService");
+        food = foodService.getFood("strawberry");
+        log.debug(food.getName());
+        Assert.assertThat(food.getPrice(), is(10.00));
+    }
 
-	@Test(expected = BeanDefinitionParsingException.class)
-	public void testErrorConfig3() {
-		new XmlApplicationContext("error-config3.xml");
-	}
+    @Test(expected = BeanDefinitionParsingException.class)
+    public void testErrorConfig1() {
+        new XmlApplicationContext("error-config1.xml");
+    }
 
-	@Test(expected = BeanDefinitionParsingException.class)
-	public void testErrorConfig4() {
-		new XmlApplicationContext("error-config4.xml");
-	}
-	
-	@Test(expected = BeanDefinitionParsingException.class)
-	public void testErrorConfig5() {
-		new XmlApplicationContext("error-config5.xml");
-	}
+    @Test(expected = BeanDefinitionParsingException.class)
+    public void testErrorConfig2() {
+        new XmlApplicationContext("error-config2.xml");
+    }
+
+    @Test(expected = BeanDefinitionParsingException.class)
+    public void testErrorConfig3() {
+        new XmlApplicationContext("error-config3.xml");
+    }
+
+    @Test(expected = BeanDefinitionParsingException.class)
+    public void testErrorConfig4() {
+        new XmlApplicationContext("error-config4.xml");
+    }
+
+    @Test(expected = BeanDefinitionParsingException.class)
+    public void testErrorConfig5() {
+        new XmlApplicationContext("error-config5.xml");
+    }
 }

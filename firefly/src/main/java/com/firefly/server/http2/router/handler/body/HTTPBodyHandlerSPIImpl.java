@@ -8,6 +8,7 @@ import com.firefly.utils.io.PipedStream;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.GenericTypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,6 +140,11 @@ public class HTTPBodyHandlerSPIImpl implements HTTPBodyHandlerSPI {
     @Override
     public <T> T getJsonBody(Class<T> clazz) {
         return Json.toObject(getStringBody(), clazz);
+    }
+
+    @Override
+    public <T> T getJsonBody(GenericTypeReference<T> typeReference) {
+        return Json.toObject(getStringBody(),typeReference);
     }
 
     @Override

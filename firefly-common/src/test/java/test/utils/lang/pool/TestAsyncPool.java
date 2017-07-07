@@ -15,8 +15,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 /**
  * @author Pengtao Qiu
@@ -41,9 +40,10 @@ public class TestAsyncPool {
         }
         list.forEach(pool::release);
 
-        Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
-        System.out.println(pool.size());
-        Assert.assertThat(pool.size(), is(4));
+        int poolSize = pool.size();
+        Assert.assertThat(poolSize, is(pool.getCreatedObjectSize()));
+        System.out.println(poolSize);
+        Assert.assertThat(poolSize, is(4));
         pool.stop();
     }
 
@@ -139,9 +139,11 @@ public class TestAsyncPool {
 
         int number = 100;
         takeObjectTest(pool, number);
-        Assert.assertThat(pool.size(), is(maxSize));
-        Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
-        System.out.println(pool.size());
+
+        int poolSize = pool.size();
+        Assert.assertThat(poolSize, lessThanOrEqualTo(maxSize));
+        Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(maxSize));
+        System.out.println(poolSize);
         start.set(false);
         pool.stop();
     }
@@ -169,9 +171,11 @@ public class TestAsyncPool {
 
         int number = 100;
         takeObjectTest(pool, number);
-        Assert.assertThat(pool.size(), is(6));
-        Assert.assertThat(pool.size(), is(pool.getCreatedObjectSize()));
-        System.out.println(pool.size());
+
+        int poolSize = pool.size();
+        Assert.assertThat(poolSize, lessThan(8));
+        Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(8));
+        System.out.println(poolSize);
         pool.stop();
     }
 

@@ -35,7 +35,7 @@ public class TestTransactionalJdbcHelper {
         jdbcHelper.update(
                 "CREATE TABLE `test`.`user`(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))");
 
-        Object[][] params = new Object[10][2];
+        Object[][] params = new Object[size][2];
         for (int i = 0; i < size; i++) {
             params[i][0] = "test transaction " + i;
             params[i][1] = "pwd transaction " + i;
@@ -74,7 +74,7 @@ public class TestTransactionalJdbcHelper {
 
             User user1 = helper.queryById(User.class, id);
             Assert.assertThat(user1.getName(), is("apple"));
-            helper.rollback();
+            helper.getTransactionalManager().rollback();
             return 0;
         });
 
@@ -106,7 +106,7 @@ public class TestTransactionalJdbcHelper {
                 user1 = helper.queryById(User.class, 1L);
                 System.out.println(user1);
                 Assert.assertThat(user1.getName(), is("apple"));
-                helper.rollback();
+                helper.getTransactionalManager().rollback();
                 return 0;
             });
             Assert.assertThat(r, is(0));

@@ -132,17 +132,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         return new HttpParser(responseHandler, config.getMaxRequestHeadLength());
     }
 
-    @Override
-    protected HttpGenerator initHttpGenerator() {
-        return new HttpGenerator();
-    }
-
     HttpParser getParser() {
         return parser;
-    }
-
-    HttpGenerator getGenerator() {
-        return generator;
     }
 
     SSLSession getSSLSession() {
@@ -254,7 +245,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         try {
             outputStream.commit();
         } catch (IOException e) {
-            generator.reset();
             log.error("client generates the HTTP message exception", e);
         }
         return outputStream;
@@ -265,7 +255,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
             log.debug("client request and does not send data");
         } catch (IOException e) {
-            generator.reset();
             log.error("client generates the HTTP message exception", e);
         }
     }
@@ -287,7 +276,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                 output.writeWithContentLength(buffers);
             }
         } catch (IOException e) {
-            generator.reset();
             log.error("client generates the HTTP message exception", e);
         }
     }
@@ -308,26 +296,25 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     static class HTTP1ClientRequestOutputStream extends AbstractHTTP1OutputStream {
 
         private final HTTP1ClientConnection connection;
+        private final HttpGenerator httpGenerator;
 
         private HTTP1ClientRequestOutputStream(HTTP1ClientConnection connection, MetaData.Request request) {
             super(request, true);
             this.connection = connection;
+            httpGenerator = new HttpGenerator();
         }
 
         @Override
         protected void generateHTTPMessageSuccessfully() {
             log.debug("client session {} generates the HTTP message completely", connection.tcpSession.getSessionId());
-            connection.generator.reset();
         }
 
         @Override
-        protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult,
-                                                        HttpGenerator.State generatorState) {
-            if (log.isDebugEnabled()) {
-                log.debug("http1 generator error, the result is {}, and the generator state is {}", generatorResult,
-                        generatorState);
-            }
-            connection.getGenerator().reset();
+        protected void generateHTTPMessageExceptionally(HttpGenerator.Result actualResult,
+                                                        HttpGenerator.State actualState,
+                                                        HttpGenerator.Result expectedResult,
+                                                        HttpGenerator.State expectedState) {
+            log.error("http1 generator error, actual: [{}, {}], expected: [{}, {}]", actualResult, actualState, expectedResult, expectedState);
             throw new IllegalStateException("client generates http message exception.");
         }
 
@@ -348,7 +335,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
         @Override
         protected HttpGenerator getHttpGenerator() {
-            return connection.getGenerator();
+            return httpGenerator;
         }
     }
 

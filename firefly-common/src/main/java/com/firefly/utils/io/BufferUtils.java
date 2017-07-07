@@ -1146,4 +1146,15 @@ public class BufferUtils {
         }
         return count;
     }
+
+    public static byte[] toArray(List<ByteBuffer> list) {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            for (ByteBuffer buf : list) {
+                BufferUtils.writeTo(buf, out);
+            }
+            return out.toByteArray();
+        } catch (IOException e) {
+            return null;
+        }
+    }
 }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.fireflysource.com/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+
+    <component-scan base-package="com.firefly.kotlin.ext.context" />
+
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
+        <property name="jdbcUrl" value="jdbc:h2:mem:test" />
+        <property name="driverClassName" value="org.h2.Driver" />
+        <property name="isAutoCommit" value="false" />
+    </bean>
+
+    <bean id="asynchronousJDBCHelper" class="com.firefly.kotlin.ext.db.AsynchronousJDBCHelper">
+        <constructor>
+            <argument type="javax.sql.DataSource" ref="dataSource"/>
+        </constructor>
+    </bean>
+
+</beans>

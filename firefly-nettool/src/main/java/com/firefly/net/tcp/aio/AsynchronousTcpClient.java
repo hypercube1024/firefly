@@ -83,6 +83,6 @@ public class AsynchronousTcpClient extends AbstractTcpLifeCycle implements Clien
 
     @Override
     protected String getThreadName() {
-        return "firefly-aio-tcp-client";
+        return "firefly-aio-tcp-client-";
     }
 }

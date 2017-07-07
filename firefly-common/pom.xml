@@ -6,12 +6,12 @@
     <packaging>jar</packaging>
 
     <name>firefly-common</name>
-    <url>http://maven.apache.org</url>
+    <url>http://www.fireflysource.com</url>
 
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.2.0</version>
+        <version>4.3.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

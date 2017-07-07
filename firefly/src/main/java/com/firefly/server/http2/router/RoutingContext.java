@@ -3,12 +3,10 @@ package com.firefly.server.http2.router;
 import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
-import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
-import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
-import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
+import com.firefly.utils.lang.GenericTypeReference;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
@@ -176,6 +174,8 @@ public interface RoutingContext extends Closeable {
     String getStringBody();
 
     <T> T getJsonBody(Class<T> clazz);
+
+    <T> T getJsonBody(GenericTypeReference<T> typeReference);
 
     JsonObject getJsonObjectBody();
 

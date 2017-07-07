@@ -20,6 +20,11 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        int length = $.httpsClient().get("https://login.taobao.com/").submit().get().getStringBody("GBK").length();
+        System.out.println(length);
+    }
+
     public static void main5(String[] args) {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) { // tls.ctf.network
@@ -36,7 +41,7 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main4(String[] args) throws ExecutionException, InterruptedException {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();
@@ -51,7 +56,7 @@ public class SimpleHTTPClientDemo5 {
                 $.httpsClient().get("https://www.taobao.com/")
                  .submit()
                  .thenApply(res -> res.getStringBody("UTF-8"))
-                 .thenAccept(v ->{
+                 .thenAccept(v -> {
                      System.out.println("----index time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
                      log.info("----------------> index body -> {}", v);
                  });

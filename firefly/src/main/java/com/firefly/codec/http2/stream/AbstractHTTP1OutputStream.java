@@ -39,7 +39,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             }
             committed = true;
         } else {
-            generateHTTPMessageExceptionally(generatorResult, generator.getState());
+            generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMMITTED);
         }
     }
 
@@ -66,14 +66,14 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
                     tcpSession.encode(chunk);
                     tcpSession.encode(data);
                 } else {
-                    generateHTTPMessageExceptionally(generatorResult, generator.getState());
+                    generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMMITTED);
                 }
             } else {
                 generatorResult = generate(null, null, null, data, false);
                 if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
                     tcpSession.encode(data);
                 } else {
-                    generateHTTPMessageExceptionally(generatorResult, generator.getState());
+                    generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMMITTED);
                 }
             }
         }
@@ -97,7 +97,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
                     tcpSession.encode(header);
                     generateLastData(generator);
                 } else {
-                    generateHTTPMessageExceptionally(generatorResult, generator.getState());
+                    generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMPLETING);
                 }
                 committed = true;
             } else {
@@ -112,14 +112,14 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
                             generateTrailer(generator, tcpSession);
                         }
                     } else {
-                        generateHTTPMessageExceptionally(generatorResult, generator.getState());
+                        generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.CONTINUE, HttpGenerator.State.COMPLETING);
                     }
                 } else {
                     generatorResult = generate(null, null, null, null, true);
                     if (generatorResult == HttpGenerator.Result.CONTINUE && generator.getState() == HttpGenerator.State.COMPLETING) {
                         generateLastData(generator);
                     } else {
-                        generateHTTPMessageExceptionally(generatorResult, generator.getState());
+                        generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.CONTINUE, HttpGenerator.State.COMPLETING);
                     }
                 }
             }
@@ -135,7 +135,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             tcpSession.encode(chunk);
             generateLastData(generator);
         } else {
-            generateHTTPMessageExceptionally(generatorResult, generator.getState());
+            generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMPLETING);
         }
     }
 
@@ -146,7 +146,7 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             tcpSession.encode(trailer);
             generateLastData(generator);
         } else {
-            generateHTTPMessageExceptionally(generatorResult, generator.getState());
+            generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMPLETING);
         }
     }
 
@@ -158,10 +158,10 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
             } else if (generatorResult == HttpGenerator.Result.SHUTDOWN_OUT) {
                 getSession().close();
             } else {
-                generateHTTPMessageExceptionally(generatorResult, generator.getState());
+                generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.DONE, HttpGenerator.State.END);
             }
         } else {
-            generateHTTPMessageExceptionally(generatorResult, generator.getState());
+            generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.DONE, HttpGenerator.State.END);
         }
     }
 
@@ -185,6 +185,9 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 
     abstract protected void generateHTTPMessageSuccessfully();
 
-    abstract protected void generateHTTPMessageExceptionally(HttpGenerator.Result generatorResult, HttpGenerator.State generatorState);
+    abstract protected void generateHTTPMessageExceptionally(HttpGenerator.Result actualResult,
+                                                             HttpGenerator.State actualState,
+                                                             HttpGenerator.Result expectedResult,
+                                                             HttpGenerator.State expectedState);
 
 }

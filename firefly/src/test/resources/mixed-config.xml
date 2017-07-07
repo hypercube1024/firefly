@@ -24,4 +24,11 @@
 		</property>
 	</bean>
 
+	<bean id="kebab" class="test.mixed.Snack">
+		<property name="productionPlace" value="China" />
+		<property name="relish" value="peppery" />
+		<property name="name" value="mmp" />
+		<property name="price" value="3.5" />
+	</bean>
+
 </beans>
