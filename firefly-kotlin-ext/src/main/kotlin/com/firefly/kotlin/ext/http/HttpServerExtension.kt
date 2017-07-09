@@ -14,6 +14,7 @@ import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
 import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.experimental.runBlocking
 import java.io.Closeable
 import java.net.InetAddress
 import java.util.function.Supplier
@@ -37,6 +38,18 @@ fun HTTP2ServerBuilder.asyncHandler(handler: suspend RoutingContext.(context: Co
 fun Router.asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Router = this.handler {
     it.response.isAsynchronous = true
     launch(AsyncPool) {
+        handler.invoke(it, context)
+    }
+}
+
+fun HTTP2ServerBuilder.syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): HTTP2ServerBuilder = this.handler {
+    runBlocking {
+        handler.invoke(it, context)
+    }
+}
+
+fun Router.syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Router = this.handler {
+    runBlocking {
         handler.invoke(it, context)
     }
 }
@@ -215,6 +228,10 @@ class RouterBlock(private val router: Router) {
 
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
         router.asyncHandler(handler)
+    }
+
+    fun syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
+        router.syncHandler(handler)
     }
 
     fun handler(handler: RoutingContext.() -> Unit): Unit {

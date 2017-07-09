@@ -31,10 +31,20 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
         if (config.isSecureConnectionEnabled()) {
             session.attachObject(new SSLSession(config.getSslContextFactory(), true, session, sslSession -> {
                 log.debug("client session {} SSL handshake finished", session.getSessionId());
-                if ("http/1.1".equals(sslSession.applicationProtocol())) {
-                    initializeHTTP1ClientConnection(session, context, sslSession);
+                String protocol = sslSession.applicationProtocol();
+                if (StringUtils.hasText(protocol)) {
+                    switch (protocol) {
+                        case "http/1.1":
+                            initializeHTTP1ClientConnection(session, context, sslSession);
+                            break;
+                        case "h2":
+                            initializeHTTP2ClientConnection(session, context, sslSession);
+                            break;
+                        default:
+                            throw new IllegalStateException("SSL application protocol negotiates failure. The protocol " + protocol + " is not supported");
+                    }
                 } else {
-                    initializeHTTP2ClientConnection(session, context, sslSession);
+                    throw new IllegalStateException("SSL application protocol negotiates exception, the protocol is null");
                 }
             }));
         } else {
@@ -46,14 +56,12 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
                     throw new IllegalArgumentException("the protocol " + config.getProtocol() + " is not support.");
                 }
                 switch (httpVersion) {
-                    case HTTP_1_1: {
+                    case HTTP_1_1:
                         initializeHTTP1ClientConnection(session, context, null);
-                    }
-                    break;
-                    case HTTP_2: {
+                        break;
+                    case HTTP_2:
                         initializeHTTP2ClientConnection(session, context, null);
-                    }
-                    break;
+                        break;
                     default:
                         throw new IllegalArgumentException("the protocol " + config.getProtocol() + " is not support.");
                 }

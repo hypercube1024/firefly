@@ -308,7 +308,9 @@ public class SSLSession implements Closeable {
     }
 
     public String applicationProtocol() {
-        return sslHandler.applicationProtocol();
+        String protocol = sslHandler.applicationProtocol();
+        log.debug("selected protocol -> {}", protocol);
+        return protocol;
     }
 
     public boolean isOpen() {

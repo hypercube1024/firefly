@@ -2,6 +2,7 @@ package com.firefly.kotlin.ext.example
 
 import com.firefly.codec.http2.model.HttpField
 import com.firefly.codec.http2.model.HttpHeader.SERVER
+import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpMethod.POST
 import com.firefly.codec.http2.model.HttpStatus.Code.OK
@@ -24,17 +25,22 @@ private val log = Log.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
 
-@NoArg
-data class Response<T>(var msg: String, var code: Int, var data: T? = null)
 
-@NoArg
-data class Request<T>(var token: String, var data: T? = null)
 
 @NoArg
 data class Product(var id: String, var type: String)
 
 fun main(args: Array<String>) {
     val server = HttpServer {
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/"
+
+            asyncHandler {
+                end("hello world!")
+            }
+        }
+
         router {
             httpMethods = listOf(GET, POST)
             path = "/product/:type/:id"

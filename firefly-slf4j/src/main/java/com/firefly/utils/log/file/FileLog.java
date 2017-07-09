@@ -386,8 +386,8 @@ public class FileLog implements Log, Closeable {
         StackTraceElement[] arr = Thread.currentThread().getStackTrace();
         StackTraceElement s = arr[4];
         if (s != null) {
-            if (s.getClassName().equals("org.slf4j.impl.LoggerImpl")) {
-                return arr[5];
+            if (s.getClassName().equals("com.firefly.utils.log.ClassNameLogWrap")) {
+                return arr[6];
             } else {
                 return s;
             }
