@@ -42,18 +42,6 @@ fun Router.asyncHandler(handler: suspend RoutingContext.(context: CoroutineConte
     }
 }
 
-fun HTTP2ServerBuilder.syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): HTTP2ServerBuilder = this.handler {
-    runBlocking {
-        handler.invoke(it, context)
-    }
-}
-
-fun Router.syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Router = this.handler {
-    runBlocking {
-        handler.invoke(it, context)
-    }
-}
-
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> RoutingContext.getJsonBody(): T = Json.parse(stringBody)
@@ -228,10 +216,6 @@ class RouterBlock(private val router: Router) {
 
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
         router.asyncHandler(handler)
-    }
-
-    fun syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
-        router.syncHandler(handler)
     }
 
     fun handler(handler: RoutingContext.() -> Unit): Unit {
