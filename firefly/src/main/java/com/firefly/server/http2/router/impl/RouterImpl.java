@@ -4,9 +4,7 @@ import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Matcher.MatchType;
 import com.firefly.server.http2.router.Router;
-import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.utils.PathUtils;
-import com.firefly.utils.function.Action1;
 
 import java.util.HashSet;
 import java.util.List;
