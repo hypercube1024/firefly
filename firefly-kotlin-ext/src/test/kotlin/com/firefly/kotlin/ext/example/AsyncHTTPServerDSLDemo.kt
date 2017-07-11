@@ -10,9 +10,13 @@ import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.kotlin.ext.log.info
+import com.firefly.server.http2.router.RoutingContext
+import com.firefly.utils.concurrent.Promise
+import com.firefly.utils.function.Action0
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -24,7 +28,6 @@ import java.util.concurrent.TimeUnit
 private val log = Log.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
-
 
 
 @NoArg
@@ -78,8 +81,8 @@ fun main(args: Array<String>) {
         }
 
         router {
-            path = "/threadLocal/delay"
             httpMethod = GET
+            path = "/threadLocal/delay"
 
             asyncHandler {
                 threadLocal.set("reqId_001")
@@ -93,8 +96,8 @@ fun main(args: Array<String>) {
         }
 
         router {
-            path = "/otherReq"
             httpMethod = GET
+            path = "/otherReq"
 
             asyncHandler {
                 log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
@@ -108,6 +111,47 @@ fun main(args: Array<String>) {
                 end("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
             }
         }
+
+        router {
+            httpMethod = GET
+            path = "/routerChain"
+
+            asyncHandler {
+                promise<String>({
+                    write("router 1 success\r\n").end(it)
+                }, {
+                    write("${it?.message}").end()
+                })
+
+                write("enter router 1\r\n").next()
+            }
+        }
+
+        router {
+            httpMethod = GET
+            path = "/routerChain"
+
+            asyncHandler {
+                promise<String> {
+                    write("router 2 success\r\n")
+                }
+
+                write("enter router 2\r\n").next()
+            }
+        }
+
+        router {
+            httpMethod = GET
+            path = "/routerChain"
+
+            asyncHandler {
+                promise<String> {
+                    write("router 3 success\r\n")
+                }
+
+                write("enter router 3\r\n").succeed("request complete")
+            }
+        }
     }
 
     server.addRouters {
@@ -115,8 +159,6 @@ fun main(args: Array<String>) {
             httpMethod = POST
             path = "/product"
             consumes = "application/json"
-
-            log.info { "setup router ($this)" }
 
             asyncHandler {
                 val product = getJsonBody<Request<Product>>()

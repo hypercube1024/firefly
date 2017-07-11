@@ -3,6 +3,7 @@ package com.firefly.kotlin.ext.http
 import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.common.Json
+import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.HTTP2ServerBuilder
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
@@ -11,12 +12,14 @@ import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
+import com.firefly.utils.concurrent.Promise
 import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.run
-import kotlinx.coroutines.experimental.runBlocking
 import java.io.Closeable
 import java.net.InetAddress
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.CoroutineContext
 
@@ -160,6 +163,8 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
 class RouterBlock(private val router: Router) {
 
+    private val promiseQueueKey = "_promiseQueue"
+
     var method: String = HttpMethod.GET.asString()
         set(value) {
             router.method(value)
@@ -222,6 +227,57 @@ class RouterBlock(private val router: Router) {
         router.handler(handler)
     }
 
+    fun <C> RoutingContext.getPromiseQueue(): Deque<Promise<C>>? {
+        val queue = getAttribute(promiseQueueKey)
+        if (queue == null) {
+            return null
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            return queue as Deque<Promise<C>>
+        }
+    }
+
+    fun <C> RoutingContext.createPromiseQueue(): Deque<Promise<C>> {
+        val queue = ConcurrentLinkedDeque<Promise<C>>()
+        setAttribute(promiseQueueKey, queue)
+        return queue
+    }
+
+    inline fun <C> RoutingContext.promise(crossinline successed: (C) -> Unit, crossinline failed: (Throwable?) -> Unit): RoutingContext {
+        val queue = getPromiseQueue<C>() ?: createPromiseQueue<C>()
+        queue.push(object : Promise<C> {
+            override fun succeeded(c: C) {
+                successed.invoke(c)
+                try {
+                    queue.pop().succeeded(c)
+                } catch (e: NoSuchElementException) {
+                }
+            }
+
+            override fun failed(x: Throwable?) {
+                failed.invoke(x)
+                try {
+                    queue.pop().failed(x)
+                } catch (e: NoSuchElementException) {
+                }
+            }
+        })
+        return this
+    }
+
+    inline fun <C> RoutingContext.promise(crossinline successed: (C) -> Unit): RoutingContext {
+        promise(successed, {})
+        return this
+    }
+
+    fun <C> RoutingContext.succeed(result: C): Unit {
+        getPromiseQueue<C>()?.pop()?.succeeded(result)
+    }
+
+    fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
+        getPromiseQueue<C>()?.pop()?.failed(x)
+    }
+
     suspend fun <T : Closeable?, R> T.safeUse(block: suspend (T) -> R): R {
         var closed = false
         try {
@@ -245,7 +301,7 @@ class RouterBlock(private val router: Router) {
     }
 
     override fun toString(): String {
-        return "RouterBlock(method='$method', methods=$methods, httpMethod=$httpMethod, httpMethods=$httpMethods, path='$path', regexPath='$regexPath', paths=$paths, consumes='$consumes', produces='$produces')"
+        return router.toString()
     }
 
 }
@@ -263,6 +319,8 @@ interface HttpServerLifecycle {
 class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
+
+    val log = Log.getLogger("firefly-system")
 
     val server: SimpleHTTPServer = SimpleHTTPServer(serverConfiguration)
     val routerManager: RouterManager = RouterManager.create(httpBodyConfiguration)
@@ -284,7 +342,9 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
     inline fun router(block: RouterBlock.() -> Unit): Unit {
-        block.invoke(RouterBlock(routerManager.register()))
+        val r = RouterBlock(routerManager.register())
+        block.invoke(r)
+        log.info("register $r")
     }
 
     inline fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)

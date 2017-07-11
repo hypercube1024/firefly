@@ -209,7 +209,7 @@ public class RouterImpl implements Router {
 
     @Override
     public String toString() {
-        return "RouterImpl{" +
+        return "Router {" +
                 "id=" + id +
                 ", matchTypes=" + matchTypes +
                 ", url='" + url + '\'' +
