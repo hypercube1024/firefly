@@ -29,6 +29,8 @@ import kotlin.coroutines.experimental.CoroutineContext
  * @author Pengtao Qiu
  */
 
+val sysLogger = Log.getLogger("firefly-system")
+
 // HTTP server API extensions
 
 fun HTTP2ServerBuilder.asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): HTTP2ServerBuilder = this.handler {
@@ -320,8 +322,6 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
 
-    val log = Log.getLogger("firefly-system")
-
     val server: SimpleHTTPServer = SimpleHTTPServer(serverConfiguration)
     val routerManager: RouterManager = RouterManager.create(httpBodyConfiguration)
 
@@ -344,7 +344,7 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
     inline fun router(block: RouterBlock.() -> Unit): Unit {
         val r = RouterBlock(routerManager.register())
         block.invoke(r)
-        log.info("register $r")
+        sysLogger.info("register $r")
     }
 
     inline fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)
