@@ -173,6 +173,20 @@ fun main(args: Array<String>) {
                 writeJson(Response("mmp ok", 33, product.toString())).end()
             }
         }
+
+        router {
+            httpMethod = GET
+            path = "/test/*"
+
+            asyncHandler {
+                setAttribute("reqId", 20)
+                if (hasNext()) {
+                    next()
+                } else {
+                    end("nothing")
+                }
+            }
+        }
     }
 
     server.listen("localhost", 8080)

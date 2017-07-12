@@ -7,6 +7,7 @@ import com.firefly.codec.http2.model.HttpStatus.Code.UNAUTHORIZED
 import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.example.Response
+import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.RandomUtils
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
@@ -94,4 +95,48 @@ class TestServerDSL {
         val r2 = client.get("$url/test/gzipMsg").asyncSubmit()
         assertEquals("gzip msg", r2.stringBody)
     }
+
+    @Test
+    fun testRequestLocal(): Unit = runBlocking {
+        val host = "localhost"
+        val port = RandomUtils.random(3000, 65534).toInt()
+        val reqLocal = ThreadLocal<RoutingContext>()
+
+        fun testReqId() {
+            val reqId = reqLocal.get()?.getAttribute("reqId") as Int
+            assertEquals(20, reqId)
+        }
+
+        HttpServer(reqLocal) {
+            router {
+                httpMethod = GET
+                path = "/test/*"
+
+                asyncHandler {
+                    setAttribute("reqId", 20)
+                    next()
+                }
+            }
+
+            router {
+                httpMethod = GET
+                path = "/test/product/:id"
+
+                asyncHandler {
+                    val reqId = getAttribute("reqId") as Int
+                    assertEquals(20, reqId)
+                    testReqId()
+                    end("reqId: $reqId")
+                }
+            }
+        }.listen(host, port)
+
+        val url = "http://$host:$port"
+        val client = firefly.httpClient()
+
+        val r0 = client.get("$url/test/product/3").asyncSubmit()
+        assertEquals("reqId: 20", r0.stringBody)
+    }
+
+
 }

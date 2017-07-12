@@ -175,11 +175,21 @@ public class TestMatcher {
         Assert.assertThat(result.getRouters().size(), is(1));
         Assert.assertThat(result.getRouters().contains(router8), is(true));
 
-
         result = routerManager.getRegexPathMatcher().match("/hello113");
         Assert.assertThat(result, notNullValue());
         Assert.assertThat(result.getRouters().size(), is(1));
         Assert.assertThat(result.getRouters().contains(router9), is(true));
         Assert.assertThat(result.getParameters().get(router9).get("group1"), is("113"));
+    }
+
+    @Test
+    public void testPathMatcher2() {
+        RouterManagerImpl routerManager = new RouterManagerImpl();
+        Router router10 = routerManager.register().path("/test/*");
+
+        Matcher.MatchResult result = routerManager.getPatternPathMatcher().match("/test/x");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router10), is(true));
     }
 }
