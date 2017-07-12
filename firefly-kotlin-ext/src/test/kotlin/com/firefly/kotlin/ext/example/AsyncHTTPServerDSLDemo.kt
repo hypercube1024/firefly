@@ -10,6 +10,7 @@ import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.kotlin.ext.log.info
+import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
@@ -24,13 +25,13 @@ import java.util.concurrent.TimeUnit
 private val log = Log.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
-
+private val coroutineLocal = ThreadLocal<RoutingContext>()
 
 @NoArg
 data class Product(var id: String, var type: String)
 
 fun main(args: Array<String>) {
-    val server = HttpServer {
+    val server = HttpServer(coroutineLocal) {
         router {
             httpMethod = HttpMethod.GET
             path = "/"
@@ -82,11 +83,13 @@ fun main(args: Array<String>) {
 
             asyncHandler {
                 threadLocal.set("reqId_001")
+                setAttribute("reqId", "001")
                 log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                testCoroutineCtx()
 
                 delay(10, TimeUnit.SECONDS) // simulate I/O wait
                 threadLocal.set(null) // clean thread local variable
-
+                removeAttribute("reqId")
                 end("${uri.path} -> var:  ${threadLocal.get()}, job: ${it[Job]}")
             }
         }
@@ -97,6 +100,7 @@ fun main(args: Array<String>) {
 
             asyncHandler {
                 log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                testCoroutineCtx()
                 runBlocking(it) {
                     log.info("${uri.path}, new coroutine 1 -> var: ${threadLocal.get()}, job: ${it[Job]}")
                 }
@@ -167,4 +171,8 @@ fun main(args: Array<String>) {
     }
 
     server.listen("localhost", 8080)
+}
+
+suspend fun testCoroutineCtx() {
+    log.info("coroutine local ${coroutineLocal.get()?.uri?.path} -> ${coroutineLocal.get()?.getAttribute("reqId")}")
 }

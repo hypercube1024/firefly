@@ -2,6 +2,7 @@ package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.AsyncPool
+import com.firefly.kotlin.ext.common.InterceptingContext
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.SimpleHTTPServer
@@ -149,7 +150,8 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 }
 
 @HttpServerMarker
-class RouterBlock(private val router: Router) {
+class RouterBlock(private val router: Router,
+                  private val coroutineLocal: ThreadLocal<RoutingContext>) {
 
     private val promiseQueueKey = "_promiseQueue"
 
@@ -210,7 +212,8 @@ class RouterBlock(private val router: Router) {
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
         router.handler {
             it.response.isAsynchronous = true
-            launch(AsyncPool) {
+            val coroutineContext = InterceptingContext(AsyncPool, it, coroutineLocal)
+            launch(coroutineContext) {
                 handler.invoke(it, context)
             }
         }
@@ -313,7 +316,8 @@ interface HttpServerLifecycle {
 annotation class HttpServerMarker
 
 @HttpServerMarker
-class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
+class HttpServer(val coroutineLocal: ThreadLocal<RoutingContext>,
+                 serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
 
@@ -324,7 +328,15 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
         block.invoke(this)
     }
 
-    constructor(block: HttpServer.() -> Unit) : this(SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
+    constructor(coroutineLocal: ThreadLocal<RoutingContext>, block: HttpServer.() -> Unit) : this(
+            coroutineLocal,
+            SimpleHTTPServerConfiguration(),
+            HTTPBodyConfiguration(),
+            block)
+
+    constructor(block: HttpServer.() -> Unit) : this(
+            ThreadLocal<RoutingContext>(),
+            block)
 
     constructor() : this({})
 
@@ -337,7 +349,7 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
     inline fun router(block: RouterBlock.() -> Unit): Unit {
-        val r = RouterBlock(routerManager.register())
+        val r = RouterBlock(routerManager.register(), coroutineLocal)
         block.invoke(r)
         sysLogger.info("register $r")
     }
