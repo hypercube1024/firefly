@@ -10,7 +10,6 @@ import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.kotlin.ext.log.info
-import com.firefly.server.http2.router.Router
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
