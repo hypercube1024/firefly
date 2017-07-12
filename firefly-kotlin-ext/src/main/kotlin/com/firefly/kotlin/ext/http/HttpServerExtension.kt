@@ -4,7 +4,6 @@ import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.Log
-import com.firefly.server.http2.HTTP2ServerBuilder
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
@@ -32,20 +31,6 @@ import kotlin.coroutines.experimental.CoroutineContext
 val sysLogger = Log.getLogger("firefly-system")
 
 // HTTP server API extensions
-
-fun HTTP2ServerBuilder.asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): HTTP2ServerBuilder = this.handler {
-    it.response.isAsynchronous = true
-    launch(AsyncPool) {
-        handler.invoke(it, context)
-    }
-}
-
-fun Router.asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Router = this.handler {
-    it.response.isAsynchronous = true
-    launch(AsyncPool) {
-        handler.invoke(it, context)
-    }
-}
 
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
@@ -222,7 +207,12 @@ class RouterBlock(private val router: Router) {
         }
 
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
-        router.asyncHandler(handler)
+        router.handler {
+            it.response.isAsynchronous = true
+            launch(AsyncPool) {
+                handler.invoke(it, context)
+            }
+        }
     }
 
     fun handler(handler: RoutingContext.() -> Unit): Unit {
