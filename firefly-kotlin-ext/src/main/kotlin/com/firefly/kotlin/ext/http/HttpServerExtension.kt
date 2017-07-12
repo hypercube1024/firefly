@@ -148,6 +148,7 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
 }
 
+@HttpServerMarker
 class RouterBlock(private val router: Router) {
 
     private val promiseQueueKey = "_promiseQueue"
@@ -308,6 +309,10 @@ interface HttpServerLifecycle {
     fun listen(): Unit
 }
 
+@DslMarker
+annotation class HttpServerMarker
+
+@HttpServerMarker
 class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {

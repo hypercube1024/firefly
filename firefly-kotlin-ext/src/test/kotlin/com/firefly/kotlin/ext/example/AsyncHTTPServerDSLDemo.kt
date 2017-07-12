@@ -10,6 +10,7 @@ import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.kotlin.ext.log.info
+import com.firefly.server.http2.router.Router
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
@@ -119,6 +120,7 @@ fun main(args: Array<String>) {
                     write("${it?.message}").end()
                 })
 
+                setAttribute("reqId", 1000)
                 write("enter router 1\r\n").next()
             }
         }
@@ -128,11 +130,12 @@ fun main(args: Array<String>) {
             path = "/routerChain"
 
             asyncHandler {
+                val reqId = getAttribute("reqId") as Int
                 promise<String> {
-                    write("router 2 success\r\n")
+                    write("router 2 success, request id $reqId\r\n")
                 }
 
-                write("enter router 2\r\n").next()
+                write("enter router 2, request id $reqId\r\n").next()
             }
         }
 
@@ -141,11 +144,12 @@ fun main(args: Array<String>) {
             path = "/routerChain"
 
             asyncHandler {
+                val reqId = getAttribute("reqId") as Int
                 promise<String> {
-                    write("router 3 success\r\n")
+                    write("router 3 success, request id $reqId\r\n")
                 }
 
-                write("enter router 3\r\n").succeed("request complete")
+                write("enter router 3, request id $reqId\r\n").succeed("request complete")
             }
         }
     }
