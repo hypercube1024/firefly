@@ -25,13 +25,13 @@ import java.util.concurrent.TimeUnit
 private val log = Log.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
-private val coroutineLocal = ThreadLocal<RoutingContext>()
+private val requestLocal = ThreadLocal<RoutingContext>()
 
 @NoArg
 data class Product(var id: String, var type: String)
 
 fun main(args: Array<String>) {
-    val server = HttpServer(coroutineLocal) {
+    val server = HttpServer(requestLocal) {
         router {
             httpMethod = HttpMethod.GET
             path = "/"
@@ -84,13 +84,18 @@ fun main(args: Array<String>) {
             asyncHandler {
                 threadLocal.set("reqId_001")
                 setAttribute("reqId", "001")
-                log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
-                testCoroutineCtx()
 
-                delay(10, TimeUnit.SECONDS) // simulate I/O wait
-                threadLocal.set(null) // clean thread local variable
-                removeAttribute("reqId")
-                end("${uri.path} -> var:  ${threadLocal.get()}, job: ${it[Job]}")
+                try {
+                    log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                    testCoroutineCtx()
+
+                    delay(10, TimeUnit.SECONDS) // simulate I/O wait
+
+                    end("${uri.path} -> threadLocal:  ${threadLocal.get()}, job: ${it[Job]}, reqId: ${getAttribute("reqId")}")
+                } finally {
+                    threadLocal.set(null) // clean thread local variable
+                    removeAttribute("reqId") // clean request id
+                }
             }
         }
 
@@ -108,7 +113,7 @@ fun main(args: Array<String>) {
                 runBlocking {
                     log.info("${uri.path}, new coroutine 2 -> var: ${threadLocal.get()}, job: ${it[Job]}")
                 }
-                end("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                end("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}, reqId: ${getAttribute("reqId")}")
             }
         }
 
@@ -174,5 +179,5 @@ fun main(args: Array<String>) {
 }
 
 suspend fun testCoroutineCtx() {
-    log.info("coroutine local ${coroutineLocal.get()?.uri?.path} -> ${coroutineLocal.get()?.getAttribute("reqId")}")
+    log.info("coroutine local ${requestLocal.get()?.uri?.path} -> ${requestLocal.get()?.getAttribute("reqId")}")
 }

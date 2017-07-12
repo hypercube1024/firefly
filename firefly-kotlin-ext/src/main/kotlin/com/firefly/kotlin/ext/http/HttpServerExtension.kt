@@ -151,7 +151,7 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
 @HttpServerMarker
 class RouterBlock(private val router: Router,
-                  private val coroutineLocal: ThreadLocal<RoutingContext>) {
+                  private val requestCtx: ThreadLocal<RoutingContext>?) {
 
     private val promiseQueueKey = "_promiseQueue"
 
@@ -212,8 +212,8 @@ class RouterBlock(private val router: Router,
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
         router.handler {
             it.response.isAsynchronous = true
-            val coroutineContext = InterceptingContext(AsyncPool, it, coroutineLocal)
-            launch(coroutineContext) {
+            val ctx = if (requestCtx == null) AsyncPool else InterceptingContext(AsyncPool, it, requestCtx)
+            launch(ctx) {
                 handler.invoke(it, context)
             }
         }
@@ -316,7 +316,7 @@ interface HttpServerLifecycle {
 annotation class HttpServerMarker
 
 @HttpServerMarker
-class HttpServer(val coroutineLocal: ThreadLocal<RoutingContext>,
+class HttpServer(val requestCtx: ThreadLocal<RoutingContext>? = null,
                  serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
@@ -328,15 +328,13 @@ class HttpServer(val coroutineLocal: ThreadLocal<RoutingContext>,
         block.invoke(this)
     }
 
-    constructor(coroutineLocal: ThreadLocal<RoutingContext>, block: HttpServer.() -> Unit) : this(
-            coroutineLocal,
-            SimpleHTTPServerConfiguration(),
-            HTTPBodyConfiguration(),
-            block)
+    constructor(coroutineLocal: ThreadLocal<RoutingContext>?, block: HttpServer.() -> Unit)
+            : this(coroutineLocal,
+                   SimpleHTTPServerConfiguration(),
+                   HTTPBodyConfiguration(),
+                   block)
 
-    constructor(block: HttpServer.() -> Unit) : this(
-            ThreadLocal<RoutingContext>(),
-            block)
+    constructor(block: HttpServer.() -> Unit) : this(null, block)
 
     constructor() : this({})
 
@@ -349,7 +347,7 @@ class HttpServer(val coroutineLocal: ThreadLocal<RoutingContext>,
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
     inline fun router(block: RouterBlock.() -> Unit): Unit {
-        val r = RouterBlock(routerManager.register(), coroutineLocal)
+        val r = RouterBlock(routerManager.register(), requestCtx)
         block.invoke(r)
         sysLogger.info("register $r")
     }
