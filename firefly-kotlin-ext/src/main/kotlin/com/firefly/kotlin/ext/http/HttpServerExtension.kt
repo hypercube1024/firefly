@@ -2,7 +2,7 @@ package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.AsyncPool
-import com.firefly.kotlin.ext.common.InterceptingContext
+import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.SimpleHTTPServer
@@ -36,6 +36,15 @@ val sysLogger = Log.getLogger("firefly-system")
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> RoutingContext.getJsonBody(): T = Json.parse(stringBody)
+
+inline fun <reified T : Any> RoutingContext.getAttr(name: String): T? {
+    val data = getAttribute(name)
+    if (data is T) {
+        return data
+    } else {
+        throw ClassCastException("The attribute $name type is ${data::class.java}. It can't cast to ${T::class.java}")
+    }
+}
 
 fun RoutingContext.writeJson(obj: Any): RoutingContext = put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).write(Json.toJson(obj))
 
@@ -151,7 +160,7 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
 @HttpServerMarker
 class RouterBlock(private val router: Router,
-                  private val requestCtx: ThreadLocal<RoutingContext>?) {
+                  private val requestCtx: CoroutineLocal<RoutingContext>?) {
 
     private val promiseQueueKey = "_promiseQueue"
 
@@ -212,8 +221,7 @@ class RouterBlock(private val router: Router,
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
         router.handler {
             it.response.isAsynchronous = true
-            val ctx = if (requestCtx == null) AsyncPool else InterceptingContext(AsyncPool, it, requestCtx)
-            launch(ctx) {
+            launch(requestCtx?.createContext(it) ?: AsyncPool) {
                 handler.invoke(it, context)
             }
         }
@@ -223,24 +231,15 @@ class RouterBlock(private val router: Router,
         router.handler(handler)
     }
 
-    fun <C> RoutingContext.getPromiseQueue(): Deque<Promise<C>>? {
-        val queue = getAttribute(promiseQueueKey)
-        if (queue == null) {
-            return null
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            return queue as Deque<Promise<C>>
-        }
-    }
+    fun <C> RoutingContext.getPromiseQueue(): Deque<Promise<C>>? = getAttr(promiseQueueKey)
 
-    fun <C> RoutingContext.createPromiseQueue(): Deque<Promise<C>> {
-        val queue = ConcurrentLinkedDeque<Promise<C>>()
-        setAttribute(promiseQueueKey, queue)
-        return queue
-    }
+    @Suppress("UNCHECKED_CAST")
+    fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<Promise<C>> = attributes.computeIfAbsent(promiseQueueKey) {
+        ConcurrentLinkedDeque<Promise<C>>()
+    } as Deque<Promise<C>>
 
     inline fun <C> RoutingContext.promise(crossinline successed: (C) -> Unit, crossinline failed: (Throwable?) -> Unit): RoutingContext {
-        val queue = getPromiseQueue<C>() ?: createPromiseQueue<C>()
+        val queue = createPromiseQueueIfAbsent<C>()
         queue.push(object : Promise<C> {
             override fun succeeded(c: C) {
                 successed.invoke(c)
@@ -316,7 +315,7 @@ interface HttpServerLifecycle {
 annotation class HttpServerMarker
 
 @HttpServerMarker
-class HttpServer(val requestCtx: ThreadLocal<RoutingContext>? = null,
+class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
                  serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
@@ -328,11 +327,11 @@ class HttpServer(val requestCtx: ThreadLocal<RoutingContext>? = null,
         block.invoke(this)
     }
 
-    constructor(coroutineLocal: ThreadLocal<RoutingContext>?, block: HttpServer.() -> Unit)
+    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
             : this(coroutineLocal,
-                   SimpleHTTPServerConfiguration(),
-                   HTTPBodyConfiguration(),
-                   block)
+            SimpleHTTPServerConfiguration(),
+            HTTPBodyConfiguration(),
+            block)
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
 

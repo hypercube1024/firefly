@@ -5,6 +5,7 @@ import com.firefly.codec.http2.model.HttpHeader.*
 import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpStatus.Code.UNAUTHORIZED
 import com.firefly.codec.http2.model.MimeTypes
+import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.example.Response
 import com.firefly.server.http2.router.RoutingContext
@@ -97,17 +98,14 @@ class TestServerDSL {
     }
 
     @Test
-    fun testRequestLocal(): Unit = runBlocking {
+    fun testRequestCtx(): Unit = runBlocking {
         val host = "localhost"
         val port = RandomUtils.random(3000, 65534).toInt()
-        val reqLocal = ThreadLocal<RoutingContext>()
+        val reqCtx = CoroutineLocal<RoutingContext>()
 
-        fun testReqId() {
-            val reqId = reqLocal.get()?.getAttribute("reqId") as Int
-            assertEquals(20, reqId)
-        }
+        fun testReqId() = assertEquals(20, reqCtx.get()?.getAttr<Int>("reqId"))
 
-        HttpServer(reqLocal) {
+        HttpServer(reqCtx) {
             router {
                 httpMethod = GET
                 path = "/test/*"
@@ -123,7 +121,7 @@ class TestServerDSL {
                 path = "/test/product/:id"
 
                 asyncHandler {
-                    val reqId = getAttribute("reqId") as Int
+                    val reqId = getAttr<Int>("reqId")
                     assertEquals(20, reqId)
                     testReqId()
                     end("reqId: $reqId")
@@ -138,5 +136,42 @@ class TestServerDSL {
         assertEquals("reqId: 20", r0.stringBody)
     }
 
+    @Test
+    fun testRouterChain(): Unit = runBlocking {
+        val host = "localhost"
+        val port = RandomUtils.random(3000, 65534).toInt()
+
+        HttpServer {
+            router {
+                httpMethod = GET
+                path = "/test/chain/*"
+
+                asyncHandler {
+                    setAttribute("userId", 33)
+                    promise<String>({
+                        write("router 1 success\r\n").end(it)
+                    }, {
+                        write("${it?.message}").end()
+                    }).next()
+                }
+            }
+
+            router {
+                httpMethod = GET
+                path = "/test/chain/task/:id"
+
+                asyncHandler {
+                    write("enter router 2\r\n").succeed("User ${getAttr<Int>("userId")} gets task ${getRouterParameter("id")}\r\n")
+                }
+            }
+        }.listen(host, port)
+
+        val url = "http://$host:$port"
+        val client = firefly.httpClient()
+        val r0 = client.get("$url/test/chain/task/70").asyncSubmit()
+        val expectedBody = "enter router 2\r\nrouter 1 success\r\nUser 33 gets task 70\r\n"
+        println(r0.stringBody)
+        assertEquals(expectedBody, r0.stringBody)
+    }
 
 }

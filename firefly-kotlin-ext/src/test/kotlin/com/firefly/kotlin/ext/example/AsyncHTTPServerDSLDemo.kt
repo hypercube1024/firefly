@@ -7,6 +7,7 @@ import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpMethod.POST
 import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
+import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.kotlin.ext.log.info
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit
 private val log = Log.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
-private val requestLocal = ThreadLocal<RoutingContext>()
+private val requestLocal = CoroutineLocal<RoutingContext>()
 
 @NoArg
 data class Product(var id: String, var type: String)
