@@ -314,6 +314,18 @@ interface HttpServerLifecycle {
 @DslMarker
 annotation class HttpServerMarker
 
+/**
+ * HTTP server DSL. It helps you write HTTP server elegantly.
+ *
+ * @param requestCtx
+ * Maintain the routing context in the HTTP request lifecycle when you use the asynchronous handlers which run in the coroutine.
+ * It visits RoutingContext in the external function conveniently. Usually, you can use it to trace HTTP request crossing all registered routers.
+ *
+ * @param serverConfiguration HTTP server configuration
+ * @param httpBodyConfiguration HTTP body configuration
+ * @param block HTTP server DSL block
+ *
+ */
 @HttpServerMarker
 class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
                  serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
