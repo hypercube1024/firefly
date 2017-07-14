@@ -7,6 +7,7 @@ import com.firefly.codec.http2.model.HttpStatus.Code.UNAUTHORIZED
 import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.firefly
+import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.example.Response
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.RandomUtils
@@ -101,7 +102,7 @@ class TestServerDSL {
     fun testRequestCtx(): Unit = runBlocking {
         val host = "localhost"
         val port = RandomUtils.random(3000, 65534).toInt()
-        val reqCtx = CoroutineLocal<RoutingContext>()
+        val reqCtx = Context.getBean<CoroutineLocal<RoutingContext>>()
 
         fun testReqId() = assertEquals(20, reqCtx.get()?.getAttr<Int>("reqId"))
 

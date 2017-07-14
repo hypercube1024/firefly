@@ -16,13 +16,13 @@ import static com.firefly.db.Transaction.Status.*;
  */
 public class Transaction {
 
-    private final static Logger log = LoggerFactory.getLogger("firefly-system");
+    protected final static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private final DataSource dataSource;
+    protected final DataSource dataSource;
 
-    private Connection connection;
-    private Status status = INIT;
-    private int count = 0;
+    protected Connection connection;
+    protected Status status = INIT;
+    protected int count = 0;
 
     public Transaction(DataSource dataSource) {
         this.dataSource = dataSource;
