@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.firefly.db.JDBCConnectionUtils.rollback;
 import static org.hamcrest.Matchers.*;
 
 public class TestAnnotation {
@@ -165,7 +166,7 @@ public class TestAnnotation {
             user.setId(1L);
             user.setName("orange");
             helper.updateObject(conn, user);
-            helper.rollback(conn);
+            rollback(conn);
             return 0;
         });
 

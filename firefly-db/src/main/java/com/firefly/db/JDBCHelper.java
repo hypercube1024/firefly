@@ -32,6 +32,8 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.firefly.db.JDBCConnectionUtils.*;
+
 public class JDBCHelper extends AbstractLifeCycle {
 
     private final static Logger log = LoggerFactory.getLogger("firefly-system");
@@ -413,38 +415,6 @@ public class JDBCHelper extends AbstractLifeCycle {
         }
     }
 
-    public void rollback(Connection connection) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            log.error("transaction rollback exception", e);
-            throw new DBException(e);
-        }
-    }
-
-    public void setAutoCommit(Connection connection, boolean autoCommit) {
-        try {
-            connection.setAutoCommit(autoCommit);
-        } catch (SQLException e) {
-            log.error("set auto commit exception", e);
-        }
-    }
-
-    public void commit(Connection connection) {
-        try {
-            connection.commit();
-        } catch (SQLException e) {
-            log.error("commit exception", e);
-        }
-    }
-
-    public void close(Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            log.error("close connection exception", e);
-        }
-    }
 
     public <T> T executeTransaction(Func2<Connection, JDBCHelper, T> func) {
         Connection connection = getConnection();

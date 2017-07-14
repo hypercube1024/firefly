@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import static com.firefly.db.JDBCConnectionUtils.setAutoCommit;
+
 public class TransactionalJDBCHelper {
 
     private final static Logger log = LoggerFactory.getLogger("firefly-system");
@@ -159,7 +161,7 @@ public class TransactionalJDBCHelper {
             }
         } else {
             try (Connection connection = transactionalManager.getConnection()) {
-                jdbcHelper.setAutoCommit(connection, true);
+                setAutoCommit(connection, true);
                 return func.call(connection, jdbcHelper);
             } catch (SQLException e) {
                 log.error("execute SQL exception", e);
@@ -167,6 +169,5 @@ public class TransactionalJDBCHelper {
             }
         }
     }
-
 
 }
