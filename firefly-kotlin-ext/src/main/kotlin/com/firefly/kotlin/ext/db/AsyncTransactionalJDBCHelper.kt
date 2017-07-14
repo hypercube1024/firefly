@@ -5,7 +5,9 @@ import com.firefly.db.JDBCHelper
 import com.firefly.db.MetricReporterFactory
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.utils.Assert
+import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.experimental.run
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.ResultSetHandler
 import java.sql.Connection
@@ -109,7 +111,29 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
     }
 
     suspend fun <R> executeSQL(func: (Connection, JDBCHelper) -> R?): R? = asyncJdbcHelper.executeSQL {
-        val conn = if (transactionalManager.isTransactionBegin) transactionalManager.connection else getConnection()
-        conn.safeUse { jdbcHelper.async(it, func).await() }
+        if (transactionalManager.isTransactionBegin) {
+            jdbcHelper.async(transactionalManager.connection, func).await()
+        } else {
+            getConnection().safeUse {
+                jdbcHelper.async(it, func).await()
+            }
+        }
+    }
+
+    suspend fun <R> transaction(func: suspend AsyncTransactionalJDBCHelper.() -> R?): R? {
+        transactionalManager.beginTransaction()
+        try {
+            val ret = func.invoke(this)
+            transactionalManager.commit()
+            return ret
+        } catch (t: Throwable) {
+            transactionalManager.rollback()
+            log.error("the transaction exception", t)
+            return null
+        } finally {
+            run(NonCancellable) {
+                transactionalManager.endTransaction()
+            }
+        }
     }
 }
