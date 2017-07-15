@@ -24,7 +24,7 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
     suspend override fun asyncGetConnection(): Connection = getTransaction()?.connection ?: jdbcHelper.asyncGetConnection().await()
 
     suspend override fun asyncBeginTransaction() {
-        createTransactionIfEmpty().asyncBeginTransaction()
+        createTransactionIfEmpty()?.asyncBeginTransaction()
     }
 
     override fun getConnection(): Connection = getTransaction()?.connection ?: jdbcHelper.connection
@@ -46,14 +46,14 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
     override fun isTransactionBegin(): Boolean = getTransaction() != null
 
     override fun beginTransaction() {
-        createTransactionIfEmpty().beginTransaction()
+        createTransactionIfEmpty()?.beginTransaction()
     }
 
     private fun getTransaction(): AsynchronousTransaction? = requestCtx.get()?.getAttr<AsynchronousTransaction>(jdbcTransactionKey)
 
     private fun createTransactionIfEmpty() = requestCtx.get()?.attributes?.computeIfAbsent(jdbcTransactionKey) {
         AsynchronousTransaction(jdbcHelper)
-    } as AsynchronousTransaction
+    } as AsynchronousTransaction?
 
 }
 

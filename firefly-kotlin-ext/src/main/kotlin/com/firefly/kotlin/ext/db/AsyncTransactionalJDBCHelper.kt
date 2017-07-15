@@ -121,7 +121,7 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
     }
 
     suspend fun <R> transaction(func: suspend AsyncTransactionalJDBCHelper.() -> R?): R? {
-        transactionalManager.beginTransaction()
+        transactionalManager.asyncBeginTransaction()
         try {
             val ret = func.invoke(this)
             transactionalManager.commit()
