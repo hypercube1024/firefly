@@ -19,7 +19,7 @@ class UserDaoImpl : UserDao {
 
     suspend override fun listUsers(userIdList: List<Long>): List<User> {
         val sql = "select * from test.user where id in (${userIdList.map { "?" }.joinToString(",")})"
-        return jdbcHelper.queryForList<User>(sql, userIdList)
+        return jdbcHelper.queryForList<User>(sql, *userIdList.toTypedArray())
     }
 
 }

@@ -10,6 +10,7 @@ import com.firefly.kotlin.ext.http.getAttr
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.future.await
 import java.sql.Connection
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Manage transaction in the HTTP request lifecycle.
@@ -20,6 +21,7 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
                                            val jdbcHelper: JDBCHelper) : AsynchronousTransactionalManager {
 
     val jdbcTransactionKey = "_currentJdbcTransaction"
+    val idGenerator = AtomicLong()
 
     suspend override fun asyncGetConnection(): Connection = getTransaction()?.connection ?: jdbcHelper.asyncGetConnection().await()
 
@@ -49,15 +51,17 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
         createTransactionIfEmpty()?.beginTransaction()
     }
 
+    override fun getCurrentTransactionId(): Long = getTransaction()?.id ?: -1
+
     private fun getTransaction(): AsynchronousTransaction? = requestCtx.get()?.getAttr<AsynchronousTransaction>(jdbcTransactionKey)
 
     private fun createTransactionIfEmpty() = requestCtx.get()?.attributes?.computeIfAbsent(jdbcTransactionKey) {
-        AsynchronousTransaction(jdbcHelper)
+        AsynchronousTransaction(jdbcHelper, idGenerator.getAndIncrement())
     } as AsynchronousTransaction?
 
 }
 
-class AsynchronousTransaction(val jdbcHelper: JDBCHelper) : Transaction(jdbcHelper.dataSource) {
+class AsynchronousTransaction(val jdbcHelper: JDBCHelper, id: Long) : Transaction(jdbcHelper.dataSource, id) {
 
     @Synchronized
     suspend fun asyncBeginTransaction(): Unit {

@@ -23,9 +23,11 @@ public class Transaction {
     protected Connection connection;
     protected Status status = INIT;
     protected int count = 0;
+    protected long id;
 
-    public Transaction(DataSource dataSource) {
+    public Transaction(DataSource dataSource, long id) {
         this.dataSource = dataSource;
+        this.id = id;
     }
 
     public enum Status {
@@ -57,6 +59,10 @@ public class Transaction {
         if (status != ROLLBACK) {
             status = COMMIT;
         }
+    }
+
+    public long getId() {
+        return id;
     }
 
     protected synchronized void check() {

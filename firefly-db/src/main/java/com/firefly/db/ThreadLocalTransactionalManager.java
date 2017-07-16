@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Pengtao Qiu
@@ -16,6 +17,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
 
     private final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
     private final DataSource dataSource;
+    private AtomicLong idGenerator = new AtomicLong();
 
     public ThreadLocalTransactionalManager(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -60,6 +62,16 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
         return transaction.get() != null;
     }
 
+    @Override
+    public long getCurrentTransactionId() {
+        Transaction t = transaction.get();
+        if (t != null) {
+            return t.id;
+        } else {
+            return -1;
+        }
+    }
+
     protected void checkTransactionBegin() {
         if (!isTransactionBegin()) {
             throw new DBException("the transaction is not begin");
@@ -69,7 +81,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
     protected Transaction getTransaction() {
         Transaction t = transaction.get();
         if (t == null) {
-            t = new Transaction(dataSource);
+            t = new Transaction(dataSource, idGenerator.getAndIncrement());
             transaction.set(t);
         }
         return t;

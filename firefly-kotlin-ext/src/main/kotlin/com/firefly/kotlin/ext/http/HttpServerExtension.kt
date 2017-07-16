@@ -38,7 +38,7 @@ inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Js
 inline fun <reified T : Any> RoutingContext.getJsonBody(): T = Json.parse(stringBody)
 
 inline fun <reified T : Any> RoutingContext.getAttr(name: String): T? {
-    val data = getAttribute(name)
+    val data = getAttribute(name) ?: return null
     if (data is T) {
         return data
     } else {
