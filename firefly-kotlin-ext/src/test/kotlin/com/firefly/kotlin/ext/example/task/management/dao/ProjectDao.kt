@@ -13,4 +13,6 @@ interface ProjectDao {
 
     suspend fun queryById(id: Long): Project?
 
+    suspend fun listProjectMembers(projectId: Long): List<Long>
+
 }

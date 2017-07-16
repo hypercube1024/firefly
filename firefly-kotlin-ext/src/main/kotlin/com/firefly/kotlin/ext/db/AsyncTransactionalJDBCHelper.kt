@@ -11,6 +11,7 @@ import kotlinx.coroutines.experimental.run
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.ResultSetHandler
 import java.sql.Connection
+import java.sql.ResultSet
 import javax.sql.DataSource
 
 /**
@@ -65,6 +66,10 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
     suspend inline fun <reified T> queryForList(sql: String, beanProcessor: BeanProcessor, vararg params: Any): List<T> = executeSQL { connection, helper ->
         helper.queryForList<T>(connection, sql, T::class.java, beanProcessor, *params)
     } ?: listOf()
+
+    suspend fun <T> query(sql: String, rsh: (rs: ResultSet) -> T?, vararg params: Any): T? = executeSQL { connection, helper ->
+        helper.runner.query(connection, sql, ResultSetHandler<T> { rsh.invoke(it) }, *params)
+    }
 
     suspend fun update(sql: String, vararg params: Any): Int = executeSQL { connection, helper ->
         helper.update(connection, sql, *params)
