@@ -56,7 +56,7 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
     private fun getTransaction(): AsynchronousTransaction? = requestCtx.get()?.getAttr<AsynchronousTransaction>(jdbcTransactionKey)
 
     private fun createTransactionIfEmpty() = requestCtx.get()?.attributes?.computeIfAbsent(jdbcTransactionKey) {
-        AsynchronousTransaction(jdbcHelper, idGenerator.getAndIncrement())
+        AsynchronousTransaction(jdbcHelper, idGenerator.incrementAndGet())
     } as AsynchronousTransaction?
 
 }

@@ -30,9 +30,7 @@ fun main(args: Array<String>) {
 fun applicationRun(host: String, port: Int): HttpServer {
     val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
 
-        initHttpContextTransactionalManager(
-                Context.getBean<AsyncHttpContextTransactionalManager>(),
-                "/*create*", "/*update*", "/*delete*").forEach { router(it) }
+        initHttpContextTransactionalManager("/*create*", "/*update*", "/*delete*").forEach { router(it) }
 
         router {
             httpMethod = HttpMethod.GET
@@ -63,13 +61,30 @@ fun applicationRun(host: String, port: Int): HttpServer {
             }
         }
 
+        router {
+            httpMethod = HttpMethod.POST
+            path = "/user/createSimulateRollback"
+
+            asyncHandler {
+                try {
+                    val userService = Context.getBean<UserService>()
+                    val request = getJsonBody<Request<User>>()
+                    log.info("create user request $request")
+                    val response = userService.insert(request)
+                    throw IllegalStateException("rollback $response")
+                } catch (x: Throwable) {
+                    fail<Unit>(x)
+                }
+            }
+        }
+
     }
     server.listen(host, port)
     return server
 }
 
-fun initHttpContextTransactionalManager(transactionalManager: AsyncHttpContextTransactionalManager,
-                                        vararg paths: String): List<RouterBlock.() -> Unit> {
+fun initHttpContextTransactionalManager(vararg paths: String): List<RouterBlock.() -> Unit> {
+    val transactionalManager =  Context.getBean<AsyncHttpContextTransactionalManager>()
     val transactionalHandler: suspend RoutingContext.(context: CoroutineContext) -> Unit = {
         transactionalManager.asyncBeginTransaction()
         promise<Unit>(succeeded = {
@@ -80,9 +95,14 @@ fun initHttpContextTransactionalManager(transactionalManager: AsyncHttpContextTr
                 end()
             }
         }, failed = {
-            transactionalManager.rollback()
-            log.error("transactional request exception", it)
-            writeJson(Response(500, "server exception", it?.message)).end()
+            try {
+                transactionalManager.rollback()
+                log.error("transactional request exception", it)
+                writeJson(Response(500, "server exception", it?.message))
+            } finally {
+                transactionalManager.endTransaction()
+                end()
+            }
         })
         next()
     }

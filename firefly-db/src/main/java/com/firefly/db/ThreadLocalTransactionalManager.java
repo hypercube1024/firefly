@@ -81,7 +81,7 @@ public class ThreadLocalTransactionalManager implements TransactionalManager {
     protected Transaction getTransaction() {
         Transaction t = transaction.get();
         if (t == null) {
-            t = new Transaction(dataSource, idGenerator.getAndIncrement());
+            t = new Transaction(dataSource, idGenerator.incrementAndGet());
             transaction.set(t);
         }
         return t;
