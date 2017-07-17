@@ -15,7 +15,6 @@ import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.runBlocking
 import java.util.*
-import kotlin.coroutines.experimental.CoroutineContext
 
 /**
  * @author Pengtao Qiu
@@ -24,97 +23,86 @@ private val log = Log.getLogger { }
 
 fun main(args: Array<String>) {
     initData()
-    applicationRun("localhost", 8080)
+    server.listen("localhost", 8080)
 }
 
-fun applicationRun(host: String, port: Int): HttpServer {
-    val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
+val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
 
-        initHttpContextTransactionalManager("/*create*", "/*update*", "/*delete*").forEach { router(it) }
+    val transactionalManager = Context.getBean<AsyncHttpContextTransactionalManager>()
 
-        router {
-            httpMethod = HttpMethod.GET
-            path = "/user/:id"
+    router {
+        // transactional interceptor
+        httpMethods = listOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
+        paths = listOf("/*create*", "/*update*", "/*delete*")
 
-            asyncHandler {
+        asyncHandler {
+            transactionalManager.asyncBeginTransaction()
+            promise<Unit>(succeeded = {
+                try {
+                    transactionalManager.commit()
+                } finally {
+                    transactionalManager.endTransaction()
+                    end()
+                }
+            }, failed = {
+                try {
+                    transactionalManager.rollback()
+                    log.error("transactional request exception", it)
+                    writeJson(Response(500, "server exception", it?.message))
+                } finally {
+                    transactionalManager.endTransaction()
+                    end()
+                }
+            })
+            next()
+        }
+    }
+
+    router {
+        httpMethod = HttpMethod.GET
+        path = "/user/:id"
+
+        asyncHandler {
+            val userService = Context.getBean<UserService>()
+            val response = userService.listUsers(Request("test", listOf(getPathParameter("id").toLong())))
+            writeJson(response).end()
+        }
+    }
+
+    router {
+        httpMethod = HttpMethod.POST
+        path = "/user/create"
+        consumes = "application/json"
+
+        asyncHandler {
+            try {
                 val userService = Context.getBean<UserService>()
-                val response = userService.listUsers(Request("test", listOf(getPathParameter("id").toLong())))
-                writeJson(response).end()
+                val request = getJsonBody<Request<User>>()
+                log.info("create user request $request")
+                val response = userService.insert(request)
+                writeJson(response).succeed(Unit)
+            } catch (x: Throwable) {
+                fail<Unit>(x)
             }
         }
-
-        router {
-            httpMethod = HttpMethod.POST
-            path = "/user/create"
-            consumes = "application/json"
-
-            asyncHandler {
-                try {
-                    val userService = Context.getBean<UserService>()
-                    val request = getJsonBody<Request<User>>()
-                    log.info("create user request $request")
-                    val response = userService.insert(request)
-                    writeJson(response).succeed(Unit)
-                } catch (x: Throwable) {
-                    fail<Unit>(x)
-                }
-            }
-        }
-
-        router {
-            httpMethod = HttpMethod.POST
-            path = "/user/createSimulateRollback"
-
-            asyncHandler {
-                try {
-                    val userService = Context.getBean<UserService>()
-                    val request = getJsonBody<Request<User>>()
-                    log.info("create user request $request")
-                    val response = userService.insert(request)
-                    throw IllegalStateException("rollback $response")
-                } catch (x: Throwable) {
-                    fail<Unit>(x)
-                }
-            }
-        }
-
-    }
-    server.listen(host, port)
-    return server
-}
-
-fun initHttpContextTransactionalManager(vararg paths: String): List<RouterBlock.() -> Unit> {
-    val transactionalManager =  Context.getBean<AsyncHttpContextTransactionalManager>()
-    val transactionalHandler: suspend RoutingContext.(context: CoroutineContext) -> Unit = {
-        transactionalManager.asyncBeginTransaction()
-        promise<Unit>(succeeded = {
-            try {
-                transactionalManager.commit()
-            } finally {
-                transactionalManager.endTransaction()
-                end()
-            }
-        }, failed = {
-            try {
-                transactionalManager.rollback()
-                log.error("transactional request exception", it)
-                writeJson(Response(500, "server exception", it?.message))
-            } finally {
-                transactionalManager.endTransaction()
-                end()
-            }
-        })
-        next()
     }
 
-    return paths.map {
-        val block: RouterBlock.() -> Unit = {
-            httpMethods = listOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
-            path = it
-            asyncHandler(transactionalHandler)
+    router {
+        httpMethod = HttpMethod.POST
+        path = "/user/createSimulateRollback"
+
+        asyncHandler {
+            try {
+                val userService = Context.getBean<UserService>()
+                val request = getJsonBody<Request<User>>()
+                log.info("create user request $request")
+                val response = userService.insert(request)
+                throw IllegalStateException("rollback $response")
+            } catch (x: Throwable) {
+                fail<Unit>(x)
+            }
         }
-        block
-    }.toList()
+    }
 }
 
 fun initData(): Unit = runBlocking {

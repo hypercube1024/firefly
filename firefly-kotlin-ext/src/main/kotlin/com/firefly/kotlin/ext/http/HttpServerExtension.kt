@@ -242,6 +242,12 @@ class RouterBlock(private val router: Router,
             field = value
         }
 
+    var paths: List<String> = listOf()
+        set(value) {
+            router.paths(value)
+            field = value
+        }
+
     var regexPath: String = ""
         set(value) {
             router.pathRegex(value)
