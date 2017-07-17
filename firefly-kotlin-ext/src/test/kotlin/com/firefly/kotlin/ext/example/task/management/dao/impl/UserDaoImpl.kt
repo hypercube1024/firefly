@@ -15,7 +15,9 @@ class UserDaoImpl : UserDao {
     @Inject
     lateinit var jdbcHelper: AsyncTransactionalJDBCHelper
 
-    suspend override fun insert(user: User): Long? = jdbcHelper.insertObject<User, Long>(user)
+    suspend override fun insert(user: User): Long? {
+        return jdbcHelper.insertObject<User, Long>(user)
+    }
 
     suspend override fun listUsers(userIdList: List<Long>): List<User> {
         val sql = "select * from test.user where id in (${userIdList.map { "?" }.joinToString(",")})"

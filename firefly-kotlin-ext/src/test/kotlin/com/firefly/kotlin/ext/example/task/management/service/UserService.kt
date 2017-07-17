@@ -11,4 +11,5 @@ interface UserService {
 
     suspend fun listUsers(request: Request<List<Long>>): Response<List<User>>
 
+    suspend fun insert(request: Request<User>): Response<Long>
 }

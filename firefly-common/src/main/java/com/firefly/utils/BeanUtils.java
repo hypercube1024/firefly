@@ -69,6 +69,15 @@ abstract public class BeanUtils {
                 return (Class<?>) type;
             } else if (type instanceof ParameterizedType) {
                 return extractClass(((ParameterizedType) type).getRawType());
+            } else if (type instanceof WildcardType) {
+                WildcardType wildcardType = (WildcardType) type;
+                if (wildcardType.getUpperBounds() != null && wildcardType.getUpperBounds().length > 0) {
+                    return extractClass(wildcardType.getUpperBounds()[0]);
+                } else if (wildcardType.getLowerBounds() != null && wildcardType.getLowerBounds().length > 0) {
+                    return extractClass(wildcardType.getLowerBounds()[0]);
+                } else {
+                    return null;
+                }
             } else {
                 return null;
             }
@@ -171,9 +180,7 @@ abstract public class BeanUtils {
                                                                             ReflectUtils.BeanMethodFilter filter,
                                                                             Func2<Class<?>, ReflectUtils.BeanMethodFilter, Map<String, Method>> getMethodMap,
                                                                             Func1<Method, Type> getType) {
-        Class<?> rawClass = type instanceof ParameterizedType
-                ? (Class<?>) ((ParameterizedType) type).getRawType()
-                : (Class<?>) type;
+        Class<?> rawClass = extractClass(type);
         Map<String, Method> methodMap = getMethodMap.call(rawClass, filter);
         if (methodMap == null || methodMap.isEmpty()) {
             return Collections.emptyMap();
@@ -206,9 +213,7 @@ abstract public class BeanUtils {
     }
 
     private static Map<String, FieldGenericTypeBind> getGenericBeanFields(Type type, ReflectUtils.BeanFieldFilter filter) {
-        Class<?> rawClass = type instanceof ParameterizedType
-                ? (Class<?>) ((ParameterizedType) type).getRawType()
-                : (Class<?>) type;
+        Class<?> rawClass = extractClass(type);
         Map<String, Field> fieldMap = getFields(rawClass, filter);
         if (fieldMap == null || fieldMap.isEmpty()) {
             return Collections.emptyMap();

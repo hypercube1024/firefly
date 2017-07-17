@@ -21,4 +21,8 @@ class UserServiceImpl : UserService {
         return Response(0, "success", userDao.listUsers(request.data))
     }
 
+    suspend override fun insert(request: Request<User>): Response<Long> {
+        return Response(0, "success", userDao.insert(request.data))
+    }
+
 }

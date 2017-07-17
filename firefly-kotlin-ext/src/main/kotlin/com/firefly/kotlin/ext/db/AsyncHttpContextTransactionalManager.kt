@@ -71,6 +71,6 @@ class AsynchronousTransaction(val jdbcHelper: JDBCHelper, id: Long) : Transactio
             status = START
         }
         count++
-        log.debug("begin transaction asynchronously {}", count)
+        log.debug("begin transaction asynchronously, id: {}, count: {}", id, count)
     }
 }

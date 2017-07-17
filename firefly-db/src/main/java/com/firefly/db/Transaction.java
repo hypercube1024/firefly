@@ -41,7 +41,7 @@ public class Transaction {
             status = START;
         }
         count++;
-        log.debug("begin transaction {}", count);
+        log.debug("begin transaction, id: {}, count: {}", id, count);
     }
 
     public synchronized Connection getConnection() {
@@ -76,14 +76,16 @@ public class Transaction {
 
     public synchronized boolean endTransaction() {
         count--;
-        log.debug("end transaction {}", count);
+        log.debug("end transaction, id: {}, count: {}", id, count);
         if (count == 0) {
             switch (status) {
                 case START:
                 case COMMIT:
+                    log.debug("commit transaction, id: {}", id);
                     JDBCConnectionUtils.commit(connection);
                     break;
                 case ROLLBACK:
+                    log.debug("rollback transaction, id: {}", id);
                     JDBCConnectionUtils.rollback(connection);
                     break;
                 default:

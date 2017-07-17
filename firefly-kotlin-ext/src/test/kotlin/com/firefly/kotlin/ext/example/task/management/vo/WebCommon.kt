@@ -1,11 +1,15 @@
 package com.firefly.kotlin.ext.example.task.management.vo
 
+import com.firefly.kotlin.ext.annotation.NoArg
+
 /**
  * @author Pengtao Qiu
  */
-data class Request<out T>(val authToken: String,
-                          val data: T)
+@NoArg
+data class Request<T>(var authToken: String,
+                      var data: T)
 
-data class Response<out T>(val code: Int,
-                           val message: String,
-                           val data: T?)
+@NoArg
+data class Response<T>(var code: Int,
+                       var message: String,
+                       var data: T?)

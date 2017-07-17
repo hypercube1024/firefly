@@ -58,6 +58,50 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Jso
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
 
+val promiseQueueKey = "_promiseQueue"
+
+fun <C> RoutingContext.getPromiseQueue(): Deque<Promise<C>>? = getAttr(promiseQueueKey)
+
+@Suppress("UNCHECKED_CAST")
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<Promise<C>> = attributes.computeIfAbsent(promiseQueueKey) {
+    ConcurrentLinkedDeque<Promise<C>>()
+} as Deque<Promise<C>>
+
+inline fun <C> RoutingContext.promise(crossinline succeeded: (C) -> Unit, crossinline failed: (Throwable?) -> Unit): RoutingContext {
+    val queue = createPromiseQueueIfAbsent<C>()
+    queue.push(object : Promise<C> {
+        override fun succeeded(c: C) {
+            succeeded.invoke(c)
+            try {
+                queue.pop().succeeded(c)
+            } catch (e: NoSuchElementException) {
+            }
+        }
+
+        override fun failed(x: Throwable?) {
+            failed.invoke(x)
+            try {
+                queue.pop().failed(x)
+            } catch (e: NoSuchElementException) {
+            }
+        }
+    })
+    return this
+}
+
+inline fun <C> RoutingContext.promise(crossinline succeeded: (C) -> Unit): RoutingContext {
+    promise(succeeded, {})
+    return this
+}
+
+fun <C> RoutingContext.succeed(result: C): Unit {
+    getPromiseQueue<C>()?.pop()?.succeeded(result)
+}
+
+fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
+    getPromiseQueue<C>()?.pop()?.failed(x)
+}
+
 
 // HTTP server DSL
 
@@ -168,8 +212,6 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 class RouterBlock(private val router: Router,
                   private val requestCtx: CoroutineLocal<RoutingContext>?) {
 
-    private val promiseQueueKey = "_promiseQueue"
-
     var method: String = HttpMethod.GET.asString()
         set(value) {
             router.method(value)
@@ -206,12 +248,6 @@ class RouterBlock(private val router: Router,
             field = value
         }
 
-    var paths: List<String> = listOf()
-        set(value) {
-            value.forEach { router.path(it) }
-            field = value
-        }
-
     var consumes: String = ""
         set(value) {
             router.consumes(value)
@@ -235,48 +271,6 @@ class RouterBlock(private val router: Router,
 
     fun handler(handler: RoutingContext.() -> Unit): Unit {
         router.handler(handler)
-    }
-
-    fun <C> RoutingContext.getPromiseQueue(): Deque<Promise<C>>? = getAttr(promiseQueueKey)
-
-    @Suppress("UNCHECKED_CAST")
-    fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<Promise<C>> = attributes.computeIfAbsent(promiseQueueKey) {
-        ConcurrentLinkedDeque<Promise<C>>()
-    } as Deque<Promise<C>>
-
-    inline fun <C> RoutingContext.promise(crossinline successed: (C) -> Unit, crossinline failed: (Throwable?) -> Unit): RoutingContext {
-        val queue = createPromiseQueueIfAbsent<C>()
-        queue.push(object : Promise<C> {
-            override fun succeeded(c: C) {
-                successed.invoke(c)
-                try {
-                    queue.pop().succeeded(c)
-                } catch (e: NoSuchElementException) {
-                }
-            }
-
-            override fun failed(x: Throwable?) {
-                failed.invoke(x)
-                try {
-                    queue.pop().failed(x)
-                } catch (e: NoSuchElementException) {
-                }
-            }
-        })
-        return this
-    }
-
-    inline fun <C> RoutingContext.promise(crossinline successed: (C) -> Unit): RoutingContext {
-        promise(successed, {})
-        return this
-    }
-
-    fun <C> RoutingContext.succeed(result: C): Unit {
-        getPromiseQueue<C>()?.pop()?.succeeded(result)
-    }
-
-    fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
-        getPromiseQueue<C>()?.pop()?.failed(x)
     }
 
     suspend fun <T : Closeable?, R> T.safeUse(block: suspend (T) -> R): R {

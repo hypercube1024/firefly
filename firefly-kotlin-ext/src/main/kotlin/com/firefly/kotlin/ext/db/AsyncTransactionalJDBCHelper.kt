@@ -117,7 +117,7 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
 
     suspend fun <R> executeSQL(func: (Connection, JDBCHelper) -> R?): R? = asyncJdbcHelper.executeSQL {
         if (transactionalManager.isTransactionBegin) {
-            log.debug("execute transaction ${transactionalManager.currentTransactionId}")
+            log.debug("execute transaction, id: ${transactionalManager.currentTransactionId}")
             jdbcHelper.async(transactionalManager.connection, func).await()
         } else {
             log.debug("execute SQL")
