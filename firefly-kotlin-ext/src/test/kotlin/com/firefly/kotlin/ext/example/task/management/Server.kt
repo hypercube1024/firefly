@@ -9,6 +9,7 @@ import com.firefly.kotlin.ext.example.task.management.model.User
 import com.firefly.kotlin.ext.example.task.management.service.UserService
 import com.firefly.kotlin.ext.example.task.management.vo.Request
 import com.firefly.kotlin.ext.http.HttpServer
+import com.firefly.kotlin.ext.http.getPathParameter
 import com.firefly.kotlin.ext.http.writeJson
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.RoutingContext
@@ -33,7 +34,7 @@ fun applicationRun(host: String, port: Int) {
 
             asyncHandler {
                 val userService = Context.getBean<UserService>()
-                val response = userService.listUsers(Request("test", listOf(getRouterParameter("id").toLong())))
+                val response = userService.listUsers(Request("test", listOf(getPathParameter("id").toLong())))
                 writeJson(response).end()
             }
         }
@@ -59,5 +60,4 @@ fun initData(): Unit = runBlocking {
     val userDao = Context.getBean<UserDao>()
     val id = userDao.insert(User(0L, "admin", Date(), Date()))
     log.info("insert user $id")
-    Unit
 }

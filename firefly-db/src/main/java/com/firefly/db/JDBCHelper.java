@@ -2,7 +2,6 @@ package com.firefly.db;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Timer;
 import com.firefly.db.DefaultBeanProcessor.Mapper;
 import com.firefly.db.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
@@ -25,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -44,9 +44,10 @@ public class JDBCHelper extends AbstractLifeCycle {
     private final ExecutorService executorService;
     private final boolean monitorEnable;
     private final MetricReporterFactory metricReporterFactory;
+    private final LatencyTopTracker latencyTopTracker;
 
     public JDBCHelper(DataSource dataSource) {
-        this(dataSource, false, null);
+        this(dataSource, true, null);
     }
 
     public JDBCHelper(DataSource dataSource, boolean monitorEnable, MetricReporterFactory metricReporterFactory) {
@@ -70,6 +71,8 @@ public class JDBCHelper extends AbstractLifeCycle {
         } else {
             this.metricReporterFactory = ServiceUtils.loadService(MetricReporterFactory.class, new DefaultMetricReporterFactory());
         }
+
+        latencyTopTracker = new LatencyTopTracker(getMetrics());
 
         this.dataSource = dataSource;
         if (monitorEnable) {
@@ -95,20 +98,31 @@ public class JDBCHelper extends AbstractLifeCycle {
             return JavassistClassProxyFactory.INSTANCE.createProxy(queryRunner,
                     (handler, originalInstance, args) -> {
                         String sql = "";
+                        Object[] params = null;
                         if (args != null && args.length > 0) {
                             for (Object arg : args) {
                                 if (arg instanceof String) {
                                     sql = (String) arg;
+                                } else if (arg instanceof Object[]) {
+                                    params = (Object[]) arg;
                                 }
                             }
                         }
-                        Timer timer = getMetrics().timer("db.JDBCHelper.sql:```" + sql + "```");
-                        Timer.Context context = timer.time();
+                        long start = System.currentTimeMillis();
+                        Exception exception = null;
                         Object ret;
                         try {
                             ret = handler.invoke(originalInstance, args);
+                        } catch (Exception e) {
+                            exception = e;
+                            return null;
                         } finally {
-                            context.stop();
+                            long currentTime = System.currentTimeMillis();
+                            long latencyTime = currentTime - start;
+                            latencyTopTracker.update(sql, exception, currentTime, latencyTime);
+                            if (log.isDebugEnabled()) {
+                                log.debug(sql + (params != null ? ("| " + Arrays.toString(params) + "| ") : "| ") + latencyTime);
+                            }
                         }
                         return ret;
                     }, null);

@@ -25,7 +25,7 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
     val asyncJdbcHelper = AsynchronousJDBCHelper(jdbcHelper)
 
     constructor(dataSource: DataSource,
-                transactionalManager: AsynchronousTransactionalManager) : this(dataSource, false, null, transactionalManager)
+                transactionalManager: AsynchronousTransactionalManager) : this(dataSource, true, null, transactionalManager)
 
     constructor(dataSource: DataSource,
                 monitorEnable: Boolean,

@@ -24,7 +24,7 @@ public class TransactionalJDBCHelper {
     protected final TransactionalManager transactionalManager;
 
     public TransactionalJDBCHelper(DataSource dataSource) {
-        this(dataSource, false, null, new ThreadLocalTransactionalManager(dataSource));
+        this(dataSource, true, null, new ThreadLocalTransactionalManager(dataSource));
     }
 
     public TransactionalJDBCHelper(DataSource dataSource, boolean monitorEnable, MetricReporterFactory metricReporterFactory, TransactionalManager transactionalManager) {

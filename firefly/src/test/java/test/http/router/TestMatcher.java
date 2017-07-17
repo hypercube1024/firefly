@@ -185,11 +185,19 @@ public class TestMatcher {
     @Test
     public void testPathMatcher2() {
         RouterManagerImpl routerManager = new RouterManagerImpl();
-        Router router10 = routerManager.register().path("/test/*");
+        Router router0 = routerManager.register().path("/test/*");
 
         Matcher.MatchResult result = routerManager.getPatternPathMatcher().match("/test/x");
         Assert.assertThat(result, notNullValue());
         Assert.assertThat(result.getRouters().size(), is(1));
-        Assert.assertThat(result.getRouters().contains(router10), is(true));
+        Assert.assertThat(result.getRouters().contains(router0), is(true));
+
+        Router router1 = routerManager.register().path("/*create*");
+        result = routerManager.getPatternPathMatcher().match("/fruit/apple/create");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router1), is(true));
+        Assert.assertThat(result.getParameters().get(router1).get("param0"), is("fruit/apple/"));
+        Assert.assertThat(result.getParameters().get(router1).get("param1"), is(""));
     }
 }
