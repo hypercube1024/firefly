@@ -4,6 +4,7 @@ import com.firefly.db.DBException
 import com.firefly.db.JDBCHelper
 import com.firefly.db.MetricReporterFactory
 import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.debug
 import com.firefly.utils.Assert
 import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.future.await
@@ -117,7 +118,7 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
 
     suspend fun <R> executeSQL(func: (Connection, JDBCHelper) -> R?): R? = asyncJdbcHelper.executeSQL {
         if (transactionalManager.isTransactionBegin) {
-            log.debug("execute transaction, id: ${transactionalManager.currentTransactionId}")
+            log.debug { "execute transaction, id: ${transactionalManager.currentTransactionId}" }
             jdbcHelper.async(transactionalManager.connection, func).await()
         } else {
             log.debug("execute SQL")
