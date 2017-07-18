@@ -1,13 +1,16 @@
 package com.firefly.kotlin.ext.example.task.management
 
 import com.firefly.codec.http2.model.HttpMethod
+import com.firefly.codec.http2.model.HttpStatus
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
 import com.firefly.kotlin.ext.db.AsyncTransactionalJDBCHelper
 import com.firefly.kotlin.ext.example.task.management.dao.UserDao
 import com.firefly.kotlin.ext.example.task.management.model.User
+import com.firefly.kotlin.ext.example.task.management.service.ProjectService
 import com.firefly.kotlin.ext.example.task.management.service.UserService
+import com.firefly.kotlin.ext.example.task.management.vo.ProjectEditor
 import com.firefly.kotlin.ext.example.task.management.vo.Request
 import com.firefly.kotlin.ext.example.task.management.vo.Response
 import com.firefly.kotlin.ext.http.*
@@ -15,6 +18,7 @@ import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.runBlocking
 import java.util.*
+import kotlin.coroutines.experimental.CoroutineContext
 
 /**
  * @author Pengtao Qiu
@@ -29,6 +33,17 @@ fun main(args: Array<String>) {
 val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
 
     val transactionalManager = Context.getBean<AsyncHttpContextTransactionalManager>()
+    val projectService = Context.getBean<ProjectService>()
+    val userService = Context.getBean<UserService>()
+
+    fun RouterBlock.asyncTransactionalHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
+        try {
+            handler.invoke(this, it)
+            succeed(Unit)
+        } catch (x: Throwable) {
+            fail<Unit>(x)
+        }
+    }
 
     router {
         // transactional interceptor
@@ -46,6 +61,9 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
                 }
             }, failed = {
                 try {
+                    statusLine {
+                        status = HttpStatus.INTERNAL_SERVER_ERROR_500
+                    }
                     transactionalManager.rollback()
                     log.error("transactional request exception", it)
                     writeJson(Response(500, "server exception", it?.message))
@@ -63,8 +81,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         path = "/user/:id"
 
         asyncHandler {
-            val userService = Context.getBean<UserService>()
-            val response = userService.listUsers(Request("test", listOf(getPathParameter("id").toLong())))
+            val response = userService.getUser(Request("test", getPathParameter("id").toLong()))
             writeJson(response).end()
         }
     }
@@ -74,16 +91,11 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         path = "/user/create"
         consumes = "application/json"
 
-        asyncHandler {
-            try {
-                val userService = Context.getBean<UserService>()
-                val request = getJsonBody<Request<User>>()
-                log.info("create user request $request")
-                val response = userService.insert(request)
-                writeJson(response).succeed(Unit)
-            } catch (x: Throwable) {
-                fail<Unit>(x)
-            }
+        asyncTransactionalHandler {
+            val request = getJsonBody<Request<User>>()
+            log.info("create user request $request")
+            val response = userService.insert(request)
+            writeJson(response)
         }
     }
 
@@ -91,18 +103,36 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         httpMethod = HttpMethod.POST
         path = "/user/createSimulateRollback"
 
-        asyncHandler {
-            try {
-                val userService = Context.getBean<UserService>()
-                val request = getJsonBody<Request<User>>()
-                log.info("create user request $request")
-                val response = userService.insert(request)
-                throw IllegalStateException("rollback $response")
-            } catch (x: Throwable) {
-                fail<Unit>(x)
-            }
+        asyncTransactionalHandler {
+            val request = getJsonBody<Request<User>>()
+            log.info("create user request $request")
+            val response = userService.insert(request)
+            throw IllegalStateException("rollback $response")
         }
     }
+
+    router {
+        httpMethod = HttpMethod.GET
+        path = "/project/:id"
+
+        asyncHandler {
+            val response = projectService.getProject(Request("test", getPathParameter("id").toLong()))
+            writeJson(response).end()
+        }
+    }
+
+    router {
+        httpMethod = HttpMethod.POST
+        path = "/project/create"
+
+        asyncTransactionalHandler {
+            val request = getJsonBody<Request<ProjectEditor>>()
+            log.info("create project request $request")
+            val response = projectService.createProject(request)
+            writeJson(response)
+        }
+    }
+
 }
 
 fun initData(): Unit = runBlocking {
@@ -111,14 +141,32 @@ fun initData(): Unit = runBlocking {
     jdbcHelper.update("create schema test")
     jdbcHelper.update("set mode MySQL")
 
-    val createUserTable = """
+    val userTable = """
             CREATE TABLE `test`.`user` (
             `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
             `name` VARCHAR(64) NOT NULL,
             `create_time` DATETIME NOT NULL,
             `update_time` DATETIME NOT NULL
             )"""
-    jdbcHelper.update(createUserTable)
+    jdbcHelper.update(userTable)
+
+    val projectTable = """
+            CREATE TABLE `test`.`project` (
+            `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+            `name` VARCHAR(64) NOT NULL,
+            `create_time` DATETIME NOT NULL,
+            `update_time` DATETIME NOT NULL,
+            `description` VARCHAR(128) NOT NULL
+            )"""
+    jdbcHelper.update(projectTable)
+
+    val projectUser = """
+            CREATE TABLE `test`.`project_user` (
+            `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` BIGINT NOT NULL,
+            `project_id` BIGINT NOT NULL
+            )"""
+    jdbcHelper.update(projectUser)
 
     val userDao = Context.getBean<UserDao>()
     val id = userDao.insert(User(0L, "admin", Date(), Date()))

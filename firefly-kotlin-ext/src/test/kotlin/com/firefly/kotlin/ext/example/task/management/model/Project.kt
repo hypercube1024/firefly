@@ -9,11 +9,11 @@ import java.util.*
  * @author Pengtao Qiu
  */
 @Table(value = "project", catalog = "test")
-data class Project(@Id("id") var id: Long,
+data class Project(@Id("id") var id: Long?,
                    @Column("name") var name: String,
-                   @Column("create_time") var createTime: Date,
-                   @Column("update_time") var updateTime: Date,
-                   @Column("description") var description: String) {
+                   @Column("description") var description: String,
+                   @Column("create_time") var createTime: Date? = Date(),
+                   @Column("update_time") var updateTime: Date? = Date()) {
 
     override fun equals(other: Any?): Boolean {
         return if (other is Project) Objects.equals(id, other.id) else false

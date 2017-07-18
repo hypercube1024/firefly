@@ -99,10 +99,13 @@ public class JDBCHelper extends AbstractLifeCycle {
                     (handler, originalInstance, args) -> {
                         String sql = "";
                         Object[] params = null;
+                        Object[] batchParams = null;
                         if (args != null && args.length > 0) {
                             for (Object arg : args) {
                                 if (arg instanceof String) {
                                     sql = (String) arg;
+                                } else if (arg instanceof Object[][]) {
+                                    batchParams = (Object[][]) arg;
                                 } else if (arg instanceof Object[]) {
                                     params = (Object[]) arg;
                                 }
@@ -121,7 +124,14 @@ public class JDBCHelper extends AbstractLifeCycle {
                             long latencyTime = currentTime - start;
                             latencyTopTracker.update(sql, exception, currentTime, latencyTime);
                             if (log.isDebugEnabled()) {
-                                log.debug(sql + (params != null ? ("| " + Arrays.toString(params) + "| ") : "| ") + latencyTime);
+                                StringBuilder str = new StringBuilder(sql);
+                                if (batchParams != null) {
+                                    str.append("|").append(Arrays.deepToString(batchParams));
+                                } else if (params != null) {
+                                    str.append("|").append(Arrays.toString(params));
+                                }
+                                str.append("|").append(latencyTime);
+                                log.debug(str.toString());
                             }
                         }
                         return ret;
