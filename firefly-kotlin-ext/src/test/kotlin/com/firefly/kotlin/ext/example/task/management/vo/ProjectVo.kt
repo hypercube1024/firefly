@@ -14,5 +14,3 @@ data class ProjectEditor(var project: Project,
 @NoArg
 data class ProjectResult(var project: Project,
                          var users: List<User>)
-
-

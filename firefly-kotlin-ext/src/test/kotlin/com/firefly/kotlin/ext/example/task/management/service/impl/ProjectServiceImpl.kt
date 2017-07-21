@@ -2,6 +2,7 @@ package com.firefly.kotlin.ext.example.task.management.service.impl
 
 import com.firefly.annotation.Component
 import com.firefly.annotation.Inject
+import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.example.task.management.dao.ProjectDao
 import com.firefly.kotlin.ext.example.task.management.dao.UserDao
 import com.firefly.kotlin.ext.example.task.management.service.ProjectService
@@ -9,6 +10,7 @@ import com.firefly.kotlin.ext.example.task.management.vo.ProjectEditor
 import com.firefly.kotlin.ext.example.task.management.vo.ProjectResult
 import com.firefly.kotlin.ext.example.task.management.vo.Request
 import com.firefly.kotlin.ext.example.task.management.vo.Response
+import kotlinx.coroutines.experimental.async
 
 /**
  * @author Pengtao Qiu
@@ -28,9 +30,13 @@ class ProjectServiceImpl : ProjectService {
     }
 
     override suspend fun getProject(request: Request<Long>): Response<ProjectResult> {
-        val project = projectDao.queryById(request.data) ?: return Response(404, "project not found", null)
-        val users = projectDao.listProjectMembers(request.data)
-        return Response(0, "success", ProjectResult(project, if (users.isEmpty()) listOf() else userDao.listUsers(users)))
+        val projectDeferred = async(AsyncPool) { projectDao.queryById(request.data) }
+        val userListDeferred = async(AsyncPool) {
+            val users = projectDao.listProjectMembers(request.data)
+            if (users.isEmpty()) listOf() else userDao.listUsers(users)
+        }
+        val project = projectDeferred.await() ?: return Response(404, "project not found", null)
+        return Response(0, "success", ProjectResult(project, userListDeferred.await()))
     }
 
 }

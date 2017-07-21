@@ -25,7 +25,7 @@ class ProjectDaoImpl : ProjectDao {
 
     override suspend fun queryById(id: Long): Project? = jdbcHelper.queryById(id)
 
-    suspend override fun listProjectMembers(projectId: Long): List<Long> {
+    override suspend fun listProjectMembers(projectId: Long): List<Long> {
         return jdbcHelper.query<List<Long>>("select `user_id` from `test`.`project_user` where `project_id` = ?", {
             val ret = ArrayList<Long>()
             while (it.next()) {

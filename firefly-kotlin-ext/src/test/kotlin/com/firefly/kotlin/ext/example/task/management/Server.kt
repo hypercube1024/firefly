@@ -2,6 +2,7 @@ package com.firefly.kotlin.ext.example.task.management
 
 import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.HttpStatus
+import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
@@ -18,6 +19,7 @@ import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.runBlocking
 import java.util.*
+import kotlin.coroutines.experimental.ContinuationInterceptor
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
@@ -133,6 +135,11 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         }
     }
 
+}
+
+fun CoroutineLocal<RoutingContext>.getTransactionalContext(): ContinuationInterceptor {
+    val ctx = get() ?: throw IllegalStateException("routing context is null")
+    return createContext(ctx, AsyncPool)
 }
 
 fun initData(): Unit = runBlocking {
