@@ -53,12 +53,13 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         paths = listOf("/*create*", "/*update*", "/*delete*")
 
         asyncHandler {
+            val c = it
             transactionalManager.asyncBeginTransaction()
             promise<Unit>(succeeded = {
                 try {
                     transactionalManager.commit()
                 } finally {
-                    transactionalManager.endTransaction()
+                    transactionalManager.asyncEndTransaction()
                     end()
                 }
             }, failed = {
@@ -70,7 +71,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
                     log.error("transactional request exception", it)
                     writeJson(Response(500, "server exception", it?.message))
                 } finally {
-                    transactionalManager.endTransaction()
+                    transactionalManager.asyncEndTransaction()
                     end()
                 }
             })

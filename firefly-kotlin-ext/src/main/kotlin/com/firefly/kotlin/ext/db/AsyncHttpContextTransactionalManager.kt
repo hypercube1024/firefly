@@ -1,16 +1,15 @@
 package com.firefly.kotlin.ext.db
 
-import com.firefly.db.JDBCConnectionUtils.setAutoCommit
 import com.firefly.db.JDBCHelper
 import com.firefly.db.Transaction
-import com.firefly.db.Transaction.Status.INIT
-import com.firefly.db.Transaction.Status.START
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.http.getAttr
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.future.await
 import java.sql.Connection
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
+import java.util.function.Supplier
 
 /**
  * Manage transaction in the HTTP request lifecycle.
@@ -27,6 +26,12 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
 
     suspend override fun asyncBeginTransaction() {
         createTransactionIfEmpty()?.asyncBeginTransaction()
+    }
+
+    suspend override fun asyncEndTransaction() {
+        if (getTransaction()?.asyncEndTransaction() ?: false) {
+            requestCtx.get()?.removeAttribute(jdbcTransactionKey)
+        }
     }
 
     override fun getConnection(): Connection = getTransaction()?.connection ?: jdbcHelper.connection
@@ -63,14 +68,14 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
 
 class AsynchronousTransaction(val jdbcHelper: JDBCHelper, id: Long) : Transaction(jdbcHelper.dataSource, id) {
 
-    @Synchronized
     suspend fun asyncBeginTransaction(): Unit {
-        if (status == INIT) {
-            connection = jdbcHelper.asyncGetConnection().await()
-            setAutoCommit(connection, false)
-            status = START
-        }
-        count++
+        CompletableFuture.runAsync(Runnable { beginTransaction() }, jdbcHelper.executorService).await()
         log.debug("begin transaction asynchronously, id: {}, count: {}", id, count)
+    }
+
+    suspend fun asyncEndTransaction(): Boolean {
+        val ret = CompletableFuture.supplyAsync(Supplier { endTransaction() }, jdbcHelper.executorService).await()
+        log.debug("end transaction asynchronously, id: {}, count: {}", id, count)
+        return ret
     }
 }

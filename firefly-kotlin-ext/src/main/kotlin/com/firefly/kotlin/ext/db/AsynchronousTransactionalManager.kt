@@ -10,4 +10,6 @@ interface AsynchronousTransactionalManager : TransactionalManager {
     suspend fun asyncGetConnection(): Connection
 
     suspend fun asyncBeginTransaction(): Unit
+
+    suspend fun asyncEndTransaction(): Unit
 }

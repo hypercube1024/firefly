@@ -494,6 +494,10 @@ public class JDBCHelper extends AbstractLifeCycle {
         return c;
     }
 
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
+
     @Override
     protected void init() {
         if (monitorEnable) {

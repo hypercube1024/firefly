@@ -46,6 +46,7 @@ class TestHTTPContextTransactionalManager {
 
         val r3 = client.get("$url/user/3")
                 .asyncSubmit().getJsonBody<Response<User>>()
+        println(r3.data)
         assertEquals(true, r3.data == null)
 
         val r4 = client.post("$url/project/create")

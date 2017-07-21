@@ -12,7 +12,6 @@ import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
-import com.firefly.utils.concurrent.Promise
 import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.run
@@ -58,48 +57,44 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Jso
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
 
+data class SuspendPromise<in C>(val succeeded: suspend (C) -> Unit, val failed: suspend (Throwable?) -> Unit)
+
 val promiseQueueKey = "_promiseQueue"
 
-fun <C> RoutingContext.getPromiseQueue(): Deque<Promise<C>>? = getAttr(promiseQueueKey)
+fun <C> RoutingContext.getPromiseQueue(): Deque<SuspendPromise<C>>? = getAttr(promiseQueueKey)
 
 @Suppress("UNCHECKED_CAST")
-fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<Promise<C>> = attributes.computeIfAbsent(promiseQueueKey) {
-    ConcurrentLinkedDeque<Promise<C>>()
-} as Deque<Promise<C>>
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<SuspendPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<SuspendPromise<C>>() } as Deque<SuspendPromise<C>>
 
-inline fun <C> RoutingContext.promise(crossinline succeeded: (C) -> Unit, crossinline failed: (Throwable?) -> Unit): RoutingContext {
+fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
-    queue.push(object : Promise<C> {
-        override fun succeeded(c: C) {
-            succeeded.invoke(c)
-            try {
-                queue.pop().succeeded(c)
-            } catch (e: NoSuchElementException) {
-            }
+    queue.push(SuspendPromise<C>(succeeded = {
+        succeeded.invoke(it)
+        try {
+            queue.pop().succeeded(it)
+        } catch (e: NoSuchElementException) {
         }
-
-        override fun failed(x: Throwable?) {
-            failed.invoke(x)
-            try {
-                queue.pop().failed(x)
-            } catch (e: NoSuchElementException) {
-            }
+    }, failed = {
+        failed.invoke(it)
+        try {
+            queue.pop().failed(it)
+        } catch (e: NoSuchElementException) {
         }
-    })
+    }))
     return this
 }
 
-inline fun <C> RoutingContext.promise(crossinline succeeded: (C) -> Unit): RoutingContext {
+fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit): RoutingContext {
     promise(succeeded, {})
     return this
 }
 
-fun <C> RoutingContext.succeed(result: C): Unit {
-    getPromiseQueue<C>()?.pop()?.succeeded(result)
+suspend fun <C> RoutingContext.succeed(result: C): Unit {
+    getPromiseQueue<C>()?.pop()?.succeeded?.invoke(result)
 }
 
-fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
-    getPromiseQueue<C>()?.pop()?.failed(x)
+suspend fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
+    getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
 }
 
 
@@ -347,9 +342,9 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
             : this(coroutineLocal,
-            SimpleHTTPServerConfiguration(),
-            HTTPBodyConfiguration(),
-            block)
+                   SimpleHTTPServerConfiguration(),
+                   HTTPBodyConfiguration(),
+                   block)
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
 
