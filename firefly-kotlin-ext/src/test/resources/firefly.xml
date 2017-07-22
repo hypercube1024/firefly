@@ -12,7 +12,7 @@
         <property name="isAutoCommit" value="false" />
     </bean>
 
-    <bean id="jdbcHelper" class="com.firefly.db.JDBCHelper">
+    <bean id="jdbcHelper" class="com.firefly.db.JDBCHelper" destroy-method="stop">
         <constructor>
             <argument type="javax.sql.DataSource" ref="dataSource"/>
         </constructor>
