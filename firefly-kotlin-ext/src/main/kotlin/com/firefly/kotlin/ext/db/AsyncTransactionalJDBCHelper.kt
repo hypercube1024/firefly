@@ -140,7 +140,7 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
             return null
         } finally {
             run(NonCancellable) {
-                transactionalManager.endTransaction()
+                transactionalManager.asyncEndTransaction()
             }
         }
     }
