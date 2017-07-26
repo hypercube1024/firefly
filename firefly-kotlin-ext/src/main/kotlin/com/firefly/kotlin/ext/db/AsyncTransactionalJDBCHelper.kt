@@ -20,10 +20,8 @@ import javax.sql.DataSource
  */
 private val log = Log.getLogger("firefly-system")
 
-class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
+class AsyncTransactionalJDBCHelper(val jdbcHelper: JDBCHelper,
                                    val transactionalManager: AsynchronousTransactionalManager) {
-
-    val asyncJdbcHelper = AsynchronousJDBCHelper(jdbcHelper)
 
     constructor(dataSource: DataSource,
                 transactionalManager: AsynchronousTransactionalManager) : this(dataSource, true, null, transactionalManager)
@@ -116,14 +114,28 @@ class AsyncTransactionalJDBCHelper(jdbcHelper: JDBCHelper,
         }
     }
 
-    suspend fun <R> executeSQL(func: (Connection, JDBCHelper) -> R?): R? = asyncJdbcHelper.executeSQL {
+    suspend fun <R> executeSQL(func: (Connection, JDBCHelper) -> R?): R? {
         if (transactionalManager.isTransactionBegin) {
             log.debug { "execute transaction, id: ${transactionalManager.currentTransactionId}" }
-            jdbcHelper.async(transactionalManager.connection, func).await()
+            return jdbcHelper.async(transactionalManager.connection, func).await()
         } else {
             log.debug("execute SQL")
-            getConnection().safeUse {
+            return getConnection().safeUse {
                 jdbcHelper.async(it, func).await()
+            }
+        }
+    }
+
+    suspend fun getConnection(): Connection = jdbcHelper.asyncGetConnection().await()
+
+    suspend fun <R> Connection.safeUse(block: suspend (Connection) -> R?): R? {
+        try {
+            return block(this)
+        } catch (e: Throwable) {
+            throw e
+        } finally {
+            run(NonCancellable) {
+                close()
             }
         }
     }

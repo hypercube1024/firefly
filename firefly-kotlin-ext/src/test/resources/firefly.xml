@@ -18,12 +18,6 @@
         </constructor>
     </bean>
 
-    <bean id="asynchronousJDBCHelper" class="com.firefly.kotlin.ext.db.AsynchronousJDBCHelper">
-        <constructor>
-            <argument type="com.firefly.db.JDBCHelper" ref="jdbcHelper"/>
-        </constructor>
-    </bean>
-
     <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
 
     <bean id="asyncHttpContextTransactionalManager" class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">
