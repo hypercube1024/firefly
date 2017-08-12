@@ -2,8 +2,9 @@ package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.AsyncPool
+import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
-import com.firefly.server.http2.HTTP2ServerBuilder
+import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
@@ -14,9 +15,10 @@ import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
 import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.run
-import kotlinx.coroutines.experimental.runBlocking
 import java.io.Closeable
 import java.net.InetAddress
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.CoroutineContext
 
@@ -26,43 +28,74 @@ import kotlin.coroutines.experimental.CoroutineContext
  * @author Pengtao Qiu
  */
 
+val sysLogger = Log.getLogger("firefly-system")
+
 // HTTP server API extensions
-
-fun HTTP2ServerBuilder.asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): HTTP2ServerBuilder = this.handler {
-    it.response.isAsynchronous = true
-    launch(AsyncPool) {
-        handler.invoke(it, context)
-    }
-}
-
-fun Router.asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Router = this.handler {
-    it.response.isAsynchronous = true
-    launch(AsyncPool) {
-        handler.invoke(it, context)
-    }
-}
-
-fun HTTP2ServerBuilder.syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): HTTP2ServerBuilder = this.handler {
-    runBlocking {
-        handler.invoke(it, context)
-    }
-}
-
-fun Router.syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Router = this.handler {
-    runBlocking {
-        handler.invoke(it, context)
-    }
-}
 
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> RoutingContext.getJsonBody(): T = Json.parse(stringBody)
+
+inline fun <reified T : Any> RoutingContext.getAttr(name: String): T? {
+    val data = getAttribute(name) ?: return null
+    if (data is T) {
+        return data
+    } else {
+        throw ClassCastException("The attribute $name type is ${data::class.java}. It can't cast to ${T::class.java}")
+    }
+}
+
+fun RoutingContext.getWildcardMatchedResult(index: Int): String = getRouterParameter("param$index")
+
+fun RoutingContext.getRegexGroup(index: Int): String = getRouterParameter("group$index")
+
+fun RoutingContext.getPathParameter(name: String): String = getRouterParameter(name)
 
 fun RoutingContext.writeJson(obj: Any): RoutingContext = put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).write(Json.toJson(obj))
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
+
+data class SuspendPromise<in C>(val succeeded: suspend (C) -> Unit, val failed: suspend (Throwable?) -> Unit)
+
+val promiseQueueKey = "_promiseQueue"
+
+fun <C> RoutingContext.getPromiseQueue(): Deque<SuspendPromise<C>>? = getAttr(promiseQueueKey)
+
+@Suppress("UNCHECKED_CAST")
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<SuspendPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<SuspendPromise<C>>() } as Deque<SuspendPromise<C>>
+
+fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
+    val queue = createPromiseQueueIfAbsent<C>()
+    queue.push(SuspendPromise<C>(succeeded = {
+        succeeded.invoke(it)
+        try {
+            queue.pop().succeeded(it)
+        } catch (e: NoSuchElementException) {
+        }
+    }, failed = {
+        failed.invoke(it)
+        try {
+            queue.pop().failed(it)
+        } catch (e: NoSuchElementException) {
+        }
+    }))
+    return this
+}
+
+fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit): RoutingContext {
+    promise(succeeded, {})
+    return this
+}
+
+suspend fun <C> RoutingContext.succeed(result: C): Unit {
+    getPromiseQueue<C>()?.pop()?.succeeded?.invoke(result)
+}
+
+suspend fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
+    getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
+}
 
 
 // HTTP server DSL
@@ -170,7 +203,9 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
 }
 
-class RouterBlock(private val router: Router) {
+@HttpServerMarker
+class RouterBlock(private val router: Router,
+                  private val requestCtx: CoroutineLocal<RoutingContext>?) {
 
     var method: String = HttpMethod.GET.asString()
         set(value) {
@@ -202,15 +237,15 @@ class RouterBlock(private val router: Router) {
             field = value
         }
 
-    var regexPath: String = ""
+    var paths: List<String> = listOf()
         set(value) {
-            router.pathRegex(value)
+            router.paths(value)
             field = value
         }
 
-    var paths: List<String> = listOf()
+    var regexPath: String = ""
         set(value) {
-            value.forEach { router.path(it) }
+            router.pathRegex(value)
             field = value
         }
 
@@ -227,11 +262,12 @@ class RouterBlock(private val router: Router) {
         }
 
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
-        router.asyncHandler(handler)
-    }
-
-    fun syncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
-        router.syncHandler(handler)
+        router.handler {
+            it.response.isAsynchronous = true
+            launch(requestCtx?.createContext(it) ?: AsyncPool) {
+                handler.invoke(it, context)
+            }
+        }
     }
 
     fun handler(handler: RoutingContext.() -> Unit): Unit {
@@ -261,7 +297,7 @@ class RouterBlock(private val router: Router) {
     }
 
     override fun toString(): String {
-        return "RouterBlock(method='$method', methods=$methods, httpMethod=$httpMethod, httpMethods=$httpMethods, path='$path', regexPath='$regexPath', paths=$paths, consumes='$consumes', produces='$produces')"
+        return router.toString()
     }
 
 }
@@ -276,7 +312,24 @@ interface HttpServerLifecycle {
     fun listen(): Unit
 }
 
-class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
+@DslMarker
+annotation class HttpServerMarker
+
+/**
+ * HTTP server DSL. It helps you write HTTP server elegantly.
+ *
+ * @param requestCtx
+ * Maintain the routing context in the HTTP request lifecycle when you use the asynchronous handlers which run in the coroutine.
+ * It visits RoutingContext in the external function conveniently. Usually, you can use it to trace HTTP request crossing all registered routers.
+ *
+ * @param serverConfiguration HTTP server configuration
+ * @param httpBodyConfiguration HTTP body configuration
+ * @param block HTTP server DSL block
+ *
+ */
+@HttpServerMarker
+class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
+                 serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
 
@@ -287,7 +340,13 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
         block.invoke(this)
     }
 
-    constructor(block: HttpServer.() -> Unit) : this(SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
+    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
+            : this(coroutineLocal,
+                   SimpleHTTPServerConfiguration(),
+                   HTTPBodyConfiguration(),
+                   block)
+
+    constructor(block: HttpServer.() -> Unit) : this(null, block)
 
     constructor() : this({})
 
@@ -300,7 +359,9 @@ class HttpServer(serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTP
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
     inline fun router(block: RouterBlock.() -> Unit): Unit {
-        block.invoke(RouterBlock(routerManager.register()))
+        val r = RouterBlock(routerManager.register(), requestCtx)
+        block.invoke(r)
+        sysLogger.info("register $r")
     }
 
     inline fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)

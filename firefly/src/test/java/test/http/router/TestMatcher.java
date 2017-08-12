@@ -175,11 +175,29 @@ public class TestMatcher {
         Assert.assertThat(result.getRouters().size(), is(1));
         Assert.assertThat(result.getRouters().contains(router8), is(true));
 
-
         result = routerManager.getRegexPathMatcher().match("/hello113");
         Assert.assertThat(result, notNullValue());
         Assert.assertThat(result.getRouters().size(), is(1));
         Assert.assertThat(result.getRouters().contains(router9), is(true));
         Assert.assertThat(result.getParameters().get(router9).get("group1"), is("113"));
+    }
+
+    @Test
+    public void testPathMatcher2() {
+        RouterManagerImpl routerManager = new RouterManagerImpl();
+        Router router0 = routerManager.register().path("/test/*");
+
+        Matcher.MatchResult result = routerManager.getPatternPathMatcher().match("/test/x");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router0), is(true));
+
+        Router router1 = routerManager.register().path("/*create*");
+        result = routerManager.getPatternPathMatcher().match("/fruit/apple/create");
+        Assert.assertThat(result, notNullValue());
+        Assert.assertThat(result.getRouters().size(), is(1));
+        Assert.assertThat(result.getRouters().contains(router1), is(true));
+        Assert.assertThat(result.getParameters().get(router1).get("param0"), is("fruit/apple/"));
+        Assert.assertThat(result.getParameters().get(router1).get("param1"), is(""));
     }
 }

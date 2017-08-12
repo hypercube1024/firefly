@@ -7,9 +7,11 @@ import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpMethod.POST
 import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
+import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.kotlin.ext.log.info
+import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
@@ -24,14 +26,13 @@ import java.util.concurrent.TimeUnit
 private val log = Log.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
-
-
+private val requestLocal = CoroutineLocal<RoutingContext>()
 
 @NoArg
 data class Product(var id: String, var type: String)
 
 fun main(args: Array<String>) {
-    val server = HttpServer {
+    val server = HttpServer(requestLocal) {
         router {
             httpMethod = HttpMethod.GET
             path = "/"
@@ -78,26 +79,34 @@ fun main(args: Array<String>) {
         }
 
         router {
-            path = "/threadLocal/delay"
             httpMethod = GET
+            path = "/threadLocal/delay"
 
             asyncHandler {
                 threadLocal.set("reqId_001")
-                log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                setAttribute("reqId", "001")
 
-                delay(10, TimeUnit.SECONDS) // simulate I/O wait
-                threadLocal.set(null) // clean thread local variable
+                try {
+                    log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                    testCoroutineCtx()
 
-                end("${uri.path} -> var:  ${threadLocal.get()}, job: ${it[Job]}")
+                    delay(10, TimeUnit.SECONDS) // simulate I/O wait
+
+                    end("${uri.path} -> threadLocal:  ${threadLocal.get()}, job: ${it[Job]}, reqId: ${getAttribute("reqId")}")
+                } finally {
+                    threadLocal.set(null) // clean thread local variable
+                    removeAttribute("reqId") // clean request id
+                }
             }
         }
 
         router {
-            path = "/otherReq"
             httpMethod = GET
+            path = "/otherReq"
 
             asyncHandler {
                 log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                testCoroutineCtx()
                 runBlocking(it) {
                     log.info("${uri.path}, new coroutine 1 -> var: ${threadLocal.get()}, job: ${it[Job]}")
                 }
@@ -105,7 +114,51 @@ fun main(args: Array<String>) {
                 runBlocking {
                     log.info("${uri.path}, new coroutine 2 -> var: ${threadLocal.get()}, job: ${it[Job]}")
                 }
-                end("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
+                end("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}, reqId: ${getAttribute("reqId")}")
+            }
+        }
+
+        router {
+            httpMethod = GET
+            path = "/routerChain"
+
+            asyncHandler {
+                promise<String>({
+                    write("router 1 success\r\n").end(it)
+                }, {
+                    write("${it?.message}").end()
+                })
+
+                setAttribute("reqId", 1000)
+                write("enter router 1\r\n").next()
+            }
+        }
+
+        router {
+            httpMethod = GET
+            path = "/routerChain"
+
+            asyncHandler {
+                val reqId = getAttribute("reqId") as Int
+                promise<String> {
+                    write("router 2 success, request id $reqId\r\n")
+                }
+
+                write("enter router 2, request id $reqId\r\n").next()
+            }
+        }
+
+        router {
+            httpMethod = GET
+            path = "/routerChain"
+
+            asyncHandler {
+                val reqId = getAttribute("reqId") as Int
+                promise<String> {
+                    write("router 3 success, request id $reqId\r\n")
+                }
+
+                write("enter router 3, request id $reqId\r\n").succeed("request complete")
             }
         }
     }
@@ -116,14 +169,30 @@ fun main(args: Array<String>) {
             path = "/product"
             consumes = "application/json"
 
-            log.info { "setup router ($this)" }
-
             asyncHandler {
                 val product = getJsonBody<Request<Product>>()
                 writeJson(Response("mmp ok", 33, product.toString())).end()
             }
         }
+
+        router {
+            httpMethod = GET
+            path = "/test/*"
+
+            asyncHandler {
+                setAttribute("reqId", 20)
+                if (hasNext()) {
+                    next()
+                } else {
+                    end("nothing")
+                }
+            }
+        }
     }
 
     server.listen("localhost", 8080)
+}
+
+suspend fun testCoroutineCtx() {
+    log.info("coroutine local ${requestLocal.get()?.uri?.path} -> ${requestLocal.get()?.getAttribute("reqId")}")
 }

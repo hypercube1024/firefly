@@ -2,6 +2,7 @@ package com.firefly.server.http2.router;
 
 import com.firefly.codec.http2.model.HttpMethod;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -16,6 +17,8 @@ public interface Router extends Comparable<Router> {
     Set<Matcher.MatchType> getMatchTypes();
 
     Router path(String url);
+
+    Router paths(List<String> urlList);
 
     Router pathRegex(String regex);
 

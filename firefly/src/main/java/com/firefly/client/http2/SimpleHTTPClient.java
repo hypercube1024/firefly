@@ -491,7 +491,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             resTimerCtx.stop();
                         } finally {
                             pool.release(o);
-                            log.debug("eafly EOF of the connection {} , released: {}",
+                            log.debug("early EOF of the connection {} , released: {}",
                                     connection.getSessionId(),
                                     o.isReleased());
                         }

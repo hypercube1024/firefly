@@ -4,6 +4,7 @@
        xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
     <component-scan base-package="com.firefly.kotlin.ext.context" />
+    <component-scan base-package="com.firefly.kotlin.ext.example.task.management" />
 
     <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
         <property name="jdbcUrl" value="jdbc:h2:mem:test" />
@@ -11,9 +12,25 @@
         <property name="isAutoCommit" value="false" />
     </bean>
 
-    <bean id="asynchronousJDBCHelper" class="com.firefly.kotlin.ext.db.AsynchronousJDBCHelper">
+    <bean id="jdbcHelper" class="com.firefly.db.JDBCHelper" destroy-method="stop">
         <constructor>
             <argument type="javax.sql.DataSource" ref="dataSource"/>
+        </constructor>
+    </bean>
+
+    <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
+
+    <bean id="asyncHttpContextTransactionalManager" class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">
+        <constructor>
+            <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
+            <argument type="com.firefly.db.JDBCHelper" ref="jdbcHelper"/>
+        </constructor>
+    </bean>
+
+    <bean id="asyncTransactionalJDBCHelper" class="com.firefly.kotlin.ext.db.AsyncTransactionalJDBCHelper">
+        <constructor>
+            <argument type="com.firefly.db.JDBCHelper" ref="jdbcHelper"/>
+            <argument type="com.firefly.kotlin.ext.db.AsynchronousTransactionalManager" ref="asyncHttpContextTransactionalManager"/>
         </constructor>
     </bean>
 

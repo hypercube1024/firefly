@@ -54,7 +54,14 @@ public abstract class ComplexTypeParser implements Parser {
             elementMetaInfo.setExtractedType(rawClass);
             elementMetaInfo.setParser(ParserStateMachine.getParser(rawClass, elementType, null));
         } else if (elementType instanceof WildcardType) {
-            init(((WildcardType) elementType).getUpperBounds()[0]);
+            WildcardType wildcardType = (WildcardType) elementType;
+            if (wildcardType.getUpperBounds() != null && wildcardType.getUpperBounds().length > 0) {
+                init(wildcardType.getUpperBounds()[0]);
+            } else if (wildcardType.getLowerBounds() != null && wildcardType.getLowerBounds().length > 0) {
+                init(wildcardType.getLowerBounds()[0]);
+            } else {
+                throw new JsonException("not support type " + elementType);
+            }
         } else {
             throw new JsonException("not support type " + elementType);
         }

@@ -48,13 +48,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>4.3.1</version>
+    <version>4.4.0</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>4.3.1</version>
+    <version>4.4.0</version>
 </dependency>
 ```
 
@@ -106,7 +106,7 @@ Add maven dependency in your pom.xml
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-kotlin-ext</artifactId>
-    <version>4.3.1</version>
+    <version>4.4.0</version>
 </dependency>
 ```
 
@@ -138,7 +138,7 @@ More detailed information, please refer to the
 * [HTTP server/client document (Java version)](http://www.fireflysource.com/docs/http-server-and-client.html)
 * [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example)
 * [HTTP server/client document (Kotlin version)](http://www.fireflysource.com/docs/http-server-and-client-kotlin-ext.html)
-* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-kotlin-ext/src/test/kotlin/com/firefly/kotlin/ext/example)
+* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-kotlin-ext/src/test/kotlin/com/firefly/kotlin/ext/example/task/management)
 
 # Contact information
 E-mail: qptkk@163.com  

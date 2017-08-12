@@ -4,14 +4,9 @@ import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Matcher.MatchType;
 import com.firefly.server.http2.router.Router;
-import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.utils.PathUtils;
-import com.firefly.utils.function.Action1;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author Pengtao Qiu
@@ -24,7 +19,7 @@ public class RouterImpl implements Router {
 
     private Handler handler;
     private boolean enable = true;
-    private String url;
+    private List<String> urlList = new ArrayList<>();
 
     public RouterImpl(int id, RouterManagerImpl routerManager) {
         this.id = id;
@@ -68,18 +63,24 @@ public class RouterImpl implements Router {
                 }
             }
         }
-        this.url = url;
+        urlList.add(url);
         matchTypes.add(MatchType.PATH);
+        return this;
+    }
+
+    @Override
+    public Router paths(List<String> urlList) {
+        urlList.forEach(this::path);
         return this;
     }
 
     private void checkPath(String url) {
         if (url == null) {
-            throw new IllegalArgumentException("the url is null");
+            throw new IllegalArgumentException("the url is empty");
         }
 
-        if (this.url != null) {
-            throw new IllegalArgumentException("the path of this router has been set");
+        if (urlList.contains(url.trim())) {
+            throw new IllegalArgumentException("the url " + url + " exists");
         }
     }
 
@@ -97,7 +98,7 @@ public class RouterImpl implements Router {
         checkPath(regex);
         regex = regex.trim();
         routerManager.getRegexPathMatcher().add(regex, this);
-        this.url = regex;
+        urlList.add(regex);
         matchTypes.add(MatchType.PATH);
         return this;
     }
@@ -209,10 +210,10 @@ public class RouterImpl implements Router {
 
     @Override
     public String toString() {
-        return "RouterImpl{" +
+        return "Router {" +
                 "id=" + id +
                 ", matchTypes=" + matchTypes +
-                ", url='" + url + '\'' +
+                ", url=" + urlList +
                 '}';
     }
 }

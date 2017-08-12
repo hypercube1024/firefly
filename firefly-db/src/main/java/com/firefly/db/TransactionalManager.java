@@ -17,4 +17,6 @@ public interface TransactionalManager {
     void endTransaction();
 
     boolean isTransactionBegin();
+
+    long getCurrentTransactionId();
 }
