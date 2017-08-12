@@ -5,8 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Implements a quoted comma separated list of values in accordance with
- * RFC7230. OWS is removed and quoted characters ignored for parsing.
+ * Implements a quoted comma separated list of values
+ * in accordance with RFC7230.
+ * OWS is removed and quoted characters ignored for parsing.
  *
  * @see "https://tools.ietf.org/html/rfc7230#section-3.2.6"
  * @see "https://tools.ietf.org/html/rfc7230#section-7"
@@ -273,8 +274,9 @@ public class QuotedCSV implements Iterable<String> {
     @Override
     public String toString() {
         List<String> list = new ArrayList<>();
-        for (String s : this)
+        for (String s : this) {
             list.add(s);
+        }
         return list.toString();
     }
 }

@@ -1,16 +1,14 @@
 package test.codec.http2.model;
 
-import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertThat;
-
+import com.firefly.codec.http2.model.QuotedQualityCSV;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.codec.http2.model.QuotedQualityCSV;
+import static org.hamcrest.Matchers.contains;
+import static org.junit.Assert.assertThat;
 
 public class QuotedQualityCSVTest {
-
     @Test
     public void test7231_5_3_2_example1() {
         QuotedQualityCSV values = new QuotedQualityCSV();
