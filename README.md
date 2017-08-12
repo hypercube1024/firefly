@@ -138,7 +138,7 @@ More detailed information, please refer to the
 * [HTTP server/client document (Java version)](http://www.fireflysource.com/docs/http-server-and-client.html)
 * [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example)
 * [HTTP server/client document (Kotlin version)](http://www.fireflysource.com/docs/http-server-and-client-kotlin-ext.html)
-* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-kotlin-ext/src/test/kotlin/com/firefly/kotlin/ext/example)
+* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-kotlin-ext/src/test/kotlin/com/firefly/kotlin/ext/example/task/management)
 
 # Contact information
 E-mail: qptkk@163.com  
