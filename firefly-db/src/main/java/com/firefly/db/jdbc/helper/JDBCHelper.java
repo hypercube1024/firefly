@@ -1,9 +1,13 @@
-package com.firefly.db;
+package com.firefly.db.jdbc.helper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
-import com.firefly.db.DefaultBeanProcessor.Mapper;
-import com.firefly.db.DefaultBeanProcessor.SQLMapper;
+import com.firefly.db.DBException;
+import com.firefly.db.DefaultMetricReporterFactory;
+import com.firefly.db.LatencyTopTracker;
+import com.firefly.db.MetricReporterFactory;
+import com.firefly.db.jdbc.helper.DefaultBeanProcessor.Mapper;
+import com.firefly.db.jdbc.helper.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ServiceUtils;
@@ -32,7 +36,7 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.firefly.db.JDBCConnectionUtils.*;
+import static com.firefly.db.jdbc.helper.JDBCConnectionUtils.*;
 
 public class JDBCHelper extends AbstractLifeCycle {
 
@@ -219,7 +223,7 @@ public class JDBCHelper extends AbstractLifeCycle {
     public <T> T queryForObject(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor,
                                 Object... params) {
         try {
-            return runner.query(connection, sql, new BeanHandler<T>(t, new BasicRowProcessor(beanProcessor)), params);
+            return runner.query(connection, sql, new BeanHandler<>(t, new BasicRowProcessor(beanProcessor)), params);
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);

@@ -1,9 +1,9 @@
 package test.db;
 
-import com.firefly.db.DefaultBeanProcessor;
-import com.firefly.db.DefaultBeanProcessor.Mapper;
-import com.firefly.db.DefaultBeanProcessor.SQLMapper;
-import com.firefly.db.JDBCHelper;
+import com.firefly.db.jdbc.helper.DefaultBeanProcessor;
+import com.firefly.db.jdbc.helper.DefaultBeanProcessor.Mapper;
+import com.firefly.db.jdbc.helper.DefaultBeanProcessor.SQLMapper;
+import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.concurrent.Promise;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.firefly.db.JDBCConnectionUtils.rollback;
+import static com.firefly.db.jdbc.helper.JDBCConnectionUtils.rollback;
 import static org.hamcrest.Matchers.*;
 
 public class TestAnnotation {

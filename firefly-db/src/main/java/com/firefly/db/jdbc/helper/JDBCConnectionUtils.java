@@ -1,5 +1,6 @@
-package com.firefly.db;
+package com.firefly.db.jdbc.helper;
 
+import com.firefly.db.DBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

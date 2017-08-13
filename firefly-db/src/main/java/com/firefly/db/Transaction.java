@@ -1,5 +1,6 @@
 package com.firefly.db;
 
+import com.firefly.db.jdbc.helper.JDBCConnectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,8 +8,8 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static com.firefly.db.JDBCConnectionUtils.close;
-import static com.firefly.db.JDBCConnectionUtils.setAutoCommit;
+import static com.firefly.db.jdbc.helper.JDBCConnectionUtils.close;
+import static com.firefly.db.jdbc.helper.JDBCConnectionUtils.setAutoCommit;
 import static com.firefly.db.Transaction.Status.*;
 
 /**

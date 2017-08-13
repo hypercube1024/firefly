@@ -1,6 +1,6 @@
 package com.firefly.kotlin.ext.db
 
-import com.firefly.db.JDBCHelper
+import com.firefly.db.jdbc.helper.JDBCHelper
 import com.firefly.db.Transaction
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.http.getAttr

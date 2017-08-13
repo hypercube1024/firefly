@@ -1,6 +1,7 @@
 package com.firefly.db;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 /**
@@ -34,8 +35,35 @@ public interface SQLResultSet {
 
     Object getObject(String columnLabel);
 
-    int findColumn(String columnLabel);
-
     BigDecimal getBigDecimal(String columnLabel);
-    
+
+    BigInteger getBigInteger(String columnLabel);
+
+    String getString(int columnIndex);
+
+    boolean getBoolean(int columnIndex);
+
+    byte getByte(int columnIndex);
+
+    short getShort(int columnIndex);
+
+    int getInt(int columnIndex);
+
+    long getLong(int columnIndex);
+
+    float getFloat(int columnIndex);
+
+    double getDouble(int columnIndex);
+
+    byte[] getBytes(int columnIndex);
+
+    Date getDate(int columnIndex);
+
+    Object getObject(int columnIndex);
+
+    BigDecimal getBigDecimal(int columnIndex);
+
+    BigInteger getBigInteger(int columnIndex);
+
+    void close();
 }

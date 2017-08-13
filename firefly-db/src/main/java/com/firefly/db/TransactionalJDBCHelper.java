@@ -1,5 +1,6 @@
 package com.firefly.db;
 
+import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.Assert;
 import com.firefly.utils.function.Func1;
 import com.firefly.utils.function.Func2;
@@ -14,7 +15,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import static com.firefly.db.JDBCConnectionUtils.setAutoCommit;
+import static com.firefly.db.jdbc.helper.JDBCConnectionUtils.setAutoCommit;
 
 public class TransactionalJDBCHelper {
 

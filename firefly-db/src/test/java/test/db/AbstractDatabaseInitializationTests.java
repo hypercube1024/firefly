@@ -3,7 +3,7 @@ package test.db;
 import org.junit.After;
 import org.junit.Before;
 
-import com.firefly.db.JDBCHelper;
+import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.io.ClassRelativeResourceLoader;
 import com.firefly.utils.io.Resource;
 import com.zaxxer.hikari.HikariConfig;

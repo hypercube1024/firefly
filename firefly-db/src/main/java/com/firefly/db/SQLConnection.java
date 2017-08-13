@@ -21,7 +21,7 @@ public interface SQLConnection {
 
     <T> Completable<List<T>> queryForList(String sql, Class<T> clazz, Object... params);
 
-    Completable<SQLResultSet> query(String sql, Object... params);
+    <T> Completable<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params);
 
     Completable<Integer> update(String sql, Object... params);
 
@@ -33,7 +33,7 @@ public interface SQLConnection {
 
     <T, R> Completable<R> insertObjectBatch(List<T> list, Class<T> clazz, Func1<SQLResultSet, R> handler);
 
-    <T, R> Completable<R> insertObjectBatch(List<T> list, Class<T> clazz);
+    <T, R> Completable<List<R>> insertObjectBatch(List<T> list, Class<T> clazz);
 
     <T> Completable<Integer> deleteById(Object id, Class<T> clazz);
 

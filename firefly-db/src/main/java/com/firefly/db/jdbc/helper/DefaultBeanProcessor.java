@@ -1,4 +1,4 @@
-package com.firefly.db;
+package com.firefly.db.jdbc.helper;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
