@@ -5,7 +5,7 @@ import com.firefly.db.SQLConnection;
 import com.firefly.db.SQLResultSet;
 import com.firefly.db.TransactionIsolation;
 import com.firefly.db.jdbc.helper.JDBCHelper;
-import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.concurrent.Promise.Completable;
 import com.firefly.utils.function.Func1;
 
 import java.sql.Connection;
@@ -36,32 +36,32 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public <T> Promise.Completable<T> queryForSingleColumn(String sql, Object... params) {
+    public <T> Completable<T> queryForSingleColumn(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForSingleColumn(connection, sql, params));
     }
 
     @Override
-    public <T> Promise.Completable<T> queryForObject(String sql, Class<T> clazz, Object... params) {
+    public <T> Completable<T> queryForObject(String sql, Class<T> clazz, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForObject(connection, sql, clazz, params));
     }
 
     @Override
-    public <T> Promise.Completable<T> queryById(Object id, Class<T> clazz) {
+    public <T> Completable<T> queryById(Object id, Class<T> clazz) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryById(connection, clazz, id));
     }
 
     @Override
-    public <K, V> Promise.Completable<Map<K, V>> queryForBeanMap(String sql, Class<V> valueClass, Object... params) {
+    public <K, V> Completable<Map<K, V>> queryForBeanMap(String sql, Class<V> valueClass, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForBeanMap(connection, sql, valueClass, params));
     }
 
     @Override
-    public <T> Promise.Completable<List<T>> queryForList(String sql, Class<T> clazz, Object... params) {
+    public <T> Completable<List<T>> queryForList(String sql, Class<T> clazz, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForList(connection, sql, clazz, params));
     }
 
     @Override
-    public <T> Promise.Completable<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params) {
+    public <T> Completable<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 return helper.getRunner().query(connection, sql, rs -> handler.call(new JDBCResultSet(rs)), params);
@@ -72,33 +72,33 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Promise.Completable<Integer> update(String sql, Object... params) {
+    public Completable<Integer> update(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.update(connection, sql, params));
     }
 
     @Override
-    public <T> Promise.Completable<Integer> updateObject(T object) {
+    public <T> Completable<Integer> updateObject(T object) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.updateObject(connection, object));
     }
 
     @Override
-    public <T> Promise.Completable<T> insert(String sql, Object... params) {
+    public <T> Completable<T> insert(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.insert(connection, sql, params));
     }
 
     @Override
-    public <T, R> Promise.Completable<R> insertObject(T object) {
+    public <T, R> Completable<R> insertObject(T object) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.insertObject(connection, object));
     }
 
     @Override
-    public <T, R> Promise.Completable<R> insertObjectBatch(List<T> list, Class<T> clazz, Func1<SQLResultSet, R> handler) {
+    public <T, R> Completable<R> insertObjectBatch(List<T> list, Class<T> clazz, Func1<SQLResultSet, R> handler) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.insertObjectBatch(connection, rs -> handler.call(new JDBCResultSet(rs)), clazz, list));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T, R> Promise.Completable<List<R>> insertObjectBatch(List<T> list, Class<T> clazz) {
+    public <T, R> Completable<List<R>> insertObjectBatch(List<T> list, Class<T> clazz) {
         return insertObjectBatch(list, clazz, rs -> {
             List<R> ret = new ArrayList<>();
             while (rs.next()) {
@@ -109,12 +109,12 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public <T> Promise.Completable<Integer> deleteById(Object id, Class<T> clazz) {
+    public <T> Completable<Integer> deleteById(Object id, Class<T> clazz) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.deleteById(connection, clazz, id));
     }
 
     @Override
-    public Promise.Completable<int[]> executeBatch(String sql, Object[][] params) {
+    public Completable<int[]> executeBatch(String sql, Object[][] params) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 return helper.getRunner().batch(connection, sql, params);
@@ -125,7 +125,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Promise.Completable<Void> setTransactionIsolation(TransactionIsolation transactionIsolation) {
+    public Completable<Void> setTransactionIsolation(TransactionIsolation transactionIsolation) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.setTransactionIsolation(toTransactionIsolationLevel(transactionIsolation));
@@ -154,7 +154,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Promise.Completable<Void> setAutoCommit(boolean autoCommit) {
+    public Completable<Void> setAutoCommit(boolean autoCommit) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.setAutoCommit(autoCommit);
@@ -166,7 +166,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Promise.Completable<Void> rollback() {
+    public Completable<Void> rollback() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.rollback();
@@ -178,7 +178,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Promise.Completable<Void> commit() {
+    public Completable<Void> commit() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.commit();
@@ -190,7 +190,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Promise.Completable<Void> close() {
+    public Completable<Void> close() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.close();
