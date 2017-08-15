@@ -1,12 +1,16 @@
 package com.firefly.db;
 
-import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.function.Func1;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Pengtao Qiu
  */
 public interface SQLClient {
 
-    Promise.Completable<SQLConnection> getConnection();
+    CompletableFuture<SQLConnection> getConnection();
+
+    <T> CompletableFuture<T> inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1);
 
 }

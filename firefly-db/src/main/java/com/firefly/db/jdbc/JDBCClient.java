@@ -5,11 +5,12 @@ import com.firefly.db.SQLClient;
 import com.firefly.db.SQLConnection;
 import com.firefly.db.jdbc.helper.DefaultBeanProcessor;
 import com.firefly.db.jdbc.helper.JDBCHelper;
-import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.function.Func1;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.apache.commons.dbutils.QueryRunner;
 
 import javax.sql.DataSource;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -52,14 +53,12 @@ public class JDBCClient extends AbstractLifeCycle implements SQLClient {
     }
 
     @Override
-    public Promise.Completable<SQLConnection> getConnection() {
-        Promise.Completable<SQLConnection> completable = new Promise.Completable<>();
-        jdbcHelper.asyncGetConnection()
-                  .thenAccept(c -> completable.succeeded(new JDBCConnection(jdbcHelper, c)))
-                  .exceptionally(e -> {
-                      completable.failed(e);
-                      return null;
-                  });
-        return completable;
+    public CompletableFuture<SQLConnection> getConnection() {
+        return jdbcHelper.asyncGetConnection().thenApply(c -> new JDBCConnection(jdbcHelper, c));
+    }
+
+    @Override
+    public <T> CompletableFuture<T> inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1) {
+        return getConnection().thenCompose(conn -> conn.inTransaction(func1));
     }
 }

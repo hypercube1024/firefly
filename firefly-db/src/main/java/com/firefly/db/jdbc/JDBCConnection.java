@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -45,32 +46,32 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public <T> Completable<T> queryForSingleColumn(String sql, Object... params) {
+    public <T> CompletableFuture<T> queryForSingleColumn(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForSingleColumn(connection, sql, params));
     }
 
     @Override
-    public <T> Completable<T> queryForObject(String sql, Class<T> clazz, Object... params) {
+    public <T> CompletableFuture<T> queryForObject(String sql, Class<T> clazz, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForObject(connection, sql, clazz, params));
     }
 
     @Override
-    public <T> Completable<T> queryById(Object id, Class<T> clazz) {
+    public <T> CompletableFuture<T> queryById(Object id, Class<T> clazz) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryById(connection, clazz, id));
     }
 
     @Override
-    public <K, V> Completable<Map<K, V>> queryForBeanMap(String sql, Class<V> valueClass, Object... params) {
+    public <K, V> CompletableFuture<Map<K, V>> queryForBeanMap(String sql, Class<V> valueClass, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForBeanMap(connection, sql, valueClass, params));
     }
 
     @Override
-    public <T> Completable<List<T>> queryForList(String sql, Class<T> clazz, Object... params) {
+    public <T> CompletableFuture<List<T>> queryForList(String sql, Class<T> clazz, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForList(connection, sql, clazz, params));
     }
 
     @Override
-    public <T> Completable<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params) {
+    public <T> CompletableFuture<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 return helper.getRunner().query(connection, sql, rs -> handler.call(new JDBCResultSet(rs)), params);
@@ -81,33 +82,33 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Integer> update(String sql, Object... params) {
+    public CompletableFuture<Integer> update(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.update(connection, sql, params));
     }
 
     @Override
-    public <T> Completable<Integer> updateObject(T object) {
+    public <T> CompletableFuture<Integer> updateObject(T object) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.updateObject(connection, object));
     }
 
     @Override
-    public <T> Completable<T> insert(String sql, Object... params) {
+    public <T> CompletableFuture<T> insert(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.insert(connection, sql, params));
     }
 
     @Override
-    public <T, R> Completable<R> insertObject(T object) {
+    public <T, R> CompletableFuture<R> insertObject(T object) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.insertObject(connection, object));
     }
 
     @Override
-    public <T, R> Completable<R> insertObjectBatch(List<T> list, Class<T> clazz, Func1<SQLResultSet, R> handler) {
+    public <T, R> CompletableFuture<R> insertObjectBatch(List<T> list, Class<T> clazz, Func1<SQLResultSet, R> handler) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.insertObjectBatch(connection, rs -> handler.call(new JDBCResultSet(rs)), clazz, list));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T, R> Completable<List<R>> insertObjectBatch(List<T> list, Class<T> clazz) {
+    public <T, R> CompletableFuture<List<R>> insertObjectBatch(List<T> list, Class<T> clazz) {
         return insertObjectBatch(list, clazz, rs -> {
             List<R> ret = new ArrayList<>();
             while (rs.next()) {
@@ -118,7 +119,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public <R> Completable<R> insertBatch(String sql, Object[][] params, Func1<SQLResultSet, R> handler) {
+    public <R> CompletableFuture<R> insertBatch(String sql, Object[][] params, Func1<SQLResultSet, R> handler) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 return helper.getRunner().insertBatch(connection, sql, rs -> handler.call(new JDBCResultSet(rs)), params);
@@ -129,12 +130,12 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public <T> Completable<Integer> deleteById(Object id, Class<T> clazz) {
+    public <T> CompletableFuture<Integer> deleteById(Object id, Class<T> clazz) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.deleteById(connection, clazz, id));
     }
 
     @Override
-    public Completable<int[]> executeBatch(String sql, Object[][] params) {
+    public CompletableFuture<int[]> executeBatch(String sql, Object[][] params) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 return helper.getRunner().batch(connection, sql, params);
@@ -145,7 +146,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Void> setTransactionIsolation(TransactionIsolation transactionIsolation) {
+    public CompletableFuture<Void> setTransactionIsolation(TransactionIsolation transactionIsolation) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.setTransactionIsolation(toTransactionIsolationLevel(transactionIsolation));
@@ -174,7 +175,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Void> setAutoCommit(boolean autoCommit) {
+    public CompletableFuture<Void> setAutoCommit(boolean autoCommit) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.setAutoCommit(autoCommit);
@@ -192,7 +193,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Void> rollback() {
+    public CompletableFuture<Void> rollback() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.rollback();
@@ -204,7 +205,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Void> commit() {
+    public CompletableFuture<Void> commit() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.commit();
@@ -216,7 +217,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Void> close() {
+    public CompletableFuture<Void> close() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.close();
@@ -228,7 +229,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Void> commitAndClose() {
+    public CompletableFuture<Void> commitAndClose() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try (Connection c = connection) {
                 c.commit();
@@ -240,7 +241,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public Completable<Void> rollbackAndClose() {
+    public CompletableFuture<Void> rollbackAndClose() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try (Connection c = connection) {
                 c.rollback();
@@ -252,7 +253,7 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public <T> Completable<T> inTransaction(Func1<SQLConnection, Completable<T>> func1) {
+    public <T> CompletableFuture<T> inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1) {
         if (inTransaction.compareAndSet(false, true)) {
             Completable<T> ret = new Completable<>();
             if (getAutoCommit()) {
@@ -270,7 +271,7 @@ public class JDBCConnection implements SQLConnection {
         }
     }
 
-    private <T> void _inTransaction(Func1<SQLConnection, Completable<T>> func1, Completable<T> ret) {
+    private <T> void _inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1, Completable<T> ret) {
         try {
             func1.call(this).thenAccept(c -> commitAndEndTransaction(ret, c)).exceptionally(e -> {
                 rollbackAndEndTransaction(ret, e);

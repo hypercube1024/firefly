@@ -4,6 +4,7 @@ import com.firefly.db.SQLClient;
 import com.firefly.db.SQLConnection;
 import com.firefly.db.jdbc.JDBCClient;
 import com.firefly.utils.concurrent.Promise.Completable;
+import com.firefly.utils.function.Func1;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
@@ -13,6 +14,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.Matchers.is;
 
@@ -32,41 +34,34 @@ public class TestTransactionalJdbcHelper {
 
     @Before
     public void before() throws Exception {
-        SQLConnection connection = sqlClient.getConnection().get();
-        connection.inTransaction(c -> {
-            try {
-                c.update("drop schema if exists test").get();
-                c.update("create schema test").get();
-                c.update("set mode MySQL").get();
-                c.update("CREATE TABLE `test`.`user`(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))").get();
+        exec(c -> c.update("drop schema if exists test")
+                   .thenCompose(v -> c.update("create schema test"))
+                   .thenCompose(v -> c.update("set mode MySQL"))
+                   .thenCompose(v -> c.update("CREATE TABLE `test`.`user`(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))"))
+                   .thenCompose(v -> {
+                       Object[][] params = new Object[size][2];
+                       for (int i = 0; i < size; i++) {
+                           params[i][0] = "test transaction " + i;
+                           params[i][1] = "pwd transaction " + i;
+                       }
+                       String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
+                       return c.insertBatch(sql, params, (rs) -> {
+                           List<Integer> ids = new ArrayList<>();
+                           while (rs.next()) {
+                               ids.add(rs.getInt(1));
+                           }
+                           return ids;
+                       });
+                   })).thenAccept(System.out::println).get();
+    }
 
-                Object[][] params = new Object[size][2];
-                for (int i = 0; i < size; i++) {
-                    params[i][0] = "test transaction " + i;
-                    params[i][1] = "pwd transaction " + i;
-                }
-                String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
-                c.executeBatch(sql, params).get();
-                Completable<List<Integer>> idList = c.insertBatch(sql, params, (rs) -> {
-                    List<Integer> ids = new ArrayList<>();
-                    while (rs.next()) {
-                        ids.add(rs.getInt(1));
-                    }
-                    return ids;
-                });
-                System.out.println(idList.get().toString());
-                return idList;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }).get();
+    private <T> CompletableFuture<T> exec(Func1<SQLConnection, CompletableFuture<T>> func1) {
+        return sqlClient.inTransaction(func1);
     }
 
     @Test
     public void test() throws Exception {
-        SQLConnection connection = sqlClient.getConnection().get();
-        connection.inTransaction(c -> {
+        exec(c -> {
             Completable<Void> ret = new Completable<>();
             try {
                 for (long i = 1; i <= size; i++) {
@@ -86,36 +81,23 @@ public class TestTransactionalJdbcHelper {
 
     @Test
     public void testRollback() throws Exception {
-        SQLConnection connection = sqlClient.getConnection().get();
         Long id = 1L;
+        exec(c -> {
+            User user = new User();
+            user.setId(id);
+            user.setName("apple");
 
-        int r = connection.inTransaction(c -> {
-            Completable<Integer> ret = new Completable<>();
-
-            try {
-                User user = new User();
-                user.setId(1L);
-                user.setName("apple");
-                int row = c.updateObject(user).get();
+            return c.updateObject(user).thenCompose(row -> {
                 Assert.assertThat(row, is(1));
-
-                User user1 = c.queryById(id, User.class).get();
+                return c.queryById(id, User.class);
+            }).thenCompose(user1 -> {
+                System.out.println("query user 1 -> " + user1);
                 Assert.assertThat(user1.getName(), is("apple"));
-                c.rollback().thenAccept(v -> ret.succeeded(0)).exceptionally(e -> {
-                    ret.failed(e);
-                    return null;
-                });
-            } catch (Exception e) {
-                ret.failed(e);
-            }
-            return ret;
-        }).get();
-
-        Assert.assertThat(r, is(0));
-        connection = sqlClient.getConnection().get();
-        User user2 = connection.queryById(id, User.class).get();
-        Assert.assertThat(user2.getName(), is("test transaction 0"));
-        connection.close().get();
+                return c.rollback();
+            });
+        }).thenCompose(ret -> exec(c -> c.queryById(id, User.class)))
+          .thenAccept(user -> Assert.assertThat(user.getName(), is("test transaction 0")))
+          .get();
     }
 
 //    @Test
@@ -159,8 +141,7 @@ public class TestTransactionalJdbcHelper {
 
     @After
     public void after() throws Exception {
-        SQLConnection connection = sqlClient.getConnection().get();
-        connection.update("DROP TABLE IF EXISTS `test`.`user`");
-        connection.close().get();
+        exec(c -> c.update("DROP TABLE IF EXISTS `test`.`user`")).get();
+        System.out.println("drop table user");
     }
 }
