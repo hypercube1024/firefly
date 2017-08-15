@@ -83,10 +83,9 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
                 destroyObject(t);
                 return createObject();
             }
-        } else {
-            // the queue is empty
+        } else { // the queue is empty
             int availableSize = maxSize - getCreatedObjectSize();
-            if (availableSize > 0) {
+            if (availableSize > 0) { // the pool is not full
                 return createObject();
             } else {
                 Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
@@ -118,23 +117,25 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     @Override
     public void release(PooledObject<T> t) {
-        if (t != null) {
-            if (t.prepareRelease()) {
-                boolean success = queue.offer(t);
-                if (!success) {
-                    // the queue is full
-                    service.execute(() -> {
-                        try {
-                            boolean success0 = queue.offer(t, timeout, TimeUnit.MILLISECONDS);
-                            if (!success0) {
-                                destroyObject(t);
-                            }
-                        } catch (InterruptedException e) {
-                            destroyObject(t);
-                        }
-                    });
+        if (t == null) {
+            return;
+        }
+        if (!t.prepareRelease()) { // Object is released
+            return;
+        }
+        boolean success = queue.offer(t);
+        if (!success) {
+            // the queue is full
+            service.execute(() -> {
+                try {
+                    boolean success0 = queue.offer(t, timeout, TimeUnit.MILLISECONDS);
+                    if (!success0) {
+                        destroyObject(t);
+                    }
+                } catch (InterruptedException e) {
+                    destroyObject(t);
                 }
-            }
+            });
         }
     }
 
@@ -142,13 +143,9 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     public PooledObject<T> get() {
         PooledObject<T> t = queue.poll();
         if (t != null) {
-            if (t.prepareTake()) {
-                return t;
-            } else {
-                return null;
-            }
+            return t.prepareTake() ? t : null;
         } else {
-            return t;
+            return null;
         }
     }
 

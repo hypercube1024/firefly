@@ -172,6 +172,16 @@
                 <version>${kotlin.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.github.mauricio</groupId>
+                <artifactId>mysql-async_2.12</artifactId>
+                <version>0.2.21</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.mauricio</groupId>
+                <artifactId>postgresql-async_2.12</artifactId>
+                <version>0.2.21</version>
+            </dependency>
 
             <!-- junit -->
             <dependency>

@@ -59,6 +59,14 @@
             <groupId>commons-dbutils</groupId>
             <artifactId>commons-dbutils</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.mauricio</groupId>
+            <artifactId>mysql-async_2.12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.mauricio</groupId>
+            <artifactId>postgresql-async_2.12</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.fireflysource</groupId>
