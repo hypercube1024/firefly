@@ -6,6 +6,7 @@ import com.firefly.db.SQLResultSet;
 import com.firefly.db.TransactionIsolation;
 import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.concurrent.Promise.Completable;
+import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func1;
 
 import java.sql.Connection;
@@ -13,6 +14,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Pengtao Qiu
@@ -21,10 +23,18 @@ public class JDBCConnection implements SQLConnection {
 
     private final JDBCHelper jdbcHelper;
     private final Connection connection;
+    private final AtomicBoolean autoCommit;
+    private final AtomicBoolean inTransaction;
 
     public JDBCConnection(JDBCHelper jdbcHelper, Connection connection) {
         this.jdbcHelper = jdbcHelper;
         this.connection = connection;
+        try {
+            autoCommit = new AtomicBoolean(connection.getAutoCommit());
+        } catch (SQLException e) {
+            throw new DBException(e);
+        }
+        inTransaction = new AtomicBoolean(false);
     }
 
     public JDBCHelper getJdbcHelper() {
@@ -158,11 +168,17 @@ public class JDBCConnection implements SQLConnection {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
                 connection.setAutoCommit(autoCommit);
+                this.autoCommit.set(autoCommit);
             } catch (SQLException e) {
                 throw new DBException(e);
             }
             return null;
         });
+    }
+
+    @Override
+    public boolean getAutoCommit() {
+        return autoCommit.get();
     }
 
     @Override
@@ -197,6 +213,82 @@ public class JDBCConnection implements SQLConnection {
             } catch (SQLException e) {
                 throw new DBException(e);
             }
+            return null;
+        });
+    }
+
+    @Override
+    public Completable<Void> commitAndClose() {
+        return jdbcHelper.async(connection, (conn, helper) -> {
+            try (Connection c = connection) {
+                c.commit();
+            } catch (SQLException e) {
+                throw new DBException(e);
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public Completable<Void> rollbackAndClose() {
+        return jdbcHelper.async(connection, (conn, helper) -> {
+            try (Connection c = connection) {
+                c.rollback();
+            } catch (SQLException e) {
+                throw new DBException(e);
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public <T> Completable<T> inTransaction(Func0<Completable<T>> func0) {
+        if (inTransaction.compareAndSet(false, true)) {
+            Completable<T> ret = new Completable<>();
+            if (getAutoCommit()) {
+                setAutoCommit(false).thenAccept(c -> _inTransaction(func0, ret)).exceptionally(e -> {
+                    inTransaction.set(false);
+                    ret.failed(e);
+                    return null;
+                });
+            } else {
+                _inTransaction(func0, ret);
+            }
+            return ret;
+        } else {
+            return func0.call();
+        }
+    }
+
+    private <T> void _inTransaction(Func0<Completable<T>> func0, Completable<T> ret) {
+        try {
+            func0.call().thenAccept(c -> commitAndEndTransaction(ret, c)).exceptionally(e -> {
+                rollbackAndEndTransaction(ret, e);
+                return null;
+            });
+        } catch (Exception e) {
+            rollbackAndEndTransaction(ret, e);
+        }
+    }
+
+    private <T> void commitAndEndTransaction(Completable<T> ret, T c) {
+        commitAndClose().thenAccept(c1 -> {
+            inTransaction.set(false);
+            ret.succeeded(c);
+        }).exceptionally(e -> {
+            inTransaction.set(false);
+            ret.failed(e);
+            return null;
+        });
+    }
+
+    private <T> void rollbackAndEndTransaction(Completable<T> ret, Throwable e) {
+        rollbackAndClose().thenAccept(c -> {
+            inTransaction.set(false);
+            ret.failed(e);
+        }).exceptionally(t -> {
+            inTransaction.set(false);
+            ret.failed(e);
             return null;
         });
     }

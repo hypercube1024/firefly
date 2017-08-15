@@ -1,6 +1,7 @@
 package com.firefly.db;
 
 import com.firefly.utils.concurrent.Promise.Completable;
+import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func1;
 
 import java.util.List;
@@ -43,10 +44,18 @@ public interface SQLConnection {
 
     Completable<Void> setAutoCommit(boolean autoCommit);
 
+    boolean getAutoCommit();
+
     Completable<Void> rollback();
 
     Completable<Void> commit();
 
     Completable<Void> close();
+
+    Completable<Void> commitAndClose();
+
+    Completable<Void> rollbackAndClose();
+
+    <T> Completable<T> inTransaction(Func0<Completable<T>> func0);
 
 }
