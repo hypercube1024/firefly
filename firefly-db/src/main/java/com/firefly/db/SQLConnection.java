@@ -1,7 +1,6 @@
 package com.firefly.db;
 
 import com.firefly.utils.concurrent.Promise.Completable;
-import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func1;
 
 import java.util.List;
@@ -36,6 +35,8 @@ public interface SQLConnection {
 
     <T, R> Completable<List<R>> insertObjectBatch(List<T> list, Class<T> clazz);
 
+    <R> Completable<R> insertBatch(String sql, Object[][] params, Func1<SQLResultSet, R> handler);
+
     <T> Completable<Integer> deleteById(Object id, Class<T> clazz);
 
     Completable<int[]> executeBatch(String sql, Object[][] params);
@@ -56,6 +57,6 @@ public interface SQLConnection {
 
     Completable<Void> rollbackAndClose();
 
-    <T> Completable<T> inTransaction(Func0<Completable<T>> func0);
+    <T> Completable<T> inTransaction(Func1<SQLConnection, Completable<T>> func1);
 
 }

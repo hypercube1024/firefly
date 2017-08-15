@@ -6,7 +6,6 @@ import com.firefly.db.SQLResultSet;
 import com.firefly.db.TransactionIsolation;
 import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.concurrent.Promise.Completable;
-import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func1;
 
 import java.sql.Connection;
@@ -115,6 +114,17 @@ public class JDBCConnection implements SQLConnection {
                 ret.add((R) rs.getObject(1));
             }
             return ret;
+        });
+    }
+
+    @Override
+    public <R> Completable<R> insertBatch(String sql, Object[][] params, Func1<SQLResultSet, R> handler) {
+        return jdbcHelper.async(connection, (conn, helper) -> {
+            try {
+                return helper.getRunner().insertBatch(connection, sql, rs -> handler.call(new JDBCResultSet(rs)), params);
+            } catch (SQLException e) {
+                throw new DBException(e);
+            }
         });
     }
 
@@ -242,27 +252,27 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
-    public <T> Completable<T> inTransaction(Func0<Completable<T>> func0) {
+    public <T> Completable<T> inTransaction(Func1<SQLConnection, Completable<T>> func1) {
         if (inTransaction.compareAndSet(false, true)) {
             Completable<T> ret = new Completable<>();
             if (getAutoCommit()) {
-                setAutoCommit(false).thenAccept(c -> _inTransaction(func0, ret)).exceptionally(e -> {
+                setAutoCommit(false).thenAccept(c -> _inTransaction(func1, ret)).exceptionally(e -> {
                     inTransaction.set(false);
                     ret.failed(e);
                     return null;
                 });
             } else {
-                _inTransaction(func0, ret);
+                _inTransaction(func1, ret);
             }
             return ret;
         } else {
-            return func0.call();
+            return func1.call(this);
         }
     }
 
-    private <T> void _inTransaction(Func0<Completable<T>> func0, Completable<T> ret) {
+    private <T> void _inTransaction(Func1<SQLConnection, Completable<T>> func1, Completable<T> ret) {
         try {
-            func0.call().thenAccept(c -> commitAndEndTransaction(ret, c)).exceptionally(e -> {
+            func1.call(this).thenAccept(c -> commitAndEndTransaction(ret, c)).exceptionally(e -> {
                 rollbackAndEndTransaction(ret, e);
                 return null;
             });
