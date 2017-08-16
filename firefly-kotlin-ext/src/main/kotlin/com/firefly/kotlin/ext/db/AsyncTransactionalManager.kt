@@ -11,4 +11,10 @@ interface AsyncTransactionalManager {
 
     suspend fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T?
 
+    suspend fun beginTransaction(): Boolean
+
+    suspend fun rollbackAndEndTransaction()
+
+    suspend fun commitAndEndTransaction()
+
 }

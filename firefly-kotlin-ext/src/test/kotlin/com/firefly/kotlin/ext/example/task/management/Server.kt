@@ -6,7 +6,7 @@ import com.firefly.db.SQLClient
 import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.context.Context
-import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
+import com.firefly.kotlin.ext.db.AsyncTransactionalManager
 import com.firefly.kotlin.ext.db.asyncUpdate
 import com.firefly.kotlin.ext.db.execSQL
 import com.firefly.kotlin.ext.example.task.management.dao.UserDao
@@ -37,7 +37,7 @@ fun main(args: Array<String>) {
 
 val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
 
-    val transactionalManager = Context.getBean<AsyncHttpContextTransactionalManager>()
+    val transactionalManager = Context.getBean<AsyncTransactionalManager>()
     val projectService = Context.getBean<ProjectService>()
     val userService = Context.getBean<UserService>()
 
@@ -56,10 +56,10 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         paths = listOf("/*create*", "/*update*", "/*delete*")
 
         asyncHandler {
-            transactionalManager.getConnection().beginTransaction().await()
+            transactionalManager.beginTransaction()
             promise<Unit>(succeeded = {
                 try {
-                    transactionalManager.getConnection().commitAndEndTransaction().await()
+                    transactionalManager.commitAndEndTransaction()
                 } finally {
                     end()
                 }
@@ -68,7 +68,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
                     statusLine {
                         status = HttpStatus.INTERNAL_SERVER_ERROR_500
                     }
-                    transactionalManager.getConnection().rollbackAndEndTransaction().await()
+                    transactionalManager.rollbackAndEndTransaction()
                     log.error("transactional request exception", it)
                     writeJson(Response(500, "server exception", it?.message))
                 } finally {

@@ -25,6 +25,16 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
         }
     }
 
+    suspend override fun beginTransaction(): Boolean = getConnection().beginTransaction().await()
+
+    suspend override fun rollbackAndEndTransaction() {
+        getConnection().rollbackAndEndTransaction().await()
+    }
+
+    suspend override fun commitAndEndTransaction() {
+        getConnection().commitAndEndTransaction().await()
+    }
+
     suspend override fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T? = getConnection().execSQL(handler)
 
     @Suppress("UNCHECKED_CAST")
