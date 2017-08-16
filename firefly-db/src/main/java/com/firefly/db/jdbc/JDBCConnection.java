@@ -257,13 +257,14 @@ public class JDBCConnection implements SQLConnection {
         if (inTransaction.compareAndSet(false, true)) {
             Completable<T> ret = new Completable<>();
             if (getAutoCommit()) {
-                setAutoCommit(false).thenAccept(c -> _inTransaction(func1, ret)).exceptionally(e -> {
-                    inTransaction.set(false);
-                    ret.failed(e);
-                    return null;
-                });
+                setAutoCommit(false).thenAccept(c -> executeFunc(func1, ret))
+                                    .exceptionally(e -> {
+                                        inTransaction.set(false);
+                                        ret.failed(e);
+                                        return null;
+                                    });
             } else {
-                _inTransaction(func1, ret);
+                executeFunc(func1, ret);
             }
             return ret;
         } else {
@@ -271,12 +272,14 @@ public class JDBCConnection implements SQLConnection {
         }
     }
 
-    private <T> void _inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1, Completable<T> ret) {
+    private <T> void executeFunc(Func1<SQLConnection, CompletableFuture<T>> func1, Completable<T> ret) {
         try {
-            func1.call(this).thenAccept(c -> commitAndEndTransaction(ret, c)).exceptionally(e -> {
-                rollbackAndEndTransaction(ret, e);
-                return null;
-            });
+            func1.call(this)
+                 .thenAccept(c -> commitAndEndTransaction(ret, c))
+                 .exceptionally(e -> {
+                     rollbackAndEndTransaction(ret, e);
+                     return null;
+                 });
         } catch (Exception e) {
             rollbackAndEndTransaction(ret, e);
         }

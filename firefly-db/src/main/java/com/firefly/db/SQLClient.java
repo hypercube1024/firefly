@@ -11,6 +11,6 @@ public interface SQLClient {
 
     CompletableFuture<SQLConnection> getConnection();
 
-    <T> CompletableFuture<T> inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1);
+    <T> CompletableFuture<T> newTransaction(Func1<SQLConnection, CompletableFuture<T>> func1);
 
 }

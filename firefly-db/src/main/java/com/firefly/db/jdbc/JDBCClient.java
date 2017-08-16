@@ -58,7 +58,7 @@ public class JDBCClient extends AbstractLifeCycle implements SQLClient {
     }
 
     @Override
-    public <T> CompletableFuture<T> inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1) {
+    public <T> CompletableFuture<T> newTransaction(Func1<SQLConnection, CompletableFuture<T>> func1) {
         return getConnection().thenCompose(conn -> conn.inTransaction(func1));
     }
 }

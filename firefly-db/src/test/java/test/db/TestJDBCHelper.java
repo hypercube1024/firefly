@@ -19,12 +19,12 @@ import java.util.Map;
 import static com.firefly.db.jdbc.helper.JDBCConnectionUtils.rollback;
 import static org.hamcrest.Matchers.*;
 
-public class TestAnnotation {
+public class TestJDBCHelper {
 
     private JDBCHelper jdbcHelper;
     private int size = 10;
 
-    public TestAnnotation() {
+    public TestJDBCHelper() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:h2:mem:test");
         config.setDriverClassName("org.h2.Driver");
