@@ -59,4 +59,10 @@ public interface SQLConnection {
 
     <T> CompletableFuture<T> inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1);
 
+    CompletableFuture<Boolean> beginTransaction();
+
+    CompletableFuture<Void> rollbackAndEndTransaction();
+
+    CompletableFuture<Void> commitAndEndTransaction();
+
 }

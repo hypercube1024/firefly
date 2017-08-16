@@ -254,56 +254,97 @@ public class JDBCConnection implements SQLConnection {
 
     @Override
     public <T> CompletableFuture<T> inTransaction(Func1<SQLConnection, CompletableFuture<T>> func1) {
+        Completable<T> ret = new Completable<>();
+        beginTransaction().thenAccept(newTransaction -> executeFuncAndCommit(func1, ret, newTransaction));
+        return ret;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> beginTransaction() {
+        Completable<Boolean> ret = new Completable<>();
         if (inTransaction.compareAndSet(false, true)) {
-            Completable<T> ret = new Completable<>();
             if (getAutoCommit()) {
-                setAutoCommit(false).thenAccept(c -> executeFunc(func1, ret))
+                setAutoCommit(false).thenAccept(v -> ret.succeeded(true))
                                     .exceptionally(e -> {
                                         inTransaction.set(false);
                                         ret.failed(e);
                                         return null;
                                     });
             } else {
-                executeFunc(func1, ret);
+                ret.succeeded(true);
             }
-            return ret;
         } else {
-            return func1.call(this);
+            ret.succeeded(false);
         }
+        return ret;
     }
 
-    private <T> void executeFunc(Func1<SQLConnection, CompletableFuture<T>> func1, Completable<T> ret) {
-        try {
-            func1.call(this)
-                 .thenAccept(c -> commitAndEndTransaction(ret, c))
-                 .exceptionally(e -> {
-                     rollbackAndEndTransaction(ret, e);
-                     return null;
-                 });
-        } catch (Exception e) {
-            rollbackAndEndTransaction(ret, e);
-        }
-    }
-
-    private <T> void commitAndEndTransaction(Completable<T> ret, T c) {
-        commitAndClose().thenAccept(c1 -> {
+    @Override
+    public CompletableFuture<Void> rollbackAndEndTransaction() {
+        Completable<Void> ret = new Completable<>();
+        rollbackAndClose().thenAccept(c -> {
             inTransaction.set(false);
-            ret.succeeded(c);
+            ret.succeeded(null);
         }).exceptionally(e -> {
             inTransaction.set(false);
             ret.failed(e);
             return null;
         });
+        return ret;
     }
 
-    private <T> void rollbackAndEndTransaction(Completable<T> ret, Throwable e) {
-        rollbackAndClose().thenAccept(c -> {
+    @Override
+    public CompletableFuture<Void> commitAndEndTransaction() {
+        Completable<Void> ret = new Completable<>();
+        commitAndClose().thenAccept(c -> {
             inTransaction.set(false);
-            ret.failed(e);
-        }).exceptionally(t -> {
+            ret.succeeded(null);
+        }).exceptionally(e -> {
             inTransaction.set(false);
             ret.failed(e);
             return null;
         });
+        return ret;
+    }
+
+    private <T> void executeFuncAndCommit(Func1<SQLConnection, CompletableFuture<T>> func1, Completable<T> ret, boolean commit) {
+        if (commit) {
+            try {
+                func1.call(this)
+                     .thenAccept(r -> commitAndEndTransaction().thenAccept(v -> ret.succeeded(r)).exceptionally(t -> {
+                         ret.failed(t);
+                         return null;
+                     }))
+                     .exceptionally(t -> {
+                         rollbackAndEndTransaction().thenAccept(c -> ret.failed(t)).exceptionally(t1 -> {
+                             ret.failed(t1);
+                             return null;
+                         });
+                         return null;
+                     });
+            } catch (Exception e) {
+                rollbackAndEndTransaction().thenAccept(c -> ret.failed(e)).exceptionally(t -> {
+                    ret.failed(t);
+                    return null;
+                });
+            }
+        } else {
+            try {
+                func1.call(this)
+                     .thenAccept(ret::succeeded)
+                     .exceptionally(t -> {
+                         rollback().thenAccept(c -> ret.failed(t)).exceptionally(t1 -> {
+                             ret.failed(t1);
+                             return null;
+                         });
+                         return null;
+                     });
+            } catch (Exception e) {
+                rollback().thenAccept(c -> ret.failed(e)).exceptionally(t -> {
+                    ret.failed(t);
+                    return null;
+                });
+            }
+        }
     }
 }
