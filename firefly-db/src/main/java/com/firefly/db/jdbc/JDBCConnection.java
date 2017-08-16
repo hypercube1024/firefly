@@ -7,6 +7,8 @@ import com.firefly.db.TransactionIsolation;
 import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.concurrent.Promise.Completable;
 import com.firefly.utils.function.Func1;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,6 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Pengtao Qiu
  */
 public class JDBCConnection implements SQLConnection {
+
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final JDBCHelper jdbcHelper;
     private final Connection connection;
@@ -180,6 +184,7 @@ public class JDBCConnection implements SQLConnection {
             try {
                 connection.setAutoCommit(autoCommit);
                 this.autoCommit.set(autoCommit);
+                log.debug("jdbc connection auto commit -> {}", autoCommit);
             } catch (SQLException e) {
                 throw new DBException(e);
             }
@@ -233,6 +238,7 @@ public class JDBCConnection implements SQLConnection {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try (Connection c = connection) {
                 c.commit();
+                log.debug("jdbc connection commit and close");
             } catch (SQLException e) {
                 throw new DBException(e);
             }
@@ -245,6 +251,7 @@ public class JDBCConnection implements SQLConnection {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try (Connection c = connection) {
                 c.rollback();
+                log.debug("jdbc connection rollback and close");
             } catch (SQLException e) {
                 throw new DBException(e);
             }
@@ -270,10 +277,13 @@ public class JDBCConnection implements SQLConnection {
                                         ret.failed(e);
                                         return null;
                                     });
+                log.debug("jdbc connection start new transaction and set auto commit is false");
             } else {
+                log.debug("jdbc connection start new transaction");
                 ret.succeeded(true);
             }
         } else {
+            log.debug("jdbc connection in transaction");
             ret.succeeded(false);
         }
         return ret;
@@ -312,18 +322,23 @@ public class JDBCConnection implements SQLConnection {
             try {
                 func1.call(this)
                      .thenAccept(r -> commitAndEndTransaction().thenAccept(v -> ret.succeeded(r)).exceptionally(t -> {
+                         log.error("jdbc connection commit and end transaction exception", t);
                          ret.failed(t);
                          return null;
                      }))
                      .exceptionally(t -> {
+                         log.error("jdbc connection executes transaction exception", t);
                          rollbackAndEndTransaction().thenAccept(c -> ret.failed(t)).exceptionally(t1 -> {
+                             log.error("jdbc connection rollback and end transaction exception", t1);
                              ret.failed(t1);
                              return null;
                          });
                          return null;
                      });
             } catch (Exception e) {
+                log.error("jdbc connection end transaction exception", e);
                 rollbackAndEndTransaction().thenAccept(c -> ret.failed(e)).exceptionally(t -> {
+                    log.error("jdbc connection rollback and end transaction exception", t);
                     ret.failed(t);
                     return null;
                 });
@@ -334,13 +349,16 @@ public class JDBCConnection implements SQLConnection {
                      .thenAccept(ret::succeeded)
                      .exceptionally(t -> {
                          rollback().thenAccept(c -> ret.failed(t)).exceptionally(t1 -> {
+                             log.error("jdbc connection rollback exception", t1);
                              ret.failed(t1);
                              return null;
                          });
                          return null;
                      });
             } catch (Exception e) {
+                log.error("jdbc connection exception", e);
                 rollback().thenAccept(c -> ret.failed(e)).exceptionally(t -> {
+                    log.error("jdbc connection rollback exception", e);
                     ret.failed(t);
                     return null;
                 });

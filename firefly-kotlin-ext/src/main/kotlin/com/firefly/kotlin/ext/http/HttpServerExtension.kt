@@ -265,7 +265,7 @@ class RouterBlock(private val router: Router,
         router.handler {
             it.response.isAsynchronous = true
             launch(requestCtx?.createContext(it) ?: AsyncPool) {
-                handler.invoke(it, context)
+                handler.invoke(it, coroutineContext)
             }
         }
     }

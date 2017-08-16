@@ -62,18 +62,18 @@ suspend inline fun <reified T> SQLConnection.asyncDeleteById(id: Any): Int {
 
 suspend fun <T> SQLConnection.execSQL(handler: suspend (conn: SQLConnection) -> T): T? {
     val newTransaction = beginTransaction().await()
-    try {
+    return try {
         val ret = handler.invoke(this)
         if (newTransaction) {
             commitAndClose().await()
         }
-        return ret
+        ret
     } catch (e: Exception) {
         if (newTransaction) {
             rollbackAndClose().await()
         } else {
             rollback().await()
         }
-        return null
+        null
     }
 }

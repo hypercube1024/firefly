@@ -13,17 +13,19 @@ import java.util.concurrent.CompletableFuture
  * @author Pengtao Qiu
  */
 class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<RoutingContext>,
-                                           val sqlClient: SQLClient) {
+                                           val sqlClient: SQLClient) : AsyncTransactionalManager {
 
     val transactionKey = "_currentTransaction"
 
-    suspend fun getConnection(): SQLConnection {
-        if (requestCtx.get() == null) {
-            return sqlClient.connection.await()
+    suspend override fun getConnection(): SQLConnection {
+        return if (requestCtx.get() == null) {
+            sqlClient.connection.await()
         } else {
-            return createConnectionIfEmpty().await()
+            createConnectionIfEmpty().await()
         }
     }
+
+    suspend override fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T? = getConnection().execSQL(handler)
 
     @Suppress("UNCHECKED_CAST")
     private fun createConnectionIfEmpty(): CompletableFuture<SQLConnection> = requestCtx.get()?.attributes?.computeIfAbsent(transactionKey) {

@@ -14,22 +14,22 @@ import com.firefly.kotlin.ext.example.task.management.model.ProjectUser
 class ProjectDaoImpl : ProjectDao {
 
     @Inject
-    lateinit var dbClient: AsyncHttpContextTransactionalManager
+    lateinit var dbClient: AsyncTransactionalManager
 
-    override suspend fun insert(project: Project): Long? = dbClient.getConnection().execSQL {
+    override suspend fun insert(project: Project): Long? = dbClient.execSQL {
         it.asyncInsertObject<Project, Long>(project)
     }
 
-    override suspend fun addProjectMembers(projectId: Long, userIdList: List<Long>): List<Long> = dbClient.getConnection().execSQL {
+    override suspend fun addProjectMembers(projectId: Long, userIdList: List<Long>): List<Long> = dbClient.execSQL {
         val projectUsers: List<ProjectUser> = userIdList.map { ProjectUser(0, it, projectId) }
         it.asyncInsertObjectBatch<ProjectUser, Long>(projectUsers)
     } ?: listOf()
 
-    override suspend fun queryById(id: Long): Project? = dbClient.getConnection().execSQL {
+    override suspend fun queryById(id: Long): Project? = dbClient.execSQL {
         it.asyncQueryById<Project>(id)
     }
 
-    override suspend fun listProjectMembers(projectId: Long): List<Long> = dbClient.getConnection().execSQL {
+    override suspend fun listProjectMembers(projectId: Long): List<Long> = dbClient.execSQL {
         it.asyncQuery<List<Long>>("select `user_id` from `test`.`project_user` where `project_id` = ?", {
             val ret = ArrayList<Long>()
             while (it.next()) {
