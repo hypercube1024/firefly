@@ -2,11 +2,13 @@ package com.firefly.kotlin.ext.example.task.management
 
 import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.HttpStatus
+import com.firefly.db.SQLClient
 import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
-import com.firefly.kotlin.ext.db.AsyncTransactionalJDBCHelper
+import com.firefly.kotlin.ext.db.asyncUpdate
+import com.firefly.kotlin.ext.db.execSQL
 import com.firefly.kotlin.ext.example.task.management.dao.UserDao
 import com.firefly.kotlin.ext.example.task.management.model.User
 import com.firefly.kotlin.ext.example.task.management.service.ProjectService
@@ -17,6 +19,7 @@ import com.firefly.kotlin.ext.example.task.management.vo.Response
 import com.firefly.kotlin.ext.http.*
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.RoutingContext
+import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.runBlocking
 import java.util.*
 import kotlin.coroutines.experimental.ContinuationInterceptor
@@ -53,12 +56,11 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         paths = listOf("/*create*", "/*update*", "/*delete*")
 
         asyncHandler {
-            transactionalManager.asyncBeginTransaction()
+            transactionalManager.getConnection().beginTransaction().await()
             promise<Unit>(succeeded = {
                 try {
-                    transactionalManager.commit()
+                    transactionalManager.getConnection().commitAndEndTransaction().await()
                 } finally {
-                    transactionalManager.asyncEndTransaction()
                     end()
                 }
             }, failed = {
@@ -66,11 +68,10 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
                     statusLine {
                         status = HttpStatus.INTERNAL_SERVER_ERROR_500
                     }
-                    transactionalManager.rollback()
+                    transactionalManager.getConnection().rollbackAndEndTransaction().await()
                     log.error("transactional request exception", it)
                     writeJson(Response(500, "server exception", it?.message))
                 } finally {
-                    transactionalManager.asyncEndTransaction()
                     end()
                 }
             })
@@ -143,21 +144,22 @@ fun CoroutineLocal<RoutingContext>.getTransactionalContext(): ContinuationInterc
 }
 
 fun initData(): Unit = runBlocking {
-    val jdbcHelper = Context.getBean<AsyncTransactionalJDBCHelper>()
-    jdbcHelper.update("drop schema if exists test")
-    jdbcHelper.update("create schema test")
-    jdbcHelper.update("set mode MySQL")
+    val dbClient = Context.getBean<SQLClient>()
+    dbClient.connection.await().execSQL {
+        it.asyncUpdate("drop schema if exists test")
+        it.asyncUpdate("create schema test")
+        it.asyncUpdate("set mode MySQL")
 
-    val userTable = """
+        val userTable = """
             CREATE TABLE `test`.`user` (
             `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
             `name` VARCHAR(64) NOT NULL,
             `create_time` DATETIME NOT NULL,
             `update_time` DATETIME NOT NULL
             )"""
-    jdbcHelper.update(userTable)
+        it.asyncUpdate(userTable)
 
-    val projectTable = """
+        val projectTable = """
             CREATE TABLE `test`.`project` (
             `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
             `name` VARCHAR(64) NOT NULL,
@@ -165,17 +167,19 @@ fun initData(): Unit = runBlocking {
             `update_time` DATETIME NOT NULL,
             `description` VARCHAR(128) NOT NULL
             )"""
-    jdbcHelper.update(projectTable)
+        it.asyncUpdate(projectTable)
 
-    val projectUser = """
+        val projectUser = """
             CREATE TABLE `test`.`project_user` (
             `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
             `user_id` BIGINT NOT NULL,
             `project_id` BIGINT NOT NULL
             )"""
-    jdbcHelper.update(projectUser)
+        it.asyncUpdate(projectUser)
 
-    val userDao = Context.getBean<UserDao>()
-    val id = userDao.insert(User(0L, "admin", Date(), Date()))
-    log.info("insert user $id")
+        val userDao = Context.getBean<UserDao>()
+        val id = userDao.insert(User(0L, "admin", Date(), Date()))
+        log.info("insert user $id")
+    }
+    Unit
 }

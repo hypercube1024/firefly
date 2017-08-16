@@ -59,3 +59,21 @@ suspend inline fun <reified T, R> SQLConnection.asyncInsertObjectBatch(list: Lis
 suspend inline fun <reified T> SQLConnection.asyncDeleteById(id: Any): Int {
     return this.deleteById(id, T::class.java).await() ?: 0
 }
+
+suspend fun <T> SQLConnection.execSQL(handler: suspend (conn: SQLConnection) -> T): T? {
+    val newTransaction = beginTransaction().await()
+    try {
+        val ret = handler.invoke(this)
+        if (newTransaction) {
+            commitAndClose().await()
+        }
+        return ret
+    } catch (e: Exception) {
+        if (newTransaction) {
+            rollbackAndClose().await()
+        } else {
+            rollback().await()
+        }
+        return null
+    }
+}

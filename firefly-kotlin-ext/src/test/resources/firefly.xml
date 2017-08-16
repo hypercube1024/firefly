@@ -12,7 +12,7 @@
         <property name="isAutoCommit" value="false" />
     </bean>
 
-    <bean id="jdbcHelper" class="com.firefly.db.jdbc.helper.JDBCHelper" destroy-method="stop">
+    <bean id="jdbcClient" class="com.firefly.db.jdbc.JDBCClient" destroy-method="stop">
         <constructor>
             <argument type="javax.sql.DataSource" ref="dataSource"/>
         </constructor>
@@ -23,14 +23,7 @@
     <bean id="asyncHttpContextTransactionalManager" class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">
         <constructor>
             <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
-            <argument type="com.firefly.db.jdbc.helper.JDBCHelper" ref="jdbcHelper"/>
-        </constructor>
-    </bean>
-
-    <bean id="asyncTransactionalJDBCHelper" class="com.firefly.kotlin.ext.db.AsyncTransactionalJDBCHelper">
-        <constructor>
-            <argument type="com.firefly.db.jdbc.helper.JDBCHelper" ref="jdbcHelper"/>
-            <argument type="com.firefly.kotlin.ext.db.AsynchronousTransactionalManager" ref="asyncHttpContextTransactionalManager"/>
+            <argument type="com.firefly.db.SQLClient" ref="jdbcClient"/>
         </constructor>
     </bean>
 
