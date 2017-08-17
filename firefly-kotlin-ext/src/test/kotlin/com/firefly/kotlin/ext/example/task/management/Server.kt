@@ -60,6 +60,8 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
             asyncNext<Unit>(succeeded = {
                 try {
                     transactionalManager.commitAndEndTransaction()
+                } catch (e: Exception) {
+                    log.error("commit and end transaction exception", e)
                 } finally {
                     end()
                 }
@@ -71,6 +73,8 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
                     transactionalManager.rollbackAndEndTransaction()
                     log.error("transactional request exception", it)
                     writeJson(Response(500, "server exception", it?.message))
+                } catch (e: Exception) {
+                    log.error("rollback and end transaction exception", e)
                 } finally {
                     end()
                 }
