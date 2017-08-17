@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 
 public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HTTPServerConnection {
 
@@ -88,6 +89,13 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     @Override
     public void upgradeHTTPTunnel(Promise<HTTPTunnelConnection> tunnelConnectionPromise) {
         this.tunnelConnectionPromise = tunnelConnectionPromise;
+    }
+
+    @Override
+    public CompletableFuture<HTTPTunnelConnection> upgradeHTTPTunnel() {
+        Promise.Completable<HTTPTunnelConnection> c = new Promise.Completable<>();
+        tunnelConnectionPromise = c;
+        return c;
     }
 
     HTTP1ServerTunnelConnection createHTTPTunnel() {

@@ -8,6 +8,7 @@ import com.firefly.utils.function.Action1;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleTcpClient extends AbstractLifeCycle {
@@ -26,7 +27,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
         this.config = config;
     }
 
-    public Promise.Completable<TcpConnection> connect(String host, int port) {
+    public CompletableFuture<TcpConnection> connect(String host, int port) {
         Promise.Completable<TcpConnection> promise = new Promise.Completable<>();
         connect(host, port, promise);
         return promise;

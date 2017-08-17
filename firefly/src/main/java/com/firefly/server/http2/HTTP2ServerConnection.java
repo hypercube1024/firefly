@@ -9,6 +9,8 @@ import com.firefly.net.Session;
 import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Promise;
 
+import java.util.concurrent.CompletableFuture;
+
 public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HTTPServerConnection {
 
 	public HTTP2ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
@@ -53,6 +55,11 @@ public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HT
 
 	@Override
 	public void upgradeHTTPTunnel(Promise<HTTPTunnelConnection> promise) {
+		throw new IllegalStateException("the http2 connection can not upgrade to http tunnel");
+	}
+
+	@Override
+	public CompletableFuture<HTTPTunnelConnection> upgradeHTTPTunnel() {
 		throw new IllegalStateException("the http2 connection can not upgrade to http tunnel");
 	}
 }
