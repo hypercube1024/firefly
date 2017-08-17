@@ -49,7 +49,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- firefly framework -->
+            <!-- firefly module -->
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-db</artifactId>
@@ -88,6 +88,13 @@
                 <version>1.7.25</version>
             </dependency>
             <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.21.0-GA</version>
+            </dependency>
+
+            <!-- metrics -->
+            <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>3.2.2</version>
@@ -102,11 +109,8 @@
                 <artifactId>HdrHistogram</artifactId>
                 <version>2.1.9</version>
             </dependency>
-            <dependency>
-                <groupId>org.javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>3.21.0-GA</version>
-            </dependency>
+
+            <!-- netty -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative-boringssl-static</artifactId>
@@ -115,8 +119,9 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
-                <version>4.1.13.Final</version>
+                <version>${netty.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>javax.servlet</groupId>
                 <artifactId>javax.servlet-api</artifactId>
@@ -127,6 +132,8 @@
                 <artifactId>compiler</artifactId>
                 <version>0.9.4</version>
             </dependency>
+
+            <!-- db -->
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
@@ -142,7 +149,7 @@
             <dependency>
                 <groupId>commons-dbutils</groupId>
                 <artifactId>commons-dbutils</artifactId>
-                <version>1.6</version>
+                <version>1.7</version>
             </dependency>
 
             <!-- kotlin lib -->
@@ -316,6 +323,7 @@
         <kotlin.coroutine.version>0.17</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+        <netty.version>4.1.14.Final</netty.version>
     </properties>
 
     <profiles>

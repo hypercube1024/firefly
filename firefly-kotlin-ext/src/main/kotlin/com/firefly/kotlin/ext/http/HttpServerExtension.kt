@@ -68,7 +68,7 @@ fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<SuspendPromise<C>> = 
 
 fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
-    queue.push(SuspendPromise<C>(succeeded = {
+    queue.push(SuspendPromise(succeeded = {
         succeeded.invoke(it)
         try {
             queue.pop().succeeded(it)
@@ -89,11 +89,21 @@ fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit): RoutingContext {
     return this
 }
 
-suspend fun <C> RoutingContext.succeed(result: C): Unit {
+fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): Boolean {
+    promise(succeeded, failed)
+    return next()
+}
+
+fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
+    promise(succeeded)
+    return next()
+}
+
+suspend fun <C> RoutingContext.succeed(result: C) {
     getPromiseQueue<C>()?.pop()?.succeeded?.invoke(result)
 }
 
-suspend fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
+suspend fun <C> RoutingContext.fail(x: Throwable? = null) {
     getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
 }
 
@@ -105,7 +115,7 @@ suspend fun <C> RoutingContext.fail(x: Throwable? = null): Unit {
  *
  * @param block Response status line statement
  */
-inline fun RoutingContext.statusLine(block: StatusLineBlock.() -> Unit): Unit = block.invoke(StatusLineBlock(this))
+inline fun RoutingContext.statusLine(block: StatusLineBlock.() -> Unit) = block.invoke(StatusLineBlock(this))
 
 class StatusLineBlock(private val ctx: RoutingContext) {
     var status: Int = HttpStatus.OK_200
@@ -133,11 +143,11 @@ class StatusLineBlock(private val ctx: RoutingContext) {
 }
 
 interface HttpFieldOperator {
-    infix fun String.to(value: String): Unit
+    infix fun String.to(value: String)
 
-    infix fun HttpHeader.to(value: String): Unit
+    infix fun HttpHeader.to(value: String)
 
-    operator fun HttpField.unaryPlus(): Unit
+    operator fun HttpField.unaryPlus()
 }
 
 /**
@@ -145,21 +155,21 @@ interface HttpFieldOperator {
  *
  * @param block HTTP header statement
  */
-inline fun RoutingContext.header(block: HeaderBlock.() -> Unit): Unit = block.invoke(HeaderBlock(this))
+inline fun RoutingContext.header(block: HeaderBlock.() -> Unit) = block.invoke(HeaderBlock(this))
 
 class HeaderBlock(ctx: RoutingContext) : HttpFieldOperator {
 
     val httpFields: HttpFields = ctx.response.fields
 
-    override infix fun String.to(value: String): Unit {
+    override infix fun String.to(value: String) {
         httpFields.put(this, value)
     }
 
-    override infix fun HttpHeader.to(value: String): Unit {
+    override infix fun HttpHeader.to(value: String) {
         httpFields.put(this, value)
     }
 
-    override operator fun HttpField.unaryPlus(): Unit {
+    override operator fun HttpField.unaryPlus() {
         httpFields.add(this)
     }
 
@@ -173,7 +183,7 @@ class HeaderBlock(ctx: RoutingContext) : HttpFieldOperator {
  *
  * @param block HTTP trailer statement
  */
-inline fun RoutingContext.trailer(block: TrailerBlock.() -> Unit): Unit = block.invoke(TrailerBlock(this))
+inline fun RoutingContext.trailer(block: TrailerBlock.() -> Unit) = block.invoke(TrailerBlock(this))
 
 class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperator {
 
@@ -185,15 +195,15 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
     override fun get(): HttpFields = httpFields
 
-    override infix fun String.to(value: String): Unit {
+    override infix fun String.to(value: String) {
         httpFields.put(this, value)
     }
 
-    override infix fun HttpHeader.to(value: String): Unit {
+    override infix fun HttpHeader.to(value: String) {
         httpFields.put(this, value)
     }
 
-    override operator fun HttpField.unaryPlus(): Unit {
+    override operator fun HttpField.unaryPlus() {
         httpFields.add(this)
     }
 
@@ -261,7 +271,7 @@ class RouterBlock(private val router: Router,
             field = value
         }
 
-    fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit): Unit {
+    fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
             launch(requestCtx?.createContext(it) ?: AsyncPool) {
@@ -270,7 +280,7 @@ class RouterBlock(private val router: Router,
         }
     }
 
-    fun handler(handler: RoutingContext.() -> Unit): Unit {
+    fun handler(handler: RoutingContext.() -> Unit) {
         router.handler(handler)
     }
 
@@ -303,13 +313,13 @@ class RouterBlock(private val router: Router,
 }
 
 interface HttpServerLifecycle {
-    fun stop(): Unit
+    fun stop()
 
-    fun listen(host: String, port: Int): Unit
+    fun listen(host: String, port: Int)
 
-    fun listen(port: Int): Unit
+    fun listen(port: Int)
 
-    fun listen(): Unit
+    fun listen()
 }
 
 @DslMarker
@@ -342,9 +352,9 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
             : this(coroutineLocal,
-                   SimpleHTTPServerConfiguration(),
-                   HTTPBodyConfiguration(),
-                   block)
+            SimpleHTTPServerConfiguration(),
+            HTTPBodyConfiguration(),
+            block)
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
 
@@ -358,11 +368,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
-    inline fun router(block: RouterBlock.() -> Unit): Unit {
+    inline fun router(block: RouterBlock.() -> Unit) {
         val r = RouterBlock(routerManager.register(), requestCtx)
         block.invoke(r)
         sysLogger.info("register $r")
     }
 
-    inline fun addRouters(block: HttpServer.() -> Unit): Unit = block.invoke(this)
+    inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
 }

@@ -1,5 +1,15 @@
 package com.firefly.db.jdbc.helper;
 
+import com.firefly.db.annotation.Column;
+import com.firefly.db.annotation.Id;
+import com.firefly.db.annotation.Table;
+import com.firefly.utils.Assert;
+import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.collection.ConcurrentReferenceHashMap;
+import org.apache.commons.dbutils.BeanProcessor;
+import org.apache.commons.dbutils.PropertyHandler;
+
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -11,24 +21,7 @@ import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.dbutils.BeanProcessor;
-
-import com.firefly.db.annotation.Column;
-import com.firefly.db.annotation.Id;
-import com.firefly.db.annotation.Table;
-import com.firefly.utils.Assert;
-import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.collection.ConcurrentReferenceHashMap;
+import java.util.*;
 
 public class DefaultBeanProcessor extends BeanProcessor {
 
@@ -44,6 +37,13 @@ public class DefaultBeanProcessor extends BeanProcessor {
      */
     private static final Map<Class<?>, Object> primitiveDefaults = new HashMap<>();
 
+    /**
+     * ServiceLoader to find <code>PropertyHandler</code> implementations on the classpath.  The iterator for this is
+     * lazy and each time <code>iterator()</code> is called.
+     */
+    // FIXME: I think this instantiates new handlers on each iterator() call. This might be worth caching upfront.
+    private static final ServiceLoader<PropertyHandler> propertyHandlers = ServiceLoader.load(PropertyHandler.class);
+
     static {
         primitiveDefaults.put(Integer.TYPE, 0);
         primitiveDefaults.put(Short.TYPE, (short) 0);
@@ -56,15 +56,13 @@ public class DefaultBeanProcessor extends BeanProcessor {
     }
 
     @Override
-    public <T> T toBean(ResultSet rs, Class<T> type) throws SQLException {
-        PropertyDescriptor[] props = this.propertyDescriptors(type);
-        ResultSetMetaData rsmd = rs.getMetaData();
-        int[] columnToProperty = this.mapColumnsToProperties(rsmd, props, type);
-        return this.createBean(rs, type, props, columnToProperty);
+    public <T> T toBean(ResultSet rs, Class<? extends T> type) throws SQLException {
+        T bean = this.newInstance(type);
+        return this.populateBean(rs, bean);
     }
 
     @Override
-    public <T> List<T> toBeanList(ResultSet rs, Class<T> type) throws SQLException {
+    public <T> List<T> toBeanList(ResultSet rs, Class<? extends T> type) throws SQLException {
         List<T> results = new ArrayList<>();
 
         if (!rs.next()) {
@@ -72,14 +70,212 @@ public class DefaultBeanProcessor extends BeanProcessor {
         }
 
         PropertyDescriptor[] props = this.propertyDescriptors(type);
-        ResultSetMetaData rsmd = rs.getMetaData();
-        int[] columnToProperty = this.mapColumnsToProperties(rsmd, props, type);
+        int[] columnToProperty = this.mapColumnsToProperties(rs.getMetaData(), props, type);
 
         do {
             results.add(this.createBean(rs, type, props, columnToProperty));
         } while (rs.next());
 
         return results;
+    }
+
+    /**
+     * Creates a new object and initializes its fields from the ResultSet.
+     *
+     * @param <T>              The type of bean to create
+     * @param rs               The result set.
+     * @param type             The bean type (the return type of the object).
+     * @param props            The property descriptors.
+     * @param columnToProperty The column indices in the result set.
+     * @return An initialized object.
+     * @throws SQLException if a database error occurs.
+     */
+    private <T> T createBean(ResultSet rs, Class<T> type,
+                             PropertyDescriptor[] props, int[] columnToProperty)
+            throws SQLException {
+
+        T bean = this.newInstance(type);
+        return populateBean(rs, bean, props, columnToProperty);
+    }
+
+    /**
+     * Initializes the fields of the provided bean from the ResultSet.
+     *
+     * @param <T>  The type of bean
+     * @param rs   The result set.
+     * @param bean The bean to be populated.
+     * @return An initialized object.
+     * @throws SQLException if a database error occurs.
+     */
+    @Override
+    public <T> T populateBean(ResultSet rs, T bean) throws SQLException {
+        Class<?> type = bean.getClass();
+        PropertyDescriptor[] props = this.propertyDescriptors(type);
+        int[] columnToProperty = this.mapColumnsToProperties(rs.getMetaData(), props, type);
+        return populateBean(rs, bean, props, columnToProperty);
+    }
+
+    /**
+     * This method populates a bean from the ResultSet based upon the underlying meta-data.
+     *
+     * @param <T>              The type of bean
+     * @param rs               The result set.
+     * @param bean             The bean to be populated.
+     * @param props            The property descriptors.
+     * @param columnToProperty The column indices in the result set.
+     * @return An initialized object.
+     * @throws SQLException if a database error occurs.
+     */
+    private <T> T populateBean(ResultSet rs, T bean,
+                               PropertyDescriptor[] props, int[] columnToProperty)
+            throws SQLException {
+
+        for (int i = 1; i < columnToProperty.length; i++) {
+
+            if (columnToProperty[i] == PROPERTY_NOT_FOUND) {
+                continue;
+            }
+
+            PropertyDescriptor prop = props[columnToProperty[i]];
+            Class<?> propType = prop.getPropertyType();
+
+            Object value = null;
+            if (propType != null) {
+                value = this.processColumn(rs, i, propType);
+
+                if (value == null && propType.isPrimitive()) {
+                    value = primitiveDefaults.get(propType);
+                }
+            }
+
+            this.callSetter(bean, prop, value);
+        }
+
+        return bean;
+    }
+
+    /**
+     * Calls the setter method on the target object for the given property.
+     * If no setter method exists for the property, this method does nothing.
+     *
+     * @param target The object to set the property on.
+     * @param prop   The property to set.
+     * @param value  The value to pass into the setter.
+     * @throws SQLException if an error occurs setting the property.
+     */
+    private void callSetter(Object target, PropertyDescriptor prop, Object value)
+            throws SQLException {
+
+        Method setter = getWriteMethod(target, prop, value);
+
+        if (setter == null || setter.getParameterTypes().length != 1) {
+            return;
+        }
+
+        try {
+            Class<?> firstParam = setter.getParameterTypes()[0];
+            for (PropertyHandler handler : propertyHandlers) {
+                if (handler.match(firstParam, value)) {
+                    value = handler.apply(firstParam, value);
+                    break;
+                }
+            }
+
+            // Don't call setter if the value object isn't the right type
+            if (this.isCompatibleType(value, firstParam)) {
+                setter.invoke(target, new Object[]{value});
+            } else {
+                throw new SQLException(
+                        "Cannot set " + prop.getName() + ": incompatible types, cannot convert "
+                                + value.getClass().getName() + " to " + firstParam.getName());
+                // value cannot be null here because isCompatibleType allows null
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw new SQLException(
+                    "Cannot set " + prop.getName() + ": " + e.getMessage());
+
+        } catch (IllegalAccessException e) {
+            throw new SQLException(
+                    "Cannot set " + prop.getName() + ": " + e.getMessage());
+
+        } catch (InvocationTargetException e) {
+            throw new SQLException(
+                    "Cannot set " + prop.getName() + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * ResultSet.getObject() returns an Integer object for an INT column.  The
+     * setter method for the property might take an Integer or a primitive int.
+     * This method returns true if the value can be successfully passed into
+     * the setter method.  Remember, Method.invoke() handles the unwrapping
+     * of Integer into an int.
+     *
+     * @param value The value to be passed into the setter method.
+     * @param type  The setter's parameter type (non-null)
+     * @return boolean True if the value is compatible (null => true)
+     */
+    private boolean isCompatibleType(Object value, Class<?> type) {
+        // Do object check first, then primitives
+        if (value == null || type.isInstance(value) || matchesPrimitive(type, value.getClass())) {
+            return true;
+
+        }
+        return false;
+
+    }
+
+    /**
+     * Check whether a value is of the same primitive type as <code>targetType</code>.
+     *
+     * @param targetType The primitive type to target.
+     * @param valueType  The value to match to the primitive type.
+     * @return Whether <code>valueType</code> can be coerced (e.g. autoboxed) into <code>targetType</code>.
+     */
+    private boolean matchesPrimitive(Class<?> targetType, Class<?> valueType) {
+        if (!targetType.isPrimitive()) {
+            return false;
+        }
+
+        try {
+            // see if there is a "TYPE" field.  This is present for primitive wrappers.
+            Field typeField = valueType.getField("TYPE");
+            Object primitiveValueType = typeField.get(valueType);
+
+            if (targetType == primitiveValueType) {
+                return true;
+            }
+        } catch (NoSuchFieldException e) {
+            // lacking the TYPE field is a good sign that we're not working with a primitive wrapper.
+            // we can't match for compatibility
+        } catch (IllegalAccessException e) {
+            // an inaccessible TYPE field is a good sign that we're not working with a primitive wrapper.
+            // nothing to do.  we can't match for compatibility
+        }
+        return false;
+    }
+
+    /**
+     * Returns a PropertyDescriptor[] for the given Class.
+     *
+     * @param c The Class to retrieve PropertyDescriptors for.
+     * @return A PropertyDescriptor[] describing the Class.
+     * @throws SQLException if introspection failed.
+     */
+    private PropertyDescriptor[] propertyDescriptors(Class<?> c)
+            throws SQLException {
+        // Introspector caches BeanInfo classes for better performance
+        BeanInfo beanInfo = null;
+        try {
+            beanInfo = Introspector.getBeanInfo(c);
+
+        } catch (IntrospectionException e) {
+            throw new SQLException(
+                    "Bean introspection failed: " + e.getMessage());
+        }
+
+        return beanInfo.getPropertyDescriptors();
     }
 
     public SQLMapper generateDeleteSQL(Class<?> t) {
@@ -369,8 +565,7 @@ public class DefaultBeanProcessor extends BeanProcessor {
 
     }
 
-    private int[] mapColumnsToProperties(ResultSetMetaData rsmd, PropertyDescriptor[] props, Class<?> type)
-            throws SQLException {
+    protected int[] mapColumnsToProperties(ResultSetMetaData rsmd, PropertyDescriptor[] props, Class<?> type) throws SQLException {
         int cols = rsmd.getColumnCount();
         int[] columnToProperty = new int[cols + 1];
         Arrays.fill(columnToProperty, PROPERTY_NOT_FOUND);
@@ -407,150 +602,6 @@ public class DefaultBeanProcessor extends BeanProcessor {
         }
 
         return columnToProperty;
-    }
-
-    /**
-     * Returns a PropertyDescriptor[] for the given Class.
-     *
-     * @param c The Class to retrieve PropertyDescriptors for.
-     * @return A PropertyDescriptor[] describing the Class.
-     * @throws SQLException if introspection failed.
-     */
-    private PropertyDescriptor[] propertyDescriptors(Class<?> c) throws SQLException {
-        // Introspector caches BeanInfo classes for better performance
-        BeanInfo beanInfo;
-        try {
-            beanInfo = Introspector.getBeanInfo(c);
-
-        } catch (IntrospectionException e) {
-            throw new SQLException("Bean introspection failed: " + e.getMessage());
-        }
-
-        return beanInfo.getPropertyDescriptors();
-    }
-
-    private <T> T createBean(ResultSet rs, Class<T> type, PropertyDescriptor[] props, int[] columnToProperty)
-            throws SQLException {
-
-        T bean = this.newInstance(type);
-
-        for (int i = 1; i < columnToProperty.length; i++) {
-
-            if (columnToProperty[i] == PROPERTY_NOT_FOUND) {
-                continue;
-            }
-
-            PropertyDescriptor prop = props[columnToProperty[i]];
-            Class<?> propType = prop.getPropertyType();
-
-            Object value = null;
-            if (propType != null) {
-                value = this.processColumn(rs, i, propType);
-
-                if (value == null && propType.isPrimitive()) {
-                    value = primitiveDefaults.get(propType);
-                }
-            }
-
-            this.callSetter(bean, prop, value);
-        }
-
-        return bean;
-    }
-
-    /**
-     * Calls the setter method on the target object for the given property. If
-     * no setter method exists for the property, this method does nothing.
-     *
-     * @param target The object to set the property on.
-     * @param prop   The property to set.
-     * @param value  The value to pass into the setter.
-     * @throws SQLException if an error occurs setting the property.
-     */
-    private void callSetter(Object target, PropertyDescriptor prop, Object value) throws SQLException {
-
-        Method setter = prop.getWriteMethod();
-
-        if (setter == null) {
-            return;
-        }
-
-        Class<?>[] params = setter.getParameterTypes();
-        try {
-            // convert types for some popular ones
-            if (value instanceof java.util.Date) {
-                final String targetType = params[0].getName();
-                if ("java.sql.Date".equals(targetType)) {
-                    value = new java.sql.Date(((java.util.Date) value).getTime());
-                } else if ("java.sql.Time".equals(targetType)) {
-                    value = new java.sql.Time(((java.util.Date) value).getTime());
-                } else if ("java.sql.Timestamp".equals(targetType)) {
-                    Timestamp tsValue = (Timestamp) value;
-                    int nanos = tsValue.getNanos();
-                    value = new java.sql.Timestamp(tsValue.getTime());
-                    ((Timestamp) value).setNanos(nanos);
-                }
-            } else if (value instanceof String && params[0].isEnum()) {
-                value = Enum.valueOf(params[0].asSubclass(Enum.class), (String) value);
-            }
-
-            // Don't call setter if the value object isn't the right type
-            if (this.isCompatibleType(value, params[0])) {
-                setter.invoke(target, value);
-            } else {
-                throw new SQLException("Cannot set " + prop.getName() + ": incompatible types, cannot convert "
-                        + value.getClass().getName() + " to " + params[0].getName());
-                // value cannot be null here because isCompatibleType allows
-                // null
-            }
-
-        } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-            throw new SQLException("Cannot set " + prop.getName() + ": " + e.getMessage());
-        }
-    }
-
-    /**
-     * ResultSet.getObject() returns an Integer object for an INT column. The
-     * setter method for the property might take an Integer or a primitive int.
-     * This method returns true if the value can be successfully passed into the
-     * setter method. Remember, Method.invoke() handles the unwrapping of
-     * Integer into an int.
-     *
-     * @param value The value to be passed into the setter method.
-     * @param type  The setter's parameter type (non-null)
-     * @return boolean True if the value is compatible (null => true)
-     */
-    private boolean isCompatibleType(Object value, Class<?> type) {
-        // Do object check first, then primitives
-        if (value == null || type.isInstance(value)) {
-            return true;
-
-        } else if (type.equals(Integer.TYPE) && value instanceof Integer) {
-            return true;
-
-        } else if (type.equals(Long.TYPE) && value instanceof Long) {
-            return true;
-
-        } else if (type.equals(Double.TYPE) && value instanceof Double) {
-            return true;
-
-        } else if (type.equals(Float.TYPE) && value instanceof Float) {
-            return true;
-
-        } else if (type.equals(Short.TYPE) && value instanceof Short) {
-            return true;
-
-        } else if (type.equals(Byte.TYPE) && value instanceof Byte) {
-            return true;
-
-        } else if (type.equals(Character.TYPE) && value instanceof Character) {
-            return true;
-
-        } else if (type.equals(Boolean.TYPE) && value instanceof Boolean) {
-            return true;
-
-        }
-        return false;
     }
 
 }

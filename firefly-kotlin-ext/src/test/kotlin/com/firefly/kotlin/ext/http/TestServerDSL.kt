@@ -149,11 +149,11 @@ class TestServerDSL {
 
                 asyncHandler {
                     setAttribute("userId", 33)
-                    promise<String>({
+                    asyncNext<String>({
                         write("router 1 success\r\n").end(it)
                     }, {
                         write("${it?.message}").end()
-                    }).next()
+                    })
                 }
             }
 

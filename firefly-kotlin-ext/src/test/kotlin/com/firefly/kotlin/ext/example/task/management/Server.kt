@@ -57,7 +57,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
 
         asyncHandler {
             transactionalManager.beginTransaction()
-            promise<Unit>(succeeded = {
+            asyncNext<Unit>(succeeded = {
                 try {
                     transactionalManager.commitAndEndTransaction()
                 } finally {
@@ -75,7 +75,6 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
                     end()
                 }
             })
-            next()
         }
     }
 

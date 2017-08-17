@@ -123,14 +123,13 @@ fun main(args: Array<String>) {
             path = "/routerChain"
 
             asyncHandler {
-                promise<String>({
+
+                setAttribute("reqId", 1000)
+                write("enter router 1\r\n").asyncNext<String>({
                     write("router 1 success\r\n").end(it)
                 }, {
                     write("${it?.message}").end()
                 })
-
-                setAttribute("reqId", 1000)
-                write("enter router 1\r\n").next()
             }
         }
 
@@ -140,11 +139,10 @@ fun main(args: Array<String>) {
 
             asyncHandler {
                 val reqId = getAttribute("reqId") as Int
-                promise<String> {
+
+                write("enter router 2, request id $reqId\r\n").asyncNext<String> {
                     write("router 2 success, request id $reqId\r\n")
                 }
-
-                write("enter router 2, request id $reqId\r\n").next()
             }
         }
 
