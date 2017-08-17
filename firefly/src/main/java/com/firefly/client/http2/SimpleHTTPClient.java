@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -243,6 +244,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         public Promise.Completable<SimpleResponse> submit() {
             submit(new Promise.Completable<>());
             return future;
+        }
+
+        public CompletableFuture<SimpleResponse> complete() {
+            return submit();
         }
 
         public void submit(Promise.Completable<SimpleResponse> future) {
