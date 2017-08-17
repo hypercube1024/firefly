@@ -22,7 +22,7 @@ class UserDaoImpl : UserDao {
     }
 
     suspend override fun listUsers(userIdList: List<Long>): List<User> = dbClient.execSQL {
-        val sql = "select * from test.user where id in (${userIdList.map { "?" }.joinToString(",")})"
+        val sql = "select * from test.user where id in (${userIdList.joinToString(",") { "?" }})"
         it.asyncQueryForList<User>(sql, *userIdList.toTypedArray())
     } ?: listOf()
 
