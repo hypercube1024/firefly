@@ -25,7 +25,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndPromise(ByteBuffer byteBuffer) {
+    public CompletableFuture<Void> writeToFuture(ByteBuffer byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
             sslSession.write(byteBuffer, new Callback() {
@@ -44,7 +44,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndPromise(ByteBuffer[] byteBuffer) {
+    public CompletableFuture<Void> writeToFuture(ByteBuffer[] byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
             sslSession.write(byteBuffer, new Callback() {
@@ -63,23 +63,23 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndPromise(Collection<ByteBuffer> byteBuffer) {
-        return writeAndPromise(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
+    public CompletableFuture<Void> writeToFuture(Collection<ByteBuffer> byteBuffer) {
+        return writeToFuture(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
     }
 
     @Override
-    public CompletableFuture<Void> writeAndPromise(String message) {
-        return writeAndPromise(message, DEFAULT_CHARSET);
+    public CompletableFuture<Void> writeToFuture(String message) {
+        return writeToFuture(message, DEFAULT_CHARSET);
     }
 
     @Override
-    public CompletableFuture<Void> writeAndPromise(String message, String charset) {
+    public CompletableFuture<Void> writeToFuture(String message, String charset) {
         ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
-        return writeAndPromise(byteBuffer);
+        return writeToFuture(byteBuffer);
     }
 
     @Override
-    public CompletableFuture<Void> writeAndPromise(FileRegion file) {
+    public CompletableFuture<Void> writeToFuture(FileRegion file) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
             sslSession.transferFileRegion(file, new Callback() {
