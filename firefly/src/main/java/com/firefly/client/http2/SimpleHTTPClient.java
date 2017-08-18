@@ -246,7 +246,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             return future;
         }
 
-        public CompletableFuture<SimpleResponse> complete() {
+        public CompletableFuture<SimpleResponse> toFuture() {
             return submit();
         }
 
