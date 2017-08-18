@@ -14,17 +14,17 @@ public interface TcpConnection extends Connection {
 
     TcpConnection receive(Action1<ByteBuffer> buffer);
 
-    CompletableFuture<Void> writeAndWait(ByteBuffer byteBuffer);
+    CompletableFuture<Void> writeAndPromise(ByteBuffer byteBuffer);
 
-    CompletableFuture<Void> writeAndWait(ByteBuffer[] byteBuffer);
+    CompletableFuture<Void> writeAndPromise(ByteBuffer[] byteBuffer);
 
-    CompletableFuture<Void> writeAndWait(Collection<ByteBuffer> byteBuffer);
+    CompletableFuture<Void> writeAndPromise(Collection<ByteBuffer> byteBuffer);
 
-    CompletableFuture<Void> writeAndWait(String message);
+    CompletableFuture<Void> writeAndPromise(String message);
 
-    CompletableFuture<Void> writeAndWait(String message, String charset);
+    CompletableFuture<Void> writeAndPromise(String message, String charset);
 
-    CompletableFuture<Void> writeAndWait(FileRegion file);
+    CompletableFuture<Void> writeAndPromise(FileRegion file);
 
     TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed);
 

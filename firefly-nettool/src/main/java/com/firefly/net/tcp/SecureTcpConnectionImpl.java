@@ -25,7 +25,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(ByteBuffer byteBuffer) {
+    public CompletableFuture<Void> writeAndPromise(ByteBuffer byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
             sslSession.write(byteBuffer, new Callback() {
@@ -44,7 +44,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(ByteBuffer[] byteBuffer) {
+    public CompletableFuture<Void> writeAndPromise(ByteBuffer[] byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
             sslSession.write(byteBuffer, new Callback() {
@@ -63,23 +63,23 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(Collection<ByteBuffer> byteBuffer) {
-        return writeAndWait(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
+    public CompletableFuture<Void> writeAndPromise(Collection<ByteBuffer> byteBuffer) {
+        return writeAndPromise(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(String message) {
-        return writeAndWait(message, DEFAULT_CHARSET);
+    public CompletableFuture<Void> writeAndPromise(String message) {
+        return writeAndPromise(message, DEFAULT_CHARSET);
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(String message, String charset) {
+    public CompletableFuture<Void> writeAndPromise(String message, String charset) {
         ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
-        return writeAndWait(byteBuffer);
+        return writeAndPromise(byteBuffer);
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(FileRegion file) {
+    public CompletableFuture<Void> writeAndPromise(FileRegion file) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
             sslSession.transferFileRegion(file, new Callback() {

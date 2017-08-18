@@ -20,7 +20,7 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(ByteBuffer byteBuffer) {
+    public CompletableFuture<Void> writeAndPromise(ByteBuffer byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         session.write(byteBuffer, new Callback() {
             public void succeeded() {
@@ -35,7 +35,7 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(ByteBuffer[] byteBuffer) {
+    public CompletableFuture<Void> writeAndPromise(ByteBuffer[] byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         session.write(byteBuffer, new Callback() {
             public void succeeded() {
@@ -50,7 +50,7 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(Collection<ByteBuffer> byteBuffer) {
+    public CompletableFuture<Void> writeAndPromise(Collection<ByteBuffer> byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         session.write(byteBuffer, new Callback() {
             public void succeeded() {
@@ -65,17 +65,17 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(String message) {
-        return writeAndWait(message, DEFAULT_CHARSET);
+    public CompletableFuture<Void> writeAndPromise(String message) {
+        return writeAndPromise(message, DEFAULT_CHARSET);
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(String message, String charset) {
-        return writeAndWait(BufferUtils.toBuffer(message, Charset.forName(charset)));
+    public CompletableFuture<Void> writeAndPromise(String message, String charset) {
+        return writeAndPromise(BufferUtils.toBuffer(message, Charset.forName(charset)));
     }
 
     @Override
-    public CompletableFuture<Void> writeAndWait(FileRegion file) {
+    public CompletableFuture<Void> writeAndPromise(FileRegion file) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         session.write(file, new Callback() {
             public void succeeded() {

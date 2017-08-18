@@ -152,7 +152,7 @@ fun main(args: Array<String>) {
 
             asyncHandler {
                 val reqId = getAttribute("reqId") as Int
-                promise<String> {
+                asyncComplete<String> {
                     write("router 3 success, request id $reqId\r\n")
                 }
 

@@ -57,18 +57,18 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Jso
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
 
-data class SuspendPromise<in C>(val succeeded: suspend (C) -> Unit, val failed: suspend (Throwable?) -> Unit)
+data class AsyncPromise<in C>(val succeeded: suspend (C) -> Unit, val failed: suspend (Throwable?) -> Unit)
 
 val promiseQueueKey = "_promiseQueue"
 
-fun <C> RoutingContext.getPromiseQueue(): Deque<SuspendPromise<C>>? = getAttr(promiseQueueKey)
+fun <C> RoutingContext.getPromiseQueue(): Deque<AsyncPromise<C>>? = getAttr(promiseQueueKey)
 
 @Suppress("UNCHECKED_CAST")
-fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<SuspendPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<SuspendPromise<C>>() } as Deque<SuspendPromise<C>>
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
 
-fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
+fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
-    queue.push(SuspendPromise(succeeded = {
+    queue.push(AsyncPromise(succeeded = {
         succeeded.invoke(it)
         try {
             queue.pop().succeeded(it)
@@ -84,18 +84,18 @@ fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit, failed: suspend (
     return this
 }
 
-fun <C> RoutingContext.promise(succeeded: suspend (C) -> Unit): RoutingContext {
-    promise(succeeded, {})
+fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit): RoutingContext {
+    asyncComplete(succeeded, {})
     return this
 }
 
 fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): Boolean {
-    promise(succeeded, failed)
+    asyncComplete(succeeded, failed)
     return next()
 }
 
 fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
-    promise(succeeded)
+    asyncComplete(succeeded)
     return next()
 }
 
