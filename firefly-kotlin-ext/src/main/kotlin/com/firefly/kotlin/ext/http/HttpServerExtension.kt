@@ -99,11 +99,11 @@ fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
     return next()
 }
 
-suspend fun <C> RoutingContext.succeed(result: C) {
+suspend fun <C> RoutingContext.asyncSucceed(result: C) {
     getPromiseQueue<C>()?.pop()?.succeeded?.invoke(result)
 }
 
-suspend fun <C> RoutingContext.fail(x: Throwable? = null) {
+suspend fun <C> RoutingContext.asyncFail(x: Throwable? = null) {
     getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
 }
 

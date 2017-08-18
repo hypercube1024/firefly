@@ -123,12 +123,11 @@ fun main(args: Array<String>) {
             path = "/routerChain"
 
             asyncHandler {
-
                 setAttribute("reqId", 1000)
                 write("enter router 1\r\n").asyncNext<String>({
                     write("router 1 success\r\n").end(it)
                 }, {
-                    write("${it?.message}").end()
+                    end("${it?.message}")
                 })
             }
         }
@@ -139,7 +138,6 @@ fun main(args: Array<String>) {
 
             asyncHandler {
                 val reqId = getAttribute("reqId") as Int
-
                 write("enter router 2, request id $reqId\r\n").asyncNext<String> {
                     write("router 2 success, request id $reqId\r\n")
                 }
@@ -152,11 +150,9 @@ fun main(args: Array<String>) {
 
             asyncHandler {
                 val reqId = getAttribute("reqId") as Int
-                asyncComplete<String> {
+                write("enter router 3, request id $reqId\r\n").asyncComplete<String> {
                     write("router 3 success, request id $reqId\r\n")
-                }
-
-                write("enter router 3, request id $reqId\r\n").succeed("request complete")
+                }.asyncSucceed("request complete")
             }
         }
     }

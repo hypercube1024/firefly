@@ -3,6 +3,7 @@ package com.firefly.server.http2.router;
 import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
@@ -57,6 +58,14 @@ public interface RoutingContext extends Closeable {
     boolean next();
 
     boolean hasNext();
+
+    <T> RoutingContext complete(Promise<T> promise);
+
+    <T> boolean next(Promise<T> promise);
+
+    <T> void succeed(T t);
+
+    void fail(Throwable x);
 
 
     // request wrap

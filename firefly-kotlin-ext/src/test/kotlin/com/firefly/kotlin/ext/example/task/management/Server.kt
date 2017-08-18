@@ -44,9 +44,9 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
     fun RouterBlock.asyncTransactionalHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
         try {
             handler.invoke(this, it)
-            succeed(Unit)
+            asyncSucceed(Unit)
         } catch (x: Throwable) {
-            fail<Unit>(x)
+            asyncFail<Unit>(x)
         }
     }
 

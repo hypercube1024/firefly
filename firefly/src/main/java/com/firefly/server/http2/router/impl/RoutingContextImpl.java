@@ -8,6 +8,7 @@ import com.firefly.server.http2.router.handler.template.TemplateHandlerSPILoader
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
@@ -19,11 +20,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * @author Pengtao Qiu
@@ -37,6 +36,7 @@ public class RoutingContextImpl implements RoutingContext {
     private volatile HTTPSessionHandlerSPI httpSessionHandlerSPI;
     private final TemplateHandlerSPI templateHandlerSPI = TemplateHandlerSPILoader.getInstance().getTemplateHandlerSPI();
     private volatile boolean asynchronousRead;
+    private volatile ConcurrentLinkedDeque<Promise<?>> handlerPromiseQueue;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -123,6 +123,65 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public boolean hasNext() {
         return !routers.isEmpty();
+    }
+
+    @Override
+    public <T> RoutingContext complete(Promise<T> promise) {
+        ConcurrentLinkedDeque<Promise<T>> queue = createHandlerPromiseQueueIfAbsent();
+        queue.push(new Promise<T>() {
+            @Override
+            public void succeeded(T result) {
+                promise.succeeded(result);
+                try {
+                    queue.pop().succeeded(result);
+                } catch (NoSuchElementException ignored) {
+                }
+            }
+
+            @Override
+            public void failed(Throwable x) {
+                promise.failed(x);
+                try {
+                    queue.pop().failed(x);
+                } catch (NoSuchElementException ignored) {
+                }
+            }
+        });
+        return this;
+    }
+
+    @Override
+    public <T> boolean next(Promise<T> promise) {
+        return complete(promise).next();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> void succeed(T t) {
+        if (handlerPromiseQueue != null) {
+            Promise<T> p = (Promise<T>) handlerPromiseQueue.pop();
+            if (p != null) {
+                p.succeeded(t);
+            }
+        }
+    }
+
+    @Override
+    public void fail(Throwable x) {
+        if (handlerPromiseQueue != null) {
+            Promise<?> p = handlerPromiseQueue.pop();
+            if (p != null) {
+                p.failed(x);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> ConcurrentLinkedDeque<Promise<T>> createHandlerPromiseQueueIfAbsent() {
+        if (handlerPromiseQueue == null) {
+            handlerPromiseQueue = new ConcurrentLinkedDeque<>();
+        }
+        return (ConcurrentLinkedDeque) handlerPromiseQueue;
     }
 
     @Override

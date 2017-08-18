@@ -162,7 +162,7 @@ class TestServerDSL {
                 path = "/test/chain/task/:id"
 
                 asyncHandler {
-                    write("enter router 2\r\n").succeed("User ${getAttr<Int>("userId")} gets task ${getRouterParameter("id")}\r\n")
+                    write("enter router 2\r\n").asyncSucceed("User ${getAttr<Int>("userId")} gets task ${getRouterParameter("id")}\r\n")
                 }
             }
         }.listen(host, port)
