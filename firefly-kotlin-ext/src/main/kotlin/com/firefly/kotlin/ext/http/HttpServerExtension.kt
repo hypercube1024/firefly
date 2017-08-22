@@ -1,7 +1,6 @@
 package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.*
-import com.firefly.kotlin.ext.common.AsyncPool
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.Log
@@ -12,9 +11,7 @@ import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
-import kotlinx.coroutines.experimental.NonCancellable
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.experimental.*
 import java.io.Closeable
 import java.net.InetAddress
 import java.util.*
@@ -215,7 +212,8 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
 @HttpServerMarker
 class RouterBlock(private val router: Router,
-                  private val requestCtx: CoroutineLocal<RoutingContext>?) {
+                  private val requestCtx: CoroutineLocal<RoutingContext>?,
+                  private val coroutineDispatcher: CoroutineDispatcher) {
 
     var method: String = HttpMethod.GET.asString()
         set(value) {
@@ -274,7 +272,7 @@ class RouterBlock(private val router: Router,
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
-            launch(requestCtx?.createContext(it) ?: AsyncPool) {
+            launch(requestCtx?.createContext(it, coroutineDispatcher) ?: coroutineDispatcher) {
                 handler.invoke(it, coroutineContext)
             }
         }
@@ -343,8 +341,9 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
                  httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
 
-    val server: SimpleHTTPServer = SimpleHTTPServer(serverConfiguration)
-    val routerManager: RouterManager = RouterManager.create(httpBodyConfiguration)
+    val server = SimpleHTTPServer(serverConfiguration)
+    val routerManager = RouterManager.create(httpBodyConfiguration)
+    val coroutineDispatcher = server.handlerPool.asCoroutineDispatcher()
 
     init {
         block.invoke(this)
@@ -369,7 +368,7 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
     inline fun router(block: RouterBlock.() -> Unit) {
-        val r = RouterBlock(routerManager.register(), requestCtx)
+        val r = RouterBlock(routerManager.register(), requestCtx, coroutineDispatcher)
         block.invoke(r)
         sysLogger.info("register $r")
     }

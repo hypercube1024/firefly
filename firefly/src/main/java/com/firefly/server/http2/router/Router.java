@@ -38,7 +38,7 @@ public interface Router extends Comparable<Router> {
 
     Router produces(String accept);
 
-    Router handler(Handler context);
+    Router handler(Handler handler);
 
     Router enable();
 

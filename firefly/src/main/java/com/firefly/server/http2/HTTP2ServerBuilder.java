@@ -126,8 +126,16 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
-    public HTTP2ServerBuilder handler(Handler context) {
-        currentRouter.handler(context);
+    public HTTP2ServerBuilder handler(Handler handler) {
+        currentRouter.handler(handler);
+        return this;
+    }
+
+    public HTTP2ServerBuilder asyncHandler(Handler handler) {
+        currentRouter.handler(ctx -> {
+            ctx.getResponse().setAsynchronous(true);
+            server.getHandlerPool().execute(() -> handler.handle(ctx));
+        });
         return this;
     }
 }

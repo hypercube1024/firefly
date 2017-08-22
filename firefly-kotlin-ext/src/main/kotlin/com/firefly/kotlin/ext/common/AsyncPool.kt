@@ -15,7 +15,7 @@ object AsyncPool : CoroutineDispatcher() {
         val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
         worker.name = "firefly-kt-async-pool-" + worker.poolIndex
         worker
-    }, null, false)
+    }, null, true)
 
     override fun dispatch(context: CoroutineContext, block: Runnable) {
         pool.execute(block)

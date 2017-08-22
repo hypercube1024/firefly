@@ -20,7 +20,7 @@ public class TestRouterChain extends AbstractHTTPHandlerTest {
     @Test
     public void testChain() throws Exception {
         HTTP2ServerBuilder httpServer = $.httpServer();
-        httpServer.router().get("/routerChain").handler(ctx -> {
+        httpServer.router().get("/routerChain").asyncHandler(ctx -> {
             ctx.setAttribute("reqId", 1000);
             ctx.write("enter router 1\r\n").next(new Promise<String>() {
                 @Override
@@ -33,7 +33,7 @@ public class TestRouterChain extends AbstractHTTPHandlerTest {
                     ctx.end(x.getMessage());
                 }
             });
-        }).router().get("/routerChain").handler(ctx -> {
+        }).router().get("/routerChain").asyncHandler(ctx -> {
             Integer reqId = (Integer) ctx.getAttribute("reqId");
             ctx.write("enter router 2, request id " + reqId + "\r\n").next(new Promise<String>() {
                 @Override
@@ -41,7 +41,7 @@ public class TestRouterChain extends AbstractHTTPHandlerTest {
                     ctx.write("router 2 success, request id " + reqId + "\r\n");
                 }
             });
-        }).router().get("/routerChain").handler(ctx -> {
+        }).router().get("/routerChain").asyncHandler(ctx -> {
             Integer reqId = (Integer) ctx.getAttribute("reqId");
             ctx.write("enter router 3, request id " + reqId + "\r\n").complete(new Promise<String>() {
                 @Override
@@ -52,14 +52,15 @@ public class TestRouterChain extends AbstractHTTPHandlerTest {
         }).listen(host, port);
 
         SimpleResponse response = $.httpClient().get(uri + "/routerChain").submit().get(2, TimeUnit.SECONDS);
+        System.out.println(response.getStringBody());
         Assert.assertThat(response.getStringBody(), is(
                 "enter router 1\r\n" +
-                "enter router 2, request id 1000\r\n" +
-                "enter router 3, request id 1000\r\n" +
-                "router 3 success, request id 1000\r\n" +
-                "router 2 success, request id 1000\r\n" +
-                "router 1 success\r\n" +
-                "request complete"));
+                        "enter router 2, request id 1000\r\n" +
+                        "enter router 3, request id 1000\r\n" +
+                        "router 3 success, request id 1000\r\n" +
+                        "router 2 success, request id 1000\r\n" +
+                        "router 1 success\r\n" +
+                        "request complete"));
         httpServer.stop();
         $.httpClient().stop();
     }
