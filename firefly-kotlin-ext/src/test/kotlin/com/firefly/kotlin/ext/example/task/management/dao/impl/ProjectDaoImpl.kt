@@ -6,6 +6,7 @@ import com.firefly.kotlin.ext.db.*
 import com.firefly.kotlin.ext.example.task.management.dao.ProjectDao
 import com.firefly.kotlin.ext.example.task.management.model.Project
 import com.firefly.kotlin.ext.example.task.management.model.ProjectUser
+import java.util.stream.Collectors
 
 /**
  * @author Pengtao Qiu
@@ -31,11 +32,7 @@ class ProjectDaoImpl : ProjectDao {
 
     override suspend fun listProjectMembers(projectId: Long): List<Long> = dbClient.execSQL {
         it.asyncQuery<List<Long>>("select `user_id` from `test`.`project_user` where `project_id` = ?", {
-            val ret = ArrayList<Long>()
-            while (it.next()) {
-                ret.add(it.getLong("user_id"))
-            }
-            ret
+            it.stream().map { it.getLong("user_id") }.collect(Collectors.toList())
         }, projectId)
     } ?: listOf()
 

@@ -12,9 +12,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
 
@@ -49,13 +48,7 @@ public class TestSQLClient {
                            params[i][1] = "pwd transaction " + i;
                        }
                        String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
-                       return c.insertBatch(sql, params, (rs) -> {
-                           List<Integer> ids = new ArrayList<>();
-                           while (rs.next()) {
-                               ids.add(rs.getInt(1));
-                           }
-                           return ids;
-                       });
+                       return c.insertBatch(sql, params, (rs) -> rs.stream().map(r -> r.getInt(1)).collect(Collectors.toList()));
                    })).thenAccept(System.out::println).get();
     }
 
