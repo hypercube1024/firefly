@@ -37,7 +37,7 @@ public class TestReactiveSQLClient {
     }
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         exec(c -> c.update("drop schema if exists test")
                    .then(v -> c.update("create schema test"))
                    .then(v -> c.update("set mode MySQL"))
@@ -54,13 +54,13 @@ public class TestReactiveSQLClient {
     }
 
     @After
-    public void after() throws Exception {
+    public void after() {
         exec(c -> c.update("DROP TABLE IF EXISTS `test`.`user`")).block();
         System.out.println("drop table user");
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() {
         exec(c -> testUser(c, 1)).block();
     }
 
@@ -79,7 +79,7 @@ public class TestReactiveSQLClient {
     }
 
     @Test
-    public void testRollback() throws Exception {
+    public void testRollback() {
         Long id = 1L;
         exec(c -> {
             User user = new User();
@@ -96,7 +96,7 @@ public class TestReactiveSQLClient {
     }
 
     @Test
-    public void testRollback2() throws Exception {
+    public void testRollback2() {
         exec(c -> {
             User user0 = new User();
             user0.setId(2L);
@@ -120,5 +120,18 @@ public class TestReactiveSQLClient {
                     .then(v -> c.queryById(2L, User.class))
                     .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 1")));
         }).block();
+    }
+
+    @Test
+    public void testUsers() {
+        exec(c -> c.queryForList("select * from test.user", User.class)
+                   .flatMapIterable(users -> users)
+                   .filter(user -> user.getId() % 2 == 0)
+                   .map(User::getId)
+                   .doOnNext(id -> Assert.assertThat(id % 2, is(0L)))
+                   .collectList())
+                .doOnSuccess(idList -> Assert.assertThat(idList.size(), is(5)))
+                .doOnSuccess(System.out::println)
+                .block();
     }
 }
