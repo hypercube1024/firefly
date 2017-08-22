@@ -45,6 +45,7 @@
         <module>firefly</module>
         <module>firefly-example</module>
         <module>firefly-kotlin-ext</module>
+        <module>firefly-reactive</module>
     </modules>
 
     <dependencyManagement>
@@ -91,6 +92,15 @@
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
                 <version>3.21.0-GA</version>
+            </dependency>
+
+            <!-- reactor -->
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-bom</artifactId>
+                <version>Aluminium-SR3</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!-- metrics -->
