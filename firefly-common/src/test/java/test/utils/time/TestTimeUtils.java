@@ -23,6 +23,7 @@ public class TestTimeUtils {
         Date start = TimeUtils.parseLocalDate("2017-05-01", DEFAULT_LOCAL_DATE);
         LocalDate localDateStart = LocalDate.parse("2017-05-01", DEFAULT_LOCAL_DATE);
         Assert.assertThat(start, is(TimeUtils.toDate(localDateStart)));
+        Assert.assertThat(LocalDate.now().withYear(2017).withMonth(5).withDayOfMonth(1), is(localDateStart));
 
         start = TimeUtils.parseLocalDateTime("2017-05-01 00:00:00", DEFAULT_LOCAL_DATE_TIME);
         LocalDateTime localDateTime = LocalDateTime.parse("2017-05-01 00:00:00", DEFAULT_LOCAL_DATE_TIME);
