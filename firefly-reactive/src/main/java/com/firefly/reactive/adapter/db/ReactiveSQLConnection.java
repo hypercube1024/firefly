@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * SQLConnection reactor adapter
+ *
  * @author Pengtao Qiu
  */
 public interface ReactiveSQLConnection {

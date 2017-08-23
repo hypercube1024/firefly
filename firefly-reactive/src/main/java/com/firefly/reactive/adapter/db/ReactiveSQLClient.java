@@ -5,6 +5,8 @@ import com.firefly.utils.function.Func1;
 import reactor.core.publisher.Mono;
 
 /**
+ * SQLClient reactor adapter
+ *
  * @author Pengtao Qiu
  */
 public interface ReactiveSQLClient {

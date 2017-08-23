@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 
 public class SimpleHTTPClient extends AbstractLifeCycle {
 
-    private static Logger log = LoggerFactory.getLogger("firefly-system");
+    protected static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final HTTP2Client http2Client;
     private final ConcurrentHashMap<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
@@ -67,10 +67,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     public class RequestBuilder {
-        String host;
-        int port;
+        protected String host;
+        protected int port;
+        protected MetaData.Request request;
 
-        MetaData.Request request;
         List<ByteBuffer> requestBody = new ArrayList<>();
 
         Action1<Response> headerComplete;
@@ -88,6 +88,16 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
+
+        public RequestBuilder() {
+
+        }
+
+        public RequestBuilder(String host, int port, MetaData.Request request) {
+            this.host = host;
+            this.port = port;
+            this.request = request;
+        }
 
         public RequestBuilder cookies(List<Cookie> cookies) {
             request.getFields().put(HttpHeader.COOKIE, CookieGenerator.generateCookies(cookies));
