@@ -241,17 +241,6 @@ public interface $ {
         return ApplicationContextSingleton.getInstance().getApplicationContext().getBeanMap();
     }
 
-    /**
-     * Run a blocking task in a shared thread pool.
-     *
-     * @param func the task with a return value
-     * @param <T>  Return value type
-     * @return the task Completable future
-     */
-    static <T> Promise.Completable<T> async(Func0<T> func) {
-        return ApplicationContextSingleton.getInstance().async(func);
-    }
-
     interface io {
         static void close(Closeable closeable) {
             IO.close(closeable);

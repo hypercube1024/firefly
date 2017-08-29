@@ -12,6 +12,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -121,5 +122,18 @@ public class TestSQLClient {
                     .thenCompose(v -> c.queryById(2L, User.class))
                     .thenAccept(user -> Assert.assertThat(user.getName(), is("test transaction 1")));
         }).get();
+    }
+
+    @Test
+    public void testUsers() throws Exception {
+        exec(c -> c.queryForList("select * from test.user", User.class)
+                   .thenApply(Collection::stream)
+                   .thenApply(stream -> stream.filter(user -> user.getId() % 2 == 0))
+                   .thenApply(stream -> stream.map(User::getId))
+                   .thenApply(stream -> stream.collect(Collectors.toList())))
+                .thenApply(idList -> {
+                    Assert.assertThat(idList.size(), is(5));
+                    return idList;
+                }).get();
     }
 }
