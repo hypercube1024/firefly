@@ -134,7 +134,7 @@ public class HTTP2ServerBuilder {
     public HTTP2ServerBuilder asyncHandler(Handler handler) {
         currentRouter.handler(ctx -> {
             ctx.getResponse().setAsynchronous(true);
-            server.getHandlerPool().execute(() -> handler.handle(ctx));
+            server.getHandlerExecutorService().execute(() -> handler.handle(ctx));
         });
         return this;
     }

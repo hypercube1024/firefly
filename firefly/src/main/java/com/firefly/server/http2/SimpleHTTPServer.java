@@ -10,6 +10,7 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 
@@ -26,7 +27,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
     private Action1<SimpleRequest> earlyEof;
     private Action1<HTTPConnection> acceptConnection;
     private Meter requestMeter;
-    private final ForkJoinPool handlerPool;
+    private final ExecutorService handlerExecutorService;
     Action2<SimpleRequest, HTTPServerConnection> tunnel;
 
     public SimpleHTTPServer() {
@@ -39,9 +40,9 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
                                          .getMetricReporterFactory()
                                          .getMetricRegistry()
                                          .meter("http2.SimpleHTTPServer.request.count");
-        handlerPool = new ForkJoinPool(defaultPoolSize, pool -> {
+        handlerExecutorService = new ForkJoinPool(defaultPoolSize, pool -> {
             ForkJoinWorkerThread workerThread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
-            workerThread.setName("firefly-http-server-handler-pool-" +  workerThread.getPoolIndex());
+            workerThread.setName("firefly-http-server-handler-pool-" + workerThread.getPoolIndex());
             return workerThread;
         }, null, true);
     }
@@ -71,8 +72,12 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
         return this;
     }
 
-    public ForkJoinPool getHandlerPool() {
-        return handlerPool;
+    public ExecutorService getNetExecutorService() {
+        return http2Server.getNetExecutorService();
+    }
+
+    public ExecutorService getHandlerExecutorService() {
+        return handlerExecutorService;
     }
 
     public void listen(String host, int port) {
@@ -155,7 +160,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
     @Override
     protected void destroy() {
         try {
-            handlerPool.shutdown();
+            handlerExecutorService.shutdown();
         } catch (Exception e) {
             log.warn("simple http server handler pool shutdown exception", e);
         } finally {

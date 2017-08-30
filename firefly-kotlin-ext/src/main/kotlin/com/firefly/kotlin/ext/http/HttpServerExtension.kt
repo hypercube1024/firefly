@@ -343,7 +343,7 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     val server = SimpleHTTPServer(serverConfiguration)
     val routerManager = RouterManager.create(httpBodyConfiguration)
-    val coroutineDispatcher = server.handlerPool.asCoroutineDispatcher()
+    val coroutineDispatcher = server.handlerExecutorService.asCoroutineDispatcher()
 
     init {
         block.invoke(this)

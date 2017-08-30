@@ -8,6 +8,8 @@ import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
+import java.util.concurrent.ExecutorService;
+
 public class HTTP2Server extends AbstractLifeCycle {
 
     private final Server server;
@@ -59,6 +61,10 @@ public class HTTP2Server extends AbstractLifeCycle {
 
     public int getPort() {
         return port;
+    }
+
+    public ExecutorService getNetExecutorService() {
+        return server.getNetExecutorService();
     }
 
     @Override
