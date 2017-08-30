@@ -1,5 +1,6 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.Server;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -17,7 +18,7 @@ public class SimpleTcpServer extends AbstractLifeCycle {
     private Action1<TcpConnection> accept;
     private Action2<Integer, Throwable> failedAcceptance;
 
-    private AsynchronousTcpServer server;
+    private Server server;
     private TcpServerConfiguration config;
 
     public SimpleTcpServer() {
@@ -25,8 +26,12 @@ public class SimpleTcpServer extends AbstractLifeCycle {
     }
 
     public SimpleTcpServer(TcpServerConfiguration config) {
+        this(new AsynchronousTcpServer(config));
         this.config = config;
-        server = new AsynchronousTcpServer(config);
+    }
+
+    public SimpleTcpServer(Server server) {
+        this.server = server;
     }
 
     public SimpleTcpServer accept(Action1<TcpConnection> accept) {

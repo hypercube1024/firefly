@@ -1,5 +1,6 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.Client;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.net.tcp.ssl.SSLSession;
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleTcpClient extends AbstractLifeCycle {
 
-    private AsynchronousTcpClient client;
+    private Client client;
     private TcpConfiguration config;
 
     private Map<Integer, Promise<TcpConnection>> context = new ConcurrentHashMap<>();
@@ -23,8 +24,12 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     }
 
     public SimpleTcpClient(TcpConfiguration config) {
-        client = new AsynchronousTcpClient(config);
+        this(new AsynchronousTcpClient(config));
         this.config = config;
+    }
+
+    public SimpleTcpClient(Client client) {
+        this.client = client;
     }
 
     public CompletableFuture<TcpConnection> connect(String host, int port) {
