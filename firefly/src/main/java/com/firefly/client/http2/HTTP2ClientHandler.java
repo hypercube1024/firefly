@@ -44,7 +44,9 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
                             throw new IllegalStateException("SSL application protocol negotiates failure. The protocol " + protocol + " is not supported");
                     }
                 } else {
-                    throw new IllegalStateException("SSL application protocol negotiates exception, the protocol is null");
+//                    throw new IllegalStateException("SSL application protocol negotiates exception, the protocol is null");
+                    log.info("Session {} SSL application protocol is null", session.getSessionId());
+                    initializeHTTP1ClientConnection(session, context, sslSession);
                 }
             }));
         } else {

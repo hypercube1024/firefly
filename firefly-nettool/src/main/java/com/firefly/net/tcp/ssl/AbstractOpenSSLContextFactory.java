@@ -36,6 +36,7 @@ public abstract class AbstractOpenSSLContextFactory implements SSLContextFactory
     @Override
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode) {
         SSLEngine sslEngine = getSslContext(clientMode).newEngine(byteBufAllocator);
+        sslEngine.setUseClientMode(clientMode);
         ApplicationProtocolSelector selector = new OpenSSLApplicationProtocolSelector(sslEngine);
         return new Pair<>(sslEngine, selector);
     }
@@ -43,6 +44,7 @@ public abstract class AbstractOpenSSLContextFactory implements SSLContextFactory
     @Override
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode, String peerHost, int peerPort) {
         SSLEngine sslEngine = getSslContext(clientMode).newEngine(byteBufAllocator, peerHost, peerPort);
+        sslEngine.setUseClientMode(clientMode);
         ApplicationProtocolSelector selector = new OpenSSLApplicationProtocolSelector(sslEngine);
         return new Pair<>(sslEngine, selector);
     }
