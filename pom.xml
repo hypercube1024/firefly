@@ -366,7 +366,7 @@
         <log.level>INFO</log.level>
         <log.path>../logs</log.path>
 
-        <kotlin.version>1.1.4-2</kotlin.version>
+        <kotlin.version>1.1.4-3</kotlin.version>
         <kotlin.coroutine.version>0.18</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
