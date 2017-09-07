@@ -12,13 +12,19 @@ public class Slf4jImplDemo {
     public static void main(String[] args) {
         MDC.put("reqId", "hello req");
         MDC.put("current user", "fuck f");
-        // logger level is INFO
+
         logger.info(() -> "test lazy log: " + dumpLargeData());
         logger.info(() -> "what's");
+
+        // logger level is INFO
         logger.debug(() -> "debug dump data: " + dumpLargeData());
+        if (logger.isDebugEnabled()) {
+            logger.getLogger().debug("debug dump data: ", dumpLargeData());
+        }
     }
 
-    static String dumpLargeData() {
+    private static String dumpLargeData() {
+        System.out.println("dump......");
         ThreadUtils.sleep(2000);
         return "large data";
     }

@@ -87,4 +87,28 @@ public class LazyLogger {
     public static LazyLogger create(Class<?> clazz) {
         return new LazyLogger(LoggerFactory.getLogger(clazz));
     }
+
+    public boolean isTraceEnabled() {
+        return logger.isTraceEnabled();
+    }
+
+    public boolean isDebugEnabled() {
+        return logger.isDebugEnabled();
+    }
+
+    public boolean isInfoEnabled() {
+        return logger.isInfoEnabled();
+    }
+
+    public boolean isWarnEnabled() {
+        return logger.isWarnEnabled();
+    }
+
+    public boolean isErrorEnabled() {
+        return logger.isErrorEnabled();
+    }
+
+    public Logger getLogger() {
+        return logger;
+    }
 }
