@@ -1,18 +1,26 @@
 package org.firefly.slf4j;
 
-import org.slf4j.Logger;
+import com.firefly.utils.concurrent.ThreadUtils;
+import com.firefly.utils.log.slf4j.ext.LazyLogger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 public class Slf4jImplDemo {
 
-    private static final Logger logger = LoggerFactory.getLogger(Slf4jImplDemo.class);
+    private static final LazyLogger logger = LazyLogger.create();
 
     public static void main(String[] args) {
         MDC.put("reqId", "hello req");
         MDC.put("current user", "fuck f");
-        logger.info("test slf4j log");
-        logger.info("what's");
+        // logger level is INFO
+        logger.info(() -> "test lazy log: " + dumpLargeData());
+        logger.info(() -> "what's");
+        logger.debug(() -> "debug dump data: " + dumpLargeData());
+    }
+
+    static String dumpLargeData() {
+        ThreadUtils.sleep(2000);
+        return "large data";
     }
 
 }
