@@ -1,6 +1,7 @@
 package com.firefly.utils.log.file;
 
 import com.firefly.utils.log.*;
+import com.firefly.utils.time.Millisecond100Clock;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -22,6 +23,8 @@ public class FileLog implements Log, Closeable {
     private long maxFileSize;
     private Charset charset = LogConfigParser.DEFAULT_CHARSET;
     private LogFormatter logFormatter;
+    private long lastFlushTime;
+    private long maxLogFlushInterval;
 
     private LogOutputStream output = new LogOutputStream();
 
@@ -32,6 +35,7 @@ public class FileLog implements Log, Closeable {
 
         if (fileOutput) {
             output.write(logFormatter.format(logItem), logItem.getDate());
+            intervalFlush();
         }
     }
 
@@ -63,6 +67,7 @@ public class FileLog implements Log, Closeable {
             if (bufferedOutputStream != null) {
                 try {
                     bufferedOutputStream.flush();
+                    lastFlushTime = Millisecond100Clock.currentTimeMillis();
                 } catch (IOException e) {
                     System.err.println("flush log buffer exception, " + e.getMessage());
                 }
@@ -151,6 +156,13 @@ public class FileLog implements Log, Closeable {
         output.flush();
     }
 
+    public void intervalFlush() {
+        long interval = Millisecond100Clock.currentTimeMillis() - lastFlushTime;
+        if (interval > maxLogFlushInterval) {
+            flush();
+        }
+    }
+
     @Override
     public void close() {
         output.close();
@@ -219,6 +231,14 @@ public class FileLog implements Log, Closeable {
 
     public void setLogFormatter(LogFormatter logFormatter) {
         this.logFormatter = logFormatter;
+    }
+
+    public long getMaxLogFlushInterval() {
+        return maxLogFlushInterval;
+    }
+
+    public void setMaxLogFlushInterval(long maxLogFlushInterval) {
+        this.maxLogFlushInterval = maxLogFlushInterval;
     }
 
     private void add(String str, String level, Throwable throwable, Object... objs) {
@@ -379,6 +399,7 @@ public class FileLog implements Log, Closeable {
                 ", maxFileSize=" + maxFileSize +
                 ", charset=" + charset +
                 ", logFormatter=" + logFormatter.getClass().getName() +
+                ", maxLogFlushInterval=" + maxLogFlushInterval +
                 '}';
     }
 
