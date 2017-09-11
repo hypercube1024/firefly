@@ -2,7 +2,6 @@ package org.firefly.slf4j;
 
 import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.log.slf4j.ext.LazyLogger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 public class Slf4jImplDemo {
