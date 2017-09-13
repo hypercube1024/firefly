@@ -29,7 +29,7 @@ public class SimpleHTTPClientDemo5 {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) { // tls.ctf.network
                 long start = System.currentTimeMillis();
-                $.httpsClient().get("https://www.baidu.com/").submit()
+                $.httpsClient().get("https://www.baidu.com").submit()
                  .thenApply(res -> res.getStringBody("UTF-8"))
                  .thenAccept(System.out::println)
                  .thenAccept(res -> {
@@ -45,7 +45,7 @@ public class SimpleHTTPClientDemo5 {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();
-                $.httpsClient().get("https://login.taobao.com/")
+                $.httpsClient().get("https://login.taobao.com")
                  .submit()
                  .thenApply(res -> res.getStringBody("GBK"))
                  .thenAccept(v -> {

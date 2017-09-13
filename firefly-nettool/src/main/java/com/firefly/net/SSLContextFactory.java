@@ -1,11 +1,13 @@
 package com.firefly.net;
 
+import com.firefly.utils.lang.Pair;
+
 import javax.net.ssl.SSLEngine;
 
 public interface SSLContextFactory {
 
-    SSLEngine createSSLEngine(boolean clientMode);
+    Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode);
 
-    SSLEngine createSSLEngine(boolean clientMode, String peerHost, int peerPort);
+    Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode, String peerHost, int peerPort);
 
 }

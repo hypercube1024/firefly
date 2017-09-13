@@ -1,16 +1,13 @@
 package com.firefly.net.tcp.ssl;
 
-import com.firefly.net.BufferPool;
-import com.firefly.net.SSLContextFactory;
-import com.firefly.net.SSLEventHandler;
-import com.firefly.net.Session;
+import com.firefly.net.*;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.net.buffer.ThreadSafeIOBufferPool;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.io.BufferUtils;
-import io.netty.handler.ssl.SslHandler;
+import com.firefly.utils.lang.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,25 +56,40 @@ public class SSLSession implements Closeable {
      * checks with initialHSComplete.
      */
     private HandshakeStatus initialHSStatus;
-
     private boolean initialHSComplete;
 
     private final SSLEventHandler sslEventHandler;
+    private final ApplicationProtocolSelector applicationProtocolSelector;
 
-    private final SslHandler sslHandler;
-
-    public SSLSession(SSLContextFactory factory, boolean clientMode, Session session, SSLEventHandler sslEventHandler) throws IOException {
-        this(factory.createSSLEngine(clientMode), session, sslEventHandler);
-    }
-
-    private SSLSession(SSLEngine sslEngine, Session session, SSLEventHandler sslEventHandler) throws IOException {
+    public SSLSession(SSLContextFactory factory,
+                      boolean clientMode,
+                      Session session,
+                      SSLEventHandler sslEventHandler) throws IOException {
+        Pair<SSLEngine, ApplicationProtocolSelector> pair = factory.createSSLEngine(clientMode);
         this.session = session;
         this.sslEventHandler = sslEventHandler;
-        this.sslEngine = sslEngine;
+        this.sslEngine = pair.first;
+        this.applicationProtocolSelector = pair.second;
 
+        init();
+    }
+
+    public SSLSession(SSLContextFactory factory,
+                      boolean clientMode, String peerHost, int peerPort,
+                      Session session,
+                      SSLEventHandler sslEventHandler) throws IOException {
+        Pair<SSLEngine, ApplicationProtocolSelector> pair = factory.createSSLEngine(clientMode, peerHost, peerPort);
+        this.session = session;
+        this.sslEventHandler = sslEventHandler;
+        this.sslEngine = pair.first;
+        this.applicationProtocolSelector = pair.second;
+
+        init();
+    }
+
+    protected void init() throws IOException {
         outAppBuffer = ByteBuffer.allocate(requestBufferSize);
         initialHSComplete = false;
-        sslHandler = new SslHandler(sslEngine);
 
         // start tls
         this.sslEngine.beginHandshake();
@@ -308,7 +320,7 @@ public class SSLSession implements Closeable {
     }
 
     public String applicationProtocol() {
-        String protocol = sslHandler.applicationProtocol();
+        String protocol = applicationProtocolSelector.applicationProtocol();
         log.debug("selected protocol -> {}", protocol);
         return protocol;
     }
