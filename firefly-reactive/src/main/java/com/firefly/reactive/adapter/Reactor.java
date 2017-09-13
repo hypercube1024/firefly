@@ -8,6 +8,7 @@ import com.firefly.reactive.adapter.db.ReactiveSQLConnection;
 import com.firefly.reactive.adapter.db.ReactiveSQLConnectionAdapter;
 import com.firefly.reactive.adapter.http.ReactiveHTTPClient;
 import com.firefly.reactive.adapter.http.ReactiveHTTPClientSingleton;
+import com.firefly.reactive.adapter.http.ReactiveHTTPsClientSingleton;
 
 /**
  * Hello world!
@@ -15,6 +16,7 @@ import com.firefly.reactive.adapter.http.ReactiveHTTPClientSingleton;
 public interface Reactor {
 
     interface db {
+        
         static ReactiveSQLClient fromSQLClient(SQLClient sqlClient) {
             return new ReactiveSQLClientAdapter(sqlClient);
         }
@@ -30,5 +32,8 @@ public interface Reactor {
             return ReactiveHTTPClientSingleton.getInstance().httpClient();
         }
 
+        static ReactiveHTTPClient httpsClient() {
+            return ReactiveHTTPsClientSingleton.getInstance().httpsClient();
+        }
     }
 }

@@ -60,4 +60,12 @@ public class TestReactiveHTTPClient {
         s.stop();
         c.stop();
     }
+
+    public static void main(String[] args) {
+        ReactiveHTTPClient c = Reactor.http.httpsClient();
+        c.get("https://www.taobao.com")
+         .toMono()
+         .map(SimpleResponse::getStringBody)
+         .subscribe(System.out::println);
+    }
 }
