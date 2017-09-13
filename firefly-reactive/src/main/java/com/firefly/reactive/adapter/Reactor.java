@@ -16,7 +16,7 @@ import com.firefly.reactive.adapter.http.ReactiveHTTPsClientSingleton;
 public interface Reactor {
 
     interface db {
-        
+
         static ReactiveSQLClient fromSQLClient(SQLClient sqlClient) {
             return new ReactiveSQLClientAdapter(sqlClient);
         }
