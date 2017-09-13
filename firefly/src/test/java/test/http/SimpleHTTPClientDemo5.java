@@ -21,7 +21,7 @@ public class SimpleHTTPClientDemo5 {
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
-        String body = $.httpsClient().get("https://www.taobao.com").submit().get().getStringBody();
+        String body = $.httpsClient().get("https://http2.github.io").submit().get().getStringBody();
         System.out.println(body);
     }
 
