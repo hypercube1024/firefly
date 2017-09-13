@@ -7,6 +7,8 @@ import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 
+import java.util.Arrays;
+
 /**
  * @author Pengtao Qiu
  */
@@ -91,8 +93,18 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
+    public HTTP2ServerBuilder methods(String[] methods) {
+        Arrays.stream(methods).forEach(this::method);
+        return this;
+    }
+
     public HTTP2ServerBuilder method(HttpMethod httpMethod) {
         currentRouter.method(httpMethod);
+        return this;
+    }
+
+    public HTTP2ServerBuilder methods(HttpMethod[] methods) {
+        Arrays.stream(methods).forEach(this::method);
         return this;
     }
 
