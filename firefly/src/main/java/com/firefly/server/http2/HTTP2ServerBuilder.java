@@ -5,14 +5,18 @@ import com.firefly.net.SSLContextFactory;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
+import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
  */
 public class HTTP2ServerBuilder {
+
+    private static ThreadLocal<RoutingContext> currentCtx = new ThreadLocal<>();
 
     private SimpleHTTPServer server;
     private RouterManager routerManager;
@@ -139,15 +143,33 @@ public class HTTP2ServerBuilder {
     }
 
     public HTTP2ServerBuilder handler(Handler handler) {
-        currentRouter.handler(handler);
+        currentRouter.handler(ctx -> {
+            try {
+                currentCtx.set(ctx);
+                handler.handle(ctx);
+            } finally {
+                currentCtx.remove();
+            }
+        });
         return this;
     }
 
     public HTTP2ServerBuilder asyncHandler(Handler handler) {
         currentRouter.handler(ctx -> {
             ctx.getResponse().setAsynchronous(true);
-            server.getHandlerExecutorService().execute(() -> handler.handle(ctx));
+            server.getHandlerExecutorService().execute(() -> {
+                try {
+                    currentCtx.set(ctx);
+                    handler.handle(ctx);
+                } finally {
+                    currentCtx.remove();
+                }
+            });
         });
         return this;
+    }
+
+    public static Optional<RoutingContext> getCurrentCtx() {
+        return Optional.ofNullable(currentCtx.get());
     }
 }

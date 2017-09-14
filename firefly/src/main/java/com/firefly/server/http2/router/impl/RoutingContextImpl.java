@@ -38,7 +38,7 @@ public class RoutingContextImpl implements RoutingContext {
     private volatile boolean asynchronousRead;
     private volatile ConcurrentLinkedDeque<Promise<?>> handlerPromiseQueue;
 
-    public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
+    RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
         this.routers = routers;
     }
