@@ -72,4 +72,6 @@ public interface ReactiveSQLConnection {
 
     SQLConnection getSQLConnection();
 
+    <T> Mono<T> execSQL(Func1<ReactiveSQLConnection, Mono<T>> func1);
+
 }

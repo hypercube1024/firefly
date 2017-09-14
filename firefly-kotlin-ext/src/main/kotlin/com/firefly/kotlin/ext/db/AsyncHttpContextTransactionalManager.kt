@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture
 class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<RoutingContext>,
                                            val sqlClient: SQLClient) : AsyncTransactionalManager {
 
-    val transactionKey = "_currentTransaction"
+    val transactionKey = "_currentKotlinTransaction"
 
     suspend override fun getConnection(): SQLConnection {
         return if (requestCtx.get() == null) {
