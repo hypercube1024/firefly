@@ -9,8 +9,11 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.Phaser;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
@@ -19,6 +22,8 @@ import static org.hamcrest.Matchers.is;
  * @author Pengtao Qiu
  */
 public class TestReactiveSQLClient {
+
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private ReactiveSQLClient sqlClient;
     private int size = 10;
@@ -81,18 +86,17 @@ public class TestReactiveSQLClient {
     @Test
     public void testRollback() {
         Long id = 1L;
-        exec(c -> {
-            User user = new User();
-            user.setId(id);
-            user.setName("apple");
-            return c.updateObject(user)
-                    .doOnSuccess(row -> Assert.assertThat(row, is(1)))
-                    .then(v -> c.queryById(id, User.class))
-                    .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("apple")))
-                    .then(v -> c.rollback());
-        }).then(ret -> exec(c -> c.queryById(id, User.class)))
-          .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))
-          .block();
+        User user = new User();
+        user.setId(id);
+        user.setName("apple");
+        exec(c -> c.updateObject(user)
+                   .doOnSuccess(row -> Assert.assertThat(row, is(1)))
+                   .then(v -> c.queryById(id, User.class))
+                   .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("apple")))
+                   .then(v -> c.rollback()))
+                .then(ret -> exec(c -> c.queryById(id, User.class)))
+                .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("test transaction 0")))
+                .block();
     }
 
     @Test
@@ -120,6 +124,34 @@ public class TestReactiveSQLClient {
                     .then(v -> c.queryById(2L, User.class))
                     .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 1")));
         }).block();
+    }
+
+    @Test
+    public void testExecSQL() {
+        Phaser phaser = new Phaser(2);
+        sqlClient.getConnection().then(c -> c.execSQL(conn -> {
+            User user0 = new User();
+            user0.setId(1L);
+            user0.setName("hello");
+            return c.updateObject(user0)
+                    .doOnSuccess(row0 -> Assert.assertThat(row0, is(1)))
+                    .then(v1 -> c.queryById(1L, User.class))
+                    .doOnSuccess(user -> Assert.assertThat(user.getName(), is("hello")))
+                    .doOnNext(v1 -> {
+                        throw new RuntimeException("test exception rollback");
+                    })
+                    .doOnError(e -> {
+                        log.error("test rollback 1, {}", e.getMessage());
+                        Assert.assertThat(e.getMessage(), is("test exception rollback"));
+                    });
+        })).subscribe(
+                data -> phaser.arrive(),
+                ex -> sqlClient
+                        .getConnection()
+                        .then(c -> c.execSQL(conn -> c.queryById(1L, User.class)
+                                                      .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
+                        .subscribe(user -> phaser.arrive()));
+        phaser.arriveAndAwaitAdvance();
     }
 
     @Test

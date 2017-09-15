@@ -2,12 +2,16 @@ package com.firefly.kotlin.ext.db
 
 import com.firefly.db.SQLConnection
 import com.firefly.db.SQLResultSet
+import com.firefly.kotlin.ext.log.Log
 import com.firefly.utils.function.Func1
 import kotlinx.coroutines.experimental.future.await
 
 /**
  * @author Pengtao Qiu
  */
+
+val sysLogger = Log.getLogger("firefly-system")
+
 suspend fun <T> SQLConnection.asyncQueryForSingleColumn(sql: String, vararg params: Any): T? {
     return this.queryForSingleColumn<T>(sql, *params).await()
 }
@@ -69,6 +73,7 @@ suspend fun <T> SQLConnection.execSQL(handler: suspend (conn: SQLConnection) -> 
         }
         ret
     } catch (e: Exception) {
+        sysLogger.error("execute SQL exception", e)
         if (newTransaction) {
             rollbackAndClose().await()
         } else {

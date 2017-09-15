@@ -5,6 +5,8 @@ import com.firefly.db.SQLResultSet;
 import com.firefly.db.TransactionIsolation;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Func1;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -14,6 +16,8 @@ import java.util.Map;
  * @author Pengtao Qiu
  */
 public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
+
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final SQLConnection sqlConnection;
 
@@ -196,11 +200,26 @@ public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
     @Override
     public <T> Mono<T> execSQL(Func1<ReactiveSQLConnection, Mono<T>> func1) {
         return beginTransaction().then(newTransaction -> {
-            Mono<T> ret = func1.call(this);
-            if (newTransaction) {
-                return commitAndClose().then(ret).doOnError(e -> rollbackAndClose());
-            } else {
-                return ret.doOnError(e -> rollback());
+            try {
+                Mono<T> ret = func1.call(this);
+                return Mono.create(sink -> {
+                    if (newTransaction) {
+                        ret.subscribe(
+                                data -> commitAndClose().subscribe(r -> sink.success(data)),
+                                ex -> rollbackAndClose().subscribe(r -> sink.error(ex)));
+                    } else {
+                        ret.subscribe(sink::success, ex -> rollbackAndClose().subscribe(r -> sink.error(ex)));
+                    }
+                });
+            } catch (Exception e) {
+                log.error("execute SQL exception", e);
+                return Mono.<T>create(sink -> sink.error(e)).doOnError(ex -> {
+                    if (newTransaction) {
+                        rollbackAndClose();
+                    } else {
+                        rollback();
+                    }
+                });
             }
         });
     }
