@@ -25,6 +25,9 @@ public class Product {
     @Column("price")
     private Double price;
 
+    @Column("status")
+    private Integer status;
+
     @Column("description")
     private String description;
 
@@ -56,6 +59,14 @@ public class Product {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
     public String getDescription() {

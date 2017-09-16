@@ -15,6 +15,7 @@ CREATE TABLE `coffee_store`.`product` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY ,
   `type` INT NOT NULL ,
   `name` VARCHAR(64) NOT NULL UNIQUE ,
+  `status` INT NOT NULL DEFAULT 0 ,
   `price` DECIMAL NOT NULL ,
   `description` VARCHAR(200) NOT NULL ,
   `create_time` DATETIME NOT NULL ,

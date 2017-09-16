@@ -1,11 +1,15 @@
 package com.firefly.example.reactive.coffee.store;
 
 import com.firefly.$;
+import com.firefly.example.reactive.coffee.store.dao.ProductDAO;
 import com.firefly.example.reactive.coffee.store.model.Product;
 import com.firefly.example.reactive.coffee.store.utils.DBUtils;
-import com.firefly.reactive.adapter.db.ReactiveSQLClient;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import reactor.test.StepVerifier;
+
+import static org.hamcrest.Matchers.is;
 
 /**
  * @author Pengtao Qiu
@@ -21,9 +25,10 @@ public class TestReactiveCoffeeStore {
 
     @Test
     public void test() {
-        ReactiveSQLClient sqlClient = $.getBean(ReactiveSQLClient.class);
-        sqlClient.newTransaction(c -> c.queryById(1L, Product.class))
-                 .doOnSuccess(System.out::println)
-                 .block();
+        ProductDAO productDAO = $.getBean(ProductDAO.class);
+        StepVerifier.create(productDAO.get(1L).doOnSuccess(System.out::println).map(Product::getId))
+                    .expectNext(1L)
+                    .expectComplete()
+                    .verify();
     }
 }
