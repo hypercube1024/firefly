@@ -199,28 +199,23 @@ public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
 
     @Override
     public <T> Mono<T> execSQL(Func1<ReactiveSQLConnection, Mono<T>> func1) {
-        return beginTransaction().then(newTransaction -> {
+        return Mono.create(sink -> beginTransaction().subscribe(isNew -> {
             try {
                 Mono<T> ret = func1.call(this);
-                return Mono.create(sink -> {
-                    if (newTransaction) {
-                        ret.subscribe(
-                                data -> commitAndClose().subscribe(r -> sink.success(data)),
-                                ex -> rollbackAndClose().subscribe(r -> sink.error(ex)));
-                    } else {
-                        ret.subscribe(sink::success, ex -> rollbackAndClose().subscribe(r -> sink.error(ex)));
-                    }
-                });
-            } catch (Exception e) {
-                log.error("execute SQL exception", e);
-                return Mono.<T>create(sink -> sink.error(e)).doOnError(ex -> {
-                    if (newTransaction) {
-                        rollbackAndClose();
-                    } else {
-                        rollback();
-                    }
-                });
+                if (isNew) {
+                    ret.subscribe(
+                            data -> commitAndEndTransaction().subscribe(r -> sink.success(data), sink::error),
+                            ex -> rollbackAndEndTransaction().subscribe(r -> sink.error(ex), sink::error));
+                } else {
+                    ret.subscribe(sink::success, ex -> rollback().subscribe(r -> sink.error(ex), sink::error));
+                }
+            } catch (Exception ex) {
+                if (isNew) {
+                    rollbackAndEndTransaction().subscribe(r -> sink.error(ex), sink::error);
+                } else {
+                    rollback().subscribe(r -> sink.error(ex), sink::error);
+                }
             }
-        });
+        }, ex -> close().subscribe(r -> sink.error(ex), sink::error)));
     }
 }
