@@ -1,4 +1,4 @@
-package com.firefly.example.reactive.coffee.store.dao;
+package com.firefly.example.reactive.coffee.store.service;
 
 import com.firefly.example.reactive.coffee.store.model.Product;
 import com.firefly.example.reactive.coffee.store.vo.Page;
@@ -8,13 +8,8 @@ import reactor.core.publisher.Mono;
 /**
  * @author Pengtao Qiu
  */
-public interface ProductDAO {
+public interface ProductService {
 
     Mono<Page<Product>> list(ProductQuery query);
-
-    Mono<Product> get(Long id);
-
-    Mono<Long> insert(Product product);
-
-    Mono<Integer> update(Product product);
+    
 }

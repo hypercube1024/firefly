@@ -4,8 +4,11 @@ import com.firefly.$;
 import com.firefly.db.annotation.Column;
 import com.firefly.db.annotation.Id;
 import com.firefly.db.annotation.Table;
+import com.firefly.example.reactive.coffee.store.vo.ProductStatus;
+import com.firefly.example.reactive.coffee.store.vo.ProductType;
 
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
@@ -99,6 +102,20 @@ public class Product {
 
     public void setType(Integer type) {
         this.type = type;
+    }
+
+    public String getStatusDesc() {
+        return Optional.ofNullable(status)
+                       .flatMap(ProductStatus::from)
+                       .map(ProductStatus::getDescription)
+                       .orElse("--");
+    }
+
+    public String getTypeDesc() {
+        return Optional.ofNullable(type)
+                       .flatMap(ProductType::from)
+                       .map(ProductType::getDescription)
+                       .orElse("--");
     }
 
     @Override

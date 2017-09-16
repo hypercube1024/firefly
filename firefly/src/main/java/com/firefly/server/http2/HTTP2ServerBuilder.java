@@ -161,6 +161,8 @@ public class HTTP2ServerBuilder {
                 try {
                     currentCtx.set(ctx);
                     handler.handle(ctx);
+                } catch (Exception e) {
+                    ctx.fail(e);
                 } finally {
                     currentCtx.remove();
                 }

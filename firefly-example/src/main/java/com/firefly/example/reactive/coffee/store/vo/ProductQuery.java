@@ -11,7 +11,6 @@ public class ProductQuery {
     private int pageSize;
 
     public ProductQuery() {
-
     }
 
     public ProductQuery(Integer productStatus, Integer productType, int pageNumber, int pageSize) {

@@ -5,6 +5,7 @@ import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
+import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.GenericTypeReference;
@@ -18,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -64,6 +66,12 @@ public interface RoutingContext extends Closeable {
     <T> RoutingContext complete(Promise<T> promise);
 
     <T> boolean next(Promise<T> promise);
+
+    default <T> CompletableFuture<T> nextFuture() {
+        Promise.Completable<T> completable = new Promise.Completable<>();
+        next(completable);
+        return completable;
+    }
 
     <T> void succeed(T t);
 
@@ -139,6 +147,11 @@ public interface RoutingContext extends Closeable {
 
     default RoutingContext write(String value) {
         getResponse().write(value);
+        return this;
+    }
+
+    default RoutingContext writeJson(Object object) {
+        put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).write(Json.toJson(object));
         return this;
     }
 

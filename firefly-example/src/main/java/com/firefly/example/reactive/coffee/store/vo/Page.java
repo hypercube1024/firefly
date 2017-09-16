@@ -1,5 +1,7 @@
 package com.firefly.example.reactive.coffee.store.vo;
 
+import com.firefly.$;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,16 +21,16 @@ public class Page<T> {
 
     public Page(List<T> record, int number, int size) {
         this.record = record;
-        this.size = size;
-        this.number = number;
+        this.size = Math.max(size, 0);
+        this.number = Math.max(number, 1);
         pageWithoutCount();
     }
 
     public Page(List<T> record, int total, int number, int size) {
         this.record = record;
         this.total = total;
-        this.size = size;
-        this.number = number;
+        this.size = Math.max(size, 0);
+        this.number = Math.max(number, 1);
         page();
     }
 
@@ -109,7 +111,7 @@ public class Page<T> {
     }
 
     public void setNumber(int number) {
-        this.number = number;
+        this.number = Math.max(number, 1);
     }
 
     public int getSize() {
@@ -117,7 +119,7 @@ public class Page<T> {
     }
 
     public void setSize(int size) {
-        this.size = size;
+        this.size = Math.max(size, 0);
     }
 
     public boolean isShowPaging() {
@@ -142,5 +144,10 @@ public class Page<T> {
 
     public void setLast(boolean last) {
         this.last = last;
+    }
+
+    @Override
+    public String toString() {
+        return $.json.toJson(this);
     }
 }
