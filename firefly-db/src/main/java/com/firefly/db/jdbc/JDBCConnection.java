@@ -1,9 +1,6 @@
 package com.firefly.db.jdbc;
 
-import com.firefly.db.DBException;
-import com.firefly.db.SQLConnection;
-import com.firefly.db.SQLResultSet;
-import com.firefly.db.TransactionIsolation;
+import com.firefly.db.*;
 import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.concurrent.Promise.Completable;
 import com.firefly.utils.function.Func1;
@@ -15,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -78,7 +76,8 @@ public class JDBCConnection implements SQLConnection {
     public <T> CompletableFuture<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
-                return helper.getRunner().query(connection, sql, rs -> handler.call(new JDBCResultSet(rs)), params);
+                return Optional.ofNullable(helper.getRunner().query(connection, sql, rs -> handler.call(new JDBCResultSet(rs)), params))
+                               .orElseThrow(RecordNotFound::new);
             } catch (SQLException e) {
                 throw new DBException(e);
             }

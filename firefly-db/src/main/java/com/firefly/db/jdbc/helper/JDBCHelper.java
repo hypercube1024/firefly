@@ -2,10 +2,7 @@ package com.firefly.db.jdbc.helper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
-import com.firefly.db.DBException;
-import com.firefly.db.DefaultMetricReporterFactory;
-import com.firefly.db.LatencyTopTracker;
-import com.firefly.db.MetricReporterFactory;
+import com.firefly.db.*;
 import com.firefly.db.jdbc.helper.DefaultBeanProcessor.Mapper;
 import com.firefly.db.jdbc.helper.DefaultBeanProcessor.SQLMapper;
 import com.firefly.utils.Assert;
@@ -28,9 +25,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -172,7 +167,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> T queryForSingleColumn(String sql, Object... params) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.queryForSingleColumn(connection, sql, params);
+            T ret = this.queryForSingleColumn(connection, sql, params);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -181,7 +178,7 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> T queryForSingleColumn(Connection connection, String sql, Object... params) {
         try {
-            return runner.query(connection, sql, new ScalarHandler<T>(), params);
+            return Optional.<T>ofNullable(runner.query(connection, sql, new ScalarHandler<>(), params)).orElseThrow(RecordNotFound::new);
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -194,7 +191,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> T queryForObject(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.queryForObject(connection, sql, t, beanProcessor, params);
+            T ret = this.queryForObject(connection, sql, t, beanProcessor, params);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -203,7 +202,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> T queryById(Class<T> t, Object id) {
         try (Connection connection = dataSource.getConnection()) {
-            return queryById(connection, t, id);
+            T ret = queryById(connection, t, id);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("query exception", e);
             throw new DBException(e);
@@ -223,7 +224,7 @@ public class JDBCHelper extends AbstractLifeCycle {
     public <T> T queryForObject(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor,
                                 Object... params) {
         try {
-            return runner.query(connection, sql, new BeanHandler<>(t, new BasicRowProcessor(beanProcessor)), params);
+            return Optional.ofNullable(runner.query(connection, sql, new BeanHandler<>(t, new BasicRowProcessor(beanProcessor)), params)).orElseThrow(RecordNotFound::new);
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -237,9 +238,10 @@ public class JDBCHelper extends AbstractLifeCycle {
     public <K, V> Map<K, V> queryForBeanMap(String sql, Class<V> t, BeanProcessor beanProcessor, Object... params) {
         String columnName = defaultBeanProcessor.getIdColumnName(t);
         Assert.notNull(columnName);
-
         try (Connection connection = dataSource.getConnection()) {
-            return this.queryForBeanMap(connection, sql, t, columnName, beanProcessor, params);
+            Map<K, V> ret = this.queryForBeanMap(connection, sql, t, columnName, beanProcessor, params);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -249,15 +251,16 @@ public class JDBCHelper extends AbstractLifeCycle {
     public <K, V> Map<K, V> queryForBeanMap(Connection connection, String sql, Class<V> t, Object... params) {
         String columnName = defaultBeanProcessor.getIdColumnName(t);
         Assert.notNull(columnName);
-
         return this.queryForBeanMap(connection, sql, t, columnName, defaultBeanProcessor, params);
     }
 
     public <K, V> Map<K, V> queryForBeanMap(Connection connection, String sql, Class<V> t, String columnName,
                                             BeanProcessor beanProcessor, Object... params) {
         try {
-            return runner.query(connection, sql,
-                    new DefaultBeanMapHandler<K, V>(t, new BasicRowProcessor(beanProcessor), 0, columnName), params);
+            return Optional.ofNullable(runner.query(
+                    connection, sql,
+                    new DefaultBeanMapHandler<K, V>(t, new BasicRowProcessor(beanProcessor), 0, columnName),
+                    params)).orElse(Collections.emptyMap());
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -270,7 +273,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> List<T> queryForList(String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.queryForList(connection, sql, t, beanProcessor, params);
+            List<T> ret = this.queryForList(connection, sql, t, beanProcessor, params);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -283,8 +288,8 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> List<T> queryForList(Connection connection, String sql, Class<T> t, BeanProcessor beanProcessor, Object... params) {
         try {
-            return runner.query(connection, sql, new BeanListHandler<>(t, new BasicRowProcessor(beanProcessor)),
-                    params);
+            return Optional.ofNullable(runner.query(connection, sql, new BeanListHandler<>(t, new BasicRowProcessor(beanProcessor)), params))
+                           .orElse(Collections.emptyList());
         } catch (SQLException e) {
             log.error("query exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -293,7 +298,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public int update(String sql, Object... params) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.update(connection, sql, params);
+            int ret = this.update(connection, sql, params);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("update exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -302,7 +309,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public int updateObject(Object object) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.updateObject(connection, object);
+            int ret = this.updateObject(connection, object);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("update exception", e);
             throw new DBException(e);
@@ -337,7 +346,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> T insert(String sql, Object... params) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.insert(connection, sql, params);
+            T ret = this.insert(connection, sql, params);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("insert exception, sql: {}", e, sql);
             throw new DBException(e);
@@ -346,7 +357,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public <T> T insertObject(Object object) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.insertObject(connection, object);
+            T ret = this.insertObject(connection, object);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("insert exception", e);
             throw new DBException(e);
@@ -416,7 +429,9 @@ public class JDBCHelper extends AbstractLifeCycle {
 
     public int deleteById(Class<?> t, Object id) {
         try (Connection connection = dataSource.getConnection()) {
-            return this.deleteById(connection, t, id);
+            int ret = this.deleteById(connection, t, id);
+            connection.commit();
+            return ret;
         } catch (SQLException e) {
             log.error("delete exception", e);
             throw new DBException(e);

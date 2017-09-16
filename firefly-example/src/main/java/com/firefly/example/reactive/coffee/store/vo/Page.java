@@ -9,18 +9,41 @@ import java.util.List;
 public class Page<T> {
 
     private List<T> record = new ArrayList<>();
-    private int total, pageCount, lastNumber, nextNumber, number, size;
+    private int number, size, total;
+
+    private int pageCount, lastNumber, nextNumber;
     private boolean showPaging, next, last;
 
     public Page() {
     }
 
-    public Page(List<T> record, int size, int number) {
-        // paging without total row number
+    public Page(List<T> record, int number, int size) {
         this.record = record;
         this.size = size;
         this.number = number;
+        pageWithoutCount();
+    }
 
+    public Page(List<T> record, int total, int number, int size) {
+        this.record = record;
+        this.total = total;
+        this.size = size;
+        this.number = number;
+        page();
+    }
+
+    public static String getPageSQLWithoutCount(int number, int size) {
+        long offset = Math.max(number - 1, 0) * size;
+        int pageSize = size + 1;
+        return " limit " + offset + ", " + pageSize;
+    }
+
+    public static String getPageSQL(int number, int size) {
+        long offset = Math.max(number - 1, 0) * size;
+        return " limit " + offset + ", " + size;
+    }
+
+    public void pageWithoutCount() {
         last = number > 1;
         next = record.size() > size;
         showPaging = last || next;
@@ -32,12 +55,7 @@ public class Page<T> {
         }
     }
 
-    public Page(List<T> record, int total, int size, int number) {
-        this.record = record;
-        this.total = total;
-        this.size = size;
-        this.number = number;
-
+    public void page() {
         pageCount = (total + size - 1) / size;
         last = number > 1;
         next = number < pageCount;

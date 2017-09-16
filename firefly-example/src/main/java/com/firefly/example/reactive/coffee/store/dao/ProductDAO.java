@@ -2,7 +2,7 @@ package com.firefly.example.reactive.coffee.store.dao;
 
 import com.firefly.example.reactive.coffee.store.model.Product;
 import com.firefly.example.reactive.coffee.store.vo.Page;
-import com.firefly.example.reactive.coffee.store.vo.ProductStatus;
+import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
 import reactor.core.publisher.Mono;
 
 /**
@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
  */
 public interface ProductDAO {
 
-    Mono<Page<Product>> listByStatus(ProductStatus status, int pageNumber, int pageSize);
+    Mono<Page<Product>> listByStatus(ProductQuery query);
 
     Mono<Product> get(Long id);
 

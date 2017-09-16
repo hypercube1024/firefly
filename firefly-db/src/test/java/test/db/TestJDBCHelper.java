@@ -1,5 +1,6 @@
 package test.db;
 
+import com.firefly.db.RecordNotFound;
 import com.firefly.db.jdbc.helper.DefaultBeanProcessor;
 import com.firefly.db.jdbc.helper.DefaultBeanProcessor.Mapper;
 import com.firefly.db.jdbc.helper.DefaultBeanProcessor.SQLMapper;
@@ -100,8 +101,12 @@ public class TestJDBCHelper {
 
         int n = jdbcHelper.deleteById(User.class, id);
         Assert.assertThat(n, is(1));
-        User user4 = jdbcHelper.queryById(User.class, id);
-        Assert.assertThat(user4, nullValue());
+
+        try {
+            jdbcHelper.queryById(User.class, id);
+        } catch (RecordNotFound ex) {
+            Assert.assertTrue(true);
+        }
 
         Long id2 = jdbcHelper.insert("insert into `test`.`user`(pt_name, pt_password, other_info) values(?,?,?)", "ptTest", "ptTestPwd", "testOtherInfo");
         User otherUser = jdbcHelper.queryForObject("select * from `test`.`user` where id = ?", User.class, id2);
