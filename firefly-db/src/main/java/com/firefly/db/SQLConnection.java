@@ -64,5 +64,4 @@ public interface SQLConnection {
     CompletableFuture<Void> rollbackAndEndTransaction();
 
     CompletableFuture<Void> commitAndEndTransaction();
-
 }

@@ -144,13 +144,11 @@ public class TestReactiveSQLClient {
                         log.error("test rollback 1, {}", e.getMessage());
                         Assert.assertThat(e.getMessage(), is("test exception rollback"));
                     });
-        })).subscribe(
-                data -> phaser.arrive(),
-                ex -> sqlClient
-                        .getConnection()
-                        .then(c -> c.execSQL(conn -> c.queryById(1L, User.class)
-                                                      .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
-                        .subscribe(user -> phaser.arrive()));
+        })).subscribe(data -> phaser.arrive(), ex -> sqlClient
+                .getConnection()
+                .then(c -> c.execSQL(conn -> c.queryById(1L, User.class)
+                                              .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
+                .subscribe(user -> phaser.arrive()));
         phaser.arriveAndAwaitAdvance();
     }
 
