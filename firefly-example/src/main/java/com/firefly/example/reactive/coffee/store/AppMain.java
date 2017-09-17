@@ -1,70 +1,47 @@
 package com.firefly.example.reactive.coffee.store;
 
 import com.firefly.$;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.MimeTypes;
-import com.firefly.example.reactive.coffee.store.router.GlobalHandler;
-import com.firefly.example.reactive.coffee.store.router.TransactionalHandler;
-import com.firefly.example.reactive.coffee.store.service.ProductService;
+import com.firefly.annotation.Inject;
+import com.firefly.example.reactive.coffee.store.router.RouterInstaller;
 import com.firefly.example.reactive.coffee.store.utils.DBUtils;
-import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
-import com.firefly.example.reactive.coffee.store.vo.ProductStatus;
 import com.firefly.server.http2.HTTP2ServerBuilder;
-
-import java.util.Collections;
-import java.util.Optional;
+import com.firefly.utils.log.slf4j.ext.LazyLogger;
 
 /**
  * @author Pengtao Qiu
  */
 public class AppMain {
 
+    private static final LazyLogger logger = LazyLogger.create();
 
-    private static final String root = "template/coffeeStore";
+    @Inject
+    private HTTP2ServerBuilder server;
 
-    public static final HTTP2ServerBuilder s = $.httpServer();
+    @Inject
+    private ProjectConfig config;
 
-    public static void initData() {
-        DBUtils dbUtils = $.getBean(DBUtils.class);
+    @Inject
+    private DBUtils dbUtils;
+
+    public void initData() {
         dbUtils.createTables();
         dbUtils.initializeData();
     }
 
-    public static void setupRouters() {
-        // global handler
-        s.router().path("*").handler($.getBean(GlobalHandler.class));
-
-        // HTTP transaction manager
-        TransactionalHandler transactionalHandler = $.getBean(TransactionalHandler.class);
-        s.router().methods(transactionalHandler.getMethods()).handler(transactionalHandler);
-
-        // index page
-        s.router().get("/").asyncHandler(ctx -> {
-            ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_HTML.asString())
-               .renderTemplate(root + "/index.mustache", Collections.emptyList());
-            ctx.succeed(true);
-        });
-
-        ProductService productService = $.getBean(ProductService.class);
-        // list products
-        s.router().get("/products").asyncHandler(ctx -> {
-            Integer type = Optional.ofNullable(ctx.getParameter("type"))
-                                   .map(Integer::parseInt)
-                                   .orElse(0);
-            Integer pageNumber = Optional.ofNullable(ctx.getParameter("pageNumber"))
-                                         .map(Integer::parseInt)
-                                         .orElse(1);
-            Integer pageSize = Optional.ofNullable(ctx.getParameter("pageSize"))
-                                       .map(Integer::parseInt)
-                                       .orElse(5);
-            ProductQuery query = new ProductQuery(ProductStatus.ENABLE.getValue(), type, pageNumber, pageSize);
-            productService.list(query).subscribe(productPage -> ctx.writeJson(productPage).succeed(true), ctx::fail);
+    public void installRouters() {
+        $.getBeans(RouterInstaller.class).stream().sorted().forEach(installer -> {
+            logger.info(() -> "install routers [" + installer.getClass().getName() + "]");
+            installer.install();
         });
     }
 
-    public static void main(String[] args) {
+    public void start(String[] args) {
         initData();
-        setupRouters();
-        s.listen("localhost", 8080);
+        installRouters();
+        server.listen(config.getHost(), config.getPort());
+    }
+
+    public static void main(String[] args) {
+        $.getBean(AppMain.class).start(args);
     }
 }

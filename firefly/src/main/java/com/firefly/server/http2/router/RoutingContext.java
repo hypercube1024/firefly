@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,6 +51,10 @@ public interface RoutingContext extends Closeable {
     SimpleRequest getRequest();
 
     String getRouterParameter(String name);
+
+    default Optional<String> getRouterParamOpt(String name) {
+        return Optional.ofNullable(getRouterParameter(name));
+    }
 
     RoutingContext content(Action1<ByteBuffer> content);
 
@@ -186,6 +191,10 @@ public interface RoutingContext extends Closeable {
 
     // HTTP body API
     String getParameter(String name);
+
+    default Optional<String> getParamOpt(String name) {
+        return Optional.ofNullable(getParameter(name));
+    }
 
     List<String> getParameterValues(String name);
 

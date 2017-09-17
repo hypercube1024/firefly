@@ -1,4 +1,4 @@
-package com.firefly.example.reactive.coffee.store.router;
+package com.firefly.example.reactive.coffee.store.router.impl.sys;
 
 import com.firefly.annotation.Component;
 import com.firefly.codec.http2.model.HttpStatus;

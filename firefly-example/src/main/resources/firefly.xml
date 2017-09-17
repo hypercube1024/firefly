@@ -3,15 +3,15 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.utils" />
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.dao" />
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.service" />
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.router" />
+    <component-scan base-package="com.firefly.example.reactive.coffee.store.utils"/>
+    <component-scan base-package="com.firefly.example.reactive.coffee.store.dao"/>
+    <component-scan base-package="com.firefly.example.reactive.coffee.store.service"/>
+    <component-scan base-package="com.firefly.example.reactive.coffee.store.router"/>
 
     <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
-        <property name="jdbcUrl" value="jdbc:h2:mem:coffee_store" />
-        <property name="driverClassName" value="org.h2.Driver" />
-        <property name="isAutoCommit" value="false" />
+        <property name="jdbcUrl" value="jdbc:h2:mem:coffee_store"/>
+        <property name="driverClassName" value="org.h2.Driver"/>
+        <property name="isAutoCommit" value="false"/>
     </bean>
 
     <bean id="jdbcClient" class="com.firefly.db.jdbc.JDBCClient" destroy-method="stop">
@@ -21,22 +21,36 @@
     </bean>
 
     <!-- Reactive adapter -->
+    <bean id="projectConfig" class="com.firefly.example.reactive.coffee.store.ProjectConfig">
+        <property name="templateRoot" value="template/coffeeStore"/>
+        <property name="host" value="localhost" />
+        <property name="port" value="8080" />
+    </bean>
+
+    <bean id="reactiveMain" class="com.firefly.example.reactive.coffee.store.AppMain" />
+
     <bean id="reactiveSQLClient" class="com.firefly.reactive.adapter.db.ReactiveSQLClientAdapter">
         <constructor>
             <argument type="com.firefly.db.SQLClient" ref="jdbcClient"/>
         </constructor>
     </bean>
 
-    <bean id="reactiveHTTPTransactionalManager" class="com.firefly.reactive.adapter.db.ReactiveHTTPTransactionalManager">
+    <bean id="reactiveHTTPTransactionalManager"
+          class="com.firefly.reactive.adapter.db.ReactiveHTTPTransactionalManager">
         <constructor>
             <argument type="com.firefly.reactive.adapter.db.ReactiveSQLClient" ref="reactiveSQLClient"/>
         </constructor>
     </bean>
 
+    <bean id="httpServer" class="com.firefly.server.http2.HTTP2ServerBuilder"
+          init-method="httpServer"
+          destroy-method="stop"/>
+
     <!-- Kotlin extension -->
     <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
 
-    <bean id="asyncHttpContextTransactionalManager" class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">
+    <bean id="asyncHttpContextTransactionalManager"
+          class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">
         <constructor>
             <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
             <argument type="com.firefly.db.SQLClient" ref="jdbcClient"/>
