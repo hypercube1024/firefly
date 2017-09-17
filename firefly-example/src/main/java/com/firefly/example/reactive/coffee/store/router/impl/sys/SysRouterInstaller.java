@@ -2,6 +2,7 @@ package com.firefly.example.reactive.coffee.store.router.impl.sys;
 
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.example.reactive.coffee.store.router.RouterInstaller;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.router.handler.file.StaticFileHandler;
@@ -39,7 +40,11 @@ public class SysRouterInstaller implements RouterInstaller {
         // static file
         try {
             Path path = Paths.get(SysRouterInstaller.class.getResource("/").toURI());
-            server.router().get("/static/*").handler(new StaticFileHandler(path.toAbsolutePath().toString()));
+            StaticFileHandler staticFileHandler = new StaticFileHandler(path.toAbsolutePath().toString());
+            server.router().get("/static/*").handler(ctx -> {
+                ctx.put(HttpHeader.CACHE_CONTROL, "max-age=86400");
+                staticFileHandler.handle(ctx);
+            });
         } catch (URISyntaxException e) {
             logger.error(() -> "setup static file router exception", e);
         }
