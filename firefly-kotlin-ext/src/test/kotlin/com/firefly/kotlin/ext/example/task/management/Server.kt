@@ -39,7 +39,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
     val projectService = Context.getBean<ProjectService>()
     val userService = Context.getBean<UserService>()
 
-    fun RouterBlock.asyncTransactionalHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
+    fun RouterBlock.asyncCompleteHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
         try {
             handler.invoke(this, it)
             asyncSucceed(Unit)
@@ -95,7 +95,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         path = "/user/create"
         consumes = "application/json"
 
-        asyncTransactionalHandler {
+        asyncCompleteHandler {
             val request = getJsonBody<Request<User>>()
             log.info("create user request $request")
             val response = userService.insert(request)
@@ -107,7 +107,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         httpMethod = HttpMethod.POST
         path = "/user/createSimulateRollback"
 
-        asyncTransactionalHandler {
+        asyncCompleteHandler {
             val request = getJsonBody<Request<User>>()
             log.info("create user request $request")
             val response = userService.insert(request)
@@ -129,7 +129,7 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
         httpMethod = HttpMethod.POST
         path = "/project/create"
 
-        asyncTransactionalHandler {
+        asyncCompleteHandler {
             val request = getJsonBody<Request<ProjectEditor>>()
             log.info("create project request $request")
             val response = projectService.createProject(request)

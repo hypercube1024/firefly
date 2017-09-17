@@ -143,30 +143,25 @@ public class HTTP2ServerBuilder {
     }
 
     public HTTP2ServerBuilder handler(Handler handler) {
-        currentRouter.handler(ctx -> {
-            try {
-                currentCtx.set(ctx);
-                handler.handle(ctx);
-            } finally {
-                currentCtx.remove();
-            }
-        });
+        currentRouter.handler(ctx -> handlerWrap(handler, ctx));
         return this;
+    }
+
+    protected void handlerWrap(Handler handler, RoutingContext ctx) {
+        try {
+            currentCtx.set(ctx);
+            handler.handle(ctx);
+        } catch (Exception e) {
+            ctx.fail(e);
+        } finally {
+            currentCtx.remove();
+        }
     }
 
     public HTTP2ServerBuilder asyncHandler(Handler handler) {
         currentRouter.handler(ctx -> {
             ctx.getResponse().setAsynchronous(true);
-            server.getHandlerExecutorService().execute(() -> {
-                try {
-                    currentCtx.set(ctx);
-                    handler.handle(ctx);
-                } catch (Exception e) {
-                    ctx.fail(e);
-                } finally {
-                    currentCtx.remove();
-                }
-            });
+            server.getHandlerExecutorService().execute(() -> handlerWrap(handler, ctx));
         });
         return this;
     }

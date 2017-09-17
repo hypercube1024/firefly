@@ -65,24 +65,25 @@ fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = at
 
 fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
-    queue.push(AsyncPromise(succeeded = {
-        succeeded.invoke(it)
-        try {
-            queue.pop().succeeded(it)
-        } catch (e: NoSuchElementException) {
-        }
-    }, failed = {
-        failed.invoke(it)
-        try {
-            queue.pop().failed(it)
-        } catch (e: NoSuchElementException) {
-        }
-    }))
+    queue.push(AsyncPromise(succeeded, failed))
+//    queue.push(AsyncPromise(succeeded = {
+//        succeeded.invoke(it)
+//        try {
+//            queue.pop().succeeded(it)
+//        } catch (e: NoSuchElementException) {
+//        }
+//    }, failed = {
+//        failed.invoke(it)
+//        try {
+//            queue.pop().failed(it)
+//        } catch (e: NoSuchElementException) {
+//        }
+//    }))
     return this
 }
 
 fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit): RoutingContext {
-    asyncComplete(succeeded, {})
+    asyncComplete(succeeded, { this.asyncFail<Throwable?>(it) })
     return this
 }
 
@@ -92,7 +93,7 @@ fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit, failed: suspend
 }
 
 fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
-    asyncComplete(succeeded)
+    asyncComplete(succeeded, { this.asyncFail<Throwable?>(it) })
     return next()
 }
 
@@ -351,9 +352,9 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
             : this(coroutineLocal,
-            SimpleHTTPServerConfiguration(),
-            HTTPBodyConfiguration(),
-            block)
+                   SimpleHTTPServerConfiguration(),
+                   HTTPBodyConfiguration(),
+                   block)
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
 

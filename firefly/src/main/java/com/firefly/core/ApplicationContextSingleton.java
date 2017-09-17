@@ -1,5 +1,6 @@
 package com.firefly.core;
 
+import com.firefly.utils.ServiceUtils;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
 /**
@@ -26,7 +27,7 @@ public class ApplicationContextSingleton extends AbstractLifeCycle {
 
     @Override
     protected void init() {
-        applicationContext = new XmlApplicationContext();
+        applicationContext = ServiceUtils.loadService(ApplicationContext.class, new XmlApplicationContext());
     }
 
     @Override

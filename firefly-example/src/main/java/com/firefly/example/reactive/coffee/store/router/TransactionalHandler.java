@@ -6,6 +6,7 @@ import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.reactive.adapter.db.ReactiveTransactionalManager;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.RoutingContext;
+import com.firefly.utils.log.slf4j.ext.LazyLogger;
 import reactor.core.publisher.Mono;
 
 /**
@@ -13,6 +14,8 @@ import reactor.core.publisher.Mono;
  */
 @Component("transactionalHandler")
 public class TransactionalHandler implements Handler {
+
+    private static LazyLogger logger = LazyLogger.create();
 
     @Inject
     private ReactiveTransactionalManager db;
@@ -25,7 +28,7 @@ public class TransactionalHandler implements Handler {
           .then(begin -> Mono.fromFuture(ctx.nextFuture()))
           .then(process -> db.commitAndEndTransaction())
           .subscribe(success -> ctx.succeed(true),
-                  ex -> db.rollbackAndEndTransaction().subscribe(rollback -> ctx.fail(ex), rollbackEx -> ctx.fail(ex)));
+                  ex -> db.rollbackAndEndTransaction().subscribe(rollbackSuccess -> ctx.fail(ex), ctx::fail));
     }
 
     public HttpMethod[] getMethods() {

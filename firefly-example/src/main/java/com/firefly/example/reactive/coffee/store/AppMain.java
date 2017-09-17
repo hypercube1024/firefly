@@ -1,6 +1,8 @@
 package com.firefly.example.reactive.coffee.store;
 
 import com.firefly.$;
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.MimeTypes;
 import com.firefly.example.reactive.coffee.store.router.GlobalHandler;
 import com.firefly.example.reactive.coffee.store.router.TransactionalHandler;
 import com.firefly.example.reactive.coffee.store.service.ProductService;
@@ -30,7 +32,7 @@ public class AppMain {
 
     public static void setupRouters() {
         // global handler
-        s.router().path("/*").handler($.getBean(GlobalHandler.class));
+        s.router().path("*").handler($.getBean(GlobalHandler.class));
 
         // HTTP transaction manager
         TransactionalHandler transactionalHandler = $.getBean(TransactionalHandler.class);
@@ -38,7 +40,8 @@ public class AppMain {
 
         // index page
         s.router().get("/").asyncHandler(ctx -> {
-            ctx.renderTemplate(root + "/index.mustache", Collections.emptyList());
+            ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_HTML.asString())
+               .renderTemplate(root + "/index.mustache", Collections.emptyList());
             ctx.succeed(true);
         });
 

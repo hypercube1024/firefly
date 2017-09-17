@@ -22,33 +22,32 @@ public class TestRouterChain extends AbstractHTTPHandlerTest {
         HTTP2ServerBuilder httpServer = $.httpServer();
         httpServer.router().get("/routerChain").asyncHandler(ctx -> {
             ctx.setAttribute("reqId", 1000);
-            ctx.write("enter router 1\r\n").next(new Promise<String>() {
-                @Override
-                public void succeeded(String result) {
-                    ctx.write("router 1 success\r\n").end(result);
-                }
-
-                @Override
-                public void failed(Throwable x) {
-                    ctx.end(x.getMessage());
-                }
-            });
+            ctx.write("enter router 1\r\n")
+               .<String>nextFuture()
+               .thenAccept(result -> ctx.write("router 1 success\r\n").end(result))
+               .exceptionally(ex -> {
+                   ctx.end(ex.getMessage());
+                   return null;
+               });
         }).router().get("/routerChain").asyncHandler(ctx -> {
             Integer reqId = (Integer) ctx.getAttribute("reqId");
-            ctx.write("enter router 2, request id " + reqId + "\r\n").next(new Promise<String>() {
-                @Override
-                public void succeeded(String result) {
-                    ctx.write("router 2 success, request id " + reqId + "\r\n");
-                }
-            });
+            ctx.write("enter router 2, request id " + reqId + "\r\n")
+               .<String>nextFuture()
+               .thenAccept(result -> ctx.write("router 2 success, request id " + reqId + "\r\n").succeed(result))
+               .exceptionally(ex -> {
+                   ctx.fail(ex);
+                   return null;
+               });
         }).router().get("/routerChain").asyncHandler(ctx -> {
             Integer reqId = (Integer) ctx.getAttribute("reqId");
-            ctx.write("enter router 3, request id " + reqId + "\r\n").complete(new Promise<String>() {
-                @Override
-                public void succeeded(String result) {
-                    ctx.write("router 3 success, request id " + reqId + "\r\n");
-                }
-            }).succeed("request complete");
+            ctx.write("enter router 3, request id " + reqId + "\r\n")
+               .<String>complete()
+               .thenAccept(result -> ctx.write("router 3 success, request id " + reqId + "\r\n").succeed(result))
+               .exceptionally(ex -> {
+                   ctx.fail(ex);
+                   return null;
+               });
+            ctx.succeed("request complete");
         }).listen(host, port);
 
         SimpleResponse response = $.httpClient().get(uri + "/routerChain").submit().get(2, TimeUnit.SECONDS);

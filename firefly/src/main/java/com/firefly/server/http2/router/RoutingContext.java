@@ -73,6 +73,12 @@ public interface RoutingContext extends Closeable {
         return completable;
     }
 
+    default <T> CompletableFuture<T> complete() {
+        Promise.Completable<T> completable = new Promise.Completable<>();
+        complete(completable);
+        return completable;
+    }
+
     <T> void succeed(T t);
 
     void fail(Throwable x);

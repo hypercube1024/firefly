@@ -128,25 +128,7 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public <T> RoutingContext complete(Promise<T> promise) {
         ConcurrentLinkedDeque<Promise<T>> queue = createHandlerPromiseQueueIfAbsent();
-        queue.push(new Promise<T>() {
-            @Override
-            public void succeeded(T result) {
-                promise.succeeded(result);
-                try {
-                    queue.pop().succeeded(result);
-                } catch (NoSuchElementException ignored) {
-                }
-            }
-
-            @Override
-            public void failed(Throwable x) {
-                promise.failed(x);
-                try {
-                    queue.pop().failed(x);
-                } catch (NoSuchElementException ignored) {
-                }
-            }
-        });
+        queue.push(promise);
         return this;
     }
 

@@ -20,6 +20,7 @@
         </constructor>
     </bean>
 
+    <!-- Reactive adapter -->
     <bean id="reactiveSQLClient" class="com.firefly.reactive.adapter.db.ReactiveSQLClientAdapter">
         <constructor>
             <argument type="com.firefly.db.SQLClient" ref="jdbcClient"/>
@@ -32,6 +33,7 @@
         </constructor>
     </bean>
 
+    <!-- Kotlin extension -->
     <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
 
     <bean id="asyncHttpContextTransactionalManager" class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">

@@ -18,6 +18,7 @@ public class GlobalHandler implements Handler {
 
     @Override
     public void handle(RoutingContext ctx) {
+        ctx.getResponse().setAsynchronous(true);
         Mono.fromFuture(ctx.nextFuture()).subscribe(ret -> ctx.end(), ex -> {
             ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
             logger.error(() -> "server exception", ex);
