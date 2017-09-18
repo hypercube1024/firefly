@@ -114,12 +114,15 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public boolean next() {
         current = routers.pollFirst();
-        if (current != null) {
-            ((RouterImpl) current.getRouter()).getHandler().handle(this);
-            return true;
-        } else {
-            return false;
-        }
+        return Optional.ofNullable(current)
+                       .map(RouterManager.RouterMatchResult::getRouter)
+                       .map(c -> (RouterImpl) c)
+                       .map(RouterImpl::getHandler)
+                       .map(handler -> {
+                           handler.handle(this);
+                           return true;
+                       })
+                       .orElse(false);
     }
 
     @Override
@@ -142,22 +145,17 @@ public class RoutingContextImpl implements RoutingContext {
     @SuppressWarnings("unchecked")
     @Override
     public <T> void succeed(T t) {
-        if (handlerPromiseQueue != null) {
-            Promise<T> p = (Promise<T>) handlerPromiseQueue.pop();
-            if (p != null) {
-                p.succeeded(t);
-            }
-        }
+        Optional.ofNullable(handlerPromiseQueue)
+                .map(ConcurrentLinkedDeque::pop)
+                .map(p -> (Promise<T>) p)
+                .ifPresent(p -> p.succeeded(t));
     }
 
     @Override
     public void fail(Throwable x) {
-        if (handlerPromiseQueue != null) {
-            Promise<?> p = handlerPromiseQueue.pop();
-            if (p != null) {
-                p.failed(x);
-            }
-        }
+        Optional.ofNullable(handlerPromiseQueue)
+                .map(ConcurrentLinkedDeque::pop)
+                .ifPresent(p -> p.failed(x));
     }
 
     @SuppressWarnings("unchecked")
@@ -270,24 +268,21 @@ public class RoutingContextImpl implements RoutingContext {
         } else {
             return httpBodyHandlerSPI.getJsonBody(typeReference);
         }
+
     }
 
     @Override
     public JsonObject getJsonObjectBody() {
-        if (httpBodyHandlerSPI == null) {
-            return request.getJsonObjectBody();
-        } else {
-            return httpBodyHandlerSPI.getJsonObjectBody();
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(HTTPBodyHandlerSPI::getJsonObjectBody)
+                       .orElse(request.getJsonObjectBody());
     }
 
     @Override
     public JsonArray getJsonArrayBody() {
-        if (httpBodyHandlerSPI == null) {
-            return request.getJsonArrayBody();
-        } else {
-            return httpBodyHandlerSPI.getJsonArrayBody();
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(HTTPBodyHandlerSPI::getJsonArrayBody)
+                       .orElse(request.getJsonArrayBody());
     }
 
     public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {
@@ -332,26 +327,30 @@ public class RoutingContextImpl implements RoutingContext {
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
-        return httpSessionHandlerSPI != null && httpSessionHandlerSPI.isRequestedSessionIdFromURL();
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::isRequestedSessionIdFromURL)
+                       .orElse(false);
     }
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
-        return httpSessionHandlerSPI != null && httpSessionHandlerSPI.isRequestedSessionIdFromCookie();
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::isRequestedSessionIdFromCookie)
+                       .orElse(false);
     }
 
     @Override
     public boolean isRequestedSessionIdValid() {
-        return httpSessionHandlerSPI != null && httpSessionHandlerSPI.isRequestedSessionIdValid();
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::isRequestedSessionIdValid)
+                       .orElse(false);
     }
 
     @Override
     public String getRequestedSessionId() {
-        if (httpSessionHandlerSPI == null) {
-            return null;
-        } else {
-            return httpSessionHandlerSPI.getRequestedSessionId();
-        }
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::getRequestedSessionId)
+                       .orElse(null);
     }
 
     public void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI) {
