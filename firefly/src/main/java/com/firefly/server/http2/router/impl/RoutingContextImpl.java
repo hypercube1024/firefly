@@ -173,101 +173,79 @@ public class RoutingContextImpl implements RoutingContext {
 
     @Override
     public String getParameter(String name) {
-        if (httpBodyHandlerSPI == null) {
-            return null;
-        } else {
-            return httpBodyHandlerSPI.getParameter(name);
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(s -> s.getParameter(name))
+                       .orElse(null);
     }
 
     @Override
     public List<String> getParameterValues(String name) {
-        if (httpBodyHandlerSPI == null) {
-            return null;
-        } else {
-            return httpBodyHandlerSPI.getParameterValues(name);
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(s -> s.getParameterValues(name))
+                       .orElse(Collections.emptyList());
     }
 
     @Override
     public Map<String, List<String>> getParameterMap() {
-        if (httpBodyHandlerSPI == null) {
-            return null;
-        } else {
-            return httpBodyHandlerSPI.getParameterMap();
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(HTTPBodyHandlerSPI::getParameterMap)
+                       .orElse(Collections.emptyMap());
     }
 
     @Override
     public Collection<Part> getParts() {
-        if (httpBodyHandlerSPI == null) {
-            return null;
-        } else {
-            return httpBodyHandlerSPI.getParts();
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(HTTPBodyHandlerSPI::getParts)
+                       .orElse(Collections.emptyList());
     }
 
     @Override
     public Part getPart(String name) {
-        if (httpBodyHandlerSPI == null) {
-            return null;
-        } else {
-            return httpBodyHandlerSPI.getPart(name);
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(s -> s.getPart(name))
+                       .orElse(null);
     }
 
     @Override
     public InputStream getInputStream() {
-        if (httpBodyHandlerSPI == null) {
-            return null;
-        } else {
-            return httpBodyHandlerSPI.getInputStream();
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(HTTPBodyHandlerSPI::getInputStream)
+                       .orElse(null);
     }
 
     @Override
     public BufferedReader getBufferedReader() {
-        if (httpBodyHandlerSPI == null) {
-            return null;
-        } else {
-            return httpBodyHandlerSPI.getBufferedReader();
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(HTTPBodyHandlerSPI::getBufferedReader)
+                       .orElse(null);
     }
 
     @Override
     public String getStringBody(String charset) {
-        if (httpBodyHandlerSPI == null) {
-            return request.getStringBody(charset);
-        } else {
-            return httpBodyHandlerSPI.getStringBody(charset);
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(s -> s.getStringBody(charset))
+                       .orElse(request.getStringBody(charset));
     }
 
     @Override
     public String getStringBody() {
-        if (httpBodyHandlerSPI == null) {
-            return request.getStringBody();
-        } else {
-            return httpBodyHandlerSPI.getStringBody();
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(HTTPBodyHandlerSPI::getStringBody)
+                       .orElse(request.getStringBody());
     }
 
     @Override
     public <T> T getJsonBody(Class<T> clazz) {
-        if (httpBodyHandlerSPI == null) {
-            return request.getJsonBody(clazz);
-        } else {
-            return httpBodyHandlerSPI.getJsonBody(clazz);
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(s -> s.getJsonBody(clazz))
+                       .orElse(request.getJsonBody(clazz));
     }
 
     @Override
     public <T> T getJsonBody(GenericTypeReference<T> typeReference) {
-        if (httpBodyHandlerSPI == null) {
-            return request.getJsonBody(typeReference);
-        } else {
-            return httpBodyHandlerSPI.getJsonBody(typeReference);
-        }
+        return Optional.ofNullable(httpBodyHandlerSPI)
+                       .map(s -> s.getJsonBody(typeReference))
+                       .orElse(request.getJsonBody(typeReference));
 
     }
 
