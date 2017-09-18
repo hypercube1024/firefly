@@ -8,6 +8,8 @@ import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.utils.log.slf4j.ext.LazyLogger;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 /**
  * @author Pengtao Qiu
  */
@@ -19,13 +21,15 @@ public class GlobalHandler implements Handler {
     @Override
     public void handle(RoutingContext ctx) {
         ctx.getResponse().setAsynchronous(true);
-        Mono.fromFuture(ctx.nextFuture()).subscribe(ret -> ctx.end(), ex -> {
-            ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-            logger.error(() -> "server exception", ex);
-            Response<Boolean> response = new Response<>();
-            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-            response.setMessage("server exception, " + ex.getMessage());
-            ctx.writeJson(response).end();
-        });
+        Mono.fromFuture(ctx.nextFuture())
+            .timeout(Duration.ofSeconds(1))
+            .subscribe(ret -> ctx.end(), ex -> {
+                ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                logger.error(() -> "server exception", ex);
+                Response<Boolean> response = new Response<>();
+                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+                response.setMessage("server exception, " + ex.getMessage());
+                ctx.writeJson(response).end();
+            });
     }
 }
