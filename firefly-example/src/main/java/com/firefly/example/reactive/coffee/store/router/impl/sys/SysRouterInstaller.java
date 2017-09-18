@@ -6,6 +6,8 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.example.reactive.coffee.store.router.RouterInstaller;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.router.handler.file.StaticFileHandler;
+import com.firefly.server.http2.router.handler.session.HTTPSessionConfiguration;
+import com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler;
 import com.firefly.utils.log.slf4j.ext.LazyLogger;
 
 import java.net.URISyntaxException;
@@ -33,6 +35,9 @@ public class SysRouterInstaller implements RouterInstaller {
     public void install() {
         // global handler
         server.router().path("*").handler(globalHandler);
+
+        // local session
+        server.router().path("*").handler(new LocalHTTPSessionHandler(new HTTPSessionConfiguration()));
 
         // HTTP transaction manager
         server.router().methods(transactionalHandler.getMethods()).handler(transactionalHandler);
