@@ -25,19 +25,21 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public Mono<Page<Product>> list(ProductQuery query) {
         List<Object> params = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("select * from coffee_store.product where 1=1 ");
+        StringBuilder sql = new StringBuilder("select p.*, inventory.amount from `coffee_store`.`product` p ");
+        sql.append("inner join `coffee_store`.`inventory` inventory on inventory.product_id = p.id ")
+           .append("where 1=1 ");
 
         Optional.ofNullable(query.getProductStatus())
                 .filter(status -> status > 0)
                 .ifPresent(status -> {
-                    sql.append(" and `status` = ?");
+                    sql.append(" and p.`status` = ?");
                     params.add(status);
                 });
 
         Optional.ofNullable(query.getProductType())
                 .filter(type -> type > 0)
                 .ifPresent(type -> {
-                    sql.append(" and `type` = ?");
+                    sql.append(" and p.`type` = ?");
                     params.add(type);
                 });
 

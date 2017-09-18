@@ -7,7 +7,7 @@
 <body>
 <div class="container">
     <div class="row">
-        <div class="col">Welcome to coffee store</div>
+        <div class="col">{{#userName}}Hi {{.}}. {{/userName}} Welcome to coffee store</div>
     </div>
 
     <div class="row">
@@ -19,31 +19,29 @@
                     <th>Name</th>
                     <th>Price</th>
                     <th>Type</th>
+                    <th>Amount</th>
                     <th>Description</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>Cappuccino</td>
-                    <td>22.99</td>
-                    <td>coffee</td>
-                    <td>Cappuccino</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>Coffee latte</td>
-                    <td>24.99</td>
-                    <td>coffee</td>
-                    <td>Coffee latte</td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td>American-style coffee</td>
-                    <td>18.99</td>
-                    <td>coffee</td>
-                    <td>American-style coffee</td>
-                </tr>
+                {{#products}}
+                    {{#record}}
+                    <tr>
+                        <td>{{id}}</td>
+                        <td>{{name}}</td>
+                        <td>{{price}}</td>
+                        <td>{{typeDesc}}</td>
+                        <td>{{amount}}</td>
+                        <td>{{description}}</td>
+                    </tr>
+                    {{/record}}
+                    {{^record}}
+                    <tr><td colspan="6">No data</td></tr>
+                    {{/record}}
+                {{/products}}
+                {{^products}}
+                    <tr><td colspan="6">No data</td></tr>
+                {{/products}}
                 </tbody>
             </table>
         </div>

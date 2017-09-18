@@ -40,6 +40,8 @@ public class Product {
     @Column("update_time")
     private Date updateTime;
 
+    private Long amount;
+
     public Long getId() {
         return id;
     }
@@ -102,6 +104,14 @@ public class Product {
 
     public void setType(Integer type) {
         this.type = type;
+    }
+
+    public Long getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Long amount) {
+        this.amount = amount;
     }
 
     public String getStatusDesc() {
