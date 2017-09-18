@@ -3,6 +3,7 @@ package com.firefly.server.http2.router;
 import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.server.http2.router.spi.AsynchronousHttpSession;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.Json;
@@ -225,6 +226,12 @@ public interface RoutingContext extends Closeable {
     HttpSession getSession();
 
     HttpSession getSession(boolean create);
+
+    CompletableFuture<AsynchronousHttpSession> getAsyncSession();
+
+    CompletableFuture<AsynchronousHttpSession> getAsyncSession(boolean create);
+
+    CompletableFuture<Integer> getAsyncSessionSize();
 
     boolean isRequestedSessionIdFromURL();
 

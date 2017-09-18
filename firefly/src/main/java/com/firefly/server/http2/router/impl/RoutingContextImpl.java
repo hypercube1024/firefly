@@ -5,6 +5,7 @@ import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.template.TemplateHandlerSPILoader;
+import com.firefly.server.http2.router.spi.AsynchronousHttpSession;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -295,20 +297,37 @@ public class RoutingContextImpl implements RoutingContext {
 
     @Override
     public HttpSession getSession() {
-        if (httpSessionHandlerSPI == null) {
-            return null;
-        } else {
-            return httpSessionHandlerSPI.getSession();
-        }
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::getSession)
+                       .orElse(null);
     }
 
     @Override
     public HttpSession getSession(boolean create) {
-        if (httpSessionHandlerSPI == null) {
-            return null;
-        } else {
-            return httpSessionHandlerSPI.getSession(create);
-        }
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(s -> s.getSession(create))
+                       .orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<AsynchronousHttpSession> getAsyncSession() {
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::getAsyncSession)
+                       .orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<AsynchronousHttpSession> getAsyncSession(boolean create) {
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(s -> s.getAsyncSession(create))
+                       .orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<Integer> getAsyncSessionSize() {
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::getAsyncSessionSize)
+                       .orElse(null);
     }
 
     @Override

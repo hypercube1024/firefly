@@ -2,6 +2,7 @@ package com.firefly.server.http2.router.handler.session;
 
 import com.firefly.codec.http2.model.Cookie;
 import com.firefly.server.http2.router.RoutingContext;
+import com.firefly.server.http2.router.spi.AsynchronousHttpSession;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Scheduler;
@@ -11,6 +12,7 @@ import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,13 +40,13 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
         init();
     }
 
-    private void init() {
+    protected void init() {
         if (getHttpSessionFromCookie() == null) {
             getHttpSessionFromURL();
         }
     }
 
-    private String getHttpSessionFromURL() {
+    protected String getHttpSessionFromURL() {
         if (requestedSessionId != null) {
             return requestedSessionId;
         }
@@ -67,7 +69,7 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
         return null;
     }
 
-    private String getHttpSessionFromCookie() {
+    protected String getHttpSessionFromCookie() {
         if (requestedSessionId != null) {
             return requestedSessionId;
         }
@@ -89,7 +91,7 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
     }
 
 
-    private void requestHttpSession() {
+    protected void requestHttpSession() {
         httpSession = (HTTPSessionImpl) sessionStore.get(requestedSessionId);
         if (httpSession != null) {
             if (httpSession.check()) {
@@ -127,7 +129,22 @@ public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
         }
     }
 
-    private void scheduleCheck(final HTTPSessionImpl session, final long remainInactiveInterval) {
+    @Override
+    public CompletableFuture<AsynchronousHttpSession> getAsyncSession() {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<AsynchronousHttpSession> getAsyncSession(boolean create) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Integer> getAsyncSessionSize() {
+        return null;
+    }
+
+    protected void scheduleCheck(final HTTPSessionImpl session, final long remainInactiveInterval) {
         scheduler.schedule(() -> {
             if (!session.check()) {
                 sessionStore.remove(session.getId());
