@@ -9,6 +9,8 @@ import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +21,8 @@ import java.util.concurrent.TimeUnit;
  * @author Pengtao Qiu
  */
 public class LocalSessionStore extends AbstractLifeCycle implements SessionStore {
+
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final ConcurrentMap<String, HTTPSession> map = new ConcurrentHashMap<>();
     private final Scheduler scheduler = Schedulers.createScheduler();
@@ -88,6 +92,7 @@ public class LocalSessionStore extends AbstractLifeCycle implements SessionStore
         scheduler.scheduleWithFixedDelay(() -> map.forEach((id, session) -> {
             if (!session.isInvalid()) {
                 map.remove(id);
+                log.info("remove expired local HTTP session -> {}", id);
             }
         }), 1, 1, TimeUnit.SECONDS);
     }

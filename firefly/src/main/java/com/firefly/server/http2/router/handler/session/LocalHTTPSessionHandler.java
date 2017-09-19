@@ -12,7 +12,7 @@ import com.firefly.utils.lang.AbstractLifeCycle;
  */
 public class LocalHTTPSessionHandler extends AbstractLifeCycle implements Handler {
 
-    private final SessionStore sessionStore = DefaultSessionStoreLoader.getInstance().getSessionStore();
+    private final SessionStore sessionStore = new LocalSessionStore();
     private final HTTPSessionConfiguration configuration;
 
     public LocalHTTPSessionHandler() {
