@@ -59,6 +59,7 @@ public class LocalSessionStore extends AbstractLifeCycle implements SessionStore
             ret.completeExceptionally(new SessionNotFound());
         } else {
             if (session.isInvalid()) {
+                map.remove(session.getId());
                 ret.completeExceptionally(new SessionInvalidException("the session is expired"));
             } else {
                 session.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
