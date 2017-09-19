@@ -1,181 +1,84 @@
 package com.firefly.server.http2.router.handler.session;
 
 import com.firefly.codec.http2.model.Cookie;
-import com.firefly.server.http2.router.RoutingContext;
-import com.firefly.server.http2.router.spi.AsynchronousHttpSession;
-import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
+import com.firefly.server.http2.router.*;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.time.Millisecond100Clock;
 
-import javax.servlet.http.HttpSession;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Pengtao Qiu
  */
-public class HTTPSessionHandlerSPIImpl implements HTTPSessionHandlerSPI {
+public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
 
-    private final HTTPSessionConfiguration configuration;
     private final SessionStore sessionStore;
-    private final RoutingContext routingContext;
-    private final Scheduler scheduler;
-    private boolean requestedSessionIdFromURL;
-    private boolean requestedSessionIdFromCookie;
-    private String requestedSessionId;
-    private HTTPSessionImpl httpSession;
 
-    public HTTPSessionHandlerSPIImpl(SessionStore sessionStore,
-                                     RoutingContext routingContext,
-                                     Scheduler scheduler,
+    public HTTPSessionHandlerSPIImpl(RoutingContext routingContext,
+                                     SessionStore sessionStore,
                                      HTTPSessionConfiguration configuration) {
+        super(routingContext, configuration.getSessionIdParameterName(), configuration.getDefaultMaxInactiveInterval());
         this.sessionStore = sessionStore;
-        this.routingContext = routingContext;
-        this.configuration = configuration;
-        this.scheduler = scheduler;
-        init();
-    }
-
-    protected void init() {
-        if (getHttpSessionFromCookie() == null) {
-            getHttpSessionFromURL();
-        }
-    }
-
-    protected String getHttpSessionFromURL() {
-        if (requestedSessionId != null) {
-            return requestedSessionId;
-        }
-
-        String param = routingContext.getURI().getParam();
-        if (StringUtils.hasText(param)) {
-            String prefix = configuration.getSessionIdParameterName() + "=";
-            if (param.length() > prefix.length()) {
-                int s = param.indexOf(prefix);
-                if (s >= 0) {
-                    s += prefix.length();
-                    requestedSessionId = param.substring(s);
-                    requestedSessionIdFromCookie = false;
-                    requestedSessionIdFromURL = true;
-                    requestHttpSession();
-                    return requestedSessionId;
-                }
-            }
-        }
-        return null;
-    }
-
-    protected String getHttpSessionFromCookie() {
-        if (requestedSessionId != null) {
-            return requestedSessionId;
-        }
-
-        List<Cookie> cookies = routingContext.getCookies();
-        if (cookies != null && !cookies.isEmpty()) {
-            Optional<Cookie> optional = cookies.stream()
-                                               .filter(c -> configuration.getSessionIdParameterName().equalsIgnoreCase(c.getName()))
-                                               .findFirst();
-            if (optional.isPresent()) {
-                requestedSessionIdFromCookie = true;
-                requestedSessionIdFromURL = false;
-                requestedSessionId = optional.get().getValue();
-                requestHttpSession();
-                return requestedSessionId;
-            }
-        }
-        return null;
     }
 
 
-    protected void requestHttpSession() {
-        httpSession = (HTTPSessionImpl) sessionStore.get(requestedSessionId);
-        if (httpSession != null) {
-            if (httpSession.check()) {
-                httpSession.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
-                httpSession.setNewSession(false);
-                scheduleCheck(httpSession, httpSession.getRemainInactiveInterval());
+    @Override
+    public CompletableFuture<HTTPSession> getSession() {
+        return getSession(true);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> getSession(boolean create) {
+        CompletableFuture<HTTPSession> ret = new CompletableFuture<>();
+        sessionStore.get(getSessionId(create)).thenAccept(ret::complete).exceptionally(ex -> {
+            if (create && Optional.ofNullable(ex)
+                                  .map(Throwable::getCause)
+                                  .filter(e -> e instanceof SessionNotFound || e instanceof SessionInvalidException)
+                                  .isPresent()) {
+                createSession(ret);
             } else {
-                httpSession = null;
-                sessionStore.remove(requestedSessionId);
+                ret.completeExceptionally(ex);
             }
+            return null;
+        });
+        return ret;
+    }
+
+
+    @Override
+    public CompletableFuture<Integer> getSessionSize() {
+        return sessionStore.size();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeSession() {
+        return sessionStore.remove(requestedSessionId);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> updateSession(HTTPSession httpSession) {
+        return sessionStore.put(requestedSessionId, httpSession);
+    }
+
+    protected String getSessionId(boolean create) {
+        if (create && !StringUtils.hasText(requestedSessionId)) {
+            requestedSessionId = UUID.randomUUID().toString().replace("-", "");
         }
-    }
-
-    @Override
-    public HttpSession getSession() {
-        return getSession(false);
-    }
-
-    @Override
-    public HttpSession getSession(boolean create) {
-        if (create) {
-            if (httpSession == null) {
-                String id = UUID.randomUUID().toString();
-                httpSession = new HTTPSessionImpl(id);
-                httpSession.setMaxInactiveInterval(configuration.getDefaultMaxInactiveInterval());
-                routingContext.addCookie(new Cookie(configuration.getSessionIdParameterName(), id));
-                sessionStore.put(id, httpSession);
-                scheduleCheck(httpSession, httpSession.getMaxInactiveInterval());
-                return httpSession;
-            } else {
-                return httpSession;
-            }
-        } else {
-            return httpSession;
-        }
-    }
-
-    @Override
-    public CompletableFuture<AsynchronousHttpSession> getAsyncSession() {
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<AsynchronousHttpSession> getAsyncSession(boolean create) {
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<Integer> getAsyncSessionSize() {
-        return null;
-    }
-
-    protected void scheduleCheck(final HTTPSessionImpl session, final long remainInactiveInterval) {
-        scheduler.schedule(() -> {
-            if (!session.check()) {
-                sessionStore.remove(session.getId());
-            } else {
-                scheduleCheck(session, session.getRemainInactiveInterval());
-            }
-        }, remainInactiveInterval, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public boolean isRequestedSessionIdFromURL() {
-        return requestedSessionIdFromURL;
-    }
-
-    @Override
-    public boolean isRequestedSessionIdFromCookie() {
-        return requestedSessionIdFromCookie;
-    }
-
-    @Override
-    public boolean isRequestedSessionIdValid() {
-        return false;
-    }
-
-    @Override
-    public String getRequestedSessionId() {
         return requestedSessionId;
     }
 
-    @Override
-    public int getSessionSize() {
-        return sessionStore.size();
+    protected void createSession(CompletableFuture<HTTPSession> ret) {
+        HTTPSession newSession = HTTPSession.create(requestedSessionId, defaultMaxInactiveInterval);
+        sessionStore.put(newSession.getId(), newSession)
+                    .thenAccept(r -> {
+                        Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
+                        routingContext.addCookie(cookie);
+                        ret.complete(newSession);
+                    })
+                    .exceptionally(ex -> {
+                        ret.completeExceptionally(ex);
+                        return null;
+                    });
     }
 }

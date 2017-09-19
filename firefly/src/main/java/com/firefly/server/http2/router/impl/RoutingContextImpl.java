@@ -2,10 +2,10 @@ package com.firefly.server.http2.router.impl;
 
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.server.http2.router.HTTPSession;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.template.TemplateHandlerSPILoader;
-import com.firefly.server.http2.router.spi.AsynchronousHttpSession;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
@@ -15,7 +15,6 @@ import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.GenericTypeReference;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -267,39 +266,38 @@ public class RoutingContextImpl implements RoutingContext {
         this.httpBodyHandlerSPI = httpBodyHandlerSPI;
     }
 
-
     @Override
-    public HttpSession getSession() {
+    public CompletableFuture<HTTPSession> getSession() {
         return Optional.ofNullable(httpSessionHandlerSPI)
                        .map(HTTPSessionHandlerSPI::getSession)
                        .orElse(null);
     }
 
     @Override
-    public HttpSession getSession(boolean create) {
+    public CompletableFuture<HTTPSession> getSession(boolean create) {
         return Optional.ofNullable(httpSessionHandlerSPI)
                        .map(s -> s.getSession(create))
                        .orElse(null);
     }
 
     @Override
-    public CompletableFuture<AsynchronousHttpSession> getAsyncSession() {
+    public CompletableFuture<Integer> getSessionSize() {
         return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(HTTPSessionHandlerSPI::getAsyncSession)
+                       .map(HTTPSessionHandlerSPI::getSessionSize)
                        .orElse(null);
     }
 
     @Override
-    public CompletableFuture<AsynchronousHttpSession> getAsyncSession(boolean create) {
+    public CompletableFuture<Boolean> removeSession() {
         return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(s -> s.getAsyncSession(create))
+                       .map(HTTPSessionHandlerSPI::removeSession)
                        .orElse(null);
     }
 
     @Override
-    public CompletableFuture<Integer> getAsyncSessionSize() {
+    public CompletableFuture<Boolean> updateSession(HTTPSession httpSession) {
         return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(HTTPSessionHandlerSPI::getAsyncSessionSize)
+                       .map(s -> s.updateSession(httpSession))
                        .orElse(null);
     }
 
@@ -314,13 +312,6 @@ public class RoutingContextImpl implements RoutingContext {
     public boolean isRequestedSessionIdFromCookie() {
         return Optional.ofNullable(httpSessionHandlerSPI)
                        .map(HTTPSessionHandlerSPI::isRequestedSessionIdFromCookie)
-                       .orElse(false);
-    }
-
-    @Override
-    public boolean isRequestedSessionIdValid() {
-        return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(HTTPSessionHandlerSPI::isRequestedSessionIdValid)
                        .orElse(false);
     }
 

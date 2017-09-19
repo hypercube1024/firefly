@@ -8,6 +8,8 @@ import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 import com.firefly.utils.lang.AbstractLifeCycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -16,6 +18,8 @@ import java.util.Optional;
  * @author Pengtao Qiu
  */
 public class HTTP2ServerBuilder {
+
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private static ThreadLocal<RoutingContext> currentCtx = new ThreadLocal<>();
 
@@ -154,6 +158,7 @@ public class HTTP2ServerBuilder {
             handler.handle(ctx);
         } catch (Exception e) {
             ctx.fail(e);
+            log.error("http server handler exception", e);
         } finally {
             currentCtx.remove();
         }

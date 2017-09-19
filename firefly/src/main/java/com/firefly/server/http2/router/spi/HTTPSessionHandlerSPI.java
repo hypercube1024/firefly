@@ -1,5 +1,7 @@
 package com.firefly.server.http2.router.spi;
 
+import com.firefly.server.http2.router.HTTPSession;
+
 import javax.servlet.http.HttpSession;
 import java.util.concurrent.CompletableFuture;
 
@@ -8,24 +10,19 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface HTTPSessionHandlerSPI {
 
-    HttpSession getSession();
+    CompletableFuture<HTTPSession> getSession();
 
-    HttpSession getSession(boolean create);
+    CompletableFuture<HTTPSession> getSession(boolean create);
 
-    CompletableFuture<AsynchronousHttpSession> getAsyncSession();
+    CompletableFuture<Integer> getSessionSize();
 
-    CompletableFuture<AsynchronousHttpSession> getAsyncSession(boolean create);
+    CompletableFuture<Boolean> removeSession();
 
-    CompletableFuture<Integer> getAsyncSessionSize();
+    CompletableFuture<Boolean> updateSession(HTTPSession httpSession);
 
     boolean isRequestedSessionIdFromURL();
 
     boolean isRequestedSessionIdFromCookie();
 
-    boolean isRequestedSessionIdValid();
-
     String getRequestedSessionId();
-
-    int getSessionSize();
-
 }

@@ -3,7 +3,6 @@ package com.firefly.server.http2.router;
 import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
-import com.firefly.server.http2.router.spi.AsynchronousHttpSession;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.Json;
@@ -11,7 +10,6 @@ import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.GenericTypeReference;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -223,21 +221,39 @@ public interface RoutingContext extends Closeable {
 
 
     // HTTP session API
-    HttpSession getSession();
+    default HTTPSession getSessionNow() {
+        return getSession().getNow(null);
+    }
 
-    HttpSession getSession(boolean create);
+    default HTTPSession getSessionNow(boolean create) {
+        return getSession(create).getNow(null);
+    }
 
-    CompletableFuture<AsynchronousHttpSession> getAsyncSession();
+    default int getSessionSizeNow() {
+        return getSessionSize().getNow(0);
+    }
 
-    CompletableFuture<AsynchronousHttpSession> getAsyncSession(boolean create);
+    default boolean removeSessionNow() {
+        return removeSession().getNow(false);
+    }
 
-    CompletableFuture<Integer> getAsyncSessionSize();
+    default boolean updateSessionNow(HTTPSession httpSession) {
+        return updateSession(httpSession).getNow(false);
+    }
+
+    CompletableFuture<HTTPSession> getSession();
+
+    CompletableFuture<HTTPSession> getSession(boolean create);
+
+    CompletableFuture<Integer> getSessionSize();
+
+    CompletableFuture<Boolean> removeSession();
+
+    CompletableFuture<Boolean> updateSession(HTTPSession httpSession);
 
     boolean isRequestedSessionIdFromURL();
 
     boolean isRequestedSessionIdFromCookie();
-
-    boolean isRequestedSessionIdValid();
 
     String getRequestedSessionId();
 

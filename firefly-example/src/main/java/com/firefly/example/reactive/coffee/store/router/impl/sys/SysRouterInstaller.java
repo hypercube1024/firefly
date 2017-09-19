@@ -6,7 +6,6 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.example.reactive.coffee.store.router.RouterInstaller;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.router.handler.file.StaticFileHandler;
-import com.firefly.server.http2.router.handler.session.HTTPSessionConfiguration;
 import com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler;
 import com.firefly.utils.log.slf4j.ext.LazyLogger;
 
@@ -31,13 +30,16 @@ public class SysRouterInstaller implements RouterInstaller {
     @Inject
     private TransactionalHandler transactionalHandler;
 
+    @Inject
+    private LocalHTTPSessionHandler localHTTPSessionHandler;
+
     @Override
     public void install() {
         // global handler
         server.router().path("*").handler(globalHandler);
 
         // local session
-        server.router().path("*").handler(new LocalHTTPSessionHandler(new HTTPSessionConfiguration()));
+        server.router().path("*").handler(localHTTPSessionHandler);
 
         // HTTP transaction manager
         server.router().methods(transactionalHandler.getMethods()).handler(transactionalHandler);

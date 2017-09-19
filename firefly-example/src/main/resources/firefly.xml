@@ -23,11 +23,11 @@
     <!-- Reactive adapter -->
     <bean id="projectConfig" class="com.firefly.example.reactive.coffee.store.ProjectConfig">
         <property name="templateRoot" value="template/coffeeStore"/>
-        <property name="host" value="localhost" />
-        <property name="port" value="8080" />
+        <property name="host" value="localhost"/>
+        <property name="port" value="8080"/>
     </bean>
 
-    <bean id="reactiveMain" class="com.firefly.example.reactive.coffee.store.AppMain" />
+    <bean id="reactiveMain" class="com.firefly.example.reactive.coffee.store.AppMain"/>
 
     <bean id="reactiveSQLClient" class="com.firefly.reactive.adapter.db.ReactiveSQLClientAdapter">
         <constructor>
@@ -41,6 +41,9 @@
             <argument type="com.firefly.reactive.adapter.db.ReactiveSQLClient" ref="reactiveSQLClient"/>
         </constructor>
     </bean>
+
+    <bean id="localSessionHandler" class="com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler"
+          destroy-method="stop"/>
 
     <bean id="httpServer" class="com.firefly.server.http2.HTTP2ServerBuilder"
           init-method="httpServer"
