@@ -3,6 +3,7 @@ package com.firefly.core;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.exception.BeanDefinitionParsingException;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
-abstract public class AbstractApplicationContext implements ApplicationContext {
+abstract public class AbstractApplicationContext extends AbstractLifeCycle implements ApplicationContext {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
@@ -29,13 +30,25 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
         beanDefinitions = getBeanDefinitions(file);
         beanDefinitionCheck(); // Conflicts check
         addObjectToContext();
+        start();
+        map = Collections.unmodifiableMap(map);
+    }
+
+    @Override
+    protected void init() {
         if (!initMethods.isEmpty()) {
             invokeMethods(initMethods);
         }
         if (!destroyedMethods.isEmpty()) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> invokeMethods(destroyedMethods), "the firefly shutdown thread"));
+            Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "the firefly shutdown thread"));
         }
-        map = Collections.unmodifiableMap(map);
+    }
+
+    @Override
+    protected void destroy() {
+        if (!destroyedMethods.isEmpty()) {
+            invokeMethods(destroyedMethods);
+        }
     }
 
     protected void invokeMethods(List<Pair<Method, Object>> methods) {

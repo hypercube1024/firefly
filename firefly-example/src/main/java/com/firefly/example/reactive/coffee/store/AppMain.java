@@ -5,12 +5,13 @@ import com.firefly.annotation.Inject;
 import com.firefly.example.reactive.coffee.store.router.RouterInstaller;
 import com.firefly.example.reactive.coffee.store.utils.DBUtils;
 import com.firefly.server.http2.HTTP2ServerBuilder;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.slf4j.ext.LazyLogger;
 
 /**
  * @author Pengtao Qiu
  */
-public class AppMain {
+public class AppMain extends AbstractLifeCycle {
 
     private static final LazyLogger logger = LazyLogger.create();
 
@@ -35,13 +36,20 @@ public class AppMain {
         });
     }
 
-    public void start(String[] args) {
+    @Override
+    protected void init() {
         initData();
         installRouters();
         server.listen(config.getHost(), config.getPort());
     }
 
+    @Override
+    protected void destroy() {
+        server.stop();
+        $.getApplicationContext().stop();
+    }
+
     public static void main(String[] args) {
-        $.getBean(AppMain.class).start(args);
+        $.getBean(AppMain.class).start();
     }
 }

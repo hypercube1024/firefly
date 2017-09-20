@@ -210,6 +210,10 @@ public interface $ {
         return ApplicationContextSingleton.getInstance().getApplicationContext().getBean(clazz);
     }
 
+    static ApplicationContext getApplicationContext() {
+        return ApplicationContextSingleton.getInstance().getApplicationContext();
+    }
+
     /**
      * Get bean from default application context. The default application context reads configuration firefly.xml in classpath.
      *
