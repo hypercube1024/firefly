@@ -1,9 +1,14 @@
 package com.firefly.example.reactive.coffee.store.router.impl.sys;
 
+import com.firefly.$;
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.db.RecordNotFound;
 import com.firefly.example.reactive.coffee.store.ProjectConfig;
+import com.firefly.example.reactive.coffee.store.service.UserService;
 import com.firefly.example.reactive.coffee.store.vo.UserInfo;
 import com.firefly.server.http2.router.HTTPSession;
 import com.firefly.server.http2.router.Handler;
@@ -36,18 +41,34 @@ public class LoginHandler implements Handler {
     @Inject
     private ProjectConfig config;
 
+    @Inject
+    private ErrorRenderer errorRenderer;
+
+    @Inject
+    private UserService userService;
+
     @Override
     public void handle(RoutingContext ctx) {
         Mono.fromFuture(ctx.getSession()).subscribe(session -> {
-            if (ctx.getURI().getPath().equals(config.getLoginURL())) {
-                renderLoginPage(ctx);
-                return;
+            String path = ctx.getURI().getPath();
+            if (path.equals(config.getLoginURL())) {
+                switch (HttpMethod.fromString(ctx.getMethod())) {
+                    case GET:
+                        renderLoginPage(ctx);
+                        return;
+                    case POST:
+                        verifyPasswordRequest(ctx, session);
+                        return;
+                    default:
+                        errorRenderer.renderError(ctx, HttpStatus.METHOD_NOT_ALLOWED_405);
+                        return;
+                }
             }
 
-            if (skipVerify(ctx.getURI().getPath())) {
+            if (skipVerify(path)) {
                 ctx.next();
             } else {
-                verifyLoginUser(ctx, session);
+                verifyLogin(ctx, session);
             }
         }, ctx::fail);
     }
@@ -60,7 +81,45 @@ public class LoginHandler implements Handler {
         ctx.succeed(true);
     }
 
-    private void verifyLoginUser(RoutingContext ctx, HTTPSession session) {
+    private void verifyPasswordRequest(RoutingContext ctx, HTTPSession session) {
+        String username = ctx.getParameter("username");
+        String password = ctx.getParameter("password");
+
+        if (!$.string.hasText(username)) {
+            ctx.fail(new IllegalArgumentException("The username is required"));
+            return;
+        }
+
+        if (!$.string.hasText(password)) {
+            ctx.fail(new IllegalArgumentException("The password is required"));
+            return;
+        }
+
+        userService.getByName(username).subscribe(user -> {
+            if (!user.getPassword().equals(password)) {
+                ctx.fail(new IllegalArgumentException("The password is incorrect"));
+            } else {
+                String backURL = ctx.getParamOpt("backURL").orElse("/");
+                UserInfo userInfo = new UserInfo();
+                $.javabean.copyBean(user, userInfo);
+                session.getAttributes().put(config.getLoginUserKey(), userInfo);
+                Mono.fromFuture(ctx.updateSession(session)).subscribe(ret -> {
+                    ctx.setAttribute(config.getLoginUserKey(), userInfo);
+                    ctx.redirect(backURL);
+                    ctx.succeed(true);
+                    logger.info(() -> "user " + userInfo + " login success!");
+                }, ctx::fail);
+            }
+        }, ex -> {
+            if (ex instanceof RecordNotFound || ex.getCause() instanceof RecordNotFound) {
+                ctx.fail(new IllegalArgumentException("The username is incorrect"));
+            } else {
+                ctx.fail(ex);
+            }
+        });
+    }
+
+    private void verifyLogin(RoutingContext ctx, HTTPSession session) {
         UserInfo userInfo = (UserInfo) session.getAttributes().get(config.getLoginUserKey());
         if (userInfo != null) {
             ctx.setAttribute(config.getLoginUserKey(), userInfo);

@@ -25,10 +25,18 @@ public class TransactionalHandler implements Handler {
     @Override
     public void handle(RoutingContext ctx) {
         db.beginTransaction()
-          .then(begin -> Mono.fromFuture(ctx.nextFuture()))
-          .then(process -> db.commitAndEndTransaction())
-          .subscribe(success -> ctx.succeed(true),
-                  ex -> db.rollbackAndEndTransaction().subscribe(rollbackSuccess -> ctx.fail(ex), ctx::fail));
+          .then(begin -> {
+              logger.info(() -> "transaction begin -> " + ctx.getURI().getPathQuery());
+              return Mono.fromFuture(ctx.nextFuture());
+          })
+          .then(process -> {
+              logger.info(() -> "transaction end -> " + ctx.getURI().getPathQuery());
+              return db.commitAndEndTransaction();
+          })
+          .subscribe(success -> {
+              logger.info(() -> "transaction submit success -> " + ctx.getURI().getPathQuery());
+              ctx.succeed(true);
+          }, ex -> db.rollbackAndEndTransaction().subscribe(rollbackSuccess -> ctx.fail(ex), ctx::fail));
     }
 
     public HttpMethod[] getMethods() {

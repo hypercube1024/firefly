@@ -22,10 +22,12 @@ abstract public class AbstractErrorResponseHandler implements Handler {
                 log.error("http handler exception", t);
                 if (!ctx.getResponse().isCommitted()) {
                     render(ctx, HttpStatus.INTERNAL_SERVER_ERROR_500, t);
+                    ctx.fail(t);
                 }
             }
         } else {
             render(ctx, HttpStatus.NOT_FOUND_404, null);
+            ctx.succeed(true);
         }
     }
 
