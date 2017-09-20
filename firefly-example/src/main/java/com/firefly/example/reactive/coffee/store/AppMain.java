@@ -46,7 +46,6 @@ public class AppMain extends AbstractLifeCycle {
     @Override
     protected void destroy() {
         server.stop();
-        $.getApplicationContext().stop();
     }
 
     public static void main(String[] args) {

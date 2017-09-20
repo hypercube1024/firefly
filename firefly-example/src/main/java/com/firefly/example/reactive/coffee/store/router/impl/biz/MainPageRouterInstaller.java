@@ -12,8 +12,6 @@ import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
 import com.firefly.example.reactive.coffee.store.vo.ProductStatus;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 
-import java.util.Collections;
-
 /**
  * @author Pengtao Qiu
  */
