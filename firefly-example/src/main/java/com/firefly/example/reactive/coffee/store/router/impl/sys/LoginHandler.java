@@ -2,6 +2,7 @@ package com.firefly.example.reactive.coffee.store.router.impl.sys;
 
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.example.reactive.coffee.store.ProjectConfig;
 import com.firefly.example.reactive.coffee.store.vo.UserInfo;
 import com.firefly.server.http2.router.HTTPSession;
@@ -11,7 +12,10 @@ import com.firefly.utils.log.slf4j.ext.LazyLogger;
 import com.firefly.utils.pattern.Pattern;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,7 +53,10 @@ public class LoginHandler implements Handler {
     }
 
     private void renderLoginPage(RoutingContext ctx) {
-        ctx.renderTemplate(config.getTemplateRoot() + "/login.mustache");
+        String backURL = ctx.getParameter("backURL");
+        Map<String, String> map = new HashMap<>();
+        map.put("backURL", backURL);
+        ctx.renderTemplate(config.getTemplateRoot() + "/login.mustache", map);
         ctx.succeed(true);
     }
 
@@ -59,7 +66,10 @@ public class LoginHandler implements Handler {
             ctx.setAttribute(config.getLoginUserKey(), userInfo);
             ctx.next();
         } else {
-            ctx.redirect(config.getLoginURL());
+            UrlEncoded urlEncoded = new UrlEncoded();
+            urlEncoded.put("backURL", ctx.getURI().getPathQuery());
+            String param = urlEncoded.encode(StandardCharsets.UTF_8, true);
+            ctx.redirect(config.getLoginURL() + "?" + param);
             ctx.succeed(true);
         }
     }
