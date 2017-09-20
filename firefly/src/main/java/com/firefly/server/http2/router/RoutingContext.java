@@ -3,6 +3,7 @@ package com.firefly.server.http2.router;
 import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.Json;
@@ -15,10 +16,7 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -187,6 +185,10 @@ public interface RoutingContext extends Closeable {
         return write(b).end();
     }
 
+    default void redirect(String url) {
+        setStatus(HttpStatus.FOUND_302).put(HttpHeader.LOCATION, url);
+        DefaultErrorResponseHandlerLoader.getInstance().getHandler().render(this, HttpStatus.FOUND_302, null);
+    }
 
     // HTTP body API
     String getParameter(String name);
@@ -263,5 +265,9 @@ public interface RoutingContext extends Closeable {
     void renderTemplate(String resourceName, Object[] scopes);
 
     void renderTemplate(String resourceName, List<Object> scopes);
+
+    default  void renderTemplate(String resourceName) {
+        renderTemplate(resourceName, Collections.emptyList());
+    }
 
 }

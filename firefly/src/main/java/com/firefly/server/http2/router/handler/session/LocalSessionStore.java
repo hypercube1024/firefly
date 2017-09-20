@@ -90,7 +90,7 @@ public class LocalSessionStore extends AbstractLifeCycle implements SessionStore
     @Override
     protected void init() {
         scheduler.scheduleWithFixedDelay(() -> map.forEach((id, session) -> {
-            if (!session.isInvalid()) {
+            if (session.isInvalid()) {
                 map.remove(id);
                 log.info("remove expired local HTTP session -> {}", id);
             }

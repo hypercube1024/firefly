@@ -19,3 +19,9 @@ VALUES
   (100, 6, now(), now()),
   (80, 7, now(), now())
 ;
+
+INSERT INTO `coffee_store`.`user` (`name`, `password`, `create_time`, `update_time`)
+VALUES
+  ('Bob', '123456', now(), now()),
+  ('John', '123456', now(), now())
+;

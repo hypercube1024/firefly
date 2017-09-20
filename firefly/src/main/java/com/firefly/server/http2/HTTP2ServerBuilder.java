@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -89,6 +90,11 @@ public class HTTP2ServerBuilder {
 
     public HTTP2ServerBuilder path(String url) {
         currentRouter.path(url);
+        return this;
+    }
+
+    public HTTP2ServerBuilder paths(List<String> paths) {
+        currentRouter.paths(paths);
         return this;
     }
 

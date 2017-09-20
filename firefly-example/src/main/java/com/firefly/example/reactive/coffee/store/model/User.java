@@ -1,5 +1,6 @@
 package com.firefly.example.reactive.coffee.store.model;
 
+import com.firefly.$;
 import com.firefly.db.annotation.Column;
 import com.firefly.db.annotation.Id;
 import com.firefly.db.annotation.Table;
@@ -65,5 +66,10 @@ public class User {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+
+    @Override
+    public String toString() {
+        return $.json.toJson(this);
     }
 }

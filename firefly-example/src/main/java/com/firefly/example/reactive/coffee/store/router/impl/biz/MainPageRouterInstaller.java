@@ -40,7 +40,6 @@ public class MainPageRouterInstaller implements RouterInstaller {
             productService.list(query).subscribe(productPage -> {
                 MainPage mainPage = new MainPage();
                 mainPage.setProducts(productPage);
-                mainPage.setUserName("Pengtao Qiu");
                 ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_HTML.asString())
                    .renderTemplate(config.getTemplateRoot() + "/index.mustache", mainPage);
                 ctx.succeed(true);

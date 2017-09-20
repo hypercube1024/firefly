@@ -7,15 +7,15 @@ import com.firefly.example.reactive.coffee.store.model.Product;
  */
 public class MainPage {
 
-    private String userName;
+    private UserInfo userInfo;
     private Page<Product> products;
 
-    public String getUserName() {
-        return userName;
+    public UserInfo getUserInfo() {
+        return userInfo;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUserInfo(UserInfo userInfo) {
+        this.userInfo = userInfo;
     }
 
     public Page<Product> getProducts() {

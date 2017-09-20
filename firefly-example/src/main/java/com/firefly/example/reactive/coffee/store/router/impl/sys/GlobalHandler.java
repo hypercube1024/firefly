@@ -25,7 +25,7 @@ public class GlobalHandler implements Handler {
             .timeout(Duration.ofSeconds(1))
             .subscribe(ret -> ctx.end(), ex -> {
                 ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                logger.error(() -> "server exception", ex);
+                logger.error(() -> "server exception, " + ctx.getURI(), ex);
                 Response<Boolean> response = new Response<>();
                 response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
                 response.setMessage("server exception, " + ex.getMessage());

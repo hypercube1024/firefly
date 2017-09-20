@@ -19,18 +19,9 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 /**
  * @author Pengtao Qiu
  */
-public class TestProductDAO {
+public class TestProductDAO extends TestBase {
 
-    private ProductDAO productDAO;
-
-    @Before
-    public void before() {
-        DBUtils dbUtils = $.getBean(DBUtils.class);
-        dbUtils.createTables();
-        dbUtils.initializeData();
-
-        productDAO = $.getBean(ProductDAO.class);
-    }
+    private ProductDAO productDAO = $.getBean(ProductDAO.class);
 
     @Test
     public void testGet() {

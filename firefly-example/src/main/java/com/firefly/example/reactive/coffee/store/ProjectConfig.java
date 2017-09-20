@@ -5,6 +5,8 @@ package com.firefly.example.reactive.coffee.store;
  */
 public class ProjectConfig {
 
+    private String loginURL = "/login";
+    private String loginUserKey = "_loginUser";
     private String templateRoot;
     private String host;
     private int port;
@@ -31,5 +33,21 @@ public class ProjectConfig {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public String getLoginUserKey() {
+        return loginUserKey;
+    }
+
+    public void setLoginUserKey(String loginUserKey) {
+        this.loginUserKey = loginUserKey;
+    }
+
+    public String getLoginURL() {
+        return loginURL;
+    }
+
+    public void setLoginURL(String loginURL) {
+        this.loginURL = loginURL;
     }
 }
