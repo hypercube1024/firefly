@@ -219,6 +219,8 @@ public class SSLSession implements Closeable {
     }
 
     private void doHandshakeResponse() throws IOException {
+
+        outter:
         while (initialHSStatus == HandshakeStatus.NEED_WRAP) {
             SSLEngineResult result;
             ByteBuffer writeBuf = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
@@ -249,8 +251,13 @@ public class SSLSession implements Closeable {
                         writeBuf = b;
                         break;
 
-                    default: // BUFFER_UNDERFLOW, CLOSED:
-                        throw new IOException("Received " + result.getStatus() + " during initial handshaking");
+                    case CLOSED:
+                        log.info("Session {} handshake failure. SSLEngine will close inbound", session.getSessionId());
+                        sslEngine.closeInbound();
+                        break outter;
+
+                    default: // BUFFER_UNDERFLOW
+                        throw new IOException(StringUtils.replace("Session {} handshake exception. status -> {}", session.getSessionId(), result.getStatus()));
                 }
             }
         }
@@ -420,7 +427,7 @@ public class SSLSession implements Closeable {
                     log.info("Session {} read data failure. SSLEngine will close inbound", session.getSessionId());
                     sslEngine.closeInbound();
                 }
-                break;
+                break needIO;
 
                 default:
                     throw new IOException(StringUtils.replace("Session {} SSLEngine read data exception. status -> {}",
@@ -468,6 +475,7 @@ public class SSLSession implements Closeable {
 
         final int remain = outputBuffer.remaining();
 
+        outter:
         while (ret < remain) {
             ByteBuffer writeBuf = ByteBuffer.allocate(writeBufferSize);
 
@@ -500,7 +508,7 @@ public class SSLSession implements Closeable {
                         log.info("Session {} write data failure. SSLEngine will close", session.getSessionId());
                         sslEngine.closeOutbound();
                     }
-                    break;
+                    break outter;
 
                     default:
                         throw new IOException(StringUtils.replace("Session {} SSLEngine writes data exception. status -> {}",

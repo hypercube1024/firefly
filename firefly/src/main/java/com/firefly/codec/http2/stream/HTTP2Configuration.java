@@ -1,6 +1,7 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.net.SSLContextFactory;
+import com.firefly.net.tcp.ssl.DefaultJavaSSLContextFactory;
 import com.firefly.net.tcp.ssl.SelfSignedCertificateOpenSSLContextFactory;
 
 public class HTTP2Configuration {
@@ -10,7 +11,7 @@ public class HTTP2Configuration {
 
     // SSL/TLS settings
     private boolean isSecureConnectionEnabled;
-    private SSLContextFactory sslContextFactory = new SelfSignedCertificateOpenSSLContextFactory();
+    private SSLContextFactory sslContextFactory = new DefaultJavaSSLContextFactory();
 
     // HTTP settings
     private int maxDynamicTableSize = 4096;

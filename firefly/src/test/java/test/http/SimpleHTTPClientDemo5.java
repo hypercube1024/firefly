@@ -21,8 +21,9 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
-    public static void main6(String[] args) throws Exception {
-        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
+    public static void main(String[] args) throws Exception {
+        System.out.println($.httpsClient().get("https://login.taobao.com").submit().get().getStringBody());
+//        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://github.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://segmentfault.com").submit().get().getStringBody());
     }
@@ -43,7 +44,7 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main4(String[] args) throws ExecutionException, InterruptedException {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();

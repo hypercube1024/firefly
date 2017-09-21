@@ -48,8 +48,6 @@ fun RoutingContext.getRegexGroup(index: Int): String = getRouterParameter("group
 
 fun RoutingContext.getPathParameter(name: String): String = getRouterParameter(name)
 
-fun RoutingContext.writeJson(obj: Any): RoutingContext = put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).write(Json.toJson(obj))
-
 inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
