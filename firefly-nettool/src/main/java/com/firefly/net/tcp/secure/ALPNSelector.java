@@ -34,7 +34,6 @@ public class ALPNSelector implements ApplicationProtocolSelector {
                 public void selected(String protocol) {
                     ALPN.remove(sslEngine);
                     applicationProtocol = protocol;
-                    System.out.println("selected protocol: " + protocol);
                 }
             });
         } else {
