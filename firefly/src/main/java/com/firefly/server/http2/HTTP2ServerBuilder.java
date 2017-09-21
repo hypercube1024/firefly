@@ -1,13 +1,12 @@
 package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
-import com.firefly.utils.lang.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +33,10 @@ public class HTTP2ServerBuilder {
         return httpServer(configuration, new HTTPBodyConfiguration());
     }
 
-    public HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
+    public HTTP2ServerBuilder httpsServer(SecureSessionFactory secureSessionFactory) {
         SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
         configuration.setSecureConnectionEnabled(true);
-        configuration.setSslContextFactory(sslContextFactory);
+        configuration.setSecureSessionFactory(secureSessionFactory);
         return httpServer(configuration, new HTTPBodyConfiguration());
     }
 

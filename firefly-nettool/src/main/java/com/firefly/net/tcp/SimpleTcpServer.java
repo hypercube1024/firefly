@@ -1,16 +1,13 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.SecureSession;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.Server;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
-import com.firefly.net.tcp.ssl.SSLSession;
-import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
-import com.firefly.utils.function.Func1;
 import com.firefly.utils.lang.AbstractLifeCycle;
-
-import java.util.List;
 
 public class SimpleTcpServer extends AbstractLifeCycle {
 
@@ -84,21 +81,21 @@ public class SimpleTcpServer extends AbstractLifeCycle {
 
                 @Override
                 public void sessionOpened(Session session) throws Throwable {
-                    session.attachObject(new SecureTcpConnectionImpl(session,
-                            new SSLSession(config.getSslContextFactory(), false, session, (ssl) -> {
-                                Object o = session.getAttachment();
-                                if (o != null && o instanceof SecureTcpConnectionImpl) {
-                                    SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-                                    if (accept != null) {
-                                        accept.call(c);
-                                    }
-                                }
-                            })));
+                    SecureSessionFactory factory = config.getSecureSessionFactory();
+                    session.attachObject(new SecureTcpConnectionImpl(session, factory.create(session, false, ssl -> {
+                        Object o = session.getAttachment();
+                        if (o != null && o instanceof SecureTcpConnectionImpl) {
+                            SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
+                            if (accept != null) {
+                                accept.call(c);
+                            }
+                        }
+                    })));
                 }
 
                 @Override
                 public void sessionClosed(Session session) throws Throwable {
-                    super.sslSessionClosed(session);
+                    super.secureSessionClosed(session);
                 }
 
             });

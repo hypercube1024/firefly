@@ -4,9 +4,11 @@ import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.StringUtils;
+
+import java.util.Optional;
 
 public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
@@ -22,13 +24,22 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
     @Override
     public void sessionOpened(final Session session) throws Throwable {
         if (config.isSecureConnectionEnabled()) {
-            session.attachObject(new SSLSession(config.getSslContextFactory(), false, session, sslSession -> {
+            SecureSessionFactory factory = config.getSecureSessionFactory();
+            session.attachObject(factory.create(session, false, sslSession -> {
                 log.debug("server session {} SSL handshake finished", session.getSessionId());
                 HTTPConnection httpConnection;
-                if ("http/1.1".equals(sslSession.applicationProtocol())) {
-                    httpConnection = new HTTP1ServerConnection(config, session, sslSession, new HTTP1ServerRequestHandler(serverHTTPHandler), listener);
-                } else {
-                    httpConnection = new HTTP2ServerConnection(config, session, sslSession, listener);
+                String protocol = Optional.ofNullable(sslSession.applicationProtocol())
+                                          .filter(StringUtils::hasText)
+                                          .orElse("http/1.1");
+                switch (protocol) {
+                    case "http/1.1":
+                        httpConnection = new HTTP1ServerConnection(config, session, sslSession, new HTTP1ServerRequestHandler(serverHTTPHandler), listener);
+                        break;
+                    case "h2":
+                        httpConnection = new HTTP2ServerConnection(config, session, sslSession, listener);
+                        break;
+                    default:
+                        throw new IllegalStateException("SSL application protocol negotiates failure. The protocol " + protocol + " is not supported");
                 }
                 session.attachObject(httpConnection);
                 serverHTTPHandler.acceptConnection(httpConnection);

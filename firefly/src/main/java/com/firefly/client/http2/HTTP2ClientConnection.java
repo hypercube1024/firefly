@@ -12,8 +12,8 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
@@ -69,9 +69,9 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
         }
     }
 
-    public HTTP2ClientConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
+    public HTTP2ClientConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
                                  Listener listener) {
-        super(config, tcpSession, sslSession, listener);
+        super(config, tcpSession, secureSession, listener);
     }
 
     @Override
@@ -96,8 +96,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
         return generator;
     }
 
-    SSLSession getSSLSession() {
-        return sslSession;
+    SecureSession getSecureSession() {
+        return secureSession;
     }
 
     SessionSPI getSessionSPI() {

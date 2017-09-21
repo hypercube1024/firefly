@@ -1,4 +1,4 @@
-package com.firefly.net.tcp.ssl;
+package com.firefly.net.tcp.secure;
 
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.utils.CollectionUtils;

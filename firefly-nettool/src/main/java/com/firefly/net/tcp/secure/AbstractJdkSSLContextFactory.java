@@ -1,4 +1,4 @@
-package com.firefly.net.tcp.ssl;
+package com.firefly.net.tcp.secure;
 
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.SSLContextFactory;
@@ -16,7 +16,7 @@ import java.security.cert.CertificateException;
 /**
  * @author Pengtao Qiu
  */
-abstract public class AbstractJavaSSLContextFactory implements SSLContextFactory {
+abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory {
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random) throws NoSuchAlgorithmException, KeyManagementException {

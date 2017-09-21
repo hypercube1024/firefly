@@ -1,9 +1,9 @@
 package com.firefly.net.tcp;
 
 import com.firefly.net.Client;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -125,7 +125,8 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 
                 @Override
                 public void sessionOpened(Session session) throws Throwable {
-                    session.attachObject(new SecureTcpConnectionImpl(session, new SSLSession(config.getSslContextFactory(), true, session, (ssl) -> {
+                    SecureSessionFactory factory = config.getSecureSessionFactory();
+                    session.attachObject(new SecureTcpConnectionImpl(session, factory.create(session, true, ssl -> {
                         Object o = session.getAttachment();
                         if (o != null && o instanceof SecureTcpConnectionImpl) {
                             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
@@ -137,7 +138,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                 @Override
                 public void sessionClosed(Session session) throws Throwable {
                     try {
-                        super.sslSessionClosed(session);
+                        super.secureSessionClosed(session);
                     } finally {
                         context.remove(session.getSessionId());
                     }

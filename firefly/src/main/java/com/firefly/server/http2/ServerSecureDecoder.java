@@ -2,8 +2,8 @@ package com.firefly.server.http2;
 
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.DecoderChain;
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +25,10 @@ public class ServerSecureDecoder extends DecoderChain {
             ByteBuffer plaintext;
             switch (connection.getHttpVersion()) {
                 case HTTP_2:
-                    plaintext = ((HTTP2ServerConnection) connection).getSSLSession().read(buf);
+                    plaintext = ((HTTP2ServerConnection) connection).getSecureSession().read(buf);
                     break;
                 case HTTP_1_1:
-                    plaintext = ((HTTP1ServerConnection) connection).getSSLSession().read(buf);
+                    plaintext = ((HTTP1ServerConnection) connection).getSecureSession().read(buf);
                     break;
                 default:
                     throw new IllegalStateException("server does not support the http version " + connection.getHttpVersion());
@@ -37,8 +37,8 @@ public class ServerSecureDecoder extends DecoderChain {
             if (plaintext != null && next != null) {
                 next.decode(plaintext, session);
             }
-        } else if (session.getAttachment() instanceof SSLSession) {
-            SSLSession sslSession = (SSLSession) session.getAttachment();
+        } else if (session.getAttachment() instanceof SecureSession) {
+            SecureSession sslSession = (SecureSession) session.getAttachment();
             ByteBuffer plaintext = sslSession.read(buf);
 
             if (plaintext != null && plaintext.hasRemaining()) {

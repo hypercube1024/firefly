@@ -1,11 +1,11 @@
-package com.firefly.net.tcp.ssl;
+package com.firefly.net.tcp.secure;
 
 import javax.net.ssl.SSLContext;
 
 /**
  * @author Pengtao Qiu
  */
-public class DefaultJavaSSLContextFactory extends AbstractJavaSSLContextFactory {
+public class DefaultJdkSSLContextFactory extends AbstractJdkSSLContextFactory {
     @Override
     public SSLContext getSSLContext() {
         try {

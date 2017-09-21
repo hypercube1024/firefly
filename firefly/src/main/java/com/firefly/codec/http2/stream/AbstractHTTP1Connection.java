@@ -5,8 +5,8 @@ import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 
 abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
 
@@ -14,9 +14,9 @@ abstract public class AbstractHTTP1Connection extends AbstractHTTPConnection {
     protected final Generator http2Generator;
     protected final HTTP2Configuration config;
 
-    public AbstractHTTP1Connection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession,
+    public AbstractHTTP1Connection(HTTP2Configuration config, SecureSession secureSession, Session tcpSession,
                                    RequestHandler requestHandler, ResponseHandler responseHandler) {
-        super(sslSession, tcpSession, HttpVersion.HTTP_1_1);
+        super(secureSession, tcpSession, HttpVersion.HTTP_1_1);
 
         this.config = config;
         parser = initHttpParser(config, requestHandler, responseHandler);

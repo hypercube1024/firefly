@@ -1,8 +1,8 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action0;
@@ -17,18 +17,18 @@ import java.util.concurrent.CompletableFuture;
 
 public class SecureTcpConnectionImpl extends AbstractTcpConnection {
 
-    SSLSession sslSession;
+    SecureSession secureSession;
 
-    public SecureTcpConnectionImpl(Session session, SSLSession sslSession) {
+    public SecureTcpConnectionImpl(Session session, SecureSession secureSession) {
         super(session);
-        this.sslSession = sslSession;
+        this.secureSession = secureSession;
     }
 
     @Override
     public CompletableFuture<Void> writeToFuture(ByteBuffer byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
-            sslSession.write(byteBuffer, new Callback() {
+            secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
                     c.succeeded(null);
                 }
@@ -47,7 +47,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     public CompletableFuture<Void> writeToFuture(ByteBuffer[] byteBuffer) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
-            sslSession.write(byteBuffer, new Callback() {
+            secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
                     c.succeeded(null);
                 }
@@ -82,7 +82,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     public CompletableFuture<Void> writeToFuture(FileRegion file) {
         Promise.Completable<Void> c = new Promise.Completable<>();
         try {
-            sslSession.transferFileRegion(file, new Callback() {
+            secureSession.transferFileRegion(file, new Callback() {
                 public void succeeded() {
                     c.succeeded(null);
                 }
@@ -100,7 +100,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
         try {
-            sslSession.write(byteBuffer, new Callback() {
+            secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -118,7 +118,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
         try {
-            sslSession.write(byteBuffer, new Callback() {
+            secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -136,7 +136,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
         try {
-            sslSession.write(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), new Callback() {
+            secureSession.write(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -167,7 +167,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(FileRegion file, Action0 succeeded, Action1<Throwable> failed) {
         try {
-            sslSession.transferFileRegion(file, new Callback() {
+            secureSession.transferFileRegion(file, new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -185,7 +185,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded) {
         try {
-            sslSession.write(byteBuffer, new Callback() {
+            secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -198,7 +198,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded) {
         try {
-            sslSession.write(byteBuffer, new Callback() {
+            secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -211,7 +211,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded) {
         try {
-            sslSession.write(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), new Callback() {
+            secureSession.write(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -230,7 +230,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     public TcpConnection write(String message, String charset, Action0 succeeded) {
         ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
         try {
-            sslSession.write(byteBuffer, new Callback() {
+            secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -243,7 +243,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(FileRegion file, Action0 succeeded) {
         try {
-            sslSession.transferFileRegion(file, new Callback() {
+            secureSession.transferFileRegion(file, new Callback() {
                 public void succeeded() {
                     succeeded.call();
                 }
@@ -256,7 +256,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(ByteBuffer byteBuffer) {
         try {
-            sslSession.write(byteBuffer, Callback.NOOP);
+            secureSession.write(byteBuffer, Callback.NOOP);
         } catch (Throwable ignored) {
         }
         return this;
@@ -265,7 +265,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(ByteBuffer[] byteBuffer) {
         try {
-            sslSession.write(byteBuffer, Callback.NOOP);
+            secureSession.write(byteBuffer, Callback.NOOP);
         } catch (Throwable ignored) {
         }
         return this;
@@ -285,7 +285,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     public TcpConnection write(String message, String charset) {
         ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
         try {
-            sslSession.write(byteBuffer, Callback.NOOP);
+            secureSession.write(byteBuffer, Callback.NOOP);
         } catch (Throwable ignored) {
         }
         return this;
@@ -294,7 +294,7 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public TcpConnection write(FileRegion file) {
         try {
-            sslSession.transferFileRegion(file, Callback.NOOP);
+            secureSession.transferFileRegion(file, Callback.NOOP);
         } catch (Throwable ignored) {
         }
         return this;

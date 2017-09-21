@@ -1,4 +1,4 @@
-package com.firefly.net.tcp.ssl;
+package com.firefly.net.tcp.secure;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +10,7 @@ import java.io.FileInputStream;
 /**
  * @author Pengtao Qiu
  */
-public class FileJavaSSLContextFactory extends AbstractJavaSSLContextFactory {
+public class FileJdkSSLContextFactory extends AbstractJdkSSLContextFactory {
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private File file;
@@ -20,14 +20,14 @@ public class FileJavaSSLContextFactory extends AbstractJavaSSLContextFactory {
     private String trustManagerFactoryType;
     private String sslProtocol;
 
-    public FileJavaSSLContextFactory(String path, String keystorePassword, String keyPassword) {
+    public FileJdkSSLContextFactory(String path, String keystorePassword, String keyPassword) {
         this(path, keystorePassword, keyPassword, null, null, null);
     }
 
-    public FileJavaSSLContextFactory(String path, String keystorePassword, String keyPassword,
-                                     String keyManagerFactoryType,
-                                     String trustManagerFactoryType,
-                                     String sslProtocol) {
+    public FileJdkSSLContextFactory(String path, String keystorePassword, String keyPassword,
+                                    String keyManagerFactoryType,
+                                    String trustManagerFactoryType,
+                                    String sslProtocol) {
         file = new File(path);
         this.keystorePassword = keystorePassword;
         this.keyPassword = keyPassword;

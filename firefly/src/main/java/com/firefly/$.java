@@ -6,7 +6,7 @@ import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.core.ApplicationContext;
 import com.firefly.core.ApplicationContextSingleton;
 import com.firefly.core.XmlApplicationContext;
-import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
@@ -123,8 +123,8 @@ public interface $ {
         return new HTTP2ServerBuilder().httpsServer();
     }
 
-    static HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
-        return new HTTP2ServerBuilder().httpsServer(sslContextFactory);
+    static HTTP2ServerBuilder httpsServer(SecureSessionFactory secureSessionFactory) {
+        return new HTTP2ServerBuilder().httpsServer(secureSessionFactory);
     }
 
     /**

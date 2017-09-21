@@ -1,4 +1,4 @@
-package com.firefly.net.tcp.ssl;
+package com.firefly.net.tcp.secure;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -9,7 +9,7 @@ import java.security.cert.X509Certificate;
 /**
  * @author Pengtao Qiu
  */
-public class NoCheckJavaSSLContextFactory extends AbstractJavaSSLContextFactory {
+public class NoCheckJdkSSLContextFactory extends AbstractJdkSSLContextFactory {
     @Override
     public SSLContext getSSLContext() {
         try {
