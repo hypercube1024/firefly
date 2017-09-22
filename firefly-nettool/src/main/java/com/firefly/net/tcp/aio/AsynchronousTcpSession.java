@@ -69,8 +69,9 @@ public class AsynchronousTcpSession implements Session {
     }
 
     void _read() {
-        if (!isOpen())
+        if (!isOpen()) {
             return;
+        }
 
         final ByteBuffer buf = ByteBuffer.allocate(BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize()));
 
@@ -85,8 +86,7 @@ public class AsynchronousTcpSession implements Session {
                         session.lastReadTime = Millisecond100Clock.currentTimeMillis();
                         if (currentReadBytes < 0) {
                             if (log.isDebugEnabled()) {
-                                log.debug("the session {} input is closed, {}", session.getSessionId(),
-                                        currentReadBytes);
+                                log.debug("the session {} input is closed, {}", session.getSessionId(), currentReadBytes);
                             }
                             session.closeNow();
                             return;
@@ -193,7 +193,7 @@ public class AsynchronousTcpSession implements Session {
             outputLock.lock();
             try {
                 int bufferSize = outputBuffer.size();
-                log.warn("the session {} has {} buffer data can not ouput", getSessionId(), bufferSize);
+                log.warn("the session {} has {} buffer data can not output", getSessionId(), bufferSize);
                 outputBuffer.clear();
                 isWriting = false;
                 shutdownSocketChannel();
@@ -205,8 +205,9 @@ public class AsynchronousTcpSession implements Session {
     }
 
     private void _write(final OutputEntry<?> entry) {
-        if (!isOpen())
+        if (!isOpen()) {
             return;
+        }
 
         switch (entry.getOutputEntryType()) {
             case BYTE_BUFFER:
