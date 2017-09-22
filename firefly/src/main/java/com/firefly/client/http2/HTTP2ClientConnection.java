@@ -77,15 +77,12 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
     @Override
     protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
                                             Listener listener) {
-        HTTP2ClientSession http2ClientSession = new HTTP2ClientSession(scheduler, this.tcpSession, this.generator,
-                listener, flowControl, config.getStreamIdleTimeout());
-        return http2ClientSession;
+        return new HTTP2ClientSession(scheduler, this.tcpSession, this.generator, listener, flowControl, config.getStreamIdleTimeout());
     }
 
     @Override
     protected Parser initParser(HTTP2Configuration config) {
-        return new Parser((HTTP2ClientSession) http2Session, config.getMaxDynamicTableSize(),
-                config.getMaxRequestHeadLength());
+        return new Parser(http2Session, config.getMaxDynamicTableSize(), config.getMaxRequestHeadLength());
     }
 
     Parser getParser() {
