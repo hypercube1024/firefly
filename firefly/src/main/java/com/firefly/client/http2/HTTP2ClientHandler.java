@@ -34,7 +34,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
             SecureSessionFactory factory = config.getSecureSessionFactory();
             session.attachObject(factory.create(session, true, sslSession -> {
                 log.debug("client session {} SSL handshake finished", session.getSessionId());
-                String protocol = Optional.ofNullable(sslSession.applicationProtocol())
+                String protocol = Optional.ofNullable(sslSession.getApplicationProtocol())
                                           .filter(StringUtils::hasText)
                                           .orElse("http/1.1");
                 switch (protocol) {

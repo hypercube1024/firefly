@@ -21,19 +21,19 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
-    public static void main6(String[] args) throws Exception {
-//        System.out.println($.httpsClient().get("https://login.taobao.com").submit().get().getStringBody());
-        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
+    public static void main(String[] args) throws Exception {
+        System.out.println($.httpsClient().get("https://login.taobao.com").submit().get().getStringBody());
+//        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://github.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://segmentfault.com").submit().get().getStringBody());
     }
 
-    public static void main(String[] args) {
+    public static void main5(String[] args) {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) { // tls.ctf.network
                 long start = System.currentTimeMillis();
-                $.httpsClient().get("https://www.baidu.com").submit()
-                 .thenApply(res -> res.getStringBody("UTF-8"))
+                $.httpsClient().get("https://www.taobao.com").submit()
+                 .thenApply(res -> res.getStringBody("GBK"))
                  .thenAccept(System.out::println)
                  .thenAccept(res -> {
                      System.out.print("------------------------");

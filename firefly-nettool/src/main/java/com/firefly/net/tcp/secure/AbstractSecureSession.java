@@ -16,6 +16,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * @author Pengtao Qiu
@@ -174,7 +175,7 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     protected void handshakeFinish() {
-        log.info("session {} handshake success!", session.getSessionId());
+        log.info("Session {} handshake success. The application protocol is {}", session.getSessionId(), getApplicationProtocol());
         initialHSComplete = true;
         handshakeListener.complete(this);
     }
@@ -279,15 +280,21 @@ abstract public class AbstractSecureSession implements SecureSession {
             // log.debug("close SSL engine, {}|{}", sslEngine.isInboundDone(),
             // sslEngine.isOutboundDone());
             sslEngine.closeOutbound();
+            sslEngine.closeInbound();
             closed = true;
         }
     }
 
     @Override
-    public String applicationProtocol() {
-        String protocol = applicationProtocolSelector.applicationProtocol();
+    public String getApplicationProtocol() {
+        String protocol = applicationProtocolSelector.getApplicationProtocol();
         log.debug("selected protocol -> {}", protocol);
         return protocol;
+    }
+
+    @Override
+    public List<String> getSupportedProtocols() {
+        return applicationProtocolSelector.getSupportedProtocols();
     }
 
     @Override

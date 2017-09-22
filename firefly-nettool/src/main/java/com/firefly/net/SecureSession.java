@@ -10,9 +10,7 @@ import java.nio.ByteBuffer;
 /**
  * @author Pengtao Qiu
  */
-public interface SecureSession extends Closeable {
-
-    String applicationProtocol();
+public interface SecureSession extends Closeable, ApplicationProtocolSelector {
 
     boolean isOpen();
 
