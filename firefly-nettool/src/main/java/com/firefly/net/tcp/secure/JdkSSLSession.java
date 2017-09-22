@@ -22,10 +22,10 @@ public class JdkSSLSession extends AbstractSecureSession {
 
     @Override
     protected SSLEngineResult unwrap(ByteBuffer input) throws IOException {
-        SSLEngineResult result = sslEngine.unwrap(input, outAppBuffer);
-        if (input != inNetBuffer) {
+        SSLEngineResult result = sslEngine.unwrap(input, receivedAppBuf);
+        if (input != receivedPacketBuf) {
             int consumed = result.bytesConsumed();
-            inNetBuffer.position(inNetBuffer.position() + consumed);
+            receivedPacketBuf.position(receivedPacketBuf.position() + consumed);
         }
         return result;
     }

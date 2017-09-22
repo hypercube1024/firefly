@@ -16,6 +16,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,8 +26,6 @@ abstract public class AbstractSecureSession implements SecureSession {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    protected static final int requestBufferSize = Integer.getInteger("com.firefly.net.tcp.secure.SecureSession.requestBufferSize", 1024 * 8);
-    protected static final int writeBufferSize = Integer.getInteger("com.firefly.net.tcp.secure.SecureSession.writeBufferSize", 1024 * 8);
     protected static final ByteBuffer hsBuffer = ByteBuffer.allocateDirect(0);
 
     protected final Session session;
@@ -34,8 +33,9 @@ abstract public class AbstractSecureSession implements SecureSession {
     protected final ApplicationProtocolSelector applicationProtocolSelector;
     protected final SecureSessionHandshakeListener handshakeListener;
 
-    protected ByteBuffer inNetBuffer;
-    protected ByteBuffer outAppBuffer;
+    protected ByteBuffer receivedPacketBuf;
+    protected ByteBuffer receivedAppBuf;
+
     protected boolean closed = false;
     protected SSLEngineResult.HandshakeStatus initialHSStatus;
     protected boolean initialHSComplete;
@@ -49,7 +49,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         this.applicationProtocolSelector = applicationProtocolSelector;
         this.handshakeListener = handshakeListener;
 
-        outAppBuffer = ByteBuffer.allocate(requestBufferSize);
+        receivedAppBuf = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
         initialHSComplete = false;
 
         // start tls
@@ -103,20 +103,20 @@ abstract public class AbstractSecureSession implements SecureSession {
 
     protected void doHandshakeReceive(ByteBuffer receiveBuffer) throws IOException {
         merge(receiveBuffer);
-        int netSize = sslEngine.getSession().getPacketBufferSize();
+        int packetBufferSize = sslEngine.getSession().getPacketBufferSize();
 
         needIO:
         while (initialHSStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP) {
 
             unwrap:
             while (true) {
-                ByteBuffer buf = splitBuffer(netSize);
+                ByteBuffer buf = splitBuffer(packetBufferSize);
                 SSLEngineResult result = unwrap(buf);
                 initialHSStatus = result.getHandshakeStatus();
 
                 if (log.isDebugEnabled()) {
                     log.debug("Session {} handshake result -> {}, initialHSStatus -> {}, inNetRemain -> {}",
-                            session.getSessionId(), result.toString(), initialHSStatus, inNetBuffer.remaining());
+                            session.getSessionId(), result.toString(), initialHSStatus, receivedPacketBuf.remaining());
                 }
 
                 switch (result.getStatus()) {
@@ -143,7 +143,7 @@ abstract public class AbstractSecureSession implements SecureSession {
                                 break needIO;
                         }
 
-                        if (inNetBuffer.remaining() >= netSize) {
+                        if (receivedPacketBuf.remaining() >= packetBufferSize) {
                             break; // retry the operation.
                         } else {
                             break needIO;
@@ -152,11 +152,10 @@ abstract public class AbstractSecureSession implements SecureSession {
 
                     case BUFFER_OVERFLOW: {
                         // Reset the application buffer size.
-                        int appSize = sslEngine.getSession().getApplicationBufferSize();
-                        ByteBuffer b = ByteBuffer.allocate(appSize + outAppBuffer.position());
-                        outAppBuffer.flip();
-                        b.put(outAppBuffer);
-                        outAppBuffer = b;
+                        ByteBuffer b = ByteBuffer.allocate(receivedAppBuf.position() + sslEngine.getSession().getApplicationBufferSize());
+                        receivedAppBuf.flip();
+                        b.put(receivedAppBuf);
+                        receivedAppBuf = b;
                     }
                     break; // retry the operation.
 
@@ -186,11 +185,11 @@ abstract public class AbstractSecureSession implements SecureSession {
         outer:
         while (initialHSStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
             SSLEngineResult result;
-            ByteBuffer writeBuf = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+            ByteBuffer packetBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
 
             wrap:
             while (true) {
-                result = sslEngine.wrap(hsBuffer, writeBuf);
+                result = sslEngine.wrap(hsBuffer, packetBuffer);
                 initialHSStatus = result.getHandshakeStatus();
                 if (log.isDebugEnabled()) {
                     log.debug("session {} handshake response, init: {} | ret: {} | complete: {} ",
@@ -202,21 +201,26 @@ abstract public class AbstractSecureSession implements SecureSession {
                             initialHSStatus = doTasks();
                         }
 
-                        writeBuf.flip();
-                        session.write(writeBuf, Callback.NOOP);
+                        packetBuffer.flip();
+                        if (packetBuffer.hasRemaining()) {
+                            session.write(packetBuffer, Callback.NOOP);
+                        }
                         break wrap;
 
                     case BUFFER_OVERFLOW:
-                        int netSize = sslEngine.getSession().getPacketBufferSize();
-                        ByteBuffer b = ByteBuffer.allocate(writeBuf.position() + netSize);
-                        writeBuf.flip();
-                        b.put(writeBuf);
-                        writeBuf = b;
+                        ByteBuffer b = ByteBuffer.allocate(packetBuffer.position() + sslEngine.getSession().getPacketBufferSize());
+                        packetBuffer.flip();
+                        b.put(packetBuffer);
+                        packetBuffer = b;
                         break;
 
                     case CLOSED:
                         log.info("Session {} handshake failure. SSLEngine will close inbound", session.getSessionId());
-                        sslEngine.closeInbound();
+                        packetBuffer.flip();
+                        if (packetBuffer.hasRemaining()) {
+                            session.write(packetBuffer, Callback.NOOP);
+                        }
+                        sslEngine.closeOutbound();
                         break outer;
 
                     default: // BUFFER_UNDERFLOW
@@ -230,25 +234,25 @@ abstract public class AbstractSecureSession implements SecureSession {
         if (!now.hasRemaining())
             return;
 
-        if (inNetBuffer != null) {
-            if (inNetBuffer.hasRemaining()) {
-                ByteBuffer ret = ByteBuffer.allocate(inNetBuffer.remaining() + now.remaining());
-                ret.put(inNetBuffer).put(now).flip();
-                inNetBuffer = ret;
+        if (receivedPacketBuf != null) {
+            if (receivedPacketBuf.hasRemaining()) {
+                ByteBuffer ret = ByteBuffer.allocate(receivedPacketBuf.remaining() + now.remaining());
+                ret.put(receivedPacketBuf).put(now).flip();
+                receivedPacketBuf = ret;
             } else {
-                inNetBuffer = now;
+                receivedPacketBuf = now;
             }
         } else {
-            inNetBuffer = now;
+            receivedPacketBuf = now;
         }
     }
 
-    protected ByteBuffer getOutAppBuffer() {
-        outAppBuffer.flip();
-        if (outAppBuffer.hasRemaining()) {
-            ByteBuffer buf = ByteBuffer.allocate(outAppBuffer.remaining());
-            buf.put(outAppBuffer).flip();
-            outAppBuffer = ByteBuffer.allocate(requestBufferSize);
+    protected ByteBuffer getReceivedAppBuf() {
+        receivedAppBuf.flip();
+        if (receivedAppBuf.hasRemaining()) {
+            ByteBuffer buf = ByteBuffer.allocate(receivedAppBuf.remaining());
+            buf.put(receivedAppBuf).flip();
+            receivedAppBuf = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
             if (log.isDebugEnabled()) {
                 log.debug("SSL session {} unwrap, app buffer -> {}", session.getSessionId(), buf.remaining());
             }
@@ -303,7 +307,7 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     protected ByteBuffer splitBuffer(int netSize) {
-        ByteBuffer buf = inNetBuffer.duplicate();
+        ByteBuffer buf = receivedPacketBuf.duplicate();
         if (buf.remaining() <= netSize) {
             return buf;
         } else {
@@ -316,6 +320,7 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     abstract protected SSLEngineResult unwrap(ByteBuffer input) throws IOException;
+
     abstract protected SSLEngineResult wrap(ByteBuffer src, ByteBuffer dst) throws IOException;
 
     /**
@@ -337,36 +342,35 @@ abstract public class AbstractSecureSession implements SecureSession {
             log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
         }
         merge(receiveBuffer);
-        if (!inNetBuffer.hasRemaining()) {
+        if (!receivedPacketBuf.hasRemaining()) {
             return null;
         }
 
         //split net buffer when the net buffer remaining great than the net size
-        int netSize = sslEngine.getSession().getPacketBufferSize();
+        int packetBufferSize = sslEngine.getSession().getPacketBufferSize();
 
         needIO:
         while (true) {
-            ByteBuffer buf = splitBuffer(netSize);
+            ByteBuffer buf = splitBuffer(packetBufferSize);
             SSLEngineResult result = unwrap(buf);
 
             if (log.isDebugEnabled()) {
-                log.debug("Session {} read data result -> {}, inNetRemain -> {}", session.getSessionId(), result.toString(), inNetBuffer.remaining());
+                log.debug("Session {} read data result -> {}, receivedPacketBuf -> {}", session.getSessionId(), result.toString(), receivedPacketBuf.remaining());
             }
 
             switch (result.getStatus()) {
                 case BUFFER_OVERFLOW: {
                     // Reset the application buffer size.
-                    int appSize = sslEngine.getSession().getApplicationBufferSize();
-                    ByteBuffer b = ByteBuffer.allocate(appSize + outAppBuffer.position());
-                    outAppBuffer.flip();
-                    b.put(outAppBuffer);
-                    outAppBuffer = b;
+                    ByteBuffer b = ByteBuffer.allocate(receivedAppBuf.position() + sslEngine.getSession().getApplicationBufferSize());
+                    receivedAppBuf.flip();
+                    b.put(receivedAppBuf);
+                    receivedAppBuf = b;
                     // retry the operation.
                 }
                 break;
 
                 case BUFFER_UNDERFLOW: {
-                    if (inNetBuffer.remaining() >= netSize) {
+                    if (receivedPacketBuf.remaining() >= packetBufferSize) {
                         break; // retry the operation.
                     } else {
                         break needIO;
@@ -377,7 +381,7 @@ abstract public class AbstractSecureSession implements SecureSession {
                     if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK) {
                         doTasks();
                     }
-                    if (inNetBuffer.hasRemaining()) {
+                    if (receivedPacketBuf.hasRemaining()) {
                         break; // retry the operation.
                     } else {
                         break needIO;
@@ -396,7 +400,7 @@ abstract public class AbstractSecureSession implements SecureSession {
             }
         }
 
-        return getOutAppBuffer();
+        return getReceivedAppBuf();
     }
 
     @Override
@@ -412,29 +416,35 @@ abstract public class AbstractSecureSession implements SecureSession {
     /**
      * This method is used to encrypt and flush to socket channel
      *
-     * @param outputBuffer Plaintext message
+     * @param outAppBuf Plaintext message
      * @return writen length
      * @throws IOException sslEngine error during data write
      */
     @Override
-    public int write(ByteBuffer outputBuffer, Callback callback) throws IOException {
-        if (!initialHSComplete)
-            throw new IllegalStateException("The initial handshake is not complete.");
+    public int write(ByteBuffer outAppBuf, Callback callback) throws IOException {
+        if (!initialHSComplete) {
+            IllegalStateException ex = new IllegalStateException("The initial handshake is not complete.");
+            callback.failed(ex);
+            throw ex;
+        }
 
         int ret = 0;
-        if (!outputBuffer.hasRemaining()) {
+        if (!outAppBuf.hasRemaining()) {
+            callback.succeeded();
             return ret;
         }
 
-        final int remain = outputBuffer.remaining();
+        final int remain = outAppBuf.remaining();
+        int packetBufferSize = sslEngine.getSession().getPacketBufferSize();
+        List<ByteBuffer> pocketBuffers = new ArrayList<>();
 
         outer:
         while (ret < remain) {
-            ByteBuffer writeBuf = ByteBuffer.allocate(writeBufferSize);
+            ByteBuffer packetBuffer = ByteBuffer.allocate(packetBufferSize);
 
             wrap:
             while (true) {
-                SSLEngineResult result = wrap(outputBuffer, writeBuf);
+                SSLEngineResult result = wrap(outAppBuf, packetBuffer);
                 ret += result.bytesConsumed();
 
                 switch (result.getStatus()) {
@@ -443,33 +453,43 @@ abstract public class AbstractSecureSession implements SecureSession {
                             doTasks();
                         }
 
-                        writeBuf.flip();
-                        session.write(writeBuf, callback);
+                        packetBuffer.flip();
+                        if (packetBuffer.hasRemaining()) {
+                            pocketBuffers.add(packetBuffer);
+                        }
                     }
                     break wrap;
 
                     case BUFFER_OVERFLOW: {
-                        int netSize = sslEngine.getSession().getPacketBufferSize();
-                        ByteBuffer b = ByteBuffer.allocate(writeBuf.position() + netSize);
-                        writeBuf.flip();
-                        b.put(writeBuf);
-                        writeBuf = b;
+                        packetBufferSize = sslEngine.getSession().getPacketBufferSize();
+                        ByteBuffer b = ByteBuffer.allocate(packetBuffer.position() + packetBufferSize);
+                        packetBuffer.flip();
+                        b.put(packetBuffer);
+                        packetBuffer = b;
                     }
                     break; // retry the operation.
 
                     case CLOSED: {
-                        log.info("Session {} write data failure. SSLEngine will close", session.getSessionId());
+                        log.info("Session {} SSLEngine will close", session.getSessionId());
+                        packetBuffer.flip();
+                        if (packetBuffer.hasRemaining()) {
+                            pocketBuffers.add(packetBuffer);
+                        }
                         sslEngine.closeOutbound();
                     }
                     break outer;
 
-                    default:
-                        throw new IOException(StringUtils.replace("Session {} SSLEngine writes data exception. status -> {}",
+                    default: {
+                        IOException ex = new IOException(StringUtils.replace("Session {} SSLEngine writes data exception. status -> {}",
                                 session.getSessionId(), result.getStatus()));
+                        callback.failed(ex);
+                        throw ex;
+                    }
                 }
             }
         }
 
+        session.write(pocketBuffers, callback);
         return ret;
     }
 
