@@ -40,7 +40,7 @@ public class MultipartDemo {
             // upload poetry
             Part poetry = ctx.getPart("poetry");
             System.out.println(poetry.getSubmittedFileName());
-            try (InputStream inputStream = $.class.getResourceAsStream("/poem.txt")) {
+            try (InputStream inputStream = $.class.getResourceAsStream("/static/poem.txt")) {
                 String poem = $.io.toString(inputStream);
                 System.out.println(poem);
             } catch (IOException e) {
@@ -58,7 +58,7 @@ public class MultipartDemo {
              phaser.arrive();
          });
 
-        InputStream inputStream = $.class.getResourceAsStream("/poem.txt");
+        InputStream inputStream = $.class.getResourceAsStream("/static/poem.txt");
         InputStreamContentProvider inputStreamContentProvider = new InputStreamContentProvider(inputStream);
         $.httpClient().post(uri + "/upload/poetry")
          .addFilePart("poetry", "poem.txt", inputStreamContentProvider, null)

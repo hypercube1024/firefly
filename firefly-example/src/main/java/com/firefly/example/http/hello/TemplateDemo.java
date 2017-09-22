@@ -43,7 +43,7 @@ public class TemplateDemo {
     public static void main(String[] args) {
         $.httpServer().router().get("/example")
          .handler(ctx -> ctx.put(HttpHeader.CONTENT_TYPE, "text/plain")
-                            .renderTemplate("template/example.mustache", new Example()))
+                            .renderTemplate("template/hello/example.mustache", new Example()))
          .listen("localhost", 8080);
     }
 }
