@@ -68,16 +68,20 @@ public class AsynchronousTcpSession implements Session {
         duration = metrics.histogram("aio.AsynchronousTcpSession.duration");
     }
 
+    private ByteBuffer allocateReadBuffer() {
+        return ByteBuffer.allocate(BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize()));
+    }
+
     void _read() {
         if (!isOpen()) {
             return;
         }
 
-        final ByteBuffer buf = ByteBuffer.allocate(BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize()));
-
+        final ByteBuffer buf = allocateReadBuffer();
         if (log.isDebugEnabled()) {
             log.debug("the session {} buffer size is {}", getSessionId(), buf.remaining());
         }
+
         socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, this,
                 new CompletionHandler<Integer, AsynchronousTcpSession>() {
 
@@ -208,7 +212,6 @@ public class AsynchronousTcpSession implements Session {
         if (!isOpen()) {
             return;
         }
-
         switch (entry.getOutputEntryType()) {
             case BYTE_BUFFER:
                 ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) entry;
@@ -233,12 +236,12 @@ public class AsynchronousTcpSession implements Session {
 
     @Override
     public void write(OutputEntry<?> entry) {
-        if (!isOpen())
+        if (!isOpen()) {
             return;
-
-        if (entry == null)
+        }
+        if (entry == null) {
             return;
-
+        }
         outputLock.lock();
         try {
             if (!isWriting) {
@@ -323,9 +326,9 @@ public class AsynchronousTcpSession implements Session {
 
     @Override
     public void closeNow() {
-        if (!isOpen())
+        if (!isOpen()) {
             return;
-
+        }
         closeTime = Millisecond100Clock.currentTimeMillis();
         try {
             socketChannel.close();
