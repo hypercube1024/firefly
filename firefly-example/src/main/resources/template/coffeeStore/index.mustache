@@ -31,7 +31,7 @@
                 </select>
             </div>
             <div class="col-auto">
-                <button type="submit" class="btn btn-secondary">Search</button>
+                <button type="submit" class="btn btn-outline-secondary">Search</button>
             </div>
             {{#userInfo}}
                 <div class="col-auto">
@@ -48,7 +48,7 @@
                 <tr class="table-primary">
                     {{#userInfo}}
                         <th>
-                            <div class="form-check">
+                            <div>
                                 <label class="form-check-label">
                                     <input class="form-check-input" type="checkbox" id="allProductBox"
                                            value="allProductBox"
@@ -71,7 +71,7 @@
                         <tr>
                             {{#userInfo}}
                                 <th>
-                                    <div class="form-check">
+                                    <div>
                                         <label class="form-check-label">
                                             <input class="form-check-input" name="productSubBox" type="checkbox"
                                                    value="{{id}}"
