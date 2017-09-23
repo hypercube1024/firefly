@@ -8,6 +8,7 @@ public class ProjectConfig {
     private String logoutURL = "/logout";
     private String loginURL = "/login";
     private String loginUserKey = "_loginUser";
+    private int sessionMaxInactiveInterval = 30 * 60;
     private String templateRoot;
     private String host;
     private int port;
@@ -58,5 +59,13 @@ public class ProjectConfig {
 
     public void setLogoutURL(String logoutURL) {
         this.logoutURL = logoutURL;
+    }
+
+    public int getSessionMaxInactiveInterval() {
+        return sessionMaxInactiveInterval;
+    }
+
+    public void setSessionMaxInactiveInterval(int sessionMaxInactiveInterval) {
+        this.sessionMaxInactiveInterval = sessionMaxInactiveInterval;
     }
 }

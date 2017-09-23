@@ -31,32 +31,42 @@
                 <tbody>
                 {{#products}}
                     {{#record}}
-                    <tr>
-                        <td>{{id}}</td>
-                        <td>{{name}}</td>
-                        <td>{{price}}</td>
-                        <td>{{typeDesc}}</td>
-                        <td>{{amount}}</td>
-                        <td>{{description}}</td>
-                    </tr>
+                        <tr>
+                            <td>{{id}}</td>
+                            <td>{{name}}</td>
+                            <td>{{price}}</td>
+                            <td>{{typeDesc}}</td>
+                            <td>{{amount}}</td>
+                            <td>{{description}}</td>
+                        </tr>
                     {{/record}}
                     {{^record}}
-                    <tr><td colspan="6">No data</td></tr>
+                        <tr>
+                            <td colspan="6">No data</td>
+                        </tr>
                     {{/record}}
                 {{/products}}
                 {{^products}}
-                    <tr><td colspan="6">No data</td></tr>
+                    <tr>
+                        <td colspan="6">No data</td>
+                    </tr>
                 {{/products}}
                 </tbody>
             </table>
-
-            <div class="d-flex justify-content-end">
-                <div class="p-1"><button type="button" class="btn btn-outline-primary btn-sm">Previous</button></div>
-                <div class="py-1"><button type="button" class="btn btn-outline-primary btn-sm">Next</button></div>
-            </div>
+            {{#products}}
+                <div class="d-flex justify-content-end">
+                    <div class="p-1">
+                        <a href="/?pageNumber={{lastNumber}}"{{^last}}aria-disabled="true"{{/last}} role="button"
+                           class="btn btn-outline-primary btn-sm {{^last}}disabled{{/last}}">Previous</a>
+                    </div>
+                    <div class="py-1">
+                        <a href="/?pageNumber={{nextNumber}}"{{^next}}aria-disabled="true"{{/next}} role="button"
+                           class="btn btn-outline-primary btn-sm {{^next}}disabled{{/next}}">Next</a>
+                    </div>
+                </div>
+            {{/products}}
         </div>
     </div>
-
 
 </div>
 

@@ -77,8 +77,7 @@ public class LoginHandler implements Handler {
 
     private void logout(RoutingContext ctx, HTTPSession session) {
         String backURL = ctx.getParamOpt("backURL").filter($.string::hasText).orElse("/");
-        session.getAttributes().remove(config.getLoginUserKey());
-        Mono.fromFuture(ctx.updateSession(session)).subscribe(ret -> {
+        Mono.fromFuture(ctx.removeSession()).subscribe(ret -> {
             ctx.removeAttribute(config.getLoginUserKey());
             ctx.redirect(backURL);
             ctx.succeed(true);
@@ -113,9 +112,12 @@ public class LoginHandler implements Handler {
                 ctx.fail(new IllegalArgumentException("The password is incorrect"));
             } else {
                 String backURL = ctx.getParamOpt("backURL").filter($.string::hasText).orElse("/");
+
                 UserInfo userInfo = new UserInfo();
                 $.javabean.copyBean(user, userInfo);
                 session.getAttributes().put(config.getLoginUserKey(), userInfo);
+                session.setMaxInactiveInterval(config.getSessionMaxInactiveInterval());
+
                 Mono.fromFuture(ctx.updateSession(session)).subscribe(ret -> {
                     ctx.setAttribute(config.getLoginUserKey(), userInfo);
                     ctx.redirect(backURL);

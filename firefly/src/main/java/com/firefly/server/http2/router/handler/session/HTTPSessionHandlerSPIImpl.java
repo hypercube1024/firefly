@@ -38,19 +38,21 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
                                   .isPresent()) {
                 createSession(ret);
             } else {
-                if (Optional.ofNullable(ex)
-                            .map(Throwable::getCause)
-                            .filter(e -> e instanceof SessionInvalidException)
-                            .isPresent()) {
-                    Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
-                    cookie.setMaxAge(0);
-                    routingContext.addCookie(cookie);
-                }
+                Optional.ofNullable(ex)
+                        .map(Throwable::getCause)
+                        .filter(e -> e instanceof SessionInvalidException)
+                        .ifPresent(e -> removeCookie());
                 ret.completeExceptionally(ex);
             }
             return null;
         });
         return ret;
+    }
+
+    private void removeCookie() {
+        Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
+        cookie.setMaxAge(0);
+        routingContext.addCookie(cookie);
     }
 
 
@@ -61,7 +63,15 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
 
     @Override
     public CompletableFuture<Boolean> removeSession() {
-        return sessionStore.remove(requestedSessionId);
+        CompletableFuture<Boolean> ret = new CompletableFuture<>();
+        sessionStore.remove(requestedSessionId).thenAccept(success -> {
+            removeCookie();
+            ret.complete(success);
+        }).exceptionally(ex -> {
+            ret.completeExceptionally(ex);
+            return null;
+        });
+        return ret;
     }
 
     @Override
@@ -80,13 +90,17 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         HTTPSession newSession = HTTPSession.create(requestedSessionId, defaultMaxInactiveInterval);
         sessionStore.put(newSession.getId(), newSession)
                     .thenAccept(r -> {
-                        Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
-                        routingContext.addCookie(cookie);
+                        createCookie();
                         ret.complete(newSession);
                     })
                     .exceptionally(ex -> {
                         ret.completeExceptionally(ex);
                         return null;
                     });
+    }
+
+    private void createCookie() {
+        Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
+        routingContext.addCookie(cookie);
     }
 }
