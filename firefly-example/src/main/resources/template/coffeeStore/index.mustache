@@ -31,16 +31,32 @@
                 </select>
             </div>
             <div class="col-auto">
-                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="submit" class="btn btn-secondary">Search</button>
             </div>
+            {{#userInfo}}
+                <div class="col-auto">
+                    <button type="button" class="btn btn-primary">Buy</button>
+                </div>
+            {{/userInfo}}
         </div>
     </form>
 
     <div class="row">
         <div class="col">
-            <table class="table table-hover table-responsive table-bordered">
+            <table id="productTable" class="table table-hover table-responsive table-bordered">
                 <thead>
                 <tr class="table-primary">
+                    {{#userInfo}}
+                        <th>
+                            <div class="form-check">
+                                <label class="form-check-label">
+                                    <input class="form-check-input" type="checkbox" id="allProductBox"
+                                           value="allProductBox"
+                                           aria-label="...">
+                                </label>
+                            </div>
+                        </th>
+                    {{/userInfo}}
                     <th>#</th>
                     <th>Name</th>
                     <th>Price</th>
@@ -53,6 +69,17 @@
                 {{#products}}
                     {{#record}}
                         <tr>
+                            {{#userInfo}}
+                                <th>
+                                    <div class="form-check">
+                                        <label class="form-check-label">
+                                            <input class="form-check-input" name="productSubBox" type="checkbox"
+                                                   value="{{id}}"
+                                                   aria-label="...">
+                                        </label>
+                                    </div>
+                                </th>
+                            {{/userInfo}}
                             <td>{{id}}</td>
                             <td>{{name}}</td>
                             <td>{{price}}</td>
@@ -69,7 +96,7 @@
                 {{/products}}
                 </tbody>
             </table>
-            
+
             {{#products}}
                 <div class="d-flex justify-content-end">
                     <div class="p-1">
@@ -93,6 +120,10 @@
 <script>
     $(document).ready(function () {
         $("#productType").val({{type}});
+
+        $("#allProductBox").click(function () {
+            $('input[name="productSubBox"]').prop("checked", this.checked);
+        });
     });
 </script>
 </body>
