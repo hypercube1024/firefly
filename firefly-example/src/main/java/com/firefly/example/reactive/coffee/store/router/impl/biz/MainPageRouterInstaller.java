@@ -10,6 +10,7 @@ import com.firefly.example.reactive.coffee.store.service.ProductService;
 import com.firefly.example.reactive.coffee.store.vo.MainPage;
 import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
 import com.firefly.example.reactive.coffee.store.vo.ProductStatus;
+import com.firefly.example.reactive.coffee.store.vo.UserInfo;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 
 /**
@@ -38,6 +39,7 @@ public class MainPageRouterInstaller implements RouterInstaller {
             productService.list(query).subscribe(productPage -> {
                 MainPage mainPage = new MainPage();
                 mainPage.setProducts(productPage);
+                mainPage.setUserInfo((UserInfo) ctx.getAttribute(config.getLoginUserKey()));
                 ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_HTML.asString())
                    .renderTemplate(config.getTemplateRoot() + "/index.mustache", mainPage);
                 ctx.succeed(true);

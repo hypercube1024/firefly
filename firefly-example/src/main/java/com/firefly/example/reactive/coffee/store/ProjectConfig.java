@@ -5,6 +5,7 @@ package com.firefly.example.reactive.coffee.store;
  */
 public class ProjectConfig {
 
+    private String logoutURL = "/logout";
     private String loginURL = "/login";
     private String loginUserKey = "_loginUser";
     private String templateRoot;
@@ -49,5 +50,13 @@ public class ProjectConfig {
 
     public void setLoginURL(String loginURL) {
         this.loginURL = loginURL;
+    }
+
+    public String getLogoutURL() {
+        return logoutURL;
+    }
+
+    public void setLogoutURL(String logoutURL) {
+        this.logoutURL = logoutURL;
     }
 }

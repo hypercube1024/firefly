@@ -322,6 +322,13 @@ public class RoutingContextImpl implements RoutingContext {
                        .orElse(null);
     }
 
+    @Override
+    public String getSessionIdParameterName() {
+        return Optional.ofNullable(httpSessionHandlerSPI)
+                       .map(HTTPSessionHandlerSPI::getSessionIdParameterName)
+                       .orElse(null);
+    }
+
     public void setHTTPSessionHandlerSPI(HTTPSessionHandlerSPI httpSessionHandlerSPI) {
         this.httpSessionHandlerSPI = httpSessionHandlerSPI;
     }

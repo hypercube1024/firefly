@@ -6,15 +6,20 @@
 </head>
 <body>
 <div class="container">
-    <div class="row my-2 p-1">
-        <div class="col">{{#userInfo}}Hi {{name}}. {{/userInfo}} Welcome to coffee store</div>
+    <div class="row py-2">
+        <div class="col">
+            {{#userInfo}}Hi {{name}}. {{/userInfo}}
+            Welcome to coffee store.
+            {{#userInfo}}<a href="/logout">Sign out</a>{{/userInfo}}
+            {{^userInfo}}<a href="/login">Sign in</a>{{/userInfo}}
+        </div>
     </div>
 
     <div class="row">
         <div class="col">
-            <table class="table table-hover table-responsive">
+            <table class="table table-hover table-responsive table-bordered">
                 <thead>
-                <tr>
+                <tr class="table-primary">
                     <th>#</th>
                     <th>Name</th>
                     <th>Price</th>
@@ -44,8 +49,15 @@
                 {{/products}}
                 </tbody>
             </table>
+
+            <div class="d-flex justify-content-end">
+                <div class="p-1"><button type="button" class="btn btn-outline-primary btn-sm">Previous</button></div>
+                <div class="py-1"><button type="button" class="btn btn-outline-primary btn-sm">Next</button></div>
+            </div>
         </div>
     </div>
+
+
 </div>
 
 {{>scripts}}

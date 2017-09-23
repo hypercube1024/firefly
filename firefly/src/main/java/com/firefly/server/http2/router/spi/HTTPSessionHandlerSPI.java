@@ -25,4 +25,6 @@ public interface HTTPSessionHandlerSPI {
     boolean isRequestedSessionIdFromCookie();
 
     String getRequestedSessionId();
+
+    String getSessionIdParameterName();
 }

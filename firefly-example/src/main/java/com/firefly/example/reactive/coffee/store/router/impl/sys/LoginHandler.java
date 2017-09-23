@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,26 +51,38 @@ public class LoginHandler implements Handler {
     @Override
     public void handle(RoutingContext ctx) {
         Mono.fromFuture(ctx.getSession()).subscribe(session -> {
-            String path = ctx.getURI().getPath();
-            if (path.equals(config.getLoginURL())) {
-                switch (HttpMethod.fromString(ctx.getMethod())) {
-                    case GET:
-                        renderLoginPage(ctx);
-                        return;
-                    case POST:
-                        verifyPasswordRequest(ctx, session);
-                        return;
-                    default:
-                        errorRenderer.renderError(ctx, HttpStatus.METHOD_NOT_ALLOWED_405);
-                        return;
+            try {
+                String path = ctx.getURI().getPath();
+                if (path.equals(config.getLoginURL())) {
+                    switch (HttpMethod.fromString(ctx.getMethod())) {
+                        case GET:
+                            renderLoginPage(ctx);
+                            break;
+                        case POST:
+                            verifyPasswordRequest(ctx, session);
+                            break;
+                        default:
+                            errorRenderer.renderError(ctx, HttpStatus.METHOD_NOT_ALLOWED_405);
+                    }
+                } else if (path.equals(config.getLogoutURL())) {
+                    logout(ctx, session);
+                } else {
+                    verifyLogin(ctx, session);
                 }
+            } catch (Exception e) {
+                ctx.fail(e);
             }
+        }, ctx::fail);
+    }
 
-            if (skipVerify(path)) {
-                ctx.next();
-            } else {
-                verifyLogin(ctx, session);
-            }
+    private void logout(RoutingContext ctx, HTTPSession session) {
+        String backURL = ctx.getParamOpt("backURL").filter($.string::hasText).orElse("/");
+        session.getAttributes().remove(config.getLoginUserKey());
+        Mono.fromFuture(ctx.updateSession(session)).subscribe(ret -> {
+            ctx.removeAttribute(config.getLoginUserKey());
+            ctx.redirect(backURL);
+            ctx.succeed(true);
+            logger.info(() -> "logout success!");
         }, ctx::fail);
     }
 
@@ -99,7 +112,7 @@ public class LoginHandler implements Handler {
             if (!user.getPassword().equals(password)) {
                 ctx.fail(new IllegalArgumentException("The password is incorrect"));
             } else {
-                String backURL = ctx.getParamOpt("backURL").orElse("/");
+                String backURL = ctx.getParamOpt("backURL").filter($.string::hasText).orElse("/");
                 UserInfo userInfo = new UserInfo();
                 $.javabean.copyBean(user, userInfo);
                 session.getAttributes().put(config.getLoginUserKey(), userInfo);
@@ -121,6 +134,12 @@ public class LoginHandler implements Handler {
 
     private void verifyLogin(RoutingContext ctx, HTTPSession session) {
         UserInfo userInfo = (UserInfo) session.getAttributes().get(config.getLoginUserKey());
+        if (skipVerify(ctx.getURI().getPath())) {
+            Optional.ofNullable(userInfo).ifPresent(u -> ctx.setAttribute(config.getLoginUserKey(), u));
+            ctx.next();
+            return;
+        }
+
         if (userInfo != null) {
             ctx.setAttribute(config.getLoginUserKey(), userInfo);
             ctx.next();

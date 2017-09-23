@@ -259,6 +259,8 @@ public interface RoutingContext extends Closeable {
 
     String getRequestedSessionId();
 
+    String getSessionIdParameterName();
+
     // Template API
     void renderTemplate(String resourceName, Object scope);
 

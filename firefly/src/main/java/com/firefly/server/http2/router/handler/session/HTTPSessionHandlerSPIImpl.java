@@ -38,6 +38,14 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
                                   .isPresent()) {
                 createSession(ret);
             } else {
+                if (Optional.ofNullable(ex)
+                            .map(Throwable::getCause)
+                            .filter(e -> e instanceof SessionInvalidException)
+                            .isPresent()) {
+                    Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
+                    cookie.setMaxAge(0);
+                    routingContext.addCookie(cookie);
+                }
                 ret.completeExceptionally(ex);
             }
             return null;

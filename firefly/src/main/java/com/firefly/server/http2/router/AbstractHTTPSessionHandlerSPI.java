@@ -96,4 +96,9 @@ abstract public class AbstractHTTPSessionHandlerSPI implements HTTPSessionHandle
     public String getRequestedSessionId() {
         return requestedSessionId;
     }
+
+    @Override
+    public String getSessionIdParameterName() {
+        return sessionIdParameterName;
+    }
 }
