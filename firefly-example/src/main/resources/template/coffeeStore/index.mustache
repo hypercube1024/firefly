@@ -15,6 +15,27 @@
         </div>
     </div>
 
+    <form action="/" method="get">
+        <div class="form-row align-items-center py-2">
+            <div class="col-auto">
+                <label class="sr-only" for="searchKey">Name</label>
+                <input type="text" name="searchKey" value="{{searchKey}}" class="form-control mb-2 mb-sm-0"
+                       id="searchKey" placeholder="name">
+            </div>
+            <div class="col-auto">
+                <label for="productType" class="sr-only">State</label>
+                <select id="productType" name="type" class="form-control">
+                    <option value="0">All</option>
+                    <option value="1">Coffee</option>
+                    <option value="2">Dessert</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+
     <div class="row">
         <div class="col">
             <table class="table table-hover table-responsive table-bordered">
@@ -46,21 +67,19 @@
                         </tr>
                     {{/record}}
                 {{/products}}
-                {{^products}}
-                    <tr>
-                        <td colspan="6">No data</td>
-                    </tr>
-                {{/products}}
                 </tbody>
             </table>
+            
             {{#products}}
                 <div class="d-flex justify-content-end">
                     <div class="p-1">
-                        <a href="/?pageNumber={{lastNumber}}"{{^last}}aria-disabled="true"{{/last}} role="button"
+                        <a href="/?pageNumber={{lastNumber}}&type={{type}}&searchKey={{searchKey}}"
+                           {{^last}}aria-disabled="true"{{/last}} role="button"
                            class="btn btn-outline-primary btn-sm {{^last}}disabled{{/last}}">Previous</a>
                     </div>
                     <div class="py-1">
-                        <a href="/?pageNumber={{nextNumber}}"{{^next}}aria-disabled="true"{{/next}} role="button"
+                        <a href="/?pageNumber={{nextNumber}}&type={{type}}&searchKey={{searchKey}}"
+                           {{^next}}aria-disabled="true"{{/next}} role="button"
                            class="btn btn-outline-primary btn-sm {{^next}}disabled{{/next}}">Next</a>
                     </div>
                 </div>
@@ -71,5 +90,10 @@
 </div>
 
 {{>scripts}}
+<script>
+    $(document).ready(function () {
+        $("#productType").val({{type}});
+    });
+</script>
 </body>
 </html>

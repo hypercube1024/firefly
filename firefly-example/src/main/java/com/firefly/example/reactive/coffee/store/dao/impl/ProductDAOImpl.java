@@ -1,5 +1,6 @@
 package com.firefly.example.reactive.coffee.store.dao.impl;
 
+import com.firefly.$;
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
 import com.firefly.example.reactive.coffee.store.dao.ProductDAO;
@@ -25,9 +26,16 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public Mono<Page<Product>> list(ProductQuery query) {
         List<Object> params = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("select p.*, inventory.amount from `coffee_store`.`product` p ");
-        sql.append("inner join `coffee_store`.`inventory` inventory on inventory.product_id = p.id ")
-           .append("where 1=1 ");
+        StringBuilder sql = new StringBuilder("select p.*, inventory.amount from `coffee_store`.`product` p");
+        sql.append(" inner join `coffee_store`.`inventory` inventory on inventory.product_id = p.id")
+           .append(" where 1=1");
+
+        Optional.ofNullable(query.getSearchKey())
+                .filter($.string::hasText)
+                .ifPresent(key -> {
+                    sql.append(" and p.`name` like ?");
+                    params.add(key + "%");
+                });
 
         Optional.ofNullable(query.getProductStatus())
                 .filter(status -> status > 0)

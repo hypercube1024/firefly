@@ -9,6 +9,8 @@ public class MainPage {
 
     private UserInfo userInfo;
     private Page<Product> products;
+    private Integer type;
+    private String searchKey;
 
     public UserInfo getUserInfo() {
         return userInfo;
@@ -24,5 +26,21 @@ public class MainPage {
 
     public void setProducts(Page<Product> products) {
         this.products = products;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
+
+    public String getSearchKey() {
+        return searchKey;
+    }
+
+    public void setSearchKey(String searchKey) {
+        this.searchKey = searchKey;
     }
 }

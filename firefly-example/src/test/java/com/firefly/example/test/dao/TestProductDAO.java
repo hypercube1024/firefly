@@ -36,21 +36,28 @@ public class TestProductDAO extends TestBase {
 
     @Test
     public void testList() {
-        ProductQuery query = new ProductQuery(ProductStatus.ENABLE.getValue(), null, 1, 5);
+        ProductQuery query = new ProductQuery(null, ProductStatus.ENABLE.getValue(), null, 1, 5);
         StepVerifier.create(productDAO.list(query)).assertNext(productPage -> {
             System.out.println(productPage);
             Assert.assertTrue(productPage.isNext());
             Assert.assertThat(productPage.getRecord().size(), is(5));
         }).expectComplete().verify();
 
-        query = new ProductQuery(ProductStatus.ENABLE.getValue(), null, 2, 5);
+        query = new ProductQuery("Co", ProductStatus.ENABLE.getValue(), null, 1, 5);
+        StepVerifier.create(productDAO.list(query)).assertNext(productPage -> {
+            System.out.println(productPage);
+            Assert.assertFalse(productPage.isNext());
+            Assert.assertThat(productPage.getRecord().size(), is(2));
+        }).expectComplete().verify();
+
+        query = new ProductQuery(null, ProductStatus.ENABLE.getValue(), null, 2, 5);
         StepVerifier.create(productDAO.list(query)).assertNext(productPage -> {
             System.out.println(productPage);
             Assert.assertFalse(productPage.isNext());
             Assert.assertThat(productPage.getRecord().size(), lessThanOrEqualTo(5));
         }).expectComplete().verify();
 
-        query = new ProductQuery(ProductStatus.ENABLE.getValue(), ProductType.DESSERT.getValue(), 1, 5);
+        query = new ProductQuery(null, ProductStatus.ENABLE.getValue(), ProductType.DESSERT.getValue(), 1, 5);
         StepVerifier.create(productDAO.list(query)).assertNext(productPage -> {
             System.out.println(productPage);
             Assert.assertFalse(productPage.isNext());

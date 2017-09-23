@@ -7,17 +7,27 @@ public class ProductQuery {
 
     private Integer productStatus;
     private Integer productType;
+    private String searchKey;
     private int pageNumber;
     private int pageSize;
 
     public ProductQuery() {
     }
 
-    public ProductQuery(Integer productStatus, Integer productType, int pageNumber, int pageSize) {
+    public ProductQuery(String searchKey, Integer productStatus, Integer productType, int pageNumber, int pageSize) {
+        this.searchKey = searchKey;
         this.productStatus = productStatus;
         this.productType = productType;
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
+    }
+
+    public String getSearchKey() {
+        return searchKey;
+    }
+
+    public void setSearchKey(String searchKey) {
+        this.searchKey = searchKey;
     }
 
     public Integer getProductStatus() {
