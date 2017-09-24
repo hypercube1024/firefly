@@ -20,8 +20,6 @@ public class Inventory {
 
     @Column("product_id")
     private Long productId;
-    private String productName;
-    private Integer productType;
 
     @Column("create_time")
     private Date createTime;
@@ -69,19 +67,4 @@ public class Inventory {
         this.updateTime = updateTime;
     }
 
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public Integer getProductType() {
-        return productType;
-    }
-
-    public void setProductType(Integer productType) {
-        this.productType = productType;
-    }
 }

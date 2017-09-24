@@ -19,9 +19,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Mono<User> getByName(String name) {
-        if (!$.string.hasText(name)) {
-            return Mono.error(new IllegalArgumentException("The username is required"));
-        }
         return userDAO.getByName(name);
     }
 }

@@ -44,4 +44,5 @@ CREATE TABLE `coffee_store`.`inventory` (
   `product_id` BIGINT NOT NULL DEFAULT 0 UNIQUE ,
   `create_time` DATETIME NOT NULL ,
   `update_time` DATETIME NOT NULL
-)
+);
+CREATE INDEX `idx_inventory_product_id` ON `coffee_store`.`inventory` (`product_id`);

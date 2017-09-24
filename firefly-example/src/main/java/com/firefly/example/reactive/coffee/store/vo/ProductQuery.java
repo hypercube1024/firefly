@@ -8,8 +8,8 @@ public class ProductQuery {
     private Integer productStatus;
     private Integer productType;
     private String searchKey;
-    private int pageNumber;
-    private int pageSize;
+    private int pageNumber = 1;
+    private int pageSize = 20;
 
     public ProductQuery() {
     }
