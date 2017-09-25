@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * The asynchronous SQL connection. It can execute SQL and bind result to Java bean.
+ *
  * @author Pengtao Qiu
  */
 public interface SQLConnection {

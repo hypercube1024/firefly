@@ -12,6 +12,7 @@ import java.util.Map;
 /**
  * SQLConnection reactor adapter
  *
+ * @see com.firefly.db.SQLConnection
  * @author Pengtao Qiu
  */
 public interface ReactiveSQLConnection {
