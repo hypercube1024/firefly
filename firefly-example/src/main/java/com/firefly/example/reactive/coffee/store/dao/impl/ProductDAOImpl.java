@@ -37,14 +37,14 @@ public class ProductDAOImpl implements ProductDAO {
                     params.add(key + "%");
                 });
 
-        Optional.ofNullable(query.getProductStatus())
+        Optional.ofNullable(query.getStatus())
                 .filter(status -> status > 0)
                 .ifPresent(status -> {
                     sql.append(" and p.`status` = ?");
                     params.add(status);
                 });
 
-        Optional.ofNullable(query.getProductType())
+        Optional.ofNullable(query.getType())
                 .filter(type -> type > 0)
                 .ifPresent(type -> {
                     sql.append(" and p.`type` = ?");

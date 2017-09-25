@@ -5,8 +5,8 @@ package com.firefly.example.reactive.coffee.store.vo;
  */
 public class ProductQuery {
 
-    private Integer productStatus;
-    private Integer productType;
+    private Integer status;
+    private Integer type;
     private String searchKey;
     private int pageNumber = 1;
     private int pageSize = 20;
@@ -14,10 +14,10 @@ public class ProductQuery {
     public ProductQuery() {
     }
 
-    public ProductQuery(String searchKey, Integer productStatus, Integer productType, int pageNumber, int pageSize) {
+    public ProductQuery(String searchKey, Integer status, Integer type, int pageNumber, int pageSize) {
         this.searchKey = searchKey;
-        this.productStatus = productStatus;
-        this.productType = productType;
+        this.status = status;
+        this.type = type;
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
     }
@@ -30,20 +30,20 @@ public class ProductQuery {
         this.searchKey = searchKey;
     }
 
-    public Integer getProductStatus() {
-        return productStatus;
+    public Integer getStatus() {
+        return status;
     }
 
-    public void setProductStatus(Integer productStatus) {
-        this.productStatus = productStatus;
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
-    public Integer getProductType() {
-        return productType;
+    public Integer getType() {
+        return type;
     }
 
-    public void setProductType(Integer productType) {
-        this.productType = productType;
+    public void setType(Integer type) {
+        this.type = type;
     }
 
     public int getPageNumber() {
