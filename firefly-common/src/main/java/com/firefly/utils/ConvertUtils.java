@@ -8,93 +8,53 @@ import java.util.concurrent.*;
 
 abstract public class ConvertUtils {
 
-	private static final IdentityHashMap<Class<?>, ParseValue> map = new IdentityHashMap<Class<?>, ParseValue>();
-	private static final Map<String, ParseValue> map2 = new HashMap<String, ParseValue>();
+	private static final IdentityHashMap<Class<?>, ParseValue> map = new IdentityHashMap<>();
+	private static final Map<String, ParseValue> map2 = new HashMap<>();
 
 	static {
-		ParseValue p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return Integer.parseInt(value);
-			}
-		};
+		ParseValue p = Integer::parseInt;
 		map.put(int.class, p);
 		map.put(Integer.class, p);
 		map2.put("byte", p);
 		map2.put("java.lang.Byte", p);
 
-		p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return Long.parseLong(value);
-			}
-		};
+		p = Long::parseLong;
 		map.put(long.class, p);
 		map.put(Long.class, p);
 		map2.put("long", p);
 		map2.put("java.lang.Long", p);
 
-		p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return Double.parseDouble(value);
-			}
-		};
+		p = Double::parseDouble;
 		map.put(double.class, p);
 		map.put(Double.class, p);
 		map2.put("double", p);
 		map2.put("java.lang.Double", p);
 
-		p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return Float.parseFloat(value);
-			}
-		};
+		p = Float::parseFloat;
 		map.put(float.class, p);
 		map.put(Float.class, p);
 		map2.put("float", p);
 		map2.put("java.lang.Float", p);
 
-		p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return Boolean.parseBoolean(value);
-			}
-		};
+		p = Boolean::parseBoolean;
 		map.put(boolean.class, p);
 		map.put(Boolean.class, p);
 		map2.put("boolean", p);
 		map2.put("java.lang.Boolean", p);
 
-		p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return Short.parseShort(value);
-			}
-		};
+		p = Short::parseShort;
 		map.put(short.class, p);
 		map.put(Short.class, p);
 		map2.put("short", p);
 		map2.put("java.lang.Short", p);
 
-		p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return Byte.parseByte(value);
-			}
-		};
+		p = Byte::parseByte;
 		map.put(byte.class, p);
 		map.put(Byte.class, p);
 		map2.put("byte", p);
 		map2.put("java.lang.Byte", p);
 
-		p = new ParseValue() {
-			@Override
-			public Object parse(String value) {
-				return value;
-			}
-		};
+		p = value -> value;
 		map.put(String.class, p);
 		map2.put("java.lang.String", p);
 	}
@@ -122,46 +82,34 @@ abstract public class ConvertUtils {
 
 	@SuppressWarnings("unchecked")
 	public static <T> T convert(String value, Class<T> c) {
-		Object ret = null;
-		ParseValue p = c == null ? null : map.get(c);
-		if (p != null)
-			ret = p.parse(value);
-		else {
-			if (VerifyUtils.isInteger(value)) {
-				ret = Integer.parseInt(value);
-			} else if (VerifyUtils.isLong(value)) {
-				ret = Long.parseLong(value);
-			} else if (VerifyUtils.isDouble(value)) {
-				ret = Double.parseDouble(value);
-			} else if (VerifyUtils.isFloat(value)) {
-				ret = Float.parseFloat(value);
-			} else {
-				ret = value;
-			}
-		}
-		return (T) ret;
+		return (T) Optional.ofNullable(c)
+						   .map(map::get)
+						   .map(p -> p.parse(value))
+						   .orElse(parseValue(value));
+	}
+
+	public static Object parseValue(String value) {
+		Object ret;
+		if (VerifyUtils.isInteger(value)) {
+            ret = Integer.parseInt(value);
+        } else if (VerifyUtils.isLong(value)) {
+            ret = Long.parseLong(value);
+        } else if (VerifyUtils.isDouble(value)) {
+            ret = Double.parseDouble(value);
+        } else if (VerifyUtils.isFloat(value)) {
+            ret = Float.parseFloat(value);
+        } else {
+            ret = value;
+        }
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
 	public static <T> T convert(String value, String argsType) {
-		Object ret = null;
-		ParseValue p = argsType == null ? null : map2.get(argsType);
-		if (p != null)
-			ret = p.parse(value);
-		else {
-			if (VerifyUtils.isInteger(value)) {
-				ret = Integer.parseInt(value);
-			} else if (VerifyUtils.isLong(value)) {
-				ret = Long.parseLong(value);
-			} else if (VerifyUtils.isDouble(value)) {
-				ret = Double.parseDouble(value);
-			} else if (VerifyUtils.isFloat(value)) {
-				ret = Float.parseFloat(value);
-			} else {
-				ret = value;
-			}
-		}
-		return (T) ret;
+		return (T) Optional.ofNullable(argsType)
+						   .map(map2::get)
+						   .map(p -> p.parse(value))
+						   .orElse(parseValue(value));
 	}
 
 	/**
@@ -178,14 +126,14 @@ abstract public class ConvertUtils {
 		int size = collection.size();
 		// Allocate a new Array
 		Iterator<?> iterator = collection.iterator();
-		Class<?> componentType = null;
+		Class<?> componentType;
 
 		if (arrayType == null) {
 			componentType = Object.class;
 		} else {
-			if (!arrayType.isArray())
+			if (!arrayType.isArray()) {
 				throw new IllegalArgumentException("type is not a array");
-
+			}
 			componentType = arrayType.getComponentType();
 		}
 		Object newArray = Array.newInstance(componentType, size);
@@ -214,15 +162,15 @@ abstract public class ConvertUtils {
 	public static Collection<Object> getCollectionObj(Class<?> clazz) {
 		if (clazz.isInterface()) {
 			if (clazz.isAssignableFrom(List.class))
-				return new ArrayList<Object>();
+				return new ArrayList<>();
 			else if (clazz.isAssignableFrom(Set.class))
-				return new HashSet<Object>();
+				return new HashSet<>();
 			else if (clazz.isAssignableFrom(Queue.class))
-				return new ArrayDeque<Object>();
+				return new ArrayDeque<>();
 			else if (clazz.isAssignableFrom(SortedSet.class))
-				return new TreeSet<Object>();
+				return new TreeSet<>();
 			else if (clazz.isAssignableFrom(BlockingQueue.class))
-				return new LinkedBlockingDeque<Object>();
+				return new LinkedBlockingDeque<>();
 			else
 				return null;
 		} else {
@@ -240,15 +188,15 @@ abstract public class ConvertUtils {
 	public static Map<Object, Object> getMapObj(Class<?> clazz) {
 		if (clazz.isInterface()) {
 			if (clazz.isAssignableFrom(Map.class))
-				return new HashMap<Object, Object>();
+				return new HashMap<>();
 			else if (clazz.isAssignableFrom(ConcurrentMap.class))
-				return new ConcurrentHashMap<Object, Object>();
+				return new ConcurrentHashMap<>();
 			else if (clazz.isAssignableFrom(SortedMap.class))
-				return new TreeMap<Object, Object>();
+				return new TreeMap<>();
 			else if (clazz.isAssignableFrom(NavigableMap.class))
-				return new TreeMap<Object, Object>();
+				return new TreeMap<>();
 			else if (clazz.isAssignableFrom(ConcurrentNavigableMap.class))
-				return new ConcurrentSkipListMap<Object, Object>();
+				return new ConcurrentSkipListMap<>();
 			else
 				return null;
 		} else {
