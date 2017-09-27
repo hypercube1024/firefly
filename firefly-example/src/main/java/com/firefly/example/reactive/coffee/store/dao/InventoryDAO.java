@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author Pengtao Qiu
  */
-public interface InventoryDao {
+public interface InventoryDAO {
 
     Mono<int[]> updateBatch(List<InventoryUpdate> list, InventoryOperator operator);
 

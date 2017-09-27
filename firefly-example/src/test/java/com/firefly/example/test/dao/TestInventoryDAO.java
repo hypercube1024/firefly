@@ -1,7 +1,7 @@
 package com.firefly.example.test.dao;
 
 import com.firefly.$;
-import com.firefly.example.reactive.coffee.store.dao.InventoryDao;
+import com.firefly.example.reactive.coffee.store.dao.InventoryDAO;
 import com.firefly.example.reactive.coffee.store.model.Inventory;
 import com.firefly.example.reactive.coffee.store.vo.InventoryOperator;
 import com.firefly.example.reactive.coffee.store.vo.InventoryUpdate;
@@ -20,9 +20,9 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author Pengtao Qiu
  */
-public class TestInventoryDao extends TestBase {
+public class TestInventoryDAO extends TestBase {
 
-    private InventoryDao inventoryDao = $.getBean(InventoryDao.class);
+    private InventoryDAO inventoryDAO = $.getBean(InventoryDAO.class);
 
     @Test
     public void testUpdate() {
@@ -37,12 +37,12 @@ public class TestInventoryDao extends TestBase {
         update.setProductId(5L);
         list.add(update);
 
-        StepVerifier.create(inventoryDao.updateBatch(list, InventoryOperator.SUB)).assertNext(r -> {
+        StepVerifier.create(inventoryDAO.updateBatch(list, InventoryOperator.SUB)).assertNext(r -> {
             Assert.assertThat(r.length, is(2));
             Arrays.stream(r).forEach(row -> Assert.assertThat(row, is(1)));
         }).expectComplete().verify();
 
-        StepVerifier.create(inventoryDao.listByProductId(Arrays.asList(4L, 5L))).assertNext(r -> {
+        StepVerifier.create(inventoryDAO.listByProductId(Arrays.asList(4L, 5L))).assertNext(r -> {
             Map<Long, Inventory> map = r.parallelStream().collect(Collectors.toMap(Inventory::getProductId, v -> v));
             Assert.assertThat(map.get(4L).getAmount(), is(67L));
             Assert.assertThat(map.get(5L).getAmount(), is(80L));
@@ -59,13 +59,13 @@ public class TestInventoryDao extends TestBase {
         update.setProductId(5L);
         list.add(update);
 
-        StepVerifier.create(inventoryDao.updateBatch(list, InventoryOperator.SUB)).assertNext(r -> {
+        StepVerifier.create(inventoryDAO.updateBatch(list, InventoryOperator.SUB)).assertNext(r -> {
             Assert.assertThat(r.length, is(2));
             Assert.assertThat(r[0], is(0));
             Assert.assertThat(r[1], is(1));
         }).expectComplete().verify();
 
-        StepVerifier.create(inventoryDao.listByProductId(Arrays.asList(4L, 5L))).assertNext(r -> {
+        StepVerifier.create(inventoryDAO.listByProductId(Arrays.asList(4L, 5L))).assertNext(r -> {
             Map<Long, Inventory> map = r.parallelStream().collect(Collectors.toMap(Inventory::getProductId, v -> v));
             Assert.assertThat(map.get(4L).getAmount(), is(67L));
             Assert.assertThat(map.get(5L).getAmount(), is(60L));

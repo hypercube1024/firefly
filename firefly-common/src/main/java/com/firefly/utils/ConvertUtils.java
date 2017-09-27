@@ -70,11 +70,10 @@ abstract public class ConvertUtils {
 
     public static <T> T convert(String value, Class<T> c, T defaultValue) {
         try {
-            if (!StringUtils.hasText(value)) {
-                return defaultValue;
-            }
-            T ret = convert(value, c);
-            return ret != null ? ret : defaultValue;
+            return Optional.ofNullable(value)
+                           .filter(StringUtils::hasText)
+                           .map(v -> convert(value, c))
+                           .orElse(defaultValue);
         } catch (Throwable t) {
             return defaultValue;
         }
@@ -124,11 +123,11 @@ abstract public class ConvertUtils {
     public static Object convert(Collection<?> collection, Class<?> arrayType) {
         int size = collection.size();
         // Allocate a new Array
-        Iterator<?> iterator = collection.iterator();
         Object newArray = Array.newInstance(Optional.ofNullable(arrayType)
                                                     .filter(Class::isArray)
                                                     .map(Class::getComponentType)
-                                                    .orElse((Class)Object.class), size);
+                                                    .orElse((Class) Object.class), size);
+        Iterator<?> iterator = collection.iterator();
         // Convert and set each element in the new Array
         for (int i = 0; i < size; i++) {
             Object element = iterator.next();
@@ -138,7 +137,6 @@ abstract public class ConvertUtils {
                 System.err.println("set element to array exception, " + e.getMessage());
             }
         }
-
         return newArray;
     }
 

@@ -2,7 +2,7 @@ package com.firefly.example.reactive.coffee.store.dao.impl;
 
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
-import com.firefly.example.reactive.coffee.store.dao.InventoryDao;
+import com.firefly.example.reactive.coffee.store.dao.InventoryDAO;
 import com.firefly.example.reactive.coffee.store.model.Inventory;
 import com.firefly.example.reactive.coffee.store.vo.InventoryOperator;
 import com.firefly.example.reactive.coffee.store.vo.InventoryUpdate;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @author Pengtao Qiu
  */
 @Component
-public class InventoryDaoImpl implements InventoryDao {
+public class InventoryDAOImpl implements InventoryDAO {
 
     @Inject
     private ReactiveTransactionalManager db;
