@@ -35,6 +35,7 @@ public class LoginHandler implements Handler {
 
     private List<Pattern> uriWhitelist = Stream.of(
             "/",
+            "/hello",
             "/favicon.ico",
             "/static/*",
             "/products").map(p -> Pattern.compile(p, "*")).collect(Collectors.toList());

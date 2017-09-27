@@ -21,5 +21,6 @@ public class MainPageRouterInstaller implements RouterInstaller {
     public void install() {
         // main page
         server.router().get("/").asyncHandler(mainPageHandler);
+        server.router().get("/hello").handler(ctx -> ctx.write("hello").succeed(true));
     }
 }
