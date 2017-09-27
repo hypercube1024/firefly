@@ -8,11 +8,16 @@ import com.firefly.example.reactive.coffee.store.model.Product;
 import com.firefly.example.reactive.coffee.store.vo.Page;
 import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
 import com.firefly.reactive.adapter.db.ReactiveTransactionalManager;
+import com.firefly.utils.CollectionUtils;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static com.firefly.example.reactive.coffee.store.utils.DBUtils.toWildcard;
 
 /**
  * @author Pengtao Qiu
@@ -59,6 +64,16 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public Mono<Product> get(Long id) {
         return db.execSQL(c -> c.queryById(id, Product.class));
+    }
+
+    @Override
+    public Mono<List<Product>> list(List<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return Mono.just(Collections.emptyList());
+        }
+
+        String sql = "select * from `coffee_store`.`product` where id in ( " + toWildcard(idList) + " )";
+        return db.execSQL(c -> c.queryForList(sql, Product.class, idList.toArray()));
     }
 
     @Override

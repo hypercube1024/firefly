@@ -26,7 +26,7 @@ CREATE INDEX `idx_product_name` ON `coffee_store`.`product` (`name`);
 CREATE TABLE `coffee_store`.`order` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY ,
   `status` INT NOT NULL DEFAULT 0,
-  `number` INT NOT NULL DEFAULT 0,
+  `amount` BIGINT NOT NULL DEFAULT 0,
   `price` DECIMAL NOT NULL DEFAULT 0.0,
   `total_price` DECIMAL NOT NULL DEFAULT 0.0,
   `product_id` BIGINT NOT NULL DEFAULT 0,

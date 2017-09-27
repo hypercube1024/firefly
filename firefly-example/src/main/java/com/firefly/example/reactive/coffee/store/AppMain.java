@@ -9,6 +9,8 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.slf4j.ext.LazyLogger;
 
 /**
+ * Firefly coffee store example
+ *
  * @author Pengtao Qiu
  */
 public class AppMain extends AbstractLifeCycle {

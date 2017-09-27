@@ -18,8 +18,8 @@ public class Order {
     @Column("status")
     private Integer status;
 
-    @Column("number")
-    private Integer number;
+    @Column("amount")
+    private Long amount;
 
     @Column("price")
     private Double price;
@@ -29,12 +29,9 @@ public class Order {
 
     @Column("product_id")
     private Long productId;
-    private String productName;
-    private Integer productType;
 
     @Column("user_id")
     private Long userId;
-    private String userName;
 
     @Column("description")
     private String description;
@@ -61,12 +58,12 @@ public class Order {
         this.status = status;
     }
 
-    public Integer getNumber() {
-        return number;
+    public Long getAmount() {
+        return amount;
     }
 
-    public void setNumber(Integer number) {
-        this.number = number;
+    public void setAmount(Long amount) {
+        this.amount = amount;
     }
 
     public Double getPrice() {
@@ -83,22 +80,6 @@ public class Order {
 
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
-    }
-
-    public Integer getProductType() {
-        return productType;
-    }
-
-    public void setProductType(Integer productType) {
-        this.productType = productType;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
     }
 
     public Long getProductId() {
@@ -141,11 +122,4 @@ public class Order {
         this.updateTime = updateTime;
     }
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
 }

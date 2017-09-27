@@ -7,6 +7,8 @@ import com.firefly.utils.log.slf4j.ext.LazyLogger;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.firefly.db.init.ScriptUtils.executeSqlScript;
 
@@ -47,6 +49,10 @@ public class DBUtils {
 
     public Resource getInitDataScript() {
         return resourceUtils.resource("/dbScript/coffee_store_init_data.sql");
+    }
+
+    public static String toWildcard(List<?> list) {
+        return list.parallelStream().map(o -> "?").collect(Collectors.joining(","));
     }
 
 }

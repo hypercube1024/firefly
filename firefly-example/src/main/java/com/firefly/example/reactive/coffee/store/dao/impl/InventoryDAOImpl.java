@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.firefly.example.reactive.coffee.store.utils.DBUtils.toWildcard;
+
 /**
  * @author Pengtao Qiu
  */
@@ -62,8 +64,7 @@ public class InventoryDAOImpl implements InventoryDAO {
             return Mono.just(Collections.emptyList());
         }
 
-        String sql = "select * from `coffee_store`.`inventory` where `product_id` in ( "
-                + productIdList.parallelStream().map(id -> "?").collect(Collectors.joining(", ")) + " )";
+        String sql = "select * from `coffee_store`.`inventory` where `product_id` in ( " + toWildcard(productIdList) + " )";
         return db.execSQL(c -> c.queryForList(sql, Inventory.class, productIdList.toArray()));
     }
 
