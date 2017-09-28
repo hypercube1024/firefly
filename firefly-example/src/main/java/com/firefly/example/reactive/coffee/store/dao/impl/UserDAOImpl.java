@@ -5,7 +5,7 @@ import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
 import com.firefly.example.reactive.coffee.store.dao.UserDAO;
 import com.firefly.example.reactive.coffee.store.model.User;
-import com.firefly.reactive.adapter.db.ReactiveTransactionalManager;
+import com.firefly.reactive.adapter.db.ReactiveSQLClient;
 import reactor.core.publisher.Mono;
 
 /**
@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 public class UserDAOImpl implements UserDAO {
 
     @Inject
-    private ReactiveTransactionalManager db;
+    private ReactiveSQLClient db;
 
     @Override
     public Mono<User> getByName(String name) {
@@ -24,6 +24,6 @@ public class UserDAOImpl implements UserDAO {
         }
 
         String sql = "select * from `coffee_store`.`user` where `name` = ?";
-        return db.execSQL(c -> c.queryForObject(sql, User.class, name));
+        return db.newTransaction(c -> c.queryForObject(sql, User.class, name));
     }
 }

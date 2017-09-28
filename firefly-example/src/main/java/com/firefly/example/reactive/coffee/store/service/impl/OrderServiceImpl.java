@@ -12,6 +12,7 @@ import com.firefly.example.reactive.coffee.store.vo.InventoryOperator;
 import com.firefly.example.reactive.coffee.store.vo.InventoryUpdate;
 import com.firefly.example.reactive.coffee.store.vo.OrderStatus;
 import com.firefly.example.reactive.coffee.store.vo.ProductBuyRequest;
+import com.firefly.reactive.adapter.db.ReactiveSQLClient;
 import com.firefly.utils.CollectionUtils;
 import reactor.core.publisher.Mono;
 
@@ -34,6 +35,10 @@ public class OrderServiceImpl implements OrderService {
     @Inject
     private ProductDAO productDAO;
 
+    @Inject
+    private ReactiveSQLClient db;
+
+
     @Override
     public Mono<Boolean> buy(ProductBuyRequest request) {
         if (request == null) {
@@ -48,16 +53,19 @@ public class OrderServiceImpl implements OrderService {
             return Mono.error(new IllegalArgumentException("The products must bu not empty"));
         }
 
-        return Mono.create(sink -> inventoryDAO.updateBatch(request.getProducts(), InventoryOperator.SUB).subscribe(arr -> {
-            if (Arrays.stream(arr).anyMatch(i -> i <= 0)) {
-                sink.error(new IllegalStateException("The products are not enough"));
-            } else {
-                productDAO.list(toProductIdList(request))
-                          .map(products -> toOrders(request, products))
-                          .then(orderDAO::insertBatch)
-                          .subscribe(orderIdList -> sink.success(true), sink::error);
-            }
-        }, sink::error));
+        return db.newTransaction(c ->
+                inventoryDAO.updateBatch(request.getProducts(), InventoryOperator.SUB, c)
+                            .doOnSuccess(this::verifyInventory)
+                            .then(arr -> productDAO.list(toProductIdList(request), c))
+                            .map(products -> toOrders(request, products))
+                            .then(orders -> orderDAO.insertBatch(orders, c))
+                            .map(orderIdList -> true));
+    }
+
+    private void verifyInventory(int[] arr) {
+        if (Arrays.stream(arr).anyMatch(i -> i <= 0)) {
+            throw new IllegalStateException("The products are not enough");
+        }
     }
 
     private List<Long> toProductIdList(ProductBuyRequest request) {
@@ -74,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
                                    .filter(i -> i.getProductId().equals(product.getId()))
                                    .map(InventoryUpdate::getAmount)
                                    .findFirst()
-                                   .orElse(0L));
+                                   .orElseThrow(() -> new IllegalStateException("The product amounts must be more than 0")));
             order.setPrice(product.getPrice());
             order.setTotalPrice(product.getPrice() * product.getAmount());
             order.setProductId(product.getId());

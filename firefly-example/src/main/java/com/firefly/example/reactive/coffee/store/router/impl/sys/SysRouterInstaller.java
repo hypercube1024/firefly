@@ -23,9 +23,6 @@ public class SysRouterInstaller implements RouterInstaller {
     private GlobalHandler globalHandler;
 
     @Inject
-    private TransactionalHandler transactionalHandler;
-
-    @Inject
     private LocalHTTPSessionHandler localHTTPSessionHandler;
 
     @Inject
@@ -39,7 +36,6 @@ public class SysRouterInstaller implements RouterInstaller {
         server.router().path("*").handler(globalHandler)
               .router().path("*").handler(localHTTPSessionHandler)
               .router().path("*").handler(loginHandler)
-              .router().methods(transactionalHandler.getMethods()).handler(transactionalHandler)
               .router().method(HttpMethod.GET).paths(staticResourceHandler.getStaticResources()).handler(staticResourceHandler);
     }
 

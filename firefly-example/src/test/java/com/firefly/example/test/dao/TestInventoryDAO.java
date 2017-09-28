@@ -5,6 +5,8 @@ import com.firefly.example.reactive.coffee.store.dao.InventoryDAO;
 import com.firefly.example.reactive.coffee.store.model.Inventory;
 import com.firefly.example.reactive.coffee.store.vo.InventoryOperator;
 import com.firefly.example.reactive.coffee.store.vo.InventoryUpdate;
+import com.firefly.example.test.TestBase;
+import com.firefly.reactive.adapter.db.ReactiveSQLClient;
 import org.junit.Assert;
 import org.junit.Test;
 import reactor.test.StepVerifier;
@@ -22,6 +24,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestInventoryDAO extends TestBase {
 
+    private ReactiveSQLClient db = $.getBean(ReactiveSQLClient.class);
     private InventoryDAO inventoryDAO = $.getBean(InventoryDAO.class);
 
     @Test
@@ -37,7 +40,8 @@ public class TestInventoryDAO extends TestBase {
         update.setProductId(5L);
         list.add(update);
 
-        StepVerifier.create(inventoryDAO.updateBatch(list, InventoryOperator.SUB)).assertNext(r -> {
+        List<InventoryUpdate> update1 = list;
+        StepVerifier.create(db.newTransaction(c -> inventoryDAO.updateBatch(update1, InventoryOperator.SUB, c))).assertNext(r -> {
             Assert.assertThat(r.length, is(2));
             Arrays.stream(r).forEach(row -> Assert.assertThat(row, is(1)));
         }).expectComplete().verify();
@@ -59,7 +63,8 @@ public class TestInventoryDAO extends TestBase {
         update.setProductId(5L);
         list.add(update);
 
-        StepVerifier.create(inventoryDAO.updateBatch(list, InventoryOperator.SUB)).assertNext(r -> {
+        List<InventoryUpdate> update2 = list;
+        StepVerifier.create(db.newTransaction(c -> inventoryDAO.updateBatch(update2, InventoryOperator.SUB, c))).assertNext(r -> {
             Assert.assertThat(r.length, is(2));
             Assert.assertThat(r[0], is(0));
             Assert.assertThat(r[1], is(1));

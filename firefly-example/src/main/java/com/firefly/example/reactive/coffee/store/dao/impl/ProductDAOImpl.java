@@ -7,7 +7,8 @@ import com.firefly.example.reactive.coffee.store.dao.ProductDAO;
 import com.firefly.example.reactive.coffee.store.model.Product;
 import com.firefly.example.reactive.coffee.store.vo.Page;
 import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
-import com.firefly.reactive.adapter.db.ReactiveTransactionalManager;
+import com.firefly.reactive.adapter.db.ReactiveSQLClient;
+import com.firefly.reactive.adapter.db.ReactiveSQLConnection;
 import com.firefly.utils.CollectionUtils;
 import reactor.core.publisher.Mono;
 
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.firefly.example.reactive.coffee.store.utils.DBUtils.toWildcard;
 
@@ -26,7 +26,7 @@ import static com.firefly.example.reactive.coffee.store.utils.DBUtils.toWildcard
 public class ProductDAOImpl implements ProductDAO {
 
     @Inject
-    private ReactiveTransactionalManager db;
+    private ReactiveSQLClient db;
 
     @Override
     public Mono<Page<Product>> list(ProductQuery query) {
@@ -57,32 +57,32 @@ public class ProductDAOImpl implements ProductDAO {
                 });
 
         sql.append(" order by id desc ").append(Page.getPageSQLWithoutCount(query.getPageNumber(), query.getPageSize()));
-        return db.execSQL(c -> c.queryForList(sql.toString(), Product.class, params.toArray())
-                                .map(r -> new Page<>(r, query.getPageNumber(), query.getPageSize())));
+        return db.newTransaction(c -> c.queryForList(sql.toString(), Product.class, params.toArray())
+                                       .map(r -> new Page<>(r, query.getPageNumber(), query.getPageSize())));
     }
 
     @Override
     public Mono<Product> get(Long id) {
-        return db.execSQL(c -> c.queryById(id, Product.class));
+        return db.newTransaction(c -> c.queryById(id, Product.class));
     }
 
     @Override
-    public Mono<List<Product>> list(List<Long> idList) {
+    public Mono<List<Product>> list(List<Long> idList, ReactiveSQLConnection connection) {
         if (CollectionUtils.isEmpty(idList)) {
             return Mono.just(Collections.emptyList());
         }
 
         String sql = "select * from `coffee_store`.`product` where id in ( " + toWildcard(idList) + " )";
-        return db.execSQL(c -> c.queryForList(sql, Product.class, idList.toArray()));
+        return connection.inTransaction(c -> c.queryForList(sql, Product.class, idList.toArray()));
     }
 
     @Override
     public Mono<Long> insert(Product product) {
-        return db.execSQL(c -> c.insertObject(product));
+        return db.newTransaction(c -> c.insertObject(product));
     }
 
     @Override
     public Mono<Integer> update(Product product) {
-        return db.execSQL(c -> c.updateObject(product));
+        return db.newTransaction(c -> c.updateObject(product));
     }
 }

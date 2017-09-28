@@ -196,26 +196,4 @@ public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
     public SQLConnection getSQLConnection() {
         return sqlConnection;
     }
-
-    @Override
-    public <T> Mono<T> execSQL(Func1<ReactiveSQLConnection, Mono<T>> func1) {
-        return Mono.create(sink -> beginTransaction().subscribe(isNew -> {
-            try {
-                Mono<T> ret = func1.call(this);
-                if (isNew) {
-                    ret.subscribe(
-                            data -> commitAndEndTransaction().subscribe(r -> sink.success(data), sink::error),
-                            ex -> rollbackAndEndTransaction().subscribe(r -> sink.error(ex), sink::error));
-                } else {
-                    ret.subscribe(sink::success, ex -> rollback().subscribe(r -> sink.error(ex), sink::error));
-                }
-            } catch (Exception ex) {
-                if (isNew) {
-                    rollbackAndEndTransaction().subscribe(r -> sink.error(ex), sink::error);
-                } else {
-                    rollback().subscribe(r -> sink.error(ex), sink::error);
-                }
-            }
-        }, ex -> close().subscribe(r -> sink.error(ex), sink::error)));
-    }
 }

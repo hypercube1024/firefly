@@ -129,7 +129,7 @@ public class TestReactiveSQLClient {
     @Test
     public void testExecSQL() {
         Phaser phaser = new Phaser(2);
-        sqlClient.getConnection().then(c -> c.execSQL(conn -> {
+        sqlClient.getConnection().then(c -> c.inTransaction(conn -> {
             User user0 = new User();
             user0.setId(1L);
             user0.setName("hello");
@@ -146,7 +146,7 @@ public class TestReactiveSQLClient {
                     });
         })).subscribe(data -> phaser.arrive(), ex -> sqlClient
                 .getConnection()
-                .then(c -> c.execSQL(conn -> c.queryById(1L, User.class)
+                .then(c -> c.inTransaction(conn -> c.queryById(1L, User.class)
                                               .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
                 .subscribe(user -> phaser.arrive()));
         phaser.arriveAndAwaitAdvance();

@@ -2,6 +2,7 @@ package com.firefly.example.test.dao;
 
 import com.firefly.$;
 import com.firefly.example.reactive.coffee.store.dao.UserDAO;
+import com.firefly.example.test.TestBase;
 import org.junit.Assert;
 import org.junit.Test;
 import reactor.test.StepVerifier;

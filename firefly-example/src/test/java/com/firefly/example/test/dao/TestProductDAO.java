@@ -6,6 +6,7 @@ import com.firefly.example.reactive.coffee.store.dao.ProductDAO;
 import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
 import com.firefly.example.reactive.coffee.store.vo.ProductStatus;
 import com.firefly.example.reactive.coffee.store.vo.ProductType;
+import com.firefly.example.test.TestBase;
 import org.junit.Assert;
 import org.junit.Test;
 import reactor.test.StepVerifier;

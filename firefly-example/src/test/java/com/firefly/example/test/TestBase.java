@@ -1,4 +1,4 @@
-package com.firefly.example.test.dao;
+package com.firefly.example.test;
 
 import com.firefly.$;
 import com.firefly.example.reactive.coffee.store.utils.DBUtils;
@@ -14,5 +14,6 @@ public class TestBase {
         DBUtils dbUtils = $.getBean(DBUtils.class);
         dbUtils.createTables();
         dbUtils.initializeData();
+        System.out.println("init test data");
     }
 }
