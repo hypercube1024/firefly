@@ -25,13 +25,9 @@ public class GlobalHandler implements Handler {
         Mono.fromFuture(ctx.nextFuture())
             .timeout(Duration.ofSeconds(1))
             .subscribe(ret -> ctx.end(), ex -> {
-                if (ex instanceof IllegalArgumentException) {
-                    ctx.setStatus(HttpStatus.BAD_REQUEST_400);
-                    logger.info(() -> $.string.replace("Request error. [{}], [{}]", ctx.getURI(), ex.getMessage()));
-                    Response<Boolean> response = new Response<>();
-                    response.setStatus(HttpStatus.BAD_REQUEST_400);
-                    response.setMessage(ex.getMessage());
-                    ctx.writeJson(response).end();
+                IllegalArgumentException e = toIllegalArgumentException(ex);
+                if (e != null) {
+                    renderIllegalArgumentException(ctx, e);
                 } else {
                     ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
                     logger.error(() -> "Server exception. " + ctx.getURI(), ex);
@@ -41,5 +37,24 @@ public class GlobalHandler implements Handler {
                     ctx.writeJson(response).end();
                 }
             });
+    }
+
+    private IllegalArgumentException toIllegalArgumentException(Throwable ex) {
+        if (ex instanceof IllegalArgumentException) {
+            return (IllegalArgumentException) ex;
+        } else if (ex.getCause() instanceof IllegalArgumentException) {
+            return (IllegalArgumentException) ex.getCause();
+        } else {
+            return null;
+        }
+    }
+
+    private void renderIllegalArgumentException(RoutingContext ctx, IllegalArgumentException ex) {
+        ctx.setStatus(HttpStatus.BAD_REQUEST_400);
+        logger.info(() -> $.string.replace("Request error. [{}], [{}]", ctx.getURI(), ex.getMessage()));
+        Response<Boolean> response = new Response<>();
+        response.setStatus(HttpStatus.BAD_REQUEST_400);
+        response.setMessage(ex.getMessage());
+        ctx.writeJson(response).end();
     }
 }
