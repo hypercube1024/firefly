@@ -223,28 +223,28 @@ public class RoutingContextImpl implements RoutingContext {
     public String getStringBody(String charset) {
         return Optional.ofNullable(httpBodyHandlerSPI)
                        .map(s -> s.getStringBody(charset))
-                       .orElse(request.getStringBody(charset));
+                       .orElseGet(() -> request.getStringBody(charset));
     }
 
     @Override
     public String getStringBody() {
         return Optional.ofNullable(httpBodyHandlerSPI)
                        .map(HTTPBodyHandlerSPI::getStringBody)
-                       .orElse(request.getStringBody());
+                       .orElseGet(request::getStringBody);
     }
 
     @Override
     public <T> T getJsonBody(Class<T> clazz) {
         return Optional.ofNullable(httpBodyHandlerSPI)
                        .map(s -> s.getJsonBody(clazz))
-                       .orElse(request.getJsonBody(clazz));
+                       .orElseGet(() -> request.getJsonBody(clazz));
     }
 
     @Override
     public <T> T getJsonBody(GenericTypeReference<T> typeReference) {
         return Optional.ofNullable(httpBodyHandlerSPI)
                        .map(s -> s.getJsonBody(typeReference))
-                       .orElse(request.getJsonBody(typeReference));
+                       .orElseGet(() -> request.getJsonBody(typeReference));
 
     }
 
@@ -252,14 +252,14 @@ public class RoutingContextImpl implements RoutingContext {
     public JsonObject getJsonObjectBody() {
         return Optional.ofNullable(httpBodyHandlerSPI)
                        .map(HTTPBodyHandlerSPI::getJsonObjectBody)
-                       .orElse(request.getJsonObjectBody());
+                       .orElseGet(request::getJsonObjectBody);
     }
 
     @Override
     public JsonArray getJsonArrayBody() {
         return Optional.ofNullable(httpBodyHandlerSPI)
                        .map(HTTPBodyHandlerSPI::getJsonArrayBody)
-                       .orElse(request.getJsonArrayBody());
+                       .orElseGet(request::getJsonArrayBody);
     }
 
     public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {

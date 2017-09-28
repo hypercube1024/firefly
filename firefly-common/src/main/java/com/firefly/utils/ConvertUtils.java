@@ -84,7 +84,7 @@ abstract public class ConvertUtils {
         return (T) Optional.ofNullable(c)
                            .map(map::get)
                            .map(p -> p.parse(value))
-                           .orElse(parseValue(value));
+                           .orElseGet(() -> parseValue(value));
     }
 
     public static Object parseValue(String value) {
@@ -108,7 +108,7 @@ abstract public class ConvertUtils {
         return (T) Optional.ofNullable(argsType)
                            .map(map2::get)
                            .map(p -> p.parse(value))
-                           .orElse(parseValue(value));
+                           .orElseGet(() -> parseValue(value));
     }
 
     /**

@@ -6,6 +6,17 @@
 </head>
 <body>
 <div class="container">
+    <div id="buySuccess" class="row justify-content-center py-2" style="display:none;">
+        <div class="alert alert-success" role="alert">
+            Buy products success
+        </div>
+    </div>
+
+    <div id="buyFailure" class="row justify-content-center py-2" style="display:none;">
+        <div id="buyFailureContent" class="alert alert-danger" role="alert">
+        </div>
+    </div>
+
     <div class="row py-2">
         <div class="col">
             {{#userInfo}}Hi {{name}}. {{/userInfo}}
@@ -29,13 +40,14 @@
                     <option value="1">Coffee</option>
                     <option value="2">Dessert</option>
                 </select>
+                <input type="hidden" id="productTypeValue" value="{{type}}">
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-outline-secondary">Search</button>
             </div>
             {{#userInfo}}
                 <div class="col-auto">
-                    <button type="button" class="btn btn-primary">Buy</button>
+                    <button id="buyProducts" type="button" class="btn btn-primary">Buy</button>
                 </div>
             {{/userInfo}}
         </div>
@@ -47,15 +59,8 @@
                 <thead>
                 <tr class="table-primary">
                     {{#userInfo}}
-                        <th>
-                            <div>
-                                <label class="form-check-label">
-                                    <input class="form-check-input" type="checkbox" id="allProductBox"
-                                           value="allProductBox"
-                                           aria-label="...">
-                                </label>
-                            </div>
-                        </th>
+                        <th><div><label class="form-check-label"><input class="form-check-input" type="checkbox" id="allProductBox" value="allProductBox" aria-label="..."></label></div></th>
+                        <th>Num</th>
                     {{/userInfo}}
                     <th>#</th>
                     <th>Name</th>
@@ -66,34 +71,46 @@
                 </tr>
                 </thead>
                 <tbody>
-                {{#products}}
-                    {{#record}}
-                        <tr>
-                            {{#userInfo}}
-                                <th>
-                                    <div>
-                                        <label class="form-check-label">
-                                            <input class="form-check-input" name="productSubBox" type="checkbox"
-                                                   value="{{id}}"
-                                                   aria-label="...">
-                                        </label>
-                                    </div>
-                                </th>
-                            {{/userInfo}}
-                            <td>{{id}}</td>
-                            <td>{{name}}</td>
-                            <td>{{price}}</td>
-                            <td>{{typeDesc}}</td>
-                            <td>{{amount}}</td>
-                            <td>{{description}}</td>
-                        </tr>
-                    {{/record}}
-                    {{^record}}
-                        <tr>
-                            <td colspan="6">No data</td>
-                        </tr>
-                    {{/record}}
-                {{/products}}
+                {{#userInfo}}
+                    {{#products}}
+                        {{#record}}
+                            <tr>
+                                <td><div><label class="form-check-label"><input class="form-check-input" name="productSubBox" type="checkbox" value="{{id}}" aria-label="..."></label></div></td>
+                                <td><input title="Buy number" id="buyAmount_{{id}}" name="buyNumber" type="number" min="1" max="100" maxlength="3" value="1"></td>
+                                <td>{{id}}</td>
+                                <td>{{name}}</td>
+                                <td>{{price}}</td>
+                                <td>{{typeDesc}}</td>
+                                <td>{{amount}}</td>
+                                <td>{{description}}</td>
+                            </tr>
+                        {{/record}}
+                        {{^record}}
+                            <tr>
+                                <td colspan="6">No data</td>
+                            </tr>
+                        {{/record}}
+                    {{/products}}
+                {{/userInfo}}
+                {{^userInfo}}
+                    {{#products}}
+                        {{#record}}
+                            <tr>
+                                <td>{{id}}</td>
+                                <td>{{name}}</td>
+                                <td>{{price}}</td>
+                                <td>{{typeDesc}}</td>
+                                <td>{{amount}}</td>
+                                <td>{{description}}</td>
+                            </tr>
+                        {{/record}}
+                        {{^record}}
+                            <tr>
+                                <td colspan="6">No data</td>
+                            </tr>
+                        {{/record}}
+                    {{/products}}
+                {{/userInfo}}
                 </tbody>
             </table>
 
@@ -117,14 +134,6 @@
 </div>
 
 {{>scripts}}
-<script>
-    $(document).ready(function () {
-        $("#productType").val({{type}});
-
-        $("#allProductBox").click(function () {
-            $('input[name="productSubBox"]').prop("checked", this.checked);
-        });
-    });
-</script>
+<script src="/static/js/mainPage.js"></script>
 </body>
 </html>

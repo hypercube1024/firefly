@@ -17,10 +17,15 @@ public class MainPageRouterInstaller implements RouterInstaller {
     @Inject
     private MainPageHandler mainPageHandler;
 
+    @Inject
+    private OrderHandler orderHandler;
+
     @Override
     public void install() {
         // main page
-        server.router().get("/").asyncHandler(mainPageHandler);
-        server.router().get("/hello").handler(ctx -> ctx.write("hello").succeed(true));
+        server.router().get("/").asyncHandler(mainPageHandler)
+              .router().get("/hello").handler(ctx -> ctx.write("hello").succeed(true))
+              .router().post("/product/buy").handler(orderHandler);
+
     }
 }
