@@ -61,9 +61,9 @@ public class OrderServiceImpl implements OrderService {
     private Mono<Boolean> buy(ProductBuyRequest request, ReactiveSQLConnection c) {
         return inventoryDAO.updateBatch(request.getProducts(), InventoryOperator.SUB, c)
                            .doOnSuccess(this::verifyInventory)
-                           .then(arr -> productDAO.list(toProductIdList(request), c))
+                           .flatMap(arr -> productDAO.list(toProductIdList(request), c))
                            .map(products -> toOrders(request, products))
-                           .then(orders -> orderDAO.insertBatch(orders, c))
+                           .flatMap(orders -> orderDAO.insertBatch(orders, c))
                            .map(orderIdList -> true);
     }
 

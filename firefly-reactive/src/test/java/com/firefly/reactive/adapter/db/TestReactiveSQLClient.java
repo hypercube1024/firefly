@@ -45,10 +45,10 @@ public class TestReactiveSQLClient {
     @Before
     public void before() {
         exec(c -> c.update("drop schema if exists test")
-                   .then(v -> c.update("create schema test"))
-                   .then(v -> c.update("set mode MySQL"))
-                   .then(v -> c.update("CREATE TABLE `test`.`user`(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))"))
-                   .then(v -> {
+                   .flatMap(v -> c.update("create schema test"))
+                   .flatMap(v -> c.update("set mode MySQL"))
+                   .flatMap(v -> c.update("CREATE TABLE `test`.`user`(id BIGINT AUTO_INCREMENT PRIMARY KEY, pt_name VARCHAR(255), pt_password VARCHAR(255), other_info VARCHAR(255))"))
+                   .flatMap(v -> {
                        Object[][] params = new Object[size][2];
                        for (int i = 0; i < size; i++) {
                            params[i][0] = "test transaction " + i;
@@ -71,7 +71,7 @@ public class TestReactiveSQLClient {
     }
 
     private Mono<Long> testUser(ReactiveSQLConnection c, long i) {
-        return c.queryById(i, User.class).then(user -> {
+        return c.queryById(i, User.class).flatMap(user -> {
             Assert.assertThat(user.getId(), is(i));
             Assert.assertThat(user.getName(), is("test transaction " + (i - 1)));
             Assert.assertThat(user.getPassword(), is("pwd transaction " + (i - 1)));
@@ -92,10 +92,10 @@ public class TestReactiveSQLClient {
         user.setName("apple");
         exec(c -> c.updateObject(user)
                    .doOnSuccess(row -> Assert.assertThat(row, is(1)))
-                   .then(v -> c.queryById(id, User.class))
+                   .flatMap(v -> c.queryById(id, User.class))
                    .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("apple")))
-                   .then(v -> c.rollback()))
-                .then(ret -> exec(c -> c.queryById(id, User.class)))
+                   .flatMap(v -> c.rollback()))
+                .flatMap(ret -> exec(c -> c.queryById(id, User.class)))
                 .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("test transaction 0")))
                 .block();
     }
@@ -108,21 +108,21 @@ public class TestReactiveSQLClient {
             user0.setName("orange");
             return c.updateObject(user0)
                     .doOnSuccess(row0 -> Assert.assertThat(row0, is(1)))
-                    .then(v -> c.queryById(2L, User.class))
+                    .flatMap(v -> c.queryById(2L, User.class))
                     .doOnSuccess(user -> Assert.assertThat(user.getName(), is("orange")))
-                    .then(v -> c.inTransaction(c1 -> {
+                    .flatMap(v -> c.inTransaction(c1 -> {
                         User user1 = new User();
                         user1.setId(1L);
                         user1.setName("apple");
                         return c1.updateObject(user1)
                                  .doOnSuccess(row1 -> Assert.assertThat(row1, is(1)))
-                                 .then(v1 -> c1.queryById(1L, User.class))
+                                 .flatMap(v1 -> c1.queryById(1L, User.class))
                                  .doOnSuccess(user -> Assert.assertThat(user.getName(), is("apple")))
-                                 .then(v1 -> c1.rollback());
+                                 .flatMap(v1 -> c1.rollback());
                     }))
-                    .then(v -> c.queryById(1L, User.class))
+                    .flatMap(v -> c.queryById(1L, User.class))
                     .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))
-                    .then(v -> c.queryById(2L, User.class))
+                    .flatMap(v -> c.queryById(2L, User.class))
                     .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 1")));
         }).block();
     }
@@ -140,7 +140,7 @@ public class TestReactiveSQLClient {
     private Mono<User> updateUser(ReactiveSQLConnection c, User user0) {
         return c.updateObject(user0)
                 .doOnSuccess(row0 -> Assert.assertThat(row0, is(1)))
-                .then(v1 -> c.queryById(1L, User.class))
+                .flatMap(v1 -> c.queryById(1L, User.class))
                 .doOnSuccess(user -> Assert.assertThat(user.getName(), is("hello")))
                 .doOnNext(v1 -> {
                     throw new RuntimeException("test exception rollback");
@@ -153,7 +153,7 @@ public class TestReactiveSQLClient {
 
     private Disposable handleException(Phaser phaser) {
         return sqlClient.getConnection()
-                        .then(c -> c.inTransaction(conn -> c.queryById(1L, User.class).doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
+                        .flatMap(c -> c.inTransaction(conn -> c.queryById(1L, User.class).doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
                         .subscribe(user -> phaser.arrive());
     }
 

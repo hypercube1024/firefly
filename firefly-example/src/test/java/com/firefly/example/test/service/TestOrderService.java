@@ -32,7 +32,7 @@ public class TestOrderService extends TestBase {
 
     @Test
     public void test() {
-        Mono<Boolean> ret = userService.getByName("John").then(user -> {
+        Mono<Boolean> ret = userService.getByName("John").flatMap(user -> {
             ProductBuyRequest request = new ProductBuyRequest();
             request.setUserId(user.getId());
             List<InventoryUpdate> products = new ArrayList<>();
@@ -59,7 +59,7 @@ public class TestOrderService extends TestBase {
 
     @Test
     public void testError() {
-        Mono<Boolean> ret = userService.getByName("John").then(user -> {
+        Mono<Boolean> ret = userService.getByName("John").flatMap(user -> {
             ProductBuyRequest request = new ProductBuyRequest();
             request.setUserId(user.getId());
             List<InventoryUpdate> products = new ArrayList<>();
