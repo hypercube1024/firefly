@@ -5,8 +5,6 @@ import com.firefly.db.SQLResultSet;
 import com.firefly.db.TransactionIsolation;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Func1;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -16,8 +14,6 @@ import java.util.Map;
  * @author Pengtao Qiu
  */
 public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
-
-    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final SQLConnection sqlConnection;
 

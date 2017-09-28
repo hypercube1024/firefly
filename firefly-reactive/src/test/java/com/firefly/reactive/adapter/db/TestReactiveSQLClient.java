@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.Phaser;
@@ -129,27 +130,31 @@ public class TestReactiveSQLClient {
     @Test
     public void testExecSQL() {
         Phaser phaser = new Phaser(2);
-        sqlClient.getConnection().then(c -> c.inTransaction(conn -> {
-            User user0 = new User();
-            user0.setId(1L);
-            user0.setName("hello");
-            return c.updateObject(user0)
-                    .doOnSuccess(row0 -> Assert.assertThat(row0, is(1)))
-                    .then(v1 -> c.queryById(1L, User.class))
-                    .doOnSuccess(user -> Assert.assertThat(user.getName(), is("hello")))
-                    .doOnNext(v1 -> {
-                        throw new RuntimeException("test exception rollback");
-                    })
-                    .doOnError(e -> {
-                        log.error("test rollback 1, {}", e.getMessage());
-                        Assert.assertThat(e.getMessage(), is("test exception rollback"));
-                    });
-        })).subscribe(data -> phaser.arrive(), ex -> sqlClient
-                .getConnection()
-                .then(c -> c.inTransaction(conn -> c.queryById(1L, User.class)
-                                              .doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
-                .subscribe(user -> phaser.arrive()));
+        User user0 = new User();
+        user0.setId(1L);
+        user0.setName("hello");
+        exec(c -> c.inTransaction(conn -> updateUser(c, user0))).subscribe(data -> phaser.arrive(), ex -> handleException(phaser));
         phaser.arriveAndAwaitAdvance();
+    }
+
+    private Mono<User> updateUser(ReactiveSQLConnection c, User user0) {
+        return c.updateObject(user0)
+                .doOnSuccess(row0 -> Assert.assertThat(row0, is(1)))
+                .then(v1 -> c.queryById(1L, User.class))
+                .doOnSuccess(user -> Assert.assertThat(user.getName(), is("hello")))
+                .doOnNext(v1 -> {
+                    throw new RuntimeException("test exception rollback");
+                })
+                .doOnError(e -> {
+                    log.error("test rollback 1, {}", e.getMessage());
+                    Assert.assertThat(e.getMessage(), is("test exception rollback"));
+                });
+    }
+
+    private Disposable handleException(Phaser phaser) {
+        return sqlClient.getConnection()
+                        .then(c -> c.inTransaction(conn -> c.queryById(1L, User.class).doOnSuccess(user -> Assert.assertThat(user.getName(), is("test transaction 0")))))
+                        .subscribe(user -> phaser.arrive());
     }
 
     @Test
