@@ -127,7 +127,7 @@ public class LoginHandler implements Handler {
                 }, ctx::fail);
             }
         }, ex -> {
-            if (ex instanceof RecordNotFound) {
+            if (ex.getCause() instanceof RecordNotFound) {
                 ctx.fail(new IllegalArgumentException("The username is incorrect"));
             } else {
                 ctx.fail(ex);
