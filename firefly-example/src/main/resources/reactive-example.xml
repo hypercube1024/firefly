@@ -18,9 +18,6 @@
         </constructor>
     </bean>
 
-    <bean id="localSessionHandler" class="com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler"
-          destroy-method="stop"/>
-
     <bean id="httpServer" class="com.firefly.server.http2.HTTP2ServerBuilder"
           init-method="httpServer"
           destroy-method="stop"/>
