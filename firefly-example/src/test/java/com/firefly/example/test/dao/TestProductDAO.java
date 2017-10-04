@@ -31,7 +31,7 @@ public class TestProductDAO extends TestBase {
         }).expectComplete().verify();
 
         StepVerifier.create(productDAO.get(200L))
-                    .expectError(RecordNotFound.class)
+                    .expectErrorMatches(t -> t.getCause() instanceof RecordNotFound)
                     .verify();
     }
 
