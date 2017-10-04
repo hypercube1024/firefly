@@ -35,7 +35,7 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
         getConnection().commitAndEndTransaction().await()
     }
 
-    suspend override fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T? = getConnection().execSQL(handler)
+    suspend override fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T = getConnection().execSQL(handler)
 
     @Suppress("UNCHECKED_CAST")
     private fun createConnectionIfEmpty(): CompletableFuture<SQLConnection> = requestCtx.get()?.attributes?.computeIfAbsent(transactionKey) {

@@ -24,6 +24,6 @@ class TaskDaoImpl : TaskDao {
 
     suspend override fun listTasksByUserId(userId: Long): List<Task> = dbClient.execSQL {
         it.asyncQueryForList<Task>("select * from test.task where user_id = ?", userId)
-    } ?: listOf()
+    }
 
 }

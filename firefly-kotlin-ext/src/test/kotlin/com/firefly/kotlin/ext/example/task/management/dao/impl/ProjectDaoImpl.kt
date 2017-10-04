@@ -24,7 +24,7 @@ class ProjectDaoImpl : ProjectDao {
     override suspend fun addProjectMembers(projectId: Long, userIdList: List<Long>): List<Long> = dbClient.execSQL {
         val projectUsers: List<ProjectUser> = userIdList.map { ProjectUser(0, it, projectId) }
         it.asyncInsertObjectBatch<ProjectUser, Long>(projectUsers)
-    } ?: listOf()
+    }
 
     override suspend fun queryById(id: Long): Project? = dbClient.execSQL {
         it.asyncQueryById<Project>(id)
@@ -34,6 +34,6 @@ class ProjectDaoImpl : ProjectDao {
         it.asyncQuery<List<Long>>("select `user_id` from `test`.`project_user` where `project_id` = ?", {
             it.stream().map { it.getLong("user_id") }.collect(Collectors.toList())
         }, projectId)
-    } ?: listOf()
+    }
 
 }
