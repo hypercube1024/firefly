@@ -87,7 +87,6 @@ class Page<T> {
     }
 
     companion object {
-
         fun getPageSQLWithoutCount(number: Int, size: Int): String {
             val offset = (Math.max(number - 1, 0) * size).toLong()
             val pageSize = size + 1

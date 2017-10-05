@@ -2,6 +2,9 @@ package com.firefly.example.kotlin.test.dao
 
 import com.firefly.db.RecordNotFound
 import com.firefly.example.kotlin.coffee.store.dao.ProductDAO
+import com.firefly.example.kotlin.coffee.store.vo.ProductQuery
+import com.firefly.example.kotlin.coffee.store.vo.ProductStatus
+import com.firefly.example.kotlin.coffee.store.vo.ProductType
 import com.firefly.example.kotlin.test.TestBase
 import com.firefly.kotlin.ext.context.Context
 import kotlinx.coroutines.experimental.runBlocking
@@ -26,5 +29,17 @@ class TestProductDAO : TestBase() {
     fun testGetException(): Unit = runBlocking {
         productDAO.get(200L)
         Unit
+    }
+
+    @Test
+    fun testList() = runBlocking {
+        val page = productDAO.list(ProductQuery(null, ProductStatus.ENABLE.value, null, 1, 5))
+        assertEquals(5, page.getRecord().size)
+
+        val page2 = productDAO.list(ProductQuery("Co", ProductStatus.ENABLE.value, null, 1, 5))
+        assertEquals(2, page2.getRecord().size)
+
+        val page3 = productDAO.list(ProductQuery(null, ProductStatus.ENABLE.value, ProductType.DESSERT.value, 1, 5))
+        assertEquals(1, page3.getRecord().size)
     }
 }
