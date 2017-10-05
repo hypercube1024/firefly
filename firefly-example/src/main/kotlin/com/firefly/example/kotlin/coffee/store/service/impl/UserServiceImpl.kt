@@ -13,7 +13,7 @@ import com.firefly.example.kotlin.coffee.store.service.UserService
 class UserServiceImpl : UserService {
 
     @Inject
-    lateinit var userDAO: UserDAO
+    private lateinit var userDAO: UserDAO
 
     suspend override fun getByName(name: String): User = userDAO.getByName(name)
 

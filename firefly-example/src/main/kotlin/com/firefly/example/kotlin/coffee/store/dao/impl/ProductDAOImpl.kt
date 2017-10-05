@@ -19,7 +19,7 @@ import java.util.*
 class ProductDAOImpl : ProductDAO {
 
     @Inject
-    lateinit var db: AsyncTransactionalManager
+    private lateinit var db: AsyncTransactionalManager
 
     suspend override fun list(query: ProductQuery): Page<Product> {
         val params = ArrayList<Any>()

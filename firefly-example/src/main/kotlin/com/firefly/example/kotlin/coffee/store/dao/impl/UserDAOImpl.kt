@@ -15,7 +15,7 @@ import com.firefly.utils.StringUtils
 class UserDAOImpl : UserDAO {
 
     @Inject
-    lateinit var db: AsyncTransactionalManager
+    private lateinit var db: AsyncTransactionalManager
 
     suspend override fun getByName(name: String): User {
         if (!StringUtils.hasText(name)) {

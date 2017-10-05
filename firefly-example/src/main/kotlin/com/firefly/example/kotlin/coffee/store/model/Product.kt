@@ -9,14 +9,14 @@ import java.util.*
  * @author Pengtao Qiu
  */
 @Table(value = "product", catalog = "coffee_store")
-data class Product(@Id("id") var id: Long,
+data class Product(@Id("id") var id: Long?,
                    @Column("type") var type: Int,
                    @Column("name") var name: String,
                    @Column("price") var price: Double,
                    @Column("status") var status: Int,
                    @Column("description") var description: String,
-                   @Column("create_time") var createTime: Date,
-                   @Column("update_time") var updateTime: Date,
+                   @Column("create_time") var createTime: Date?,
+                   @Column("update_time") var updateTime: Date?,
                    var amount: Long) {
 
     override fun equals(other: Any?): Boolean = if (other is Product) Objects.equals(id, other.id) else false

@@ -21,7 +21,7 @@ import java.util.stream.Collectors
 class InventoryDAOImpl : InventoryDAO {
 
     @Inject
-    lateinit var db: AsyncTransactionalManager
+    private lateinit var db: AsyncTransactionalManager
 
     suspend override fun updateBatch(list: List<InventoryUpdate>, operator: InventoryOperator): IntArray = db.execSQL {
         if (CollectionUtils.isEmpty(list)) {

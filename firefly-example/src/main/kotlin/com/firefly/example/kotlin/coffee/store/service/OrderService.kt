@@ -6,5 +6,5 @@ import com.firefly.example.kotlin.coffee.store.vo.ProductBuyRequest
  * @author Pengtao Qiu
  */
 interface OrderService {
-    fun buy(request: ProductBuyRequest): Boolean
+    suspend fun buy(request: ProductBuyRequest)
 }

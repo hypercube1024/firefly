@@ -15,7 +15,7 @@ import com.firefly.example.kotlin.coffee.store.vo.ProductQuery
 class ProductServiceImpl : ProductService {
 
     @Inject
-    lateinit var productDAO: ProductDAO
+    private lateinit var productDAO: ProductDAO
 
     suspend override fun list(query: ProductQuery): Page<Product> = productDAO.list(query)
 
