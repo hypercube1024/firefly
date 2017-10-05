@@ -10,6 +10,8 @@ import com.firefly.kotlin.ext.context.Context
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * @author Pengtao Qiu
@@ -39,7 +41,11 @@ class TestProductDAO : TestBase() {
         val page2 = productDAO.list(ProductQuery("Co", ProductStatus.ENABLE.value, null, 1, 5))
         assertEquals(2, page2.getRecord().size)
 
-        val page3 = productDAO.list(ProductQuery(null, ProductStatus.ENABLE.value, ProductType.DESSERT.value, 1, 5))
-        assertEquals(1, page3.getRecord().size)
+        val page3 = productDAO.list(ProductQuery(null, ProductStatus.ENABLE.value, null, 2, 5))
+        assertFalse { page3.isNext }
+        assertTrue { page3.getRecord().size <= 5 }
+
+        val page4 = productDAO.list(ProductQuery(null, ProductStatus.ENABLE.value, ProductType.DESSERT.value, 1, 5))
+        assertEquals(1, page4.getRecord().size)
     }
 }
