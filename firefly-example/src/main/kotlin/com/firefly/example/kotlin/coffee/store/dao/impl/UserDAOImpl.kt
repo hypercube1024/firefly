@@ -23,7 +23,7 @@ class UserDAOImpl : UserDAO {
         }
 
         val sql = "select * from `coffee_store`.`user` where `name` = ?"
-        return db.execSQL { it.asyncQueryForObject<User>(sql) }
+        return db.execSQL { it.asyncQueryForObject<User>(sql, name) }
     }
 
 }
