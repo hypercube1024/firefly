@@ -76,6 +76,10 @@ suspend fun <T> SQLConnection.execSQL(handler: suspend (conn: SQLConnection) -> 
     } catch (e: Exception) {
         sysLogger.error("execute SQL exception", e)
         (if (isNew) rollbackAndEndTransaction() else rollback()).await()
-        throw CommonRuntimeException(e)
+        if (e is RuntimeException) {
+            throw e
+        } else {
+            throw CommonRuntimeException(e)
+        }
     }
 }

@@ -19,7 +19,7 @@ class TestInventoryDAO : TestBase() {
     private val inventoryDAO = Context.getBean<InventoryDAO>()
 
     @Test
-    fun test(): Unit = runBlocking {
+    fun test() = runBlocking {
         val ret = inventoryDAO.updateBatch(
                 listOf(InventoryUpdate(4L, 10L),
                        InventoryUpdate(5L, 20L)),
@@ -44,6 +44,5 @@ class TestInventoryDAO : TestBase() {
                 .parallelStream().collect(Collectors.toMap(Inventory::productId, { v -> v }))
         assertEquals(67L, map2[4L]?.amount)
         assertEquals(60L, map2[5L]?.amount)
-        Unit
     }
 }
