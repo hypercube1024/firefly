@@ -2,11 +2,12 @@ package com.firefly.example.kotlin.test.dao
 
 import com.firefly.db.RecordNotFound
 import com.firefly.example.kotlin.coffee.store.dao.ProductDAO
+import com.firefly.example.kotlin.coffee.store.ktCtx
 import com.firefly.example.kotlin.coffee.store.vo.ProductQuery
 import com.firefly.example.kotlin.coffee.store.vo.ProductStatus
 import com.firefly.example.kotlin.coffee.store.vo.ProductType
 import com.firefly.example.kotlin.test.TestBase
-import com.firefly.kotlin.ext.context.Context
+import com.firefly.kotlin.ext.context.getBean
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -18,7 +19,7 @@ import kotlin.test.assertTrue
  */
 class TestProductDAO : TestBase() {
 
-    private val productDAO = Context.getBean<ProductDAO>()
+    private val productDAO = ktCtx.getBean<ProductDAO>()
 
     @Test
     fun testGet() = runBlocking {

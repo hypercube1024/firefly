@@ -3,7 +3,7 @@ package com.firefly.example.kotlin.coffee.store.dao.impl
 import com.firefly.annotation.Component
 import com.firefly.annotation.Inject
 import com.firefly.example.kotlin.coffee.store.dao.UserDAO
-import com.firefly.example.reactive.coffee.store.model.User
+import com.firefly.example.kotlin.coffee.store.model.User
 import com.firefly.kotlin.ext.db.AsyncTransactionalManager
 import com.firefly.kotlin.ext.db.asyncQueryForObject
 import com.firefly.utils.StringUtils

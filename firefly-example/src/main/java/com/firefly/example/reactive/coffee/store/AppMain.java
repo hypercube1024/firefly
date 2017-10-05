@@ -2,6 +2,7 @@ package com.firefly.example.reactive.coffee.store;
 
 import com.firefly.$;
 import com.firefly.annotation.Inject;
+import com.firefly.core.ApplicationContext;
 import com.firefly.example.reactive.coffee.store.router.RouterInstaller;
 import com.firefly.example.reactive.coffee.store.utils.DBUtils;
 import com.firefly.server.http2.HTTP2ServerBuilder;
@@ -16,6 +17,7 @@ import com.firefly.utils.log.slf4j.ext.LazyLogger;
 public class AppMain extends AbstractLifeCycle {
 
     private static final LazyLogger logger = LazyLogger.create();
+    public static final ApplicationContext javaCtx = $.createApplicationContext("java-example.xml");
 
     @Inject
     private HTTP2ServerBuilder server;
@@ -32,7 +34,7 @@ public class AppMain extends AbstractLifeCycle {
     }
 
     public void installRouters() {
-        $.getBeans(RouterInstaller.class).stream().sorted().forEach(installer -> {
+        javaCtx.getBeans(RouterInstaller.class).stream().sorted().forEach(installer -> {
             logger.info(() -> "install routers [" + installer.getClass().getName() + "]");
             installer.install();
         });
@@ -51,6 +53,6 @@ public class AppMain extends AbstractLifeCycle {
     }
 
     public static void main(String[] args) {
-        $.getBean(AppMain.class).start();
+        javaCtx.getBean(AppMain.class).start();
     }
 }

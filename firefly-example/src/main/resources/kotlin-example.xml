@@ -3,6 +3,15 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
+    <import resource="datasource.xml"/>
+
+    <component-scan base-package="com.firefly.example.kotlin.coffee.store.utils"/>
+    <component-scan base-package="com.firefly.example.kotlin.coffee.store.dao"/>
+    <component-scan base-package="com.firefly.example.kotlin.coffee.store.service"/>
+
+    <bean id="localSessionHandler" class="com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler"
+          destroy-method="stop"/>
+
     <!-- Kotlin extension -->
     <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
 

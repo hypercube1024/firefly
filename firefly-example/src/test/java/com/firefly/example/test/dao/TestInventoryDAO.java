@@ -1,6 +1,5 @@
 package com.firefly.example.test.dao;
 
-import com.firefly.$;
 import com.firefly.example.reactive.coffee.store.dao.InventoryDAO;
 import com.firefly.example.reactive.coffee.store.model.Inventory;
 import com.firefly.example.reactive.coffee.store.vo.InventoryOperator;
@@ -17,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.firefly.example.reactive.coffee.store.AppMain.javaCtx;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -24,8 +24,8 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestInventoryDAO extends TestBase {
 
-    private ReactiveSQLClient db = $.getBean(ReactiveSQLClient.class);
-    private InventoryDAO inventoryDAO = $.getBean(InventoryDAO.class);
+    private ReactiveSQLClient db = javaCtx.getBean(ReactiveSQLClient.class);
+    private InventoryDAO inventoryDAO = javaCtx.getBean(InventoryDAO.class);
 
     @Test
     public void testUpdate() {

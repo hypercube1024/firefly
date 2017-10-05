@@ -1,12 +1,12 @@
 package com.firefly.example.test.dao;
 
-import com.firefly.$;
 import com.firefly.example.reactive.coffee.store.dao.UserDAO;
 import com.firefly.example.test.TestBase;
 import org.junit.Assert;
 import org.junit.Test;
 import reactor.test.StepVerifier;
 
+import static com.firefly.example.reactive.coffee.store.AppMain.javaCtx;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestUserDAO extends TestBase {
 
-    private UserDAO userDAO = $.getBean(UserDAO.class);
+    private UserDAO userDAO = javaCtx.getBean(UserDAO.class);
 
     @Test
     public void test() {

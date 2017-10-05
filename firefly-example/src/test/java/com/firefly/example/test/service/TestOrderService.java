@@ -1,6 +1,5 @@
 package com.firefly.example.test.service;
 
-import com.firefly.$;
 import com.firefly.example.reactive.coffee.store.dao.InventoryDAO;
 import com.firefly.example.reactive.coffee.store.model.Inventory;
 import com.firefly.example.reactive.coffee.store.service.OrderService;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.firefly.example.reactive.coffee.store.AppMain.javaCtx;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -26,9 +26,9 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestOrderService extends TestBase {
 
-    private OrderService orderService = $.getBean(OrderService.class);
-    private UserService userService = $.getBean(UserService.class);
-    private InventoryDAO inventoryDAO = $.getBean(InventoryDAO.class);
+    private OrderService orderService = javaCtx.getBean(OrderService.class);
+    private UserService userService = javaCtx.getBean(UserService.class);
+    private InventoryDAO inventoryDAO = javaCtx.getBean(InventoryDAO.class);
 
     @Test
     public void test() {

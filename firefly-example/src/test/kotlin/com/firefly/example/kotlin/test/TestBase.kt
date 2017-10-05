@@ -1,7 +1,8 @@
 package com.firefly.example.kotlin.test
 
+import com.firefly.example.kotlin.coffee.store.ktCtx
 import com.firefly.example.kotlin.coffee.store.utils.DBUtils
-import com.firefly.kotlin.ext.context.Context
+import com.firefly.kotlin.ext.context.getBean
 import org.junit.Before
 
 /**
@@ -11,7 +12,7 @@ open class TestBase {
 
     @Before
     fun before() {
-        val dbUtils = Context.getBean<DBUtils>()
+        val dbUtils = ktCtx.getBean<DBUtils>()
         dbUtils.createTables()
         dbUtils.initializeData()
         println("init test data")

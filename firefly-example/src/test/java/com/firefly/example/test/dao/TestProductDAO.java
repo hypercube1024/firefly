@@ -1,6 +1,5 @@
 package com.firefly.example.test.dao;
 
-import com.firefly.$;
 import com.firefly.db.RecordNotFound;
 import com.firefly.example.reactive.coffee.store.dao.ProductDAO;
 import com.firefly.example.reactive.coffee.store.vo.ProductQuery;
@@ -11,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import reactor.test.StepVerifier;
 
+import static com.firefly.example.reactive.coffee.store.AppMain.javaCtx;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
  */
 public class TestProductDAO extends TestBase {
 
-    private ProductDAO productDAO = $.getBean(ProductDAO.class);
+    private ProductDAO productDAO = javaCtx.getBean(ProductDAO.class);
 
     @Test
     public void testGet() {

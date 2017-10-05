@@ -13,4 +13,9 @@ data class Inventory(@Id("id") var id: Long,
                      @Column("amount") var amount: Long,
                      @Column("product_id") var productId: Long,
                      @Column("create_time") var createTime: Date,
-                     @Column("update_time") var updateTime: Date)
+                     @Column("update_time") var updateTime: Date) {
+
+    override fun equals(other: Any?): Boolean = if (other is Inventory) Objects.equals(id, other.id) else false
+
+    override fun hashCode(): Int = Objects.hashCode(id)
+}
