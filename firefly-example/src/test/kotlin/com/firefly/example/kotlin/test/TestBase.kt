@@ -1,6 +1,6 @@
 package com.firefly.example.kotlin.test
 
-import com.firefly.example.reactive.coffee.store.utils.DBUtils
+import com.firefly.example.kotlin.coffee.store.utils.DBUtils
 import com.firefly.kotlin.ext.context.Context
 import org.junit.Before
 

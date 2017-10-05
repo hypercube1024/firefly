@@ -44,7 +44,6 @@ class TestInventoryDAO : TestBase() {
                 .parallelStream().collect(Collectors.toMap(Inventory::productId, { v -> v }))
         assertEquals(67L, map2[4L]?.amount)
         assertEquals(60L, map2[5L]?.amount)
-
         Unit
     }
 }

@@ -17,6 +17,6 @@ interface ProductDAO {
 
     suspend fun insert(product: Product): Long
 
-    suspend fun update(product: Product): Long
+    suspend fun update(product: Product): Int
 
 }

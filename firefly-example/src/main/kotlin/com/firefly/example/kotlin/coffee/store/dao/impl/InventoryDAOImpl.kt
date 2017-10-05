@@ -4,9 +4,9 @@ import com.firefly.annotation.Component
 import com.firefly.annotation.Inject
 import com.firefly.example.kotlin.coffee.store.dao.InventoryDAO
 import com.firefly.example.kotlin.coffee.store.model.Inventory
+import com.firefly.example.kotlin.coffee.store.utils.DBUtils.Companion.toWildcard
 import com.firefly.example.kotlin.coffee.store.vo.InventoryOperator
 import com.firefly.example.kotlin.coffee.store.vo.InventoryUpdate
-import com.firefly.example.reactive.coffee.store.utils.DBUtils.toWildcard
 import com.firefly.kotlin.ext.db.AsyncTransactionalManager
 import com.firefly.kotlin.ext.db.asyncQueryForList
 import com.firefly.utils.CollectionUtils
