@@ -9,7 +9,8 @@ import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.launch
 import org.junit.Before
-import org.mockito.Mockito
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -30,9 +31,9 @@ open class TestBase {
 
     protected suspend fun newTransaction(action: suspend () -> Unit) {
         val map = ConcurrentHashMap<String, Any>()
-        val ctx = Mockito.mock(RoutingContext::class.java)
-        Mockito.`when`(ctx.getAttribute(db.transactionKey)).thenReturn(db.sqlClient.connection.await())
-        Mockito.`when`(ctx.attributes).thenReturn(map)
+        val ctx = mock(RoutingContext::class.java)
+        `when`(ctx.getAttribute(db.transactionKey)).thenReturn(db.sqlClient.connection.await())
+        `when`(ctx.attributes).thenReturn(map)
         launch(coroutineLocal.createContext(ctx)) {
             db.beginTransaction()
             try {

@@ -23,7 +23,6 @@ class TestOrderService : TestBase() {
     private val userService = ktCtx.getBean<UserService>()
     private val inventoryDAO = ktCtx.getBean<InventoryDAO>()
 
-
     @Test
     fun test() = runBlocking {
         val user = userService.getByName("John")
