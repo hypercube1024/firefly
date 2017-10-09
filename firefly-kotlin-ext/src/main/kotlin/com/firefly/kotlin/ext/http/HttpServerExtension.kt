@@ -64,19 +64,6 @@ fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = at
 fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
     queue.push(AsyncPromise(succeeded, failed))
-//    queue.push(AsyncPromise(succeeded = {
-//        succeeded.invoke(it)
-//        try {
-//            queue.pop().succeeded(it)
-//        } catch (e: NoSuchElementException) {
-//        }
-//    }, failed = {
-//        failed.invoke(it)
-//        try {
-//            queue.pop().failed(it)
-//        } catch (e: NoSuchElementException) {
-//        }
-//    }))
     return this
 }
 

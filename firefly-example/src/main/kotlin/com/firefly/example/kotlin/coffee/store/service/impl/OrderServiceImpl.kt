@@ -32,7 +32,7 @@ class OrderServiceImpl : OrderService {
     private lateinit var productDAO: ProductDAO
 
     suspend override fun buy(request: ProductBuyRequest) {
-        if (request.userId == 0L) {
+        if (request.userId.equals(0L)) {
             throw IllegalArgumentException("The user id is required")
         }
 
@@ -62,15 +62,15 @@ class OrderServiceImpl : OrderService {
             val totalPrice = BigDecimal.valueOf(product.price).multiply(BigDecimal.valueOf(amount)).toDouble()
 
             Order(null,
-                  OrderStatus.FINISHED.value,
-                  amount,
-                  product.price,
-                  totalPrice,
-                  product.id!!,
-                  request.userId,
-                  product.description,
-                  null, null
-                 )
+                    OrderStatus.FINISHED.value,
+                    amount,
+                    product.price,
+                    totalPrice,
+                    product.id!!,
+                    request.userId,
+                    product.description,
+                    null, null
+            )
         }.collect(Collectors.toList<Order>())
     }
 
@@ -80,6 +80,6 @@ class OrderServiceImpl : OrderService {
                 .filter { i -> i.productId == product.id }
                 .map { it.amount }
                 .findFirst()
-                .orElseThrow({ IllegalStateException("The product amounts must be more than 0") }).toLong()
+                .orElseThrow({ IllegalStateException("The product amounts must be more than 0") })
     }
 }

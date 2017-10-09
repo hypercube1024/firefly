@@ -3,6 +3,7 @@ package com.firefly.kotlin.ext.db
 import com.firefly.db.SQLClient
 import com.firefly.db.SQLConnection
 import com.firefly.kotlin.ext.common.CoroutineLocal
+import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.future.await
 import java.util.concurrent.CompletableFuture

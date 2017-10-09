@@ -51,7 +51,7 @@ public class TestOrderService extends TestBase {
         StepVerifier.create(ret).expectNext(true).expectComplete().verify();
 
         StepVerifier.create(inventoryDAO.listByProductId(Arrays.asList(4L, 5L))).assertNext(r -> {
-            Map<Long, Inventory> map = r.parallelStream().collect(Collectors.toMap(Inventory::getProductId, v -> v));
+            Map<Long, Inventory> map = r.stream().collect(Collectors.toMap(Inventory::getProductId, v -> v));
             Assert.assertThat(map.get(4L).getAmount(), is(67L));
             Assert.assertThat(map.get(5L).getAmount(), is(80L));
         }).expectComplete().verify();
