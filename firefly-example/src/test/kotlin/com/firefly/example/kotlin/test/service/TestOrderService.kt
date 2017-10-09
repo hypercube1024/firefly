@@ -45,7 +45,7 @@ class TestOrderService : TestBase() {
                     InventoryUpdate(4L, 90L),
                     InventoryUpdate(5L, 20L)))
             orderService.buy(req)
-        }
+        }.join()
 
         val inventories = inventoryDAO.listByProductId(listOf(4L, 5L))
         val map = inventories.stream().collect(Collectors.toMap(Inventory::productId, { v -> v }))

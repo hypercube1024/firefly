@@ -6,6 +6,7 @@ import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.context.getBean
 import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
 import com.firefly.server.http2.router.RoutingContext
+import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.launch
 import org.junit.Before
@@ -29,12 +30,12 @@ open class TestBase {
         println("init test data")
     }
 
-    protected suspend fun newTransaction(action: suspend () -> Unit) {
+    protected suspend fun newTransaction(action: suspend () -> Unit): Job {
         val map = ConcurrentHashMap<String, Any>()
         val ctx = mock(RoutingContext::class.java)
         `when`(ctx.getAttribute(db.transactionKey)).thenReturn(db.sqlClient.connection.await())
         `when`(ctx.attributes).thenReturn(map)
-        launch(coroutineLocal.createContext(ctx)) {
+        return launch(coroutineLocal.createContext(ctx)) {
             db.beginTransaction()
             try {
                 action.invoke()
@@ -43,6 +44,6 @@ open class TestBase {
                 e.printStackTrace()
                 db.rollbackAndEndTransaction()
             }
-        }.join()
+        }
     }
 }
