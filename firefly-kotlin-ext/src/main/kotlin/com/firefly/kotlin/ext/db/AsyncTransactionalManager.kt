@@ -1,6 +1,7 @@
 package com.firefly.kotlin.ext.db
 
 import com.firefly.db.SQLConnection
+import kotlinx.coroutines.experimental.future.await
 
 /**
  * @author Pengtao Qiu
@@ -9,12 +10,16 @@ interface AsyncTransactionalManager {
 
     suspend fun getConnection(): SQLConnection
 
-    suspend fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T
+    suspend fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T = getConnection().execSQL(handler)
 
-    suspend fun beginTransaction(): Boolean
+    suspend fun beginTransaction(): Boolean = getConnection().beginTransaction().await()
 
-    suspend fun rollbackAndEndTransaction()
+    suspend fun rollbackAndEndTransaction() {
+        getConnection().rollbackAndEndTransaction().await()
+    }
 
-    suspend fun commitAndEndTransaction()
+    suspend fun commitAndEndTransaction() {
+        getConnection().commitAndEndTransaction().await()
+    }
 
 }
