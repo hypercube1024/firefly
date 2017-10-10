@@ -34,6 +34,9 @@ class SysRouterInstaller : RouterInstaller {
     private lateinit var staticResourceHandler: StaticResourceHandler
 
     @Inject
+    private lateinit var loginHandler: LoginHandler
+
+    @Inject
     private lateinit var db: AsyncTransactionalManager
 
     override fun install() = server.addRouters {
@@ -78,6 +81,13 @@ class SysRouterInstaller : RouterInstaller {
             handler(localHTTPSessionHandler)
         }
 
+        router {
+            path = "*"
+            asyncHandler {
+                loginHandler.handler(this)
+            }
+        }
+
         // transaction handler
         router {
             httpMethods = listOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
@@ -106,6 +116,7 @@ class SysRouterInstaller : RouterInstaller {
                 })
             }
         }
+
 
         // static file handler
         router {
