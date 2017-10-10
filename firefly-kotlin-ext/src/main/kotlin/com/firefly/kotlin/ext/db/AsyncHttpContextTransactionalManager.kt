@@ -19,6 +19,7 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
 
     suspend override fun getConnection(): SQLConnection {
         return if (requestCtx.get() == null) {
+            sysLogger.debug("get new db connection from pool")
             sqlClient.connection.await()
         } else {
             createConnectionIfEmpty().await()
@@ -27,6 +28,7 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
 
     @Suppress("UNCHECKED_CAST")
     private fun createConnectionIfEmpty(): CompletableFuture<SQLConnection> = requestCtx.get()?.attributes?.computeIfAbsent(transactionKey) {
+        sysLogger.debug("init new db connection")
         sqlClient.connection
     } as CompletableFuture<SQLConnection>
 

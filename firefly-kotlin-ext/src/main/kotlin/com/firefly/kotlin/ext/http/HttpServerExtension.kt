@@ -197,6 +197,10 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
 
 }
 
+interface AsyncHandler {
+    suspend fun handle(ctx: RoutingContext)
+}
+
 @HttpServerMarker
 class RouterBlock(private val router: Router,
                   private val requestCtx: CoroutineLocal<RoutingContext>?,
@@ -222,7 +226,7 @@ class RouterBlock(private val router: Router,
 
     var httpMethods: List<HttpMethod> = listOf(HttpMethod.GET, HttpMethod.POST)
         set(value) {
-            httpMethods.forEach { router.method(it) }
+            value.forEach { router.method(it) }
             field = value
         }
 
@@ -263,6 +267,10 @@ class RouterBlock(private val router: Router,
                 handler.invoke(it, coroutineContext)
             }
         }
+    }
+
+    fun asyncHandler(handler: AsyncHandler) = asyncHandler {
+        handler.handle(this)
     }
 
     fun asyncCompleteHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {

@@ -19,4 +19,10 @@
         <level>INFO</level>
         <path>${log.path}</path>
     </logger>
+
+    <logger>
+        <name>com.firefly.example.kotlin</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+    </logger>
 </loggers>
