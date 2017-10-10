@@ -7,8 +7,11 @@ import com.firefly.codec.http2.model.HttpStatus
 import com.firefly.example.kotlin.coffee.store.router.RouterInstaller
 import com.firefly.example.kotlin.coffee.store.vo.Response
 import com.firefly.example.kotlin.coffee.store.vo.ResponseStatus
+import com.firefly.kotlin.ext.db.AsyncTransactionalManager
 import com.firefly.kotlin.ext.http.HttpServer
+import com.firefly.kotlin.ext.http.asyncFail
 import com.firefly.kotlin.ext.http.asyncNext
+import com.firefly.kotlin.ext.http.asyncSucceed
 import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler
 import java.lang.IllegalArgumentException
@@ -19,9 +22,7 @@ import java.lang.IllegalArgumentException
 @Component("sysRouterInstaller")
 class SysRouterInstaller : RouterInstaller {
 
-    companion object {
-        private val log = Log.getLogger { }
-    }
+    private val log = Log.getLogger { }
 
     @Inject
     private lateinit var server: HttpServer
@@ -32,7 +33,12 @@ class SysRouterInstaller : RouterInstaller {
     @Inject
     private lateinit var staticResourceHandler: StaticResourceHandler
 
+    @Inject
+    private lateinit var db: AsyncTransactionalManager
+
     override fun install() = server.addRouters {
+
+        // global handler
         router {
             path = "*"
 
@@ -70,6 +76,35 @@ class SysRouterInstaller : RouterInstaller {
         router {
             path = "*"
             handler(localHTTPSessionHandler)
+        }
+
+        // transaction handler
+        router {
+            httpMethods = listOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
+            path = "*"
+
+            asyncHandler {
+                db.beginTransaction()
+                asyncNext<Unit>({
+                    try {
+                        db.commitAndEndTransaction()
+                    } catch (e: Exception) {
+                        log.error("commit and end transaction exception", e)
+                    } finally {
+                        asyncSucceed(Unit)
+                    }
+                }, {
+                    setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+                    try {
+                        log.error("transactional request exception", it)
+                        db.rollbackAndEndTransaction()
+                        asyncFail<Unit>(it)
+                    } catch (e: Exception) {
+                        log.error("rollback and end transaction exception", e)
+                        asyncFail<Unit>(e)
+                    }
+                })
+            }
         }
 
         // static file handler
