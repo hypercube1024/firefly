@@ -13,7 +13,6 @@
     <bean id="localSessionHandler" class="com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler"
           destroy-method="stop"/>
 
-    <!-- Reactive adapter -->
     <bean id="projectConfig" class="com.firefly.example.reactive.coffee.store.ProjectConfig">
         <property name="templateRoot" value="template/coffeeStore"/>
         <property name="host" value="localhost"/>

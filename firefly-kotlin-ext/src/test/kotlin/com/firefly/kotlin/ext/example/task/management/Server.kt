@@ -39,15 +39,6 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
     val projectService = Context.getBean<ProjectService>()
     val userService = Context.getBean<UserService>()
 
-    fun RouterBlock.asyncCompleteHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
-        try {
-            handler.invoke(this, it)
-            asyncSucceed(Unit)
-        } catch (x: Throwable) {
-            asyncFail<Unit>(x)
-        }
-    }
-
     router {
         // transactional interceptor
         httpMethods = listOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)

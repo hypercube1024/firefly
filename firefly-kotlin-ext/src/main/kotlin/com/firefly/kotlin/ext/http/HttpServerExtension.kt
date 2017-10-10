@@ -7,6 +7,7 @@ import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
+import com.firefly.server.http2.router.Handler
 import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
@@ -264,9 +265,23 @@ class RouterBlock(private val router: Router,
         }
     }
 
+    fun asyncCompleteHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
+        try {
+            handler.invoke(this, it)
+            asyncSucceed(Unit)
+        } catch (x: Throwable) {
+            asyncFail<Unit>(x)
+        }
+    }
+
     fun handler(handler: RoutingContext.() -> Unit) {
         router.handler(handler)
     }
+
+    fun handler(handler: Handler) {
+        router.handler(handler)
+    }
+
 
     suspend fun <T : Closeable?, R> T.safeUse(block: suspend (T) -> R): R {
         var closed = false
@@ -335,11 +350,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
         block.invoke(this)
     }
 
+    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?)
+            : this(coroutineLocal, SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), {})
+
     constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
-            : this(coroutineLocal,
-                   SimpleHTTPServerConfiguration(),
-                   HTTPBodyConfiguration(),
-                   block)
+            : this(coroutineLocal, SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
 
