@@ -5,14 +5,16 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.server.http2.router.RoutingContext;
 
+import java.util.Optional;
+
 /**
  * @author Pengtao Qiu
  */
 public class DefaultErrorResponseHandler extends AbstractErrorResponseHandler {
 
     public void render(RoutingContext ctx, int status, Throwable t) {
-        HttpStatus.Code code = HttpStatus.getCode(status);
-        String title = status + " " + (code != null ? code.getMessage() : "error");
+        HttpStatus.Code code = Optional.ofNullable(HttpStatus.getCode(status)).orElse(HttpStatus.Code.INTERNAL_SERVER_ERROR);
+        String title = status + " " + code.getMessage();
         String content;
         switch (code) {
             case NOT_FOUND: {

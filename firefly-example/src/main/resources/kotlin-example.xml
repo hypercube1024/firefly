@@ -33,7 +33,11 @@
         <property name="templateRoot" value="template/coffeeStore"/>
         <property name="host" value="localhost"/>
         <property name="port" value="8080"/>
+        <property name="loginURL" value="/login"/>
+        <property name="logoutURL" value="/logout"/>
+        <property name="loginUserKey" value="_loginUser"/>
+        <property name="sessionMaxInactiveInterval" value="1800"/>
     </bean>
 
-    <bean id="ktMain" class="com.firefly.example.kotlin.coffee.store.AppMain" />
+    <bean id="ktMain" class="com.firefly.example.kotlin.coffee.store.AppMain"/>
 </beans>

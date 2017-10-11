@@ -382,5 +382,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
         sysLogger.info("register $r")
     }
 
+    inline fun router(id: Int, block: RouterBlock.() -> Unit) {
+        val r = RouterBlock(routerManager.register(id), requestCtx, coroutineDispatcher)
+        block.invoke(r)
+        sysLogger.info("register $r")
+    }
+
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
 }

@@ -1,5 +1,6 @@
 package com.firefly.example.kotlin.coffee.store.vo
 
+import com.firefly.example.kotlin.coffee.store.model.Product
 import com.firefly.kotlin.ext.annotation.NoArg
 
 /**
@@ -25,3 +26,9 @@ enum class ProductType(val value: Int,
                        val description: String) {
     COFFEE(1, "coffee"), DESSERT(2, "dessert")
 }
+
+@NoArg
+data class MainPage(var userInfo: UserInfo?,
+                    var products: Page<Product>,
+                    var type: Int?,
+                    var searchKey: String?)

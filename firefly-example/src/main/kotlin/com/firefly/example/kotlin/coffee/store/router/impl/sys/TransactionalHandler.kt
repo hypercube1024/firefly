@@ -28,6 +28,7 @@ class TransactionalHandler : AsyncHandler {
         ctx.asyncNext<Unit>(succeeded = {
             try {
                 db.commitAndEndTransaction()
+                log.info("commit and end transaction -> ${ctx.uri}")
                 ctx.asyncSucceed(Unit)
             } catch (e: Exception) {
                 log.error("commit and end transaction exception", e)
@@ -36,11 +37,11 @@ class TransactionalHandler : AsyncHandler {
         }, failed = {
             ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
             try {
-                log.error("transactional request exception", it)
                 db.rollbackAndEndTransaction()
+                log.error("rollback and end transaction -> ${ctx.uri}", it)
                 ctx.asyncFail<Unit>(it)
             } catch (e: Exception) {
-                log.error("rollback and end transaction exception", e)
+                log.error("rollback and end transaction exception -> ${ctx.uri}", e)
                 ctx.asyncFail<Unit>(e)
             }
         })

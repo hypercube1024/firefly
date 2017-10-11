@@ -19,10 +19,12 @@ class GlobalHandler : AsyncHandler {
     private val log = Log.getLogger { }
 
     suspend override fun handle(ctx: RoutingContext) {
+        log.info("request start -> ${ctx.uri}")
         ctx.asyncNext<Unit>(succeeded = {
             log.info("request end -> ${ctx.uri}")
             ctx.end()
         }, failed = {
+            log.error("request error -> ${ctx.uri}", it)
             when (it) {
                 is IllegalArgumentException -> {
                     ctx.setStatus(HttpStatus.OK_200)

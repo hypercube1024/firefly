@@ -34,7 +34,7 @@ class AppMain : AbstractLifeCycle() {
         dbUtils.initializeData()
 
         ktCtx.getBeans(RouterInstaller::class.java).sorted().forEach {
-            log.info {"install routers [${it::class.java.name}]"}
+            log.info {"install routers [${it::class.qualifiedName}]"}
             it.install()
         }
 

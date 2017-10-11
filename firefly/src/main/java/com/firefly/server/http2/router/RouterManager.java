@@ -15,6 +15,8 @@ import java.util.Set;
  */
 public interface RouterManager extends RequestAcceptor {
 
+    int DEFAULT_LAST_ROUTER_ID = Integer.MAX_VALUE / 2;
+
     class RouterMatchResult implements Comparable<RouterMatchResult> {
 
         private final Router router;
@@ -60,6 +62,8 @@ public interface RouterManager extends RequestAcceptor {
 
     Router register();
 
+    Router register(Integer id);
+
     NavigableSet<RouterMatchResult> findRouter(String method, String path, String contentType, String accept);
 
     static RouterManager create() {
@@ -69,7 +73,7 @@ public interface RouterManager extends RequestAcceptor {
     static RouterManager create(HTTPBodyConfiguration configuration) {
         RouterManagerImpl routerManager = new RouterManagerImpl();
         routerManager.register().path("*").handler(new HTTPBodyHandler(configuration));
-        routerManager.registerLast().path("*").handler(DefaultErrorResponseHandlerLoader.getInstance().getHandler());
+        routerManager.register(DEFAULT_LAST_ROUTER_ID).path("*").handler(DefaultErrorResponseHandlerLoader.getInstance().getHandler());
         return routerManager;
     }
 }

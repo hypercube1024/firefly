@@ -61,6 +61,11 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
+    public HTTP2ServerBuilder router(Integer id) {
+        currentRouter = routerManager.register(id);
+        return this;
+    }
+
     private void check() {
         if (server == null) {
             throw new IllegalStateException("the http server has not been created, please call httpServer() first");

@@ -38,7 +38,6 @@ class StaticResourceHandler : AsyncHandler {
             ctx.put(HttpHeader.CACHE_CONTROL, "max-age=86400")
             staticFileHandler.handle(ctx)
         }.join()
-        ctx.asyncSucceed(Unit)
     }
 
 }
