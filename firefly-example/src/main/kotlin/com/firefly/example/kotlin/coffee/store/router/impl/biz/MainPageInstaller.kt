@@ -64,9 +64,7 @@ class MainPageInstaller : RouterInstaller {
             path = "/product/buy"
 
             asyncCompleteHandler {
-                val userInfo = getAttr<UserInfo>(config.loginUserKey) ?: throw IllegalStateException("The user does not login")
-                val request = getJsonBody<ProductBuyRequest>()
-                request.userId = userInfo.id
+                val request = toProductBuyRequest(this)
                 orderService.buy(request)
                 writeJson(Response(ResponseStatus.OK.value, ResponseStatus.OK.description, true))
             }
@@ -77,9 +75,16 @@ class MainPageInstaller : RouterInstaller {
     private fun toProductQuery(ctx: RoutingContext): ProductQuery = ProductQuery(
             ctx.getParameter("searchKey"),
             ProductStatus.ENABLE.value,
-            ctx.getParamOpt("type").filter { `$`.string.hasText(it) }.map<Int> { Integer.parseInt(it) }.orElse(0),
-            ctx.getParamOpt("pageNumber").filter { `$`.string.hasText(it) }.map<Int> { Integer.parseInt(it) }.orElse(1),
-            ctx.getParamOpt("pageSize").filter { `$`.string.hasText(it) }.map<Int> { Integer.parseInt(it) }.orElse(5)
+            ctx.getParamOpt("type").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(0),
+            ctx.getParamOpt("pageNumber").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(1),
+            ctx.getParamOpt("pageSize").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(5)
     )
+
+    private fun toProductBuyRequest(ctx: RoutingContext): ProductBuyRequest {
+        val userInfo = ctx.getAttr<UserInfo>(config.loginUserKey) ?: throw IllegalStateException("The user does not login")
+        val request = ctx.getJsonBody<ProductBuyRequest>()
+        request.userId = userInfo.id
+        return request
+    }
 
 }
