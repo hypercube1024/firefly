@@ -14,7 +14,7 @@ data class ProductQuery(var searchKey: String? = null,
                         var pageSize: Int = 20)
 
 @NoArg
-data class ProductBuyRequest(var userId: Long,
+data class ProductBuyRequest(var userId: Long?,
                              var products: List<InventoryUpdate>)
 
 enum class ProductStatus(val value: Int,

@@ -64,7 +64,7 @@ class OrderServiceImpl : OrderService {
             Order(null, OrderStatus.FINISHED.value,
                     amount, product.price, totalPrice,
                     product.id ?: 0,
-                    request.userId,
+                    request.userId ?: 0L,
                     product.description,
                     null, null)
         }.collect(Collectors.toList<Order>())

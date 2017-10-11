@@ -8,13 +8,12 @@ import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.example.kotlin.coffee.store.ProjectConfig
 import com.firefly.example.kotlin.coffee.store.router.RouterInstaller
+import com.firefly.example.kotlin.coffee.store.service.OrderService
 import com.firefly.example.kotlin.coffee.store.service.ProductService
-import com.firefly.example.kotlin.coffee.store.vo.MainPage
-import com.firefly.example.kotlin.coffee.store.vo.ProductQuery
-import com.firefly.example.kotlin.coffee.store.vo.ProductStatus
-import com.firefly.example.kotlin.coffee.store.vo.UserInfo
+import com.firefly.example.kotlin.coffee.store.vo.*
 import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.http.getAttr
+import com.firefly.kotlin.ext.http.getJsonBody
 import com.firefly.kotlin.ext.http.header
 import com.firefly.server.http2.router.RoutingContext
 
@@ -32,6 +31,9 @@ class MainPageInstaller : RouterInstaller {
 
     @Inject
     private lateinit var productService: ProductService
+
+    @Inject
+    private lateinit var orderService: OrderService
 
     override fun install() = server.addRouters {
         router {
@@ -56,6 +58,20 @@ class MainPageInstaller : RouterInstaller {
                 renderTemplate("${config.templateRoot}/index.mustache", mainPage)
             }
         }
+
+        router {
+            httpMethod = HttpMethod.POST
+            path = "/product/buy"
+
+            asyncCompleteHandler {
+                val userInfo = getAttr<UserInfo>(config.loginUserKey) ?: throw IllegalStateException("The user does not login")
+                val request = getJsonBody<ProductBuyRequest>()
+                request.userId = userInfo.id
+                orderService.buy(request)
+                writeJson(Response(ResponseStatus.OK.value, ResponseStatus.OK.description, true))
+            }
+        }
+
     }
 
     private fun toProductQuery(ctx: RoutingContext): ProductQuery = ProductQuery(
