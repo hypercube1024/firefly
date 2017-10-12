@@ -49,7 +49,7 @@ public class HelloService {
 }
 ```
 
-Create `ApplicationContext` using factory method
+Instantiate `ApplicationContext` using factory method
 ```java
 public class IOCMain {
     public static final ApplicationContext ctx = $.createApplicationContext("hello-ioc.xml");
