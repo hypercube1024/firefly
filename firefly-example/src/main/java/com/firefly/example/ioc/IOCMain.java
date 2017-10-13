@@ -10,6 +10,6 @@ public class IOCMain {
     public static final ApplicationContext ctx = $.createApplicationContext("hello-ioc.xml");
 
     public static void main(String[] args) {
-        ctx.getBean(HelloService.class).print();
+        ctx.getBean(FooService.class).say("foo");
     }
 }

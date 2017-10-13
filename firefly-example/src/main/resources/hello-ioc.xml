@@ -3,7 +3,9 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-    <bean id="helloService" class="com.firefly.example.ioc.HelloService">
+    <component-scan base-package="com.firefly.example.ioc"/>
+
+    <bean id="helloService" class="com.firefly.example.ioc.HelloServiceImpl">
         <property name="message" value="Hello IOC"/>
     </bean>
 
