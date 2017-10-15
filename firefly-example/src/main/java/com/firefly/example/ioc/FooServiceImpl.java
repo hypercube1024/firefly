@@ -6,7 +6,7 @@ import com.firefly.annotation.Inject;
 /**
  * @author Pengtao Qiu
  */
-@Component
+@Component("fooService")
 public class FooServiceImpl implements FooService {
 
     @Inject
