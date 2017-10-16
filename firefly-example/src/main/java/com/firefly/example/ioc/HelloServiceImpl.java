@@ -6,6 +6,7 @@ import com.firefly.annotation.InitialMethod;
 /**
  * @author Pengtao Qiu
  */
+@ProxyChain
 public class HelloServiceImpl implements HelloService {
 
     private String message;
