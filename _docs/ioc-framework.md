@@ -362,3 +362,95 @@ The proxy design pattern is one of the twenty-three well-known GoF design patter
 What problems can the Proxy design pattern solve?  
 * The access to an object should be controlled.
 * Provide additional functionality when accessing an object.
+
+Now we create a proxy chain which contains `LogProxy` and `AuthenticationProxy`.
+```java
+@Component("logProxy")
+public class LogProxy implements ClassProxy {
+
+    @Override
+    public Object intercept(MethodProxy handler, Object originalInstance, Object[] args) {
+        System.out.println("log entry " + handler.method().getName());
+        Object ret = handler.invoke(originalInstance, args);
+        System.out.println("log exit " + handler.method().getName());
+        return ret;
+    }
+}
+
+@Component("authenticationProxy")
+public class AuthenticationProxy implements ClassProxy {
+
+    @Override
+    public Object intercept(MethodProxy handler, Object originalInstance, Object[] args) {
+        System.out.println("authentication start " + handler.method().getName());
+        Object ret = handler.invoke(originalInstance, args);
+        System.out.println("authentication exit " + handler.method().getName());
+        return ret;
+    }
+}
+```
+In this case, it just prints some texts to show how does it work. The `MethodProxy` instance is a reference of original method.
+
+Add a new annotation `ProxyChain` that sets proxy order of the chain.
+```java
+@Proxy(proxyClass = LogProxy.class)
+@Proxy(proxyClass = AuthenticationProxy.class)
+@Target( { ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface ProxyChain {
+}
+```
+The proxy order is inverted order of codes. In this case, the execution order is `AuthenticationProxy -> LogProxy -> OriginalService`.
+
+Add proxy chain for `HelloService`
+```java
+@ProxyChain
+public class HelloServiceImpl implements HelloService {
+
+    private String message;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public void print() {
+        System.out.println(message);
+    }
+
+    @InitialMethod
+    public void init() {
+        System.out.println("init HelloService");
+    }
+
+    @DestroyedMethod
+    public void destroy() {
+        System.out.println("destroy HelloService");
+    }
+}
+```
+
+Run it
+```java
+public class IOCMain {
+    public static final ApplicationContext ctx = $.createApplicationContext("hello-ioc.xml");
+
+    public static void main(String[] args) {
+        ctx.getBean(HelloService.class).print();
+    }
+}
+```
+
+The console shows
+```
+authentication start print
+log entry print
+Hello IOC
+log exit print
+authentication exit print
+```
