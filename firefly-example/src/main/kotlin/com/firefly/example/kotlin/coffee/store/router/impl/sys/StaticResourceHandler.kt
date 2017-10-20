@@ -4,6 +4,7 @@ import com.firefly.annotation.Component
 import com.firefly.codec.http2.model.HttpHeader
 import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncSucceed
+import com.firefly.server.http2.router.Handler
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.file.StaticFileHandler
 import com.firefly.utils.exception.CommonRuntimeException
@@ -15,13 +16,12 @@ import java.nio.file.Paths
  * @author Pengtao Qiu
  */
 @Component("staticResourceHandler")
-class StaticResourceHandler : AsyncHandler {
+class StaticResourceHandler : Handler {
 
     val staticResources = listOf("/favicon.ico", "/static/*")
 
     companion object {
         private val staticFileHandler = createStaticFileHandler()
-        private val dispatcher = newFixedThreadPoolContext(8, "static-file-pool")
 
         private fun createStaticFileHandler(): StaticFileHandler {
             try {
@@ -33,11 +33,9 @@ class StaticResourceHandler : AsyncHandler {
         }
     }
 
-    override suspend fun handle(ctx: RoutingContext) {
-        launch(dispatcher) {
-            ctx.put(HttpHeader.CACHE_CONTROL, "max-age=86400")
-            staticFileHandler.handle(ctx)
-        }.join()
+    override fun handle(ctx: RoutingContext) {
+        ctx.put(HttpHeader.CACHE_CONTROL, "max-age=86400")
+        staticFileHandler.handle(ctx)
     }
 
 }

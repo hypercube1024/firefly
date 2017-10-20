@@ -36,6 +36,14 @@ class SysRouterInstaller : RouterInstaller {
     private lateinit var errorHandler: ErrorHandler
 
     override fun install() = server.addRouters {
+
+        // static file handler
+        router {
+            httpMethod = HttpMethod.GET
+            paths = staticResourceHandler.staticResources
+            handler(staticResourceHandler)
+        }
+
         // global handler
         router {
             path = "*"
@@ -52,13 +60,6 @@ class SysRouterInstaller : RouterInstaller {
         router {
             path = "*"
             asyncHandler(loginHandler)
-        }
-
-        // static file handler
-        router {
-            httpMethod = HttpMethod.GET
-            paths = staticResourceHandler.staticResources
-            asyncCompleteHandler { staticResourceHandler.handle(this) }
         }
 
         // transaction handler
