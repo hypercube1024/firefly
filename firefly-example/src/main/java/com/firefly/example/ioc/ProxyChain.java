@@ -8,6 +8,7 @@ import java.lang.annotation.*;
  * @author Pengtao Qiu
  */
 @Proxy(proxyClass = LogProxy.class)
+@Proxy(proxyClass = AuthenticationProxy.class)
 @Target( { ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
