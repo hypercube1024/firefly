@@ -7,7 +7,7 @@ import kotlin.coroutines.experimental.CoroutineContext
 /**
  * @author Pengtao Qiu
  */
-object AsyncPool : CoroutineDispatcher() {
+object CommonCoroutinePool : CoroutineDispatcher() {
 
     val defaultPoolSize: Int = Integer.getInteger("com.firefly.kotlin.common.async.defaultPoolSize", Runtime.getRuntime().availableProcessors())
 

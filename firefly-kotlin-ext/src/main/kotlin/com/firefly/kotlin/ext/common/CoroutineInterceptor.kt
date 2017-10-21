@@ -17,7 +17,7 @@ class CoroutineLocal<D> {
 
     private val threadLocal = ThreadLocal<D>()
 
-    fun createContext(data: D, context: ContinuationInterceptor = AsyncPool): ContinuationInterceptor = InterceptingContext(context, data, threadLocal)
+    fun createContext(data: D, context: ContinuationInterceptor = CommonCoroutinePool): ContinuationInterceptor = InterceptingContext(context, data, threadLocal)
 
     fun get(): D? = threadLocal.get()
 }

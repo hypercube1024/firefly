@@ -2,7 +2,7 @@ package com.firefly.kotlin.ext.example.task.management.service.impl
 
 import com.firefly.annotation.Component
 import com.firefly.annotation.Inject
-import com.firefly.kotlin.ext.common.AsyncPool
+import com.firefly.kotlin.ext.common.CommonCoroutinePool
 import com.firefly.kotlin.ext.example.task.management.dao.ProjectDao
 import com.firefly.kotlin.ext.example.task.management.dao.UserDao
 import com.firefly.kotlin.ext.example.task.management.service.ProjectService
@@ -35,8 +35,8 @@ class ProjectServiceImpl : ProjectService {
     }
 
     override suspend fun getProject(request: Request<Long>): Response<ProjectResult> {
-        val projectDeferred = async(AsyncPool) { projectDao.queryById(request.data) }
-        val userListDeferred = async(AsyncPool) {
+        val projectDeferred = async(CommonCoroutinePool) { projectDao.queryById(request.data) }
+        val userListDeferred = async(CommonCoroutinePool) {
             val users = projectDao.listProjectMembers(request.data)
             log.info("get project id ${request.data}, users -> $users")
             if (users.isEmpty()) listOf() else userDao.listUsers(users)
