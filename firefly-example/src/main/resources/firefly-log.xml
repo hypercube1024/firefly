@@ -6,23 +6,27 @@
         <name>firefly-system</name>
         <level>INFO</level>
         <path>${log.path}</path>
+        <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
     </logger>
 
     <logger>
         <name>firefly-monitor</name>
         <level>INFO</level>
         <path>${log.path}</path>
+        <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
     </logger>
 
     <logger>
         <name>com.firefly.example.reactive</name>
         <level>INFO</level>
         <path>${log.path}</path>
+        <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
     </logger>
 
     <logger>
         <name>com.firefly.example.kotlin</name>
         <level>INFO</level>
         <path>${log.path}</path>
+        <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
     </logger>
 </loggers>

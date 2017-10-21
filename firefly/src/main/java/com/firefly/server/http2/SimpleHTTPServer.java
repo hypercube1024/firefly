@@ -94,14 +94,14 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
     protected void init() {
         http2Server = new HTTP2Server(configuration.getHost(), configuration.getPort(), configuration,
                 new ServerHTTPHandler.Adapter().acceptHTTPTunnelConnection((request, response, out, connection) -> {
-                    SimpleRequest r = new SimpleRequest(request, response, out);
+                    SimpleRequest r = new SimpleRequest(request, response, out, connection);
                     request.setAttachment(r);
                     if (tunnel != null) {
                         tunnel.call(r, connection);
                     }
                     return true;
                 }).headerComplete((request, response, out, connection) -> {
-                    SimpleRequest r = new SimpleRequest(request, response, out);
+                    SimpleRequest r = new SimpleRequest(request, response, out, connection);
                     request.setAttachment(r);
                     if (headerComplete != null) {
                         headerComplete.call(r);
@@ -137,7 +137,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
                             SimpleRequest r = (SimpleRequest) request.getAttachment();
                             badMessage.call(status, reason, r);
                         } else {
-                            SimpleRequest r = new SimpleRequest(request, response, out);
+                            SimpleRequest r = new SimpleRequest(request, response, out, connection);
                             request.setAttachment(r);
                             badMessage.call(status, reason, r);
                         }
@@ -148,7 +148,7 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
                             SimpleRequest r = (SimpleRequest) request.getAttachment();
                             earlyEof.call(r);
                         } else {
-                            SimpleRequest r = new SimpleRequest(request, response, out);
+                            SimpleRequest r = new SimpleRequest(request, response, out, connection);
                             request.setAttachment(r);
                             earlyEof.call(r);
                         }

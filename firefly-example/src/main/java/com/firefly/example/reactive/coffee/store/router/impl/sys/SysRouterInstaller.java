@@ -33,10 +33,10 @@ public class SysRouterInstaller implements RouterInstaller {
 
     @Override
     public void install() {
-        server.router().path("*").handler(globalHandler)
+        server.router().method(HttpMethod.GET).paths(staticResourceHandler.getStaticResources()).handler(staticResourceHandler)
+              .router().path("*").handler(globalHandler)
               .router().path("*").handler(localHTTPSessionHandler)
-              .router().path("*").handler(loginHandler)
-              .router().method(HttpMethod.GET).paths(staticResourceHandler.getStaticResources()).handler(staticResourceHandler);
+              .router().path("*").handler(loginHandler);
     }
 
     @Override

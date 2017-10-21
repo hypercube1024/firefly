@@ -6,6 +6,7 @@ import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.file.StaticFileHandler;
 import com.firefly.utils.exception.CommonRuntimeException;
+import com.firefly.utils.log.slf4j.ext.LazyLogger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,6 +18,8 @@ import java.util.List;
  */
 @Component("staticResourceHandler")
 public class StaticResourceHandler implements Handler {
+
+    public static final LazyLogger log = LazyLogger.create();
 
     private final List<String> staticResources = Arrays.asList("/favicon.ico", "/static/*");
     private final StaticFileHandler staticFileHandler;
@@ -32,9 +35,9 @@ public class StaticResourceHandler implements Handler {
 
     @Override
     public void handle(RoutingContext ctx) {
+        log.info(() -> "static file request -> " + ctx.getURI());
         ctx.put(HttpHeader.CACHE_CONTROL, "max-age=86400");
         staticFileHandler.handle(ctx);
-        ctx.succeed(true);
     }
 
     public List<String> getStaticResources() {

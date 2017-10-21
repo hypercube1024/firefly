@@ -47,6 +47,10 @@ public interface RoutingContext extends Closeable {
 
     SimpleRequest getRequest();
 
+    default int getConnectionId() {
+        return getRequest().getConnection().getSessionId();
+    }
+
     String getRouterParameter(String name);
 
     default Optional<String> getRouterParamOpt(String name) {

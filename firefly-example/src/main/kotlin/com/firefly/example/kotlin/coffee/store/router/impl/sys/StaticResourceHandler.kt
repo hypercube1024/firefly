@@ -2,14 +2,11 @@ package com.firefly.example.kotlin.coffee.store.router.impl.sys
 
 import com.firefly.annotation.Component
 import com.firefly.codec.http2.model.HttpHeader
-import com.firefly.kotlin.ext.http.AsyncHandler
-import com.firefly.kotlin.ext.http.asyncSucceed
+import com.firefly.kotlin.ext.log.Log
 import com.firefly.server.http2.router.Handler
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.file.StaticFileHandler
 import com.firefly.utils.exception.CommonRuntimeException
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import java.nio.file.Paths
 
 /**
@@ -21,6 +18,7 @@ class StaticResourceHandler : Handler {
     val staticResources = listOf("/favicon.ico", "/static/*")
 
     companion object {
+        private val log = Log.getLogger { }
         private val staticFileHandler = createStaticFileHandler()
 
         private fun createStaticFileHandler(): StaticFileHandler {
@@ -34,6 +32,7 @@ class StaticResourceHandler : Handler {
     }
 
     override fun handle(ctx: RoutingContext) {
+        log.info("static file request ${ctx.uri}")
         ctx.put(HttpHeader.CACHE_CONTROL, "max-age=86400")
         staticFileHandler.handle(ctx)
     }
