@@ -579,7 +579,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                             try {
                                 o.getObject().close();
                             } catch (IOException e) {
-                                log.error("close http connection exception", e);
+                                log.warn("close http connection exception", e);
                             }
                         }));
     }
