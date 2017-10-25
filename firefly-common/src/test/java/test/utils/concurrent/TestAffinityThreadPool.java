@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
 
@@ -17,45 +18,62 @@ import static org.hamcrest.CoreMatchers.is;
  */
 public class TestAffinityThreadPool {
 
+    private int processorNumber = Runtime.getRuntime().availableProcessors();
+
     @Test
     public void test() throws InterruptedException, ExecutionException {
         AffinityThreadPool pool = new AffinityThreadPool();
-
+        int maxTask = 20;
         List<Callable<String>> taskList = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            taskList.add(create(1));
+        for (int i = 0; i < maxTask; i++) {
+            taskList.add(create(i));
         }
         List<Future<String>> futureList = pool.invokeAll(taskList);
-        for (Future<String> future : futureList) {
+        for (int i = 0; i < maxTask; i++) {
+            Future<String> future = futureList.get(i);
             System.out.println(future.get());
-            Assert.assertThat(future.get(), is("firefly-affinity-thread-1"));
+            Assert.assertThat(future.get(), is("firefly-affinity-thread-" + (i % processorNumber)));
         }
 
-        if (Runtime.getRuntime().availableProcessors() >= 2) {
-            taskList = new ArrayList<>();
-            for (int i = 0; i < 10; i++) {
-                taskList.add(create(2));
-            }
-            futureList = pool.invokeAll(taskList);
-            for (Future<String> future : futureList) {
-                System.out.println(future.get());
-                Assert.assertThat(future.get(), is("firefly-affinity-thread-2"));
-            }
+        taskList = new ArrayList<>();
+        int id = 3;
+        for (int i = 0; i < maxTask; i++) {
+            taskList.add(create(id));
         }
+        futureList = pool.invokeAll(taskList);
+        for (int i = 0; i < maxTask; i++) {
+            Future<String> future = futureList.get(i);
+            System.out.println(future.get());
+            Assert.assertThat(future.get(), is("firefly-affinity-thread-" + (id % processorNumber)));
+        }
+
+        pool.shutdown();
+        Assert.assertThat(pool.isShutdown(), is(true));
+        boolean terminated = pool.awaitTermination(5, TimeUnit.SECONDS);
+        Assert.assertThat(terminated, is(true));
     }
 
-    private Callable<String> create(int id) {
-        return new Callable<String>() {
+    private AffinityTask create(int id) {
+        return new AffinityTask(id);
+    }
 
-            @Override
-            public String call() throws Exception {
-                return Thread.currentThread().getName();
-            }
+    private class AffinityTask implements Callable<String> {
 
-            @Override
-            public int hashCode() {
-                return id;
-            }
-        };
+        private final int id;
+
+        public AffinityTask(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public String call() throws Exception {
+            return Thread.currentThread().getName();
+        }
+
+        @Override
+        public int hashCode() {
+            return id;
+        }
+
     }
 }

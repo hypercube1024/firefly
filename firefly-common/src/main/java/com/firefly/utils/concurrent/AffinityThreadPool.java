@@ -4,7 +4,6 @@ import com.firefly.utils.exception.CommonRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * @author Pengtao Qiu
  */
-public class AffinityThreadPool implements ExecutorService {
+public class AffinityThreadPool extends AbstractExecutorService {
 
     private static final int defaultPoolSize = Runtime.getRuntime().availableProcessors();
 
@@ -21,6 +20,7 @@ public class AffinityThreadPool implements ExecutorService {
     private final Work[] works;
     private final WorkSelector workSelector;
     private final int poolSize;
+    private final CountDownLatch workCountDownLatch;
 
     public AffinityThreadPool() {
         this(new ThreadFactory() {
@@ -43,6 +43,7 @@ public class AffinityThreadPool implements ExecutorService {
         this.workSelector = workSelector;
         threads = new Thread[poolSize];
         works = new Work[poolSize];
+        workCountDownLatch = new CountDownLatch(poolSize);
         for (int i = 0; i < poolSize; i++) {
             works[i] = new Work(i, new LinkedTransferQueue<>());
             threads[i] = threadFactory.newThread(works[i]);
@@ -57,8 +58,9 @@ public class AffinityThreadPool implements ExecutorService {
     private class Work implements Runnable {
         private final int id;
         private final BlockingQueue<Runnable> workQueue;
-        private volatile boolean shutdownNow = false;
+        private volatile boolean shutdownNow;
         private volatile boolean shutdown;
+        private volatile boolean terminated;
 
         private Work(int id, BlockingQueue<Runnable> workQueue) {
             this.id = id;
@@ -78,52 +80,16 @@ public class AffinityThreadPool implements ExecutorService {
                     e.printStackTrace();
                 }
             }
-            shutdown = true;
+            terminated = true;
+            workCountDownLatch.countDown();
         }
 
         private void execute(Runnable command) {
             workQueue.offer(command);
         }
 
-        private Future<?> submit(Runnable task) {
-            Promise.Completable<Void> completable = new Promise.Completable<>();
-            execute(() -> {
-                try {
-                    task.run();
-                    completable.succeeded(null);
-                } catch (Throwable t) {
-                    completable.failed(t);
-                }
-            });
-            return completable;
-        }
-
-        private <T> Future<T> submit(Callable<T> task) {
-            Promise.Completable<T> completable = new Promise.Completable<>();
-            execute(() -> {
-                try {
-                    completable.succeeded(task.call());
-                } catch (Exception e) {
-                    completable.failed(e);
-                }
-            });
-            return completable;
-        }
-
-        private <T> Future<T> submit(Runnable task, T result) {
-            Promise.Completable<T> completable = new Promise.Completable<>();
-            execute(() -> {
-                try {
-                    task.run();
-                    completable.succeeded(result);
-                } catch (Exception e) {
-                    completable.failed(e);
-                }
-            });
-            return completable;
-        }
-
         private List<Runnable> shutdownNow() {
+            shutdown = true;
             shutdownNow = true;
             try {
                 threads[id].interrupt();
@@ -140,6 +106,7 @@ public class AffinityThreadPool implements ExecutorService {
 
         private void shutdown() {
             try {
+                shutdown = true;
                 workQueue.put(new ShutdownCommand());
             } catch (InterruptedException e) {
                 throw new CommonRuntimeException(e);
@@ -154,11 +121,15 @@ public class AffinityThreadPool implements ExecutorService {
             }
         }
 
-        public boolean isShutdown() {
+        private boolean isShutdown() {
             return shutdown;
         }
 
-        public int getId() {
+        private boolean isTerminated() {
+            return terminated;
+        }
+
+        private int getId() {
             return id;
         }
     }
@@ -169,23 +140,23 @@ public class AffinityThreadPool implements ExecutorService {
     }
 
     @Override
-    public Future<?> submit(Runnable task) {
-        return works[workSelector.select(poolSize, task)].submit(task);
+    protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+        return new FutureTask<T>(callable) {
+            @Override
+            public int hashCode() {
+                return callable.hashCode();
+            }
+        };
     }
 
     @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        return works[workSelector.select(poolSize, task)].submit(task);
-    }
-
-    @Override
-    public <T> Future<T> submit(Runnable task, T result) {
-        return works[workSelector.select(poolSize, task)].submit(task, result);
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        return tasks.stream().map(this::submit).collect(Collectors.toList());
+    protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        return new FutureTask<T>(runnable, value) {
+            @Override
+            public int hashCode() {
+                return runnable.hashCode();
+            }
+        };
     }
 
     @Override
@@ -205,28 +176,12 @@ public class AffinityThreadPool implements ExecutorService {
 
     @Override
     public boolean isTerminated() {
-        throw new CommonRuntimeException("not implement method");
+        return Arrays.stream(works).allMatch(Work::isTerminated);
     }
 
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        throw new CommonRuntimeException("not implement method");
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        throw new CommonRuntimeException("not implement method");
-    }
-
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        throw new CommonRuntimeException("not implement method");
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        throw new CommonRuntimeException("not implement method");
+        return workCountDownLatch.await(timeout, unit);
     }
 
 }
