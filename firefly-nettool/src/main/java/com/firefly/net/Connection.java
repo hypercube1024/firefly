@@ -1,8 +1,5 @@
 package com.firefly.net;
 
-import com.firefly.utils.function.Action0;
-import com.firefly.utils.function.Action1;
-
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 

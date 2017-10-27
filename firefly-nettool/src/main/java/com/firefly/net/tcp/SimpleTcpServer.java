@@ -1,6 +1,5 @@
 package com.firefly.net.tcp;
 
-import com.firefly.net.SecureSession;
 import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.Server;
 import com.firefly.net.Session;
