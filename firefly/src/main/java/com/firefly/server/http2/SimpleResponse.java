@@ -18,17 +18,19 @@ public class SimpleResponse implements Closeable {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    Response response;
-    HTTPOutputStream output;
+    final Response response;
+    final HTTPOutputStream output;
+    final HttpURI uri;
     PrintWriter printWriter;
     BufferedHTTPOutputStream bufferedOutputStream;
     int bufferSize = 8 * 1024;
     String characterEncoding = "UTF-8";
     boolean asynchronous;
 
-    public SimpleResponse(Response response, HTTPOutputStream output) {
+    public SimpleResponse(Response response, HTTPOutputStream output, HttpURI uri) {
         this.output = output;
         this.response = response;
+        this.uri = uri;
     }
 
     public HttpVersion getHttpVersion() {
@@ -85,7 +87,7 @@ public class SimpleResponse implements Closeable {
 
     public synchronized OutputStream getOutputStream() {
         if (printWriter != null) {
-            throw new IllegalStateException("the response has used print writer");
+            throw new IllegalStateException("the response has used print writer -> " + uri);
         }
 
         if (bufferedOutputStream == null) {
@@ -98,13 +100,13 @@ public class SimpleResponse implements Closeable {
 
     public synchronized PrintWriter getPrintWriter() {
         if (bufferedOutputStream != null) {
-            throw new IllegalStateException("the response has used output stream");
+            throw new IllegalStateException("the response has used output stream -> " + uri);
         }
         if (printWriter == null) {
             try {
                 printWriter = new PrintWriter(new OutputStreamWriter(new BufferedHTTPOutputStream(output, bufferSize), characterEncoding));
             } catch (UnsupportedEncodingException e) {
-                log.error("create print writer exception", e);
+                log.error("create print writer exception " + uri, e);
             }
             return printWriter;
         } else {
@@ -213,7 +215,7 @@ public class SimpleResponse implements Closeable {
         try {
             getOutputStream().write(b, off, len);
         } catch (IOException e) {
-            log.error("write data exception", e);
+            log.error("write data exception " + uri, e);
         }
         return this;
     }

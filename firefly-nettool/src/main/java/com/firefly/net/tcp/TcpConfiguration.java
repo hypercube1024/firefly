@@ -1,14 +1,14 @@
 package com.firefly.net.tcp;
 
 import com.firefly.net.Config;
-import com.firefly.net.SSLContextFactory;
-import com.firefly.net.tcp.ssl.SelfSignedCertificateOpenSSLContextFactory;
+import com.firefly.net.SecureSessionFactory;
+import com.firefly.net.tcp.secure.JdkSecureSessionFactory;
 
 public class TcpConfiguration extends Config {
 
     // SSL/TLS settings
     private boolean isSecureConnectionEnabled;
-    private SSLContextFactory sslContextFactory = new SelfSignedCertificateOpenSSLContextFactory();
+    private SecureSessionFactory secureSessionFactory = new JdkSecureSessionFactory();
 
     public boolean isSecureConnectionEnabled() {
         return isSecureConnectionEnabled;
@@ -18,12 +18,11 @@ public class TcpConfiguration extends Config {
         this.isSecureConnectionEnabled = isSecureConnectionEnabled;
     }
 
-    public SSLContextFactory getSslContextFactory() {
-        return sslContextFactory;
+    public SecureSessionFactory getSecureSessionFactory() {
+        return secureSessionFactory;
     }
 
-    public void setSslContextFactory(SSLContextFactory sslContextFactory) {
-        this.sslContextFactory = sslContextFactory;
+    public void setSecureSessionFactory(SecureSessionFactory secureSessionFactory) {
+        this.secureSessionFactory = secureSessionFactory;
     }
-
 }

@@ -6,8 +6,7 @@ package com.firefly.server.http2.router.handler.session;
 public class HTTPSessionConfiguration {
 
     private String sessionIdParameterName = "jsessionid";
-    private int defaultMaxInactiveInterval = 10 * 60; //unit second
-    private int schedulerPoolSize = 1;
+    private int defaultMaxInactiveInterval = 10 * 60; //second
 
     public String getSessionIdParameterName() {
         return sessionIdParameterName;
@@ -23,13 +22,5 @@ public class HTTPSessionConfiguration {
 
     public void setDefaultMaxInactiveInterval(int defaultMaxInactiveInterval) {
         this.defaultMaxInactiveInterval = defaultMaxInactiveInterval;
-    }
-
-    public int getSchedulerPoolSize() {
-        return schedulerPoolSize;
-    }
-
-    public void setSchedulerPoolSize(int schedulerPoolSize) {
-        this.schedulerPoolSize = schedulerPoolSize;
     }
 }

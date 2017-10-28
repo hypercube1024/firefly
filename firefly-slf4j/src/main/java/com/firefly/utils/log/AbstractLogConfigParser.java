@@ -11,6 +11,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
 
     protected FileLog createLog(Configuration c) {
         FileLog fileLog = new FileLog();
+        fileLog.setMaxLogFlushInterval(Math.max(c.getMaxLogFlushInterval(), 500L));
         fileLog.setName(c.getName());
         fileLog.setLevel(LogLevel.fromName(c.getLevel()));
         fileLog.setMaxFileSize(c.getMaxFileSize());
@@ -64,11 +65,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
     }
 
     private boolean createLogDirectory(File file) {
-        if (file.exists() && file.isDirectory()) {
-            return true;
-        } else {
-            return file.mkdirs();
-        }
+        return file.exists() && file.isDirectory() || file.mkdirs();
     }
 
     @Override

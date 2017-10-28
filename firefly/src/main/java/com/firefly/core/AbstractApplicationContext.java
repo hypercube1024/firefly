@@ -3,6 +3,7 @@ package com.firefly.core;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.core.support.exception.BeanDefinitionParsingException;
 import com.firefly.utils.VerifyUtils;
+import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
-abstract public class AbstractApplicationContext implements ApplicationContext {
+abstract public class AbstractApplicationContext extends AbstractLifeCycle implements ApplicationContext {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
@@ -29,13 +30,25 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
         beanDefinitions = getBeanDefinitions(file);
         beanDefinitionCheck(); // Conflicts check
         addObjectToContext();
+        start();
+        map = Collections.unmodifiableMap(map);
+    }
+
+    @Override
+    protected void init() {
         if (!initMethods.isEmpty()) {
             invokeMethods(initMethods);
         }
         if (!destroyedMethods.isEmpty()) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> invokeMethods(destroyedMethods), "the firefly shutdown thread"));
+            Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "the firefly shutdown thread"));
         }
-        map = Collections.unmodifiableMap(map);
+    }
+
+    @Override
+    protected void destroy() {
+        if (!destroyedMethods.isEmpty()) {
+            invokeMethods(destroyedMethods);
+        }
     }
 
     protected void invokeMethods(List<Pair<Method, Object>> methods) {
@@ -93,13 +106,13 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
                 if (VerifyUtils.isNotEmpty(b1.getId())
                         && VerifyUtils.isNotEmpty(b2.getId())
                         && b1.getId().equals(b2.getId())) {
-                    error(b1.getClassName() + " and " + b2.getClassName() + "'s id are duplicated ");
+                    error("Duplicated bean ID of " + b1.getClassName() + " and " + b2.getClassName());
                 }
 
                 if (b1.getClassName().equals(b2.getClassName())) {
                     // Two components' class name are equal, but one of them does not set id.
                     if (VerifyUtils.isEmpty(b1.getId()) || VerifyUtils.isEmpty(b2.getId())) {
-                        error("class " + b1.getClassName() + " duplicate definition");
+                        error("Duplicated class definition. Please set a ID for " + b1.getClassName());
                     } else {
                         // Their id are different, save them to memo.
                         // When the component is injecting by type, throw an exception.
@@ -112,7 +125,7 @@ abstract public class AbstractApplicationContext implements ApplicationContext {
                         if (iname1.equals(iname2)) {
                             // Two components' interface name are equal, but one of them does not set id.
                             if (VerifyUtils.isEmpty(b1.getId()) || VerifyUtils.isEmpty(b2.getId())) {
-                                error("class " + b1.getClassName() + " duplicate definition");
+                                error("Duplicated class definition. Please set a ID for " + b1.getClassName());
                             } else {
                                 // Their id are different, save them to memo.
                                 // When the component is injecting by type, throw an exception.

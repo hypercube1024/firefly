@@ -57,24 +57,23 @@ abstract public class AbstractRegexMatcher implements Matcher {
         Set<Router> routers = new HashSet<>();
         Map<Router, Map<String, String>> parameters = new HashMap<>();
 
-        regexMap.entrySet()
-                .forEach(e -> {
-                    java.util.regex.Matcher m = e.getKey().pattern.matcher(value);
-                    if (m.matches()) {
-                        routers.addAll(e.getValue());
-                        m = e.getKey().pattern.matcher(value);
+        regexMap.forEach((rule, routerSet) -> {
+            java.util.regex.Matcher m = rule.pattern.matcher(value);
+            if (m.matches()) {
+                routers.addAll(routerSet);
+                m = rule.pattern.matcher(value);
 
-                        Map<String, String> param = new HashMap<>();
-                        while (m.find()) {
-                            for (int i = 1; i <= m.groupCount(); i++) {
-                                param.put("group" + i, m.group(i));
-                            }
-                        }
-                        if (!param.isEmpty()) {
-                            e.getValue().forEach(router -> parameters.put(router, param));
-                        }
+                Map<String, String> param = new HashMap<>();
+                while (m.find()) {
+                    for (int i = 1; i <= m.groupCount(); i++) {
+                        param.put("group" + i, m.group(i));
                     }
-                });
+                }
+                if (!param.isEmpty()) {
+                    routerSet.forEach(router -> parameters.put(router, param));
+                }
+            }
+        });
         if (routers.isEmpty()) {
             return null;
         } else {

@@ -48,13 +48,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>4.4.0</version>
+    <version>4.5.0</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>4.4.0</version>
+    <version>4.5.0</version>
 </dependency>
 ```
 
@@ -106,7 +106,7 @@ Add maven dependency in your pom.xml
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-kotlin-ext</artifactId>
-    <version>4.4.0</version>
+    <version>4.5.0</version>
 </dependency>
 ```
 
@@ -135,10 +135,15 @@ fun main(args: Array<String>): Unit = runBlocking {
 ```
 
 More detailed information, please refer to the 
-* [HTTP server/client document (Java version)](http://www.fireflysource.com/docs/http-server-and-client.html)
-* [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example)
+* [HTTP server/client document](http://www.fireflysource.com/docs/http-server-and-client.html)
+* [TCP server/client document](http://www.fireflysource.com/docs/tcp-server-and-client.html)
+* [Inversion of control document](http://www.fireflysource.com/docs/ioc-framework.html)
+* [Database access document](http://www.fireflysource.com/docs/database-access.html)
+* [Log document](http://www.fireflysource.com/docs/log.html)
 * [HTTP server/client document (Kotlin version)](http://www.fireflysource.com/docs/http-server-and-client-kotlin-ext.html)
-* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-kotlin-ext/src/test/kotlin/com/firefly/kotlin/ext/example/task/management)
+* [Database access document (Kotlin version)](http://www.fireflysource.com/docs/database-access-kotlin.html)
+* [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example/src/main/java/com/firefly/example)
+* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example/src/main/kotlin/com/firefly/example/kotlin)
 
 # Contact information
 E-mail: qptkk@163.com  

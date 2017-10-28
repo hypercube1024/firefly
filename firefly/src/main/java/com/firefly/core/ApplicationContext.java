@@ -1,9 +1,11 @@
 package com.firefly.core;
 
+import com.firefly.utils.lang.LifeCycle;
+
 import java.util.Collection;
 import java.util.Map;
 
-public interface ApplicationContext {
+public interface ApplicationContext extends LifeCycle {
 
     /**
      * Get a bean by type

@@ -1,6 +1,6 @@
 package test.db;
 
-import com.firefly.db.JDBCHelper;
+import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.concurrent.ThreadUtils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

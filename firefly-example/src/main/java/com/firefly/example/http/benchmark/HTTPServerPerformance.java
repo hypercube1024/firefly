@@ -11,7 +11,7 @@ import java.util.List;
  * OS X 10.12.3, java version "1.8.0_111"
  * log level: INFO
  * JVM arguments: -XX:+UseG1GC -Xmx1024m -Xms1024m
- *
+ * <p>
  * wrk -t8 -c32 -d60s http://127.0.0.1:4455/
  * Running 1m test @ http://127.0.0.1:4455/
  * 8 threads and 32 connections
@@ -21,7 +21,7 @@ import java.util.List;
  * 3449340 requests in 1.00m, 411.19MB read
  * Requests/sec:  57393.23
  * Transfer/sec:      6.84MB
- *
+ * <p>
  * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items
  * Running 1m test @ http://127.0.0.1:4455/items
  * 8 threads and 32 connections
@@ -67,7 +67,7 @@ public class HTTPServerPerformance {
          .handler(ctx -> ctx.end("hello world!"))
          .router().get("/items")
          .handler(ctx -> ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_HTML_UTF_8.asString())
-                            .renderTemplate("template/items.mustache", new ItemRepository("drinks")))
+                            .renderTemplate("template/benchmark/items.mustache", new ItemRepository("drinks")))
          .listen("127.0.0.1", 4455);
     }
 }

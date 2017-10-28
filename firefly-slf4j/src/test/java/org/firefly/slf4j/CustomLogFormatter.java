@@ -12,21 +12,21 @@ public class CustomLogFormatter implements LogFormatter {
 
     @Override
     public String format(LogItem logItem) {
-        String logStr = logItem.getLevel() + " >>> " + SafeSimpleDateFormat.defaultDateFormat.format(logItem.getDate());
+        String logStr = logItem.getLevel() + " " + SafeSimpleDateFormat.defaultDateFormat.format(logItem.getDate());
 
         if (logItem.getMdcData() != null && !logItem.getMdcData().isEmpty()) {
-            logStr += " >>> " + logItem.getMdcData();
+            logStr += " " + logItem.getMdcData();
         }
 
         if (StringUtils.hasText(logItem.getClassName())) {
-            logStr += " >>> " + logItem.getClassName();
+            logStr += " " + logItem.getClassName();
         }
 
         if (StringUtils.hasText(logItem.getThreadName())) {
-            logStr += " >>> " + logItem.getThreadName();
+            logStr += " " + logItem.getThreadName();
         }
 
-        logStr += " --->>> " + logItem.renderContentTemplate();
+        logStr += " --> " + logItem.renderContentTemplate();
         return logStr;
     }
 

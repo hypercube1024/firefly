@@ -22,7 +22,7 @@ public class ClientSecureEncoder extends EncoderChain {
             case HTTP_1_1:
                 if (message instanceof ByteBuffer) {
                     HTTP1ClientConnection http1ClientConnection = (HTTP1ClientConnection) connection;
-                    http1ClientConnection.getSSLSession().write((ByteBuffer) message, Callback.NOOP);
+                    http1ClientConnection.getSecureSession().write((ByteBuffer) message, Callback.NOOP);
                 } else {
                     throw new IllegalArgumentException(
                             "the http1 encoder must receive the ByteBuffer, but this message type is "

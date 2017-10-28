@@ -6,7 +6,7 @@ import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.core.ApplicationContext;
 import com.firefly.core.ApplicationContextSingleton;
 import com.firefly.core.XmlApplicationContext;
-import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
@@ -17,9 +17,7 @@ import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 import com.firefly.utils.BeanUtils;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.ThreadUtils;
-import com.firefly.utils.function.Func0;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
@@ -125,8 +123,8 @@ public interface $ {
         return new HTTP2ServerBuilder().httpsServer();
     }
 
-    static HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
-        return new HTTP2ServerBuilder().httpsServer(sslContextFactory);
+    static HTTP2ServerBuilder httpsServer(SecureSessionFactory secureSessionFactory) {
+        return new HTTP2ServerBuilder().httpsServer(secureSessionFactory);
     }
 
     /**
@@ -210,6 +208,10 @@ public interface $ {
         return ApplicationContextSingleton.getInstance().getApplicationContext().getBean(clazz);
     }
 
+    static ApplicationContext getApplicationContext() {
+        return ApplicationContextSingleton.getInstance().getApplicationContext();
+    }
+
     /**
      * Get bean from default application context. The default application context reads configuration firefly.xml in classpath.
      *
@@ -239,17 +241,6 @@ public interface $ {
      */
     static Map<String, Object> getBeanMap() {
         return ApplicationContextSingleton.getInstance().getApplicationContext().getBeanMap();
-    }
-
-    /**
-     * Run a blocking task in a shared thread pool.
-     *
-     * @param func the task with a return value
-     * @param <T>  Return value type
-     * @return the task Completable future
-     */
-    static <T> Promise.Completable<T> async(Func0<T> func) {
-        return ApplicationContextSingleton.getInstance().async(func);
     }
 
     interface io {

@@ -4,6 +4,7 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.utils.concurrent.Promise;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Phaser;
 
@@ -35,7 +36,7 @@ public class SimpleHTTPClientDemo4 {
         }
 
         for (int i = 30; i < 40; i++) {
-            Promise.Completable<SimpleResponse> future = client
+            CompletableFuture<SimpleResponse> future = client
                     .post("http://localhost:3333/postData")
                     .put("RequestId", i + "_")
                     .body("test post data, hello foo " + i)

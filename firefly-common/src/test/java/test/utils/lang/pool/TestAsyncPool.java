@@ -173,7 +173,7 @@ public class TestAsyncPool {
         takeObjectTest(pool, number);
 
         int poolSize = pool.size();
-        Assert.assertThat(poolSize, lessThan(8));
+        Assert.assertThat(poolSize, lessThanOrEqualTo(8));
         Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(8));
         System.out.println(poolSize);
         pool.stop();

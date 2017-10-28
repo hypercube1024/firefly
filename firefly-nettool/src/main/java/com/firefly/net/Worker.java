@@ -6,5 +6,4 @@ public interface Worker {
 
 	void registerChannel(Channel channel, int sessionId);
 
-	void shutdown();
 }

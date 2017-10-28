@@ -3,11 +3,13 @@ package com.firefly.client.http2;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.net.SecureSession;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.StringUtils;
 
 import java.util.Map;
+import java.util.Optional;
 
 public class HTTP2ClientHandler extends AbstractHTTPHandler {
 
@@ -29,22 +31,21 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
         }
 
         if (config.isSecureConnectionEnabled()) {
-            session.attachObject(new SSLSession(config.getSslContextFactory(), true, session, sslSession -> {
+            SecureSessionFactory factory = config.getSecureSessionFactory();
+            session.attachObject(factory.create(session, true, sslSession -> {
                 log.debug("client session {} SSL handshake finished", session.getSessionId());
-                String protocol = sslSession.applicationProtocol();
-                if (StringUtils.hasText(protocol)) {
-                    switch (protocol) {
-                        case "http/1.1":
-                            initializeHTTP1ClientConnection(session, context, sslSession);
-                            break;
-                        case "h2":
-                            initializeHTTP2ClientConnection(session, context, sslSession);
-                            break;
-                        default:
-                            throw new IllegalStateException("SSL application protocol negotiates failure. The protocol " + protocol + " is not supported");
-                    }
-                } else {
-                    throw new IllegalStateException("SSL application protocol negotiates exception, the protocol is null");
+                String protocol = Optional.ofNullable(sslSession.getApplicationProtocol())
+                                          .filter(StringUtils::hasText)
+                                          .orElse("http/1.1");
+                switch (protocol) {
+                    case "http/1.1":
+                        initializeHTTP1ClientConnection(session, context, sslSession);
+                        break;
+                    case "h2":
+                        initializeHTTP2ClientConnection(session, context, sslSession);
+                        break;
+                    default:
+                        throw new IllegalStateException("SSL application protocol negotiates failure. The protocol " + protocol + " is not supported");
                 }
             }));
         } else {
@@ -71,7 +72,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
     }
 
     private void initializeHTTP1ClientConnection(final Session session, final HTTP2ClientContext context,
-                                                 final SSLSession sslSession) {
+                                                 final SecureSession sslSession) {
         try {
             HTTP1ClientConnection http1ClientConnection = new HTTP1ClientConnection(config, session, sslSession);
             session.attachObject(http1ClientConnection);
@@ -84,7 +85,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
     }
 
     private void initializeHTTP2ClientConnection(final Session session, final HTTP2ClientContext context,
-                                                 final SSLSession sslSession) {
+                                                 final SecureSession sslSession) {
         try {
             final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession,
                     context.listener);

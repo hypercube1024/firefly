@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 public class StaticFileDemo {
     public static void main(String[] args) throws Exception {
         Path path = Paths.get(StaticFileDemo.class.getResource("/").toURI());
-        $.httpServer().router().get("/static/*")
+        $.httpsServer().router().get("/static/*")
          .handler(new StaticFileHandler(path.toAbsolutePath().toString()))
          .listen("localhost", 8080);
     }

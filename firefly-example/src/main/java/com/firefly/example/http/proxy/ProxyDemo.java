@@ -14,6 +14,7 @@ import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -29,11 +30,9 @@ public class ProxyDemo {
         server.acceptHTTPTunnelConnection((request, serverConnection) -> {
             SimpleResponse response = request.getAsyncResponse();
             request.getAttributes().computeIfAbsent("tunnelSuccess", k -> {
-                Promise.Completable<TcpConnection> p = tcpClient.connect(request.getURI().getHost(), request.getURI().getPort());
+                CompletableFuture<TcpConnection> p = tcpClient.connect(request.getURI().getHost(), request.getURI().getPort());
                 p.thenAccept(tcpConn -> {
-                    Promise.Completable<HTTPTunnelConnection> promise = new Promise.Completable<>();
-                    serverConnection.upgradeHTTPTunnel(promise);
-                    promise.thenAccept(tunnel -> {
+                    serverConnection.upgradeHTTPTunnel().thenAccept(tunnel -> {
                         tcpConn.receive(dstBuf -> tunnel.write(dstBuf, Callback.NOOP))
                                .exception(e -> $.io.close(tcpConn))
                                .close(() -> request.remove("tunnelSuccess"));

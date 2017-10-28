@@ -178,4 +178,30 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
         $.httpClient().stop();
     }
 
+    @Test
+    public void testGetWithBody() {
+        Phaser phaser = new Phaser(3);
+
+        HTTP2ServerBuilder httpServer = $.httpServer();
+        httpServer.router().get("/queryWithBody").handler(ctx -> {
+            String body = ctx.getStringBody();
+            System.out.println(body);
+            Assert.assertThat(body, is("Get request with body"));
+            ctx.end("receive: " + body);
+            phaser.arrive();
+        }).listen(host, port);
+
+        $.httpClient().get(uri + "/queryWithBody").body("Get request with body")
+         .submit()
+         .thenAccept(res -> {
+             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+             Assert.assertThat(res.getStringBody(), is("receive: Get request with body"));
+             phaser.arrive();
+         });
+
+        phaser.arriveAndAwaitAdvance();
+        httpServer.stop();
+        $.httpClient().stop();
+    }
+
 }

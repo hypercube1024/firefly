@@ -7,8 +7,9 @@ import com.firefly.server.http2.router.impl.RouterManagerImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.NavigableSet;
+import java.util.*;
 
+import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.Matchers.*;
 
 /**
@@ -19,21 +20,11 @@ public class TestMatcher {
     @Test
     public void testFindRouter() {
         RouterManager routerManager = new RouterManagerImpl();
-        Router router0 = routerManager.register()
-                                      .get("/hello/get")
-                                      .produces("application/json");
-        Router router1 = routerManager.register()
-                                      .get("/hello/:testParam0")
-                                      .produces("application/json");
-        Router router2 = routerManager.register()
-                                      .get("/hello/:testParam1")
-                                      .produces("application/json");
-        Router router3 = routerManager.register()
-                                      .post("/book/update/:id")
-                                      .consumes("*/json");
-        Router router4 = routerManager.register()
-                                      .post("/book/update/:id")
-                                      .consumes("application/json");
+        Router router0 = routerManager.register().get("/hello/get").produces("application/json");
+        Router router1 = routerManager.register().get("/hello/:testParam0").produces("application/json");
+        Router router2 = routerManager.register().get("/hello/:testParam1").produces("application/json");
+        Router router3 = routerManager.register().post("/book/update/:id").consumes("*/json");
+        Router router4 = routerManager.register().post("/book/update/:id").consumes("application/json");
 
         NavigableSet<RouterManager.RouterMatchResult> result = routerManager.findRouter("GET", "/hello/get", null,
                 "application/json,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
@@ -44,8 +35,7 @@ public class TestMatcher {
         Assert.assertThat(result.last().getRouter(), is(router2));
         Assert.assertThat(result.last().getParameters().get("testParam1"), is("get"));
 
-        result = routerManager.findRouter("GET", "/hello/get", null,
-                "application/*,*/*;q=0.8");
+        result = routerManager.findRouter("GET", "/hello/get", null, "application/*,*/*;q=0.8");
         Assert.assertThat(result, notNullValue());
         Assert.assertThat(result.size(), is(3));
         Assert.assertThat(result.first().getRouter(), is(router0));
@@ -53,8 +43,7 @@ public class TestMatcher {
         Assert.assertThat(result.last().getRouter(), is(router2));
         Assert.assertThat(result.last().getParameters().get("testParam1"), is("get"));
 
-        result = routerManager.findRouter("GET", "/hello/get", null,
-                "*/json,*/*;q=0.8");
+        result = routerManager.findRouter("GET", "/hello/get", null, "*/json,*/*;q=0.8");
         Assert.assertThat(result, notNullValue());
         Assert.assertThat(result.size(), is(3));
         Assert.assertThat(result.first().getRouter(), is(router0));

@@ -1,11 +1,9 @@
 package com.firefly.server.http2;
 
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.ErrorCode;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.ResetFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
+import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.utils.concurrent.Callback;
@@ -23,6 +21,16 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
     public HTTP2ServerRequestHandler(ServerHTTPHandler serverHTTPHandler) {
         this.serverHTTPHandler = serverHTTPHandler;
+    }
+
+    @Override
+    public void onClose(Session session, GoAwayFrame frame) {
+        try {
+            log.info("receive the GoAwayFrame -> ", frame);
+            connection.close();
+        } catch (IOException e) {
+            log.error("close http2 connection exception", e);
+        }
     }
 
     @Override

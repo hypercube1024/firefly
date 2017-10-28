@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.4.0</version>
+        <version>4.5.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -33,7 +33,6 @@
     </build>
 
     <dependencies>
-
         <!-- Common -->
         <dependency>
             <groupId>com.fireflysource</groupId>
@@ -43,6 +42,8 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
+
+        <!-- metrics -->
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
@@ -55,6 +56,8 @@
             <groupId>org.hdrhistogram</groupId>
             <artifactId>HdrHistogram</artifactId>
         </dependency>
+
+        <!-- db utils -->
         <dependency>
             <groupId>commons-dbutils</groupId>
             <artifactId>commons-dbutils</artifactId>

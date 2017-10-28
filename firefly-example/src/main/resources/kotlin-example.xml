@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.fireflysource.com/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+
+    <import resource="datasource.xml"/>
+
+    <component-scan base-package="com.firefly.example.kotlin.coffee.store.utils"/>
+    <component-scan base-package="com.firefly.example.kotlin.coffee.store.dao"/>
+    <component-scan base-package="com.firefly.example.kotlin.coffee.store.service"/>
+    <component-scan base-package="com.firefly.example.kotlin.coffee.store.router"/>
+
+    <bean id="localSessionHandler" class="com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler"
+          destroy-method="stop"/>
+
+    <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
+
+    <bean id="asyncHttpContextTransactionalManager"
+          class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">
+        <constructor>
+            <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
+            <argument type="com.firefly.db.SQLClient" ref="jdbcClient"/>
+        </constructor>
+    </bean>
+
+    <bean id="ktHttpServer" class="com.firefly.kotlin.ext.http.HttpServer">
+        <constructor>
+            <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
+        </constructor>
+    </bean>
+
+    <bean id="ktProjectConfig" class="com.firefly.example.kotlin.coffee.store.ProjectConfig">
+        <property name="templateRoot" value="template/coffeeStore"/>
+        <property name="host" value="localhost"/>
+        <property name="port" value="8080"/>
+        <property name="loginURL" value="/login"/>
+        <property name="logoutURL" value="/logout"/>
+        <property name="loginUserKey" value="_loginUser"/>
+        <property name="sessionMaxInactiveInterval" value="1800"/>
+    </bean>
+
+    <bean id="ktMain" class="com.firefly.example.kotlin.coffee.store.AppMain"/>
+</beans>

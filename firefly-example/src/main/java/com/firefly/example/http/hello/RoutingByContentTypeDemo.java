@@ -5,6 +5,7 @@ import com.firefly.client.http2.SimpleResponse;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.concurrent.Promise.Completable;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Phaser;
 
 /**
@@ -41,9 +42,9 @@ public class RoutingByContentTypeDemo {
 
         Product product = new Product();
         product.name = "new book";
-        Completable<SimpleResponse> c = $.httpClient().post("http://localhost:8080/product")
-                                         .jsonBody(product)
-                                         .submit();
+        CompletableFuture<SimpleResponse> c = $.httpClient().post("http://localhost:8080/product")
+                                               .jsonBody(product)
+                                               .submit();
         System.out.println(c.get().getStringBody());
 
         product = new Product();

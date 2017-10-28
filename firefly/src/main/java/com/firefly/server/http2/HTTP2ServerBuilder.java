@@ -1,16 +1,27 @@
 package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
+import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
  */
 public class HTTP2ServerBuilder {
+
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
+
+    private static ThreadLocal<RoutingContext> currentCtx = new ThreadLocal<>();
 
     private SimpleHTTPServer server;
     private RouterManager routerManager;
@@ -22,10 +33,10 @@ public class HTTP2ServerBuilder {
         return httpServer(configuration, new HTTPBodyConfiguration());
     }
 
-    public HTTP2ServerBuilder httpsServer(SSLContextFactory sslContextFactory) {
+    public HTTP2ServerBuilder httpsServer(SecureSessionFactory secureSessionFactory) {
         SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
         configuration.setSecureConnectionEnabled(true);
-        configuration.setSslContextFactory(sslContextFactory);
+        configuration.setSecureSessionFactory(secureSessionFactory);
         return httpServer(configuration, new HTTPBodyConfiguration());
     }
 
@@ -47,6 +58,11 @@ public class HTTP2ServerBuilder {
      */
     public HTTP2ServerBuilder router() {
         currentRouter = routerManager.register();
+        return this;
+    }
+
+    public HTTP2ServerBuilder router(Integer id) {
+        currentRouter = routerManager.register(id);
         return this;
     }
 
@@ -81,6 +97,11 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
+    public HTTP2ServerBuilder paths(List<String> paths) {
+        currentRouter.paths(paths);
+        return this;
+    }
+
     public HTTP2ServerBuilder pathRegex(String regex) {
         currentRouter.pathRegex(regex);
         return this;
@@ -91,8 +112,18 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
+    public HTTP2ServerBuilder methods(String[] methods) {
+        Arrays.stream(methods).forEach(this::method);
+        return this;
+    }
+
     public HTTP2ServerBuilder method(HttpMethod httpMethod) {
         currentRouter.method(httpMethod);
+        return this;
+    }
+
+    public HTTP2ServerBuilder methods(HttpMethod[] methods) {
+        Arrays.stream(methods).forEach(this::method);
         return this;
     }
 
@@ -126,8 +157,32 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
-    public HTTP2ServerBuilder handler(Handler context) {
-        currentRouter.handler(context);
+    public HTTP2ServerBuilder handler(Handler handler) {
+        currentRouter.handler(ctx -> handlerWrap(handler, ctx));
         return this;
+    }
+
+    protected void handlerWrap(Handler handler, RoutingContext ctx) {
+        try {
+            currentCtx.set(ctx);
+            handler.handle(ctx);
+        } catch (Exception e) {
+            ctx.fail(e);
+            log.error("http server handler exception", e);
+        } finally {
+            currentCtx.remove();
+        }
+    }
+
+    public HTTP2ServerBuilder asyncHandler(Handler handler) {
+        currentRouter.handler(ctx -> {
+            ctx.getResponse().setAsynchronous(true);
+            server.getHandlerExecutorService().execute(() -> handlerWrap(handler, ctx));
+        });
+        return this;
+    }
+
+    public static Optional<RoutingContext> getCurrentCtx() {
+        return Optional.ofNullable(currentCtx.get());
     }
 }
