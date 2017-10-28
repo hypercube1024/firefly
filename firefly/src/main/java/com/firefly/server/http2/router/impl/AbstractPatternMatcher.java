@@ -50,7 +50,7 @@ abstract public class AbstractPatternMatcher implements Matcher {
     }
 
     @Override
-    public MatchResult match(String value) {
+    public MatchResult match(String v) {
         if (patternMap == null) {
             return null;
         }
@@ -58,20 +58,19 @@ abstract public class AbstractPatternMatcher implements Matcher {
         Set<Router> routers = new HashSet<>();
         Map<Router, Map<String, String>> parameters = new HashMap<>();
 
-        patternMap.entrySet()
-                  .forEach(e -> {
-                      String[] strings = e.getKey().pattern.match(value);
-                      if (strings != null) {
-                          routers.addAll(e.getValue());
-                          if (strings.length > 0) {
-                              Map<String, String> param = new HashMap<>();
-                              for (int i = 0; i < strings.length; i++) {
-                                  param.put("param" + i, strings[i]);
-                              }
-                              e.getValue().forEach(router -> parameters.put(router, param));
-                          }
-                      }
-                  });
+        patternMap.forEach((rule, routerSet) -> {
+            String[] strings = rule.pattern.match(v);
+            if (strings != null) {
+                routers.addAll(routerSet);
+                if (strings.length > 0) {
+                    Map<String, String> param = new HashMap<>();
+                    for (int i = 0; i < strings.length; i++) {
+                        param.put("param" + i, strings[i]);
+                    }
+                    routerSet.forEach(router -> parameters.put(router, param));
+                }
+            }
+        });
         if (routers.isEmpty()) {
             return null;
         } else {

@@ -12,8 +12,8 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
@@ -69,23 +69,20 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
         }
     }
 
-    public HTTP2ClientConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
+    public HTTP2ClientConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
                                  Listener listener) {
-        super(config, tcpSession, sslSession, listener);
+        super(config, tcpSession, secureSession, listener);
     }
 
     @Override
     protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
                                             Listener listener) {
-        HTTP2ClientSession http2ClientSession = new HTTP2ClientSession(scheduler, this.tcpSession, this.generator,
-                listener, flowControl, config.getStreamIdleTimeout());
-        return http2ClientSession;
+        return new HTTP2ClientSession(scheduler, this.tcpSession, this.generator, listener, flowControl, config.getStreamIdleTimeout());
     }
 
     @Override
     protected Parser initParser(HTTP2Configuration config) {
-        return new Parser((HTTP2ClientSession) http2Session, config.getMaxDynamicTableSize(),
-                config.getMaxRequestHeadLength());
+        return new Parser(http2Session, config.getMaxDynamicTableSize(), config.getMaxRequestHeadLength());
     }
 
     Parser getParser() {
@@ -96,8 +93,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
         return generator;
     }
 
-    SSLSession getSSLSession() {
-        return sslSession;
+    SecureSession getSecureSession() {
+        return secureSession;
     }
 
     SessionSPI getSessionSPI() {

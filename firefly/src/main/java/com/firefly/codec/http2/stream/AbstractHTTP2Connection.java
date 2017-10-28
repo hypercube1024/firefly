@@ -4,8 +4,8 @@ import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 
@@ -23,9 +23,9 @@ abstract public class AbstractHTTP2Connection extends AbstractHTTPConnection {
         scheduler.stop();
     }
 
-    public AbstractHTTP2Connection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
+    public AbstractHTTP2Connection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
                                    Listener listener) {
-        super(sslSession, tcpSession, HttpVersion.HTTP_2);
+        super(secureSession, tcpSession, HttpVersion.HTTP_2);
 
         FlowControlStrategy flowControl;
         switch (config.getFlowControlStrategy()) {

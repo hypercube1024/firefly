@@ -4,8 +4,8 @@ import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPConnection;
 import com.firefly.codec.http2.stream.ConnectionType;
 import com.firefly.codec.http2.stream.HTTPTunnelConnection;
+import com.firefly.net.SecureSession;
 import com.firefly.net.buffer.FileRegion;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.function.Action1;
 
@@ -19,8 +19,8 @@ public class HTTP1ServerTunnelConnection extends AbstractHTTPConnection implemen
 
     Action1<ByteBuffer> content;
 
-    public HTTP1ServerTunnelConnection(SSLSession sslSession, com.firefly.net.Session tcpSession, HttpVersion httpVersion) {
-        super(sslSession, tcpSession, httpVersion);
+    public HTTP1ServerTunnelConnection(SecureSession secureSession, com.firefly.net.Session tcpSession, HttpVersion httpVersion) {
+        super(secureSession, tcpSession, httpVersion);
     }
 
     @Override

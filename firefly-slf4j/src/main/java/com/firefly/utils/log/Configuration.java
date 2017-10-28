@@ -12,6 +12,7 @@ public class Configuration {
     private long maxFileSize;
     private String charset;
     private String formatter;
+    private long maxLogFlushInterval = Long.getLong("com.firefly.utils.log.file.maxLogFlushInterval", 1000L);
 
     public String getName() {
         return name;
@@ -69,4 +70,11 @@ public class Configuration {
         this.formatter = formatter;
     }
 
+    public long getMaxLogFlushInterval() {
+        return maxLogFlushInterval;
+    }
+
+    public void setMaxLogFlushInterval(long maxLogFlushInterval) {
+        this.maxLogFlushInterval = maxLogFlushInterval;
+    }
 }

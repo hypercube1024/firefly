@@ -149,11 +149,11 @@ class TestServerDSL {
 
                 asyncHandler {
                     setAttribute("userId", 33)
-                    promise<String>({
+                    asyncNext<String>({
                         write("router 1 success\r\n").end(it)
                     }, {
                         write("${it?.message}").end()
-                    }).next()
+                    })
                 }
             }
 
@@ -162,7 +162,7 @@ class TestServerDSL {
                 path = "/test/chain/task/:id"
 
                 asyncHandler {
-                    write("enter router 2\r\n").succeed("User ${getAttr<Int>("userId")} gets task ${getRouterParameter("id")}\r\n")
+                    write("enter router 2\r\n").asyncSucceed("User ${getAttr<Int>("userId")} gets task ${getRouterParameter("id")}\r\n")
                 }
             }
         }.listen(host, port)

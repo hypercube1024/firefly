@@ -24,9 +24,9 @@ import java.util.function.Supplier;
 
 public class SimpleRequest {
 
-    Request request;
-    SimpleResponse response;
-    HTTPConnection connection;
+    final Request request;
+    final SimpleResponse response;
+    final HTTPConnection connection;
     Action1<ByteBuffer> content;
     Action1<SimpleRequest> contentComplete;
     Action1<SimpleRequest> messageComplete;
@@ -35,13 +35,16 @@ public class SimpleRequest {
     List<Cookie> cookies;
     String stringBody;
 
-    ConcurrentHashMap<String, Object> attributes = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String, Object> attributes = new ConcurrentHashMap<>();
 
-    public SimpleRequest(Request request, Response response, HTTPOutputStream output) {
+    public SimpleRequest(Request request, Response response,
+                         HTTPOutputStream output,
+                         HTTPConnection connection) {
         this.request = request;
         response.setStatus(HttpStatus.OK_200);
         response.setHttpVersion(HttpVersion.HTTP_1_1);
-        this.response = new SimpleResponse(response, output);
+        this.response = new SimpleResponse(response, output, request.getURI());
+        this.connection = connection;
     }
 
     public HttpVersion getHttpVersion() {

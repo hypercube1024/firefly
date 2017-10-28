@@ -1,7 +1,7 @@
 package com.firefly.codec.http2.stream;
 
-import com.firefly.net.SSLContextFactory;
-import com.firefly.net.tcp.ssl.SelfSignedCertificateOpenSSLContextFactory;
+import com.firefly.net.SecureSessionFactory;
+import com.firefly.net.tcp.secure.JdkSecureSessionFactory;
 
 public class HTTP2Configuration {
 
@@ -10,7 +10,7 @@ public class HTTP2Configuration {
 
     // SSL/TLS settings
     private boolean isSecureConnectionEnabled;
-    private SSLContextFactory sslContextFactory = new SelfSignedCertificateOpenSSLContextFactory();
+    private SecureSessionFactory secureSessionFactory = new JdkSecureSessionFactory();
 
     // HTTP settings
     private int maxDynamicTableSize = 4096;
@@ -139,12 +139,12 @@ public class HTTP2Configuration {
         this.isSecureConnectionEnabled = isSecureConnectionEnabled;
     }
 
-    public SSLContextFactory getSslContextFactory() {
-        return sslContextFactory;
+    public SecureSessionFactory getSecureSessionFactory() {
+        return secureSessionFactory;
     }
 
-    public void setSslContextFactory(SSLContextFactory sslContextFactory) {
-        this.sslContextFactory = sslContextFactory;
+    public void setSecureSessionFactory(SecureSessionFactory secureSessionFactory) {
+        this.secureSessionFactory = secureSessionFactory;
     }
 
     public String getProtocol() {

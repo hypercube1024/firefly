@@ -9,7 +9,7 @@ abstract public class VerifyUtils {
 		char first = str.charAt(0);
 		int i = first == '-' ? 1 : 0;
 		for (; i < str.length(); i++) {
-			if (isDigit(str.charAt(i)) == false) {
+			if (!isDigit(str.charAt(i))) {
 				return false;
 			}
 		}
@@ -23,7 +23,7 @@ abstract public class VerifyUtils {
 		char first = str.charAt(0);
 		int i = first == '-' ? 1 : 0;
 		for (; i < str.length(); i++) {
-			if (isDigit(str.charAt(i)) == false) {
+			if (!isDigit(str.charAt(i))) {
 				return false;
 			}
 		}
@@ -42,7 +42,7 @@ abstract public class VerifyUtils {
 		int i = first == '-' ? 1 : 0;
 		int len = j ? str.length() - 1 : str.length();
 		for (; i < len; i++) {
-			if (isDigit(str.charAt(i)) == false) {
+			if (!isDigit(str.charAt(i))) {
 				return false;
 			}
 		}
@@ -69,7 +69,7 @@ abstract public class VerifyUtils {
 			char c = str.charAt(i);
 			if(c == '.') {
 				point++;
-			} else if (VerifyUtils.isDigit(c) == false) {
+			} else if (!isDigit(c)) {
 				return false;
 			}
 		}
@@ -86,7 +86,7 @@ abstract public class VerifyUtils {
 			char c = str.charAt(i);
 			if(c == '.') {
 				point++;
-			} else if (isDigit(c) == false) {
+			} else if (!isDigit(c)) {
 				return false;
 			}
 		}

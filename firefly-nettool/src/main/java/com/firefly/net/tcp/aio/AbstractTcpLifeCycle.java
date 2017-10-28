@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.AsynchronousChannelGroup;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.TimeUnit;
@@ -29,10 +30,15 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
     protected Config config;
     protected AtomicInteger sessionId = new AtomicInteger();
     protected AsynchronousChannelGroup group;
+    protected ExecutorService netExecutorService;
     protected AsynchronousTcpWorker worker;
     protected ScheduledReporter reporter;
 
     abstract protected String getThreadName();
+
+    public ExecutorService getNetExecutorService() {
+        return netExecutorService;
+    }
 
     @Override
     protected void init() {
@@ -40,12 +46,13 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
             throw new NetException("server configuration is null");
 
         try {
-            group = AsynchronousChannelGroup.withThreadPool(new ForkJoinPool
+            netExecutorService = new ForkJoinPool
                     (config.getAsynchronousCorePoolSize(), pool -> {
                         ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
                         worker.setName(getThreadName() + worker.getPoolIndex());
                         return worker;
-                    }, null, true));
+                    }, null, true);
+            group = AsynchronousChannelGroup.withThreadPool(netExecutorService);
             log.info(config.toString());
             EventManager eventManager = new DefaultEventManager(config);
             worker = new AsynchronousTcpWorker(config, eventManager);

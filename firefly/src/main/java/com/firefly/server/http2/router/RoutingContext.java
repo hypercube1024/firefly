@@ -3,26 +3,29 @@ package com.firefly.server.http2.router;
 import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
+import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
+import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
+import com.firefly.utils.json.Json;
 import com.firefly.utils.json.JsonArray;
 import com.firefly.utils.json.JsonObject;
 import com.firefly.utils.lang.GenericTypeReference;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A new RoutingContext(ctx) instance is created for each HTTP request.
  * <p>
- * You can visit the RoutingContext instance in the whole router chain. It provides HTTP request/response API and allows you to maintain arbitrary data that lives for the lifetime of the context. Contexts are discarded once they have been routed to the handler for the request.
+ * You can visit the RoutingContext instance in the whole router chain.
+ * It provides HTTP request/response API and allows you to maintain arbitrary data that lives for the lifetime of the context.
+ * Contexts are discarded once they have been routed to the handler for the request.
  * <p>
  * The context also provides access to the Session, cookies and body for the request, given the correct handlers in the application.
  *
@@ -44,7 +47,15 @@ public interface RoutingContext extends Closeable {
 
     SimpleRequest getRequest();
 
+    default int getConnectionId() {
+        return getRequest().getConnection().getSessionId();
+    }
+
     String getRouterParameter(String name);
+
+    default Optional<String> getRouterParamOpt(String name) {
+        return Optional.ofNullable(getRouterParameter(name));
+    }
 
     RoutingContext content(Action1<ByteBuffer> content);
 
@@ -57,6 +68,26 @@ public interface RoutingContext extends Closeable {
     boolean next();
 
     boolean hasNext();
+
+    <T> RoutingContext complete(Promise<T> promise);
+
+    <T> boolean next(Promise<T> promise);
+
+    default <T> CompletableFuture<T> nextFuture() {
+        Promise.Completable<T> completable = new Promise.Completable<>();
+        next(completable);
+        return completable;
+    }
+
+    default <T> CompletableFuture<T> complete() {
+        Promise.Completable<T> completable = new Promise.Completable<>();
+        complete(completable);
+        return completable;
+    }
+
+    <T> void succeed(T t);
+
+    void fail(Throwable x);
 
 
     // request wrap
@@ -131,6 +162,11 @@ public interface RoutingContext extends Closeable {
         return this;
     }
 
+    default RoutingContext writeJson(Object object) {
+        put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).write(Json.toJson(object));
+        return this;
+    }
+
     default RoutingContext end(String value) {
         return write(value).end();
     }
@@ -153,9 +189,17 @@ public interface RoutingContext extends Closeable {
         return write(b).end();
     }
 
+    default void redirect(String url) {
+        setStatus(HttpStatus.FOUND_302).put(HttpHeader.LOCATION, url);
+        DefaultErrorResponseHandlerLoader.getInstance().getHandler().render(this, HttpStatus.FOUND_302, null);
+    }
 
     // HTTP body API
     String getParameter(String name);
+
+    default Optional<String> getParamOpt(String name) {
+        return Optional.ofNullable(getParameter(name));
+    }
 
     List<String> getParameterValues(String name);
 
@@ -183,17 +227,43 @@ public interface RoutingContext extends Closeable {
 
 
     // HTTP session API
-    HttpSession getSession();
+    default HTTPSession getSessionNow() {
+        return getSession().getNow(null);
+    }
 
-    HttpSession getSession(boolean create);
+    default HTTPSession getSessionNow(boolean create) {
+        return getSession(create).getNow(null);
+    }
+
+    default int getSessionSizeNow() {
+        return getSessionSize().getNow(0);
+    }
+
+    default boolean removeSessionNow() {
+        return removeSession().getNow(false);
+    }
+
+    default boolean updateSessionNow(HTTPSession httpSession) {
+        return updateSession(httpSession).getNow(false);
+    }
+
+    CompletableFuture<HTTPSession> getSession();
+
+    CompletableFuture<HTTPSession> getSession(boolean create);
+
+    CompletableFuture<Integer> getSessionSize();
+
+    CompletableFuture<Boolean> removeSession();
+
+    CompletableFuture<Boolean> updateSession(HTTPSession httpSession);
 
     boolean isRequestedSessionIdFromURL();
 
     boolean isRequestedSessionIdFromCookie();
 
-    boolean isRequestedSessionIdValid();
-
     String getRequestedSessionId();
+
+    String getSessionIdParameterName();
 
     // Template API
     void renderTemplate(String resourceName, Object scope);
@@ -201,5 +271,9 @@ public interface RoutingContext extends Closeable {
     void renderTemplate(String resourceName, Object[] scopes);
 
     void renderTemplate(String resourceName, List<Object> scopes);
+
+    default  void renderTemplate(String resourceName) {
+        renderTemplate(resourceName, Collections.emptyList());
+    }
 
 }

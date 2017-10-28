@@ -1,24 +1,30 @@
 package com.firefly.server.http2.router.spi;
 
+import com.firefly.server.http2.router.HTTPSession;
+
 import javax.servlet.http.HttpSession;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Pengtao Qiu
  */
 public interface HTTPSessionHandlerSPI {
 
-    HttpSession getSession();
+    CompletableFuture<HTTPSession> getSession();
 
-    HttpSession getSession(boolean create);
+    CompletableFuture<HTTPSession> getSession(boolean create);
+
+    CompletableFuture<Integer> getSessionSize();
+
+    CompletableFuture<Boolean> removeSession();
+
+    CompletableFuture<Boolean> updateSession(HTTPSession httpSession);
 
     boolean isRequestedSessionIdFromURL();
 
     boolean isRequestedSessionIdFromCookie();
 
-    boolean isRequestedSessionIdValid();
-
     String getRequestedSessionId();
 
-    int getSessionSize();
-
+    String getSessionIdParameterName();
 }

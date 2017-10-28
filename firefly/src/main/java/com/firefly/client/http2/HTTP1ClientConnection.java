@@ -9,8 +9,8 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
@@ -115,13 +115,13 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
     }
 
-    public HTTP1ClientConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession) {
-        this(config, sslSession, tcpSession, new ResponseHandlerWrap());
+    public HTTP1ClientConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession) {
+        this(config, secureSession, tcpSession, new ResponseHandlerWrap());
     }
 
-    private HTTP1ClientConnection(HTTP2Configuration config, SSLSession sslSession, Session tcpSession,
+    private HTTP1ClientConnection(HTTP2Configuration config, SecureSession secureSession, Session tcpSession,
                                   ResponseHandler responseHandler) {
-        super(config, sslSession, tcpSession, null, responseHandler);
+        super(config, secureSession, tcpSession, null, responseHandler);
         wrap = (ResponseHandlerWrap) responseHandler;
         wrap.connection = this;
     }
@@ -136,8 +136,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         return parser;
     }
 
-    SSLSession getSSLSession() {
-        return sslSession;
+    SecureSession getSecureSession() {
+        return secureSession;
     }
 
     HTTP2Configuration getHTTP2Configuration() {

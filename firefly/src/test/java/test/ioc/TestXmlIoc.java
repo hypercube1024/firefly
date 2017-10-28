@@ -3,7 +3,6 @@ package test.ioc;
 import com.firefly.$;
 import com.firefly.core.ApplicationContext;
 import com.firefly.core.XmlApplicationContext;
-import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.exception.CommonRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,9 +43,6 @@ public class TestXmlIoc {
         Assert.assertThat(person.getName(), is("Jack"));
         PersonService personService = $.getBean("personService");
         Assert.assertThat(true, is(personService.isInitial()));
-
-        Promise.Completable<Person> c = $.async(() -> $.getBean("person"));
-        Assert.assertThat(c.get().getAge(), is(12));
 
         List<Object> l = personService.getTestList();
         Assert.assertThat(l.size(), greaterThan(0));

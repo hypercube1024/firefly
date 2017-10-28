@@ -1,18 +1,20 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.Client;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.Session;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleTcpClient extends AbstractLifeCycle {
 
-    private AsynchronousTcpClient client;
+    private Client client;
     private TcpConfiguration config;
 
     private Map<Integer, Promise<TcpConnection>> context = new ConcurrentHashMap<>();
@@ -22,11 +24,15 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     }
 
     public SimpleTcpClient(TcpConfiguration config) {
-        client = new AsynchronousTcpClient(config);
+        this(new AsynchronousTcpClient(config));
         this.config = config;
     }
 
-    public Promise.Completable<TcpConnection> connect(String host, int port) {
+    public SimpleTcpClient(Client client) {
+        this.client = client;
+    }
+
+    public CompletableFuture<TcpConnection> connect(String host, int port) {
         Promise.Completable<TcpConnection> promise = new Promise.Completable<>();
         connect(host, port, promise);
         return promise;
@@ -119,7 +125,8 @@ public class SimpleTcpClient extends AbstractLifeCycle {
 
                 @Override
                 public void sessionOpened(Session session) throws Throwable {
-                    session.attachObject(new SecureTcpConnectionImpl(session, new SSLSession(config.getSslContextFactory(), true, session, (ssl) -> {
+                    SecureSessionFactory factory = config.getSecureSessionFactory();
+                    session.attachObject(new SecureTcpConnectionImpl(session, factory.create(session, true, ssl -> {
                         Object o = session.getAttachment();
                         if (o != null && o instanceof SecureTcpConnectionImpl) {
                             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
@@ -131,7 +138,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                 @Override
                 public void sessionClosed(Session session) throws Throwable {
                     try {
-                        super.sslSessionClosed(session);
+                        super.secureSessionClosed(session);
                     } finally {
                         context.remove(session.getSessionId());
                     }

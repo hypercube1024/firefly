@@ -10,8 +10,8 @@ import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.*;
+import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.net.tcp.ssl.SSLSession;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 
 public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HTTPServerConnection {
 
@@ -31,9 +32,9 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     boolean upgradeHTTP2Successfully = false;
     Promise<HTTPTunnelConnection> tunnelConnectionPromise;
 
-    HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SSLSession sslSession,
+    HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
                           HTTP1ServerRequestHandler requestHandler, ServerSessionListener serverSessionListener) {
-        super(config, sslSession, tcpSession, requestHandler, null);
+        super(config, secureSession, tcpSession, requestHandler, null);
         requestHandler.connection = this;
         this.serverSessionListener = serverSessionListener;
         this.serverRequestHandler = requestHandler;
@@ -49,8 +50,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         return parser;
     }
 
-    SSLSession getSSLSession() {
-        return sslSession;
+    SecureSession getSecureSession() {
+        return secureSession;
     }
 
     Session getTcpSession() {
@@ -90,9 +91,16 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         this.tunnelConnectionPromise = tunnelConnectionPromise;
     }
 
+    @Override
+    public CompletableFuture<HTTPTunnelConnection> upgradeHTTPTunnel() {
+        Promise.Completable<HTTPTunnelConnection> c = new Promise.Completable<>();
+        tunnelConnectionPromise = c;
+        return c;
+    }
+
     HTTP1ServerTunnelConnection createHTTPTunnel() {
         if (tunnelConnectionPromise != null) {
-            HTTP1ServerTunnelConnection tunnelConnection = new HTTP1ServerTunnelConnection(sslSession, tcpSession, httpVersion);
+            HTTP1ServerTunnelConnection tunnelConnection = new HTTP1ServerTunnelConnection(secureSession, tcpSession, httpVersion);
             tunnelConnectionPromise.succeeded(tunnelConnection);
             tcpSession.attachObject(tunnelConnection);
             return tunnelConnection;
@@ -238,7 +246,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     boolean upgradeProtocolToHTTP2(MetaData.Request request, MetaData.Response response) {
         if (HttpMethod.PRI.is(request.getMethod())) {
             // XXX need test
-            HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config, tcpSession, sslSession,
+            HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config, tcpSession, secureSession,
                     serverSessionListener);
             tcpSession.attachObject(http2ServerConnection);
             http2ServerConnection.getParser().directUpgrade();
@@ -271,7 +279,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                                 responseH2c();
 
                                 HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
-                                        tcpSession, sslSession, serverSessionListener);
+                                        tcpSession, secureSession, serverSessionListener);
                                 tcpSession.attachObject(http2ServerConnection);
 
                                 http2ServerConnection.getParser().standardUpgrade();
