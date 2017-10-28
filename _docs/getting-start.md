@@ -153,10 +153,15 @@ fun main(args: Array<String>): Unit = runBlocking {
 ```
 
 More detailed information, please refer to the
-* [HTTP server/client document (Java version)](http://www.fireflysource.com/docs/http-server-and-client.html)
-* [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example)
-* [HTTP server/client document (Kotlin version)](http://www.fireflysource.com/docs/http-server-and-client-kotlin-ext.html)
-* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-kotlin-ext/src/test/kotlin/com/firefly/kotlin/ext/example/task/management)
+* [HTTP server/client document]({{ site.url }}/docs/http-server-and-client.html)
+* [TCP server/client document]({{ site.url }}/docs/tcp-server-and-client.html)
+* [Inversion of control document]({{ site.url }}/docs/ioc-framework.html)
+* [Database access document]({{ site.url }}/docs/database-access.html)
+* [Log document]({{ site.url }}/docs/log.html)
+* [HTTP server/client document (Kotlin version)]({{ site.url }}/docs/http-server-and-client-kotlin-ext.html)
+* [Database access document (Kotlin version)]({{ site.url }}/docs/database-access-kotlin.html)
+* [Example (Java version)]({{ site.data.global.githubURL }}/tree/master/firefly-example/src/main/java/com/firefly/example)
+* [Example (Kotlin version)]({{ site.data.global.githubURL }}/tree/master/firefly-example/src/main/kotlin/com/firefly/example/kotlin)
 
 # Contact information
 E-mail: qptkk@163.com  

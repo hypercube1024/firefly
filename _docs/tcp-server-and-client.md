@@ -21,7 +21,7 @@ NIO bases on the Reactor pattern. When the socket flows readable or writable, th
 Unlike NIO, when the read and write operation, can only directly call API read or write method. These two methods are asynchronous.  For a read operation, when the stream can be read,  the operating system will spread into the read buffer method and readable, and notify the application;  for a write operation, when the operating system will write transmission stream to write is completed, the operating system to inform application program.
 That can be understood as, read/write methods are asynchronous. After completion will take the initiative to call the callback function.
 
-Here is table show the different of NIO, AIO, and BIO:
+Here is the table showing the different of NIO, AIO, and BIO.
 <table class="table table-striped table-hover ">
 <thead>
 <tr>
