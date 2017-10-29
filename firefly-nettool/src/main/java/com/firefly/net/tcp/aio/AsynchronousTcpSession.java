@@ -369,6 +369,7 @@ public class AsynchronousTcpSession implements Session {
     private void shutdownSocketChannel() {
         shutdownOutput();
         shutdownInput();
+        state = State.CLOSE;
     }
 
     @Override
