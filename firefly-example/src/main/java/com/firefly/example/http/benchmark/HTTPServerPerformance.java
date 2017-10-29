@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * OS X 10.12.3, java version "1.8.0_111"
+ * OS X 10.13, java version "1.8.0_144"
  * log level: INFO
  * JVM arguments: -XX:+UseG1GC -Xmx1024m -Xms1024m
  * <p>
@@ -16,21 +16,21 @@ import java.util.List;
  * Running 1m test @ http://127.0.0.1:4455/
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   555.32us   88.19us   6.72ms   87.13%
- * Req/Sec     7.21k   494.12     8.30k    76.91%
- * 3449340 requests in 1.00m, 411.19MB read
- * Requests/sec:  57393.23
- * Transfer/sec:      6.84MB
+ * Latency   475.91us   78.51us   7.35ms   92.30%
+ * Req/Sec     8.40k   389.96     9.37k    76.12%
+ * 4016354 requests in 1.00m, 471.13MB read
+ * Requests/sec:  66827.27
+ * Transfer/sec:      7.84MB
  * <p>
  * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items
  * Running 1m test @ http://127.0.0.1:4455/items
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   565.51us   84.67us   5.20ms   85.52%
- * Req/Sec     7.08k   443.70     8.08k    79.91%
- * 3386095 requests in 1.00m, 1.29GB read
- * Requests/sec:  56341.23
- * Transfer/sec:     22.03MB
+ * Latency   495.33us   91.90us   9.41ms   93.92%
+ * Req/Sec     8.07k   396.75     9.02k    80.26%
+ * 3863290 requests in 1.00m, 1.47GB read
+ * Requests/sec:  64281.57
+ * Transfer/sec:     25.01MB
  *
  * @author Pengtao Qiu
  */
