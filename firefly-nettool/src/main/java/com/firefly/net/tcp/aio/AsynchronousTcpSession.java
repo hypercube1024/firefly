@@ -7,8 +7,6 @@ import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.CountingCallback;
-import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.time.Millisecond100Clock;
 import com.firefly.utils.time.SafeSimpleDateFormat;
@@ -273,26 +271,10 @@ public class AsynchronousTcpSession implements Session {
         write(new ByteBufferArrayOutputEntry(callback, buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY)));
     }
 
-    private class FileBufferReaderHandler implements BufferReaderHandler {
-
-        private final long len;
-
-        private FileBufferReaderHandler(long len) {
-            this.len = len;
-        }
-
-        @Override
-        public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count) {
-            log.debug("write file,  count: {} , length: {}", count, len);
-            write(buf, countingCallback);
-        }
-
-    }
-
     @Override
     public void write(FileRegion file, Callback callback) {
         try (FileRegion fileRegion = file) {
-            fileRegion.transferTo(callback, new FileBufferReaderHandler(fileRegion.getLength()));
+            fileRegion.transferTo(callback, (buf, countingCallback, count) -> write(buf, countingCallback));
         } catch (Throwable t) {
             log.error("transfer file error", t);
         }
