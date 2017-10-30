@@ -21,6 +21,20 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
  */
 abstract public class TimeUtils {
 
+    public static final DateTimeFormatter LOCAL_DATE_SLASH_SEPARATOR = new DateTimeFormatterBuilder()
+            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('/')
+            .appendValue(MONTH_OF_YEAR, 2)
+            .appendLiteral('/')
+            .appendValue(DAY_OF_MONTH, 2)
+            .toFormatter();
+
+    public static final DateTimeFormatter DEFAULT_LOCAL_MONTH = new DateTimeFormatterBuilder()
+            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('-')
+            .appendValue(MONTH_OF_YEAR, 2)
+            .toFormatter();
+
     public static final DateTimeFormatter DEFAULT_LOCAL_DATE = new DateTimeFormatterBuilder()
             .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
             .appendLiteral('-')
