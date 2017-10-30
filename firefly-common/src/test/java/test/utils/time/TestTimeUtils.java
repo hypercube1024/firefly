@@ -43,5 +43,10 @@ public class TestTimeUtils {
 
         Date current = TimeUtils.parseLocalDateTime("2017-05-01 08:00:00", DEFAULT_LOCAL_DATE_TIME);
         System.out.println(TimeUtils.format(current, ZoneOffset.UTC, ISO_LOCAL_DATE_TIME));
+
+        LocalDate yearMonth = TimeUtils.parseYearMonth("2017-03", DEFAULT_LOCAL_MONTH);
+        Assert.assertThat(yearMonth.getMonthValue(), is(3));
+        Assert.assertThat(yearMonth.getYear(), is(2017));
+        Assert.assertThat(yearMonth.getDayOfMonth(), is(1));
     }
 }
