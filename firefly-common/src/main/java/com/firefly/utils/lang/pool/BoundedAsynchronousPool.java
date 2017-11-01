@@ -49,21 +49,20 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         start();
     }
 
-    private Promise.Completable<PooledObject<T>> createObject() {
-        Promise.Completable<PooledObject<T>> r = new Promise.Completable<>();
-        createObject(r);
-        return r;
-    }
-
     private void createObject(Promise.Completable<PooledObject<T>> completable) {
-        Atomics.getAndIncrement(createdObjectSize, maxSize);
-        Promise.Completable<PooledObject<T>> tmp = objectFactory.createNew();
-        tmp.thenAccept(completable::succeeded)
-           .exceptionally(e0 -> {
-               Atomics.getAndDecrement(createdObjectSize, 0);
-               completable.failed(e0);
-               return null;
-           });
+        try {
+            Atomics.getAndIncrement(createdObjectSize, maxSize);
+            Promise.Completable<PooledObject<T>> tmp = objectFactory.createNew();
+            tmp.thenAccept(completable::succeeded)
+               .exceptionally(e0 -> {
+                   Atomics.getAndDecrement(createdObjectSize, 0);
+                   completable.failed(e0);
+                   return null;
+               });
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            Atomics.getAndDecrement(createdObjectSize, 0);
+        }
     }
 
     private void destroyObject(PooledObject<T> t) {
@@ -73,36 +72,22 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     @Override
     public Promise.Completable<PooledObject<T>> take() {
-        PooledObject<T> t = get();
-        if (t != null) {
-            if (validator.isValid(t)) {
-                Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
-                completable.succeeded(t);
-                return completable;
-            } else {
-                destroyObject(t);
-                return createObject();
-            }
+        Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
+        PooledObject<T> pooledObject = queue.poll();
+        if (pooledObject != null) {
+            checkObjectFromPool(pooledObject, completable);
+            return completable;
         } else { // the queue is empty
             int availableSize = maxSize - getCreatedObjectSize();
             if (availableSize > 0) { // the pool is not full
-                return createObject();
+                createObject(completable);
+                return completable;
             } else {
-                Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
                 service.execute(() -> {
                     try {
-                        PooledObject<T> r = queue.poll(timeout, TimeUnit.MILLISECONDS);
-                        if (r != null) {
-                            if (r.prepareTake()) {
-                                if (validator.isValid(r)) {
-                                    completable.succeeded(r);
-                                } else {
-                                    destroyObject(r);
-                                    createObject(completable);
-                                }
-                            } else {
-                                completable.failed(new CommonRuntimeException("the pooled object has been used"));
-                            }
+                        PooledObject<T> object = queue.poll(timeout, TimeUnit.MILLISECONDS);
+                        if (object != null) {
+                            checkObjectFromPool(object, completable);
                         } else {
                             completable.failed(new TimeoutException("take pooled object timeout"));
                         }
@@ -112,6 +97,19 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
                 });
                 return completable;
             }
+        }
+    }
+
+    private void checkObjectFromPool(PooledObject<T> pooledObject, Promise.Completable<PooledObject<T>> completable) {
+        if (pooledObject.prepareTake()) {
+            if (validator.isValid(pooledObject)) {
+                completable.succeeded(pooledObject);
+            } else {
+                destroyObject(pooledObject);
+                createObject(completable);
+            }
+        } else {
+            completable.failed(new CommonRuntimeException("the pooled object has been used"));
         }
     }
 
@@ -141,12 +139,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     @Override
     public PooledObject<T> get() {
-        PooledObject<T> t = queue.poll();
-        if (t != null) {
-            return t.prepareTake() ? t : null;
-        } else {
-            return null;
-        }
+        throw new CommonRuntimeException("the method is not implemented");
     }
 
     @Override

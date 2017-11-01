@@ -119,7 +119,7 @@ public class TestAsyncPool {
             }).start();
             return completable;
         }, (o) -> !o.getObject().closed, (o) -> {
-            System.out.println("destory obj - [" + o.getObject().i + "]");
+            System.out.println("destroy obj - [" + o.getObject().i + "]");
             o.getObject().closed = true;
         });
         new Thread(() -> {
@@ -141,9 +141,10 @@ public class TestAsyncPool {
         takeObjectTest(pool, number);
 
         int poolSize = pool.size();
+        int createdSize = pool.getCreatedObjectSize();
         Assert.assertThat(poolSize, lessThanOrEqualTo(maxSize));
-        Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(maxSize));
-        System.out.println(poolSize);
+        Assert.assertThat(createdSize, lessThanOrEqualTo(maxSize));
+        System.out.println("pool size: " + poolSize + ", created size: " + createdSize);
         start.set(false);
         pool.stop();
     }
@@ -173,33 +174,37 @@ public class TestAsyncPool {
         takeObjectTest(pool, number);
 
         int poolSize = pool.size();
+        int createdSize = pool.getCreatedObjectSize();
         Assert.assertThat(poolSize, lessThanOrEqualTo(8));
-        Assert.assertThat(pool.getCreatedObjectSize(), lessThanOrEqualTo(8));
-        System.out.println(poolSize);
+        Assert.assertThat(createdSize, lessThanOrEqualTo(8));
+        System.out.println("pool size: " + poolSize + ", created size: " + createdSize);
         pool.stop();
     }
 
     private void takeObjectTest(BoundedAsynchronousPool<TestPooledObject> pool, int number) {
-        Phaser phaser = new Phaser(number + 1);
+        CountDownLatch countDownLatch = new CountDownLatch(number);
         for (int j = 0; j < number; j++) {
             pool.take()
                 .thenAccept(o -> {
                     System.out.println("get o: " + o.getObject().i + "| created object size: " + pool.getCreatedObjectSize());
                     new Thread(() -> {
                         ThreadUtils.sleep(100L);
-                        phaser.arrive();
+                        countDownLatch.countDown();
                         pool.release(o);
                     }).start();
                 })
                 .exceptionally(t -> {
-                    phaser.arrive();
                     System.out.println(t.getMessage());
-                    Assert.assertThat(t, instanceOf(CommonRuntimeException.class));
+                    countDownLatch.countDown();
                     return null;
                 });
             System.out.println("loop num -> " + j);
         }
-        phaser.arriveAndAwaitAdvance();
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private BoundedAsynchronousPool<TestPooledObject> createPool(int size) {
@@ -209,7 +214,7 @@ public class TestAsyncPool {
             completable.succeeded(new PooledObject<>(new TestPooledObject(i.getAndIncrement())));
             return completable;
         }, (o) -> !o.getObject().closed, (o) -> {
-            System.out.println("destory obj - [" + o.getObject().i + "]");
+            System.out.println("destroy obj - [" + o.getObject().i + "]");
             o.getObject().closed = true;
         });
     }

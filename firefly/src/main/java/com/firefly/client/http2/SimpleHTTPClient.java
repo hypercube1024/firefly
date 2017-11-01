@@ -1,6 +1,9 @@
 package com.firefly.client.http2;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.RatioGauge;
+import com.codahale.metrics.Timer;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
@@ -17,7 +20,6 @@ import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.AsynchronousPool;
 import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
 import com.firefly.utils.lang.pool.PooledObject;
-import com.firefly.utils.time.Millisecond100Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
