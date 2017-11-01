@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.firefly.codec.http2.frame.Frame;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -77,13 +78,7 @@ public class DataGenerateParseTest {
 			ByteBuffer slice = data.slice();
 			int generated = 0;
 			List<ByteBuffer> list = new ArrayList<>();
-			while (true) {
-				Pair<Integer, List<ByteBuffer>> pair = generator.generateData(13, slice, true, slice.remaining());
-				generated += pair.first;
-				list.addAll(pair.second);
-				if (generated == data.remaining())
-					break;
-			}
+			encodeDataFrame(generator, data, slice, generated, list);
 
 			frames.clear();
 			for (ByteBuffer buffer : list) {
@@ -113,13 +108,7 @@ public class DataGenerateParseTest {
 			ByteBuffer slice = data.slice();
 			int generated = 0;
 			List<ByteBuffer> list = new ArrayList<>();
-			while (true) {
-				Pair<Integer, List<ByteBuffer>> pair = generator.generateData(13, slice, true, slice.remaining());
-				generated += pair.first;
-				list.addAll(pair.second);
-				if (generated == data.remaining())
-					break;
-			}
+			encodeDataFrame(generator, data, slice, generated, list);
 
 			frames.clear();
 			for (ByteBuffer buffer : list) {
@@ -130,5 +119,15 @@ public class DataGenerateParseTest {
 
 			Assert.assertEquals(largeContent.length, frames.size());
 		}
+	}
+
+	private void encodeDataFrame(DataGenerator generator, ByteBuffer data, ByteBuffer slice, int generated, List<ByteBuffer> list) {
+		while (true) {
+            Pair<Integer, List<ByteBuffer>> pair = generator.generateData(13, slice, true, slice.remaining());
+            generated += pair.first - Frame.HEADER_LENGTH;
+            list.addAll(pair.second);
+            if (generated == data.remaining())
+                break;
+        }
 	}
 }
