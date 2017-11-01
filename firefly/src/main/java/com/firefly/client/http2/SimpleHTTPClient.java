@@ -563,27 +563,26 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     private AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
-        return poolMap.computeIfAbsent(request,
-                req -> new BoundedAsynchronousPool<>(simpleHTTPClientConfiguration.getPoolSize(),
-                        simpleHTTPClientConfiguration.getConnectTimeout(),
-                        () -> {
-                            Promise.Completable<PooledObject<HTTPClientConnection>> r = new Promise.Completable<>();
-                            Promise.Completable<HTTPClientConnection> c = http2Client.connect(request.host, request.port);
-                            c.thenAccept(conn -> r.succeeded(new PooledObject<>(conn)))
-                             .exceptionally(e -> {
-                                 r.failed(e);
-                                 return null;
-                             });
-                            return r;
-                        },
-                        o -> o.getObject().isOpen(),
-                        (o) -> {
-                            try {
-                                o.getObject().close();
-                            } catch (IOException e) {
-                                log.warn("close http connection exception", e);
-                            }
-                        }));
+        return poolMap.computeIfAbsent(request, req -> new BoundedAsynchronousPool<>(simpleHTTPClientConfiguration.getPoolSize(),
+                simpleHTTPClientConfiguration.getConnectTimeout(),
+                () -> {
+                    Promise.Completable<PooledObject<HTTPClientConnection>> r = new Promise.Completable<>();
+                    Promise.Completable<HTTPClientConnection> c = http2Client.connect(request.host, request.port);
+                    c.thenAccept(conn -> r.succeeded(new PooledObject<>(conn)))
+                     .exceptionally(e -> {
+                         r.failed(e);
+                         return null;
+                     });
+                    return r;
+                },
+                pooledObject -> pooledObject.getObject().isOpen(),
+                pooledObject -> {
+                    try {
+                        pooledObject.getObject().close();
+                    } catch (IOException e) {
+                        log.warn("close http connection exception", e);
+                    }
+                }));
     }
 
     @Override
