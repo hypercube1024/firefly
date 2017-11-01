@@ -57,6 +57,13 @@ public class Generator {
 		return generators[frame.getType().getType()].generate(frame);
 	}
 
+	/**
+	 * Encode data frame to binary codes
+	 * @param frame DataFrame
+	 * @param maxLength The max length of DataFrame
+	 * @return A pair of encoding result. The first field is frame length which contains header frame and data frame.
+	 * The second field is binary codes.
+	 */
 	public Pair<Integer, List<ByteBuffer>> data(DataFrame frame, int maxLength) {
 		return dataGenerator.generate(frame, maxLength);
 	}

@@ -11,7 +11,9 @@ public interface Session {
 
     DisconnectionOutputEntry DISCONNECTION_FLAG = new DisconnectionOutputEntry(null, null);
 
-    enum State {CLOSE, OPEN}
+    enum State {
+        CLOSE, OPEN, INPUT_SHUTDOWN, OUTPUT_SHUTDOWN
+    }
 
     void attachObject(Object attachment);
 

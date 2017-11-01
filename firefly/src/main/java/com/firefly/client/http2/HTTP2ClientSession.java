@@ -54,17 +54,6 @@ public class HTTP2ClientSession extends HTTP2Session {
 		}
 	}
 
-	private void notifyHeaders(StreamSPI stream, HeadersFrame frame) {
-		Stream.Listener listener = stream.getListener();
-		if (listener == null)
-			return;
-		try {
-			listener.onHeaders(stream, frame);
-		} catch (Throwable x) {
-			log.error("Failure while notifying listener {}", x, listener);
-		}
-	}
-
 	@Override
 	public void onPushPromise(PushPromiseFrame frame) {
 		if (log.isDebugEnabled())

@@ -125,7 +125,7 @@ public class AsynchronousTcpSession implements Session {
                 log.warn("The session {} read data is failed", t, session.getSessionId());
             }
 
-            session.closeNow();
+            session.shutdownSocketChannel();
         }
     }
 
@@ -149,7 +149,7 @@ public class AsynchronousTcpSession implements Session {
             long w = currentWrittenBytes.longValue();
             if (w < 0) {
                 log.info("The session {} output channel is shutdown, {}", getSessionId(), currentWrittenBytes);
-                shutdownSocketChannel();
+                closeNow();
                 return;
             }
 
@@ -338,6 +338,7 @@ public class AsynchronousTcpSession implements Session {
         } catch (IOException e) {
             log.error("The session {} shutdown output error", e, sessionId);
         }
+        state = State.OUTPUT_SHUTDOWN;
     }
 
     @Override
@@ -349,12 +350,12 @@ public class AsynchronousTcpSession implements Session {
         } catch (IOException e) {
             log.error("The session {} shutdown input error", e, sessionId);
         }
+        state = State.INPUT_SHUTDOWN;
     }
 
     private void shutdownSocketChannel() {
         shutdownOutput();
         shutdownInput();
-        state = State.CLOSE;
     }
 
     @Override
