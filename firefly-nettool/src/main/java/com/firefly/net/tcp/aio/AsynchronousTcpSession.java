@@ -6,6 +6,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.net.exception.NetException;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -207,24 +208,27 @@ public class AsynchronousTcpSession implements Session {
 
     private void _write(final OutputEntry<?> entry) {
         switch (entry.getOutputEntryType()) {
-            case BYTE_BUFFER:
+            case BYTE_BUFFER: {
                 ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) entry;
                 socketChannel.write(byteBufferOutputEntry.getData(),
                         config.getTimeout(), TimeUnit.MILLISECONDS, this,
                         new OutputEntryCompletionHandler<>(byteBufferOutputEntry));
-                break;
-
-            case BYTE_BUFFER_ARRAY:
+            }
+            break;
+            case BYTE_BUFFER_ARRAY: {
                 ByteBufferArrayOutputEntry byteBuffersEntry = (ByteBufferArrayOutputEntry) entry;
                 socketChannel.write(byteBuffersEntry.getData(), 0, byteBuffersEntry.getData().length,
                         config.getTimeout(), TimeUnit.MILLISECONDS, this,
                         new OutputEntryCompletionHandler<>(byteBuffersEntry));
-                break;
-            case DISCONNECTION:
+            }
+            break;
+            case DISCONNECTION: {
                 log.debug("The session {} will close", getSessionId());
                 shutdownSocketChannel();
+            }
+            break;
             default:
-                break;
+                throw new NetException("unknown output entry type");
         }
     }
 
