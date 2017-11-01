@@ -71,10 +71,6 @@ public class AsynchronousTcpSession implements Session {
     }
 
     void _read() {
-        if (!isOpen()) {
-            return;
-        }
-
         final ByteBuffer buf = allocateReadBuffer();
         if (log.isDebugEnabled()) {
             log.debug("The session {} allocates buffer. Its size is {}", getSessionId(), buf.remaining());
@@ -210,9 +206,6 @@ public class AsynchronousTcpSession implements Session {
     }
 
     private void _write(final OutputEntry<?> entry) {
-        if (!isOpen()) {
-            return;
-        }
         switch (entry.getOutputEntryType()) {
             case BYTE_BUFFER:
                 ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) entry;
@@ -237,9 +230,6 @@ public class AsynchronousTcpSession implements Session {
 
     @Override
     public void write(OutputEntry<?> entry) {
-        if (!isOpen()) {
-            return;
-        }
         if (entry == null) {
             return;
         }
@@ -310,8 +300,8 @@ public class AsynchronousTcpSession implements Session {
     }
 
     @Override
-    public void closeNow() {
-        if (!isOpen()) {
+    public synchronized void closeNow() {
+        if (state == State.CLOSE) {
             return;
         }
         closeTime = Millisecond100Clock.currentTimeMillis();
