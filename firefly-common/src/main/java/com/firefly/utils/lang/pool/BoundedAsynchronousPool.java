@@ -146,7 +146,12 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     @Override
     public PooledObject<T> get() {
-        throw new CommonRuntimeException("the method is not implemented");
+        try {
+            return take().get();
+        } catch (InterruptedException | ExecutionException e) {
+            System.err.println(e.getMessage());
+            return null;
+        }
     }
 
     @Override
