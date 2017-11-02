@@ -7,8 +7,8 @@ import com.firefly.codec.http2.stream.HTTP2Configuration;
  */
 public class SimpleHTTPClientConfiguration extends HTTP2Configuration {
 
-    public static final int defaultPoolSize = Integer.getInteger("com.firefly.client.http2.connection.defaultPoolSize", 64);
-    public static final long defaultConnectTimeout = Long.getLong("com.firefly.client.http2.connection.defaultConnectTimeout", 30 * 1000L);
+    public static final int defaultPoolSize = Integer.getInteger("com.firefly.client.http2.connection.defaultPoolSize", 32);
+    public static final long defaultConnectTimeout = Long.getLong("com.firefly.client.http2.connection.defaultConnectTimeout", 5 * 1000L);
 
     private int poolSize = defaultPoolSize;
     private long connectTimeout = defaultConnectTimeout;

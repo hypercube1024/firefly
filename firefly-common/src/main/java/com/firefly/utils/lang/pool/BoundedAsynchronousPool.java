@@ -2,6 +2,7 @@ package com.firefly.utils.lang.pool;
 
 import com.firefly.utils.concurrent.Atomics;
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.concurrent.ReentrantLocker;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
@@ -13,14 +14,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements AsynchronousPool<T> {
 
-    private int maxSize;
-    private AtomicInteger createdObjectSize = new AtomicInteger(0);
-    private long timeout = 5000L;
-    private BlockingQueue<PooledObject<T>> queue;
-    private ExecutorService service;
-    private ObjectFactory<T> objectFactory;
-    private Validator<T> validator;
-    private Dispose<T> dispose;
+    protected final int maxSize;
+    protected final AtomicInteger createdObjectSize = new AtomicInteger(0);
+    protected final long timeout;
+    protected final BlockingQueue<PooledObject<T>> queue;
+    protected final ExecutorService service;
+    protected final ObjectFactory<T> objectFactory;
+    protected final Validator<T> validator;
+    protected final Dispose<T> dispose;
+    protected final ReentrantLocker locker = new ReentrantLocker();
 
     public BoundedAsynchronousPool(ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
         this(32, objectFactory, validator, dispose);
@@ -37,7 +39,8 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
                 objectFactory, validator, dispose);
     }
 
-    public BoundedAsynchronousPool(int maxSize, long timeout, ExecutorService service,
+    public BoundedAsynchronousPool(int maxSize, long timeout,
+                                   ExecutorService service,
                                    ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
         this.maxSize = maxSize;
         this.timeout = timeout;
@@ -49,10 +52,10 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         start();
     }
 
-    private void createObject(Promise.Completable<PooledObject<T>> completable) {
+    protected void createObject(Promise.Completable<PooledObject<T>> completable) {
         try {
             Atomics.getAndIncrement(createdObjectSize, maxSize);
-            Promise.Completable<PooledObject<T>> tmp = objectFactory.createNew();
+            CompletableFuture<PooledObject<T>> tmp = objectFactory.createNew();
             tmp.thenAccept(completable::succeeded)
                .exceptionally(e0 -> {
                    Atomics.getAndDecrement(createdObjectSize, 0);
@@ -65,38 +68,44 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         }
     }
 
-    private void destroyObject(PooledObject<T> t) {
+    protected void destroyObject(PooledObject<T> t) {
         Atomics.getAndDecrement(createdObjectSize, 0);
-        dispose.destroy(t);
+        try {
+            dispose.destroy(t);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
     }
 
     @Override
-    public Promise.Completable<PooledObject<T>> take() {
+    public CompletableFuture<PooledObject<T>> take() {
         Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
         PooledObject<T> pooledObject = queue.poll();
         if (pooledObject != null) {
             checkObjectFromPool(pooledObject, completable);
             return completable;
         } else { // the queue is empty
-            int availableSize = maxSize - getCreatedObjectSize();
-            if (availableSize > 0) { // the pool is not full
-                createObject(completable);
-                return completable;
-            } else {
-                service.execute(() -> {
-                    try {
-                        PooledObject<T> object = queue.poll(timeout, TimeUnit.MILLISECONDS);
-                        if (object != null) {
-                            checkObjectFromPool(object, completable);
-                        } else {
-                            completable.failed(new TimeoutException("take pooled object timeout"));
+            return locker.lock(() -> {
+                int availableSize = maxSize - getCreatedObjectSize();
+                if (availableSize > 0) { // the pool is not full
+                    createObject(completable);
+                    return completable;
+                } else {
+                    service.execute(() -> {
+                        try {
+                            PooledObject<T> object = queue.poll(timeout, TimeUnit.MILLISECONDS);
+                            if (object != null) {
+                                checkObjectFromPool(object, completable);
+                            } else {
+                                completable.failed(new TimeoutException("take pooled object timeout"));
+                            }
+                        } catch (InterruptedException e) {
+                            completable.failed(e);
                         }
-                    } catch (InterruptedException e) {
-                        completable.failed(e);
-                    }
-                });
-                return completable;
-            }
+                    });
+                    return completable;
+                }
+            });
         }
     }
 

@@ -118,7 +118,7 @@ public class TestAsyncPool {
                 completable.succeeded(new PooledObject<>(obj));
             }).start();
             return completable;
-        }, (o) -> !o.getObject().closed, (o) -> {
+        }, o -> !o.getObject().closed, o -> {
             System.out.println("destroy obj - [" + o.getObject().i + "]");
             o.getObject().closed = true;
         });
@@ -165,8 +165,8 @@ public class TestAsyncPool {
             }).start();
 
             return completable;
-        }, (o) -> !o.getObject().closed, (o) -> {
-            System.out.println("destory obj - [" + o.getObject().i + "]");
+        }, o -> !o.getObject().closed, o -> {
+            System.out.println("destroy obj - [" + o.getObject().i + "]");
             o.getObject().closed = true;
         });
 
@@ -194,7 +194,7 @@ public class TestAsyncPool {
                     }).start();
                 })
                 .exceptionally(t -> {
-                    System.out.println(t.getMessage());
+                    System.out.println(t.getMessage() + "|" + t.getClass());
                     countDownLatch.countDown();
                     return null;
                 });
@@ -213,7 +213,7 @@ public class TestAsyncPool {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
             completable.succeeded(new PooledObject<>(new TestPooledObject(i.getAndIncrement())));
             return completable;
-        }, (o) -> !o.getObject().closed, (o) -> {
+        }, o -> !o.getObject().closed, o -> {
             System.out.println("destroy obj - [" + o.getObject().i + "]");
             o.getObject().closed = true;
         });
