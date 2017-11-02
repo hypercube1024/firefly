@@ -3,9 +3,7 @@ package com.firefly.utils.concurrent;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Atomics {
-    private Atomics() {
-    }
+abstract public class Atomics {
 
     public static boolean updateMin(AtomicLong currentMin, long newValue) {
         long oldValue = currentMin.get();
