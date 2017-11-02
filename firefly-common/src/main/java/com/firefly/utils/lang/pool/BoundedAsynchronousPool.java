@@ -87,7 +87,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         } else { // the queue is empty
             return locker.lock(() -> {
                 int availableSize = maxSize - getCreatedObjectSize();
-                if (availableSize > 0) { // the pool is not full
+                if (availableSize > 0) {
                     createObject(completable);
                     return completable;
                 } else {
@@ -123,24 +123,22 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     }
 
     @Override
-    public void release(PooledObject<T> t) {
-        if (t == null) {
+    public void release(PooledObject<T> pooledObject) {
+        if (pooledObject == null) {
             return;
         }
-        if (!t.prepareRelease()) { // Object is released
+        if (!pooledObject.prepareRelease()) { // Object is released
             return;
         }
-        boolean success = queue.offer(t);
-        if (!success) {
+        if (!queue.offer(pooledObject)) {
             // the queue is full
             service.execute(() -> {
                 try {
-                    boolean success0 = queue.offer(t, timeout, TimeUnit.MILLISECONDS);
-                    if (!success0) {
-                        destroyObject(t);
+                    if (!queue.offer(pooledObject, timeout, TimeUnit.MILLISECONDS)) {
+                        destroyObject(pooledObject);
                     }
                 } catch (InterruptedException e) {
-                    destroyObject(t);
+                    destroyObject(pooledObject);
                 }
             });
         }
@@ -167,8 +165,8 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     }
 
     @Override
-    public boolean isValid(PooledObject<T> t) {
-        return validator.isValid(t);
+    public boolean isValid(PooledObject<T> pooledObject) {
+        return validator.isValid(pooledObject);
     }
 
     @Override
@@ -178,10 +176,10 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     @Override
     protected void destroy() {
         try {
-            PooledObject<T> t;
-            while ((t = queue.poll()) != null) {
-                t.prepareTake();
-                destroyObject(t);
+            PooledObject<T> pooledObject;
+            while ((pooledObject = queue.poll()) != null) {
+                pooledObject.prepareTake();
+                destroyObject(pooledObject);
             }
         } catch (Exception e) {
             System.err.println(e.getMessage());
