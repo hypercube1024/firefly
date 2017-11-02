@@ -29,7 +29,7 @@ public class HTTP2MockSession implements Session {
 	}
 
 	@Override
-	public void fireReceiveMessage(Object message) {
+	public void onReceivingMessage(Object message) {
 		// TODO Auto-generated method stub
 
 	}

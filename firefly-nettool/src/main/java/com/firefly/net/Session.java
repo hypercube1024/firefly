@@ -19,7 +19,7 @@ public interface Session {
 
     Object getAttachment();
 
-    void fireReceiveMessage(Object message);
+    void onReceivingMessage(Object message);
 
     void encode(Object message);
 

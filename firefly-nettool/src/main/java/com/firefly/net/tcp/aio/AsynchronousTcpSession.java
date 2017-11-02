@@ -285,7 +285,7 @@ public class AsynchronousTcpSession implements Session {
     }
 
     @Override
-    public void fireReceiveMessage(Object message) {
+    public void onReceivingMessage(Object message) {
         eventManager.executeReceiveTask(this, message);
     }
 
