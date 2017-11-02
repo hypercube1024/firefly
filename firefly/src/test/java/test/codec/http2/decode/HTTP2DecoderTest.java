@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 public class HTTP2DecoderTest {
-    
+
     @Test
     public void testData() throws Throwable {
         final byte[] smallContent = new byte[22];
