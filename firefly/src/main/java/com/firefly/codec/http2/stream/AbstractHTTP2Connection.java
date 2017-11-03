@@ -13,17 +13,14 @@ import com.firefly.utils.concurrent.Schedulers;
 
 abstract public class AbstractHTTP2Connection extends AbstractHTTPConnection {
 
+    public static final Scheduler scheduler = Schedulers.createScheduler();
+
     protected final HTTP2Session http2Session;
     protected final Parser parser;
     protected final Generator generator;
 
-    protected static final Scheduler scheduler = Schedulers.createScheduler();
-
-    public static void stopScheduler() {
-        scheduler.stop();
-    }
-
-    public AbstractHTTP2Connection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
+    public AbstractHTTP2Connection(HTTP2Configuration config,
+                                   Session tcpSession, SecureSession secureSession,
                                    Listener listener) {
         super(secureSession, tcpSession, HttpVersion.HTTP_2);
 

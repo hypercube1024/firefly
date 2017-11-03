@@ -21,14 +21,14 @@ public class FileJdkSSLContextFactory extends AbstractJdkSSLContextFactory {
     private String sslProtocol;
 
     public FileJdkSSLContextFactory(String path, String keystorePassword, String keyPassword) {
-        this(path, keystorePassword, keyPassword, null, null, null);
+        this(new File(path), keystorePassword, keyPassword, null, null, null);
     }
 
-    public FileJdkSSLContextFactory(String path, String keystorePassword, String keyPassword,
+    public FileJdkSSLContextFactory(File file, String keystorePassword, String keyPassword,
                                     String keyManagerFactoryType,
                                     String trustManagerFactoryType,
                                     String sslProtocol) {
-        file = new File(path);
+        this.file = file;
         this.keystorePassword = keystorePassword;
         this.keyPassword = keyPassword;
         this.keyManagerFactoryType = keyManagerFactoryType;
@@ -40,8 +40,7 @@ public class FileJdkSSLContextFactory extends AbstractJdkSSLContextFactory {
     public SSLContext getSSLContext() {
         SSLContext ret = null;
         try (FileInputStream in = new FileInputStream(file)) {
-            ret = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType,
-                    sslProtocol);
+            ret = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
         } catch (Exception e) {
             log.error("get SSL context exception", e);
         }
