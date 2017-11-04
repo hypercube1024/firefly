@@ -55,7 +55,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     protected void createObject(Promise.Completable<PooledObject<T>> completable) {
         try {
             Atomics.getAndIncrement(createdObjectSize, maxSize);
-            CompletableFuture<PooledObject<T>> tmp = objectFactory.createNew();
+            CompletableFuture<PooledObject<T>> tmp = objectFactory.createNew(this);
             tmp.thenAccept(completable::succeeded)
                .exceptionally(e0 -> {
                    Atomics.getAndDecrement(createdObjectSize, 0);

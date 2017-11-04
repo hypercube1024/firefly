@@ -115,6 +115,6 @@ public interface Pool<T> extends LifeCycle {
          *
          * @return a future that is a new instance of an object of type T.
          */
-        CompletableFuture<PooledObject<T>> createNew();
+        CompletableFuture<PooledObject<T>> createNew(Pool<T> pool);
     }
 }

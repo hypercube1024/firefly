@@ -31,14 +31,14 @@ public class TestAsyncPool {
             o.getObject().closed = true;
             list.add(o);
         }
-        list.forEach(pool::release);
+        list.forEach(PooledObject::release);
 
         list = new ArrayList<>();
         for (int j = 0; j < 3; j++) {
             PooledObject<TestPooledObject> o = pool.take().get();
             list.add(o);
         }
-        list.forEach(pool::release);
+        list.forEach(PooledObject::release);
 
         int poolSize = pool.size();
         Assert.assertThat(poolSize, is(pool.getCreatedObjectSize()));
@@ -52,13 +52,13 @@ public class TestAsyncPool {
         AsynchronousPool<TestPooledObject> pool = createPool(10);
         PooledObject<TestPooledObject> o = pool.take().get();
         Assert.assertThat(pool.size(), is(0));
-        pool.release(o);
+        o.release();
         Assert.assertThat(pool.size(), is(1));
         System.out.println("o -> " + o.getObject().i);
 
         PooledObject<TestPooledObject> o2 = pool.take().get();
         Assert.assertThat(o, is(o2));
-        pool.release(o2);
+        o2.release();
         System.out.println("o2 -> " + o2.getObject().i);
 
         List<PooledObject<TestPooledObject>> list = new ArrayList<>();
@@ -67,7 +67,7 @@ public class TestAsyncPool {
             System.out.println(o3.getObject().i + "|" + o3.getObject().closed);
             list.add(o3);
         }
-        list.forEach(pool::release);
+        list.forEach(PooledObject::release);
         System.out.println("-------------------");
         for (int j = 0; j < 10; j++) {
             PooledObject<TestPooledObject> o3 = pool.take().get();
@@ -108,14 +108,14 @@ public class TestAsyncPool {
         AtomicInteger i = new AtomicInteger();
         AtomicBoolean start = new AtomicBoolean(true);
         TransferQueue<TestPooledObject> queue = new LinkedTransferQueue<>();
-        BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(maxSize, () -> {
+        BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(maxSize, p -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
             new Thread(() -> {
                 ThreadUtils.sleep(100L);
                 int x = i.incrementAndGet();
                 TestPooledObject obj = new TestPooledObject(x);
                 queue.offer(obj);
-                completable.succeeded(new PooledObject<>(obj));
+                completable.succeeded(new PooledObject<>(obj, p));
             }).start();
             return completable;
         }, o -> !o.getObject().closed, o -> {
@@ -152,7 +152,7 @@ public class TestAsyncPool {
     @Test
     public void testBoundedAsynchronousPoolException() throws InterruptedException {
         AtomicInteger i = new AtomicInteger();
-        BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(8, () -> {
+        BoundedAsynchronousPool<TestPooledObject> pool = new BoundedAsynchronousPool<>(8, p -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
             new Thread(() -> {
                 ThreadUtils.sleep(100L);
@@ -160,10 +160,9 @@ public class TestAsyncPool {
                 if (x % 3 == 0) {
                     completable.failed(new CommonRuntimeException("test create pooled object: " + x + " exception"));
                 } else {
-                    completable.succeeded(new PooledObject<>(new TestPooledObject(x)));
+                    completable.succeeded(new PooledObject<>(new TestPooledObject(x), p));
                 }
             }).start();
-
             return completable;
         }, o -> !o.getObject().closed, o -> {
             System.out.println("destroy obj - [" + o.getObject().i + "]");
@@ -190,7 +189,7 @@ public class TestAsyncPool {
                     new Thread(() -> {
                         ThreadUtils.sleep(100L);
                         countDownLatch.countDown();
-                        pool.release(o);
+                        o.release();
                     }).start();
                 })
                 .exceptionally(t -> {
@@ -209,9 +208,9 @@ public class TestAsyncPool {
 
     private BoundedAsynchronousPool<TestPooledObject> createPool(int size) {
         AtomicInteger i = new AtomicInteger();
-        return new BoundedAsynchronousPool<>(size, () -> {
+        return new BoundedAsynchronousPool<>(size, pool -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
-            completable.succeeded(new PooledObject<>(new TestPooledObject(i.getAndIncrement())));
+            completable.succeeded(new PooledObject<>(new TestPooledObject(i.getAndIncrement()), pool));
             return completable;
         }, o -> !o.getObject().closed, o -> {
             System.out.println("destroy obj - [" + o.getObject().i + "]");

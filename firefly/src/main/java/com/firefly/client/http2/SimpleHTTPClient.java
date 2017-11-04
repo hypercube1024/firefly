@@ -8,6 +8,7 @@ import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
@@ -33,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -412,148 +414,20 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
-    protected void send(RequestBuilder r) {
+    protected void send(RequestBuilder reqBuilder) {
         Timer.Context resTimerCtx = responseTimer.time();
-        AsynchronousPool<HTTPClientConnection> pool = getPool(r);
-        pool.take().thenAccept(o -> {
-            HTTPClientConnection connection = o.getObject();
-            connection.close(conn -> pool.release(o))
-                      .exception((conn, exception) -> pool.release(o));
+        getPool(reqBuilder).take().thenAccept(pooledConn -> {
+            HTTPClientConnection connection = pooledConn.getObject();
+            connection.close(conn -> pooledConn.release())
+                      .exception((conn, exception) -> pooledConn.release());
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
-                pool.release(o);
+                pooledConn.release();
             }
-
-            log.debug("take the connection {} from pool, released: {}",
-                    connection.getSessionId(),
-                    o.isReleased());
-
-            ClientHTTPHandler handler = new ClientHTTPHandler.Adapter()
-                    .headerComplete((req, resp, outputStream, conn) -> {
-                        if (r.headerComplete != null) {
-                            r.headerComplete.call(resp);
-                        }
-                        if (r.future != null) {
-                            if (r.simpleResponse == null) {
-                                r.simpleResponse = new SimpleResponse(resp);
-                            }
-                        }
-                        return false;
-                    }).content((buffer, req, resp, outputStream, conn) -> {
-                        if (r.content != null) {
-                            r.content.call(buffer);
-                        }
-                        if (r.future != null && r.simpleResponse != null) {
-                            r.simpleResponse.responseBody.add(buffer);
-                        }
-                        return false;
-                    }).contentComplete((req, resp, outputStream, conn) -> {
-                        if (r.contentComplete != null) {
-                            r.contentComplete.call(resp);
-                        }
-                        return false;
-                    }).messageComplete((req, resp, outputStream, conn) -> {
-                        try {
-                            if (r.messageComplete != null) {
-                                r.messageComplete.call(resp);
-                            }
-                            if (r.future != null) {
-                                r.future.succeeded(r.simpleResponse);
-                            }
-                            resTimerCtx.stop();
-                            return true;
-                        } finally {
-                            pool.release(o);
-                            log.debug("complete request of the connection {} , released: {}",
-                                    connection.getSessionId(),
-                                    o.isReleased());
-                        }
-                    }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
-                        try {
-                            if (r.badMessage != null) {
-                                r.badMessage.call(errCode, reason, resp);
-                            }
-                            if (r.future != null) {
-                                if (r.simpleResponse == null) {
-                                    r.simpleResponse = new SimpleResponse(resp);
-                                }
-                                r.future.failed(new BadMessageException(errCode, reason));
-                            }
-                            if (r.badMessage == null && r.future == null) {
-                                IO.close(o.getObject());
-                            }
-                            errorMeter.mark();
-                            resTimerCtx.stop();
-                        } finally {
-                            pool.release(o);
-                            log.debug("bad message of the connection {} , released: {}",
-                                    connection.getSessionId(),
-                                    o.isReleased());
-                        }
-                    }).earlyEOF((req, resp, outputStream, conn) -> {
-                        try {
-                            if (r.earlyEof != null) {
-                                r.earlyEof.call(resp);
-                            }
-                            if (r.future != null) {
-                                if (r.simpleResponse == null) {
-                                    r.simpleResponse = new SimpleResponse(resp);
-                                }
-                                r.future.failed(new EofException("early eof"));
-                            }
-                            if (r.earlyEof == null && r.future == null) {
-                                IO.close(o.getObject());
-                            }
-                            errorMeter.mark();
-                            resTimerCtx.stop();
-                        } finally {
-                            pool.release(o);
-                            log.debug("early EOF of the connection {} , released: {}",
-                                    connection.getSessionId(),
-                                    o.isReleased());
-                        }
-                    });
-
-            if (r.requestBody != null && !r.requestBody.isEmpty()) {
-                connection.send(r.request, r.requestBody.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), handler);
-            } else if (r.promise != null) {
-                connection.send(r.request, r.promise, handler);
-            } else if (r.output != null) {
-                Promise<HTTPOutputStream> p = new Promise<HTTPOutputStream>() {
-                    public void succeeded(HTTPOutputStream out) {
-                        r.output.call(out);
-                    }
-                };
-                connection.send(r.request, p, handler);
-            } else if (r.multiPartProvider != null) {
-                IO.close(r.multiPartProvider);
-                r.multiPartProvider.setListener(() -> log.debug("multi part content listener"));
-                if (r.multiPartProvider.getLength() > 0) {
-                    r.put(HttpHeader.CONTENT_LENGTH, String.valueOf(r.multiPartProvider.getLength()));
-                }
-                Promise.Completable<HTTPOutputStream> p = new Promise.Completable<>();
-                connection.send(r.request, p, handler);
-                p.thenAccept(output -> {
-                    try (HTTPOutputStream out = output) {
-                        for (ByteBuffer buf : r.multiPartProvider) {
-                            out.write(buf);
-                        }
-                    } catch (IOException e) {
-                        log.error("SimpleHTTPClient writes data exception", e);
-                    }
-                }).exceptionally(t -> {
-                    log.error("SimpleHTTPClient gets output stream exception", t);
-                    resTimerCtx.stop();
-                    errorMeter.mark();
-                    return null;
-                });
-            } else if (r.formUrlEncoded != null) {
-                String body = r.formUrlEncoded.encode(Charset.forName(simpleHTTPClientConfiguration.getCharacterEncoding()), true);
-                byte[] content = StringUtils.getBytes(body, simpleHTTPClientConfiguration.getCharacterEncoding());
-                connection.send(r.request, ByteBuffer.wrap(content), handler);
-            } else {
-                connection.send(r.request, handler);
+            if (log.isDebugEnabled()) {
+                log.debug("take the connection {} from pool, released: {}, {}", connection.getSessionId(), pooledConn.isReleased(), connection.getHttpVersion());
             }
+            send(reqBuilder, resTimerCtx, connection, createClientHTTPHandler(reqBuilder, resTimerCtx, pooledConn));
         }).exceptionally(e -> {
             log.error("SimpleHTTPClient sends message exception", e);
             resTimerCtx.stop();
@@ -562,21 +436,135 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         });
     }
 
-    private AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
-        return poolMap.computeIfAbsent(request, req -> new BoundedAsynchronousPool<>(simpleHTTPClientConfiguration.getPoolSize(),
+    protected void send(RequestBuilder reqBuilder, Timer.Context resTimerCtx, HTTPClientConnection connection, ClientHTTPHandler handler) {
+        if (!CollectionUtils.isEmpty(reqBuilder.requestBody)) {
+            connection.send(reqBuilder.request, reqBuilder.requestBody.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), handler);
+        } else if (reqBuilder.promise != null) {
+            connection.send(reqBuilder.request, reqBuilder.promise, handler);
+        } else if (reqBuilder.output != null) {
+            Promise<HTTPOutputStream> p = new Promise<HTTPOutputStream>() {
+                public void succeeded(HTTPOutputStream out) {
+                    reqBuilder.output.call(out);
+                }
+            };
+            connection.send(reqBuilder.request, p, handler);
+        } else if (reqBuilder.multiPartProvider != null) {
+            IO.close(reqBuilder.multiPartProvider);
+            reqBuilder.multiPartProvider.setListener(() -> log.debug("multi part content listener"));
+            if (reqBuilder.multiPartProvider.getLength() > 0) {
+                reqBuilder.put(HttpHeader.CONTENT_LENGTH, String.valueOf(reqBuilder.multiPartProvider.getLength()));
+            }
+            Promise.Completable<HTTPOutputStream> p = new Promise.Completable<>();
+            connection.send(reqBuilder.request, p, handler);
+            p.thenAccept(output -> {
+                try (HTTPOutputStream out = output) {
+                    for (ByteBuffer buf : reqBuilder.multiPartProvider) {
+                        out.write(buf);
+                    }
+                } catch (IOException e) {
+                    log.error("SimpleHTTPClient writes data exception", e);
+                }
+            }).exceptionally(t -> {
+                log.error("SimpleHTTPClient gets output stream exception", t);
+                resTimerCtx.stop();
+                errorMeter.mark();
+                return null;
+            });
+        } else if (reqBuilder.formUrlEncoded != null) {
+            String body = reqBuilder.formUrlEncoded.encode(Charset.forName(simpleHTTPClientConfiguration.getCharacterEncoding()), true);
+            byte[] content = StringUtils.getBytes(body, simpleHTTPClientConfiguration.getCharacterEncoding());
+            connection.send(reqBuilder.request, ByteBuffer.wrap(content), handler);
+        } else {
+            connection.send(reqBuilder.request, handler);
+        }
+    }
+
+    protected ClientHTTPHandler createClientHTTPHandler(RequestBuilder reqBuilder,
+                                                        Timer.Context resTimerCtx,
+                                                        PooledObject<HTTPClientConnection> pooledConn) {
+        return new ClientHTTPHandler.Adapter().headerComplete((req, resp, outputStream, conn) -> {
+            Optional.ofNullable(reqBuilder.headerComplete).ifPresent(header -> header.call(resp));
+            if (reqBuilder.future != null) {
+                if (reqBuilder.simpleResponse == null) {
+                    reqBuilder.simpleResponse = new SimpleResponse(resp);
+                }
+            }
+            return false;
+        }).content((buffer, req, resp, outputStream, conn) -> {
+            Optional.ofNullable(reqBuilder.content).ifPresent(c -> c.call(buffer));
+            if (reqBuilder.future != null) {
+                Optional.ofNullable(reqBuilder.simpleResponse).map(r -> r.responseBody).ifPresent(body -> body.add(buffer));
+            }
+            return false;
+        }).contentComplete((req, resp, outputStream, conn) -> {
+            Optional.ofNullable(reqBuilder.contentComplete).ifPresent(content -> content.call(resp));
+            return false;
+        }).messageComplete((req, resp, outputStream, conn) -> {
+            try {
+                Optional.ofNullable(reqBuilder.messageComplete).ifPresent(msg -> msg.call(resp));
+                Optional.ofNullable(reqBuilder.future).ifPresent(f -> f.succeeded(reqBuilder.simpleResponse));
+                resTimerCtx.stop();
+                return true;
+            } finally {
+                pooledConn.release();
+                if (log.isDebugEnabled()) {
+                    log.debug("complete request of the connection {} , released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
+                }
+            }
+        }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
+            try {
+                Optional.ofNullable(reqBuilder.badMessage).ifPresent(bad -> bad.call(errCode, reason, resp));
+                if (reqBuilder.future != null) {
+                    if (reqBuilder.simpleResponse == null) {
+                        reqBuilder.simpleResponse = new SimpleResponse(resp);
+                    }
+                    reqBuilder.future.failed(new BadMessageException(errCode, reason));
+                }
+                errorMeter.mark();
+                resTimerCtx.stop();
+            } finally {
+                IO.close(pooledConn.getObject());
+                pooledConn.release();
+                if (log.isDebugEnabled()) {
+                    log.debug("bad message of the connection {}, released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
+                }
+            }
+        }).earlyEOF((req, resp, outputStream, conn) -> {
+            try {
+                Optional.ofNullable(reqBuilder.earlyEof).ifPresent(e -> e.call(resp));
+                if (reqBuilder.future != null) {
+                    if (reqBuilder.simpleResponse == null) {
+                        reqBuilder.simpleResponse = new SimpleResponse(resp);
+                    }
+                    reqBuilder.future.failed(new EofException("early eof"));
+                }
+                errorMeter.mark();
+                resTimerCtx.stop();
+            } finally {
+                IO.close(pooledConn.getObject());
+                pooledConn.release();
+                if (log.isDebugEnabled()) {
+                    log.debug("early EOF of the connection {}, released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
+                }
+            }
+        });
+    }
+
+    protected AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
+        return poolMap.computeIfAbsent(request, req -> new BoundedAsynchronousPool<>(
+                simpleHTTPClientConfiguration.getPoolSize(),
                 simpleHTTPClientConfiguration.getConnectTimeout(),
-                () -> {
-                    Promise.Completable<PooledObject<HTTPClientConnection>> r = new Promise.Completable<>();
-                    Promise.Completable<HTTPClientConnection> c = http2Client.connect(request.host, request.port);
-                    c.thenAccept(conn -> r.succeeded(new PooledObject<>(conn)))
-                     .exceptionally(e -> {
-                         r.failed(e);
-                         return null;
-                     });
-                    return r;
+                pool -> { // The pooled object factory
+                    Promise.Completable<PooledObject<HTTPClientConnection>> pooledConn = new Promise.Completable<>();
+                    Promise.Completable<HTTPClientConnection> connFuture = http2Client.connect(request.host, request.port);
+                    connFuture.thenAccept(conn -> pooledConn.succeeded(new PooledObject<>(conn, pool))).exceptionally(e -> {
+                        pooledConn.failed(e);
+                        return null;
+                    });
+                    return pooledConn;
                 },
-                pooledObject -> pooledObject.getObject().isOpen(),
-                pooledObject -> {
+                pooledObject -> pooledObject.getObject().isOpen(), // The connection validator
+                pooledObject -> { // Destroyed connection
                     try {
                         pooledObject.getObject().close();
                     } catch (IOException e) {
@@ -587,7 +575,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     @Override
     protected void init() {
-
     }
 
     @Override
