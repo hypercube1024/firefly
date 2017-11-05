@@ -31,7 +31,7 @@ public class SimpleHTTPClientDemo5 {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) { // tls.ctf.network
                 long start = System.currentTimeMillis();
-                $.httpsClient().get("https://login.taobao.com").submit()
+                $.httpsClient().get("https://www.taobao.com").submit()
                  .thenApply(SimpleResponse::getStringBody)
                  .thenAccept(System.out::println)
                  .thenAccept(res -> {

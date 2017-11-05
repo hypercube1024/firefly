@@ -225,6 +225,5 @@ public class TestAsyncPool {
         public TestPooledObject(int i) {
             this.i = i;
         }
-
     }
 }
