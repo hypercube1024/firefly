@@ -6,7 +6,7 @@ import com.firefly.utils.concurrent.ReentrantLocker;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.lang.tracker.LeakDetector;
+import com.firefly.utils.lang.LeakDetector;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -66,12 +66,11 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         try {
             Atomics.getAndIncrement(createdObjectSize, maxSize);
             CompletableFuture<PooledObject<T>> tmp = objectFactory.createNew(this);
-            tmp.thenAccept(completable::succeeded)
-               .exceptionally(e0 -> {
-                   Atomics.getAndDecrement(createdObjectSize, 0);
-                   completable.failed(e0);
-                   return null;
-               });
+            tmp.thenAccept(completable::succeeded).exceptionally(e0 -> {
+                Atomics.getAndDecrement(createdObjectSize, 0);
+                completable.failed(e0);
+                return null;
+            });
         } catch (Exception e) {
             System.err.println(e.getMessage());
             Atomics.getAndDecrement(createdObjectSize, 0);
@@ -81,7 +80,6 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     protected void destroyObject(PooledObject<T> pooledObject) {
         Atomics.getAndDecrement(createdObjectSize, 0);
         try {
-            pooledObject.clearLeakDetectorReference();
             dispose.destroy(pooledObject);
         } catch (Exception e) {
             System.err.println(e.getMessage());
@@ -123,7 +121,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     private void checkObjectFromPool(PooledObject<T> pooledObject, Promise.Completable<PooledObject<T>> completable) {
         if (pooledObject.prepareTake()) {
             if (validator.isValid(pooledObject)) {
-                pooledObject.createNewLeakDetectorReference();
+                pooledObject.setPhantomReference(getLeakDetector().register(pooledObject, pooledObject.getLeakCallback()));
                 completable.succeeded(pooledObject);
             } else {
                 destroyObject(pooledObject);
@@ -144,7 +142,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         }
 
         if (queue.offer(pooledObject)) {
-            pooledObject.clearLeakDetectorReference();
+            pooledObject.clear();
         } else {
             // the queue is full
             service.execute(() -> {

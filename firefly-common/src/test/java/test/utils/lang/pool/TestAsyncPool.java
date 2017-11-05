@@ -6,6 +6,7 @@ import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.lang.pool.AsynchronousPool;
 import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
 import com.firefly.utils.lang.pool.PooledObject;
+import com.firefly.utils.lang.LeakDetector;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -206,6 +207,50 @@ public class TestAsyncPool {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testObjectLeak() {
+        AtomicInteger i = new AtomicInteger();
+        Phaser phaser = new Phaser(2);
+        AtomicBoolean leaked = new AtomicBoolean(false);
+        LeakDetector<PooledObject<TestPooledObject>> leakDetector = new LeakDetector<>(0L, 1L,
+                () -> System.out.println("not any leaked object"));
+
+        BoundedAsynchronousPool<TestPooledObject> asynchronousPool = new BoundedAsynchronousPool<>(
+                10,
+                10 * 1000L,
+                Executors.newCachedThreadPool(),
+                pool -> { // object factory
+                    Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
+                    int x = i.getAndIncrement();
+                    String leakMessage = "The object leaked. i: " + x;
+
+                    PooledObject<TestPooledObject> pooledObject = new PooledObject<>(new TestPooledObject(x), pool, () -> {
+                        System.out.println(leakMessage);
+                        leaked.set(true);
+                        phaser.arrive();
+                    });
+                    completable.succeeded(pooledObject);
+                    return completable;
+                },
+                o -> !o.getObject().closed, // validator
+                o -> { // destroy callback
+                    System.out.println("destroy obj - [" + o.getObject().i + "]");
+                    o.getObject().closed = true;
+                }, leakDetector);
+
+        PooledObject<TestPooledObject> pooledObject = asynchronousPool.get();
+        Assert.assertThat(pooledObject.getObject().i, is(0));
+        Assert.assertFalse(leaked.get());
+        Assert.assertThat(asynchronousPool.size(), is(0));
+        Assert.assertThat(asynchronousPool.getCreatedObjectSize(), is(1));
+
+        pooledObject = null;
+        System.gc();
+        System.out.println("after gc");
+        phaser.arriveAndAwaitAdvance();
+        Assert.assertTrue(leaked.get());
     }
 
     private BoundedAsynchronousPool<TestPooledObject> createPool(int size) {

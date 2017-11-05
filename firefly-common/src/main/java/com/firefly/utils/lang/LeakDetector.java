@@ -1,12 +1,17 @@
-package com.firefly.utils.lang.tracker;
+package com.firefly.utils.lang;
 
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
+import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,6 +25,7 @@ public class LeakDetector<T> extends AbstractLifeCycle {
     private final TimeUnit unit;
     private final ReferenceQueue<T> referenceQueue = new ReferenceQueue<>();
     private final Action0 noLeakCallback;
+    private final Map<PhantomReference<T>, Action0> registeredMap = Collections.synchronizedMap(new IdentityHashMap<>());
 
     public LeakDetector() {
         this(() -> {
@@ -48,15 +54,26 @@ public class LeakDetector<T> extends AbstractLifeCycle {
     }
 
     /**
-     * Create a LeakDetectorReference. When the tracked object is released, you must call the release method of LeakDetectorReference.
+     * Register a tracked object. When the tracked object is released, you must call the clear method of LeakDetector.
      *
      * @param object   The tracked object
      * @param callback When the garbage collector cleans up the tracked object, if the tracked object is not released,
      *                 that means the tracked object leaked. The detector will execute the callback method.
-     * @return a new LeakDetectorReference
+     * @return a new PhantomReference that tracks the object
      */
-    public LeakDetectorReference<T> create(T object, Action0 callback) {
-        return new LeakDetectorReference<>(object, referenceQueue, callback);
+    public PhantomReference<T> register(T object, Action0 callback) {
+        PhantomReference<T> ref = new PhantomReference<>(object, referenceQueue);
+        registeredMap.put(ref, callback);
+        return ref;
+    }
+
+    /**
+     * Clear tracked object
+     *
+     * @param reference The PhantomReference of tracked object
+     */
+    public void clear(PhantomReference<T> reference) {
+        Optional.ofNullable(registeredMap.remove(reference)).ifPresent(a -> reference.clear());
     }
 
     public long getInitialDelay() {
@@ -78,10 +95,8 @@ public class LeakDetector<T> extends AbstractLifeCycle {
             Reference<? extends T> ref;
             while ((ref = referenceQueue.poll()) != null) {
                 try {
-                    if (ref instanceof LeakDetectorReference) {
-                        leaked = true;
-                        ((LeakDetectorReference) ref).getCallback().call();
-                    }
+                    leaked = true;
+                    Optional.ofNullable(registeredMap.remove(ref)).ifPresent(Action0::call);
                 } catch (Exception e) {
                     System.err.println(e.getMessage());
                 }

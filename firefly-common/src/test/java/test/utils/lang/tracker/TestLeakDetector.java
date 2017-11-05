@@ -1,8 +1,6 @@
 package test.utils.lang.tracker;
 
-import com.firefly.utils.concurrent.ThreadUtils;
-import com.firefly.utils.lang.tracker.LeakDetector;
-import com.firefly.utils.lang.tracker.LeakDetectorReference;
+import com.firefly.utils.lang.LeakDetector;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,11 +15,9 @@ public class TestLeakDetector {
     public static class TrackedObject {
         private boolean released;
         private String name;
-        private LeakDetectorReference<TrackedObject> leakDetectorReference;
 
         public void release() {
             released = true;
-            leakDetectorReference.clear();
         }
 
         public boolean isReleased() {
@@ -40,13 +36,6 @@ public class TestLeakDetector {
             this.name = name;
         }
 
-        public LeakDetectorReference<TrackedObject> getLeakDetectorReference() {
-            return leakDetectorReference;
-        }
-
-        public void setLeakDetectorReference(LeakDetectorReference<TrackedObject> leakDetectorReference) {
-            this.leakDetectorReference = leakDetectorReference;
-        }
     }
 
     @Test
@@ -59,13 +48,12 @@ public class TestLeakDetector {
         TrackedObject trackedObject = new TrackedObject();
         String name = "My tracked object 1";
         trackedObject.setName(name);
-        LeakDetectorReference<TrackedObject> ref = leakDetector.create(trackedObject, () -> {
+
+        leakDetector.register(trackedObject, () -> {
             System.out.println(name + " leaked.");
             leaked.set(true);
             phaser.arrive();
         });
-        System.out.println(ref);
-        trackedObject.setLeakDetectorReference(ref);
         Assert.assertFalse(leaked.get());
 //        trackedObject.release();
 
