@@ -1,8 +1,12 @@
 package com.firefly.utils.lang.pool;
 
+import com.firefly.utils.function.Action0;
+import com.firefly.utils.lang.tracker.LeakDetectorReference;
 import com.firefly.utils.time.Millisecond100Clock;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Pengtao Qiu
@@ -14,12 +18,16 @@ public class PooledObject<T> {
     private final long createTime;
     private long activeTime;
     private AtomicBoolean released = new AtomicBoolean(false);
+    private final AtomicReference<LeakDetectorReference<PooledObject<T>>> leakDetectorReference = new AtomicReference<>();
+    private final Action0 leakCallback;
 
-    public PooledObject(T object, Pool<T> pool) {
+    public PooledObject(T object, Pool<T> pool, Action0 leakCallback) {
         this.object = object;
         this.pool = pool;
+        this.leakCallback = leakCallback;
         createTime = Millisecond100Clock.currentTimeMillis();
         activeTime = createTime;
+        createNewLeakDetectorReference();
     }
 
     /**
@@ -82,5 +90,20 @@ public class PooledObject<T> {
      */
     public void release() {
         pool.release(this);
+    }
+
+    public AtomicReference<LeakDetectorReference<PooledObject<T>>> getLeakDetectorReference() {
+        return leakDetectorReference;
+    }
+
+    public void createNewLeakDetectorReference() {
+        Optional.ofNullable(pool.getLeakDetector())
+                .map(detector -> detector.create(this, leakCallback))
+                .ifPresent(leakDetectorReference::set);
+    }
+
+    public void clearLeakDetectorReference() {
+        Optional.ofNullable(getLeakDetectorReference().get())
+                .ifPresent(LeakDetectorReference::clear);
     }
 }

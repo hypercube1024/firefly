@@ -5,6 +5,7 @@ import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.ReentrantLocker;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.lang.tracker.LeakDetector;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,6 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements AsynchronousPool<T> {
 
+    public static final int defaultPoolServiceThreadNumber = Integer.getInteger("com.firefly.utils.lang.pool.asynchronous.number", Runtime.getRuntime().availableProcessors());
+
     protected final int maxSize;
     protected final AtomicInteger createdObjectSize = new AtomicInteger(0);
     protected final long timeout;
@@ -22,6 +25,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     protected final ObjectFactory<T> objectFactory;
     protected final Validator<T> validator;
     protected final Dispose<T> dispose;
+    protected final LeakDetector<PooledObject<T>> leakDetector;
     protected final ReentrantLocker locker = new ReentrantLocker();
 
     public BoundedAsynchronousPool(ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
@@ -35,13 +39,15 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     public BoundedAsynchronousPool(int maxSize, long timeout,
                                    ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
         this(maxSize, timeout,
-                Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "firefly bounded asynchronous pool")),
-                objectFactory, validator, dispose);
+                Executors.newFixedThreadPool(defaultPoolServiceThreadNumber, r -> new Thread(r, "firefly bounded asynchronous pool")),
+                objectFactory, validator, dispose,
+                new LeakDetector<>());
     }
 
     public BoundedAsynchronousPool(int maxSize, long timeout,
                                    ExecutorService service,
-                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
+                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
+                                   LeakDetector<PooledObject<T>> leakDetector) {
         this.maxSize = maxSize;
         this.timeout = timeout;
         this.service = service;
@@ -49,6 +55,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         this.validator = validator;
         this.dispose = dispose;
         this.queue = new ArrayBlockingQueue<>(maxSize);
+        this.leakDetector = leakDetector;
         start();
     }
 
@@ -68,10 +75,11 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         }
     }
 
-    protected void destroyObject(PooledObject<T> t) {
+    protected void destroyObject(PooledObject<T> pooledObject) {
         Atomics.getAndDecrement(createdObjectSize, 0);
         try {
-            dispose.destroy(t);
+            pooledObject.clearLeakDetectorReference();
+            dispose.destroy(pooledObject);
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
@@ -112,6 +120,7 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     private void checkObjectFromPool(PooledObject<T> pooledObject, Promise.Completable<PooledObject<T>> completable) {
         if (pooledObject.prepareTake()) {
             if (validator.isValid(pooledObject)) {
+                pooledObject.createNewLeakDetectorReference();
                 completable.succeeded(pooledObject);
             } else {
                 destroyObject(pooledObject);
@@ -130,7 +139,10 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         if (!pooledObject.prepareRelease()) { // Object is released
             return;
         }
-        if (!queue.offer(pooledObject)) {
+
+        if (queue.offer(pooledObject)) {
+            pooledObject.clearLeakDetectorReference();
+        } else {
             // the queue is full
             service.execute(() -> {
                 try {
@@ -172,6 +184,11 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     @Override
     public boolean isValid(PooledObject<T> pooledObject) {
         return validator.isValid(pooledObject);
+    }
+
+    @Override
+    public LeakDetector<PooledObject<T>> getLeakDetector() {
+        return leakDetector;
     }
 
     @Override

@@ -557,7 +557,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 pool -> { // The pooled object factory
                     Promise.Completable<PooledObject<HTTPClientConnection>> pooledConn = new Promise.Completable<>();
                     Promise.Completable<HTTPClientConnection> connFuture = http2Client.connect(request.host, request.port);
-                    connFuture.thenAccept(conn -> pooledConn.succeeded(new PooledObject<>(conn, pool))).exceptionally(e -> {
+                    connFuture.thenAccept(conn -> {
+                        String leakMessage = "The Firefly HTTP client connection leaked. id: " + conn.getSessionId();
+                        pooledConn.succeeded(new PooledObject<>(conn, pool, () -> log.error(leakMessage)));
+                    }).exceptionally(e -> {
                         pooledConn.failed(e);
                         return null;
                     });

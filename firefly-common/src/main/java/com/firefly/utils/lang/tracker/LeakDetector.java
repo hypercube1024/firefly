@@ -21,7 +21,7 @@ public class LeakDetector<T> extends AbstractLifeCycle {
     private final ReferenceQueue<T> referenceQueue = new ReferenceQueue<>();
 
     public LeakDetector() {
-        this(0L, 5L);
+        this(0L, 15L);
     }
 
     public LeakDetector(long initialDelay, long delay) {
@@ -57,8 +57,12 @@ public class LeakDetector<T> extends AbstractLifeCycle {
         scheduler.scheduleAtFixedRate(() -> {
             Reference<? extends T> ref;
             while ((ref = referenceQueue.poll()) != null) {
-                if (ref instanceof LeakDetectorReference) {
-                    ((LeakDetectorReference) ref).getCallback().call();
+                try {
+                    if (ref instanceof LeakDetectorReference) {
+                        ((LeakDetectorReference) ref).getCallback().call();
+                    }
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
                 }
             }
         }, initialDelay, delay, unit);

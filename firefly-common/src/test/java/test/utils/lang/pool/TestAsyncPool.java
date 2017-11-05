@@ -115,7 +115,8 @@ public class TestAsyncPool {
                 int x = i.incrementAndGet();
                 TestPooledObject obj = new TestPooledObject(x);
                 queue.offer(obj);
-                completable.succeeded(new PooledObject<>(obj, p));
+                String leakMessage = "The object leaked. i: " + obj.i;
+                completable.succeeded(new PooledObject<>(obj, p, () -> System.out.println(leakMessage)));
             }).start();
             return completable;
         }, o -> !o.getObject().closed, o -> {
@@ -160,7 +161,8 @@ public class TestAsyncPool {
                 if (x % 3 == 0) {
                     completable.failed(new CommonRuntimeException("test create pooled object: " + x + " exception"));
                 } else {
-                    completable.succeeded(new PooledObject<>(new TestPooledObject(x), p));
+                    String leakMessage = "The object leaked. i: " + x;
+                    completable.succeeded(new PooledObject<>(new TestPooledObject(x), p, () -> System.out.println(leakMessage)));
                 }
             }).start();
             return completable;
@@ -210,7 +212,9 @@ public class TestAsyncPool {
         AtomicInteger i = new AtomicInteger();
         return new BoundedAsynchronousPool<>(size, pool -> {
             Promise.Completable<PooledObject<TestPooledObject>> completable = new Promise.Completable<>();
-            completable.succeeded(new PooledObject<>(new TestPooledObject(i.getAndIncrement()), pool));
+            int x = i.getAndIncrement();
+            String leakMessage = "The object leaked. i: " + x;
+            completable.succeeded(new PooledObject<>(new TestPooledObject(x), pool, () -> System.out.println(leakMessage)));
             return completable;
         }, o -> !o.getObject().closed, o -> {
             System.out.println("destroy obj - [" + o.getObject().i + "]");

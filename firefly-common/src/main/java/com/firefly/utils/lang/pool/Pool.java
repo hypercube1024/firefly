@@ -1,6 +1,7 @@
 package com.firefly.utils.lang.pool;
 
 import com.firefly.utils.lang.LifeCycle;
+import com.firefly.utils.lang.tracker.LeakDetector;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -57,6 +58,7 @@ public interface Pool<T> extends LifeCycle {
 
     /**
      * If return true, the pool is empty
+     *
      * @return If return true, the pool is empty
      */
     boolean isEmpty();
@@ -66,9 +68,17 @@ public interface Pool<T> extends LifeCycle {
      * When the object is destroy, the created object size decrease.
      * If the created object size less then pool size, the pool will create a new object,
      * or else the pool will wait the object return
-     * @return
+     *
+     * @return created object size
      */
     int getCreatedObjectSize();
+
+    /**
+     * Get the leak detector
+     *
+     * @return the leak detector
+     */
+    LeakDetector<PooledObject<T>> getLeakDetector();
 
     /**
      * Represents the functionality to validate an object of the pool
