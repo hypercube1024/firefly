@@ -1,9 +1,6 @@
 package com.firefly.client.http2;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.RatioGauge;
-import com.codahale.metrics.Timer;
+import com.codahale.metrics.*;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
@@ -48,6 +45,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     private final SimpleHTTPClientConfiguration simpleHTTPClientConfiguration;
     private final Timer responseTimer;
     private final Meter errorMeter;
+    private final Counter leakedConnectionCounter;
 
     public SimpleHTTPClient() {
         this(new SimpleHTTPClientConfiguration());
@@ -61,6 +59,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                                                    .getMetricRegistry();
         responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
         errorMeter = metrics.meter("http2.SimpleHTTPClient.error.count");
+        leakedConnectionCounter = metrics.counter("http2.SimpleHTTPClient.leak.count");
         metrics.register("http2.SimpleHTTPClient.error.ratio.1m", new RatioGauge() {
             @Override
             protected Ratio getRatio() {
@@ -563,7 +562,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         String leakMessage = StringUtils.replace(
                                 "The Firefly HTTP client connection leaked. id -> {}, host -> {}:{}",
                                 conn.getSessionId(), host, port);
-                        pooledConn.succeeded(new PooledObject<>(conn, pool, () -> log.error(leakMessage)));
+                        pooledConn.succeeded(new PooledObject<>(conn, pool, () -> {
+                            leakedConnectionCounter.inc();
+                            log.error(leakMessage);
+                        }));
                     }).exceptionally(e -> {
                         pooledConn.failed(e);
                         return null;
