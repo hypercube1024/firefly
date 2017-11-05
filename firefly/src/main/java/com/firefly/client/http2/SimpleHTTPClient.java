@@ -551,14 +551,18 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     protected AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
+        String host = request.host;
+        int port = request.port;
         return poolMap.computeIfAbsent(request, req -> new BoundedAsynchronousPool<>(
                 simpleHTTPClientConfiguration.getPoolSize(),
                 simpleHTTPClientConfiguration.getConnectTimeout(),
                 pool -> { // The pooled object factory
                     Promise.Completable<PooledObject<HTTPClientConnection>> pooledConn = new Promise.Completable<>();
-                    Promise.Completable<HTTPClientConnection> connFuture = http2Client.connect(request.host, request.port);
+                    Promise.Completable<HTTPClientConnection> connFuture = http2Client.connect(host, port);
                     connFuture.thenAccept(conn -> {
-                        String leakMessage = "The Firefly HTTP client connection leaked. id: " + conn.getSessionId();
+                        String leakMessage = StringUtils.replace(
+                                "The Firefly HTTP client connection leaked. id -> {}, host -> {}:{}",
+                                conn.getSessionId(), host, port);
                         pooledConn.succeeded(new PooledObject<>(conn, pool, () -> log.error(leakMessage)));
                     }).exceptionally(e -> {
                         pooledConn.failed(e);
@@ -573,7 +577,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     } catch (IOException e) {
                         log.warn("close http connection exception", e);
                     }
-                }));
+                },
+                () -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port)));
     }
 
     @Override

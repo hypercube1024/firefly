@@ -53,7 +53,8 @@ public class TestLeakDetector {
     public void test() {
         Phaser phaser = new Phaser(2);
         AtomicBoolean leaked = new AtomicBoolean(false);
-        LeakDetector<TrackedObject> leakDetector = new LeakDetector<>(0L, 1L);
+        LeakDetector<TrackedObject> leakDetector = new LeakDetector<>(0L, 1L,
+                () -> System.out.println("not any leaked object"));
 
         TrackedObject trackedObject = new TrackedObject();
         String name = "My tracked object 1";

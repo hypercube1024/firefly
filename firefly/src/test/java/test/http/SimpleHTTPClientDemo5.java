@@ -27,7 +27,7 @@ public class SimpleHTTPClientDemo5 {
 //        System.out.println($.httpsClient().get("https://segmentfault.com").submit().get().getStringBody());
     }
 
-    public static void main(String[] args) {
+    public static void main5(String[] args) {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) { // tls.ctf.network
                 long start = System.currentTimeMillis();
@@ -43,7 +43,7 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main4(String[] args) throws ExecutionException, InterruptedException {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();

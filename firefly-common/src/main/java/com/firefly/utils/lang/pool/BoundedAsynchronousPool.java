@@ -4,6 +4,7 @@ import com.firefly.utils.concurrent.Atomics;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.ReentrantLocker;
 import com.firefly.utils.exception.CommonRuntimeException;
+import com.firefly.utils.function.Action0;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.tracker.LeakDetector;
 
@@ -33,15 +34,17 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     }
 
     public BoundedAsynchronousPool(int maxSize, ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
-        this(maxSize, 5000L, objectFactory, validator, dispose);
+        this(maxSize, 5000L, objectFactory, validator, dispose, () -> {
+        });
     }
 
     public BoundedAsynchronousPool(int maxSize, long timeout,
-                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
+                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
+                                   Action0 noLeakCallback) {
         this(maxSize, timeout,
                 Executors.newFixedThreadPool(defaultPoolServiceThreadNumber, r -> new Thread(r, "firefly bounded asynchronous pool")),
                 objectFactory, validator, dispose,
-                new LeakDetector<>());
+                new LeakDetector<>(noLeakCallback));
     }
 
     public BoundedAsynchronousPool(int maxSize, long timeout,

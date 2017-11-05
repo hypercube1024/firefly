@@ -19,24 +19,31 @@ public class LeakDetector<T> extends AbstractLifeCycle {
     private final long delay;
     private final TimeUnit unit;
     private final ReferenceQueue<T> referenceQueue = new ReferenceQueue<>();
+    private final Action0 noLeakCallback;
 
     public LeakDetector() {
-        this(0L, 15L);
+        this(() -> {
+        });
     }
 
-    public LeakDetector(long initialDelay, long delay) {
-        this(initialDelay, delay, TimeUnit.SECONDS);
+    public LeakDetector(Action0 noLeakCallback) {
+        this(0L, 15L, noLeakCallback);
     }
 
-    public LeakDetector(long initialDelay, long delay, TimeUnit unit) {
-        this(Schedulers.computation(), initialDelay, delay, unit);
+    public LeakDetector(long initialDelay, long delay, Action0 noLeakCallback) {
+        this(initialDelay, delay, TimeUnit.SECONDS, noLeakCallback);
     }
 
-    public LeakDetector(Scheduler scheduler, long initialDelay, long delay, TimeUnit unit) {
+    public LeakDetector(long initialDelay, long delay, TimeUnit unit, Action0 noLeakCallback) {
+        this(Schedulers.computation(), initialDelay, delay, unit, noLeakCallback);
+    }
+
+    public LeakDetector(Scheduler scheduler, long initialDelay, long delay, TimeUnit unit, Action0 noLeakCallback) {
         this.scheduler = scheduler;
         this.initialDelay = initialDelay;
         this.delay = delay;
         this.unit = unit;
+        this.noLeakCallback = noLeakCallback;
         start();
     }
 
@@ -52,18 +59,35 @@ public class LeakDetector<T> extends AbstractLifeCycle {
         return new LeakDetectorReference<>(object, referenceQueue, callback);
     }
 
+    public long getInitialDelay() {
+        return initialDelay;
+    }
+
+    public long getDelay() {
+        return delay;
+    }
+
+    public TimeUnit getUnit() {
+        return unit;
+    }
+
     @Override
     protected void init() {
         scheduler.scheduleAtFixedRate(() -> {
+            boolean leaked = false;
             Reference<? extends T> ref;
             while ((ref = referenceQueue.poll()) != null) {
                 try {
                     if (ref instanceof LeakDetectorReference) {
+                        leaked = true;
                         ((LeakDetectorReference) ref).getCallback().call();
                     }
                 } catch (Exception e) {
                     System.err.println(e.getMessage());
                 }
+            }
+            if (!leaked) {
+                noLeakCallback.call();
             }
         }, initialDelay, delay, unit);
     }
