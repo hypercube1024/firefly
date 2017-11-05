@@ -39,7 +39,7 @@ public class TestLeakDetector {
     }
 
     @Test
-    public void test() {
+    public void testLeak() {
         Phaser phaser = new Phaser(2);
         AtomicBoolean leaked = new AtomicBoolean(false);
         LeakDetector<TrackedObject> leakDetector = new LeakDetector<>(0L, 1L,
@@ -55,7 +55,6 @@ public class TestLeakDetector {
             phaser.arrive();
         });
         Assert.assertFalse(leaked.get());
-//        trackedObject.release();
 
         // Simulate the TrackedObject leaked. When the garbage collector cleans up the object, it is not released.
         trackedObject = null;

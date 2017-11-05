@@ -562,7 +562,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         String leakMessage = StringUtils.replace(
                                 "The Firefly HTTP client connection leaked. id -> {}, host -> {}:{}",
                                 conn.getSessionId(), host, port);
-                        pooledConn.succeeded(new PooledObject<>(conn, pool, () -> {
+                        pooledConn.succeeded(new PooledObject<>(conn, pool, () -> { // connection leak callback
                             leakedConnectionCounter.inc();
                             log.error(leakMessage);
                         }));
