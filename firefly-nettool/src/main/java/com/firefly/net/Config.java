@@ -35,7 +35,7 @@ public class Config {
      * Set the I/O timeout, if the last I/O timestamp before present over timeout
      * value, the session will close.
      *
-     * @param timeout Max I/O idle time. The unit is millisecond.
+     * @param timeout Max I/O idle time. The time unit is millisecond.
      */
     public void setTimeout(int timeout) {
         this.timeout = timeout;

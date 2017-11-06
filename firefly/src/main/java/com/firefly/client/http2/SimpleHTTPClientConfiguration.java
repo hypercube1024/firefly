@@ -13,18 +13,38 @@ public class SimpleHTTPClientConfiguration extends HTTP2Configuration {
     private int poolSize = defaultPoolSize;
     private long connectTimeout = defaultConnectTimeout;
 
+    /**
+     * Get the HTTP client connection pool size.
+     *
+     * @return The HTTP client connection pool size.
+     */
     public int getPoolSize() {
         return poolSize;
     }
 
+    /**
+     * Set the HTTP client connection pool size.
+     *
+     * @param poolSize The HTTP client connection pool size
+     */
     public void setPoolSize(int poolSize) {
         this.poolSize = poolSize;
     }
 
+    /**
+     * Get the connecting timeout. The time unit is millisecond.
+     *
+     * @return The connecting timeout. The time unit is millisecond.
+     */
     public long getConnectTimeout() {
         return connectTimeout;
     }
 
+    /**
+     * Set the connecting timeout. The time unit is millisecond.
+     *
+     * @param connectTimeout The connecting timeout. The time unit is millisecond.
+     */
     public void setConnectTimeout(long connectTimeout) {
         this.connectTimeout = connectTimeout;
     }

@@ -54,9 +54,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
         this.simpleHTTPClientConfiguration = http2Configuration;
         http2Client = new HTTP2Client(http2Configuration);
-        MetricRegistry metrics = http2Configuration.getTcpConfiguration()
-                                                   .getMetricReporterFactory()
-                                                   .getMetricRegistry();
+        MetricRegistry metrics = http2Configuration.getTcpConfiguration().getMetricReporterFactory().getMetricRegistry();
         responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
         errorMeter = metrics.meter("http2.SimpleHTTPClient.error.count");
         leakedConnectionCounter = metrics.counter("http2.SimpleHTTPClient.leak.count");
@@ -95,82 +93,175 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
 
-        public RequestBuilder() {
+        protected RequestBuilder() {
 
         }
 
-        public RequestBuilder(String host, int port, MetaData.Request request) {
+        protected RequestBuilder(String host, int port, MetaData.Request request) {
             this.host = host;
             this.port = port;
             this.request = request;
         }
 
+        /**
+         * Set the cookies.
+         *
+         * @param cookies The cookies.
+         * @return RequestBuilder
+         */
         public RequestBuilder cookies(List<Cookie> cookies) {
             request.getFields().put(HttpHeader.COOKIE, CookieGenerator.generateCookies(cookies));
             return this;
         }
 
+        /**
+         * Put an HTTP field. It will replace existed field.
+         *
+         * @param name The field name.
+         * @param list The field values.
+         * @return RequestBuilder
+         */
         public RequestBuilder put(String name, List<String> list) {
             request.getFields().put(name, list);
             return this;
         }
 
+        /**
+         * Put an HTTP field. It will replace existed field.
+         *
+         * @param header The field name.
+         * @param value  The field value.
+         * @return RequestBuilder
+         */
         public RequestBuilder put(HttpHeader header, String value) {
             request.getFields().put(header, value);
             return this;
         }
 
+        /**
+         * Put an HTTP field. It will replace existed field.
+         *
+         * @param name  The field name.
+         * @param value The field value.
+         * @return RequestBuilder
+         */
         public RequestBuilder put(String name, String value) {
             request.getFields().put(name, value);
             return this;
         }
 
+        /**
+         * Put an HTTP field. It will replace existed field.
+         *
+         * @param field The HTTP field.
+         * @return RequestBuilder
+         */
         public RequestBuilder put(HttpField field) {
             request.getFields().put(field);
             return this;
         }
 
+        /**
+         * Add some HTTP fields.
+         *
+         * @param fields The HTTP fields.
+         * @return RequestBuilder
+         */
         public RequestBuilder addAll(HttpFields fields) {
             request.getFields().addAll(fields);
             return this;
         }
 
+        /**
+         * Add an HTTP field.
+         *
+         * @param field The HTTP field.
+         * @return RequestBuilder
+         */
         public RequestBuilder add(HttpField field) {
             request.getFields().add(field);
             return this;
         }
 
+        /**
+         * Get the HTTP trailers.
+         *
+         * @return The HTTP trailers.
+         */
         public Supplier<HttpFields> getTrailerSupplier() {
             return request.getTrailerSupplier();
         }
 
+        /**
+         * Set the HTTP trailers.
+         *
+         * @param trailers The HTTP trailers.
+         * @return RequestBuilder
+         */
         public RequestBuilder setTrailerSupplier(Supplier<HttpFields> trailers) {
             request.setTrailerSupplier(trailers);
             return this;
         }
 
+        /**
+         * Set the JSON HTTP body data.
+         *
+         * @param obj The JSON HTTP body data. The HTTP client will serialize the object when the request is submitted.
+         * @return RequestBuilder
+         */
         public RequestBuilder jsonBody(Object obj) {
             return put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).body(Json.toJson(obj));
         }
 
+        /**
+         * Set the text HTTP body data.
+         *
+         * @param content The text HTTP body data.
+         * @return RequestBuilder
+         */
         public RequestBuilder body(String content) {
             return body(content, StandardCharsets.UTF_8);
         }
 
+        /**
+         * Set the text HTTP body data.
+         *
+         * @param content The text HTTP body data.
+         * @param charset THe charset of the text.
+         * @return RequestBuilder
+         */
         public RequestBuilder body(String content, Charset charset) {
             return write(BufferUtils.toBuffer(content, charset));
         }
 
+        /**
+         * Write HTTP body data. When you submit the request, the data will be sent.
+         *
+         * @param buffer The HTTP body data.
+         * @return RequestBuilder
+         */
         public RequestBuilder write(ByteBuffer buffer) {
             requestBody.add(buffer);
             return this;
         }
 
+        /**
+         * Set a output stream callback. When the HTTP client creates the HTTPOutputStream, it will execute this callback.
+         *
+         * @param output The output stream callback.
+         * @return RequestBuilder
+         */
         public RequestBuilder output(Action1<HTTPOutputStream> output) {
             this.output = output;
             return this;
         }
 
+        /**
+         * Set a output stream callback. When the HTTP client creates the HTTPOutputStream, it will execute this callback.
+         *
+         * @param promise The output stream callback.
+         * @return RequestBuilder
+         */
         public RequestBuilder output(Promise<HTTPOutputStream> promise) {
             this.promise = promise;
             return this;
@@ -184,11 +275,28 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             return multiPartProvider;
         }
 
+        /**
+         * Add a multi-part mime content. Such as a file.
+         *
+         * @param name    The content name.
+         * @param content The ContentProvider that helps you read the content.
+         * @param fields  The header fields of the content.
+         * @return RequestBuilder
+         */
         public RequestBuilder addFieldPart(String name, ContentProvider content, HttpFields fields) {
             multiPartProvider().addFieldPart(name, content, fields);
             return this;
         }
 
+        /**
+         * Add a multi-part mime content. Such as a file.
+         *
+         * @param name     The content name.
+         * @param fileName The content file name.
+         * @param content  The ContentProvider that helps you read the content.
+         * @param fields   The header fields of the content.
+         * @return RequestBuilder
+         */
         public RequestBuilder addFilePart(String name, String fileName, ContentProvider content, HttpFields fields) {
             multiPartProvider().addFilePart(name, fileName, content, fields);
             return this;
@@ -202,15 +310,22 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             return formUrlEncoded;
         }
 
+        /**
+         * Add a value in an existed form parameter. The form content type is "application/x-www-form-urlencoded".
+         *
+         * @param name  The parameter name.
+         * @param value The parameter value.
+         * @return RequestBuilder
+         */
         public RequestBuilder addFormParam(String name, String value) {
             formUrlEncoded().add(name, value);
             return this;
         }
 
         /**
-         * Add a parameter in a exist form parameter. The form content type is "application/x-www-form-urlencoded".
+         * Add some values in an existed form parameter. The form content type is "application/x-www-form-urlencoded".
          *
-         * @param name  The parameter name.
+         * @param name   The parameter name.
          * @param values The parameter values.
          * @return RequestBuilder
          */
