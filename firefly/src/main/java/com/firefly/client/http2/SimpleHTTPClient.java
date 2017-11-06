@@ -848,9 +848,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     protected AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
+        return poolMap.computeIfAbsent(request, this::createConnectionPool);
+    }
+
+    protected AsynchronousPool<HTTPClientConnection> createConnectionPool(RequestBuilder request) {
         String host = request.host;
         int port = request.port;
-        return poolMap.computeIfAbsent(request, req -> new BoundedAsynchronousPool<>(
+        return new BoundedAsynchronousPool<>(
                 simpleHTTPClientConfiguration.getPoolSize(),
                 simpleHTTPClientConfiguration.getConnectTimeout(),
                 pool -> { // The pooled object factory
@@ -878,7 +882,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         log.warn("close http connection exception", e);
                     }
                 },
-                () -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port)));
+                () -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port));
     }
 
     @Override
