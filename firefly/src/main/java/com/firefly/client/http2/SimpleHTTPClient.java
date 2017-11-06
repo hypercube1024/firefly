@@ -69,6 +69,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         start();
     }
 
+    /**
+     * The HTTP request builder that helps you to create a new HTTP request.
+     */
     public class RequestBuilder {
         protected String host;
         protected int port;
@@ -204,70 +207,161 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             return this;
         }
 
+        /**
+         * Add a parameter in a exist form parameter. The form content type is "application/x-www-form-urlencoded".
+         *
+         * @param name  The parameter name.
+         * @param values The parameter values.
+         * @return RequestBuilder
+         */
         public RequestBuilder addFormParam(String name, List<String> values) {
             formUrlEncoded().addValues(name, values);
             return this;
         }
 
+        /**
+         * Put a parameter in the form content. The form content type is "application/x-www-form-urlencoded".
+         *
+         * @param name  The parameter name.
+         * @param value The parameter value.
+         * @return RequestBuilder
+         */
         public RequestBuilder putFormParam(String name, String value) {
             formUrlEncoded().put(name, value);
             return this;
         }
 
+        /**
+         * Put a parameter in the form content. The form content type is "application/x-www-form-urlencoded".
+         *
+         * @param name   The parameter name.
+         * @param values The parameter values.
+         * @return RequestBuilder
+         */
         public RequestBuilder putFormParam(String name, List<String> values) {
             formUrlEncoded().putValues(name, values);
             return this;
         }
 
+        /**
+         * Remove a parameter in the form content. The form content type is "application/x-www-form-urlencoded".
+         *
+         * @param name The parameter name.
+         * @return RequestBuilder
+         */
         public RequestBuilder removeFormParam(String name) {
             formUrlEncoded().remove(name);
             return this;
         }
 
+        /**
+         * Set the HTTP header complete callback.
+         *
+         * @param headerComplete The HTTP header complete callback. When the HTTP client receives all HTTP headers,
+         *                       it will execute this action.
+         * @return RequestBuilder
+         */
         public RequestBuilder headerComplete(Action1<Response> headerComplete) {
             this.headerComplete = headerComplete;
             return this;
         }
 
+        /**
+         * Set the HTTP message complete callback.
+         *
+         * @param messageComplete The HTTP message complete callback. When the HTTP client receives the complete HTTP message
+         *                        that contains HTTP headers and body, it will execute this action.
+         * @return RequestBuilder
+         */
         public RequestBuilder messageComplete(Action1<Response> messageComplete) {
             this.messageComplete = messageComplete;
             return this;
         }
 
+        /**
+         * Set the HTTP content receiving callback.
+         *
+         * @param content The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
+         *                it will execute this action. This action will be executed many times.
+         * @return RequestBuilder
+         */
         public RequestBuilder content(Action1<ByteBuffer> content) {
             this.content = content;
             return this;
         }
 
+        /**
+         * Set the HTTP content complete callback.
+         *
+         * @param contentComplete The HTTP content complete callback. When the HTTP client receives the HTTP body finish,
+         *                        it will execute this action.
+         * @return RequestBuilder
+         */
         public RequestBuilder contentComplete(Action1<Response> contentComplete) {
             this.contentComplete = contentComplete;
             return this;
         }
 
+        /**
+         * Set the bad message callback.
+         *
+         * @param badMessage The bad message callback. When the HTTP client parses an incorrect message format,
+         *                   it will execute this action. The callback has three parameters.
+         *                   The first parameter is the bad status code.
+         *                   The second parameter is the reason.
+         *                   The third parameter is HTTP response.
+         * @return RequestBuilder
+         */
         public RequestBuilder badMessage(Action3<Integer, String, Response> badMessage) {
             this.badMessage = badMessage;
             return this;
         }
 
+        /**
+         * Set the early EOF callback.
+         *
+         * @param earlyEof The early EOF callback. When the HTTP client encounters an error, it will execute this action.
+         * @return RequestBuilder
+         */
         public RequestBuilder earlyEof(Action1<Response> earlyEof) {
             this.earlyEof = earlyEof;
             return this;
         }
 
+        /**
+         * Submit an HTTP request.
+         *
+         * @return The CompletableFuture of HTTP response.
+         */
         public Promise.Completable<SimpleResponse> submit() {
             submit(new Promise.Completable<>());
             return future;
         }
 
+        /**
+         * Submit an HTTP request.
+         *
+         * @return The CompletableFuture of HTTP response.
+         */
         public CompletableFuture<SimpleResponse> toFuture() {
             return submit();
         }
 
+        /**
+         * Submit an HTTP request.
+         *
+         * @param future The HTTP response callback.
+         */
         public void submit(Promise.Completable<SimpleResponse> future) {
             this.future = future;
             send(this);
         }
 
+        /**
+         * Submit an HTTP request.
+         *
+         * @param action The HTTP response callback.
+         */
         public void submit(Action1<SimpleResponse> action) {
             Promise.Completable<SimpleResponse> future = new Promise.Completable<SimpleResponse>() {
                 public void succeeded(SimpleResponse t) {
@@ -283,6 +377,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             submit(future);
         }
 
+        /**
+         * Submit an HTTP request.
+         */
         public void end() {
             send(this);
         }
@@ -303,6 +400,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     }
 
+    /**
+     * Remove the HTTP connection pool.
+     *
+     * @param url The host URL.
+     */
     public void removeConnectionPool(String url) {
         try {
             removeConnectionPool(new URL(url));
@@ -312,6 +414,11 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
+    /**
+     * Remove the HTTP connection pool.
+     *
+     * @param url The host URL.
+     */
     public void removeConnectionPool(URL url) {
         RequestBuilder req = new RequestBuilder();
         req.host = url.getHost();
@@ -319,6 +426,12 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         removePool(req);
     }
 
+    /**
+     * Remove the HTTP connection pool.
+     *
+     * @param host The host URL.
+     * @param port The target port.
+     */
     public void removeConnectionPool(String host, int port) {
         RequestBuilder req = new RequestBuilder();
         req.host = host;
@@ -331,6 +444,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         pool.stop();
     }
 
+    /**
+     * Get the HTTP connection pool size.
+     *
+     * @param host The host name.
+     * @param port The target port.
+     * @return The HTTP connection pool size.
+     */
     public int getConnectionPoolSize(String host, int port) {
         RequestBuilder req = new RequestBuilder();
         req.host = host;
@@ -338,6 +458,12 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         return _getPoolSize(req);
     }
 
+    /**
+     * Get the HTTP connection pool size.
+     *
+     * @param url The host URL.
+     * @return The HTTP connection pool size.
+     */
     public int getConnectionPoolSize(String url) {
         try {
             return getConnectionPoolSize(new URL(url));
@@ -347,6 +473,12 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
+    /**
+     * Get the HTTP connection pool size.
+     *
+     * @param url The host URL.
+     * @return The HTTP connection pool size.
+     */
     public int getConnectionPoolSize(URL url) {
         RequestBuilder req = new RequestBuilder();
         req.host = url.getHost();
@@ -363,30 +495,74 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
+    /**
+     * Create a RequestBuilder with GET method and URL.
+     *
+     * @param url The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder get(String url) {
         return request(HttpMethod.GET.asString(), url);
     }
 
+    /**
+     * Create a RequestBuilder with POST method and URL.
+     *
+     * @param url The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder post(String url) {
         return request(HttpMethod.POST.asString(), url);
     }
 
+    /**
+     * Create a RequestBuilder with HEAD method and URL.
+     *
+     * @param url The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder head(String url) {
         return request(HttpMethod.HEAD.asString(), url);
     }
 
+    /**
+     * Create a RequestBuilder with PUT method and URL.
+     *
+     * @param url The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder put(String url) {
         return request(HttpMethod.PUT.asString(), url);
     }
 
+    /**
+     * Create a RequestBuilder with DELETE method and URL.
+     *
+     * @param url The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder delete(String url) {
         return request(HttpMethod.DELETE.asString(), url);
     }
 
+    /**
+     * Create a RequestBuilder with HTTP method and URL.
+     *
+     * @param method HTTP method.
+     * @param url    The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder request(HttpMethod method, String url) {
         return request(method.asString(), url);
     }
 
+    /**
+     * Create a RequestBuilder with HTTP method and URL.
+     *
+     * @param method HTTP method.
+     * @param url    The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder request(String method, String url) {
         try {
             return request(method, new URL(url));
@@ -396,6 +572,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
+    /**
+     * Create a RequestBuilder with HTTP method and URL.
+     *
+     * @param method HTTP method.
+     * @param url    The request URL.
+     * @return A new RequestBuilder that helps you to build an HTTP request.
+     */
     public RequestBuilder request(String method, URL url) {
         try {
             RequestBuilder req = new RequestBuilder();
