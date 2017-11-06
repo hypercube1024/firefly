@@ -204,11 +204,10 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
                 pooledObject.prepareTake();
                 destroyObject(pooledObject);
             }
+            leakDetector.stop();
+            service.shutdown();
         } catch (Exception e) {
             System.err.println(e.getMessage());
-        }
-        if (service != null) {
-            service.shutdown();
         }
     }
 }
