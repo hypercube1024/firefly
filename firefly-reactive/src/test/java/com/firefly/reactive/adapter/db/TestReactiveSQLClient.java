@@ -13,11 +13,15 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Phaser;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
@@ -102,7 +106,7 @@ public class TestReactiveSQLClient {
                     .expectComplete().verify();
         StepVerifier.create(exec(c -> c.queryById(id, User.class)).map(User::getName))
                     .expectNext("test transaction 0")
-                    .expectComplete().verify();
+                    .verifyComplete();
     }
 
     @Test
@@ -172,7 +176,7 @@ public class TestReactiveSQLClient {
         StepVerifier.create(ids).assertNext(idList -> {
             Assert.assertThat(idList.size(), is(5));
             System.out.println(idList);
-        }).expectComplete().verify();
+        }).verifyComplete();
     }
 
     @Test
@@ -180,7 +184,7 @@ public class TestReactiveSQLClient {
         Mono<User> user = exec(c -> c.queryById(1, User.class));
         StepVerifier.create(user)
                     .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 0")))
-                    .expectComplete().verify();
+                    .verifyComplete();
     }
 
     @Test
@@ -201,6 +205,43 @@ public class TestReactiveSQLClient {
     }
 
     @Test
+    public void testBatchInsertUsers() {
+        List<User> users = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            User user = new User();
+            user.setName("test insert " + i);
+            user.setPassword("test insert pwd " + i);
+            users.add(user);
+        }
+        Mono<List<Long>> newUserIdList = exec(c -> c.insertObjectBatch(users, User.class));
+        StepVerifier.create(newUserIdList)
+                    .assertNext(list -> {
+                        Assert.assertThat(list.size(), is(5));
+                        Assert.assertThat(list.get(0), is(size + 1L));
+                    })
+                    .verifyComplete();
+    }
+
+    @Test
+    public void testBatchInsertUsers2() {
+        List<User> users = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            User user = new User();
+            user.setName("test insert batch " + i);
+            user.setPassword("test insert pwd batch " + i);
+            users.add(user);
+        }
+        Mono<List<Integer>> newUserIdList = exec(c -> c.insertObjectBatch(users, User.class,
+                resultSet -> resultSet.stream().map(row -> row.getInt(1)).collect(Collectors.toList())));
+        StepVerifier.create(newUserIdList)
+                    .assertNext(list -> {
+                        Assert.assertThat(list.size(), is(10));
+                        Assert.assertThat(list.get(0), is(size + 1));
+                    })
+                    .verifyComplete();
+    }
+
+    @Test
     public void testDeleteUser() {
         Mono<Integer> row = exec(c -> c.deleteById(1L, User.class));
         StepVerifier.create(row).expectNext(1).verifyComplete();
@@ -217,6 +258,65 @@ public class TestReactiveSQLClient {
         Mono<User> userMono = exec(c -> c.queryById(1, User.class));
         StepVerifier.create(userMono)
                     .assertNext(u -> Assert.assertThat(u.getName(), is("update user name")))
-                    .expectComplete().verify();
+                    .verifyComplete();
+    }
+
+    @Test
+    public void testQueryForSingleColumn() {
+        Mono<Long> count = exec(c -> c.queryForSingleColumn("select count(*) from test.user"));
+        StepVerifier.create(count).expectNext(Long.valueOf(size)).verifyComplete();
+
+        count = exec(c -> c.queryForSingleColumn("select count(*) from test.user where id > ?", 5L));
+        StepVerifier.create(count).expectNext(size - 5L).verifyComplete();
+    }
+
+    @Test
+    public void testQueryForObject() {
+        Mono<User> user = exec(c -> c.queryForObject("select * from test.user where id = ?", User.class, 2L));
+        StepVerifier.create(user)
+                    .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 1")))
+                    .verifyComplete();
+    }
+
+    @Test
+    public void testQueryForList() {
+        Mono<List<User>> users = exec(c -> c.queryForList("select * from test.user where id >= ?", User.class, 9L));
+        StepVerifier.create(users.flatMapIterable(tmpUsers -> tmpUsers).map(User::getName))
+                    .expectNext("test transaction 8")
+                    .expectNext("test transaction 9")
+                    .verifyComplete();
+    }
+
+    @Test
+    public void testQuery() {
+        String sql = "select * from test.user where id >= ?";
+        Mono<List<String>> userNames = exec(c -> c.query(sql, resultSet -> resultSet.stream().map(row -> row.getString("pt_name")).collect(Collectors.toList()), 9L));
+        StepVerifier.create(userNames.flatMapIterable(tmpNames -> tmpNames))
+                    .expectNext("test transaction 8")
+                    .expectNext("test transaction 9")
+                    .verifyComplete();
+    }
+
+    @Test
+    public void testQueryForMap() {
+        String sql = "select * from test.user where id >= ?";
+        Mono<Map<Long, User>> userMap = exec(c -> c.queryForBeanMap(sql, User.class, 9L));
+        StepVerifier.create(userMap.map(map -> map.get(10L)).map(User::getName))
+                    .expectNext("test transaction 9")
+                    .verifyComplete();
+    }
+
+    @Test
+    public void testInsert() {
+        String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
+        Mono<Long> newUserId = exec(c -> c.insert(sql, "hello user", "hello user pwd"));
+        StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
+    }
+
+    @Test
+    public void testUpdate() {
+        String sql = "update test.user set `pt_name` = ? where id = ?";
+        Mono<Integer> row = exec(c -> c.update(sql, "update xxx", 2L));
+        StepVerifier.create(row).expectNext(1).verifyComplete();
     }
 }

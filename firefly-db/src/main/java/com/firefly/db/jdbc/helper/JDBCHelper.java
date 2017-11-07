@@ -117,7 +117,7 @@ public class JDBCHelper extends AbstractLifeCycle {
                             ret = handler.invoke(originalInstance, args);
                         } catch (Exception e) {
                             exception = e;
-                            return null;
+                            throw new DBException(exception);
                         } finally {
                             long currentTime = System.currentTimeMillis();
                             long latencyTime = currentTime - start;

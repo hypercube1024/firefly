@@ -19,20 +19,20 @@ public interface ReactiveSQLConnection {
     /**
      * Query single column record by SQL. If the database has not record, it will emit the RecordNotFound exception.
      *
-     * @param sql    An SQL that may contain one or more '?' IN parameter placeholders
-     * @param params SQL parameters
-     * @param <T>    The type of column
-     * @return The result that is wrapped by Mono
+     * @param sql    An SQL that may contain one or more '?' IN parameter placeholders.
+     * @param params SQL parameters.
+     * @param <T>    The type of column.
+     * @return The result that is wrapped by Mono.
      */
     <T> Mono<T> queryForSingleColumn(String sql, Object... params);
 
     /**
      * Query record and bind object. If the database has not record, it will emit the RecordNotFound exception.
      *
-     * @param sql    An SQL that may contain one or more '?' IN parameter placeholders
-     * @param clazz  The Class reference of bound object
-     * @param params SQL parameters
-     * @param <T>    The type of bound object
+     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param clazz  The Class reference of bound object.
+     * @param params SQL parameters.
+     * @param <T>    The type of bound object.
      * @return The result that binds to Class and it is wrapped by Mono.
      */
     <T> Mono<T> queryForObject(String sql, Class<T> clazz, Object... params);
@@ -50,38 +50,54 @@ public interface ReactiveSQLConnection {
      * </pre>
      * </blockquote>
      *
-     * @param id    Primary key
-     * @param clazz The Class reference of bound object
-     * @param <T>   The type of bound object
+     * @param id    Primary key.
+     * @param clazz The Class reference of bound object.
+     * @param <T>   The type of bound object.
      * @return The result that binds to Class and it is wrapped by Mono.
      */
     <T> Mono<T> queryById(Object id, Class<T> clazz);
 
     /**
-     * Query records and convert records to a Map
+     * Query records and convert records to a Map.
      *
-     * @param sql        An SQL that may contain one or more '?' IN parameter placeholders
-     * @param valueClass The Class reference of bound object
-     * @param params     SQL parameters
-     * @param <K>        The type of primary key
-     * @param <V>        The type of bound object
+     * @param sql        A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param valueClass The Class reference of bound object.
+     * @param params     SQL parameters.
+     * @param <K>        The type of primary key.
+     * @param <V>        The type of bound object.
      * @return The result that contains a map, the key is primary key of record, the value is bound object. And it is wrapped by Mono.
      */
     <K, V> Mono<Map<K, V>> queryForBeanMap(String sql, Class<V> valueClass, Object... params);
 
     /**
-     * Query records and bind object
+     * Query records and bind object.
      *
-     * @param sql    An SQL that may contain one or more '?' IN parameter placeholders
-     * @param clazz  The Class reference of bound object
-     * @param params SQL parameters
-     * @param <T>    The type of bound object
+     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param clazz  The Class reference of bound object.
+     * @param params SQL parameters.
+     * @param <T>    The type of bound object.
      * @return The result that contains a list, the list element binds to Class. And it is wrapped by Mono.
      */
     <T> Mono<List<T>> queryForList(String sql, Class<T> clazz, Object... params);
 
+    /**
+     * Query records and convert result set to javabean using handler.
+     *
+     * @param sql     A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param handler The function that converts result set to javabean.
+     * @param params  SQL parameters.
+     * @param <T>     The type of converted object.
+     * @return The result that is wrapped by Mono.
+     */
     <T> Mono<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params);
 
+    /**
+     * Update records.
+     *
+     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param params SQL parameters.
+     * @return The affected row number.
+     */
     Mono<Integer> update(String sql, Object... params);
 
     /**
@@ -93,6 +109,14 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<Integer> updateObject(T object);
 
+    /**
+     * Insert records
+     *
+     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param params SQL parameters.
+     * @param <T>    The type of autoincrement id.
+     * @return The autoincrement id that is wrapped by Mono.
+     */
     <T> Mono<T> insert(String sql, Object... params);
 
     /**
@@ -105,10 +129,39 @@ public interface ReactiveSQLConnection {
      */
     <T, R> Mono<R> insertObject(T object);
 
+    /**
+     * Batch to insert javabean.
+     *
+     * @param list    The javabean list.
+     * @param clazz   The javabean Class.
+     * @param handler The function that converts result set to java type.
+     * @param <T>     The type of javabean.
+     * @param <R>     The type of autoincrement id.
+     * @return The autoincrement id list that is wrapped by Mono.
+     */
     <T, R> Mono<R> insertObjectBatch(List<T> list, Class<T> clazz, Func1<SQLResultSet, R> handler);
 
+    /**
+     * Batch to insert javabean.
+     *
+     * @param list  The javabean list.
+     * @param clazz The javabean Class.
+     * @param <T>   The type of javabean.
+     * @param <R>   The type of autoincrement id.
+     * @return The autoincrement id list that is wrapped by Mono.
+     */
     <T, R> Mono<List<R>> insertObjectBatch(List<T> list, Class<T> clazz);
 
+    /**
+     * Execute a sql to batch inserting data.
+     *
+     * @param sql     A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param params  An array of query replacement parameters.  Each row in
+     *                this array is one set of batch replacement values.
+     * @param handler The function that converts result set to java type.
+     * @param <R>     The type of autoincrement id.
+     * @return The autoincrement id list that is wrapped by Mono.
+     */
     <R> Mono<R> insertBatch(String sql, Object[][] params, Func1<SQLResultSet, R> handler);
 
     /**
@@ -121,6 +174,14 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<Integer> deleteById(Object id, Class<T> clazz);
 
+    /**
+     * Execute a batch of SQL INSERT, UPDATE, or DELETE queries.
+     *
+     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param params An array of query replacement parameters.  Each row in
+     *               this array is one set of batch replacement values.
+     * @return The number of rows updated per statement.
+     */
     Mono<int[]> executeBatch(String sql, Object[][] params);
 
     Mono<Boolean> setTransactionIsolation(TransactionIsolation transactionIsolation);
