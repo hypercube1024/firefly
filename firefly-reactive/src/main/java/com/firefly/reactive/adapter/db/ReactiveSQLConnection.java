@@ -38,17 +38,7 @@ public interface ReactiveSQLConnection {
     <T> Mono<T> queryForObject(String sql, Class<T> clazz, Object... params);
 
     /**
-     * Query record by id. If the database has not record, it will emit the RecordNotFound exception. For example:
-     * <blockquote>
-     * <pre>
-     * @Test
-     * public void testRecordNotFound() {
-     *     StepVerifier.create(exec(c -> c.queryById(size + 10, User.class)))
-     *     .expectErrorMatches(t -> t.getCause() instanceof RecordNotFound)
-     *     .verify();
-     * }
-     * </pre>
-     * </blockquote>
+     * Query record by id. If the database has not record, it will emit the RecordNotFound exception.
      *
      * @param id    Primary key.
      * @param clazz The Class reference of bound object.
