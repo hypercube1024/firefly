@@ -174,30 +174,99 @@ public interface ReactiveSQLConnection {
      */
     Mono<int[]> executeBatch(String sql, Object[][] params);
 
+    /**
+     * Set the transaction isolation.
+     *
+     * @param transactionIsolation The transaction isolation.
+     * @return If return true, set the transaction isolation success.
+     */
     Mono<Boolean> setTransactionIsolation(TransactionIsolation transactionIsolation);
 
+    /**
+     * Set transaction committing automatically.
+     *
+     * @param autoCommit If set the true, the transaction will commit automatically.
+     * @return If return true, Set auto committing success.
+     */
     Mono<Boolean> setAutoCommit(boolean autoCommit);
 
+    /**
+     * Get auto committing.
+     *
+     * @return If return true, the transaction will commit automatically.
+     */
     boolean getAutoCommit();
 
+    /**
+     * Rollback the transaction.
+     *
+     * @return If return true, the transaction rollback success.
+     */
     Mono<Boolean> rollback();
 
+    /**
+     * Commit a transaction.
+     *
+     * @return If return true, the transaction committing success.
+     */
     Mono<Boolean> commit();
 
+    /**
+     * Close the connection.
+     *
+     * @return If return true, close connection success.
+     */
     Mono<Boolean> close();
 
+    /**
+     * Commit and then close connection.
+     *
+     * @return If return true, commit and then close connection success.
+     */
     Mono<Boolean> commitAndClose();
 
+    /**
+     * Rollback and then close connection.
+     *
+     * @return If return true, rollback and then close connection success.
+     */
     Mono<Boolean> rollbackAndClose();
 
+    /**
+     * Execute the statements in transaction.
+     *
+     * @param func1 The statements will be executed in a transaction.
+     * @param <T>   The type of transaction result.
+     * @return The transaction result that is wrapped by Mono.
+     */
     <T> Mono<T> inTransaction(Func1<ReactiveSQLConnection, Mono<T>> func1);
 
+    /**
+     * Begin a transaction.
+     *
+     * @return If return true, begin transaction success.
+     */
     Mono<Boolean> beginTransaction();
 
+    /**
+     * Rollback and then end the transaction.
+     *
+     * @return If return true, rollback and then end the transaction success.
+     */
     Mono<Boolean> rollbackAndEndTransaction();
 
+    /**
+     * Commit and then end the transaction.
+     *
+     * @return If return true, commit and then end the transaction success.
+     */
     Mono<Boolean> commitAndEndTransaction();
 
+    /**
+     * Get original SQL connection.
+     *
+     * @return The original SQL connection.
+     */
     SQLConnection getSQLConnection();
 
 }
