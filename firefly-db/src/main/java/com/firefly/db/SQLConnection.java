@@ -14,36 +14,33 @@ import java.util.concurrent.CompletableFuture;
 public interface SQLConnection {
 
     /**
-     * Query single column record by SQL
+     * Query single column record by SQL. If the database has not record, it will emit the RecordNotFound exception.
      *
      * @param sql    An SQL that may contain one or more '?' IN parameter placeholders
      * @param params SQL parameters
      * @param <T>    The type of column
      * @return The future result
-     * @throws RecordNotFound If the database has not record throw RecordNotFound exception
      */
     <T> CompletableFuture<T> queryForSingleColumn(String sql, Object... params);
 
     /**
-     * Query record and bind object
+     * Query record and bind object. If the database has not record, it will emit the RecordNotFound exception.
      *
      * @param sql    An SQL that may contain one or more '?' IN parameter placeholders
      * @param clazz  The Class reference of bound object
      * @param params SQL parameters
      * @param <T>    The type of bound object
      * @return The future result
-     * @throws RecordNotFound If the database has not record throw RecordNotFound exception
      */
     <T> CompletableFuture<T> queryForObject(String sql, Class<T> clazz, Object... params);
 
     /**
-     * Query record by id
+     * Query record by id. If the database has not record, it will emit the RecordNotFound exception.
      *
      * @param id    Primary key
      * @param clazz The Class reference of bound object
      * @param <T>   The type of bound object
      * @return The future result
-     * @throws RecordNotFound If the database has not record of this id throw RecordNotFound exception
      */
     <T> CompletableFuture<T> queryById(Object id, Class<T> clazz);
 

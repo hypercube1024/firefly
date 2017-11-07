@@ -1,5 +1,6 @@
 package com.firefly.reactive.adapter.db;
 
+import com.firefly.db.RecordNotFound;
 import com.firefly.db.jdbc.JDBCClient;
 import com.firefly.reactive.adapter.Reactor;
 import com.firefly.utils.function.Func1;
@@ -13,7 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
+import java.util.List;
 import java.util.concurrent.Phaser;
 import java.util.stream.Collectors;
 
@@ -90,14 +93,16 @@ public class TestReactiveSQLClient {
         User user = new User();
         user.setId(id);
         user.setName("apple");
-        exec(c -> c.updateObject(user)
-                   .doOnSuccess(row -> Assert.assertThat(row, is(1)))
-                   .flatMap(v -> c.queryById(id, User.class))
-                   .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("apple")))
-                   .flatMap(v -> c.rollback()))
-                .flatMap(ret -> exec(c -> c.queryById(id, User.class)))
-                .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("test transaction 0")))
-                .block();
+        StepVerifier.create(exec(c -> c.updateObject(user)
+                                       .doOnSuccess(row -> Assert.assertThat(row, is(1)))
+                                       .flatMap(v -> c.queryById(id, User.class))
+                                       .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("apple")))
+                                       .flatMap(v -> c.rollback())))
+                    .expectNext(true)
+                    .expectComplete().verify();
+        StepVerifier.create(exec(c -> c.queryById(id, User.class)).map(User::getName))
+                    .expectNext("test transaction 0")
+                    .expectComplete().verify();
     }
 
     @Test
@@ -159,14 +164,59 @@ public class TestReactiveSQLClient {
 
     @Test
     public void testUsers() {
-        exec(c -> c.queryForList("select * from test.user", User.class)
-                   .flatMapIterable(users -> users)
-                   .filter(user -> user.getId() % 2 == 0)
-                   .map(User::getId)
-                   .doOnNext(id -> Assert.assertThat(id % 2, is(0L)))
-                   .collectList())
-                .doOnSuccess(idList -> Assert.assertThat(idList.size(), is(5)))
-                .doOnSuccess(System.out::println)
-                .block();
+        Mono<List<Long>> ids = exec(c -> c.queryForList("select * from test.user", User.class)
+                                          .flatMapIterable(users -> users)
+                                          .filter(user -> user.getId() % 2 == 0)
+                                          .map(User::getId)
+                                          .collectList());
+        StepVerifier.create(ids).assertNext(idList -> {
+            Assert.assertThat(idList.size(), is(5));
+            System.out.println(idList);
+        }).expectComplete().verify();
+    }
+
+    @Test
+    public void testQueryById() {
+        Mono<User> user = exec(c -> c.queryById(1, User.class));
+        StepVerifier.create(user)
+                    .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 0")))
+                    .expectComplete().verify();
+    }
+
+    @Test
+    public void testRecordNotFound() {
+        Mono<User> user = exec(c -> c.queryById(size + 10, User.class));
+        StepVerifier.create(user)
+                    .expectErrorMatches(t -> t.getCause() instanceof RecordNotFound)
+                    .verify();
+    }
+
+    @Test
+    public void testInsertUser() {
+        User user = new User();
+        user.setName("test insert");
+        user.setPassword("test insert pwd");
+        Mono<Long> newUserId = exec(c -> c.insertObject(user));
+        StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
+    }
+
+    @Test
+    public void testDeleteUser() {
+        Mono<Integer> row = exec(c -> c.deleteById(1L, User.class));
+        StepVerifier.create(row).expectNext(1).verifyComplete();
+    }
+
+    @Test
+    public void testUpdateUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setName("update user name");
+        Mono<Integer> row = exec(c -> c.updateObject(user));
+        StepVerifier.create(row).expectNext(1).verifyComplete();
+
+        Mono<User> userMono = exec(c -> c.queryById(1, User.class));
+        StepVerifier.create(userMono)
+                    .assertNext(u -> Assert.assertThat(u.getName(), is("update user name")))
+                    .expectComplete().verify();
     }
 }
