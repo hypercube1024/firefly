@@ -16,6 +16,9 @@ title: Database access
 	- [Insert data](#insert-data)
 	- [Delete data](#delete-data)
 	- [Update data](#update-data)
+- [Query single column data](#query-single-column-data)
+- [Prepared statement query](#prepared-statement-query)
+- [Prepared statement update](#prepared-statement-update)
 
 <!-- /TOC -->
 
@@ -160,7 +163,7 @@ public void testQueryById() {
     Mono<User> user = exec(c -> c.queryById(1, User.class));
     StepVerifier.create(user)
                 .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 0")))
-                .expectComplete().verify();
+                .verifyComplete();
 }
 ```
 
@@ -189,6 +192,49 @@ public void testInsertUser() {
 }
 ```
 
+Batch to insert data. For example:
+```java
+@Test
+public void testBatchInsertUsers() {
+    List<User> users = new ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+        User user = new User();
+        user.setName("test insert " + i);
+        user.setPassword("test insert pwd " + i);
+        users.add(user);
+    }
+    Mono<List<Long>> newUserIdList = exec(c -> c.insertObjectBatch(users, User.class));
+    StepVerifier.create(newUserIdList)
+                .assertNext(list -> {
+                    Assert.assertThat(list.size(), is(5));
+                    Assert.assertThat(list.get(0), is(size + 1L));
+                })
+                .verifyComplete();
+}
+```
+
+Batch to insert data and use the custom mapping. For example:
+```java
+@Test
+public void testBatchInsertUsers2() {
+    List<User> users = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+        User user = new User();
+        user.setName("test insert batch " + i);
+        user.setPassword("test insert pwd batch " + i);
+        users.add(user);
+    }
+    Mono<List<Integer>> newUserIdList = exec(c -> c.insertObjectBatch(users, User.class,
+            resultSet -> resultSet.stream().map(row -> row.getInt(1)).collect(Collectors.toList())));
+    StepVerifier.create(newUserIdList)
+                .assertNext(list -> {
+                    Assert.assertThat(list.size(), is(10));
+                    Assert.assertThat(list.get(0), is(size + 1));
+                })
+                .verifyComplete();
+}
+```
+
 ## Delete data
 Delete user whose id is 1L and return affected row number. For example:
 ```java
@@ -213,6 +259,89 @@ public void testUpdateUser() {
     Mono<User> userMono = exec(c -> c.queryById(1, User.class));
     StepVerifier.create(userMono)
                 .assertNext(u -> Assert.assertThat(u.getName(), is("update user name")))
-                .expectComplete().verify();
+                .verifyComplete();
+}
+```
+
+# Query single column data
+```java
+@Test
+public void testQueryForSingleColumn() {
+    Mono<Long> count = exec(c -> c.queryForSingleColumn("select count(*) from test.user"));
+    StepVerifier.create(count).expectNext(Long.valueOf(size)).verifyComplete();
+
+    count = exec(c -> c.queryForSingleColumn("select count(*) from test.user where id > ?", 5L));
+    StepVerifier.create(count).expectNext(size - 5L).verifyComplete();
+}
+```
+Notes: If the return type does not equals the column type, it will throw cast class exception.
+
+# Prepared statement query
+To execute a prepared statement query and return one row. For example:
+```java
+@Test
+public void testQueryForObject() {
+    Mono<User> user = exec(c -> c.queryForObject("select * from test.user where id = ?", User.class, 2L));
+    StepVerifier.create(user)
+                .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 1")))
+                .verifyComplete();
+}
+```
+
+To execute a prepared statement query and return many rows. For example:
+```java
+@Test
+public void testQueryForList() {
+    Mono<List<User>> users = exec(c -> c.queryForList("select * from test.user where id >= ?", User.class, 9L));
+    StepVerifier.create(users.flatMapIterable(tmpUsers -> tmpUsers).map(User::getName))
+                .expectNext("test transaction 8")
+                .expectNext("test transaction 9")
+                .verifyComplete();
+}
+```
+
+To execute a prepared statement query and use the custom mapping. For example:
+```java
+@Test
+public void testQuery() {
+    String sql = "select * from test.user where id >= ?";
+    Mono<List<String>> userNames = exec(c -> c.query(sql, resultSet -> resultSet.stream().map(row -> row.getString("pt_name")).collect(Collectors.toList()), 9L));
+    StepVerifier.create(userNames.flatMapIterable(tmpNames -> tmpNames))
+                .expectNext("test transaction 8")
+                .expectNext("test transaction 9")
+                .verifyComplete();
+}
+```
+
+To execute a prepared statement query and convert result to a map. For example:
+```java
+@Test
+public void testQueryForMap() {
+    String sql = "select * from test.user where id >= ?";
+    Mono<Map<Long, User>> userMap = exec(c -> c.queryForBeanMap(sql, User.class, 9L));
+    StepVerifier.create(userMap.map(map -> map.get(10L)).map(User::getName))
+                .expectNext("test transaction 9")
+                .verifyComplete();
+}
+```
+
+# Prepared statement update
+To execute a prepared statement insert. For example:
+```java
+@Test
+public void testInsert() {
+    String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
+    Mono<Long> newUserId = exec(c -> c.insert(sql, "hello user", "hello user pwd"));
+    StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
+}
+```
+
+To execute a prepared statement update. For example:
+```java
+@Test
+public void testUpdate() {
+    String sql = "update test.user set `pt_name` = ? where id = ?";
+    Mono<Integer> row = exec(c -> c.update(sql, "update xxx", 2L));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
 }
 ```
