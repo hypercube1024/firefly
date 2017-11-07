@@ -11,6 +11,11 @@ title: Database access
 - [Create a client](#create-a-client)
 - [Execute transaction](#execute-transaction)
 - [Bind data to java bean](#bind-data-to-java-bean)
+	- [Create mapping](#create-mapping)
+	- [Query data by id](#query-data-by-id)
+	- [Insert data](#insert-data)
+	- [Delete data](#delete-data)
+	- [Update data](#update-data)
 
 <!-- /TOC -->
 
@@ -89,7 +94,14 @@ public void before() {
 ```
 
 # Bind data to java bean
+We use the annotation to bind database result set to a java bean. Such as, `com.firefly.db.annotation.Table`, `com.firefly.db.annotation.Column`, and `com.firefly.db.annotation.Id`.
+
+## Create mapping
 Creating User class and mapping it to table test.user.
+* `@Table` - set the database name and table name.
+* `@Column`- set the table column name.
+* `@Id` - set the primary key of the table.
+
 ```java
 @Table(value = "user", catalog = "test")
 public class User {
@@ -141,21 +153,66 @@ public class User {
 }
 ```
 
-Query or (insert/update) data mapping to java bean
+## Query data by id
 ```java
 @Test
-public void testRollback() {
-    Long id = 1L;
+public void testQueryById() {
+    Mono<User> user = exec(c -> c.queryById(1, User.class));
+    StepVerifier.create(user)
+                .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 0")))
+                .expectComplete().verify();
+}
+```
+
+In this case, the SQL client query test.user table by id, if the database has not the record, SQL client will emit a RecordNotFound exception. Such as:
+```java
+@Test
+public void testRecordNotFound() {
+    Mono<User> user = exec(c -> c.queryById(size + 10, User.class));
+    StepVerifier.create(user)
+                .expectErrorMatches(t -> t.getCause() instanceof RecordNotFound)
+                .verify();
+}
+```
+
+
+## Insert data
+We can insert a javabean into the database directly and the SQL client will return the autoincrement id. For example:
+```java
+@Test
+public void testInsertUser() {
     User user = new User();
-    user.setId(id);
-    user.setName("apple");
-    exec(c -> c.updateObject(user)
-               .doOnSuccess(row -> Assert.assertThat(row, is(1)))
-               .flatMap(v -> c.queryById(id, User.class))
-               .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("apple")))
-               .flatMap(v -> c.rollback()))
-            .flatMap(ret -> exec(c -> c.queryById(id, User.class)))
-            .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("test transaction 0")))
-            .block();
+    user.setName("test insert");
+    user.setPassword("test insert pwd");
+    Mono<Long> newUserId = exec(c -> c.insertObject(user));
+    StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
+}
+```
+
+## Delete data
+Delete user whose id is 1L and return affected row number. For example:
+```java
+@Test
+public void testDeleteUser() {
+    Mono<Integer> row = exec(c -> c.deleteById(1L, User.class));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
+}
+```
+
+## Update data
+Update user whose id is 1L and return affected row number. For example:
+```java
+@Test
+public void testUpdateUser() {
+    User user = new User();
+    user.setId(1L);
+    user.setName("update user name");
+    Mono<Integer> row = exec(c -> c.updateObject(user));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
+
+    Mono<User> userMono = exec(c -> c.queryById(1, User.class));
+    StepVerifier.create(userMono)
+                .assertNext(u -> Assert.assertThat(u.getName(), is("update user name")))
+                .expectComplete().verify();
 }
 ```
