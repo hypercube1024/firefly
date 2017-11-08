@@ -10,6 +10,8 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
+import com.firefly.utils.heartbeat.HealthCheck;
+import com.firefly.utils.heartbeat.Task;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.EofException;
 import com.firefly.utils.io.IO;
@@ -64,6 +66,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 return Ratio.of(errorMeter.getOneMinuteRate(), responseTimer.getOneMinuteRate());
             }
         });
+        Optional.ofNullable(http2Configuration.getHealthCheck()).ifPresent(HealthCheck::start);
         start();
     }
 
@@ -711,6 +714,26 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
+    /**
+     * Register an health check task.
+     *
+     * @param task The health check task.
+     */
+    public void registerHealthCheck(Task task) {
+        Optional.ofNullable(simpleHTTPClientConfiguration.getHealthCheck())
+                .ifPresent(healthCheck -> healthCheck.register(task));
+    }
+
+    /**
+     * Clear the health check task.
+     *
+     * @param name The task name.
+     */
+    public void clearHealthCheck(String name) {
+        Optional.ofNullable(simpleHTTPClientConfiguration.getHealthCheck())
+                .ifPresent(healthCheck -> healthCheck.clear(name));
+    }
+
     protected void send(RequestBuilder reqBuilder) {
         Timer.Context resTimerCtx = responseTimer.time();
         getPool(reqBuilder).take().thenAccept(pooledConn -> {
@@ -893,5 +916,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     protected void destroy() {
         http2Client.stop();
         poolMap.forEach((k, v) -> v.stop());
+        Optional.ofNullable(simpleHTTPClientConfiguration.getHealthCheck()).ifPresent(HealthCheck::stop);
     }
 }

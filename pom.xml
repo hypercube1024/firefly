@@ -413,7 +413,7 @@
         <log.path>../logs</log.path>
 
         <kotlin.version>1.1.51</kotlin.version>
-        <kotlin.coroutine.version>0.19.1</kotlin.coroutine.version>
+        <kotlin.coroutine.version>0.19.3</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>

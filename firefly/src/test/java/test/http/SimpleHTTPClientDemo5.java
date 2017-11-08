@@ -4,6 +4,9 @@ import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
+import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.utils.heartbeat.Result;
+import com.firefly.utils.heartbeat.Task;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +24,18 @@ public class SimpleHTTPClientDemo5 {
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
     public static void main(String[] args) throws Exception {
+        Task task = new Task();
+        task.setTask(() -> $.httpsClient().head("https://login.taobao.com").submit().thenApply(res -> {
+            if (res.getStatus() == HttpStatus.OK_200) {
+                return Result.SUCCESS;
+            } else {
+                return Result.FAILURE;
+            }
+        }));
+        task.setName("https://login.taobao.com");
+        task.setResultListener((name, result, ex) -> System.out.println("the health check result -> " + result));
+        $.httpsClient().registerHealthCheck(task);
+
         $.httpsClient().get("https://login.taobao.com").submit()
          .thenAccept(res -> {
              System.out.println(res.getStatus());

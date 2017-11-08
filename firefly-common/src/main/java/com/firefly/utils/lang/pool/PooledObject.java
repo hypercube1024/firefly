@@ -98,14 +98,29 @@ public class PooledObject<T> {
         Optional.ofNullable(phantomReference).ifPresent(ref -> pool.getLeakDetector().clear(ref));
     }
 
+    /**
+     * Get the leak callback. It is invoked when the pooled object leaks.
+     *
+     * @return The leak callback.
+     */
     public Action0 getLeakCallback() {
         return leakCallback;
     }
 
+    /**
+     * Get the phantom reference which is used to track leak.
+     *
+     * @return The phantom reference which is used to track leak.
+     */
     public PhantomReference<PooledObject<T>> getPhantomReference() {
         return phantomReference;
     }
 
+    /**
+     * Set the phantom reference which is used to track leak.
+     *
+     * @param phantomReference The phantom reference which is used to track leak.
+     */
     public void setPhantomReference(PhantomReference<PooledObject<T>> phantomReference) {
         this.phantomReference = phantomReference;
     }
