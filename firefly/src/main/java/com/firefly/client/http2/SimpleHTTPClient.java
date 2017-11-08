@@ -44,7 +44,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     private final HTTP2Client http2Client;
     private final ConcurrentHashMap<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
-    private final SimpleHTTPClientConfiguration simpleHTTPClientConfiguration;
+    private final SimpleHTTPClientConfiguration config;
     private final Timer responseTimer;
     private final Meter errorMeter;
     private final Counter leakedConnectionCounter;
@@ -54,7 +54,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     public SimpleHTTPClient(SimpleHTTPClientConfiguration http2Configuration) {
-        this.simpleHTTPClientConfiguration = http2Configuration;
+        this.config = http2Configuration;
         http2Client = new HTTP2Client(http2Configuration);
         MetricRegistry metrics = http2Configuration.getTcpConfiguration().getMetricReporterFactory().getMetricRegistry();
         responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
@@ -66,7 +66,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 return Ratio.of(errorMeter.getOneMinuteRate(), responseTimer.getOneMinuteRate());
             }
         });
-        Optional.ofNullable(http2Configuration.getHealthCheck()).ifPresent(HealthCheck::start);
         start();
     }
 
@@ -720,7 +719,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
      * @param task The health check task.
      */
     public void registerHealthCheck(Task task) {
-        Optional.ofNullable(simpleHTTPClientConfiguration.getHealthCheck())
+        Optional.ofNullable(config.getHealthCheck())
                 .ifPresent(healthCheck -> healthCheck.register(task));
     }
 
@@ -730,7 +729,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
      * @param name The task name.
      */
     public void clearHealthCheck(String name) {
-        Optional.ofNullable(simpleHTTPClientConfiguration.getHealthCheck())
+        Optional.ofNullable(config.getHealthCheck())
                 .ifPresent(healthCheck -> healthCheck.clear(name));
     }
 
@@ -791,8 +790,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 return null;
             });
         } else if (reqBuilder.formUrlEncoded != null) {
-            String body = reqBuilder.formUrlEncoded.encode(Charset.forName(simpleHTTPClientConfiguration.getCharacterEncoding()), true);
-            byte[] content = StringUtils.getBytes(body, simpleHTTPClientConfiguration.getCharacterEncoding());
+            String body = reqBuilder.formUrlEncoded.encode(Charset.forName(config.getCharacterEncoding()), true);
+            byte[] content = StringUtils.getBytes(body, config.getCharacterEncoding());
             connection.send(reqBuilder.request, ByteBuffer.wrap(content), handler);
         } else {
             connection.send(reqBuilder.request, handler);
@@ -809,7 +808,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     reqBuilder.simpleResponse = new SimpleResponse(resp);
                 }
             }
-            return false;
+            return HttpMethod.HEAD.is(req.getMethod()) && messageComplete(reqBuilder, resTimerCtx, pooledConn, resp);
         }).content((buffer, req, resp, outputStream, conn) -> {
             Optional.ofNullable(reqBuilder.content).ifPresent(c -> c.call(buffer));
             if (reqBuilder.future != null) {
@@ -819,18 +818,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }).contentComplete((req, resp, outputStream, conn) -> {
             Optional.ofNullable(reqBuilder.contentComplete).ifPresent(content -> content.call(resp));
             return false;
-        }).messageComplete((req, resp, outputStream, conn) -> {
-            try {
-                Optional.ofNullable(reqBuilder.messageComplete).ifPresent(msg -> msg.call(resp));
-                Optional.ofNullable(reqBuilder.future).ifPresent(f -> f.succeeded(reqBuilder.simpleResponse));
-                resTimerCtx.stop();
-                return true;
-            } finally {
-                pooledConn.release();
-                if (log.isDebugEnabled()) {
-                    log.debug("complete request of the connection {} , released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
-                }
-            }
         }).badMessage((errCode, reason, req, resp, outputStream, conn) -> {
             try {
                 Optional.ofNullable(reqBuilder.badMessage).ifPresent(bad -> bad.call(errCode, reason, resp));
@@ -840,9 +827,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     }
                     reqBuilder.future.failed(new BadMessageException(errCode, reason));
                 }
+            } finally {
                 errorMeter.mark();
                 resTimerCtx.stop();
-            } finally {
                 IO.close(pooledConn.getObject());
                 pooledConn.release();
                 if (log.isDebugEnabled()) {
@@ -858,16 +845,33 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     }
                     reqBuilder.future.failed(new EofException("early eof"));
                 }
+            } finally {
                 errorMeter.mark();
                 resTimerCtx.stop();
-            } finally {
                 IO.close(pooledConn.getObject());
                 pooledConn.release();
                 if (log.isDebugEnabled()) {
                     log.debug("early EOF of the connection {}, released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
                 }
             }
-        });
+        }).messageComplete((req, resp, outputStream, conn) -> messageComplete(reqBuilder, resTimerCtx, pooledConn, resp));
+    }
+
+    private boolean messageComplete(RequestBuilder reqBuilder,
+                                    Timer.Context resTimerCtx,
+                                    PooledObject<HTTPClientConnection> pooledConn,
+                                    Response resp) {
+        try {
+            Optional.ofNullable(reqBuilder.messageComplete).ifPresent(msg -> msg.call(resp));
+            Optional.ofNullable(reqBuilder.future).ifPresent(f -> f.succeeded(reqBuilder.simpleResponse));
+            return true;
+        } finally {
+            resTimerCtx.stop();
+            pooledConn.release();
+            if (log.isDebugEnabled()) {
+                log.debug("complete request of the connection {} , released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
+            }
+        }
     }
 
     protected AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
@@ -878,8 +882,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         String host = request.host;
         int port = request.port;
         return new BoundedAsynchronousPool<>(
-                simpleHTTPClientConfiguration.getPoolSize(),
-                simpleHTTPClientConfiguration.getConnectTimeout(),
+                config.getPoolSize(),
+                config.getConnectTimeout(),
                 pool -> { // The pooled object factory
                     Promise.Completable<PooledObject<HTTPClientConnection>> pooledConn = new Promise.Completable<>();
                     Promise.Completable<HTTPClientConnection> connFuture = http2Client.connect(host, port);
@@ -910,12 +914,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     @Override
     protected void init() {
+        Optional.ofNullable(config.getHealthCheck()).ifPresent(HealthCheck::start);
     }
 
     @Override
     protected void destroy() {
         http2Client.stop();
         poolMap.forEach((k, v) -> v.stop());
-        Optional.ofNullable(simpleHTTPClientConfiguration.getHealthCheck()).ifPresent(HealthCheck::stop);
+        Optional.ofNullable(config.getHealthCheck()).ifPresent(HealthCheck::stop);
     }
 }

@@ -24,23 +24,19 @@ public class SimpleHTTPClientDemo5 {
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
     public static void main(String[] args) throws Exception {
-        Task task = new Task();
-        task.setTask(() -> $.httpsClient().head("https://login.taobao.com").submit().thenApply(res -> {
-            if (res.getStatus() == HttpStatus.OK_200) {
-                return Result.SUCCESS;
-            } else {
-                return Result.FAILURE;
-            }
-        }));
-        task.setName("https://login.taobao.com");
-        task.setResultListener((name, result, ex) -> System.out.println("the health check result -> " + result));
-        $.httpsClient().registerHealthCheck(task);
+//        Task task = new Task();
+//        task.setTask(() -> $.httpsClient().head("https://github.com").submit()
+//                            .thenApply(res -> res.getStatus() == HttpStatus.OK_200? Result.SUCCESS : Result.FAILURE));
+//        task.setName("https://github.com");
+//        task.setResultListener((name, result, ex) -> System.out.println("the " + name + " health check result -> " + result));
+//        $.httpsClient().registerHealthCheck(task);
 
-        $.httpsClient().get("https://login.taobao.com").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStatus());
-             System.out.println(res.getFields());
-             System.out.println(res.getStringBody());
+        $.httpsClient().head("https://github.com")
+         .submit()
+         .thenAccept(resp -> {
+             System.out.println(resp.getStatus());
+             System.out.println(resp.getFields());
+             System.out.println(resp.getStringBody());
          });
 
 //        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
