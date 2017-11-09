@@ -260,6 +260,8 @@ Hello IOC
 # Lifecycle callbacks
 To interact with the container’s management of the bean lifecycle, you can use `@InitialMethod` and `@DestroyedMethod` to specify lifecycle callbacks. For example:
 ```java
+@Component
+public class HelloServiceImpl implements HelloService {
 
     private String message;
 

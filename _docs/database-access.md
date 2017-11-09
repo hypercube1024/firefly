@@ -11,6 +11,14 @@ title: Database access
 - [Create a client](#create-a-client)
 - [Execute transaction](#execute-transaction)
 - [Bind data to java bean](#bind-data-to-java-bean)
+	- [Create mapping](#create-mapping)
+	- [Query data by id](#query-data-by-id)
+	- [Insert data](#insert-data)
+	- [Delete data](#delete-data)
+	- [Update data](#update-data)
+- [Query single column data](#query-single-column-data)
+- [Prepared statement query](#prepared-statement-query)
+- [Prepared statement update](#prepared-statement-update)
 
 <!-- /TOC -->
 
@@ -89,7 +97,14 @@ public void before() {
 ```
 
 # Bind data to java bean
+We use the annotation to bind database result set to a java bean. Such as, `com.firefly.db.annotation.Table`, `com.firefly.db.annotation.Column`, and `com.firefly.db.annotation.Id`.
+
+## Create mapping
 Creating User class and mapping it to table test.user.
+* `@Table` - set the database name and table name.
+* `@Column`- set the table column name.
+* `@Id` - set the primary key of the table.
+
 ```java
 @Table(value = "user", catalog = "test")
 public class User {
@@ -141,21 +156,192 @@ public class User {
 }
 ```
 
-Query or (insert/update) data mapping to java bean
+## Query data by id
 ```java
 @Test
-public void testRollback() {
-    Long id = 1L;
+public void testQueryById() {
+    Mono<User> user = exec(c -> c.queryById(1, User.class));
+    StepVerifier.create(user)
+                .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 0")))
+                .verifyComplete();
+}
+```
+
+In this case, the SQL client query test.user table by id, if the database has not the record, SQL client will emit a RecordNotFound exception. Such as:
+```java
+@Test
+public void testRecordNotFound() {
+    Mono<User> user = exec(c -> c.queryById(size + 10, User.class));
+    StepVerifier.create(user)
+                .expectErrorMatches(t -> t.getCause() instanceof RecordNotFound)
+                .verify();
+}
+```
+
+
+## Insert data
+We can insert a javabean into the database directly and the SQL client will return the autoincrement id. For example:
+```java
+@Test
+public void testInsertUser() {
     User user = new User();
-    user.setId(id);
-    user.setName("apple");
-    exec(c -> c.updateObject(user)
-               .doOnSuccess(row -> Assert.assertThat(row, is(1)))
-               .flatMap(v -> c.queryById(id, User.class))
-               .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("apple")))
-               .flatMap(v -> c.rollback()))
-            .flatMap(ret -> exec(c -> c.queryById(id, User.class)))
-            .doOnSuccess(user1 -> Assert.assertThat(user1.getName(), is("test transaction 0")))
-            .block();
+    user.setName("test insert");
+    user.setPassword("test insert pwd");
+    Mono<Long> newUserId = exec(c -> c.insertObject(user));
+    StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
+}
+```
+
+Batch to insert data. For example:
+```java
+@Test
+public void testBatchInsertUsers() {
+    List<User> users = new ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+        User user = new User();
+        user.setName("test insert " + i);
+        user.setPassword("test insert pwd " + i);
+        users.add(user);
+    }
+    Mono<List<Long>> newUserIdList = exec(c -> c.insertObjectBatch(users, User.class));
+    StepVerifier.create(newUserIdList)
+                .assertNext(list -> {
+                    Assert.assertThat(list.size(), is(5));
+                    Assert.assertThat(list.get(0), is(size + 1L));
+                })
+                .verifyComplete();
+}
+```
+
+Batch to insert data and use the custom mapping. For example:
+```java
+@Test
+public void testBatchInsertUsers2() {
+    List<User> users = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+        User user = new User();
+        user.setName("test insert batch " + i);
+        user.setPassword("test insert pwd batch " + i);
+        users.add(user);
+    }
+    Mono<List<Integer>> newUserIdList = exec(c -> c.insertObjectBatch(users, User.class,
+            resultSet -> resultSet.stream().map(row -> row.getInt(1)).collect(Collectors.toList())));
+    StepVerifier.create(newUserIdList)
+                .assertNext(list -> {
+                    Assert.assertThat(list.size(), is(10));
+                    Assert.assertThat(list.get(0), is(size + 1));
+                })
+                .verifyComplete();
+}
+```
+
+## Delete data
+Delete user whose id is 1L and return affected row number. For example:
+```java
+@Test
+public void testDeleteUser() {
+    Mono<Integer> row = exec(c -> c.deleteById(1L, User.class));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
+}
+```
+
+## Update data
+Update user whose id is 1L and return affected row number. For example:
+```java
+@Test
+public void testUpdateUser() {
+    User user = new User();
+    user.setId(1L);
+    user.setName("update user name");
+    Mono<Integer> row = exec(c -> c.updateObject(user));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
+
+    Mono<User> userMono = exec(c -> c.queryById(1, User.class));
+    StepVerifier.create(userMono)
+                .assertNext(u -> Assert.assertThat(u.getName(), is("update user name")))
+                .verifyComplete();
+}
+```
+
+# Query single column data
+```java
+@Test
+public void testQueryForSingleColumn() {
+    Mono<Long> count = exec(c -> c.queryForSingleColumn("select count(*) from test.user"));
+    StepVerifier.create(count).expectNext(Long.valueOf(size)).verifyComplete();
+
+    count = exec(c -> c.queryForSingleColumn("select count(*) from test.user where id > ?", 5L));
+    StepVerifier.create(count).expectNext(size - 5L).verifyComplete();
+}
+```
+Notes: If the return type does not equals the column type, it will throw cast class exception.
+
+# Prepared statement query
+To execute a prepared statement query and return one row. For example:
+```java
+@Test
+public void testQueryForObject() {
+    Mono<User> user = exec(c -> c.queryForObject("select * from test.user where id = ?", User.class, 2L));
+    StepVerifier.create(user)
+                .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 1")))
+                .verifyComplete();
+}
+```
+
+To execute a prepared statement query and return many rows. For example:
+```java
+@Test
+public void testQueryForList() {
+    Mono<List<User>> users = exec(c -> c.queryForList("select * from test.user where id >= ?", User.class, 9L));
+    StepVerifier.create(users.flatMapIterable(tmpUsers -> tmpUsers).map(User::getName))
+                .expectNext("test transaction 8")
+                .expectNext("test transaction 9")
+                .verifyComplete();
+}
+```
+
+To execute a prepared statement query and use the custom mapping. For example:
+```java
+@Test
+public void testQuery() {
+    String sql = "select * from test.user where id >= ?";
+    Mono<List<String>> userNames = exec(c -> c.query(sql, resultSet -> resultSet.stream().map(row -> row.getString("pt_name")).collect(Collectors.toList()), 9L));
+    StepVerifier.create(userNames.flatMapIterable(tmpNames -> tmpNames))
+                .expectNext("test transaction 8")
+                .expectNext("test transaction 9")
+                .verifyComplete();
+}
+```
+
+To execute a prepared statement query and convert result to a map. For example:
+```java
+@Test
+public void testQueryForMap() {
+    String sql = "select * from test.user where id >= ?";
+    Mono<Map<Long, User>> userMap = exec(c -> c.queryForBeanMap(sql, User.class, 9L));
+    StepVerifier.create(userMap.map(map -> map.get(10L)).map(User::getName))
+                .expectNext("test transaction 9")
+                .verifyComplete();
+}
+```
+
+# Prepared statement update
+To execute a prepared statement insert. For example:
+```java
+@Test
+public void testInsert() {
+    String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
+    Mono<Long> newUserId = exec(c -> c.insert(sql, "hello user", "hello user pwd"));
+    StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
+}
+```
+
+To execute a prepared statement update. For example:
+```java
+@Test
+public void testUpdate() {
+    String sql = "update test.user set `pt_name` = ? where id = ?";
+    Mono<Integer> row = exec(c -> c.update(sql, "update xxx", 2L));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
 }
 ```
