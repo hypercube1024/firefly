@@ -7,8 +7,10 @@ import java.util.List;
  */
 public interface ApplicationProtocolSelector {
 
-    String getApplicationProtocol();
+    default String getApplicationProtocol() {
+        return null;
+    }
 
-    List<String> getSupportedProtocols();
+    List<String> getSupportedApplicationProtocols();
 
 }

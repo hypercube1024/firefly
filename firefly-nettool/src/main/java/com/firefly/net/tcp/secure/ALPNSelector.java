@@ -73,7 +73,7 @@ public class ALPNSelector implements ApplicationProtocolSelector {
     }
 
     @Override
-    public List<String> getSupportedProtocols() {
+    public List<String> getSupportedApplicationProtocols() {
         return supportedProtocols;
     }
 }

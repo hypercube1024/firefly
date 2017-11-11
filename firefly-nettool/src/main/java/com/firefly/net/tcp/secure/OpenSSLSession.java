@@ -3,6 +3,7 @@ package com.firefly.net.tcp.secure;
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.SecureSessionHandshakeListener;
 import com.firefly.net.Session;
+import com.firefly.utils.io.BufferUtils;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -12,32 +13,35 @@ import java.nio.ByteBuffer;
 /**
  * @author Pengtao Qiu
  */
-public class JdkSSLSession extends AbstractSecureSession {
-
-    public JdkSSLSession(Session session, SSLEngine sslEngine,
-                         ApplicationProtocolSelector applicationProtocolSelector,
-                         SecureSessionHandshakeListener handshakeListener) throws IOException {
+public class OpenSSLSession extends AbstractSecureSession {
+    public OpenSSLSession(Session session, SSLEngine sslEngine,
+                          ApplicationProtocolSelector applicationProtocolSelector,
+                          SecureSessionHandshakeListener handshakeListener) throws IOException {
         super(session, sslEngine, applicationProtocolSelector, handshakeListener);
     }
 
     @Override
     protected SSLEngineResult unwrap(ByteBuffer input) throws IOException {
-        SSLEngineResult result = sslEngine.unwrap(input, receivedAppBuf);
+        ByteBuffer tmp = BufferUtils.toDirectBuffer(input);
+        SSLEngineResult result = sslEngine.unwrap(tmp, receivedAppBuf);
+        int consumed = result.bytesConsumed();
         if (input != receivedPacketBuf) {
-            int consumed = result.bytesConsumed();
             receivedPacketBuf.position(receivedPacketBuf.position() + consumed);
+        }
+        if (tmp != input) {
+            input.position(input.position() + consumed);
         }
         return result;
     }
 
     @Override
     protected SSLEngineResult wrap(ByteBuffer src, ByteBuffer dst) throws IOException {
-        return sslEngine.wrap(src, dst);
+        ByteBuffer tmp = BufferUtils.toDirectBuffer(src);
+        return sslEngine.wrap(tmp, dst);
     }
 
     @Override
     protected ByteBuffer newBuffer(int size) {
         return ByteBuffer.allocateDirect(size);
     }
-
 }

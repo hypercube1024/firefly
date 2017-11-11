@@ -7,24 +7,23 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
+import static com.firefly.utils.io.BufferUtils.toHeapBuffer;
+
 public class HTTP2ClientDecoder extends DecoderChain {
 
-	private static Logger log = LoggerFactory.getLogger("firefly-system");
+    private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-	@Override
-	public void decode(ByteBuffer buffer, Session session) throws Throwable {
-		if(!buffer.hasArray()) {
-			throw new IllegalArgumentException("the byte buffer has not array");
-		}
-		
-		if (!buffer.hasRemaining())
-			return;
+    @Override
+    public void decode(ByteBuffer buffer, Session session) throws Throwable {
+        if (!buffer.hasRemaining())
+            return;
 
-		if (log.isDebugEnabled())
-			log.debug("the client session {} received the {} bytes", session.getSessionId(), buffer.remaining());
+        if (log.isDebugEnabled()) {
+            log.debug("the client session {} received the {} bytes", session.getSessionId(), buffer.remaining());
+        }
 
-		HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) session.getAttachment();
-		http2ClientConnection.getParser().parse(buffer);
-	}
+        HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) session.getAttachment();
+        http2ClientConnection.getParser().parse(toHeapBuffer(buffer));
+    }
 
 }

@@ -5,6 +5,8 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.net.tcp.TcpConfiguration;
+import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLContextFactory;
 import com.firefly.utils.heartbeat.Result;
 import com.firefly.utils.heartbeat.Task;
 import com.firefly.utils.io.BufferUtils;
@@ -23,7 +25,15 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
+        SimpleHTTPClientConfiguration httpClientConfiguration = new SimpleHTTPClientConfiguration();
+        httpClientConfiguration.setSecureConnectionEnabled(true);
+        httpClientConfiguration.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
+        $.createHTTPClient(httpClientConfiguration).get("https://www.jd.com").submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
+    }
+
+    public static void main6(String[] args) throws Exception {
 //        Task task = new Task();
 //        task.setTask(() -> $.httpsClient().head("https://github.com").submit()
 //                            .thenApply(res -> res.getStatus() == HttpStatus.OK_200? Result.SUCCESS : Result.FAILURE));
@@ -31,13 +41,16 @@ public class SimpleHTTPClientDemo5 {
 //        task.setResultListener((name, result, ex) -> System.out.println("the " + name + " health check result -> " + result));
 //        $.httpsClient().registerHealthCheck(task);
 
-        $.httpsClient().head("https://github.com")
-         .submit()
-         .thenAccept(resp -> {
-             System.out.println(resp.getStatus());
-             System.out.println(resp.getFields());
-             System.out.println(resp.getStringBody());
-         });
+//        $.httpsClient().head("https://github.com")
+//         .submit()
+//         .thenAccept(resp -> {
+//             System.out.println(resp.getStatus());
+//             System.out.println(resp.getFields());
+//             System.out.println(resp.getStringBody());
+//         });
+
+        $.httpsClient().get("https://login.taobao.com").submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody("GBK")));
 
 //        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://github.com").submit().get().getStringBody());
