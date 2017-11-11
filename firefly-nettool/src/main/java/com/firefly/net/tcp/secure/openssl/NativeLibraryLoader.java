@@ -354,7 +354,7 @@ public final class NativeLibraryLoader {
             // the UnixFileStore, though the flag is not exposed via a public API.  To find out if library is being
             // loaded off a volume with noexec, confirm or add executalbe permissions, then check File#canExecute().
 
-            // Note: We use FQCN to not break when netty is used in java6
+            // Note: We use FQCN to not break when it is used in java6
             Set<java.nio.file.attribute.PosixFilePermission> existingFilePermissions =
                     java.nio.file.Files.getPosixFilePermissions(file.toPath());
             Set<java.nio.file.attribute.PosixFilePermission> executePermissions =
