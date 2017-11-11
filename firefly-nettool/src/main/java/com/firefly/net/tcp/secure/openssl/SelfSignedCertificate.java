@@ -194,7 +194,7 @@ public final class SelfSignedCertificate {
         final String keyText =
                 "-----BEGIN PRIVATE KEY-----\n" +
                         new String(encodedBuf, StandardCharsets.US_ASCII) +
-                        "\n-----END PRIVATE KEY-----\n";
+                        "-----END PRIVATE KEY-----\n";
 
         File keyFile = File.createTempFile("keyutil_" + fqdn + '_', ".key");
         keyFile.deleteOnExit();
@@ -215,7 +215,7 @@ public final class SelfSignedCertificate {
         final String certText =
                 "-----BEGIN CERTIFICATE-----\n" +
                         new String(encodedBuf, StandardCharsets.US_ASCII) +
-                        "\n-----END CERTIFICATE-----\n";
+                        "-----END CERTIFICATE-----\n";
         ;
 
         File certFile = File.createTempFile("keyutil_" + fqdn + '_', ".crt");

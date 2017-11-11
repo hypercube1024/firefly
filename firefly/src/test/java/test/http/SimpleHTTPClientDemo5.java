@@ -23,7 +23,7 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
-    public static void main(String[] args) throws Exception {
+    public static void main6(String[] args) throws Exception {
 //        Task task = new Task();
 //        task.setTask(() -> $.httpsClient().head("https://github.com").submit()
 //                            .thenApply(res -> res.getStatus() == HttpStatus.OK_200? Result.SUCCESS : Result.FAILURE));
@@ -31,13 +31,16 @@ public class SimpleHTTPClientDemo5 {
 //        task.setResultListener((name, result, ex) -> System.out.println("the " + name + " health check result -> " + result));
 //        $.httpsClient().registerHealthCheck(task);
 
-        $.httpsClient().head("https://github.com")
-         .submit()
-         .thenAccept(resp -> {
-             System.out.println(resp.getStatus());
-             System.out.println(resp.getFields());
-             System.out.println(resp.getStringBody());
-         });
+//        $.httpsClient().head("https://github.com")
+//         .submit()
+//         .thenAccept(resp -> {
+//             System.out.println(resp.getStatus());
+//             System.out.println(resp.getFields());
+//             System.out.println(resp.getStringBody());
+//         });
+
+        $.httpsClient().get("https://login.taobao.com").submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody("GBK")));
 
 //        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://github.com").submit().get().getStringBody());
@@ -60,7 +63,7 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main4(String[] args) throws ExecutionException, InterruptedException {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();

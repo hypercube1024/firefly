@@ -51,7 +51,7 @@ public final class NativeLibraryLoader {
      * @throws IllegalArgumentException if none of the given libraries load successfully.
      */
     public static void loadFirstAvailable(ClassLoader loader, String... names) {
-        List<Throwable> suppressed = new ArrayList<Throwable>();
+        List<Throwable> suppressed = new ArrayList<>();
         for (String name : names) {
             try {
                 load(name, loader);
@@ -75,7 +75,7 @@ public final class NativeLibraryLoader {
     private static String calculatePackagePrefix() {
         String maybeShaded = NativeLibraryLoader.class.getName();
         // Use ! instead of . to avoid shading utilities from modifying the string
-        String expected = "io!netty!util!internal!NativeLibraryLoader".replace('!', '.');
+        String expected = "com!firefly!net!tcp!secure!openssl!NativeLibraryLoader".replace('!', '.');
         if (!maybeShaded.endsWith(expected)) {
             throw new UnsatisfiedLinkError(String.format(
                     "Could not find prefix added to %s to get %s. When shading, only adding a "

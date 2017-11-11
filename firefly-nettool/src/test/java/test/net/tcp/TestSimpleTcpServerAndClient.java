@@ -5,6 +5,7 @@ import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.StringParser;
+import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLContextFactory;
 import com.firefly.utils.io.IO;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,7 +62,19 @@ public class TestSimpleTcpServerAndClient {
         run.serverConfig.setSecureConnectionEnabled(true);
         run.port = 1213;
         run.maxMsg = 20;
-        run.testName = "Test TCP server and client with TLS";
+        run.testName = "Test TCP server and client with JDK SSL";
+        data.add(run);
+
+        run = new Run();
+        run.clientConfig = new TcpConfiguration();
+        run.clientConfig.setSecureConnectionEnabled(true); // enable TLS
+        run.clientConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
+        run.serverConfig = new TcpServerConfiguration();
+        run.serverConfig.setSecureConnectionEnabled(true);
+        run.serverConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
+        run.port = 1214;
+        run.maxMsg = 20;
+        run.testName = "Test TCP server and client with OpenSSL";
         data.add(run);
 
         return data;

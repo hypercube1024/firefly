@@ -30,7 +30,7 @@ import java.util.Set;
 public final class PemX509Certificate extends X509Certificate implements PemEncoded {
 
     private static final byte[] BEGIN_CERT = "-----BEGIN CERTIFICATE-----\n".getBytes(StandardCharsets.US_ASCII);
-    private static final byte[] END_CERT = "\n-----END CERTIFICATE-----\n".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] END_CERT = "-----END CERTIFICATE-----\n".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Creates a {@link PemEncoded} value from the {@link X509Certificate}s.
@@ -78,7 +78,7 @@ public final class PemX509Certificate extends X509Certificate implements PemEnco
         ByteBuffer content = encoded.content();
         if (pem == null) {
             // see the other append() method
-            pem = ByteBuffer.allocateDirect(content.remaining() * count);
+            pem = ByteBuffer.allocateDirect(content.remaining() * count * 2);
         }
 
         pem.put(content.duplicate());
@@ -94,10 +94,10 @@ public final class PemX509Certificate extends X509Certificate implements PemEnco
             // We try to approximate the buffer's initial size. The sizes of
             // certificates can vary a lot so it'll be off a bit depending
             // on the number of elements in the array (count argument).
-            int length = (BEGIN_CERT.length + base64.length + END_CERT.length) * count;
+            int length = (BEGIN_CERT.length + base64.length + END_CERT.length) * count * 2;
             pem = ByteBuffer.allocateDirect(length);
         }
-        pem.put(BEGIN_CERT).put(base64).put(END_CERT);
+        pem.put(BEGIN_CERT).put(base64, 0, base64.length).put(END_CERT);
         return pem;
     }
 

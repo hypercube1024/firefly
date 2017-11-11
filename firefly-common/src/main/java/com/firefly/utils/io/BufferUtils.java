@@ -1163,7 +1163,7 @@ public class BufferUtils {
             return buf;
         } else {
             ByteBuffer directBuf = ByteBuffer.allocateDirect(buf.remaining());
-            directBuf.put(buf.duplicate()).flip();
+            directBuf.put(buf.slice()).flip();
             return directBuf;
         }
     }

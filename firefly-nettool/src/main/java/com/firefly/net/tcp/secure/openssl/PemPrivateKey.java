@@ -23,7 +23,7 @@ public final class PemPrivateKey implements PrivateKey, PemEncoded {
     private static final long serialVersionUID = 7978017465645018936L;
 
     private static final byte[] BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n".getBytes(StandardCharsets.US_ASCII);
-    private static final byte[] END_PRIVATE_KEY = "\n-----END PRIVATE KEY-----\n".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] END_PRIVATE_KEY = "-----END PRIVATE KEY-----\n".getBytes(StandardCharsets.US_ASCII);
 
     private static final String PKCS8_FORMAT = "PKCS#8";
 
