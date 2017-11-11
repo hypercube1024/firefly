@@ -1167,4 +1167,14 @@ public class BufferUtils {
             return directBuf;
         }
     }
+
+    public static ByteBuffer toHeapBuffer(ByteBuffer buf) {
+        if (buf.isDirect()) {
+            ByteBuffer heapBuffer = ByteBuffer.allocate(buf.remaining());
+            heapBuffer.put(buf.slice()).flip();
+            return heapBuffer;
+        } else {
+            return buf;
+        }
+    }
 }

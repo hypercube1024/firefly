@@ -3,7 +3,6 @@ package com.firefly.net.tcp.secure.openssl;
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.utils.Assert;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.io.BufferUtils;
 import io.netty.internal.tcnative.CertificateVerifier;
 import io.netty.internal.tcnative.SSL;
 import io.netty.internal.tcnative.SSLContext;
@@ -28,7 +27,6 @@ import static com.firefly.net.tcp.secure.openssl.ObjectUtil.checkNotNull;
 import static com.firefly.net.tcp.secure.openssl.ObjectUtil.checkPositiveOrZero;
 import static com.firefly.net.tcp.secure.openssl.OpenSsl.DEFAULT_CIPHERS;
 import static com.firefly.net.tcp.secure.openssl.OpenSsl.availableJavaCipherSuites;
-import static com.firefly.utils.io.BufferUtils.toDirectBuffer;
 
 /**
  * An implementation of {@link SslContext} which works with libraries that support the
@@ -711,9 +709,8 @@ public abstract class ReferenceCountedOpenSslContext extends SslContext implemen
         // We can turn direct buffers straight into BIOs. No need to
         // make a yet another copy.
         ByteBuffer content = pem.content();
-        ByteBuffer directBuffer = toDirectBuffer(content);
-        Assert.isTrue(directBuffer.isDirect(), "The content must be direct");
-        return newBIO(directBuffer);
+        Assert.isTrue(content.isDirect(), "The content must be direct");
+        return newBIO(content);
     }
 
     private static long newBIO(ByteBuffer buffer) throws Exception {

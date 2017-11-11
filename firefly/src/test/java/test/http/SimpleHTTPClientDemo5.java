@@ -5,6 +5,8 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.net.tcp.TcpConfiguration;
+import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLContextFactory;
 import com.firefly.utils.heartbeat.Result;
 import com.firefly.utils.heartbeat.Task;
 import com.firefly.utils.io.BufferUtils;
@@ -22,6 +24,14 @@ import java.util.concurrent.TimeUnit;
 public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
+
+    public static void main(String[] args) {
+        SimpleHTTPClientConfiguration httpClientConfiguration = new SimpleHTTPClientConfiguration();
+        httpClientConfiguration.setSecureConnectionEnabled(true);
+        httpClientConfiguration.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
+        $.createHTTPClient(httpClientConfiguration).get("https://www.jd.com").submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
+    }
 
     public static void main6(String[] args) throws Exception {
 //        Task task = new Task();
@@ -63,7 +73,7 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main4(String[] args) throws ExecutionException, InterruptedException {
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();

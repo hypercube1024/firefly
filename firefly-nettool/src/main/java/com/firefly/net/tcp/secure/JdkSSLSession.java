@@ -35,4 +35,9 @@ public class JdkSSLSession extends AbstractSecureSession {
         return sslEngine.wrap(src, dst);
     }
 
+    @Override
+    protected ByteBuffer newBuffer(int size) {
+        return ByteBuffer.allocateDirect(size);
+    }
+
 }

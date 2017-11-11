@@ -23,7 +23,6 @@ import static com.firefly.net.tcp.secure.openssl.EmptyArrays.EMPTY_CERTIFICATES;
 import static com.firefly.net.tcp.secure.openssl.EmptyArrays.EMPTY_JAVAX_X509_CERTIFICATES;
 import static com.firefly.net.tcp.secure.openssl.ObjectUtil.checkNotNull;
 import static com.firefly.net.tcp.secure.openssl.SslUtils.*;
-import static com.firefly.utils.io.BufferUtils.toDirectBuffer;
 import static io.netty.internal.tcnative.SSL.SSL_MAX_PLAINTEXT_LENGTH;
 import static io.netty.internal.tcnative.SSL.SSL_MAX_RECORD_LENGTH;
 import static java.lang.Integer.MAX_VALUE;
@@ -351,9 +350,9 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
      * Calling this function with src.remaining == 0 is undefined.
      */
     private int writePlaintextData(final ByteBuffer src, int len) {
+        Assert.isTrue(src.isDirect(), "The src must be direct");
         final int pos = src.position();
         final int sslWrote;
-        Assert.isTrue(src.isDirect(), "The src buffer must be direct");
         sslWrote = SSL.writeToSSL(ssl, Buffer.address(src) + pos, len);
         if (sslWrote > 0) {
             src.position(pos + sslWrote);
@@ -365,8 +364,8 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
      * Write encrypted data to the OpenSSL network BIO.
      */
     private void writeEncryptedData(final ByteBuffer src, int len) {
+        Assert.isTrue(src.isDirect(), "The src must be direct");
         final int pos = src.position();
-        Assert.isTrue(src.isDirect(), "The src buffer must be direct");
         SSL.bioSetByteBuffer(networkBIO, Buffer.address(src) + pos, len, false);
     }
 
@@ -376,9 +375,8 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
     private int readPlaintextData(final ByteBuffer dst) {
         final int sslRead;
         final int pos = dst.position();
-        ByteBuffer directBuffer = toDirectBuffer(dst);
-        Assert.isTrue(directBuffer.isDirect(), "The dst buffer must be direct");
-        sslRead = SSL.readFromSSL(ssl, Buffer.address(directBuffer) + pos, directBuffer.limit() - pos);
+        Assert.isTrue(dst.isDirect(), "The dst buffer must be direct");
+        sslRead = SSL.readFromSSL(ssl, Buffer.address(dst) + pos, dst.limit() - pos);
         if (sslRead > 0) {
             dst.position(pos + sslRead);
         }
@@ -611,8 +609,7 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
                         // between calls.
                         final int availableCapacityForWrap = dst.remaining() - bytesProduced - maxWrapOverhead;
                         if (availableCapacityForWrap <= 0) {
-                            return new SSLEngineResult(BUFFER_OVERFLOW, getHandshakeStatus(), bytesConsumed,
-                                    bytesProduced);
+                            return new SSLEngineResult(BUFFER_OVERFLOW, getHandshakeStatus(), bytesConsumed, bytesProduced);
                         }
                         bytesWritten = writePlaintextData(src, min(remaining, availableCapacityForWrap));
                     }
@@ -641,8 +638,8 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
                                 // try to wrap again. Otherwise we should only try to wrap again if there is still data
                                 // pending in SSL buffers.
                                 SSLEngineResult.HandshakeStatus hs = mayFinishHandshake(
-                                        status != FINISHED ? bytesProduced == dst.remaining() ? NEED_WRAP
-                                                : getHandshakeStatus(SSL.bioLengthNonApplication(networkBIO))
+                                        status != FINISHED
+                                                ? bytesProduced == dst.remaining() ? NEED_WRAP : getHandshakeStatus(SSL.bioLengthNonApplication(networkBIO))
                                                 : FINISHED);
                                 return newResult(hs, bytesConsumed, bytesProduced);
                             }

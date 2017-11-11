@@ -30,7 +30,6 @@ import java.security.PrivilegedAction;
 import java.util.*;
 
 import static com.firefly.net.tcp.secure.openssl.SslUtils.*;
-import static com.firefly.utils.io.BufferUtils.toDirectBuffer;
 
 /**
  * Tells if <a href="http://netty.io/wiki/forked-tomcat-native.html">{@code netty-tcnative}</a> and its OpenSSL support
@@ -372,9 +371,8 @@ public final class OpenSsl {
     }
 
     static long memoryAddress(ByteBuffer buf) {
-        ByteBuffer directBuffer = toDirectBuffer(buf);
-        Assert.isTrue(directBuffer.isDirect());
-        return Buffer.address(directBuffer);
+        Assert.isTrue(buf.isDirect(), "The buf must be direct");
+        return Buffer.address(buf);
     }
 
     private OpenSsl() { }

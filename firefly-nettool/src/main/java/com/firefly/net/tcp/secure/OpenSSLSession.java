@@ -39,4 +39,9 @@ public class OpenSSLSession extends AbstractSecureSession {
         ByteBuffer tmp = BufferUtils.toDirectBuffer(src);
         return sslEngine.wrap(tmp, dst);
     }
+
+    @Override
+    protected ByteBuffer newBuffer(int size) {
+        return ByteBuffer.allocateDirect(size);
+    }
 }
