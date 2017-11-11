@@ -10,15 +10,15 @@ import java.util.List;
 /**
  * @author Pengtao Qiu
  */
-public class SelfSignedCertificateOpenSSLContextFactory extends AbstractOpenSSLSecureSessionFactory {
+public class SelfSignedCertificateOpenSSLSecureSessionFactory extends AbstractOpenSSLSecureSessionFactory {
 
     private SelfSignedCertificate selfSignedCertificate;
 
-    public SelfSignedCertificateOpenSSLContextFactory() {
+    public SelfSignedCertificateOpenSSLSecureSessionFactory() {
         this(DEFAULT_SUPPORTED_PROTOCOLS);
     }
 
-    public SelfSignedCertificateOpenSSLContextFactory(List<String> supportedProtocols) {
+    public SelfSignedCertificateOpenSSLSecureSessionFactory(List<String> supportedProtocols) {
         super(supportedProtocols);
         try {
             selfSignedCertificate = new SelfSignedCertificate("www.fireflysource.com");

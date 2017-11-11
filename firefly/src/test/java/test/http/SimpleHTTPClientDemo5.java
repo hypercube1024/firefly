@@ -4,11 +4,7 @@ import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.net.tcp.TcpConfiguration;
-import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLContextFactory;
-import com.firefly.utils.heartbeat.Result;
-import com.firefly.utils.heartbeat.Task;
+import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLSecureSessionFactory;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +24,7 @@ public class SimpleHTTPClientDemo5 {
     public static void main(String[] args) {
         SimpleHTTPClientConfiguration httpClientConfiguration = new SimpleHTTPClientConfiguration();
         httpClientConfiguration.setSecureConnectionEnabled(true);
-        httpClientConfiguration.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
+        httpClientConfiguration.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
         $.createHTTPClient(httpClientConfiguration).get("https://www.jd.com").submit()
          .thenAccept(resp -> System.out.println(resp.getStringBody()));
     }

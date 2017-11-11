@@ -7,10 +7,10 @@ import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.StringParser;
-import com.firefly.net.tcp.secure.FileCertificateOpenSSLContextFactory;
+import com.firefly.net.tcp.secure.FileCertificateOpenSSLSecureSessionFactory;
 import com.firefly.net.tcp.secure.FileJdkSSLContextFactory;
 import com.firefly.net.tcp.secure.JdkSecureSessionFactory;
-import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLContextFactory;
+import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLSecureSessionFactory;
 import com.firefly.utils.io.ClassPathResource;
 import com.firefly.utils.io.IO;
 import org.junit.Assert;
@@ -93,10 +93,10 @@ public class TestSimpleTcpServerAndClient {
         run = new Run();
         run.clientConfig = new TcpConfiguration();
         run.clientConfig.setSecureConnectionEnabled(true);
-        run.clientConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
+        run.clientConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
-        run.serverConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
+        run.serverConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
         run.port = port;
         run.maxMsg = 20;
         run.testName = "Test openssl self signed certificate";
@@ -129,7 +129,7 @@ public class TestSimpleTcpServerAndClient {
     private static SecureSessionFactory createOpenSSLFileSecureSessionFactory() throws IOException {
         ClassPathResource certificate = new ClassPathResource("/myCA.cer");
         ClassPathResource privateKey = new ClassPathResource("/myCAPriv8.key");
-        return new FileCertificateOpenSSLContextFactory(certificate.getFile().getAbsolutePath(), privateKey.getFile().getAbsolutePath());
+        return new FileCertificateOpenSSLSecureSessionFactory(certificate.getFile().getAbsolutePath(), privateKey.getFile().getAbsolutePath());
     }
 
 

@@ -6,15 +6,15 @@ import java.util.List;
 /**
  * @author Pengtao Qiu
  */
-public class FileCertificateOpenSSLContextFactory extends AbstractOpenSSLSecureSessionFactory {
+public class FileCertificateOpenSSLSecureSessionFactory extends AbstractOpenSSLSecureSessionFactory {
     private final String certificatePath;
     private final String privateKeyPath;
 
-    public FileCertificateOpenSSLContextFactory(String certificatePath, String privateKeyPath) {
+    public FileCertificateOpenSSLSecureSessionFactory(String certificatePath, String privateKeyPath) {
         this(DEFAULT_SUPPORTED_PROTOCOLS, certificatePath, privateKeyPath);
     }
 
-    public FileCertificateOpenSSLContextFactory(List<String> supportedProtocols, String certificatePath, String privateKeyPath) {
+    public FileCertificateOpenSSLSecureSessionFactory(List<String> supportedProtocols, String certificatePath, String privateKeyPath) {
         super(supportedProtocols);
         this.certificatePath = certificatePath;
         this.privateKeyPath = privateKeyPath;
