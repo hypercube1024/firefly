@@ -1,11 +1,17 @@
 package test.net.tcp;
 
+import com.firefly.net.SSLContextFactory;
+import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.StringParser;
+import com.firefly.net.tcp.secure.FileCertificateOpenSSLContextFactory;
+import com.firefly.net.tcp.secure.FileJdkSSLContextFactory;
+import com.firefly.net.tcp.secure.JdkSecureSessionFactory;
 import com.firefly.net.tcp.secure.SelfSignedCertificateOpenSSLContextFactory;
+import com.firefly.utils.io.ClassPathResource;
 import com.firefly.utils.io.IO;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,6 +20,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -45,39 +52,84 @@ public class TestSimpleTcpServerAndClient {
     }
 
     @Parameters(name = "{0}")
-    public static Collection<Run> data() {
+    public static Collection<Run> data() throws IOException {
+        int port = 1212;
         List<Run> data = new ArrayList<>();
         Run run = new Run();
         run.clientConfig = new TcpConfiguration();
         run.serverConfig = new TcpServerConfiguration();
-        run.port = 1212;
+        run.port = port;
         run.maxMsg = 5;
-        run.testName = "Test TCP server and client";
+        run.testName = "Test the plaintext";
         data.add(run);
+        port += 1;
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
-        run.clientConfig.setSecureConnectionEnabled(true); // enable TLS
+        run.clientConfig.setSecureSessionFactory(new JdkSecureSessionFactory());
+        run.clientConfig.setSecureConnectionEnabled(true);
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
-        run.port = 1213;
+        run.serverConfig.setSecureSessionFactory(new JdkSecureSessionFactory());
+        run.port = port;
         run.maxMsg = 20;
-        run.testName = "Test TCP server and client with JDK SSL";
+        run.testName = "Test jdk self signed certificate";
         data.add(run);
+        port += 1;
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
-        run.clientConfig.setSecureConnectionEnabled(true); // enable TLS
+        run.clientConfig.setSecureSessionFactory(createJDKFileSecureSessionFactory());
+        run.clientConfig.setSecureConnectionEnabled(true);
+        run.serverConfig = new TcpServerConfiguration();
+        run.serverConfig.setSecureConnectionEnabled(true);
+        run.serverConfig.setSecureSessionFactory(createJDKFileSecureSessionFactory());
+        run.port = port;
+        run.maxMsg = 20;
+        run.testName = "Test jdk file certificate";
+        data.add(run);
+        port += 1;
+
+        run = new Run();
+        run.clientConfig = new TcpConfiguration();
+        run.clientConfig.setSecureConnectionEnabled(true);
         run.clientConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
         run.serverConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLContextFactory());
-        run.port = 1214;
+        run.port = port;
         run.maxMsg = 20;
-        run.testName = "Test TCP server and client with OpenSSL";
+        run.testName = "Test openssl self signed certificate";
+        data.add(run);
+        port += 1;
+
+        run = new Run();
+        run.clientConfig = new TcpConfiguration();
+        run.clientConfig.setSecureConnectionEnabled(true);
+        run.clientConfig.setSecureSessionFactory(createOpenSSLFileSecureSessionFactory());
+        run.serverConfig = new TcpServerConfiguration();
+        run.serverConfig.setSecureConnectionEnabled(true);
+        run.serverConfig.setSecureSessionFactory(createOpenSSLFileSecureSessionFactory());
+        run.port = port;
+        run.maxMsg = 20;
+        run.testName = "Test openssl self signed certificate";
         data.add(run);
 
         return data;
+    }
+
+    private static SecureSessionFactory createJDKFileSecureSessionFactory() throws IOException {
+        ClassPathResource pathResource = new ClassPathResource("/fireflySecureKeys.jks");
+        System.out.println(pathResource.getFile().getAbsolutePath());
+        SSLContextFactory factory = new FileJdkSSLContextFactory(pathResource.getFile().getAbsolutePath(),
+                "123456", "654321");
+        return new JdkSecureSessionFactory(factory, factory);
+    }
+
+    private static SecureSessionFactory createOpenSSLFileSecureSessionFactory() throws IOException {
+        ClassPathResource certificate = new ClassPathResource("/myCA.cer");
+        ClassPathResource privateKey = new ClassPathResource("/myCAPriv8.key");
+        return new FileCertificateOpenSSLContextFactory(certificate.getFile().getAbsolutePath(), privateKey.getFile().getAbsolutePath());
     }
 
 

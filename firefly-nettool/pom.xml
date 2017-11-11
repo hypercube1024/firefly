@@ -28,16 +28,16 @@
             <testResource>
                 <filtering>true</filtering>
                 <directory>src/test/resources</directory>
-                <excludes>
-                    <exclude>**/*.jks</exclude>
-                </excludes>
+                <includes>
+                    <include>**/*.xml</include>
+                </includes>
             </testResource>
             <testResource>
                 <filtering>false</filtering>
                 <directory>src/test/resources</directory>
-                <includes>
-                    <include>**/*.jks</include>
-                </includes>
+                <excludes>
+                    <exclude>**/*.xml</exclude>
+                </excludes>
             </testResource>
         </testResources>
     </build>

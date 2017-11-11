@@ -66,8 +66,7 @@ public final class SslContextBuilder {
      *                         password-protected
      * @see #keyManager(File, File, String)
      */
-    public static SslContextBuilder forServer(
-            File keyCertChainFile, File keyFile, String keyPassword) {
+    public static SslContextBuilder forServer(File keyCertChainFile, File keyFile, String keyPassword) {
         return new SslContextBuilder(true).keyManager(keyCertChainFile, keyFile, keyPassword);
     }
 

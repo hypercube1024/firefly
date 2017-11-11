@@ -1,11 +1,10 @@
 package com.firefly.net.tcp.secure;
 
-import com.firefly.net.tcp.secure.openssl.*;
+import com.firefly.net.tcp.secure.openssl.SelfSignedCertificate;
 import com.firefly.utils.exception.CommonRuntimeException;
 
-import javax.net.ssl.SSLException;
+import java.io.File;
 import java.security.cert.CertificateException;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -14,14 +13,13 @@ import java.util.List;
 public class SelfSignedCertificateOpenSSLContextFactory extends AbstractOpenSSLSecureSessionFactory {
 
     private SelfSignedCertificate selfSignedCertificate;
-    private List<String> supportedProtocols;
 
     public SelfSignedCertificateOpenSSLContextFactory() {
-        this(Arrays.asList("h2", "http/1.1"));
+        this(DEFAULT_SUPPORTED_PROTOCOLS);
     }
 
     public SelfSignedCertificateOpenSSLContextFactory(List<String> supportedProtocols) {
-        this.supportedProtocols = supportedProtocols;
+        super(supportedProtocols);
         try {
             selfSignedCertificate = new SelfSignedCertificate("www.fireflysource.com");
         } catch (CertificateException e) {
@@ -38,29 +36,13 @@ public class SelfSignedCertificateOpenSSLContextFactory extends AbstractOpenSSLS
         this.selfSignedCertificate = selfSignedCertificate;
     }
 
-    public List<String> getSupportedProtocols() {
-        return supportedProtocols;
-    }
-
-    public void setSupportedProtocols(List<String> supportedProtocols) {
-        this.supportedProtocols = supportedProtocols;
+    @Override
+    public File getCertificate() {
+        return selfSignedCertificate.certificate();
     }
 
     @Override
-    public SslContext createSSLContext(boolean clientMode) {
-        SslContextBuilder sslContextBuilder = clientMode
-                ? SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE)
-                : SslContextBuilder.forServer(selfSignedCertificate.certificate(), selfSignedCertificate.privateKey());
-
-        try {
-            return sslContextBuilder.ciphers(SecurityUtils.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
-                                    .applicationProtocolConfig(new ApplicationProtocolConfig(ApplicationProtocolConfig.Protocol.ALPN,
-                                            ApplicationProtocolConfig.SelectorFailureBehavior.CHOOSE_MY_LAST_PROTOCOL,
-                                            ApplicationProtocolConfig.SelectedListenerFailureBehavior.CHOOSE_MY_LAST_PROTOCOL,
-                                            supportedProtocols)).build();
-        } catch (SSLException e) {
-            log.error("create ssl context exception", e);
-            throw new CommonRuntimeException(e);
-        }
+    public File getPrivateKey() {
+        return selfSignedCertificate.privateKey();
     }
 }
