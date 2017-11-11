@@ -1157,4 +1157,14 @@ public class BufferUtils {
             return null;
         }
     }
+
+    public static ByteBuffer toDirectBuffer(ByteBuffer buf) {
+        if (buf.isDirect()) {
+            return buf;
+        } else {
+            ByteBuffer directBuf = ByteBuffer.allocateDirect(buf.remaining());
+            directBuf.put(buf.duplicate()).flip();
+            return directBuf;
+        }
+    }
 }

@@ -297,8 +297,8 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     @Override
-    public List<String> getSupportedProtocols() {
-        return applicationProtocolSelector.getSupportedProtocols();
+    public List<String> getSupportedApplicationProtocols() {
+        return applicationProtocolSelector.getSupportedApplicationProtocols();
     }
 
     @Override
