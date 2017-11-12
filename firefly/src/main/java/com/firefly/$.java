@@ -77,108 +77,150 @@ public interface $ {
     }
 
     /**
-     * Create an new HTTP client instance
+     * Create a new HTTP client instance.
      *
-     * @return An new HTTP client instance
+     * @return A new HTTP client instance.
      */
     static SimpleHTTPClient createHTTPClient() {
         return new SimpleHTTPClient();
     }
 
     /**
-     * Create an new HTTP client instance
+     * Create a new HTTP client instance.
      *
-     * @param configuration HTTP client configuration
-     * @return An new HTTP client instance
+     * @param configuration HTTP client configuration.
+     * @return A new HTTP client instance.
      */
     static SimpleHTTPClient createHTTPClient(SimpleHTTPClientConfiguration configuration) {
         return new SimpleHTTPClient(configuration);
     }
 
     /**
+     * Create a new HTTPs client.
+     *
+     * @param secureSessionFactory The secure session factory. We provide JDK or OpenSSL secure session factory.
+     * @return A new HTTPs client.
+     */
+    static SimpleHTTPClient createHTTPsClient(SecureSessionFactory secureSessionFactory) {
+        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
+        configuration.setSecureSessionFactory(secureSessionFactory);
+        configuration.setSecureConnectionEnabled(true);
+        return new SimpleHTTPClient(configuration);
+    }
+
+    /**
      * Use fluent API to create an new HTTP server instance.
      *
-     * @return HTTP server builder API
+     * @return HTTP server builder.
      */
     static HTTP2ServerBuilder httpServer() {
         return new HTTP2ServerBuilder().httpServer();
     }
 
+    /**
+     * Create a new HTTP2 server. It uses the plaintext HTTP2 protocol.
+     *
+     * @return HTTP server builder.
+     */
     static HTTP2ServerBuilder plaintextHTTP2Server() {
         SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
         configuration.setProtocol(HttpVersion.HTTP_2.asString());
         return httpServer(configuration);
     }
 
+    /**
+     * Create a new HTTP server.
+     *
+     * @param serverConfiguration The server configuration.
+     * @return HTTP server builder
+     */
     static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration) {
         return httpServer(serverConfiguration, new HTTPBodyConfiguration());
     }
 
+    /**
+     * Create a new HTTP server.
+     *
+     * @param serverConfiguration   HTTP server configuration.
+     * @param httpBodyConfiguration HTTP body process configuration.
+     * @return HTTP server builder.
+     */
     static HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration,
                                          HTTPBodyConfiguration httpBodyConfiguration) {
         return new HTTP2ServerBuilder().httpServer(serverConfiguration, httpBodyConfiguration);
     }
 
+    /**
+     * Create a new HTTPs server.
+     *
+     * @return HTTP server builder.
+     */
     static HTTP2ServerBuilder httpsServer() {
         return new HTTP2ServerBuilder().httpsServer();
     }
 
+    /**
+     * Create a new HTTPs server.
+     *
+     * @param secureSessionFactory The secure session factory. We provide JDK or OpenSSL secure session factory.
+     * @return HTTP server builder.
+     */
     static HTTP2ServerBuilder httpsServer(SecureSessionFactory secureSessionFactory) {
         return new HTTP2ServerBuilder().httpsServer(secureSessionFactory);
     }
 
     /**
-     * Create an new HTTP server instance
+     * Create a new HTTP server instance
      *
-     * @return An new HTTP server instance
+     * @return A new HTTP server instance
      */
     static SimpleHTTPServer createHTTPServer() {
         return new SimpleHTTPServer();
     }
 
     /**
-     * Create an new HTTP server instance
+     * Create a new HTTP server instance
      *
      * @param configuration HTTP server configuration
-     * @return An new HTTP server instance
+     * @return A new HTTP server instance
      */
     static SimpleHTTPServer createHTTPServer(SimpleHTTPServerConfiguration configuration) {
         return new SimpleHTTPServer(configuration);
     }
 
     /**
-     * Create an new TCP client instance
+     * Create a new TCP client instance
      *
-     * @return An new TCP client instance
+     * @return A new TCP client instance
      */
     static SimpleTcpClient createTCPClient() {
         return new SimpleTcpClient();
     }
 
     /**
-     * Create an new TCP client instance
+     * Create a new TCP client instance
      *
      * @param configuration TCP client configuration
-     * @return An new TCP client instance
+     * @return A new TCP client instance
      */
     static SimpleTcpClient createTCPClient(TcpConfiguration configuration) {
         return new SimpleTcpClient(configuration);
     }
 
     /**
-     * Create an new TCP server instance
+     * Create a new TCP server instance
      *
-     * @return an new TCP server instance
+     * @return a new TCP server instance
      */
     static SimpleTcpServer createTCPServer() {
         return new SimpleTcpServer();
     }
 
     /**
-     * Create an new TCP server instance
+     * Create a new TCP server instance
      *
      * @param configuration TCP server configuration
-     * @return an new TCP server instance
+     * @return a new TCP server instance
      */
     static SimpleTcpServer createTCPServer(TcpServerConfiguration configuration) {
         return new SimpleTcpServer(configuration);
@@ -193,6 +235,12 @@ public interface $ {
         return new XmlApplicationContext();
     }
 
+    /**
+     * Create a new application context.
+     *
+     * @param path The configuration file path.
+     * @return A new application context.
+     */
     static ApplicationContext createApplicationContext(String path) {
         return new XmlApplicationContext(path);
     }
@@ -208,6 +256,11 @@ public interface $ {
         return ApplicationContextSingleton.getInstance().getApplicationContext().getBean(clazz);
     }
 
+    /**
+     * Get the default application context.
+     *
+     * @return The default application context.
+     */
     static ApplicationContext getApplicationContext() {
         return ApplicationContextSingleton.getInstance().getApplicationContext();
     }

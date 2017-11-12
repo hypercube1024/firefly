@@ -2,7 +2,7 @@ package com.firefly.net.tcp;
 
 import com.firefly.net.Config;
 import com.firefly.net.SecureSessionFactory;
-import com.firefly.net.tcp.secure.JdkSecureSessionFactory;
+import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 
 public class TcpConfiguration extends Config {
 

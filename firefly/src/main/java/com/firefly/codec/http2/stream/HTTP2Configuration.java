@@ -1,7 +1,7 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.net.SecureSessionFactory;
-import com.firefly.net.tcp.secure.JdkSecureSessionFactory;
+import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 
 public class HTTP2Configuration {
 
