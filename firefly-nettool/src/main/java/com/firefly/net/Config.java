@@ -1,9 +1,11 @@
 package com.firefly.net;
 
+import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.ServiceUtils;
 
 public class Config {
 
+    public static final SecureSessionFactory defaultSecureSessionFactory = ServiceUtils.loadService(SecureSessionFactory.class, new DefaultOpenSSLSecureSessionFactory());
     public static final int defaultTimeout = Integer.getInteger("com.firefly.net.defaultTimeout", 30 * 1000);
     public static final int defaultPoolSize = Integer.getInteger("com.firefly.net.defaultPoolSize", Runtime.getRuntime().availableProcessors());
 
@@ -43,6 +45,7 @@ public class Config {
 
     /**
      * Get the server name. The I/O thread name contains server name. It helps you debug codes.
+     *
      * @return server name
      */
     public String getServerName() {
@@ -51,6 +54,7 @@ public class Config {
 
     /**
      * Set the server name. The I/O thread name contains server name. It helps you debug codes.
+     *
      * @param serverName Server name.
      */
     public void setServerName(String serverName) {
@@ -59,6 +63,7 @@ public class Config {
 
     /**
      * Get the client name. If you start a client, the I/O thread name contains client name. It helps you debug codes.
+     *
      * @return client name
      */
     public String getClientName() {
@@ -67,6 +72,7 @@ public class Config {
 
     /**
      * Set the client name. If you start a client, the I/O thread name contains client name. It helps you debug codes.
+     *
      * @param clientName client name
      */
     public void setClientName(String clientName) {
@@ -75,6 +81,7 @@ public class Config {
 
     /**
      * Get the decoder. When the server or client receives data, it will call the Decoder. You can write the protocol parser in Decoder.
+     *
      * @return decoder
      */
     public Decoder getDecoder() {
@@ -83,6 +90,7 @@ public class Config {
 
     /**
      * Set the decoder. When the server or client receives data, it will call the Decoder. You can write the protocol parser in Decoder.
+     *
      * @param decoder decoder
      */
     public void setDecoder(Decoder decoder) {
@@ -91,6 +99,7 @@ public class Config {
 
     /**
      * Get the encoder. You can write the protocol generator in Encoder.
+     *
      * @return encoder
      */
     public Encoder getEncoder() {
@@ -99,6 +108,7 @@ public class Config {
 
     /**
      * Set the encoder. You can write the protocol generator in Encoder.
+     *
      * @param encoder encoder
      */
     public void setEncoder(Encoder encoder) {
@@ -108,6 +118,7 @@ public class Config {
     /**
      * Get the handler. It is the handler of network events.
      * Such as creating a session, closing session, receiving a message and throwing the exception.
+     *
      * @return Handler
      */
     public Handler getHandler() {
@@ -117,6 +128,7 @@ public class Config {
     /**
      * Set the handler. It is the handler of network events.
      * Such as creating a session, closing session, receiving a message and throwing the exception.
+     *
      * @param handler Handler
      */
     public void setHandler(Handler handler) {
@@ -125,6 +137,7 @@ public class Config {
 
     /**
      * Get the I/O thread pool size. The default size equals the processor number.
+     *
      * @return I/O thread pool size
      */
     public int getAsynchronousCorePoolSize() {
@@ -133,6 +146,7 @@ public class Config {
 
     /**
      * Set the I/O thread pool size. The default size equals the processor number.
+     *
      * @param asynchronousCorePoolSize I/O thread pool size
      */
     public void setAsynchronousCorePoolSize(int asynchronousCorePoolSize) {
@@ -141,6 +155,7 @@ public class Config {
 
     /**
      * Get the MetricReporterFactory. The default reporter is slf4j.
+     *
      * @return MetricReporterFactory
      */
     public MetricReporterFactory getMetricReporterFactory() {
@@ -149,6 +164,7 @@ public class Config {
 
     /**
      * Set the MetricReporterFactory. The default reporter is slf4j.
+     *
      * @param metricReporterFactory MetricReporterFactory
      */
     public void setMetricReporterFactory(MetricReporterFactory metricReporterFactory) {
@@ -157,6 +173,7 @@ public class Config {
 
     /**
      * If the monitorEnable is true, the server or client will record runtime performance data to a metric reporter.
+     *
      * @return monitorEnable The default value is true.
      */
     public boolean isMonitorEnable() {
@@ -165,6 +182,7 @@ public class Config {
 
     /**
      * If the monitorEnable is true, the server or client will record runtime performance data to a metric reporter.
+     *
      * @param monitorEnable monitorEnable. The default value is true.
      */
     public void setMonitorEnable(boolean monitorEnable) {
