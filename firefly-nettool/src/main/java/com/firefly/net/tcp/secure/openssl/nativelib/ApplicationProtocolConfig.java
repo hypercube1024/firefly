@@ -24,9 +24,10 @@ public final class ApplicationProtocolConfig {
 
     /**
      * Create a new instance.
-     * @param protocol The application protocol functionality to use.
-     * @param selectorBehavior How the peer selecting the protocol should behave.
-     * @param selectedBehavior How the peer being notified of the selected protocol should behave.
+     *
+     * @param protocol           The application protocol functionality to use.
+     * @param selectorBehavior   How the peer selecting the protocol should behave.
+     * @param selectedBehavior   How the peer being notified of the selected protocol should behave.
      * @param supportedProtocols The order of iteration determines the preference of support for protocols.
      */
     public ApplicationProtocolConfig(Protocol protocol, SelectorFailureBehavior selectorBehavior,
@@ -36,9 +37,10 @@ public final class ApplicationProtocolConfig {
 
     /**
      * Create a new instance.
-     * @param protocol The application protocol functionality to use.
-     * @param selectorBehavior How the peer selecting the protocol should behave.
-     * @param selectedBehavior How the peer being notified of the selected protocol should behave.
+     *
+     * @param protocol           The application protocol functionality to use.
+     * @param selectorBehavior   How the peer selecting the protocol should behave.
+     * @param selectedBehavior   How the peer being notified of the selected protocol should behave.
      * @param supportedProtocols The order of iteration determines the preference of support for protocols.
      */
     public ApplicationProtocolConfig(Protocol protocol, SelectorFailureBehavior selectorBehavior,
@@ -48,9 +50,10 @@ public final class ApplicationProtocolConfig {
 
     /**
      * Create a new instance.
-     * @param protocol The application protocol functionality to use.
-     * @param selectorBehavior How the peer selecting the protocol should behave.
-     * @param selectedBehavior How the peer being notified of the selected protocol should behave.
+     *
+     * @param protocol           The application protocol functionality to use.
+     * @param selectorBehavior   How the peer selecting the protocol should behave.
+     * @param selectedBehavior   How the peer being notified of the selected protocol should behave.
      * @param supportedProtocols The order of iteration determines the preference of support for protocols.
      */
     private ApplicationProtocolConfig(
@@ -102,6 +105,8 @@ public final class ApplicationProtocolConfig {
 
     /**
      * The application level protocols supported.
+     *
+     * @return The application level protocols supported.
      */
     public List<String> supportedProtocols() {
         return supportedProtocols;
@@ -109,6 +114,8 @@ public final class ApplicationProtocolConfig {
 
     /**
      * Get which application level protocol negotiation to use.
+     *
+     * @return application level protocol negotiation to use.
      */
     public Protocol protocol() {
         return protocol;
@@ -116,6 +123,8 @@ public final class ApplicationProtocolConfig {
 
     /**
      * Get the desired behavior for the peer who selects the application protocol.
+     *
+     * @return the desired behavior for the peer who selects the application protocol.
      */
     public SelectorFailureBehavior selectorFailureBehavior() {
         return selectorBehavior;
@@ -123,6 +132,8 @@ public final class ApplicationProtocolConfig {
 
     /**
      * Get the desired behavior for the peer who is notified of the selected protocol.
+     *
+     * @return the desired behavior for the peer who is notified of the selected protocol.
      */
     public SelectedListenerFailureBehavior selectedListenerFailureBehavior() {
         return selectedBehavior;

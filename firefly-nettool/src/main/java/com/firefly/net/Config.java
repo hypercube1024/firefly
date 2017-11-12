@@ -1,11 +1,9 @@
 package com.firefly.net;
 
-import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.ServiceUtils;
 
 public class Config {
 
-    public static final SecureSessionFactory defaultSecureSessionFactory = ServiceUtils.loadService(SecureSessionFactory.class, new DefaultOpenSSLSecureSessionFactory());
     public static final int defaultTimeout = Integer.getInteger("com.firefly.net.defaultTimeout", 30 * 1000);
     public static final int defaultPoolSize = Integer.getInteger("com.firefly.net.defaultPoolSize", Runtime.getRuntime().availableProcessors());
 

@@ -17,28 +17,38 @@ package com.firefly.net.tcp.secure.openssl.nativelib;
 public interface ReferenceCounted {
     /**
      * Returns the reference count of this object.  If {@code 0}, it means this object has been deallocated.
+     *
+     * @return the reference count of this object.  If {@code 0}, it means this object has been deallocated.
      */
     int refCnt();
 
     /**
      * Increases the reference count by {@code 1}.
+     *
+     * @return ReferenceCounted
      */
     ReferenceCounted retain();
 
     /**
      * Increases the reference count by the specified {@code increment}.
+     *
+     * @return ReferenceCounted
      */
     ReferenceCounted retain(int increment);
 
     /**
      * Records the current access location of this object for debugging purposes.
      * This method is a shortcut to {@link #touch(Object) touch(null)}.
+     *
+     * @return ReferenceCounted
      */
     ReferenceCounted touch();
 
     /**
      * Records the current access location of this object with an additional arbitrary information for debugging
      * purposes.
+     *
+     * @return ReferenceCounted
      */
     ReferenceCounted touch(Object hint);
 

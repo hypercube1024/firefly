@@ -1,8 +1,7 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.net.SecureSessionFactory;
-
-import static com.firefly.net.Config.defaultSecureSessionFactory;
+import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 
 public class HTTP2Configuration {
 
@@ -11,7 +10,7 @@ public class HTTP2Configuration {
 
     // SSL/TLS settings
     private boolean isSecureConnectionEnabled;
-    private SecureSessionFactory secureSessionFactory = defaultSecureSessionFactory;
+    private SecureSessionFactory secureSessionFactory = new JdkSecureSessionFactory();
 
     // HTTP settings
     private int maxDynamicTableSize = 4096;

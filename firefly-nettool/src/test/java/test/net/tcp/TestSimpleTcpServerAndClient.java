@@ -7,11 +7,12 @@ import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.StringParser;
-import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.FileCertificateOpenSSLSecureSessionFactory;
 import com.firefly.net.tcp.secure.jdk.FileJdkSSLContextFactory;
 import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
+import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
+import com.firefly.net.tcp.secure.openssl.FileCertificateOpenSSLSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.SelfSignedCertificateOpenSSLSecureSessionFactory;
+import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.ClassPathResource;
 import com.firefly.utils.io.IO;
 import org.junit.Assert;
@@ -54,16 +55,14 @@ public class TestSimpleTcpServerAndClient {
 
     @Parameters(name = "{0}")
     public static Collection<Run> data() throws IOException {
-        int port = 1212;
         List<Run> data = new ArrayList<>();
         Run run = new Run();
         run.clientConfig = new TcpConfiguration();
         run.serverConfig = new TcpServerConfiguration();
-        run.port = port;
+        run.port = (int) RandomUtils.random(1000, 65534);
         run.maxMsg = 5;
         run.testName = "Test the plaintext";
         data.add(run);
-        port += 1;
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
@@ -72,11 +71,10 @@ public class TestSimpleTcpServerAndClient {
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
         run.serverConfig.setSecureSessionFactory(new JdkSecureSessionFactory());
-        run.port = port;
+        run.port = (int) RandomUtils.random(1000, 65534);
         run.maxMsg = 20;
         run.testName = "Test jdk self signed certificate";
         data.add(run);
-        port += 1;
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
@@ -85,11 +83,10 @@ public class TestSimpleTcpServerAndClient {
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
         run.serverConfig.setSecureSessionFactory(createJDKFileSecureSessionFactory());
-        run.port = port;
+        run.port = (int) RandomUtils.random(1000, 65534);
         run.maxMsg = 20;
         run.testName = "Test jdk file certificate";
         data.add(run);
-        port += 1;
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
@@ -98,11 +95,10 @@ public class TestSimpleTcpServerAndClient {
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
         run.serverConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
-        run.port = port;
+        run.port = (int) RandomUtils.random(1000, 65534);
         run.maxMsg = 20;
         run.testName = "Test openssl self signed certificate";
         data.add(run);
-        port += 1;
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
@@ -111,11 +107,10 @@ public class TestSimpleTcpServerAndClient {
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
         run.serverConfig.setSecureSessionFactory(new DefaultOpenSSLSecureSessionFactory());
-        run.port = port;
+        run.port = (int) RandomUtils.random(1000, 65534);
         run.maxMsg = 20;
         run.testName = "Test openssl default certificate";
         data.add(run);
-        port += 1;
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
@@ -124,7 +119,7 @@ public class TestSimpleTcpServerAndClient {
         run.serverConfig = new TcpServerConfiguration();
         run.serverConfig.setSecureConnectionEnabled(true);
         run.serverConfig.setSecureSessionFactory(createOpenSSLFileSecureSessionFactory());
-        run.port = port;
+        run.port = (int) RandomUtils.random(1000, 65534);
         run.maxMsg = 20;
         run.testName = "Test openssl self signed certificate";
         data.add(run);
