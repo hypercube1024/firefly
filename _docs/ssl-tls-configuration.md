@@ -139,3 +139,10 @@ public class OpensslFileCertHTTPsServer {
     }
 }
 ```
+
+Notes: the OpenSSL private key must be `PKCS8` format. You can use the tool `openssl pkcs8` to convert format. Such as:
+```
+openssl genrsa -out myCA.key 2048
+openssl req -new -x509 -key myCA.key -out myCA.cer -days 36500
+openssl pkcs8 -topk8 -inform PEM -outform PEM -in myCA.key -out myCAPriv8.key -nocrypt
+```
