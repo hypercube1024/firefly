@@ -10,7 +10,7 @@ import java.util.concurrent.Phaser;
  */
 public class HelloHTTPsServerAndClient {
     public static void main(String[] args) {
-        Phaser phaser = new Phaser(3);
+        Phaser phaser = new Phaser(2);
 
         HTTP2ServerBuilder httpServer = $.httpsServer();
         httpServer.router().get("/").handler(ctx -> ctx.write("hello world! ").next())
@@ -18,10 +18,6 @@ public class HelloHTTPsServerAndClient {
                   .listen("localhost", 8081);
 
         $.httpsClient().get("https://localhost:8081/").submit()
-         .thenAccept(res -> System.out.println(res.getStringBody()))
-         .thenAccept(res -> phaser.arrive());
-
-        $.httpsClient().get("https://localhost:8081/hello").submit()
          .thenAccept(res -> System.out.println(res.getStringBody()))
          .thenAccept(res -> phaser.arrive());
 
