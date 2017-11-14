@@ -40,6 +40,18 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<T> namedQueryForSingleColumn(String sql, Map<String, Object> paramMap);
 
+    /**
+     * Query single column record by named SQL. If the database has not record, it will emit the RecordNotFound exception.
+     *
+     * @param sql         A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                    "select * from test where id in (:idList)",
+     *                    "select * from test where id = :id",
+     *                    "select * from test where id = :{id}",
+     *                    "select * from test where id = &id"
+     * @param paramObject Named SQL parameter object that uses the property name to match parameter.
+     * @param <T>         The type of column.
+     * @return The future result.
+     */
     <T> Mono<T> namedQueryForSingleColumn(String sql, Object paramObject);
 
     /**
@@ -53,8 +65,34 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<T> queryForObject(String sql, Class<T> clazz, Object... params);
 
+    /**
+     * Query record and bind object. If the database has not record, it will emit the RecordNotFound exception.
+     *
+     * @param sql      A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                 "select * from test where id in (:idList)",
+     *                 "select * from test where id = :id",
+     *                 "select * from test where id = :{id}",
+     *                 "select * from test where id = &id"
+     * @param clazz    The Class reference of bound object.
+     * @param paramMap Named SQL parameters.
+     * @param <T>      The type of bound object.
+     * @return The result that binds to Class and it is wrapped by Mono.
+     */
     <T> Mono<T> namedQueryForObject(String sql, Class<T> clazz, Map<String, Object> paramMap);
 
+    /**
+     * Query record and bind object. If the database has not record, it will emit the RecordNotFound exception.
+     *
+     * @param sql         A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                    "select * from test where id in (:idList)",
+     *                    "select * from test where id = :id",
+     *                    "select * from test where id = :{id}",
+     *                    "select * from test where id = &id"
+     * @param clazz       The Class reference of bound object.
+     * @param paramObject Named SQL parameters.
+     * @param <T>         The type of bound object.
+     * @return The result that binds to Class and it is wrapped by Mono.
+     */
     <T> Mono<T> namedQueryForObject(String sql, Class<T> clazz, Object paramObject);
 
     /**
@@ -79,8 +117,36 @@ public interface ReactiveSQLConnection {
      */
     <K, V> Mono<Map<K, V>> queryForBeanMap(String sql, Class<V> valueClass, Object... params);
 
+    /**
+     * Query records and convert records to a Map.
+     *
+     * @param sql        A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                   "select * from test where id in (:idList)",
+     *                   "select * from test where id = :id",
+     *                   "select * from test where id = :{id}",
+     *                   "select * from test where id = &id"
+     * @param valueClass The Class reference of bound object.
+     * @param paramMap   Named SQL parameters.
+     * @param <K>        The type of primary key.
+     * @param <V>        The type of bound object.
+     * @return The result that contains a map, the key is primary key of record, the value is bound object. And it is wrapped by Mono.
+     */
     <K, V> Mono<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Map<String, Object> paramMap);
 
+    /**
+     * Query records and convert records to a Map.
+     *
+     * @param sql         A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                    "select * from test where id in (:idList)",
+     *                    "select * from test where id = :id",
+     *                    "select * from test where id = :{id}",
+     *                    "select * from test where id = &id"
+     * @param valueClass  The Class reference of bound object.
+     * @param paramObject Named SQL parameters.
+     * @param <K>         The type of primary key.
+     * @param <V>         The type of bound object.
+     * @return The result that contains a map, the key is primary key of record, the value is bound object. And it is wrapped by Mono.
+     */
     <K, V> Mono<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Object paramObject);
 
     /**
@@ -94,8 +160,34 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<List<T>> queryForList(String sql, Class<T> clazz, Object... params);
 
+    /**
+     * Query records and bind object.
+     *
+     * @param sql      A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                 "select * from test where id in (:idList)",
+     *                 "select * from test where id = :id",
+     *                 "select * from test where id = :{id}",
+     *                 "select * from test where id = &id"
+     * @param clazz    The Class reference of bound object.
+     * @param paramMap Named SQL parameters.
+     * @param <T>      The type of bound object.
+     * @return The result that contains a list, the list element binds to Class. And it is wrapped by Mono.
+     */
     <T> Mono<List<T>> namedQueryForList(String sql, Class<T> clazz, Map<String, Object> paramMap);
 
+    /**
+     * Query records and bind object.
+     *
+     * @param sql         A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                    "select * from test where id in (:idList)",
+     *                    "select * from test where id = :id",
+     *                    "select * from test where id = :{id}",
+     *                    "select * from test where id = &id"
+     * @param clazz       The Class reference of bound object.
+     * @param paramObject Named SQL parameters.
+     * @param <T>         The type of bound object.
+     * @return The result that contains a list, the list element binds to Class. And it is wrapped by Mono.
+     */
     <T> Mono<List<T>> namedQueryForList(String sql, Class<T> clazz, Object paramObject);
 
     /**
@@ -109,8 +201,34 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params);
 
+    /**
+     * Query records and convert result set to javabean using handler.
+     *
+     * @param sql      A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                 "select * from test where id in (:idList)",
+     *                 "select * from test where id = :id",
+     *                 "select * from test where id = :{id}",
+     *                 "select * from test where id = &id"
+     * @param handler  The function that converts result set to javabean.
+     * @param paramMap Named SQL parameters.
+     * @param <T>      The type of converted object.
+     * @return The result that is wrapped by Mono.
+     */
     <T> Mono<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Map<String, Object> paramMap);
 
+    /**
+     * Query records and convert result set to javabean using handler.
+     *
+     * @param sql         A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                    "select * from test where id in (:idList)",
+     *                    "select * from test where id = :id",
+     *                    "select * from test where id = :{id}",
+     *                    "select * from test where id = &id"
+     * @param handler     The function that converts result set to javabean.
+     * @param paramObject Named SQL parameters.
+     * @param <T>         The type of converted object.
+     * @return The result that is wrapped by Mono.
+     */
     <T> Mono<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Object paramObject);
 
     /**
@@ -122,8 +240,22 @@ public interface ReactiveSQLConnection {
      */
     Mono<Integer> update(String sql, Object... params);
 
+    /**
+     * Update records.
+     *
+     * @param sql      A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&".
+     * @param paramMap Named SQL parameters.
+     * @return The affected row number.
+     */
     Mono<Integer> namedUpdate(String sql, Map<String, Object> paramMap);
 
+    /**
+     * Update records.
+     *
+     * @param sql         A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&".
+     * @param paramObject Named SQL parameters.
+     * @return The affected row number.
+     */
     Mono<Integer> namedUpdate(String sql, Object paramObject);
 
     /**
@@ -145,8 +277,24 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<T> insert(String sql, Object... params);
 
+    /**
+     * Insert records
+     *
+     * @param sql      A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&".
+     * @param paramMap Named SQL parameters.
+     * @param <T>      The type of autoincrement id.
+     * @return The autoincrement id that is wrapped by Mono.
+     */
     <T> Mono<T> namedInsert(String sql, Map<String, Object> paramMap);
 
+    /**
+     * Insert records
+     *
+     * @param sql         A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&".
+     * @param paramObject Named SQL parameters.
+     * @param <T>         The type of autoincrement id.
+     * @return The autoincrement id that is wrapped by Mono.
+     */
     <T> Mono<T> namedInsert(String sql, Object paramObject);
 
     /**
