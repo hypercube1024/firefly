@@ -282,7 +282,15 @@ public void testQueryForSingleColumn() {
     StepVerifier.create(count).expectNext(size - 5L).verifyComplete();
 }
 ```
-Notes: If the return type does not equals the column type, it will throw cast class exception.
+Notes: If the return type does not equals the column type, it will throw cast class exception. The named SQL placeholder can start with ':' or '&'. For example:
+```
+select count(*) from test.user where id > :id
+select count(*) from test.user where id > &id
+```
+You can also use the `:{xxx}` placeholder. Such as:
+```
+select count(*) from test.user where id > :{id}
+```
 
 # Prepared statement query
 To execute a prepared statement query and return one row. For example:
@@ -386,14 +394,21 @@ public void testInsert() {
     Mono<Long> newUserId = exec(c -> c.insert(sql, "hello user", "hello user pwd"));
     StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
 
-    String namedSql = "insert into `test`.`user`(pt_name, pt_password) values(:name, :pwd)";
+    String namedSql = "insert into `test`.`user`(pt_name, pt_password) values(:name, :password)";
     Map<String, Object> paramMap = new HashMap<>();
-    paramMap.put("name", "hello user");
-    paramMap.put("pwd", "hello user pwd");
+    paramMap.put("name", "hello user1");
+    paramMap.put("password", "hello user pwd1");
     newUserId = exec(c -> c.namedInsert(namedSql, paramMap));
     StepVerifier.create(newUserId).expectNext(size + 2L).verifyComplete();
+
+    User user = new User();
+    user.setName("hello user2");
+    user.setPassword("hello user pwd2");
+    newUserId = exec(c -> c.namedInsert(namedSql, user));
+    StepVerifier.create(newUserId).expectNext(size + 3L).verifyComplete();
 }
 ```
+When we use the named SQL, we can use javabean or map to replace the placeholders. The javabean uses the property name to match the parameter. The map uses the key to match the parameter. 
 
 To execute a prepared statement update. For example:
 ```java
@@ -408,6 +423,12 @@ public void testUpdate() {
     paramMap.put("name", "update xxx");
     paramMap.put("id", 2L);
     row = exec(c -> c.namedUpdate(namedSql, paramMap));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
+
+    User user = new User();
+    user.setId(2L);
+    user.setName("update xxx");
+    row = exec(c -> c.namedUpdate(namedSql, user));
     StepVerifier.create(row).expectNext(1).verifyComplete();
 }
 ```
