@@ -267,10 +267,18 @@ public void testUpdateUser() {
 ```java
 @Test
 public void testQueryForSingleColumn() {
-    Mono<Long> count = exec(c -> c.queryForSingleColumn("select count(*) from test.user"));
+    String sql1 = "select count(*) from test.user";
+    Mono<Long> count = exec(c -> c.queryForSingleColumn(sql1));
     StepVerifier.create(count).expectNext(Long.valueOf(size)).verifyComplete();
 
-    count = exec(c -> c.queryForSingleColumn("select count(*) from test.user where id > ?", 5L));
+    String sql2 = "select count(*) from test.user where id > ?";
+    count = exec(c -> c.queryForSingleColumn(sql2, 5L));
+    StepVerifier.create(count).expectNext(size - 5L).verifyComplete();
+
+    String namedSql = "select count(*) from test.user where id > :id";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("id", 5L);
+    count = exec(c -> c.namedQueryForSingleColumn(namedSql, paramMap));
     StepVerifier.create(count).expectNext(size - 5L).verifyComplete();
 }
 ```
@@ -281,7 +289,16 @@ To execute a prepared statement query and return one row. For example:
 ```java
 @Test
 public void testQueryForObject() {
-    Mono<User> user = exec(c -> c.queryForObject("select * from test.user where id = ?", User.class, 2L));
+    String sql = "select * from test.user where id = ?";
+    Mono<User> user = exec(c -> c.queryForObject(sql, User.class, 2L));
+    StepVerifier.create(user)
+                .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 1")))
+                .verifyComplete();
+
+    String namedSql = "select * from test.user where id = :id";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("id", 2L);
+    user = exec(c -> c.namedQueryForObject(namedSql, User.class, paramMap));
     StepVerifier.create(user)
                 .assertNext(u -> Assert.assertThat(u.getName(), is("test transaction 1")))
                 .verifyComplete();
@@ -292,7 +309,17 @@ To execute a prepared statement query and return many rows. For example:
 ```java
 @Test
 public void testQueryForList() {
-    Mono<List<User>> users = exec(c -> c.queryForList("select * from test.user where id >= ?", User.class, 9L));
+    String sql = "select * from test.user where id >= ?";
+    Mono<List<User>> users = exec(c -> c.queryForList(sql, User.class, 9L));
+    StepVerifier.create(users.flatMapIterable(tmpUsers -> tmpUsers).map(User::getName))
+                .expectNext("test transaction 8")
+                .expectNext("test transaction 9")
+                .verifyComplete();
+
+    String namedSql = "select * from test.user where id >= :id";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("id", 9L);
+    users = exec(c -> c.namedQueryForList(namedSql, User.class, paramMap));
     StepVerifier.create(users.flatMapIterable(tmpUsers -> tmpUsers).map(User::getName))
                 .expectNext("test transaction 8")
                 .expectNext("test transaction 9")
@@ -305,7 +332,22 @@ To execute a prepared statement query and use the custom mapping. For example:
 @Test
 public void testQuery() {
     String sql = "select * from test.user where id >= ?";
-    Mono<List<String>> userNames = exec(c -> c.query(sql, resultSet -> resultSet.stream().map(row -> row.getString("pt_name")).collect(Collectors.toList()), 9L));
+    Mono<List<String>> userNames = exec(c ->
+            c.query(sql, resultSet -> resultSet.stream()
+                                               .map(row -> row.getString("pt_name"))
+                                               .collect(Collectors.toList()), 9L));
+    StepVerifier.create(userNames.flatMapIterable(tmpNames -> tmpNames))
+                .expectNext("test transaction 8")
+                .expectNext("test transaction 9")
+                .verifyComplete();
+
+    String namedSql = "select * from test.user where id >= :id";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("id", 9L);
+    userNames = exec(c ->
+            c.namedQuery(namedSql, resultSet -> resultSet.stream()
+                                                         .map(row -> row.getString("pt_name"))
+                                                         .collect(Collectors.toList()), paramMap));
     StepVerifier.create(userNames.flatMapIterable(tmpNames -> tmpNames))
                 .expectNext("test transaction 8")
                 .expectNext("test transaction 9")
@@ -318,7 +360,17 @@ To execute a prepared statement query and convert result to a map. For example:
 @Test
 public void testQueryForMap() {
     String sql = "select * from test.user where id >= ?";
-    Mono<Map<Long, User>> userMap = exec(c -> c.queryForBeanMap(sql, User.class, 9L));
+    Mono<Map<Long, User>> userMap = exec(c -> c.queryForBeanMap(sql,
+            User.class, 9L));
+    StepVerifier.create(userMap.map(map -> map.get(10L)).map(User::getName))
+                .expectNext("test transaction 9")
+                .verifyComplete();
+
+    String namedSql = "select * from test.user where id >= :id";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("id", 9L);
+    userMap = exec(c -> c.namedQueryForBeanMap(namedSql,
+            User.class, paramMap));
     StepVerifier.create(userMap.map(map -> map.get(10L)).map(User::getName))
                 .expectNext("test transaction 9")
                 .verifyComplete();
@@ -333,6 +385,13 @@ public void testInsert() {
     String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
     Mono<Long> newUserId = exec(c -> c.insert(sql, "hello user", "hello user pwd"));
     StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
+
+    String namedSql = "insert into `test`.`user`(pt_name, pt_password) values(:name, :pwd)";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("name", "hello user");
+    paramMap.put("pwd", "hello user pwd");
+    newUserId = exec(c -> c.namedInsert(namedSql, paramMap));
+    StepVerifier.create(newUserId).expectNext(size + 2L).verifyComplete();
 }
 ```
 
@@ -342,6 +401,13 @@ To execute a prepared statement update. For example:
 public void testUpdate() {
     String sql = "update test.user set `pt_name` = ? where id = ?";
     Mono<Integer> row = exec(c -> c.update(sql, "update xxx", 2L));
+    StepVerifier.create(row).expectNext(1).verifyComplete();
+
+    String namedSql = "update test.user set `pt_name` = :name where id = :id";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("name", "update xxx");
+    paramMap.put("id", 2L);
+    row = exec(c -> c.namedUpdate(namedSql, paramMap));
     StepVerifier.create(row).expectNext(1).verifyComplete();
 }
 ```
