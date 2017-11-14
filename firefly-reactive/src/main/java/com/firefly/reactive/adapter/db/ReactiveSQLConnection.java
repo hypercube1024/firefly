@@ -26,6 +26,18 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<T> queryForSingleColumn(String sql, Object... params);
 
+    /**
+     * Query single column record by named SQL. If the database has not record, it will emit the RecordNotFound exception.
+     *
+     * @param sql      A SQL that may contain one or more placeholders. The placeholder starts with ":" or "&", such as,
+     *                 "select * from test where id in (:idList)",
+     *                 "select * from test where id = :id",
+     *                 "select * from test where id = :{id}",
+     *                 "select * from test where id = &id"
+     * @param paramMap Named SQL parameters.
+     * @param <T>      The type of column.
+     * @return The future result.
+     */
     <T> Mono<T> namedQueryForSingleColumn(String sql, Map<String, Object> paramMap);
 
     <T> Mono<T> namedQueryForSingleColumn(String sql, Object paramObject);
