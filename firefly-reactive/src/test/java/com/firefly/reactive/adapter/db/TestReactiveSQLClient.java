@@ -363,12 +363,18 @@ public class TestReactiveSQLClient {
         Mono<Long> newUserId = exec(c -> c.insert(sql, "hello user", "hello user pwd"));
         StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
 
-        String namedSql = "insert into `test`.`user`(pt_name, pt_password) values(:name, :pwd)";
+        String namedSql = "insert into `test`.`user`(pt_name, pt_password) values(:name, :password)";
         Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("name", "hello user");
-        paramMap.put("pwd", "hello user pwd");
+        paramMap.put("name", "hello user1");
+        paramMap.put("password", "hello user pwd1");
         newUserId = exec(c -> c.namedInsert(namedSql, paramMap));
         StepVerifier.create(newUserId).expectNext(size + 2L).verifyComplete();
+
+        User user = new User();
+        user.setName("hello user2");
+        user.setPassword("hello user pwd2");
+        newUserId = exec(c -> c.namedInsert(namedSql, user));
+        StepVerifier.create(newUserId).expectNext(size + 3L).verifyComplete();
     }
 
     @Test
@@ -382,6 +388,12 @@ public class TestReactiveSQLClient {
         paramMap.put("name", "update xxx");
         paramMap.put("id", 2L);
         row = exec(c -> c.namedUpdate(namedSql, paramMap));
+        StepVerifier.create(row).expectNext(1).verifyComplete();
+
+        User user = new User();
+        user.setId(2L);
+        user.setName("update xxx");
+        row = exec(c -> c.namedUpdate(namedSql, user));
         StepVerifier.create(row).expectNext(1).verifyComplete();
     }
 }
