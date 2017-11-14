@@ -3,10 +3,10 @@ package com.firefly.client.http2;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class HTTP1ClientResponseHandler implements ResponseHandler {
@@ -92,21 +92,13 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
                             && "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
                         log.debug("the client {} connection is persistent", response.getHttpVersion());
                     } else {
-                        try {
-                            connection.close();
-                        } catch (IOException e) {
-                            log.error("client closes connection exception", e);
-                        }
+                        IO.close(connection);
                     }
                     break;
                 case HTTP_1_1: // the persistent connection is default in HTTP 1.1
                     if ("close".equalsIgnoreCase(requestConnectionValue)
                             || "close".equalsIgnoreCase(responseConnectionValue)) {
-                        try {
-                            connection.close();
-                        } catch (IOException e) {
-                            log.error("client closes connection exception", e);
-                        }
+                        IO.close(connection);
                     } else {
                         log.debug("the client {} connection is persistent", response.getHttpVersion());
                     }
