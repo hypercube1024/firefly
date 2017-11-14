@@ -27,8 +27,28 @@ public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
     }
 
     @Override
+    public <T> Mono<T> namedQueryForSingleColumn(String sql, Map<String, Object> paramMap) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForSingleColumn(sql, paramMap));
+    }
+
+    @Override
+    public <T> Mono<T> namedQueryForSingleColumn(String sql, Object paramObject) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForSingleColumn(sql, paramObject));
+    }
+
+    @Override
     public <T> Mono<T> queryForObject(String sql, Class<T> clazz, Object... params) {
         return Mono.fromCompletionStage(sqlConnection.queryForObject(sql, clazz, params));
+    }
+
+    @Override
+    public <T> Mono<T> namedQueryForObject(String sql, Class<T> clazz, Map<String, Object> paramMap) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForObject(sql, clazz, paramMap));
+    }
+
+    @Override
+    public <T> Mono<T> namedQueryForObject(String sql, Class<T> clazz, Object paramObject) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForObject(sql, clazz, paramObject));
     }
 
     @Override
@@ -42,8 +62,28 @@ public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
     }
 
     @Override
+    public <K, V> Mono<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Map<String, Object> paramMap) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForBeanMap(sql, valueClass, paramMap));
+    }
+
+    @Override
+    public <K, V> Mono<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Object paramObject) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForBeanMap(sql, valueClass, paramObject));
+    }
+
+    @Override
     public <T> Mono<List<T>> queryForList(String sql, Class<T> clazz, Object... params) {
         return Mono.fromCompletionStage(sqlConnection.queryForList(sql, clazz, params));
+    }
+
+    @Override
+    public <T> Mono<List<T>> namedQueryForList(String sql, Class<T> clazz, Map<String, Object> paramMap) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForList(sql, clazz, paramMap));
+    }
+
+    @Override
+    public <T> Mono<List<T>> namedQueryForList(String sql, Class<T> clazz, Object paramObject) {
+        return Mono.fromCompletionStage(sqlConnection.namedQueryForList(sql, clazz, paramObject));
     }
 
     @Override
@@ -52,8 +92,28 @@ public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
     }
 
     @Override
+    public <T> Mono<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Map<String, Object> paramMap) {
+        return Mono.fromCompletionStage(sqlConnection.namedQuery(sql, handler, paramMap));
+    }
+
+    @Override
+    public <T> Mono<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Object paramObject) {
+        return Mono.fromCompletionStage(sqlConnection.namedQuery(sql, handler, paramObject));
+    }
+
+    @Override
     public Mono<Integer> update(String sql, Object... params) {
         return Mono.fromCompletionStage(sqlConnection.update(sql, params));
+    }
+
+    @Override
+    public Mono<Integer> namedUpdate(String sql, Map<String, Object> paramMap) {
+        return Mono.fromCompletionStage(sqlConnection.namedUpdate(sql, paramMap));
+    }
+
+    @Override
+    public Mono<Integer> namedUpdate(String sql, Object paramObject) {
+        return Mono.fromCompletionStage(sqlConnection.namedUpdate(sql, paramObject));
     }
 
     @Override
@@ -64,6 +124,16 @@ public class ReactiveSQLConnectionAdapter implements ReactiveSQLConnection {
     @Override
     public <T> Mono<T> insert(String sql, Object... params) {
         return Mono.fromCompletionStage(sqlConnection.insert(sql, params));
+    }
+
+    @Override
+    public <T> Mono<T> namedInsert(String sql, Map<String, Object> paramMap) {
+        return Mono.fromCompletionStage(sqlConnection.namedInsert(sql, paramMap));
+    }
+
+    @Override
+    public <T> Mono<T> namedInsert(String sql, Object paramObject) {
+        return Mono.fromCompletionStage(sqlConnection.namedInsert(sql, paramObject));
     }
 
     @Override

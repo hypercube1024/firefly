@@ -12,7 +12,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -135,5 +138,13 @@ public class TestSQLClient {
                     Assert.assertThat(idList.size(), is(5));
                     return idList;
                 }).get();
+    }
+
+    @Test
+    public void testNamedQuery() throws Exception {
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("nameList", Arrays.asList("test transaction 0", "test transaction 1"));
+        exec(c -> c.namedQueryForSingleColumn("select count(*) from test.user where pt_name in (:nameList)", paramMap))
+                .thenAccept(count -> Assert.assertThat(count, is(2L))).get();
     }
 }

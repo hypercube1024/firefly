@@ -19,23 +19,31 @@ public interface ReactiveSQLConnection {
     /**
      * Query single column record by SQL. If the database has not record, it will emit the RecordNotFound exception.
      *
-     * @param sql    An SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql    An SQL that may contain one or more '?' placeholders.
      * @param params SQL parameters.
      * @param <T>    The type of column.
      * @return The result that is wrapped by Mono.
      */
     <T> Mono<T> queryForSingleColumn(String sql, Object... params);
 
+    <T> Mono<T> namedQueryForSingleColumn(String sql, Map<String, Object> paramMap);
+
+    <T> Mono<T> namedQueryForSingleColumn(String sql, Object paramObject);
+
     /**
      * Query record and bind object. If the database has not record, it will emit the RecordNotFound exception.
      *
-     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql    A SQL that may contain one or more '?' placeholders.
      * @param clazz  The Class reference of bound object.
      * @param params SQL parameters.
      * @param <T>    The type of bound object.
      * @return The result that binds to Class and it is wrapped by Mono.
      */
     <T> Mono<T> queryForObject(String sql, Class<T> clazz, Object... params);
+
+    <T> Mono<T> namedQueryForObject(String sql, Class<T> clazz, Map<String, Object> paramMap);
+
+    <T> Mono<T> namedQueryForObject(String sql, Class<T> clazz, Object paramObject);
 
     /**
      * Query record by id. If the database has not record, it will emit the RecordNotFound exception.
@@ -50,7 +58,7 @@ public interface ReactiveSQLConnection {
     /**
      * Query records and convert records to a Map.
      *
-     * @param sql        A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql        A SQL that may contain one or more '?' placeholders.
      * @param valueClass The Class reference of bound object.
      * @param params     SQL parameters.
      * @param <K>        The type of primary key.
@@ -59,10 +67,14 @@ public interface ReactiveSQLConnection {
      */
     <K, V> Mono<Map<K, V>> queryForBeanMap(String sql, Class<V> valueClass, Object... params);
 
+    <K, V> Mono<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Map<String, Object> paramMap);
+
+    <K, V> Mono<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Object paramObject);
+
     /**
      * Query records and bind object.
      *
-     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql    A SQL that may contain one or more '?' placeholders.
      * @param clazz  The Class reference of bound object.
      * @param params SQL parameters.
      * @param <T>    The type of bound object.
@@ -70,10 +82,14 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<List<T>> queryForList(String sql, Class<T> clazz, Object... params);
 
+    <T> Mono<List<T>> namedQueryForList(String sql, Class<T> clazz, Map<String, Object> paramMap);
+
+    <T> Mono<List<T>> namedQueryForList(String sql, Class<T> clazz, Object paramObject);
+
     /**
      * Query records and convert result set to javabean using handler.
      *
-     * @param sql     A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql     A SQL that may contain one or more '?' placeholders.
      * @param handler The function that converts result set to javabean.
      * @param params  SQL parameters.
      * @param <T>     The type of converted object.
@@ -81,14 +97,22 @@ public interface ReactiveSQLConnection {
      */
     <T> Mono<T> query(String sql, Func1<SQLResultSet, T> handler, Object... params);
 
+    <T> Mono<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Map<String, Object> paramMap);
+
+    <T> Mono<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Object paramObject);
+
     /**
      * Update records.
      *
-     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql    A SQL that may contain one or more '?' placeholders.
      * @param params SQL parameters.
      * @return The affected row number.
      */
     Mono<Integer> update(String sql, Object... params);
+
+    Mono<Integer> namedUpdate(String sql, Map<String, Object> paramMap);
+
+    Mono<Integer> namedUpdate(String sql, Object paramObject);
 
     /**
      * Update record using the mapped javabean.
@@ -102,12 +126,16 @@ public interface ReactiveSQLConnection {
     /**
      * Insert records
      *
-     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql    A SQL that may contain one or more '?' placeholders.
      * @param params SQL parameters.
      * @param <T>    The type of autoincrement id.
      * @return The autoincrement id that is wrapped by Mono.
      */
     <T> Mono<T> insert(String sql, Object... params);
+
+    <T> Mono<T> namedInsert(String sql, Map<String, Object> paramMap);
+
+    <T> Mono<T> namedInsert(String sql, Object paramObject);
 
     /**
      * Insert a javabean to the database.
@@ -145,7 +173,7 @@ public interface ReactiveSQLConnection {
     /**
      * Execute a sql to batch inserting data.
      *
-     * @param sql     A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql     A SQL that may contain one or more '?' placeholders.
      * @param params  An array of query replacement parameters.  Each row in
      *                this array is one set of batch replacement values.
      * @param handler The function that converts result set to java type.
@@ -167,7 +195,7 @@ public interface ReactiveSQLConnection {
     /**
      * Execute a batch of SQL INSERT, UPDATE, or DELETE queries.
      *
-     * @param sql    A SQL that may contain one or more '?' IN parameter placeholders.
+     * @param sql    A SQL that may contain one or more '?' placeholders.
      * @param params An array of query replacement parameters.  Each row in
      *               this array is one set of batch replacement values.
      * @return The number of rows updated per statement.
