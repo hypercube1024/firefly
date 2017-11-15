@@ -15,6 +15,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class MimeTypes {
 
@@ -577,5 +578,30 @@ public class MimeTypes {
         } else {
             return Collections.emptyList();
         }
+    }
+
+    public static List<AcceptMIMEType> parseAcceptMIMETypes(String accept) {
+        return Optional.ofNullable(accept)
+                       .filter(StringUtils::hasText)
+                       .map(a -> StringUtils.split(a, ','))
+                       .map(Arrays::stream)
+                       .map(stream -> stream.map(type -> {
+                           String[] mimeTypeAndQuality = StringUtils.split(type, ';');
+                           AcceptMIMEType acceptMIMEType = new AcceptMIMEType();
+
+                           // parse the MIME type
+                           String[] mimeType = StringUtils.split(mimeTypeAndQuality[0].trim(), '/');
+                           acceptMIMEType.setParentType(mimeType[0].trim());
+                           acceptMIMEType.setChildType(mimeType[1].trim());
+
+                           // parse the quality
+                           if (mimeTypeAndQuality.length > 1) {
+                               String q = mimeTypeAndQuality[1];
+                               String[] qualityKV = StringUtils.split(q, '=');
+                               acceptMIMEType.setQuality(Float.parseFloat(qualityKV[1].trim()));
+                           }
+                           return acceptMIMEType;
+                       }).collect(Collectors.toList()))
+                       .orElse(Collections.emptyList());
     }
 }

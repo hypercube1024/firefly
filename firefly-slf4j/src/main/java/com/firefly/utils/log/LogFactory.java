@@ -42,7 +42,7 @@ public class LogFactory extends AbstractLifeCycle {
     }
 
     public Log getLog(Class<?> clazz) {
-		return getLog(clazz.getName());
+        return getLog(clazz.getName());
     }
 
     public Log getLog(String name) {

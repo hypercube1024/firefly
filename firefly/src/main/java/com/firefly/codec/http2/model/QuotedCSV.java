@@ -1,5 +1,7 @@
 package com.firefly.codec.http2.model;
 
+import com.firefly.utils.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -117,7 +119,7 @@ public class QuotedCSV implements Iterable<String> {
                         switch (state) {
                             case VALUE:
                                 parsedValue(buffer);
-                                value_length = buffer.length();
+//                                value_length = buffer.length();
                                 break;
                             case PARAM_NAME:
                             case PARAM_VALUE:
@@ -186,7 +188,6 @@ public class QuotedCSV implements Iterable<String> {
                                 param_value = nws_length;
                             buffer.append(c);
                             nws_length = buffer.length();
-                            continue;
                         }
                     }
                 }
@@ -231,11 +232,11 @@ public class QuotedCSV implements Iterable<String> {
     }
 
     public static String unquote(String s) {
+        if (!StringUtils.hasText(s)) {
+            return s;
+        }
         // handle trivial cases
         int l = s.length();
-        if (s == null || l == 0)
-            return s;
-
         // Look for any quotes
         int i = 0;
         for (; i < l; i++) {
@@ -248,7 +249,7 @@ public class QuotedCSV implements Iterable<String> {
 
         boolean quoted = true;
         boolean sloshed = false;
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         buffer.append(s, 0, i);
         i++;
         for (; i < l; i++) {
