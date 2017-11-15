@@ -57,16 +57,49 @@ public interface RoutingContext extends Closeable {
         return Optional.ofNullable(getRouterParameter(name));
     }
 
+    /**
+     * Set the HTTP body packet receiving callback.
+     *
+     * @param content The HTTP body data receiving callback. When the server receives the HTTP body packet, it will be called.
+     * @return RoutingContext
+     */
     RoutingContext content(Action1<ByteBuffer> content);
 
+    /**
+     * Set the HTTP body packet complete callback.
+     *
+     * @param contentComplete The HTTP body packet complete callback.
+     * @return RoutingContext
+     */
     RoutingContext contentComplete(Action1<SimpleRequest> contentComplete);
 
+    /**
+     * Set the HTTP message complete callback.
+     *
+     * @param messageComplete the HTTP message complete callback.
+     * @return RoutingContext
+     */
     RoutingContext messageComplete(Action1<SimpleRequest> messageComplete);
 
+    /**
+     * If return true, it represents you has set a HTTP body data receiving callback.
+     *
+     * @return If return true, it represents you has set a HTTP body data receiving callback
+     */
     boolean isAsynchronousRead();
 
+    /**
+     * Execute the next handler.
+     *
+     * @return If return false, it represents current handler is the last.
+     */
     boolean next();
 
+    /**
+     * If return false, it represents current handler is the last.
+     *
+     * @return If return false, it represents current handler is the last.
+     */
     boolean hasNext();
 
     <T> RoutingContext complete(Promise<T> promise);
@@ -272,7 +305,7 @@ public interface RoutingContext extends Closeable {
 
     void renderTemplate(String resourceName, List<Object> scopes);
 
-    default  void renderTemplate(String resourceName) {
+    default void renderTemplate(String resourceName) {
         renderTemplate(resourceName, Collections.emptyList());
     }
 

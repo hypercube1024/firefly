@@ -21,15 +21,15 @@ import java.util.function.Supplier
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
- * Firefly HTTP server extensions
+ * Firefly HTTP server extensions. 
  *
  * @author Pengtao Qiu
  */
 
 val sysLogger = Log.getLogger("firefly-system")
 
-// HTTP server API extensions
 
+// HTTP server API extensions
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> RoutingContext.getJsonBody(): T = Json.parse(stringBody)
@@ -60,8 +60,12 @@ val promiseQueueKey = "_promiseQueue"
 fun <C> RoutingContext.getPromiseQueue(): Deque<AsyncPromise<C>>? = getAttr(promiseQueueKey)
 
 @Suppress("UNCHECKED_CAST")
-fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>>
+        = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
 
+/**
+ * Set the callback that is called when the asynchronous handler finishes.
+ */
 fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
     queue.push(AsyncPromise(succeeded, failed))
@@ -73,6 +77,9 @@ fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit): RoutingCon
     return this
 }
 
+/**
+ * Execute the next asynchronous handler and set the callback is called when the asynchronous handler finishes.
+ */
 fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): Boolean {
     asyncComplete(succeeded, failed)
     return next()
@@ -83,10 +90,16 @@ fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
     return next()
 }
 
+/**
+ * Execute asynchronous succeeded callback.
+ */
 suspend fun <C> RoutingContext.asyncSucceed(result: C) {
     getPromiseQueue<C>()?.pop()?.succeeded?.invoke(result)
 }
 
+/**
+ * Execute asynchronous failed callback
+ */
 suspend fun <C> RoutingContext.asyncFail(x: Throwable? = null) {
     getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
 }
@@ -116,13 +129,11 @@ class StatusLineBlock(private val ctx: RoutingContext) {
 
     var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
         set(value) {
-            ctx.setHttpVersion(value)
+            ctx.httpVersion = value
             field = value
         }
 
-    override fun toString(): String {
-        return "StatusLineBlock(status=$status, reason='$reason', httpVersion=$httpVersion)"
-    }
+    override fun toString(): String = "StatusLineBlock(status=$status, reason='$reason', httpVersion=$httpVersion)"
 
 }
 
@@ -157,9 +168,7 @@ class HeaderBlock(ctx: RoutingContext) : HttpFieldOperator {
         httpFields.add(this)
     }
 
-    override fun toString(): String {
-        return "HeaderBlock(httpFields=$httpFields)"
-    }
+    override fun toString(): String = "HeaderBlock(httpFields=$httpFields)"
 }
 
 /**
@@ -191,9 +200,7 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
         httpFields.add(this)
     }
 
-    override fun toString(): String {
-        return "TrailerBlock(httpFields=$httpFields)"
-    }
+    override fun toString(): String = "TrailerBlock(httpFields=$httpFields)"
 
 }
 
@@ -260,6 +267,9 @@ class RouterBlock(private val router: Router,
             field = value
         }
 
+    /**
+     * Execute handler in the coroutine
+     */
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
@@ -273,6 +283,9 @@ class RouterBlock(private val router: Router,
         handler.handle(this)
     }
 
+    /**
+     * Automatically call the succeeded callback when the asynchronous handler has executed finish
+     */
     fun asyncCompleteHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
         try {
             handler.invoke(this, it)
@@ -290,7 +303,9 @@ class RouterBlock(private val router: Router,
         router.handler(handler)
     }
 
-
+    /**
+     * Automatically close the resource when the block has executed finish
+     */
     suspend fun <T : Closeable?, R> T.safeUse(block: suspend (T) -> R): R {
         var closed = false
         try {
@@ -313,19 +328,35 @@ class RouterBlock(private val router: Router,
         }
     }
 
-    override fun toString(): String {
-        return router.toString()
-    }
+    override fun toString(): String = router.toString()
 
 }
 
 interface HttpServerLifecycle {
+
+    /**
+     * Stop the HTTP server.
+     */
     fun stop()
 
+    /**
+     * Start the HTTP server.
+     *
+     * @param host The server hostname.
+     * @param port The server port.
+     */
     fun listen(host: String, port: Int)
 
+    /**
+     * Start the HTTP server and set the address of the local host.
+     *
+     * @param port The server port.
+     */
     fun listen(port: Int)
 
+    /**
+     * Start the HTTP server. You must set host and port in the SimpleHTTPServerConfiguration.
+     */
     fun listen()
 }
 
