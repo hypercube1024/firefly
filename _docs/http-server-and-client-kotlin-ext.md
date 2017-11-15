@@ -15,6 +15,9 @@ title: HTTP server and client Kotlin extension
 - [Capturing path parameters](#capturing-path-parameters)
 - [Routing by wildcard](#routing-by-wildcard)
 - [Routing by regular expressions](#routing-by-regular-expressions)
+- [Routing by HTTP method](#routing-by-http-method)
+- [Routing based on MIME type of request](#routing-based-on-mime-type-of-request)
+- [Routing based on MIME types acceptable by the client](#routing-based-on-mime-types-acceptable-by-the-client)
 
 <!-- /TOC -->
 
@@ -320,3 +323,141 @@ List orange
 List orange success
 ```
 We use the `getRegexGroup` function to get the matched group and the index starts from 1.
+
+# Routing by HTTP method
+We can set value for the `httpMethod` property to match the HTTP request. If you don't set any value to the `httpMethod` property, the router will match all HTTP methods. For example:
+```kotlin
+fun main(args: Array<String>) = runBlocking {
+    val host = "localhost"
+    val port = 8081
+
+    HttpServer {
+        router {
+            httpMethod = GET
+            path = "/product/:id"
+
+            asyncHandler {
+                val id = getPathParameter("id")
+                end("Get the product $id.")
+            }
+        }
+
+        router {
+            httpMethod = POST
+            path = "/product"
+
+            asyncHandler {
+                end("Create a new product: $stringBody")
+            }
+        }
+
+        router {
+            httpMethod = PUT
+            path = "/product/:id"
+
+            asyncHandler {
+                val id = getPathParameter("id")
+                end("Update the product $id: $stringBody")
+            }
+        }
+
+        router {
+            httpMethod = DELETE
+            path = "/product/:id"
+
+            asyncHandler {
+                val id = getPathParameter("id")
+                end("Delete the product $id")
+            }
+        }
+    }.listen(host, port)
+
+    val getResp = firefly.httpClient().get("http://$host:$port/product/20").asyncSubmit()
+    println(getResp.stringBody)
+
+    val postResp = firefly.httpClient().post("http://$host:$port/product")
+            .body("Car 20. The color is red.").asyncSubmit()
+    println(postResp.stringBody)
+
+    val putResp = firefly.httpClient().put("http://$host:$port/product/20")
+            .body("Change the color from red to black.").asyncSubmit()
+    println(putResp.stringBody)
+
+    val delResp = firefly.httpClient().delete("http://$host:$port/product/20").asyncSubmit()
+    println(delResp.stringBody)
+}
+```
+Run it. The console shows:
+```
+Get the product 20.
+Create a new product: Car 20. The color is red.
+Update the product 20: Change the color from red to black.
+Delete the product 20
+```
+
+In the above example, we build the RESTful APIs. The URL `/product/:id` represents resources. The HTTP verbs (Such as, `GET`, `POST`, `PUT`, `DELETE` and so on) represent the operation of resources (Such as get, create, update and delete).  
+
+If you want to let a lot of HTTP methods match a router, just use the `httpMethods` property instead of `httpMethod`. Its type is `List`.
+
+# Routing based on MIME type of request
+You can specify that a route will match against matching request MIME types using `consumes` property.
+
+In this case, the request will contain a content-type header specifying the MIME type of the request body. This will be matched against the value specified in consumes.
+
+Basically, the `consumes` is describing which MIME types the handler can consume. For example:
+```kotlin
+fun main(args: Array<String>) = runBlocking {
+    val host = "localhost"
+    val port = 8081
+
+    HttpServer {
+        router {
+            httpMethod = HttpMethod.PUT
+            path = "/product/:id"
+            consumes = "*/json"
+
+            asyncHandler {
+                val id = getPathParameter("id")
+                val type = getWildcardMatchedResult(0)
+                val car = getJsonBody<Car>()
+                end("Update resource $id: $car. The content type is $type/json")
+            }
+        }
+    }.listen(host, port)
+
+    val resp = firefly.httpClient().put("http://$host:$port/product/20")
+            .jsonBody(Car(20, "My car", "black")).asyncSubmit()
+    println(resp.stringBody)
+}
+
+@NoArg
+data class Car(var id: Long,
+               var name: String,
+               var color: String)
+```
+In the above example, we use the wildcard `*` to match the content type of the HTTP request. We can also use the exact MIME type to match the request.  
+
+The server uses the `getJsonBody<Car>()` function to get JSON data. This function receives a reified type parameter `Car`. The JSON parser will bind the JSON data to that type.
+
+# Routing based on MIME types acceptable by the client
+The HTTP Accept header is used to signify which MIME types of the response are acceptable to the client.
+
+An accept header can have multiple MIME types separated by ‘,’.
+
+MIME types can also have a q value appended to them which signifies a weighting to apply if more than one response MIME type is available matching the HTTP Accept header. The q value is a number between 0 and 1.0. If omitted it defaults to 1.0.
+
+For example, the following accept header signifies the client will accept a MIME type of only text/plain:
+```
+Accept: text/plain
+```
+With the following, the client will accept text/plain or text/html with no preference.
+```
+Accept: text/plain, text/html
+```
+With the following the client will accept text/plain or text/html but prefers text/html as it has a higher q value (the default value is q=1.0)
+```
+Accept: text/plain; q=0.9, text/html
+```
+If the server can provide both text/plain and text/html it should provide the text/html in this case.
+
+By using `produces` property you define which MIME type(s) the route produces, e.g. the following handler produces a response with MIME type application/json. For example:

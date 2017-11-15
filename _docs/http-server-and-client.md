@@ -384,7 +384,7 @@ The HTTP Accept header is used to signify which MIME types of the response are a
 
 An accept header can have multiple MIME types separated by ‘,’.
 
-MIME types can also have a q value appended to them* which signifies a weighting to apply if more than one response MIME type is available matching the HTTP Accept header. The q value is a number between 0 and 1.0. If omitted it defaults to 1.0.
+MIME types can also have a q value appended to them which signifies a weighting to apply if more than one response MIME type is available matching the HTTP Accept header. The q value is a number between 0 and 1.0. If omitted it defaults to 1.0.
 
 For example, the following accept header signifies the client will accept a MIME type of only text/plain:
 ```
