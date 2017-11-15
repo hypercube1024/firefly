@@ -1,4 +1,4 @@
-package com.firefly.example.kotlin.benchmark
+package com.firefly.example.kotlin.http.benchmark
 
 import com.firefly.codec.http2.model.HttpHeader.CONTENT_TYPE
 import com.firefly.codec.http2.model.HttpMethod
@@ -15,9 +15,9 @@ data class Item(val name: String, val price: Double)
 data class ItemRepository(val name: String) {
     fun repository(): List<Item> =
             listOf(Item("foo", 33.2),
-                   Item("beer", 5.99),
-                   Item("cola", 2.5),
-                   Item("mineral water", 2.0))
+                    Item("beer", 5.99),
+                    Item("cola", 2.5),
+                    Item("mineral water", 2.0))
 }
 
 /**

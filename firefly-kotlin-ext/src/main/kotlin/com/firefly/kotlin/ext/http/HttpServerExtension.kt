@@ -21,7 +21,7 @@ import java.util.function.Supplier
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
- * Firefly HTTP server extensions. 
+ * Firefly HTTP server extensions.
  *
  * @author Pengtao Qiu
  */
@@ -268,7 +268,9 @@ class RouterBlock(private val router: Router,
         }
 
     /**
-     * Execute handler in the coroutine
+     * Register a handler that is executed in the coroutine asynchronously.
+     *
+     * @param handler The handler that processes the business logic.
      */
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
@@ -279,12 +281,17 @@ class RouterBlock(private val router: Router,
         }
     }
 
+    /**
+     * Register a handler that is executed in the coroutine asynchronously.
+     *
+     * @param handler The handler that processes the business logic.
+     */
     fun asyncHandler(handler: AsyncHandler) = asyncHandler {
         handler.handle(this)
     }
 
     /**
-     * Automatically call the succeeded callback when the asynchronous handler has executed finish
+     * Automatically call the succeeded callback when the asynchronous handler has completed.
      */
     fun asyncCompleteHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
         try {
@@ -295,16 +302,26 @@ class RouterBlock(private val router: Router,
         }
     }
 
+    /**
+     * Register a handler that is executed in the network thread synchronously.
+     *
+     * @param handler The handler that processes the business logic.
+     */
     fun handler(handler: RoutingContext.() -> Unit) {
         router.handler(handler)
     }
 
+    /**
+     * Register a handler that is executed in the network thread synchronously.
+     *
+     * @param handler The handler that processes the business logic.
+     */
     fun handler(handler: Handler) {
         router.handler(handler)
     }
 
     /**
-     * Automatically close the resource when the block has executed finish
+     * Automatically close the resource when the block has completed.
      */
     suspend fun <T : Closeable?, R> T.safeUse(block: suspend (T) -> R): R {
         var closed = false
@@ -366,14 +383,11 @@ annotation class HttpServerMarker
 /**
  * HTTP server DSL. It helps you write HTTP server elegantly.
  *
- * @param requestCtx
- * Maintain the routing context in the HTTP request lifecycle when you use the asynchronous handlers which run in the coroutine.
+ * @param requestCtx Maintain the routing context in the HTTP request lifecycle when you use the asynchronous handlers which run in the coroutine.
  * It visits RoutingContext in the external function conveniently. Usually, you can use it to trace HTTP request crossing all registered routers.
- *
- * @param serverConfiguration HTTP server configuration
- * @param httpBodyConfiguration HTTP body configuration
- * @param block HTTP server DSL block
- *
+ * @param serverConfiguration HTTP server configuration.
+ * @param httpBodyConfiguration HTTP body configuration.
+ * @param block The HTTP server DSL block. You can register routers in this block.
  */
 @HttpServerMarker
 class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
@@ -407,17 +421,33 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
+    /**
+     * Register a router using the DSL with a autoincrement ID.
+     *
+     * @param block The router builder.
+     */
     inline fun router(block: RouterBlock.() -> Unit) {
         val r = RouterBlock(routerManager.register(), requestCtx, coroutineDispatcher)
         block.invoke(r)
         sysLogger.info("register $r")
     }
 
+    /**
+     * Register a router using the DSL with a specified ID.
+     *
+     * @param id The router ID. The router is sorted by ID ascending order.
+     * @param block The router builder.
+     */
     inline fun router(id: Int, block: RouterBlock.() -> Unit) {
         val r = RouterBlock(routerManager.register(id), requestCtx, coroutineDispatcher)
         block.invoke(r)
         sysLogger.info("register $r")
     }
 
+    /**
+     * Register routers using the DSL.
+     *
+     * @param block Register routers in this block.
+     */
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
 }
