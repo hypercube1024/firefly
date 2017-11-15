@@ -267,6 +267,7 @@ class RouterBlock(private val router: Router,
             field = value
         }
 
+    fun getId() = router.id
     /**
      * Register a handler that is executed in the coroutine asynchronously.
      *
