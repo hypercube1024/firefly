@@ -14,8 +14,8 @@ title: HTTP server and client
 	- [Routing Context](#routing-context)
 - [Capturing path parameters](#capturing-path-parameters)
 - [Routing by exact path](#routing-by-exact-path)
-- [Routing by paths with wildcard](#routing-by-paths-with-wildcard)
-- [Routing with regular expressions](#routing-with-regular-expressions)
+- [Routing by wildcard](#routing-by-wildcard)
+- [Routing by regular expressions](#routing-by-regular-expressions)
 - [Routing by HTTP method](#routing-by-http-method)
 - [Routing based on MIME type of request](#routing-based-on-mime-type-of-request)
 - [Routing based on MIME types acceptable by the client](#routing-based-on-mime-types-acceptable-by-the-client)
@@ -174,7 +174,7 @@ pliers: 1
 screwdriver: 1
 ```
 
-# Routing by paths with wildcard
+# Routing by wildcard
 Often you want to route all requests that accord with a pattern. You could use a regex to do this, but a simply way is to use an asterisk wildcard *
 
 ```java
@@ -197,7 +197,7 @@ current path is /product/apple
 current path is /good/my-items
 ```
 
-# Routing with regular expressions
+# Routing by regular expressions
 Regular expressions can also be used to match URI paths in routes.
 ```java
 public class RoutingWithRegexDemo {
