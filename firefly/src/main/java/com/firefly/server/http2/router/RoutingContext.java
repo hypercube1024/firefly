@@ -53,6 +53,18 @@ public interface RoutingContext extends Closeable {
 
     String getRouterParameter(String name);
 
+    default String getWildcardMatchedResult(int index) {
+        return getRouterParameter("param" + index);
+    }
+
+    default String getRegexGroup(int index) {
+        return getRouterParameter("group" + index);
+    }
+
+    default String getPathParameter(String name) {
+        return getRouterParameter(name);
+    }
+
     default Optional<String> getRouterParamOpt(String name) {
         return Optional.ofNullable(getRouterParameter(name));
     }

@@ -7,11 +7,21 @@ import com.firefly.$;
  */
 public class CapturingPathParameterDemo {
     public static void main(String[] args) {
-        $.httpServer().router().get("/good/:type/:id")
+        String host = "localhost";
+        int port = 8081;
+
+        $.httpServer().router().get("/product/:id")
          .handler(ctx -> {
-            String type = ctx.getRouterParameter("type");
-            String id = ctx.getRouterParameter("id");
-            ctx.end("get good type: " + type + ", id: " + id);
-         }).listen("localhost", 8080);
+             String id = ctx.getRouterParameter("id");
+             ctx.end($.string.replace("Get the product {}", id));
+         }).listen(host, port);
+
+        $.httpClient()
+         .get($.string.replace("http://{}:{}/product/20", host, port))
+         .submit()
+         .thenAccept(resp -> {
+             System.out.println(resp.getStatus());
+             System.out.println(resp.getStringBody());
+         });
     }
 }

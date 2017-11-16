@@ -4,7 +4,6 @@ import com.firefly.codec.http2.model.HttpMethod.*
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.http.asyncSubmit
-import com.firefly.kotlin.ext.http.getPathParameter
 import kotlinx.coroutines.experimental.runBlocking
 
 /**

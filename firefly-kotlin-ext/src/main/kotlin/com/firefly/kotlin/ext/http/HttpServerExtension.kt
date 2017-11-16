@@ -43,12 +43,6 @@ inline fun <reified T : Any> RoutingContext.getAttr(name: String): T? {
     }
 }
 
-fun RoutingContext.getWildcardMatchedResult(index: Int): String = getRouterParameter("param$index")
-
-fun RoutingContext.getRegexGroup(index: Int): String = getRouterParameter("group$index")
-
-fun RoutingContext.getPathParameter(name: String): String = getRouterParameter(name)
-
 inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
