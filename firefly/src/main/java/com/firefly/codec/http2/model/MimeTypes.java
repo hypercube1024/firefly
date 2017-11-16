@@ -591,7 +591,7 @@ public class MimeTypes {
     }
 
     private static List<AcceptMIMEType> apply(Stream<String> stream) {
-        List<AcceptMIMEType> list = stream.map(type -> {
+        List<AcceptMIMEType> list = stream.map(String::trim).filter(StringUtils::hasText).map(type -> {
             String[] mimeTypeAndQuality = StringUtils.split(type, ';');
             AcceptMIMEType acceptMIMEType = new AcceptMIMEType();
 
@@ -621,7 +621,6 @@ public class MimeTypes {
                 String[] qualityKV = StringUtils.split(q, '=');
                 acceptMIMEType.setQuality(Float.parseFloat(qualityKV[1].trim()));
             }
-
 
             return acceptMIMEType;
         }).collect(Collectors.toList());
