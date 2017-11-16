@@ -461,3 +461,55 @@ Accept: text/plain; q=0.9, text/html
 If the server can provide both text/plain and text/html it should provide the text/html in this case.
 
 By using `produces` property you define which MIME type(s) the route produces, e.g. the following handler produces a response with MIME type application/json. For example:
+```kotlin
+fun main(args: Array<String>) = runBlocking {
+    val host = "localhost"
+    val port = 8081
+
+    HttpServer {
+        router {
+            httpMethod = HttpMethod.PUT
+            path = "/product/:id"
+            consumes = "*/json"
+            produces = "text/plain"
+
+            asyncHandler {
+                val id = getPathParameter("id")
+                val car = getJsonBody<Car>()
+                end("Update resource $id: $car")
+            }
+        }
+
+        router {
+            httpMethod = HttpMethod.PUT
+            path = "/product/:id"
+            consumes = "*/json"
+            produces = "application/json"
+
+            asyncHandler {
+                writeJson(getJsonBody<Car>()).end()
+            }
+        }
+    }.listen(host, port)
+
+    val text = firefly.httpClient().put("http://$host:$port/product/20")
+            .put(HttpHeader.ACCEPT, "text/plain, application/json;q=0.9, */*;q=0.8")
+            .jsonBody(Car(20, "My car", "black"))
+            .asyncSubmit()
+    println(text.stringBody)
+
+    val json = firefly.httpClient().put("http://$host:$port/product/20")
+            .put(HttpHeader.ACCEPT, "application/json, text/plain, */*;q=0.8")
+            .jsonBody(Car(20, "My car", "black"))
+            .asyncSubmit()
+    println(json.stringBody)
+}
+```
+Run it. The console shows:
+```
+Update resource 20: Car(id=20, name=My car, color=black)
+{"color":"black","id":20,"name":"My car"}
+```
+In the above example, the first request, the `text/plain` weight(1.0) is higher than `application/json`(0.9), so this request matches the first router that responds the text format.   
+
+The second request, the `application/json` weight equals the `text/plain`, but `application/json` is in front of `text/plain`, so the `application/json` priority is higher than `text/plain`. It matches the second router that responds the JSON format.
