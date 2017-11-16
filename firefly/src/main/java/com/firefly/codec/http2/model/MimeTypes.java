@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MimeTypes {
 
@@ -585,23 +586,46 @@ public class MimeTypes {
                        .filter(StringUtils::hasText)
                        .map(a -> StringUtils.split(a, ','))
                        .map(Arrays::stream)
-                       .map(stream -> stream.map(type -> {
-                           String[] mimeTypeAndQuality = StringUtils.split(type, ';');
-                           AcceptMIMEType acceptMIMEType = new AcceptMIMEType();
-
-                           // parse the MIME type
-                           String[] mimeType = StringUtils.split(mimeTypeAndQuality[0].trim(), '/');
-                           acceptMIMEType.setParentType(mimeType[0].trim());
-                           acceptMIMEType.setChildType(mimeType[1].trim());
-
-                           // parse the quality
-                           if (mimeTypeAndQuality.length > 1) {
-                               String q = mimeTypeAndQuality[1];
-                               String[] qualityKV = StringUtils.split(q, '=');
-                               acceptMIMEType.setQuality(Float.parseFloat(qualityKV[1].trim()));
-                           }
-                           return acceptMIMEType;
-                       }).collect(Collectors.toList()))
+                       .map(MimeTypes::apply)
                        .orElse(Collections.emptyList());
+    }
+
+    private static List<AcceptMIMEType> apply(Stream<String> stream) {
+        List<AcceptMIMEType> list = stream.map(type -> {
+            String[] mimeTypeAndQuality = StringUtils.split(type, ';');
+            AcceptMIMEType acceptMIMEType = new AcceptMIMEType();
+
+            // parse the MIME type
+            String[] mimeType = StringUtils.split(mimeTypeAndQuality[0].trim(), '/');
+            String parentType = mimeType[0].trim();
+            String childType = mimeType[1].trim();
+            acceptMIMEType.setParentType(parentType);
+            acceptMIMEType.setChildType(childType);
+            if (parentType.equals("*")) {
+                if (childType.equals("*")) {
+                    acceptMIMEType.setMatchType(AcceptMIMEMatchType.ALL);
+                } else {
+                    acceptMIMEType.setMatchType(AcceptMIMEMatchType.CHILD);
+                }
+            } else {
+                if (childType.equals("*")) {
+                    acceptMIMEType.setMatchType(AcceptMIMEMatchType.PARENT);
+                } else {
+                    acceptMIMEType.setMatchType(AcceptMIMEMatchType.EXACT);
+                }
+            }
+
+            // parse the quality
+            if (mimeTypeAndQuality.length > 1) {
+                String q = mimeTypeAndQuality[1];
+                String[] qualityKV = StringUtils.split(q, '=');
+                acceptMIMEType.setQuality(Float.parseFloat(qualityKV[1].trim()));
+            }
+
+
+            return acceptMIMEType;
+        }).collect(Collectors.toList());
+        list.sort((a1, a2) -> Float.compare(a2.getQuality(), a1.getQuality()));
+        return list;
     }
 }

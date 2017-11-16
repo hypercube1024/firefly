@@ -87,11 +87,11 @@ public class ParameterPathMatcher implements Matcher {
                 Set<Router> routers = new HashSet<>();
                 Map<Router, Map<String, String>> parameters = new HashMap<>();
 
-                map.entrySet().forEach(e -> {
-                    Map<String, String> param = e.getKey().match(list);
+                map.forEach((key, regRouter) -> {
+                    Map<String, String> param = key.match(list);
                     if (param != null) {
-                        routers.addAll(e.getValue());
-                        e.getValue().forEach(router -> parameters.put(router, param));
+                        routers.addAll(regRouter);
+                        regRouter.forEach(router -> parameters.put(router, param));
                     }
                 });
 

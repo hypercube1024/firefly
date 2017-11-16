@@ -5,7 +5,11 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     protected volatile boolean start;
 
     public AbstractLifeCycle() {
-        Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "the firefly shutdown thread"));
+        try {
+            Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "the firefly shutdown thread"));
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
     }
 
     @Override

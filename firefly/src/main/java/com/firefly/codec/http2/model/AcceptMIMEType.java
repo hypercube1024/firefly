@@ -9,6 +9,7 @@ public class AcceptMIMEType {
     private String parentType;
     private String childType;
     private float quality = 1.0f;
+    private AcceptMIMEMatchType matchType;
 
     public String getParentType() {
         return parentType;
@@ -32,6 +33,14 @@ public class AcceptMIMEType {
 
     public void setQuality(float quality) {
         this.quality = quality;
+    }
+
+    public AcceptMIMEMatchType getMatchType() {
+        return matchType;
+    }
+
+    public void setMatchType(AcceptMIMEMatchType matchType) {
+        this.matchType = matchType;
     }
 
     @Override
