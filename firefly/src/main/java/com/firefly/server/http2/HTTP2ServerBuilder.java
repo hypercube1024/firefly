@@ -1,5 +1,6 @@
 package com.firefly.server.http2;
 
+import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.net.SecureSessionFactory;
 import com.firefly.server.http2.router.Handler;
@@ -7,10 +8,14 @@ import com.firefly.server.http2.router.Router;
 import com.firefly.server.http2.router.RouterManager;
 import com.firefly.server.http2.router.RoutingContext;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
+import com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler;
+import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
+import com.firefly.server.http2.router.impl.RoutingContextImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +51,12 @@ public class HTTP2ServerBuilder {
 
     public HTTP2ServerBuilder httpServer(SimpleHTTPServerConfiguration serverConfiguration,
                                          HTTPBodyConfiguration httpBodyConfiguration) {
+        AbstractErrorResponseHandler handler = DefaultErrorResponseHandlerLoader.getInstance().getHandler();
         server = new SimpleHTTPServer(serverConfiguration);
+        server.badMessage((status, reason, request) -> {
+            RoutingContext ctx = new RoutingContextImpl(request, Collections.emptyNavigableSet());
+            handler.render(ctx, status, new BadMessageException(reason));
+        });
         routerManager = RouterManager.create(httpBodyConfiguration);
         return this;
     }

@@ -12,6 +12,8 @@ import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
+import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader
+import com.firefly.server.http2.router.impl.RoutingContextImpl
 import kotlinx.coroutines.experimental.*
 import java.io.Closeable
 import java.net.InetAddress
@@ -393,8 +395,13 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     val server = SimpleHTTPServer(serverConfiguration)
     val routerManager = RouterManager.create(httpBodyConfiguration)
     val coroutineDispatcher = server.handlerExecutorService.asCoroutineDispatcher()
+    val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
     init {
+        server.badMessage { status, reason, request ->
+            val ctx = RoutingContextImpl(request, Collections.emptyNavigableSet<RouterManager.RouterMatchResult>())
+            defaultErrorHandler.render(ctx, status, BadMessageException(reason))
+        }
         block.invoke(this)
     }
 
