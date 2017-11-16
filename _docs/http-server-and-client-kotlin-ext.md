@@ -435,6 +435,10 @@ data class Car(var id: Long,
                var name: String,
                var color: String)
 ```
+Run it. The console shows:
+```
+Update resource 20: Car(id=20, name=My car, color=black). The content type is application/json
+```
 In the above example, we use the wildcard `*` to match the content type of the HTTP request. We can also use the exact MIME type to match the request.  
 
 The server uses the `getJsonBody<Car>()` function to get JSON data. This function receives a reified type parameter `Car`. The JSON parser will bind the JSON data to that type.
