@@ -51,8 +51,12 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
+    public SimpleHTTPServer getServer() {
+        return server;
+    }
+
     /**
-     * register an new router
+     * register a new router
      *
      * @return HTTP2ServerBuilder
      */
@@ -91,7 +95,6 @@ public class HTTP2ServerBuilder {
     }
 
     // delegated Router methods
-
     public HTTP2ServerBuilder path(String url) {
         currentRouter.path(url);
         return this;
