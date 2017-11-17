@@ -18,6 +18,8 @@ title: HTTP server and client Kotlin extension
 - [Routing by HTTP method](#routing-by-http-method)
 - [Routing based on MIME type of request](#routing-based-on-mime-type-of-request)
 - [Routing based on MIME types acceptable by the client](#routing-based-on-mime-types-acceptable-by-the-client)
+- [Set HTTP header and trailer](#set-http-header-and-trailer)
+- [Coroutine local variable](#coroutine-local-variable)
 
 <!-- /TOC -->
 
@@ -517,3 +519,157 @@ Update resource 20: Car(id=20, name=My car, color=black)
 In the above example, the first request, the `text/plain` weight(1.0) is higher than `application/json`(0.9), so this request matches the first router that responds the text format.   
 
 The second request, the `application/json` weight equals the `text/plain`, but `application/json` is in front of `text/plain`, so the `application/json` priority is higher than `text/plain`. It matches the second router that responds the JSON format.
+
+# Set HTTP header and trailer
+We provide the DSL style APIs to set HTTP status line, header, and trailer. For example:
+```kotlin
+fun main(args: Array<String>) = runBlocking {
+    val host = "localhost"
+    val port = 8081
+
+    HttpServer {
+        router {
+            httpMethod = HttpMethod.POST
+            path = "/product"
+
+            asyncHandler {
+                statusLine {
+                    status = HttpStatus.Code.OK.code
+                    reason = HttpStatus.Code.OK.message
+                }
+
+                header {
+                    HttpHeader.SERVER to "Firefly Kotlin Server"
+                    +HttpField("Woo", "Ohh nice")
+                }
+
+                trailer {
+                    "Home-Page" to "www.fireflysource.com"
+                }
+
+                val trailer = request.trailerSupplier.get()
+                end("The server received:\r\n" +
+                        "$stringBody\r\n" +
+                        "Sender: ${trailer["Sender"]}\r\n" +
+                        "${trailer["Signature"]}\r\n")
+            }
+        }
+    }.listen(host, port)
+
+    val resp = firefly.httpClient()
+            .post("http://$host:$port/product")
+            .output {
+                it.use {
+                    it.write(BufferUtils.toBuffer(
+                            "IKBC C87\r\n" +
+                            "Cherry G80-3000\r\n"))
+                }
+            }
+            .setTrailerSupplier {
+                val fields = HttpFields()
+                fields.put("Sender", "Firefly Kotlin Client")
+                fields.put("Signature", "It does not do to dwell on dreams and forget to live.")
+                fields
+            }.asyncSubmit()
+
+    println(resp.status)
+    println(resp.fields)
+    println(resp.trailerSupplier.get()["Home-Page"])
+    println(resp.stringBody)
+}
+```
+
+Run it. The console shows:
+```
+200
+Server: Firefly Kotlin Server
+Woo: Ohh nice
+Transfer-Encoding: chunked
+X-Powered-By: Firefly(4.6.0)
+
+
+www.fireflysource.com
+The server received:
+IKBC C87
+Cherry G80-3000
+
+Sender: Firefly Kotlin Client
+It does not do to dwell on dreams and forget to live.
+```
+Notes: If you want to set the HTTP trailer, you must use the chunked encoding. You can use the HTTP client `output` function which writes data stream using chunked encoding.
+
+# Coroutine local variable
+Sometimes we need track request across the whole call stack transparently. Such as transparent transactional management, record request id to the log and so on. But the Firefly Kotlin server executes handler in the coroutine. It does not block the thread.  When the function suspends, the current thread will return the thread pool. If you write data to the thread local variable, another request will read that data. So we have to write data to coroutine local variable that maintains the data in the coroutine scope.  
+
+In the next example, we will demonstrate how to track the request clue crossing the multiple servers.
+```kotlin
+val host = "localhost"
+val port1 = 8081
+val port2 = 8082
+val coroutineLocal = CoroutineLocal<RoutingContext>()
+
+fun main(args: Array<String>) = runBlocking {
+    HttpServer(coroutineLocal) {
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/product"
+
+            asyncHandler {
+                val reqId = fields["Request-ID"]
+                val name = getParameter("name")
+                val p = this@HttpServer.server.configuration.port
+
+                write("[$reqId-$p]: The product $name is not found. we will try to find it from the other server.\r\n")
+                write("[$reqId-$p]: Please wait......\r\n")
+                val resp = searchProduct(name)
+                when (resp.status) {
+                    OK_200 -> end(resp.stringBody)
+                    NOT_FOUND_404 -> end("The product is not found on all servers")
+                    else -> end("The server exception. ${resp.reason}")
+                }
+            }
+        }
+    }.listen(host, port1)
+
+    HttpServer(coroutineLocal) {
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/product"
+
+            asyncHandler {
+                val reqId = fields["Request-ID"]
+                val name = getParameter("name")
+                val p = this@HttpServer.server.configuration.port
+
+                end("[$reqId-$p]: The product $name: Hannah\r\n")
+            }
+        }
+    }.listen(host, port2)
+
+    val resp = firefly.httpClient()
+            .get("http://$host:$port1/product?name=Han")
+            .put("Request-ID", "333").asyncSubmit()
+    println(resp.status)
+    println(resp.stringBody)
+}
+
+suspend fun searchProduct(name: String): SimpleResponse {
+    val ctx = coroutineLocal.get()
+    val reqId = ctx?.fields?.get("Request-ID")
+    return firefly.httpClient()
+            .get("http://$host:$port2/product?name=$name")
+            .put("Request-ID", reqId)
+            .asyncSubmit()
+}
+```
+
+Run it. The console shows:
+```
+200
+[333-8081]: The product Han is not found. we will try to find it from the other server.
+[333-8081]: Please wait......
+[333-8082]: The product Han: Hannah
+```
+As you see, we use the coroutine local variable to get the request id in the function `searchProduct`. And then, send it to another server. It is not transmitted request id by the function parameter.
+
+We also can use the coroutine local variable to manage database transaction transparently. Please refer to the [example project](({{ site.data.global.githubURL }}/tree/master/firefly-example/src/main/kotlin/com/firefly/example/kotlin/coffee/store))
