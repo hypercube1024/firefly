@@ -10,7 +10,7 @@ import com.firefly.kotlin.ext.example.task.management.vo.ProjectEditor
 import com.firefly.kotlin.ext.example.task.management.vo.ProjectResult
 import com.firefly.kotlin.ext.example.task.management.vo.Request
 import com.firefly.kotlin.ext.example.task.management.vo.Response
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import kotlinx.coroutines.experimental.async
 
 /**
@@ -19,7 +19,7 @@ import kotlinx.coroutines.experimental.async
 @Component
 class ProjectServiceImpl : ProjectService {
 
-    private val log = Log.getLogger { }
+    private val log = KtLogger.getLogger { }
 
     @Inject
     lateinit var projectDao: ProjectDao

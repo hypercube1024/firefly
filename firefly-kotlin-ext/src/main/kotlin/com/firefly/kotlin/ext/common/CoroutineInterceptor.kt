@@ -1,6 +1,6 @@
 package com.firefly.kotlin.ext.common
 
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.Continuation
 import kotlin.coroutines.experimental.ContinuationInterceptor
@@ -11,7 +11,7 @@ import kotlin.coroutines.experimental.CoroutineContext
  * @author Pengtao Qiu
  */
 
-private val log = Log.getLogger("firefly-system")
+private val log = KtLogger.getLogger("firefly-system")
 
 class CoroutineLocal<D> {
 

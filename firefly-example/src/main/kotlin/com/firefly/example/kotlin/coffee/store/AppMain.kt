@@ -6,7 +6,7 @@ import com.firefly.example.kotlin.coffee.store.utils.DBUtils
 import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.context.getBean
 import com.firefly.kotlin.ext.http.HttpServer
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
 import com.firefly.utils.lang.AbstractLifeCycle
 
@@ -18,7 +18,7 @@ val ktCtx = Context.create("kotlin-example.xml")
 
 class AppMain : AbstractLifeCycle() {
 
-    private val log = Log.getLogger {  }
+    private val log = KtLogger.getLogger {  }
 
     @Inject
     private lateinit var server: HttpServer

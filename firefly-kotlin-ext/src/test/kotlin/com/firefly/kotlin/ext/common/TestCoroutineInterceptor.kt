@@ -1,6 +1,6 @@
 package com.firefly.kotlin.ext.common
 
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import kotlinx.coroutines.experimental.*
 import org.junit.Test
 import java.util.concurrent.*
@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
  * @author Pengtao Qiu
  */
 
-private val log = Log.getLogger { }
+private val log = KtLogger.getLogger { }
 
 private val dispatchExecutor: ExecutorService = ThreadPoolExecutor(
         2, 2,

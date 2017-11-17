@@ -3,7 +3,7 @@ package com.firefly.kotlin.ext.http
 import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
@@ -28,7 +28,7 @@ import kotlin.coroutines.experimental.CoroutineContext
  * @author Pengtao Qiu
  */
 
-val sysLogger = Log.getLogger("firefly-system")
+val sysLogger = KtLogger.getLogger("firefly-system")
 
 
 // HTTP server API extensions

@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 /**
  * @author Pengtao Qiu
  */
-object Log {
+object KtLogger {
     fun getLogger(func: () -> Unit): Logger = LoggerFactory.getLogger(KotlinNameResolver.name(func))
 
     fun getLogger(name: String): Logger = LoggerFactory.getLogger(name)
@@ -90,6 +90,6 @@ inline fun (() -> Any?).toStringSafe(): String {
     return try {
         invoke().toString()
     } catch (e: Exception) {
-        "Log message invocation exception: $e"
+        "KtLogger: get message exception: $e"
     }
 }

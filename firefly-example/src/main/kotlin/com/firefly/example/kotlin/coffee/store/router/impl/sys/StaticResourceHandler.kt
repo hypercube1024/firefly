@@ -2,7 +2,7 @@ package com.firefly.example.kotlin.coffee.store.router.impl.sys
 
 import com.firefly.annotation.Component
 import com.firefly.codec.http2.model.HttpHeader
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.Handler
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.file.StaticFileHandler
@@ -18,7 +18,7 @@ class StaticResourceHandler : Handler {
     val staticResources = listOf("/favicon.ico", "/static/*")
 
     companion object {
-        private val log = Log.getLogger { }
+        private val log = KtLogger.getLogger { }
         private val staticFileHandler = createStaticFileHandler()
 
         private fun createStaticFileHandler(): StaticFileHandler {

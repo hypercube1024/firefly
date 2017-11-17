@@ -2,7 +2,7 @@ package com.firefly.kotlin.ext.db
 
 import com.firefly.db.SQLConnection
 import com.firefly.db.SQLResultSet
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.utils.function.Func1
 import kotlinx.coroutines.experimental.future.await
 
@@ -10,7 +10,7 @@ import kotlinx.coroutines.experimental.future.await
  * @author Pengtao Qiu
  */
 
-val sysLogger = Log.getLogger("firefly-system")
+val sysLogger = KtLogger.getLogger("firefly-system")
 
 
 // query for single column

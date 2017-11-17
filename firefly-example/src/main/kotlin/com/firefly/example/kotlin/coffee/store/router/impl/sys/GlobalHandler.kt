@@ -6,7 +6,7 @@ import com.firefly.example.kotlin.coffee.store.vo.Response
 import com.firefly.example.kotlin.coffee.store.vo.ResponseStatus
 import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncNext
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.RoutingContext
 import java.lang.IllegalArgumentException
 
@@ -16,7 +16,7 @@ import java.lang.IllegalArgumentException
 @Component("globalHandler")
 class GlobalHandler : AsyncHandler {
 
-    private val log = Log.getLogger { }
+    private val log = KtLogger.getLogger { }
 
     suspend override fun handle(ctx: RoutingContext) {
         log.info("request start -> ${ctx.uri}")

@@ -8,7 +8,7 @@ import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncFail
 import com.firefly.kotlin.ext.http.asyncNext
 import com.firefly.kotlin.ext.http.asyncSucceed
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.RoutingContext
 
 /**
@@ -17,7 +17,7 @@ import com.firefly.server.http2.router.RoutingContext
 @Component("transactionalHandler")
 class TransactionalHandler : AsyncHandler {
 
-    private val log = Log.getLogger { }
+    private val log = KtLogger.getLogger { }
 
     @Inject
     private lateinit var db: AsyncTransactionalManager

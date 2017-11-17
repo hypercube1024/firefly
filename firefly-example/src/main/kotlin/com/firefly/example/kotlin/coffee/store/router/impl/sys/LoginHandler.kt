@@ -13,7 +13,7 @@ import com.firefly.example.kotlin.coffee.store.vo.UserInfo
 import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncFail
 import com.firefly.kotlin.ext.http.asyncSucceed
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.HTTPSession
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.pattern.Pattern
@@ -29,7 +29,7 @@ import java.util.stream.Stream
 @Component("loginHandler")
 class LoginHandler : AsyncHandler {
 
-    private val log = Log.getLogger { }
+    private val log = KtLogger.getLogger { }
 
     private val uriWhitelist: List<Pattern> = Stream.of(
             "/",

@@ -3,7 +3,7 @@ package com.firefly.example.kotlin.coffee.store.utils
 import com.firefly.annotation.Component
 import com.firefly.annotation.Inject
 import com.firefly.db.init.ScriptUtils.executeSqlScript
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.error
 import com.firefly.utils.io.Resource
 import java.util.stream.Collectors
@@ -12,7 +12,7 @@ import javax.sql.DataSource
 /**
  * @author Pengtao Qiu
  */
-private val logger = Log.getLogger { }
+private val logger = KtLogger.getLogger { }
 
 @Component
 class DBUtils {
