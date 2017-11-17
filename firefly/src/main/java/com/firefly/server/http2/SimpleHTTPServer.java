@@ -80,6 +80,10 @@ public class SimpleHTTPServer extends AbstractLifeCycle {
         return handlerExecutorService;
     }
 
+    public SimpleHTTPServerConfiguration getConfiguration() {
+        return configuration;
+    }
+
     public void listen(String host, int port) {
         configuration.setHost(host);
         configuration.setPort(port);
