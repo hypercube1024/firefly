@@ -96,7 +96,7 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-Create a HTTP server (Java version)
+Create an HTTP server (Java version)
 ```java
 public class HelloHTTPServer {
     public static void main(String[] args) {
@@ -107,7 +107,7 @@ public class HelloHTTPServer {
 }
 ```
 
-Create a HTTP client (Java version)
+Create an HTTP client (Java version)
 ```java
 public class HelloHTTPClient {
     public static void main(String[] args){
@@ -128,7 +128,7 @@ Add maven dependency in your pom.xml
 </dependency>
 ```
 
-Create a HTTP server (Kotlin DSL version)
+Create an HTTP server (Kotlin DSL version)
 ```kotlin
 fun main(args: Array<String>) {
     HttpServer {
@@ -144,7 +144,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-Create a HTTP client (Kotlin coroutine asynchronous client)
+Create an HTTP client (Kotlin coroutine asynchronous client)
 ```kotlin
 fun main(args: Array<String>): Unit = runBlocking {
     val msg = firefly.httpClient().get("http://localhost:8080").asyncSubmit().stringBody

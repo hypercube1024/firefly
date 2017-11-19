@@ -25,7 +25,7 @@ title: Database access
 # Create a client
 The Firefly JDBC client allows you to interact with any JDBC compliant database using an asynchronous API. We provides two interfaces `ReactiveSQLClient` or `SQLClient`.
 
-To use this project, add the following dependency to the dependencies section of your build descriptor:
+Add the following dependency to the dependencies section of your build descriptor:
 ```xml
 <dependency>
     <groupId>com.fireflysource</groupId>
@@ -52,7 +52,7 @@ To use this project, add the following dependency to the dependencies section of
 </dependency>
 ```
 
-In this case, we use the HikariDataSource and h2databse and create the ReactiveSQLClient instance. The ReactiveSQLClient wraps the SQLClient using spring reactor. The spring reactor provides more powerful asynchronous APIs than CompletableFuture.
+In this example, we use the HikariDataSource and h2databse and create the ReactiveSQLClient instance. The ReactiveSQLClient wraps the SQLClient using spring reactor. The spring reactor provides more powerful asynchronous APIs than CompletableFuture.
 ```java
 public class TestReactiveSQLClient {
 
@@ -167,7 +167,7 @@ public void testQueryById() {
 }
 ```
 
-In this case, the SQL client query test.user table by id, if the database has not the record, SQL client will emit a RecordNotFound exception. Such as:
+In this example, the SQL client query test.user table by id, if the database has not the record, SQL client will emit a RecordNotFound exception. Such as:
 ```java
 @Test
 public void testRecordNotFound() {
@@ -408,7 +408,7 @@ public void testInsert() {
     StepVerifier.create(newUserId).expectNext(size + 3L).verifyComplete();
 }
 ```
-When we use the named SQL, we can use javabean or map to replace the placeholders. The javabean uses the property name to match the parameter. The map uses the key to match the parameter. 
+When we use the named SQL, we can use javabean or map to replace the placeholders. The javabean uses the property name to match the parameter. The map uses the key to match the parameter.
 
 To execute a prepared statement update. For example:
 ```java
