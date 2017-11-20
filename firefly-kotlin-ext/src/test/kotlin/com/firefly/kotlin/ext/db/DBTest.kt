@@ -88,7 +88,7 @@ class DBTest {
     }
 
     @Test
-    fun testInsert() = runBlocking {
+    fun testInsertObject() = runBlocking {
         val newUserId = exec {
             val user = User(null, "test insert", "test insert pwd", null)
             it.asyncInsertObject<User, Long>(user)
@@ -97,7 +97,7 @@ class DBTest {
     }
 
     @Test
-    fun testBatchInsert() = runBlocking {
+    fun testBatchInsertObject() = runBlocking {
         val newIdList = exec {
             it.asyncInsertObjectBatch<User, Long>(List(5) { index ->
                 User(null, "test insert $index", "test insert pwd $index", null)
@@ -125,7 +125,7 @@ class DBTest {
     }
 
     @Test
-    fun testUpdate() = runBlocking {
+    fun testUpdateObject() = runBlocking {
         val rows = exec {
             it.asyncUpdateObject(User(1L, "update user name", null, null))
         }
@@ -135,6 +135,121 @@ class DBTest {
         assertEquals("update user name", user.name)
     }
 
+    @Test
+    fun testQueryForSingleColumn() = runBlocking {
+        val count = exec { it.asyncQueryForSingleColumn<Long>("select count(*) from test.user") }
+        assertEquals(size.toLong(), count)
+
+        val count2 = exec {
+            it.asyncQueryForSingleColumn<Long>("select count(*) from test.user where id > ?", 5L)
+        }
+        assertEquals(size.toLong() - 5L, count2)
+
+        val count3 = exec {
+            it.asyncNamedQueryForSingleColumn<Long>("select count(*) from test.user where id > :id",
+                    mapOf("id" to 5L))
+        }
+        assertEquals(size.toLong() - 5L, count3)
+    }
+
+    @Test
+    fun testQueryForObject() = runBlocking {
+        val user = exec { it.asyncQueryForObject<User>("select * from test.user where id = ?", 2L) }
+        assertEquals("test transaction 1", user.name)
+
+        val user2 = exec {
+            it.asyncNamedQueryForObject<User>("select * from test.user where id = :id",
+                    mapOf("id" to 2L))
+        }
+        assertEquals("test transaction 1", user2.name)
+    }
+
+    @Test
+    fun testQueryForList() = runBlocking {
+        val users = exec { it.asyncQueryForList<User>("select * from test.user where id >= ?", 9L) }
+        assertEquals("test transaction 8", users[0].name)
+        assertEquals("test transaction 9", users[1].name)
+
+        val users2 = exec {
+            it.asyncNamedQueryForList<User>("select * from test.user where id >= :id", mapOf("id" to 9L))
+        }
+        assertEquals("test transaction 8", users2[0].name)
+        assertEquals("test transaction 9", users2[1].name)
+    }
+
+    @Test
+    fun testQuery() = runBlocking {
+        val names = exec {
+            it.asyncQuery("select * from test.user where id >= ?", { rs ->
+                rs.map { it.getString("pt_name") }
+            }, 9L)
+        }
+        assertEquals("test transaction 8", names[0])
+        assertEquals("test transaction 9", names[1])
+
+        val names2 = exec {
+            it.asyncNamedQuery("select * from test.user where id >= :id", { rs ->
+                rs.map { it.getString("pt_name") }
+            }, mapOf("id" to 9L))
+        }
+        assertEquals("test transaction 8", names2[0])
+        assertEquals("test transaction 9", names2[1])
+    }
+
+    @Test
+    fun testQueryForMap() = runBlocking {
+        val userMap = exec {
+            it.asyncQueryForBeanMap<Long, User>("select * from test.user where id >= ?", 9L)
+        }
+        assertEquals("test transaction 9", userMap[10L]?.name)
+
+        val userMap2 = exec {
+            it.asyncNamedQueryForBeanMap<Long, User>("select * from test.user where id >= :id", mapOf("id" to 9L))
+        }
+        assertEquals("test transaction 9", userMap2[10L]?.name)
+    }
+
+    @Test
+    fun testInsert() = runBlocking {
+        val newUserId = exec {
+            it.asyncInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(?,?)",
+                    "hello user", "hello user pwd")
+        }
+        assertEquals(size + 1L, newUserId)
+
+        val newUserId2 = exec {
+            it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
+                    mapOf("name" to "hello user",
+                            "password" to "hello user pwd"))
+        }
+        assertEquals(size + 2L, newUserId2)
+
+        val newUserId3 = exec {
+            it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
+                    User(null, "hello user", "hello user pwd", null))
+        }
+        assertEquals(size + 3L, newUserId3)
+    }
+
+    @Test
+    fun testUpdate() = runBlocking {
+        val rows = exec {
+            it.asyncUpdate("update test.user set `pt_name` = ? where id = ?", "update xxx", 2L)
+        }
+        assertEquals(rows, 1)
+
+        val rows2 = exec {
+            it.asyncNamedUpdate("update test.user set `pt_name` = :name where id = :id",
+                    mapOf("id" to 2L, "name" to "update xxx"))
+        }
+        assertEquals(rows2, 1)
+
+        val rows3 = exec {
+            it.asyncNamedUpdate("update test.user set `pt_name` = :name where id = :id",
+                    User(2L, "update xxx", null, null))
+        }
+        assertEquals(rows3, 1)
+    }
 
     @Table(value = "user", catalog = "test")
     data class User(@Id("id") var id: Long?,

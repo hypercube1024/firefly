@@ -93,9 +93,9 @@ suspend fun <T> SQLConnection.asyncUpdateObject(obj: T): Int {
 // insert
 suspend fun <R> SQLConnection.asyncInsert(sql: String, vararg params: Any): R = this.insert<R>(sql, *params).await()
 
-suspend fun <R> SQLConnection.asyncInsert(sql: String, paramMap: Map<String, Any>): R = this.namedInsert<R>(sql, paramMap).await()
+suspend fun <R> SQLConnection.asyncNamedInsert(sql: String, paramMap: Map<String, Any>): R = this.namedInsert<R>(sql, paramMap).await()
 
-suspend fun <R> SQLConnection.asyncInsert(sql: String, paramObject: Any): R = this.namedInsert<R>(sql, paramObject).await()
+suspend fun <R> SQLConnection.asyncNamedInsert(sql: String, paramObject: Any): R = this.namedInsert<R>(sql, paramObject).await()
 
 suspend fun <T, R> SQLConnection.asyncInsertObject(obj: T): R = this.insertObject<T, R>(obj).await()
 
