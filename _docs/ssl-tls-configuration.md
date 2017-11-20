@@ -124,7 +124,7 @@ Run it and visit the `https://localhost:8081`. The browser will render
 hello world!
 ```
 
-You can also use your own openssl certificate. For example:
+You can also use yourself openssl certificate file. For example:
 ```java
 public class OpensslFileCertHTTPsServer {
     public static void main(String[] args) throws IOException {
