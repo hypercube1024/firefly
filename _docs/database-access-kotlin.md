@@ -13,6 +13,9 @@ title: Database access Kotlin version
 - [Bind data to java bean](#bind-data-to-java-bean)
 	- [Create mapping](#create-mapping)
 	- [Query data by id](#query-data-by-id)
+	- [Insert data](#insert-data)
+	- [Delete data](#delete-data)
+	- [Update data](#update-data)
 
 <!-- /TOC -->
 
@@ -34,7 +37,7 @@ class DBTest {
 
     private val sqlClient: SQLClient
 
-    constructor() {
+    init {
         val config = HikariConfig()
         config.jdbcUrl = "jdbc:h2:mem:test"
         config.driverClassName = "org.h2.Driver"
@@ -49,10 +52,13 @@ class DBTest {
 # Execute transaction
 We use `execSQL` method to create a new transaction. The transaction will submit or rollback automatically when the callback is complete.
 ```kotlin
+private suspend fun <T> exec(handler: suspend (conn: SQLConnection) -> T): T
+            = sqlClient.connection.await().execSQL(handler)
+
 @Before
 fun before() = runBlocking {
-    sqlClient.connection.await().execSQL {
-        it.asyncUpdate("create schema test")
+    exec {
+        it.asyncUpdate("CREATE SCHEMA IF NOT EXISTS test")
         it.asyncUpdate("set mode MySQL")
         val table = "CREATE TABLE `test`.`user`(" +
                 "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
@@ -85,10 +91,10 @@ Creating User class and mapping it to table test.user.
 
 ```kotlin
 @Table(value = "user", catalog = "test")
-data class User(@Id("id") var id: Long,
-                @Column("pt_name") var name: String,
-                @Column("pt_password") var password: String,
-                var otherInfo: String) {
+data class User(@Id("id") var id: Long?,
+                @Column("pt_name") var name: String?,
+                @Column("pt_password") var password: String?,
+                var otherInfo: String?) {
 
     override fun equals(other: Any?): Boolean = if (other is User) Objects.equals(id, other.id) else false
 
@@ -100,7 +106,7 @@ data class User(@Id("id") var id: Long,
 ```kotlin
 @Test
 fun testQueryById() = runBlocking {
-    val user = sqlClient.connection.await().execSQL {
+    val user = exec {
         it.asyncQueryById<User>(1L)
     }
     assertEquals("test transaction 0", user.name)
@@ -111,9 +117,75 @@ In this example, the SQL client query test.user table by id, if the database has
 ```kotlin
 @Test(expected = RecordNotFound::class)
 fun testRecordNotFound() = runBlocking {
-    sqlClient.connection.await().execSQL {
+    exec {
         it.asyncQueryById<User>(size + 10)
     }
     Unit
+}
+```
+
+## Insert data
+We can insert a javabean into the database directly and the SQL client will return the autoincrement id. For example:
+```kotlin
+@Test
+fun testInsert() = runBlocking {
+    val newUserId = exec {
+        val user = User(null, "test insert", "test insert pwd", null)
+        it.asyncInsertObject<User, Long>(user)
+    }
+    assertEquals(size + 1L, newUserId)
+}
+```
+
+Batch to insert data. For example:
+```kotlin
+@Test
+fun testBatchInsert() = runBlocking {
+    val newIdList = exec {
+        it.asyncInsertObjectBatch<User, Long>(List(5) { index ->
+            User(null, "test insert $index", "test insert pwd $index", null)
+        })
+    }
+    assertEquals(5, newIdList.size)
+    assertEquals(size + 1L, newIdList[0])
+}
+```
+
+Batch to insert data and use the custom mapping. For example:
+```kotlin
+@Test
+fun testBatchInsert2() = runBlocking {
+    val newIdList = exec {
+        it.asyncInsertObjectBatch<User, List<Int>>(List(5) { index ->
+            User(null, "test insert $index", "test insert pwd $index", null)
+        }, Func1 { rs -> rs.map { row -> row.getInt(1) } })
+    }
+    assertEquals(5, newIdList.size)
+    assertEquals(size + 1, newIdList[0])
+}
+```
+
+## Delete data
+Delete user whose id is 1L and return affected row number. For example:
+```kotlin
+@Test
+fun testDelete() = runBlocking {
+    val rows = exec { it.asyncDeleteById<User>(1L) }
+    assertEquals(1, rows)
+}
+```
+
+## Update data
+Update user whose id is 1L and return affected row number. For example:
+```kotlin
+@Test
+fun testUpdate() = runBlocking {
+    val rows = exec {
+        it.asyncUpdateObject(User(1L, "update user name", null, null))
+    }
+    assertEquals(1, rows)
+
+    val user = exec { it.asyncQueryById<User>(1L) }
+    assertEquals("update user name", user.name)
 }
 ```
