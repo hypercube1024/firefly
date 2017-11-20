@@ -16,6 +16,9 @@ title: Database access Kotlin version
 	- [Insert data](#insert-data)
 	- [Delete data](#delete-data)
 	- [Update data](#update-data)
+- [Query single column data](#query-single-column-data)
+- [Prepared statement query](#prepared-statement-query)
+- [Prepared statement update](#prepared-statement-update)
 
 <!-- /TOC -->
 
@@ -128,7 +131,7 @@ fun testRecordNotFound() = runBlocking {
 We can insert a javabean into the database directly and the SQL client will return the autoincrement id. For example:
 ```kotlin
 @Test
-fun testInsert() = runBlocking {
+fun testInsertObject() = runBlocking {
     val newUserId = exec {
         val user = User(null, "test insert", "test insert pwd", null)
         it.asyncInsertObject<User, Long>(user)
@@ -140,7 +143,7 @@ fun testInsert() = runBlocking {
 Batch to insert data. For example:
 ```kotlin
 @Test
-fun testBatchInsert() = runBlocking {
+fun testBatchInsertObject() = runBlocking {
     val newIdList = exec {
         it.asyncInsertObjectBatch<User, Long>(List(5) { index ->
             User(null, "test insert $index", "test insert pwd $index", null)
@@ -179,7 +182,7 @@ fun testDelete() = runBlocking {
 Update user whose id is 1L and return affected row number. For example:
 ```kotlin
 @Test
-fun testUpdate() = runBlocking {
+fun testUpdateObject() = runBlocking {
     val rows = exec {
         it.asyncUpdateObject(User(1L, "update user name", null, null))
     }
@@ -187,5 +190,156 @@ fun testUpdate() = runBlocking {
 
     val user = exec { it.asyncQueryById<User>(1L) }
     assertEquals("update user name", user.name)
+}
+```
+
+# Query single column data
+```kotlin
+@Test
+fun testQueryForSingleColumn() = runBlocking {
+    val count = exec { it.asyncQueryForSingleColumn<Long>("select count(*) from test.user") }
+    assertEquals(size.toLong(), count)
+
+    val count2 = exec {
+        it.asyncQueryForSingleColumn<Long>("select count(*) from test.user where id > ?", 5L)
+    }
+    assertEquals(size.toLong() - 5L, count2)
+
+    val count3 = exec {
+        it.asyncNamedQueryForSingleColumn<Long>(
+                "select count(*) from test.user where id > :id",
+                mapOf("id" to 5L))
+    }
+    assertEquals(size.toLong() - 5L, count3)
+}
+```
+Notes: If the return type does not equals the column type, it will throw cast class exception. The named SQL placeholder can start with ':' or '&'. For example:
+```
+select count(*) from test.user where id > :id
+select count(*) from test.user where id > &id
+```
+You can also use the `:{xxx}` placeholder. Such as:
+```
+select count(*) from test.user where id > :{id}
+```
+
+# Prepared statement query
+To execute a prepared statement query and return one row. For example:
+```kotlin
+@Test
+fun testQueryForObject() = runBlocking {
+    val user = exec { it.asyncQueryForObject<User>("select * from test.user where id = ?", 2L) }
+    assertEquals("test transaction 1", user.name)
+
+    val user2 = exec {
+        it.asyncNamedQueryForObject<User>("select * from test.user where id = :id",
+                mapOf("id" to 2L))
+    }
+    assertEquals("test transaction 1", user2.name)
+}
+```
+
+To execute a prepared statement query and return many rows. For example:
+```kotlin
+@Test
+fun testQueryForList() = runBlocking {
+    val users = exec { it.asyncQueryForList<User>("select * from test.user where id >= ?", 9L) }
+    assertEquals("test transaction 8", users[0].name)
+    assertEquals("test transaction 9", users[1].name)
+
+    val users2 = exec {
+        it.asyncNamedQueryForList<User>("select * from test.user where id >= :id", mapOf("id" to 9L))
+    }
+    assertEquals("test transaction 8", users2[0].name)
+    assertEquals("test transaction 9", users2[1].name)
+}
+```
+
+To execute a prepared statement query and use the custom mapping. For example:
+```kotlin
+@Test
+    fun testQuery() = runBlocking {
+        val names = exec {
+            it.asyncQuery("select * from test.user where id >= ?", { rs ->
+                rs.map { it.getString("pt_name") }
+            }, 9L)
+        }
+        assertEquals("test transaction 8", names[0])
+        assertEquals("test transaction 9", names[1])
+
+        val names2 = exec {
+            it.asyncNamedQuery("select * from test.user where id >= :id", { rs ->
+                rs.map { it.getString("pt_name") }
+            }, mapOf("id" to 9L))
+        }
+        assertEquals("test transaction 8", names2[0])
+        assertEquals("test transaction 9", names2[1])
+    }
+```
+
+To execute a prepared statement query and convert result to a map. For example:
+```kotlin
+@Test
+fun testQueryForMap() = runBlocking {
+    val userMap = exec {
+        it.asyncQueryForBeanMap<Long, User>("select * from test.user where id >= ?", 9L)
+    }
+    assertEquals("test transaction 9", userMap[10L]?.name)
+
+    val userMap2 = exec {
+        it.asyncNamedQueryForBeanMap<Long, User>("select * from test.user where id >= :id", mapOf("id" to 9L))
+    }
+    assertEquals("test transaction 9", userMap2[10L]?.name)
+}
+```
+
+# Prepared statement update
+To execute a prepared statement insert. For example:
+```kotlin
+@Test
+fun testInsert() = runBlocking {
+    val newUserId = exec {
+        it.asyncInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(?,?)",
+                "hello user", "hello user pwd")
+    }
+    assertEquals(size + 1L, newUserId)
+
+    val newUserId2 = exec {
+        it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
+                mapOf("name" to "hello user",
+                        "password" to "hello user pwd"))
+    }
+    assertEquals(size + 2L, newUserId2)
+
+    val newUserId3 = exec {
+        it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
+                User(null, "hello user", "hello user pwd", null))
+    }
+    assertEquals(size + 3L, newUserId3)
+}
+```
+
+When we use the named SQL, we can use javabean or map to replace the placeholders. The javabean uses the property name to match the parameter. The map uses the key to match the parameter.
+
+To execute a prepared statement update. For example:
+```kotlin
+@Test
+fun testUpdate() = runBlocking {
+    val rows = exec {
+        it.asyncUpdate("update test.user set `pt_name` = ? where id = ?", "update xxx", 2L)
+    }
+    assertEquals(rows, 1)
+
+    val rows2 = exec {
+        it.asyncNamedUpdate("update test.user set `pt_name` = :name where id = :id",
+                mapOf("id" to 2L, "name" to "update xxx"))
+    }
+    assertEquals(rows2, 1)
+
+    val rows3 = exec {
+        it.asyncNamedUpdate("update test.user set `pt_name` = :name where id = :id",
+                User(2L, "update xxx", null, null))
+    }
+    assertEquals(rows3, 1)
 }
 ```
