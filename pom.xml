@@ -5,7 +5,7 @@
 
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-framework</artifactId>
-    <version>4.5.0</version>
+    <version>4.6.0</version>
     <packaging>pom</packaging>
 
 
@@ -112,17 +112,22 @@
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
-                <version>3.2.2</version>
+                <version>${metrics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-healthchecks</artifactId>
+                <version>${metrics.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.vladimir-bukhtoyarov</groupId>
                 <artifactId>rolling-metrics</artifactId>
-                <version>2.0.2</version>
+                <version>2.0.3</version>
             </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
                 <artifactId>HdrHistogram</artifactId>
-                <version>2.1.9</version>
+                <version>2.1.10</version>
             </dependency>
 
             <dependency>
@@ -220,6 +225,12 @@
                 <groupId>org.mortbay.jetty.alpn</groupId>
                 <artifactId>alpn-boot</artifactId>
                 <version>${alpn-boot.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-tcnative-boringssl-static</artifactId>
+                <version>2.0.7.Final</version>
             </dependency>
 
         </dependencies>
@@ -358,6 +369,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <additionalparam>-Xdoclint:none</additionalparam>
                     <failOnError>true</failOnError>
                     <charset>UTF-8</charset>
                     <encoding>UTF-8</encoding>
@@ -401,11 +413,12 @@
         <log.level>INFO</log.level>
         <log.path>../logs</log.path>
 
-        <kotlin.version>1.1.51</kotlin.version>
-        <kotlin.coroutine.version>0.19.1</kotlin.coroutine.version>
+        <kotlin.version>1.1.60</kotlin.version>
+        <kotlin.coroutine.version>0.19.3</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
+        <metrics.version>3.2.5</metrics.version>
     </properties>
 
     <profiles>

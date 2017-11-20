@@ -1,10 +1,14 @@
 package com.firefly.server.http2.router.impl;
 
-import com.firefly.codec.http2.model.MimeTypes;
+import com.firefly.codec.http2.model.AcceptMIMEType;
 import com.firefly.server.http2.router.Router;
+import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.firefly.codec.http2.model.MimeTypes.parseAcceptMIMETypes;
 
 /**
  * @author Pengtao Qiu
@@ -22,53 +26,33 @@ public class AcceptHeaderMatcher extends AbstractPreciseMatcher {
             return null;
         }
 
-        List<String> acceptList = MimeTypes.getAcceptMIMETypes(value);
-        if (acceptList == null || acceptList.isEmpty()) {
+        List<AcceptMIMEType> acceptMIMETypes = parseAcceptMIMETypes(value);
+        if (CollectionUtils.isEmpty(acceptMIMETypes)) {
             return null;
-        } else {
-            List<MatchResult> retList = new ArrayList<>();
-            acceptList.forEach(s -> {
-                String[] t = StringUtils.split(s, '/');
-                String parentType = t[0].trim();
-                String childType = t[1].trim();
-                if (parentType.equals("*")) {
-                    if (!childType.equals("*")) {
-                        Set<Router> set = new HashSet<>();
-                        map.entrySet()
-                           .stream()
-                           .filter(e -> StringUtils.split(e.getKey(), '/')[1].trim().equals(childType))
-                           .map(Map.Entry::getValue)
-                           .forEach(set::addAll);
-                        if (!set.isEmpty()) {
-                            retList.add(new MatchResult(set, Collections.emptyMap(), getMatchType()));
-                        }
-                    }
-                } else {
-                    if (!childType.equals("*")) {
-                        MatchResult r = super.match(s);
-                        if (r != null) {
-                            retList.add(r);
-                        }
-                    } else {
-                        Set<Router> set = new HashSet<>();
-                        map.entrySet()
-                           .stream()
-                           .filter(e -> StringUtils.split(e.getKey(), '/')[0].trim().equals(parentType))
-                           .map(Map.Entry::getValue)
-                           .forEach(set::addAll);
-                        if (!set.isEmpty()) {
-                            retList.add(new MatchResult(set, Collections.emptyMap(), getMatchType()));
-                        }
-                    }
+        }
+        
+        for (AcceptMIMEType type : acceptMIMETypes) {
+            Set<Router> set = map.entrySet().parallelStream().filter(e -> {
+                String[] t = StringUtils.split(e.getKey(), '/');
+                String p = t[0].trim();
+                String c = t[1].trim();
+                switch (type.getMatchType()) {
+                    case EXACT:
+                        return p.equals(type.getParentType()) && c.equals(type.getChildType());
+                    case CHILD:
+                        return c.equals(type.getChildType());
+                    case PARENT:
+                        return p.equals(type.getParentType());
+                    case ALL:
+                        return true;
+                    default:
+                        return false;
                 }
-            });
-            if (retList.isEmpty()) {
-                return null;
-            } else {
-                Set<Router> routers = new HashSet<>();
-                retList.forEach(e -> routers.addAll(e.getRouters()));
-                return new MatchResult(routers, Collections.emptyMap(), getMatchType());
+            }).map(Map.Entry::getValue).flatMap(Collection::stream).collect(Collectors.toSet());
+            if (!CollectionUtils.isEmpty(set)) {
+                return new MatchResult(set, Collections.emptyMap(), getMatchType());
             }
         }
+        return null;
     }
 }

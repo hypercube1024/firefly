@@ -9,7 +9,7 @@ import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.http.*
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.Job
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
  * @author Pengtao Qiu
  */
 
-private val log = Log.getLogger { }
+private val log = KtLogger.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
 private val requestLocal = CoroutineLocal<RoutingContext>()

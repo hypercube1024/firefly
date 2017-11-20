@@ -7,9 +7,8 @@ import com.firefly.server.http2.router.impl.RouterManagerImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.NavigableSet;
 
-import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.Matchers.*;
 
 /**
@@ -52,7 +51,7 @@ public class TestMatcher {
         Assert.assertThat(result.last().getParameters().get("testParam1"), is("get"));
 
         result = routerManager.findRouter("GET", "/hello/get", null, "*/*");
-        Assert.assertThat(result, empty());
+        Assert.assertThat(result.size(), is(3));
 
         result = routerManager.findRouter("GET", "/hello/get", null, null);
         Assert.assertThat(result, empty());
@@ -67,6 +66,27 @@ public class TestMatcher {
         Assert.assertThat(result.last().getRouter(), is(router4));
         Assert.assertThat(result.last().getParameters().get("id"), is("3"));
         Assert.assertThat(result.first().getParameters().get("param0"), is("application"));
+    }
+
+    @Test
+    public void testProduces() {
+        RouterManager routerManager = new RouterManagerImpl();
+        Router router0 = routerManager.register().get("/hello/get").produces("application/json");
+        Router router1 = routerManager.register().get("/hello/:testParam0").produces("text/html");
+        NavigableSet<RouterManager.RouterMatchResult> result = routerManager.findRouter("GET", "/hello/get", null,
+                "text/html,application/xml;q=0.9,application/json;q=0.8");
+        Assert.assertThat(result.size(), is(1));
+        Assert.assertThat(result.first().getRouter(), is(router1));
+
+        result = routerManager.findRouter("GET", "/hello/get", null,
+                "text/html;q=0.6,application/xml;q=0.7,application/json;q=0.8");
+        Assert.assertThat(result.size(), is(1));
+        Assert.assertThat(result.first().getRouter(), is(router0));
+
+        result = routerManager.findRouter("GET", "/hello/get", null,
+                "text/html,application/xml,application/json");
+        Assert.assertThat(result.size(), is(1));
+        Assert.assertThat(result.first().getRouter(), is(router1));
     }
 
     @Test

@@ -3,7 +3,7 @@ package com.firefly.kotlin.ext.http
 import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
@@ -12,6 +12,8 @@ import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
+import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader
+import com.firefly.server.http2.router.impl.RoutingContextImpl
 import kotlinx.coroutines.experimental.*
 import java.io.Closeable
 import java.net.InetAddress
@@ -21,15 +23,15 @@ import java.util.function.Supplier
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
- * Firefly HTTP server extensions
+ * Firefly HTTP server extensions.
  *
  * @author Pengtao Qiu
  */
 
-val sysLogger = Log.getLogger("firefly-system")
+val sysLogger = KtLogger.getLogger("firefly-system")
+
 
 // HTTP server API extensions
-
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> RoutingContext.getJsonBody(): T = Json.parse(stringBody)
@@ -43,12 +45,6 @@ inline fun <reified T : Any> RoutingContext.getAttr(name: String): T? {
     }
 }
 
-fun RoutingContext.getWildcardMatchedResult(index: Int): String = getRouterParameter("param$index")
-
-fun RoutingContext.getRegexGroup(index: Int): String = getRouterParameter("group$index")
-
-fun RoutingContext.getPathParameter(name: String): String = getRouterParameter(name)
-
 inline fun <reified T : Any> SimpleRequest.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
 
 inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringBody)
@@ -60,8 +56,12 @@ val promiseQueueKey = "_promiseQueue"
 fun <C> RoutingContext.getPromiseQueue(): Deque<AsyncPromise<C>>? = getAttr(promiseQueueKey)
 
 @Suppress("UNCHECKED_CAST")
-fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>>
+        = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
 
+/**
+ * Set the callback that is called when the asynchronous handler finishes.
+ */
 fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
     queue.push(AsyncPromise(succeeded, failed))
@@ -73,6 +73,9 @@ fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit): RoutingCon
     return this
 }
 
+/**
+ * Execute the next asynchronous handler and set the callback is called when the asynchronous handler finishes.
+ */
 fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): Boolean {
     asyncComplete(succeeded, failed)
     return next()
@@ -83,10 +86,16 @@ fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
     return next()
 }
 
+/**
+ * Execute asynchronous succeeded callback.
+ */
 suspend fun <C> RoutingContext.asyncSucceed(result: C) {
     getPromiseQueue<C>()?.pop()?.succeeded?.invoke(result)
 }
 
+/**
+ * Execute asynchronous failed callback
+ */
 suspend fun <C> RoutingContext.asyncFail(x: Throwable? = null) {
     getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
 }
@@ -116,13 +125,11 @@ class StatusLineBlock(private val ctx: RoutingContext) {
 
     var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
         set(value) {
-            ctx.setHttpVersion(value)
+            ctx.httpVersion = value
             field = value
         }
 
-    override fun toString(): String {
-        return "StatusLineBlock(status=$status, reason='$reason', httpVersion=$httpVersion)"
-    }
+    override fun toString(): String = "StatusLineBlock(status=$status, reason='$reason', httpVersion=$httpVersion)"
 
 }
 
@@ -157,9 +164,7 @@ class HeaderBlock(ctx: RoutingContext) : HttpFieldOperator {
         httpFields.add(this)
     }
 
-    override fun toString(): String {
-        return "HeaderBlock(httpFields=$httpFields)"
-    }
+    override fun toString(): String = "HeaderBlock(httpFields=$httpFields)"
 }
 
 /**
@@ -191,9 +196,7 @@ class TrailerBlock(ctx: RoutingContext) : Supplier<HttpFields>, HttpFieldOperato
         httpFields.add(this)
     }
 
-    override fun toString(): String {
-        return "TrailerBlock(httpFields=$httpFields)"
-    }
+    override fun toString(): String = "TrailerBlock(httpFields=$httpFields)"
 
 }
 
@@ -260,6 +263,12 @@ class RouterBlock(private val router: Router,
             field = value
         }
 
+    fun getId() = router.id
+    /**
+     * Register a handler that is executed in the coroutine asynchronously.
+     *
+     * @param handler The handler that processes the business logic.
+     */
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
@@ -269,10 +278,18 @@ class RouterBlock(private val router: Router,
         }
     }
 
+    /**
+     * Register a handler that is executed in the coroutine asynchronously.
+     *
+     * @param handler The handler that processes the business logic.
+     */
     fun asyncHandler(handler: AsyncHandler) = asyncHandler {
         handler.handle(this)
     }
 
+    /**
+     * Automatically call the succeeded callback when the asynchronous handler has completed.
+     */
     fun asyncCompleteHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) = asyncHandler {
         try {
             handler.invoke(this, it)
@@ -282,15 +299,27 @@ class RouterBlock(private val router: Router,
         }
     }
 
+    /**
+     * Register a handler that is executed in the network thread synchronously.
+     *
+     * @param handler The handler that processes the business logic.
+     */
     fun handler(handler: RoutingContext.() -> Unit) {
         router.handler(handler)
     }
 
+    /**
+     * Register a handler that is executed in the network thread synchronously.
+     *
+     * @param handler The handler that processes the business logic.
+     */
     fun handler(handler: Handler) {
         router.handler(handler)
     }
 
-
+    /**
+     * Automatically close the resource when the block has completed.
+     */
     suspend fun <T : Closeable?, R> T.safeUse(block: suspend (T) -> R): R {
         var closed = false
         try {
@@ -313,19 +342,35 @@ class RouterBlock(private val router: Router,
         }
     }
 
-    override fun toString(): String {
-        return router.toString()
-    }
+    override fun toString(): String = router.toString()
 
 }
 
 interface HttpServerLifecycle {
+
+    /**
+     * Stop the HTTP server.
+     */
     fun stop()
 
+    /**
+     * Start the HTTP server.
+     *
+     * @param host The server hostname.
+     * @param port The server port.
+     */
     fun listen(host: String, port: Int)
 
+    /**
+     * Start the HTTP server and set the address of the local host.
+     *
+     * @param port The server port.
+     */
     fun listen(port: Int)
 
+    /**
+     * Start the HTTP server. You must set host and port in the SimpleHTTPServerConfiguration.
+     */
     fun listen()
 }
 
@@ -335,14 +380,11 @@ annotation class HttpServerMarker
 /**
  * HTTP server DSL. It helps you write HTTP server elegantly.
  *
- * @param requestCtx
- * Maintain the routing context in the HTTP request lifecycle when you use the asynchronous handlers which run in the coroutine.
+ * @param requestCtx Maintain the routing context in the HTTP request lifecycle when you use the asynchronous handlers which run in the coroutine.
  * It visits RoutingContext in the external function conveniently. Usually, you can use it to trace HTTP request crossing all registered routers.
- *
- * @param serverConfiguration HTTP server configuration
- * @param httpBodyConfiguration HTTP body configuration
- * @param block HTTP server DSL block
- *
+ * @param serverConfiguration HTTP server configuration.
+ * @param httpBodyConfiguration HTTP body configuration.
+ * @param block The HTTP server DSL block. You can register routers in this block.
  */
 @HttpServerMarker
 class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
@@ -353,8 +395,13 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     val server = SimpleHTTPServer(serverConfiguration)
     val routerManager = RouterManager.create(httpBodyConfiguration)
     val coroutineDispatcher = server.handlerExecutorService.asCoroutineDispatcher()
+    val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
     init {
+        server.badMessage { status, reason, request ->
+            val ctx = RoutingContextImpl(request, Collections.emptyNavigableSet<RouterManager.RouterMatchResult>())
+            defaultErrorHandler.render(ctx, status, BadMessageException(reason))
+        }
         block.invoke(this)
     }
 
@@ -376,17 +423,33 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
+    /**
+     * Register a router using the DSL with a autoincrement ID.
+     *
+     * @param block The router builder.
+     */
     inline fun router(block: RouterBlock.() -> Unit) {
         val r = RouterBlock(routerManager.register(), requestCtx, coroutineDispatcher)
         block.invoke(r)
         sysLogger.info("register $r")
     }
 
+    /**
+     * Register a router using the DSL with a specified ID.
+     *
+     * @param id The router ID. The router is sorted by ID ascending order.
+     * @param block The router builder.
+     */
     inline fun router(id: Int, block: RouterBlock.() -> Unit) {
         val r = RouterBlock(routerManager.register(id), requestCtx, coroutineDispatcher)
         block.invoke(r)
         sysLogger.info("register $r")
     }
 
+    /**
+     * Register routers using the DSL.
+     *
+     * @param block Register routers in this block.
+     */
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
 }

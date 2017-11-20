@@ -1,7 +1,12 @@
 package test.codec.http2.model;
 
+import com.firefly.codec.http2.model.AcceptMIMEMatchType;
+import com.firefly.codec.http2.model.AcceptMIMEType;
 import com.firefly.codec.http2.model.MimeTypes;
+import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -93,5 +98,52 @@ public class MimeTypesTest {
         assertEquals("foo/bar", MimeTypes.getContentTypeWithoutCharset("foo/bar;charset=uTf8"));
         assertEquals("foo/bar;other=\"charset=abc\"", MimeTypes.getContentTypeWithoutCharset("foo/bar;other=\"charset=abc\";charset=uTf8"));
         assertEquals("text/html", MimeTypes.getContentTypeWithoutCharset("text/html;charset=utf-8"));
+    }
+
+    @Test
+    public void testAcceptMimeTypes() {
+        List<AcceptMIMEType> list = MimeTypes.parseAcceptMIMETypes("text/plain; q=0.9, text/html");
+        Assert.assertThat(list.size(), is(2));
+        Assert.assertThat(list.get(0).getParentType(), is("text"));
+        Assert.assertThat(list.get(0).getChildType(), is("html"));
+        Assert.assertThat(list.get(0).getQuality(), is(1.0F));
+        Assert.assertThat(list.get(1).getParentType(), is("text"));
+        Assert.assertThat(list.get(1).getChildType(), is("plain"));
+        Assert.assertThat(list.get(1).getQuality(), is(0.9F));
+
+        list = MimeTypes.parseAcceptMIMETypes("text/plain, text/html");
+        Assert.assertThat(list.size(), is(2));
+        Assert.assertThat(list.get(0).getParentType(), is("text"));
+        Assert.assertThat(list.get(0).getChildType(), is("plain"));
+        Assert.assertThat(list.get(1).getParentType(), is("text"));
+        Assert.assertThat(list.get(1).getChildType(), is("html"));
+
+        list = MimeTypes.parseAcceptMIMETypes("text/plain");
+        Assert.assertThat(list.size(), is(1));
+        Assert.assertThat(list.get(0).getParentType(), is("text"));
+        Assert.assertThat(list.get(0).getChildType(), is("plain"));
+
+        list = MimeTypes.parseAcceptMIMETypes("*/*; q=0.8, text/plain; q=0.9, text/html, */json");
+        Assert.assertThat(list.size(), is(4));
+
+        Assert.assertThat(list.get(0).getParentType(), is("text"));
+        Assert.assertThat(list.get(0).getChildType(), is("html"));
+        Assert.assertThat(list.get(0).getQuality(), is(1.0F));
+        Assert.assertThat(list.get(0).getMatchType(), is(AcceptMIMEMatchType.EXACT));
+
+        Assert.assertThat(list.get(1).getParentType(), is("*"));
+        Assert.assertThat(list.get(1).getChildType(), is("json"));
+        Assert.assertThat(list.get(1).getQuality(), is(1.0F));
+        Assert.assertThat(list.get(1).getMatchType(), is(AcceptMIMEMatchType.CHILD));
+
+        Assert.assertThat(list.get(2).getParentType(), is("text"));
+        Assert.assertThat(list.get(2).getChildType(), is("plain"));
+        Assert.assertThat(list.get(2).getQuality(), is(0.9F));
+        Assert.assertThat(list.get(2).getMatchType(), is(AcceptMIMEMatchType.EXACT));
+
+        Assert.assertThat(list.get(3).getParentType(), is("*"));
+        Assert.assertThat(list.get(3).getChildType(), is("*"));
+        Assert.assertThat(list.get(3).getQuality(), is(0.8F));
+        Assert.assertThat(list.get(3).getMatchType(), is(AcceptMIMEMatchType.ALL));
     }
 }

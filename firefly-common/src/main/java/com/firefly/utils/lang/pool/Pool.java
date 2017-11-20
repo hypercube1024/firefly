@@ -1,7 +1,9 @@
 package com.firefly.utils.lang.pool;
 
-import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.lang.LifeCycle;
+import com.firefly.utils.lang.LeakDetector;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Represents a cached pool of objects.
@@ -35,52 +37,94 @@ public interface Pool<T> extends LifeCycle {
      * The mechanism of putting the object back to the pool is generally
      * asynchronous, however future implementations might differ.
      *
-     * @param t the object to return to the pool
+     * @param pooledObject the object to return to the pool
      */
+    void release(PooledObject<T> pooledObject);
 
-    void release(PooledObject<T> t);
+    /**
+     * Check the pooled object. If return true, the object is valid
+     *
+     * @param pooledObject The pooled object
+     * @return if return true, the object is valid.
+     */
+    boolean isValid(PooledObject<T> pooledObject);
 
-    boolean isValid(PooledObject<T> t);
-
+    /**
+     * Get the current pool size
+     *
+     * @return Current pool size
+     */
     int size();
 
+    /**
+     * If return true, the pool is empty
+     *
+     * @return If return true, the pool is empty
+     */
     boolean isEmpty();
 
+    /**
+     * When the object factory create a new object, the created object size increase.
+     * When the object is destroy, the created object size decrease.
+     * If the created object size less then pool size, the pool will create a new object,
+     * or else the pool will wait the object return
+     *
+     * @return created object size
+     */
     int getCreatedObjectSize();
 
     /**
+     * Get the leak detector
+     *
+     * @return the leak detector
+     */
+    LeakDetector<PooledObject<T>> getLeakDetector();
+
+    /**
      * Represents the functionality to validate an object of the pool
+     *
+     * @param <T> The pooled object
      */
     interface Validator<T> {
+
         /**
          * Checks whether the object is valid.
          *
-         * @param t the object to check.
+         * @param pooledObject the object to check.
          * @return true if the object is valid else false.
          */
-        boolean isValid(PooledObject<T> t);
-
+        boolean isValid(PooledObject<T> pooledObject);
     }
 
+    /**
+     * Cleanup the pooled object
+     *
+     * @param <T> The pooled object
+     */
     interface Dispose<T> {
+
         /**
          * Performs any cleanup activities before discarding the object. For
          * example before discarding database connection objects, the pool will
          * want to close the connections.
          *
-         * @param t the object to cleanup
+         * @param pooledObject the object to cleanup
          */
-
-        void destroy(PooledObject<T> t);
+        void destroy(PooledObject<T> pooledObject);
     }
 
+    /**
+     * A factory to create a new object
+     *
+     * @param <T> The pooled object
+     */
     interface ObjectFactory<T> {
 
         /**
-         * Returns a new instance of an object of type T.
+         * Create a new object in future.
          *
-         * @return T an new instance of the object of type T
+         * @return a future that is a new instance of an object of type T.
          */
-        Promise.Completable<PooledObject<T>> createNew();
+        CompletableFuture<PooledObject<T>> createNew(Pool<T> pool);
     }
 }

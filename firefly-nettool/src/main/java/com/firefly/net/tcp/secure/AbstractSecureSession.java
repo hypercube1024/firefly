@@ -49,7 +49,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         this.applicationProtocolSelector = applicationProtocolSelector;
         this.handshakeListener = handshakeListener;
 
-        receivedAppBuf = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
+        receivedAppBuf = newBuffer(sslEngine.getSession().getApplicationBufferSize());
         initialHSComplete = false;
 
         // start tls
@@ -152,7 +152,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
                     case BUFFER_OVERFLOW: {
                         // Reset the application buffer size.
-                        ByteBuffer b = ByteBuffer.allocate(receivedAppBuf.position() + sslEngine.getSession().getApplicationBufferSize());
+                        ByteBuffer b = newBuffer(receivedAppBuf.position() + sslEngine.getSession().getApplicationBufferSize());
                         receivedAppBuf.flip();
                         b.put(receivedAppBuf);
                         receivedAppBuf = b;
@@ -185,7 +185,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         outer:
         while (initialHSStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
             SSLEngineResult result;
-            ByteBuffer packetBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+            ByteBuffer packetBuffer = newBuffer(sslEngine.getSession().getPacketBufferSize());
 
             wrap:
             while (true) {
@@ -208,7 +208,7 @@ abstract public class AbstractSecureSession implements SecureSession {
                         break wrap;
 
                     case BUFFER_OVERFLOW:
-                        ByteBuffer b = ByteBuffer.allocate(packetBuffer.position() + sslEngine.getSession().getPacketBufferSize());
+                        ByteBuffer b = newBuffer(packetBuffer.position() + sslEngine.getSession().getPacketBufferSize());
                         packetBuffer.flip();
                         b.put(packetBuffer);
                         packetBuffer = b;
@@ -236,7 +236,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
         if (receivedPacketBuf != null) {
             if (receivedPacketBuf.hasRemaining()) {
-                ByteBuffer ret = ByteBuffer.allocate(receivedPacketBuf.remaining() + now.remaining());
+                ByteBuffer ret = newBuffer(receivedPacketBuf.remaining() + now.remaining());
                 ret.put(receivedPacketBuf).put(now).flip();
                 receivedPacketBuf = ret;
             } else {
@@ -250,9 +250,9 @@ abstract public class AbstractSecureSession implements SecureSession {
     protected ByteBuffer getReceivedAppBuf() {
         receivedAppBuf.flip();
         if (receivedAppBuf.hasRemaining()) {
-            ByteBuffer buf = ByteBuffer.allocate(receivedAppBuf.remaining());
+            ByteBuffer buf = newBuffer(receivedAppBuf.remaining());
             buf.put(receivedAppBuf).flip();
-            receivedAppBuf = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
+            receivedAppBuf = newBuffer(sslEngine.getSession().getApplicationBufferSize());
             if (log.isDebugEnabled()) {
                 log.debug("SSL session {} unwrap, app buffer -> {}", session.getSessionId(), buf.remaining());
             }
@@ -297,8 +297,8 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     @Override
-    public List<String> getSupportedProtocols() {
-        return applicationProtocolSelector.getSupportedProtocols();
+    public List<String> getSupportedApplicationProtocols() {
+        return applicationProtocolSelector.getSupportedApplicationProtocols();
     }
 
     @Override
@@ -311,7 +311,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         if (buf.remaining() <= netSize) {
             return buf;
         } else {
-            ByteBuffer splitBuf = ByteBuffer.allocate(netSize);
+            ByteBuffer splitBuf = newBuffer(netSize);
             byte[] data = new byte[netSize];
             buf.get(data);
             splitBuf.put(data).flip();
@@ -322,6 +322,8 @@ abstract public class AbstractSecureSession implements SecureSession {
     abstract protected SSLEngineResult unwrap(ByteBuffer input) throws IOException;
 
     abstract protected SSLEngineResult wrap(ByteBuffer src, ByteBuffer dst) throws IOException;
+
+    abstract protected ByteBuffer newBuffer(int size);
 
     /**
      * This method is used to decrypt data, it implied do handshake
@@ -361,7 +363,7 @@ abstract public class AbstractSecureSession implements SecureSession {
             switch (result.getStatus()) {
                 case BUFFER_OVERFLOW: {
                     // Reset the application buffer size.
-                    ByteBuffer b = ByteBuffer.allocate(receivedAppBuf.position() + sslEngine.getSession().getApplicationBufferSize());
+                    ByteBuffer b = newBuffer(receivedAppBuf.position() + sslEngine.getSession().getApplicationBufferSize());
                     receivedAppBuf.flip();
                     b.put(receivedAppBuf);
                     receivedAppBuf = b;
@@ -440,7 +442,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
         outer:
         while (ret < remain) {
-            ByteBuffer packetBuffer = ByteBuffer.allocate(packetBufferSize);
+            ByteBuffer packetBuffer = newBuffer(packetBufferSize);
 
             wrap:
             while (true) {
@@ -462,7 +464,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
                     case BUFFER_OVERFLOW: {
                         packetBufferSize = sslEngine.getSession().getPacketBufferSize();
-                        ByteBuffer b = ByteBuffer.allocate(packetBuffer.position() + packetBufferSize);
+                        ByteBuffer b = newBuffer(packetBuffer.position() + packetBufferSize);
                         packetBuffer.flip();
                         b.put(packetBuffer);
                         packetBuffer = b;

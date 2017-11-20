@@ -12,6 +12,7 @@ import com.firefly.kotlin.ext.example.Response
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.RandomUtils
 import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.experimental.withTimeout
 import org.junit.Test
 import java.nio.charset.StandardCharsets
 import java.util.zip.GZIPOutputStream
@@ -83,7 +84,7 @@ class TestServerDSL {
         val url = "http://$host:$port"
         val client = firefly.httpClient()
 
-        val r0 = client.get("$url/test/headerAndTrailer").asyncSubmit()
+        val r0 = withTimeout(5000L) { client.get("$url/test/headerAndTrailer").asyncSubmit() }
         assertEquals("test add", r0.fields["Add-My-Header"])
         assertEquals("Ohh nice", r0.fields["My-Header"])
         assertEquals("Firefly kotlin DSL server", r0.fields[SERVER])
@@ -104,7 +105,7 @@ class TestServerDSL {
         val port = RandomUtils.random(3000, 65534).toInt()
         val reqCtx = Context.getBean<CoroutineLocal<RoutingContext>>()
 
-        fun testReqId() = assertEquals(20, reqCtx.get()?.getAttr<Int>("reqId"))
+        fun testReqId() = assertEquals(20, reqCtx.get()?.getAttr("reqId") ?: 0)
 
         HttpServer(reqCtx) {
             router {
@@ -133,7 +134,7 @@ class TestServerDSL {
         val url = "http://$host:$port"
         val client = firefly.httpClient()
 
-        val r0 = client.get("$url/test/product/3").asyncSubmit()
+        val r0 = withTimeout(5000L) { client.get("$url/test/product/3").asyncSubmit() }
         assertEquals("reqId: 20", r0.stringBody)
     }
 

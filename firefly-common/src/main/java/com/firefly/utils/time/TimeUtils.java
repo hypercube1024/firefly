@@ -1,9 +1,6 @@
 package com.firefly.utils.time;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
@@ -13,13 +10,25 @@ import java.util.Date;
 
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.time.temporal.ChronoField.*;
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 
 /**
  * @author Pengtao Qiu
  */
 abstract public class TimeUtils {
+
+    public static final DateTimeFormatter LOCAL_DATE_SLASH_SEPARATOR = new DateTimeFormatterBuilder()
+            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('/')
+            .appendValue(MONTH_OF_YEAR, 2)
+            .appendLiteral('/')
+            .appendValue(DAY_OF_MONTH, 2)
+            .toFormatter();
+
+    public static final DateTimeFormatter DEFAULT_LOCAL_MONTH = new DateTimeFormatterBuilder()
+            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('-')
+            .appendValue(MONTH_OF_YEAR, 2)
+            .toFormatter();
 
     public static final DateTimeFormatter DEFAULT_LOCAL_DATE = new DateTimeFormatterBuilder()
             .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
@@ -88,6 +97,10 @@ abstract public class TimeUtils {
 
     public static Date parseLocalDateTime(String text, DateTimeFormatter formatter) {
         return toDate(LocalDateTime.parse(text, formatter));
+    }
+
+    public static LocalDate parseYearMonth(String text, DateTimeFormatter formatter) {
+        return YearMonth.parse(text, formatter).atDay(1);
     }
 
     public static long between(ChronoUnit chronoUnit, Temporal temporal1Inclusive, Temporal temporal2Exclusive) {

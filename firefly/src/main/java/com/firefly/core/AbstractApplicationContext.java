@@ -39,9 +39,6 @@ abstract public class AbstractApplicationContext extends AbstractLifeCycle imple
         if (!initMethods.isEmpty()) {
             invokeMethods(initMethods);
         }
-        if (!destroyedMethods.isEmpty()) {
-            Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "the firefly shutdown thread"));
-        }
     }
 
     @Override

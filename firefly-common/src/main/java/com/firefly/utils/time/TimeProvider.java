@@ -27,7 +27,7 @@ public class TimeProvider extends AbstractLifeCycle {
                 }
                 current = System.currentTimeMillis();
             }
-        }, "filefly time provider " + interval + "ms").start();
+        }, "firefly time provider " + interval + "ms").start();
     }
 
     @Override

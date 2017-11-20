@@ -3,7 +3,7 @@ package com.firefly.kotlin.ext.example
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.http.asyncSubmit
 import com.firefly.kotlin.ext.http.getJsonBody
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
 import kotlinx.coroutines.experimental.runBlocking
 
@@ -13,7 +13,7 @@ import kotlinx.coroutines.experimental.runBlocking
  * @author Pengtao Qiu
  */
 
-private val log = Log.getLogger { }
+private val log = KtLogger.getLogger { }
 
 private val host = "http://localhost:8080"
 

@@ -4,6 +4,7 @@ import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
+import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +21,31 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
-    public static void main(String[] args) throws Exception {
-        System.out.println($.httpsClient().get("https://login.taobao.com").submit().get().getStringBody());
+    public static void main7(String[] args) {
+        SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
+        client.get("https://www.jd.com").submit()
+              .thenAccept(resp -> System.out.println(resp.getStringBody()));
+    }
+
+    public static void main6(String[] args) throws Exception {
+//        Task task = new Task();
+//        task.setTask(() -> $.httpsClient().head("https://github.com").submit()
+//                            .thenApply(res -> res.getStatus() == HttpStatus.OK_200? Result.SUCCESS : Result.FAILURE));
+//        task.setName("https://github.com");
+//        task.setResultListener((name, result, ex) -> System.out.println("the " + name + " health check result -> " + result));
+//        $.httpsClient().registerHealthCheck(task);
+
+//        $.httpsClient().head("https://github.com")
+//         .submit()
+//         .thenAccept(resp -> {
+//             System.out.println(resp.getStatus());
+//             System.out.println(resp.getFields());
+//             System.out.println(resp.getStringBody());
+//         });
+
+        $.httpsClient().get("https://login.taobao.com").submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody("GBK")));
+
 //        System.out.println($.httpsClient().get("https://www.taobao.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://github.com").submit().get().getStringBody());
 //        System.out.println($.httpsClient().get("https://segmentfault.com").submit().get().getStringBody());
@@ -43,25 +67,25 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main4(String[] args) throws ExecutionException, InterruptedException {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 25; i++) {
                 long start = System.currentTimeMillis();
-                $.httpsClient().get("https://login.taobao.com")
-                 .submit()
-                 .thenApply(res -> res.getStringBody("GBK"))
-                 .thenAccept(v -> {
-                     System.out.println("----login time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
-                     log.info("----------------> login body -> {}", v);
-                 });
+                client.get("https://login.taobao.com").submit()
+                      .thenApply(res -> res.getStringBody("GBK"))
+                      .thenAccept(v -> {
+                          System.out.println("----login time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
+                          log.info("----------------> login body -> {}", v);
+                      });
 
-                $.httpsClient().get("https://www.taobao.com/")
-                 .submit()
-                 .thenApply(res -> res.getStringBody("UTF-8"))
-                 .thenAccept(v -> {
-                     System.out.println("----index time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
-                     log.info("----------------> index body -> {}", v);
-                 });
+//                $.httpsClient().get("https://www.taobao.com/")
+//                 .submit()
+//                 .thenApply(res -> res.getStringBody("UTF-8"))
+//                 .thenAccept(v -> {
+//                     System.out.println("----index time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
+//                     log.info("----------------> index body -> {}", v);
+//                 });
             }
             Thread.sleep(5000L);
         }

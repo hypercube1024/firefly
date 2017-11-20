@@ -6,9 +6,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.net.exception.NetException;
 import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.CountingCallback;
-import com.firefly.utils.io.BufferReaderHandler;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.time.Millisecond100Clock;
 import com.firefly.utils.time.SafeSimpleDateFormat;
@@ -73,58 +72,58 @@ public class AsynchronousTcpSession implements Session {
     }
 
     void _read() {
-        if (!isOpen()) {
-            return;
-        }
-
         final ByteBuffer buf = allocateReadBuffer();
         if (log.isDebugEnabled()) {
-            log.debug("the session {} buffer size is {}", getSessionId(), buf.remaining());
+            log.debug("The session {} allocates buffer. Its size is {}", getSessionId(), buf.remaining());
+        }
+        socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, this, new InputCompletionHandler(buf));
+    }
+
+    private class InputCompletionHandler implements CompletionHandler<Integer, AsynchronousTcpSession> {
+
+        private final ByteBuffer buf;
+
+        public InputCompletionHandler(ByteBuffer buf) {
+            this.buf = buf;
         }
 
-        socketChannel.read(buf, config.getTimeout(), TimeUnit.MILLISECONDS, this,
-                new CompletionHandler<Integer, AsynchronousTcpSession>() {
+        @Override
+        public void completed(Integer currentReadBytes, AsynchronousTcpSession session) {
+            session.lastReadTime = Millisecond100Clock.currentTimeMillis();
+            if (currentReadBytes < 0) {
+                log.info("The session {} input channel is shutdown, {}", session.getSessionId(), currentReadBytes);
+                session.closeNow();
+                return;
+            }
 
-                    @Override
-                    public void completed(Integer currentReadBytes, AsynchronousTcpSession session) {
-                        session.lastReadTime = Millisecond100Clock.currentTimeMillis();
-                        if (currentReadBytes < 0) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("the session {} input is closed, {}", session.getSessionId(), currentReadBytes);
-                            }
-                            session.closeNow();
-                            return;
-                        }
+            if (log.isDebugEnabled()) {
+                log.debug("The session {} read {} bytes", session.getSessionId(), currentReadBytes);
+            }
+            // Update the predictor.
+            session.bufferSizePredictor.previousReceivedBufferSize(currentReadBytes);
+            session.readBytes += currentReadBytes;
+            buf.flip();
+            try {
+                config.getDecoder().decode(buf, session);
+            } catch (Throwable t) {
+                eventManager.executeExceptionTask(session, t);
+            } finally {
+                _read();
+            }
+        }
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("the session {} read {} bytes", session.getSessionId(), currentReadBytes);
-                        }
-                        // Update the predictor.
-                        session.bufferSizePredictor.previousReceivedBufferSize(currentReadBytes);
-                        session.readBytes += currentReadBytes;
-                        buf.flip();
-                        try {
-                            config.getDecoder().decode(buf, session);
-                        } catch (Throwable t) {
-                            eventManager.executeExceptionTask(session, t);
-                        } finally {
-                            _read();
-                        }
-                    }
+        @Override
+        public void failed(Throwable t, AsynchronousTcpSession session) {
+            if (t instanceof InterruptedByTimeoutException) {
+                if (log.isDebugEnabled()) {
+                    log.debug("The session {} reading data is timeout.", getSessionId());
+                }
+            } else {
+                log.warn("The session {} read data is failed", t, session.getSessionId());
+            }
 
-                    @Override
-                    public void failed(Throwable t, AsynchronousTcpSession session) {
-                        if (t instanceof InterruptedByTimeoutException) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("the session {} reading data is timeout.", getSessionId());
-                            }
-                        } else {
-                            log.warn("the session {} read data is failed", t, session.getSessionId());
-                        }
-
-                        session.closeNow();
-                    }
-                });
+            session.shutdownSocketChannel();
+        }
     }
 
     private class OutputEntryCompletionHandler<V extends Number, T> implements CompletionHandler<V, AsynchronousTcpSession> {
@@ -137,15 +136,29 @@ public class AsynchronousTcpSession implements Session {
 
         @Override
         public void completed(V currentWrittenBytes, AsynchronousTcpSession session) {
+            lastWrittenTime = Millisecond100Clock.currentTimeMillis();
             if (log.isDebugEnabled()) {
-                log.debug("the session {} completed writing {} bytes, remaining {} bytes",
+                log.debug("The session {} completed writing {} bytes, remaining {} bytes",
                         session.getSessionId(),
                         currentWrittenBytes, entry.remaining());
             }
+
+            long w = currentWrittenBytes.longValue();
+            if (w < 0) {
+                log.info("The session {} output channel is shutdown, {}", getSessionId(), currentWrittenBytes);
+                closeNow();
+                return;
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("The session {} writes {} bytes", getSessionId(), currentWrittenBytes);
+            }
+            writtenBytes += w;
+
             if (entry.remaining() > 0) {
                 _write(entry);
             } else {
-                writingCompletedCallback(entry.getCallback(), currentWrittenBytes.longValue());
+                writingCompletedCallback(entry.getCallback());
             }
         }
 
@@ -155,23 +168,8 @@ public class AsynchronousTcpSession implements Session {
         }
 
 
-        private void writingCompletedCallback(Callback callback, long currentWrittenBytes) {
-            lastWrittenTime = Millisecond100Clock.currentTimeMillis();
-            if (currentWrittenBytes < 0) {
-                if (log.isDebugEnabled()) {
-                    log.debug("the session {} output is closed, {}", getSessionId(), currentWrittenBytes);
-                }
-                shutdownSocketChannel();
-                return;
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("the session {} writes {} bytes", getSessionId(), currentWrittenBytes);
-            }
-
-            writtenBytes += currentWrittenBytes;
+        private void writingCompletedCallback(Callback callback) {
             callback.succeeded();
-
             outputLock.lock();
             try {
                 OutputEntry<?> obj = outputBuffer.poll();
@@ -188,16 +186,16 @@ public class AsynchronousTcpSession implements Session {
         private void writingFailedCallback(Callback callback, Throwable t) {
             if (t instanceof InterruptedByTimeoutException) {
                 if (log.isDebugEnabled()) {
-                    log.debug("the session {} writing data is timeout.", getSessionId());
+                    log.debug("The session {} writing data is timeout.", getSessionId());
                 }
             } else {
-                log.warn("the session {} writes data is failed", t, getSessionId());
+                log.warn("The session {} writes data is failed", t, getSessionId());
             }
 
             outputLock.lock();
             try {
                 int bufferSize = outputBuffer.size();
-                log.warn("the session {} has {} buffer data can not output", getSessionId(), bufferSize);
+                log.warn("The session {} has {} buffer data can not output", getSessionId(), bufferSize);
                 outputBuffer.clear();
                 isWriting = false;
                 shutdownSocketChannel();
@@ -209,36 +207,33 @@ public class AsynchronousTcpSession implements Session {
     }
 
     private void _write(final OutputEntry<?> entry) {
-        if (!isOpen()) {
-            return;
-        }
         switch (entry.getOutputEntryType()) {
-            case BYTE_BUFFER:
+            case BYTE_BUFFER: {
                 ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) entry;
                 socketChannel.write(byteBufferOutputEntry.getData(),
                         config.getTimeout(), TimeUnit.MILLISECONDS, this,
                         new OutputEntryCompletionHandler<>(byteBufferOutputEntry));
-                break;
-
-            case BYTE_BUFFER_ARRAY:
+            }
+            break;
+            case BYTE_BUFFER_ARRAY: {
                 ByteBufferArrayOutputEntry byteBuffersEntry = (ByteBufferArrayOutputEntry) entry;
                 socketChannel.write(byteBuffersEntry.getData(), 0, byteBuffersEntry.getData().length,
                         config.getTimeout(), TimeUnit.MILLISECONDS, this,
                         new OutputEntryCompletionHandler<>(byteBuffersEntry));
-                break;
-            case DISCONNECTION:
-                log.debug("the session {} will close", getSessionId());
+            }
+            break;
+            case DISCONNECTION: {
+                log.debug("The session {} will close", getSessionId());
                 shutdownSocketChannel();
+            }
+            break;
             default:
-                break;
+                throw new NetException("unknown output entry type");
         }
     }
 
     @Override
     public void write(OutputEntry<?> entry) {
-        if (!isOpen()) {
-            return;
-        }
         if (entry == null) {
             return;
         }
@@ -270,26 +265,10 @@ public class AsynchronousTcpSession implements Session {
         write(new ByteBufferArrayOutputEntry(callback, buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY)));
     }
 
-    private class FileBufferReaderHandler implements BufferReaderHandler {
-
-        private final long len;
-
-        private FileBufferReaderHandler(long len) {
-            this.len = len;
-        }
-
-        @Override
-        public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count) {
-            log.debug("write file,  count: {} , lenth: {}", count, len);
-            write(buf, countingCallback);
-        }
-
-    }
-
     @Override
     public void write(FileRegion file, Callback callback) {
         try (FileRegion fileRegion = file) {
-            fileRegion.transferTo(callback, new FileBufferReaderHandler(fileRegion.getLength()));
+            fileRegion.transferTo(callback, (buf, countingCallback, count) -> write(buf, countingCallback));
         } catch (Throwable t) {
             log.error("transfer file error", t);
         }
@@ -306,7 +285,7 @@ public class AsynchronousTcpSession implements Session {
     }
 
     @Override
-    public void fireReceiveMessage(Object message) {
+    public void onReceivingMessage(Object message) {
         eventManager.executeReceiveTask(this, message);
     }
 
@@ -325,8 +304,8 @@ public class AsynchronousTcpSession implements Session {
     }
 
     @Override
-    public void closeNow() {
-        if (!isOpen()) {
+    public synchronized void closeNow() {
+        if (state == State.CLOSE) {
             return;
         }
         closeTime = Millisecond100Clock.currentTimeMillis();
@@ -334,9 +313,9 @@ public class AsynchronousTcpSession implements Session {
             socketChannel.close();
         } catch (AsynchronousCloseException e) {
             if (log.isDebugEnabled())
-                log.debug("the session {} asynchronously closed", sessionId);
+                log.debug("The session {} asynchronously closed", sessionId);
         } catch (IOException e) {
-            log.error("the session {} close error", e, sessionId);
+            log.error("The session {} close error", e, sessionId);
         }
         state = State.CLOSE;
         eventManager.executeCloseTask(this);
@@ -349,10 +328,11 @@ public class AsynchronousTcpSession implements Session {
         try {
             socketChannel.shutdownOutput();
         } catch (ClosedChannelException e) {
-            log.debug("the session {} is closed", e, sessionId);
+            log.debug("The session {} is closed", e, sessionId);
         } catch (IOException e) {
-            log.error("the session {} shutdown output error", e, sessionId);
+            log.error("The session {} shutdown output error", e, sessionId);
         }
+        state = State.OUTPUT_SHUTDOWN;
     }
 
     @Override
@@ -360,10 +340,11 @@ public class AsynchronousTcpSession implements Session {
         try {
             socketChannel.shutdownInput();
         } catch (ClosedChannelException e) {
-            log.debug("the session {} is closed", e, sessionId);
+            log.debug("The session {} is closed", e, sessionId);
         } catch (IOException e) {
-            log.error("the session {} shutdown input error", e, sessionId);
+            log.error("The session {} shutdown input error", e, sessionId);
         }
+        state = State.INPUT_SHUTDOWN;
     }
 
     private void shutdownSocketChannel() {
@@ -439,7 +420,7 @@ public class AsynchronousTcpSession implements Session {
                 localAddress = (InetSocketAddress) socketChannel.getLocalAddress();
                 return localAddress;
             } catch (IOException e) {
-                log.error("the session {} gets local address error", e, sessionId);
+                log.error("The session {} gets local address error", e, sessionId);
                 return null;
             }
         }
@@ -454,7 +435,7 @@ public class AsynchronousTcpSession implements Session {
                 remoteAddress = (InetSocketAddress) socketChannel.getRemoteAddress();
                 return remoteAddress;
             } catch (Throwable t) {
-                log.error("the session {} gets remote address error", t, sessionId);
+                log.error("The session {} gets remote address error", t, sessionId);
                 return null;
             }
         }

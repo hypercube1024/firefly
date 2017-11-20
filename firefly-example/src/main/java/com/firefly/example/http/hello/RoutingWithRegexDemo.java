@@ -8,12 +8,27 @@ import com.firefly.codec.http2.model.HttpMethod;
  */
 public class RoutingWithRegexDemo {
     public static void main(String[] args) {
-        $.httpServer().router()
-         .method(HttpMethod.GET).pathRegex("/hello(\\d*)")
+        String host = "localhost";
+        int port = 8081;
+
+        $.httpServer()
+         .router().method(HttpMethod.GET).pathRegex("/product(.*)")
          .handler(ctx -> {
-             String group1 = ctx.getRouterParameter("group1");
-             ctx.write("match path: " + ctx.getURI().getPath()).write("\r\n")
-                .end("capture group1: " + group1);
-         }).listen("localhost", 8080);
+             String matched = ctx.getRegexGroup(1);
+             ctx.write("Intercept the product: " + matched + "\r\n").next();
+         })
+         .router().get("/product/:type")
+         .handler(ctx -> {
+             String type = ctx.getPathParameter("type");
+             ctx.end("List " + type + "\r\n");
+         })
+         .listen(host, port);
+
+        $.httpClient().get($.string.replace("http://{}:{}/product/orange", host, port))
+         .submit()
+         .thenAccept(resp -> {
+             System.out.println(resp.getStatus());
+             System.out.println(resp.getStringBody());
+         });
     }
 }

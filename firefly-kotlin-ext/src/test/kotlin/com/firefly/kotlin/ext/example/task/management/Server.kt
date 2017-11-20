@@ -16,17 +16,16 @@ import com.firefly.kotlin.ext.example.task.management.vo.ProjectEditor
 import com.firefly.kotlin.ext.example.task.management.vo.Request
 import com.firefly.kotlin.ext.example.task.management.vo.Response
 import com.firefly.kotlin.ext.http.*
-import com.firefly.kotlin.ext.log.Log
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.runBlocking
 import java.util.*
-import kotlin.coroutines.experimental.CoroutineContext
 
 /**
  * @author Pengtao Qiu
  */
-private val log = Log.getLogger { }
+private val log = KtLogger.getLogger { }
 
 fun main(args: Array<String>) {
     initData()

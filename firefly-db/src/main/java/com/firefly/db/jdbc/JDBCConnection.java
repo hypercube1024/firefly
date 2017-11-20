@@ -2,19 +2,24 @@ package com.firefly.db.jdbc;
 
 import com.firefly.db.*;
 import com.firefly.db.jdbc.helper.JDBCHelper;
+import com.firefly.db.jdbc.helper.namedparam.ParsedSql;
+import com.firefly.db.jdbc.helper.namedparam.PreparedSqlAndValues;
+import com.firefly.utils.BeanUtils;
+import com.firefly.utils.collection.ConcurrentLinkedHashMap;
 import com.firefly.utils.concurrent.Promise.Completable;
 import com.firefly.utils.function.Func1;
+import com.firefly.utils.lang.bean.PropertyAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.firefly.db.jdbc.helper.namedparam.NamedParameterParser.parseSqlStatement;
+import static com.firefly.db.jdbc.helper.namedparam.NamedParameterParser.replaceParsedSql;
 
 /**
  * @author Pengtao Qiu
@@ -22,6 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class JDBCConnection implements SQLConnection {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
+
+    protected static final Map<String, ParsedSql> namedParamCache = new ConcurrentLinkedHashMap<>(true, 256);
 
     private final JDBCHelper jdbcHelper;
     private final Connection connection;
@@ -47,14 +54,58 @@ public class JDBCConnection implements SQLConnection {
         return connection;
     }
 
+    protected static ParsedSql parseSql(String sql) {
+        ParsedSql parsedSql = namedParamCache.get(sql);
+        if (parsedSql == null) {
+            parsedSql = parseSqlStatement(sql);
+            namedParamCache.put(sql, parsedSql);
+        }
+        return parsedSql;
+    }
+
+    protected static PreparedSqlAndValues getPreparedSqlAndValues(String sql, Map<String, Object> paramMap) {
+        return replaceParsedSql(parseSql(sql), paramMap);
+    }
+
+    protected static PreparedSqlAndValues getPreparedSqlAndValues(String sql, Object object) {
+        Map<String, PropertyAccess> beanAccess = BeanUtils.getBeanAccess(object.getClass());
+        Map<String, Object> paramMap = new HashMap<>();
+        beanAccess.forEach((name, property) -> paramMap.put(name, property.getValue(object)));
+        return getPreparedSqlAndValues(sql, paramMap);
+    }
+
     @Override
     public <T> CompletableFuture<T> queryForSingleColumn(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForSingleColumn(connection, sql, params));
     }
 
     @Override
+    public <T> CompletableFuture<T> namedQueryForSingleColumn(String sql, Map<String, Object> paramMap) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramMap);
+        return queryForSingleColumn(preparedSqlAndValues.getPreparedSql(), preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
+    public <T> CompletableFuture<T> namedQueryForSingleColumn(String sql, Object paramObject) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramObject);
+        return queryForSingleColumn(preparedSqlAndValues.getPreparedSql(), preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
     public <T> CompletableFuture<T> queryForObject(String sql, Class<T> clazz, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForObject(connection, sql, clazz, params));
+    }
+
+    @Override
+    public <T> CompletableFuture<T> namedQueryForObject(String sql, Class<T> clazz, Map<String, Object> paramMap) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramMap);
+        return queryForObject(preparedSqlAndValues.getPreparedSql(), clazz, preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
+    public <T> CompletableFuture<T> namedQueryForObject(String sql, Class<T> clazz, Object paramObject) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramObject);
+        return queryForObject(preparedSqlAndValues.getPreparedSql(), clazz, preparedSqlAndValues.getValues().toArray());
     }
 
     @Override
@@ -68,8 +119,32 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
+    public <K, V> CompletableFuture<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Map<String, Object> paramMap) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramMap);
+        return queryForBeanMap(preparedSqlAndValues.getPreparedSql(), valueClass, preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
+    public <K, V> CompletableFuture<Map<K, V>> namedQueryForBeanMap(String sql, Class<V> valueClass, Object paramObject) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramObject);
+        return queryForBeanMap(preparedSqlAndValues.getPreparedSql(), valueClass, preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
     public <T> CompletableFuture<List<T>> queryForList(String sql, Class<T> clazz, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.queryForList(connection, sql, clazz, params));
+    }
+
+    @Override
+    public <T> CompletableFuture<List<T>> namedQueryForList(String sql, Class<T> clazz, Map<String, Object> paramMap) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramMap);
+        return queryForList(preparedSqlAndValues.getPreparedSql(), clazz, preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
+    public <T> CompletableFuture<List<T>> namedQueryForList(String sql, Class<T> clazz, Object paramObject) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramObject);
+        return queryForList(preparedSqlAndValues.getPreparedSql(), clazz, preparedSqlAndValues.getValues().toArray());
     }
 
     @Override
@@ -85,8 +160,32 @@ public class JDBCConnection implements SQLConnection {
     }
 
     @Override
+    public <T> CompletableFuture<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Map<String, Object> paramMap) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramMap);
+        return query(preparedSqlAndValues.getPreparedSql(), handler, preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
+    public <T> CompletableFuture<T> namedQuery(String sql, Func1<SQLResultSet, T> handler, Object paramObject) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramObject);
+        return query(preparedSqlAndValues.getPreparedSql(), handler, preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
     public CompletableFuture<Integer> update(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.update(connection, sql, params));
+    }
+
+    @Override
+    public CompletableFuture<Integer> namedUpdate(String sql, Map<String, Object> paramMap) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramMap);
+        return update(preparedSqlAndValues.getPreparedSql(), preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
+    public CompletableFuture<Integer> namedUpdate(String sql, Object paramObject) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramObject);
+        return update(preparedSqlAndValues.getPreparedSql(), preparedSqlAndValues.getValues().toArray());
     }
 
     @Override
@@ -97,6 +196,18 @@ public class JDBCConnection implements SQLConnection {
     @Override
     public <T> CompletableFuture<T> insert(String sql, Object... params) {
         return jdbcHelper.async(connection, (conn, helper) -> helper.insert(connection, sql, params));
+    }
+
+    @Override
+    public <T> CompletableFuture<T> namedInsert(String sql, Map<String, Object> paramMap) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramMap);
+        return insert(preparedSqlAndValues.getPreparedSql(), preparedSqlAndValues.getValues().toArray());
+    }
+
+    @Override
+    public <T> CompletableFuture<T> namedInsert(String sql, Object paramObject) {
+        PreparedSqlAndValues preparedSqlAndValues = getPreparedSqlAndValues(sql, paramObject);
+        return insert(preparedSqlAndValues.getPreparedSql(), preparedSqlAndValues.getValues().toArray());
     }
 
     @Override

@@ -28,9 +28,6 @@ public class DataGenerator {
 
 		List<ByteBuffer> list = new LinkedList<>();
 
-		if (streamId < 0)
-			throw new IllegalArgumentException("Invalid stream id: " + streamId);
-
 		int dataLength = data.remaining();
 		int maxFrameSize = headerGenerator.getMaxFrameSize();
 		int length = Math.min(dataLength, Math.min(maxFrameSize, maxLength));
@@ -45,7 +42,7 @@ public class DataGenerator {
 			data.limit(limit);
 			generateFrame(streamId, slice, false, list);
 		}
-		return new Pair<>(length, list);
+		return new Pair<>(length + Frame.HEADER_LENGTH, list);
 	}
 
 	private void generateFrame(int streamId, ByteBuffer data, boolean last, List<ByteBuffer> list) {

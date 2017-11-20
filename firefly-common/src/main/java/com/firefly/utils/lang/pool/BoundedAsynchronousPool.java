@@ -2,8 +2,11 @@ package com.firefly.utils.lang.pool;
 
 import com.firefly.utils.concurrent.Atomics;
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.concurrent.ReentrantLocker;
 import com.firefly.utils.exception.CommonRuntimeException;
+import com.firefly.utils.function.Action0;
 import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.lang.LeakDetector;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,32 +16,41 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements AsynchronousPool<T> {
 
-    private int maxSize;
-    private AtomicInteger createdObjectSize = new AtomicInteger(0);
-    private long timeout = 5000L;
-    private BlockingQueue<PooledObject<T>> queue;
-    private ExecutorService service;
-    private ObjectFactory<T> objectFactory;
-    private Validator<T> validator;
-    private Dispose<T> dispose;
+    public static final int defaultPoolServiceThreadNumber = Integer.getInteger("com.firefly.utils.lang.pool.asynchronous.number", Runtime.getRuntime().availableProcessors());
+
+    protected final int maxSize;
+    protected final AtomicInteger createdObjectSize = new AtomicInteger(0);
+    protected final long timeout;
+    protected final BlockingQueue<PooledObject<T>> queue;
+    protected final ExecutorService service;
+    protected final ObjectFactory<T> objectFactory;
+    protected final Validator<T> validator;
+    protected final Dispose<T> dispose;
+    protected final LeakDetector<PooledObject<T>> leakDetector;
+    protected final ReentrantLocker locker = new ReentrantLocker();
 
     public BoundedAsynchronousPool(ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
         this(32, objectFactory, validator, dispose);
     }
 
     public BoundedAsynchronousPool(int maxSize, ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
-        this(maxSize, 5000L, objectFactory, validator, dispose);
+        this(maxSize, 5000L, objectFactory, validator, dispose, () -> {
+        });
     }
 
     public BoundedAsynchronousPool(int maxSize, long timeout,
-                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
+                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
+                                   Action0 noLeakCallback) {
         this(maxSize, timeout,
-                Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "firefly bounded asynchronous pool")),
-                objectFactory, validator, dispose);
+                Executors.newFixedThreadPool(defaultPoolServiceThreadNumber, r -> new Thread(r, "firefly bounded asynchronous pool")),
+                objectFactory, validator, dispose,
+                new LeakDetector<>(noLeakCallback));
     }
 
-    public BoundedAsynchronousPool(int maxSize, long timeout, ExecutorService service,
-                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose) {
+    public BoundedAsynchronousPool(int maxSize, long timeout,
+                                   ExecutorService service,
+                                   ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
+                                   LeakDetector<PooledObject<T>> leakDetector) {
         this.maxSize = maxSize;
         this.timeout = timeout;
         this.service = service;
@@ -46,94 +58,100 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
         this.validator = validator;
         this.dispose = dispose;
         this.queue = new ArrayBlockingQueue<>(maxSize);
+        this.leakDetector = leakDetector;
         start();
     }
 
-    private Promise.Completable<PooledObject<T>> createObject() {
-        Promise.Completable<PooledObject<T>> r = new Promise.Completable<>();
-        createObject(r);
-        return r;
+    protected void createObject(Promise.Completable<PooledObject<T>> completable) {
+        try {
+            Atomics.getAndIncrement(createdObjectSize, maxSize);
+            CompletableFuture<PooledObject<T>> tmp = objectFactory.createNew(this);
+            tmp.thenAccept(completable::succeeded).exceptionally(e0 -> {
+                Atomics.getAndDecrement(createdObjectSize, 0);
+                completable.failed(e0);
+                return null;
+            });
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            Atomics.getAndDecrement(createdObjectSize, 0);
+        }
     }
 
-    private void createObject(Promise.Completable<PooledObject<T>> completable) {
-        Atomics.getAndIncrement(createdObjectSize, maxSize);
-        Promise.Completable<PooledObject<T>> tmp = objectFactory.createNew();
-        tmp.thenAccept(completable::succeeded)
-           .exceptionally(e0 -> {
-               Atomics.getAndDecrement(createdObjectSize, 0);
-               completable.failed(e0);
-               return null;
-           });
-    }
-
-    private void destroyObject(PooledObject<T> t) {
+    protected void destroyObject(PooledObject<T> pooledObject) {
         Atomics.getAndDecrement(createdObjectSize, 0);
-        dispose.destroy(t);
+        try {
+            dispose.destroy(pooledObject);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
     }
 
     @Override
-    public Promise.Completable<PooledObject<T>> take() {
-        PooledObject<T> t = get();
-        if (t != null) {
-            if (validator.isValid(t)) {
-                Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
-                completable.succeeded(t);
-                return completable;
-            } else {
-                destroyObject(t);
-                return createObject();
-            }
+    public CompletableFuture<PooledObject<T>> take() {
+        Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
+        PooledObject<T> pooledObject = queue.poll();
+        if (pooledObject != null) {
+            checkObjectFromPool(pooledObject, completable);
+            return completable;
         } else { // the queue is empty
-            int availableSize = maxSize - getCreatedObjectSize();
-            if (availableSize > 0) { // the pool is not full
-                return createObject();
-            } else {
-                Promise.Completable<PooledObject<T>> completable = new Promise.Completable<>();
-                service.execute(() -> {
-                    try {
-                        PooledObject<T> r = queue.poll(timeout, TimeUnit.MILLISECONDS);
-                        if (r != null) {
-                            if (r.prepareTake()) {
-                                if (validator.isValid(r)) {
-                                    completable.succeeded(r);
-                                } else {
-                                    destroyObject(r);
-                                    createObject(completable);
-                                }
+            return locker.lock(() -> {
+                int availableSize = maxSize - getCreatedObjectSize();
+                if (availableSize > 0) {
+                    createObject(completable);
+                    return completable;
+                } else {
+                    service.execute(() -> {
+                        try {
+                            PooledObject<T> object = queue.poll(timeout, TimeUnit.MILLISECONDS);
+                            if (object != null) {
+                                checkObjectFromPool(object, completable);
                             } else {
-                                completable.failed(new CommonRuntimeException("the pooled object has been used"));
+                                completable.failed(new TimeoutException("take pooled object timeout"));
                             }
-                        } else {
-                            completable.failed(new TimeoutException("take pooled object timeout"));
+                        } catch (InterruptedException e) {
+                            completable.failed(e);
                         }
-                    } catch (InterruptedException e) {
-                        completable.failed(e);
-                    }
-                });
-                return completable;
+                    });
+                    return completable;
+                }
+            });
+        }
+    }
+
+    private void checkObjectFromPool(PooledObject<T> pooledObject, Promise.Completable<PooledObject<T>> completable) {
+        if (pooledObject.prepareTake()) {
+            if (validator.isValid(pooledObject)) {
+                pooledObject.setPhantomReference(getLeakDetector().register(pooledObject, pooledObject.getLeakCallback()));
+                completable.succeeded(pooledObject);
+            } else {
+                destroyObject(pooledObject);
+                createObject(completable);
             }
+        } else {
+            completable.failed(new CommonRuntimeException("the pooled object has been used"));
         }
     }
 
     @Override
-    public void release(PooledObject<T> t) {
-        if (t == null) {
+    public void release(PooledObject<T> pooledObject) {
+        if (pooledObject == null) {
             return;
         }
-        if (!t.prepareRelease()) { // Object is released
+        if (!pooledObject.prepareRelease()) { // Object is released
             return;
         }
-        boolean success = queue.offer(t);
-        if (!success) {
+
+        if (queue.offer(pooledObject)) {
+            pooledObject.clear();
+        } else {
             // the queue is full
             service.execute(() -> {
                 try {
-                    boolean success0 = queue.offer(t, timeout, TimeUnit.MILLISECONDS);
-                    if (!success0) {
-                        destroyObject(t);
+                    if (!queue.offer(pooledObject, timeout, TimeUnit.MILLISECONDS)) {
+                        destroyObject(pooledObject);
                     }
                 } catch (InterruptedException e) {
-                    destroyObject(t);
+                    destroyObject(pooledObject);
                 }
             });
         }
@@ -141,10 +159,10 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     @Override
     public PooledObject<T> get() {
-        PooledObject<T> t = queue.poll();
-        if (t != null) {
-            return t.prepareTake() ? t : null;
-        } else {
+        try {
+            return take().get();
+        } catch (InterruptedException | ExecutionException e) {
+            System.err.println(e.getMessage());
             return null;
         }
     }
@@ -165,8 +183,13 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     }
 
     @Override
-    public boolean isValid(PooledObject<T> t) {
-        return validator.isValid(t);
+    public boolean isValid(PooledObject<T> pooledObject) {
+        return validator.isValid(pooledObject);
+    }
+
+    @Override
+    public LeakDetector<PooledObject<T>> getLeakDetector() {
+        return leakDetector;
     }
 
     @Override
@@ -176,16 +199,15 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     @Override
     protected void destroy() {
         try {
-            PooledObject<T> t;
-            while ((t = queue.poll()) != null) {
-                t.prepareTake();
-                destroyObject(t);
+            PooledObject<T> pooledObject;
+            while ((pooledObject = queue.poll()) != null) {
+                pooledObject.prepareTake();
+                destroyObject(pooledObject);
             }
+            leakDetector.stop();
+            service.shutdown();
         } catch (Exception e) {
             System.err.println(e.getMessage());
-        }
-        if (service != null) {
-            service.shutdown();
         }
     }
 }
