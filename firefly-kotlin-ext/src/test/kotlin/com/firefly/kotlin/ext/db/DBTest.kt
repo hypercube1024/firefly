@@ -42,9 +42,10 @@ class DBTest {
     @Before
     fun before() = runBlocking {
         exec {
+            it.asyncUpdate("DROP SCHEMA IF EXISTS test")
             it.asyncUpdate("CREATE SCHEMA IF NOT EXISTS test")
             it.asyncUpdate("set mode MySQL")
-            val table = "CREATE TABLE `test`.`user`(" +
+            val table = "CREATE TABLE IF NOT EXISTS `test`.`user`(" +
                     "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
                     "pt_name VARCHAR(255), " +
                     "pt_password VARCHAR(255), " +
