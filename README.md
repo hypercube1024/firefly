@@ -92,7 +92,7 @@ public class HelloHTTPServer {
 Create a HTTP client (Java version)
 ```java
 public class HelloHTTPClient {
-    public static void main(String[] args){
+    public static void main(String[] args) {
         $.httpClient().get("http://localhost:8080/").submit()
          .thenAccept(res -> System.out.println(res.getStringBody()));
     }
@@ -128,7 +128,7 @@ fun main(args: Array<String>) {
 
 Create a HTTP client (Kotlin coroutine asynchronous client)
 ```kotlin
-fun main(args: Array<String>): Unit = runBlocking {
+fun main(args: Array<String>) = runBlocking {
     val msg = firefly.httpClient().get("http://localhost:8080").asyncSubmit().stringBody
     println(msg)
 }
@@ -137,6 +137,7 @@ fun main(args: Array<String>): Unit = runBlocking {
 More detailed information, please refer to the 
 * [HTTP server/client document](http://www.fireflysource.com/docs/http-server-and-client.html)
 * [TCP server/client document](http://www.fireflysource.com/docs/tcp-server-and-client.html)
+* [SSL/TLS configuration document](http://www.fireflysource.com/docs/ssl-tls-configuration.html)
 * [Inversion of control document](http://www.fireflysource.com/docs/ioc-framework.html)
 * [Database access document](http://www.fireflysource.com/docs/database-access.html)
 * [Log document](http://www.fireflysource.com/docs/log.html)

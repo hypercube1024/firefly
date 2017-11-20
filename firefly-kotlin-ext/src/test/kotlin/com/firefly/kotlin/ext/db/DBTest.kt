@@ -218,16 +218,14 @@ class DBTest {
         }
         assertEquals(size + 1L, newUserId)
 
+        val namedSQL = "insert into `test`.`user`(pt_name, pt_password) values(:name, :password)"
         val newUserId2 = exec {
-            it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
-                    mapOf("name" to "hello user",
-                            "password" to "hello user pwd"))
+            it.asyncNamedInsert<Long>(namedSQL, mapOf("name" to "hello user", "password" to "hello user pwd"))
         }
         assertEquals(size + 2L, newUserId2)
 
         val newUserId3 = exec {
-            it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
-                    User(null, "hello user", "hello user pwd", null))
+            it.asyncNamedInsert<Long>(namedSQL, User(null, "hello user", "hello user pwd", null))
         }
         assertEquals(size + 3L, newUserId3)
     }
