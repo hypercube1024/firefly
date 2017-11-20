@@ -110,7 +110,7 @@ public class HelloHTTPServer {
 Create an HTTP client (Java version)
 ```java
 public class HelloHTTPClient {
-    public static void main(String[] args){
+    public static void main(String[] args) {
         $.httpClient().get("http://localhost:8080/").submit()
          .thenAccept(res -> System.out.println(res.getStringBody()));
     }
@@ -146,7 +146,7 @@ fun main(args: Array<String>) {
 
 Create an HTTP client (Kotlin coroutine asynchronous client)
 ```kotlin
-fun main(args: Array<String>): Unit = runBlocking {
+fun main(args: Array<String>) = runBlocking {
     val msg = firefly.httpClient().get("http://localhost:8080").asyncSubmit().stringBody
     println(msg)
 }
@@ -155,7 +155,7 @@ fun main(args: Array<String>): Unit = runBlocking {
 More detailed information, please refer to the
 * [HTTP server/client document]({{ site.url }}/docs/http-server-and-client.html)
 * [TCP server/client document]({{ site.url }}/docs/tcp-server-and-client.html)
-* [SSL/TLS configuration]({{ site.url }}/docs/ssl-tls-configuration.html)
+* [SSL/TLS configuration document]({{ site.url }}/docs/ssl-tls-configuration.html)
 * [Inversion of control document]({{ site.url }}/docs/ioc-framework.html)
 * [Database access document]({{ site.url }}/docs/database-access.html)
 * [Log document]({{ site.url }}/docs/log.html)

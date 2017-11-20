@@ -298,25 +298,23 @@ fun testQueryForMap() = runBlocking {
 To execute a prepared statement insert. For example:
 ```kotlin
 @Test
-fun testInsert() = runBlocking {
-    val newUserId = exec {
-        it.asyncInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(?,?)",
-                "hello user", "hello user pwd")
-    }
-    assertEquals(size + 1L, newUserId)
+public void testInsert() {
+    String sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)";
+    Mono<Long> newUserId = exec(c -> c.insert(sql, "hello user", "hello user pwd"));
+    StepVerifier.create(newUserId).expectNext(size + 1L).verifyComplete();
 
-    val newUserId2 = exec {
-        it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
-                mapOf("name" to "hello user",
-                        "password" to "hello user pwd"))
-    }
-    assertEquals(size + 2L, newUserId2)
+    String namedSql = "insert into `test`.`user`(pt_name, pt_password) values(:name, :password)";
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put("name", "hello user1");
+    paramMap.put("password", "hello user pwd1");
+    newUserId = exec(c -> c.namedInsert(namedSql, paramMap));
+    StepVerifier.create(newUserId).expectNext(size + 2L).verifyComplete();
 
-    val newUserId3 = exec {
-        it.asyncNamedInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(:name, :password)",
-                User(null, "hello user", "hello user pwd", null))
-    }
-    assertEquals(size + 3L, newUserId3)
+    User user = new User();
+    user.setName("hello user2");
+    user.setPassword("hello user pwd2");
+    newUserId = exec(c -> c.namedInsert(namedSql, user));
+    StepVerifier.create(newUserId).expectNext(size + 3L).verifyComplete();
 }
 ```
 
