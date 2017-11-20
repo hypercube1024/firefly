@@ -5,6 +5,7 @@ layout: document
 title: HTTP server and client
 
 ---
+
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [Basic concepts](#basic-concepts)
@@ -14,12 +15,11 @@ title: HTTP server and client
 	- [Routing Context](#routing-context)
 - [Capturing path parameters](#capturing-path-parameters)
 - [Routing by exact path](#routing-by-exact-path)
-- [Routing by paths with wildcard](#routing-by-paths-with-wildcard)
-- [Routing with regular expressions](#routing-with-regular-expressions)
+- [Routing by wildcard](#routing-by-wildcard)
+- [Routing by regular expressions](#routing-by-regular-expressions)
 - [Routing by HTTP method](#routing-by-http-method)
 - [Routing based on MIME type of request](#routing-based-on-mime-type-of-request)
 - [Routing based on MIME types acceptable by the client](#routing-based-on-mime-types-acceptable-by-the-client)
-- [Combining routing criteria](#combining-routing-criteria)
 - [Error handling](#error-handling)
 	- [Custom error handling](#custom-error-handling)
 - [Handling sessions](#handling-sessions)
@@ -138,18 +138,29 @@ It’s possible to match paths using placeholders for parameters. The placeholde
 ```java
 public class CapturingPathParameterDemo {
     public static void main(String[] args) {
-        $.httpServer().router().get("/good/:type/:id")
+        String host = "localhost";
+        int port = 8081;
+
+        $.httpServer().router().get("/product/:id")
          .handler(ctx -> {
-            String type = ctx.getRouterParameter("type");
-            String id = ctx.getRouterParameter("id");
-            ctx.end("get good type: " + type + ", id: " + id);
-         }).listen("localhost", 8080);
+             String id = ctx.getRouterParameter("id");
+             ctx.end($.string.replace("Get the product {}", id));
+         }).listen(host, port);
+
+        $.httpClient()
+         .get($.string.replace("http://{}:{}/product/20", host, port))
+         .submit()
+         .thenAccept(resp -> {
+             System.out.println(resp.getStatus());
+             System.out.println(resp.getStringBody());
+         });
     }
 }
 ```
-In the above example, if a GET request is made to the path: "http://localhost:8080/good/fruit/3" then the type will receive the value "fruit" and id will receive the value "3".
+Run it. The console shows:
 ```
-get good type: fruit, id: 3
+200
+Get the product 20
 ```
 
 # Routing by exact path
@@ -174,217 +185,212 @@ pliers: 1
 screwdriver: 1
 ```
 
-# Routing by paths with wildcard
-Often you want to route all requests that accord with a pattern. You could use a regex to do this, but a simply way is to use an asterisk wildcard *
-
+# Routing by wildcard
+Often you want to route all requests that accord with a pattern. You could use a regex to do this, but a simply way is to use an asterisk wildcard `*`. For example:
 ```java
 public class RoutingByPathsWithWildcardDemo {
     public static void main(String[] args) {
+        String host = "localhost";
+        int port = 8081;
+
         $.httpServer()
          .router().get("/product*")
-         .handler(ctx -> ctx.end("current path is " + ctx.getURI().getPath()))
-         .router().get("/*items*")
-         .handler(ctx -> ctx.end("current path is " + ctx.getURI().getPath()))
-         .listen("localhost", 8080);
+         .handler(ctx -> {
+             String matched = ctx.getWildcardMatchedResult(0);
+             ctx.write("Intercept the product: " + matched + "\r\n").next();
+         })
+         .router().get("/product/:type")
+         .handler(ctx -> {
+             String type = ctx.getPathParameter("type");
+             ctx.end("List " + type + "\r\n");
+         })
+         .listen(host, port);
+
+        $.httpClient().get($.string.replace("http://{}:{}/product/apple", host, port))
+         .submit()
+         .thenAccept(resp -> {
+             System.out.println(resp.getStatus());
+             System.out.println(resp.getStringBody());
+         });
     }
 }
 ```
-
-For example "http://localhost:8080/product/apple" and "http://localhost:8080/good/my-items" would both match.
+Run it. The console shows:
 ```
-current path is /product/apple
-
-current path is /good/my-items
+200
+Intercept the product: /apple
+List apple
 ```
+We use the `getWildcardMatchedResult` function to get the matched part and the index starts from 0.
 
-# Routing with regular expressions
-Regular expressions can also be used to match URI paths in routes.
+# Routing by regular expressions
+Regular expressions can also be used to match URI paths in routes. For example:
 ```java
 public class RoutingWithRegexDemo {
     public static void main(String[] args) {
-        $.httpServer().router()
-         .method(HttpMethod.GET).pathRegex("/hello(\\d*)")
+        String host = "localhost";
+        int port = 8081;
+
+        $.httpServer()
+         .router().method(HttpMethod.GET).pathRegex("/product(.*)")
          .handler(ctx -> {
-             String group1 = ctx.getRouterParameter("group1");
-             ctx.write("match path: " + ctx.getURI().getPath()).write("\r\n")
-                .end("capture group1: " + group1);
-         }).listen("localhost", 8080);
+             String matched = ctx.getRegexGroup(1);
+             ctx.write("Intercept the product: " + matched + "\r\n").next();
+         })
+         .router().get("/product/:type")
+         .handler(ctx -> {
+             String type = ctx.getPathParameter("type");
+             ctx.end("List " + type + "\r\n");
+         })
+         .listen(host, port);
+
+        $.httpClient().get($.string.replace("http://{}:{}/product/orange", host, port))
+         .submit()
+         .thenAccept(resp -> {
+             System.out.println(resp.getStatus());
+             System.out.println(resp.getStringBody());
+         });
     }
 }
 ```
-
-Visit "http://localhost:8080/hello55", the server response:
-
+Run it. The console shows:
 ```
-match path: /hello55
-capture group1: 55
+200
+Intercept the product: /orange
+List orange
 ```
-In the above example, we can get the values of regex capture group, use method **ctx.getRouterParameter** and the parameter format is "group{index}".
+We use the `getRegexGroup` function to get the matched group and the index starts from 1.
 
 
 # Routing by HTTP method
-By the default, a route will match all HTTP methods if you do not call **router.method**, **router.get**, **router.post**, **router.put** or **router.delete**.
-
+By the default, a route will match all HTTP methods if you do not call **router.method**, **router.get**, **router.post**, **router.put** or **router.delete**. For example:
 ```java
-public class RoutingByAllHTTPmethodDemo {
+public class RoutingByMethods {
     public static void main(String[] args) {
-        Phaser phaser = new Phaser(3);
+        String host = "localhost";
+        int port = 8081;
 
-        HTTP2ServerBuilder server = $.httpServer();
-        server.router().path("/all-methods")
-              .handler(ctx -> ctx.end("the HTTP method: " + ctx.getMethod()))
-              .listen("localhost", 8080);
+        $.httpServer()
+         .router().get("/product/:id")
+         .handler(ctx -> {
+             String id = ctx.getPathParameter("id");
+             ctx.end($.string.replace("Get the product {}", id));
+         })
+         .router().post("/product")
+         .handler(ctx -> {
+             String product = ctx.getStringBody();
+             ctx.end($.string.replace("Create a new product: {}", product));
+         })
+         .router().put("/product/:id")
+         .handler(ctx -> {
+             String id = ctx.getPathParameter("id");
+             String product = ctx.getStringBody();
+             ctx.end($.string.replace("Update the product {}: {}", id, product));
+         })
+         .router().delete("/product/:id")
+         .handler(ctx -> {
+             String id = ctx.getPathParameter("id");
+             ctx.end($.string.replace("Delete the product {}", id));
+         })
+         .listen(host, port);
 
-        $.httpClient().post("http://localhost:8080/all-methods").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             phaser.arrive();
-         });
+        $.httpClient()
+         .get($.string.replace("http://{}:{}/product/20", host, port))
+         .submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
 
-        $.httpClient().put("http://localhost:8080/all-methods").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             phaser.arrive();
-         });
+        $.httpClient()
+         .post($.string.replace("http://{}:{}/product", host, port))
+         .body("Car 20. The color is red.")
+         .submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
 
-        phaser.arriveAndAwaitAdvance();
-        server.stop();
-        $.httpClient().stop();
+        $.httpClient()
+         .put($.string.replace("http://{}:{}/product/20", host, port))
+         .body("Change the color from red to black.")
+         .submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
+
+        $.httpClient()
+         .delete($.string.replace("http://{}:{}/product/20", host, port))
+         .submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
     }
 }
 ```
-
-In this example, we only call **router.path** to bind path "/all-methods", it match all HTTP methods, run it result:
-
+Run it. The console shows:
 ```
-the HTTP method: PUT
-the HTTP method: POST
+Get the product 20.
+Create a new product: Car 20. The color is red.
+Update the product 20: Change the color from red to black.
+Delete the product 20
 ```
+In the above example, we build the RESTful APIs. The URL `/product/:id` represents resources. The HTTP verbs (Such as, `GET`, `POST`, `PUT`, `DELETE` and so on) represent the operation of resources (Such as get, create, update and delete).  
 
-Calling **router.method** specifies an HTTP method to a router, like this:
-
-```java
-public class RoutingBySpecifiedHTTPmethodDemo {
-    public static void main(String[] args) {
-        Phaser phaser = new Phaser(4);
-
-        HTTP2ServerBuilder server = $.httpServer();
-        server.router().method(HttpMethod.GET).path("/get-or-post")
-              .handler(ctx -> ctx.end("the HTTP method: " + ctx.getMethod()))
-              .router().post("/get-or-post")
-              .handler(ctx -> ctx.end("the HTTP method: " + ctx.getMethod()))
-              .listen("localhost", 8080);
-
-        $.httpClient().get("http://localhost:8080/get-or-post").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             phaser.arrive();
-         });
-
-        $.httpClient().post("http://localhost:8080/get-or-post").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             phaser.arrive();
-         });
-
-        $.httpClient().put("http://localhost:8080/get-or-post").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStatus() + " " + res.getReason());
-             phaser.arrive();
-         });
-
-        phaser.arriveAndAwaitAdvance();
-        server.stop();
-        $.httpClient().stop();
-    }
-}
-```
-The shortcut method **router.post("/get-or-post")** (or get, put, delete) equals **router.method("POST").path("/get-or-post")**, run it result:
-
-```
-404 Not Found
-the HTTP method: POST
-the HTTP method: GET
-```
-
-In the above example, the path "http://localhost:8080/get-or-post" only receives GET or POST method. The PUT request is not matched.
+If you want to let a lot of HTTP methods match a router, just use the **router.methods** instead of **router.method**. Its type is `List`.
 
 # Routing based on MIME type of request
 You can specify that a route will match against matching request MIME types using **router.consumes**.
 
 In this case, the request will contain a content-type header specifying the MIME type of the request body. This will be matched against the value specified in consumes.
 
-Basically, **router.consumes** is describing which MIME types the handler can consume.
-
-Matching can be done on exact MIME type matches:
-
+Basically, **router.consumes** is describing which MIME types the handler can consume. For example:
 ```java
-public class RoutingByContentTypeDemo {
+public class RoutingByConsumes {
 
-    public static class Product {
-        public int id;
+    public static class Car {
+        public Long id;
         public String name;
+        public String color;
 
         @Override
         public String toString() {
-            return "id[" + id + "], name[" + name + "]";
+            return "Car{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", color='" + color + '\'' +
+                    '}';
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        Phaser phaser = new Phaser(2);
+    public static void main(String[] args) {
+        String host = "localhost";
+        int port = 8081;
 
-        HTTP2ServerBuilder server = $.httpServer();
-        server.router().put("/product/:id").consumes("application/json")
-              .handler(ctx -> {
-                  Product product = ctx.getJsonBody(Product.class);
-                  ctx.end("update product: " + product + " success");
-              })
-              .router().post("/product").consumes("*/json")
-              .handler(ctx -> {
-                  Product product = ctx.getJsonBody(Product.class);
-                  ctx.write("content type: " + ctx.getRouterParameter("param0"))
-                     .write("\r\n")
-                     .end("create product: " + product + " success");
-              }).listen("localhost", 8080);
+        $.httpServer()
+         .router().put("/product/:id").consumes("*/json")
+         .handler(ctx -> {
+             String id = ctx.getPathParameter("id");
+             String type = ctx.getWildcardMatchedResult(0);
+             Car car = ctx.getJsonBody(Car.class);
+             ctx.end($.string.replace("Update resource {}: {}. The content type is {}/json", id, car, type));
+         })
+         .listen(host, port);
 
-        Product product = new Product();
-        product.name = "new book";
-        Completable<SimpleResponse> c = $.httpClient().post("http://localhost:8080/product")
-                                         .jsonBody(product)
-                                         .submit();
-        System.out.println(c.get().getStringBody());
+        Car car = new Car();
+        car.id = 20L;
+        car.name = "My car";
+        car.color = "black";
 
-        product = new Product();
-        product.id = 1;
-        product.name = "old book";
-        $.httpClient().put("http://localhost:8080/product/1").jsonBody(product).submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             phaser.arrive();
-         });
-
-        phaser.arriveAndAwaitAdvance();
-        server.stop();
-        $.httpClient().stop();
+        $.httpClient().put($.string.replace("http://{}:{}/product/20", host, port))
+         .jsonBody(car)
+         .submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
     }
 }
 ```
-
-The router specifies content-type "application/json", that means the server can only handle JSON content. Also, you use the wildcard in the MIME type, run it result:
-
+Run it. The console shows:
 ```
-content type: application
-create product: id[0], name[new book] success
-update product: id[1], name[old book] success
+Update resource 20: Car{id=20, name='My car', color='black'}. The content type is application/json
 ```
+In the above example, we use the wildcard `*` to match the content type of the HTTP request. We can also use the exact MIME type to match the request.  
 
 # Routing based on MIME types acceptable by the client
 The HTTP Accept header is used to signify which MIME types of the response are acceptable to the client.
 
 An accept header can have multiple MIME types separated by ‘,’.
 
-MIME types can also have a q value appended to them* which signifies a weighting to apply if more than one response MIME type is available matching the HTTP Accept header. The q value is a number between 0 and 1.0. If omitted it defaults to 1.0.
+MIME types can also have a q value appended to them which signifies a weighting to apply if more than one response MIME type is available matching the HTTP Accept header. The q value is a number between 0 and 1.0. If omitted it defaults to 1.0.
 
 For example, the following accept header signifies the client will accept a MIME type of only text/plain:
 ```
@@ -405,104 +411,52 @@ By using **router.produces** you define which MIME type(s) the route produces, e
 ```java
 public class RoutingByAcceptDemo {
 
-    public static class Apple {
-        public String color;
-        public double weight;
-
-        @Override
-        public String toString() {
-            return "color[" + color + "], weight[" + weight + "]";
-        }
-    }
-
     public static void main(String[] args) {
-        Phaser phaser = new Phaser(2);
+        String host = "localhost";
+        int port = 8081;
 
-        HTTP2ServerBuilder server = $.httpServer();
-        server.router().get("/apple/:id").produces("application/json")
-              .handler(ctx -> {
-                  Apple apple = new Apple();
-                  apple.weight = 1.2;
-                  apple.color = "red";
-                  ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.asString())
-                     .end($.json.toJson(apple));
-              }).listen("localhost", 8080);
+        $.httpServer()
+         .router().put("/product/:id").consumes("*/json").produces("text/plain")
+         .handler(ctx -> {
+             String id = ctx.getPathParameter("id");
+             String type = ctx.getWildcardMatchedResult(0);
+             Car car = ctx.getJsonBody(Car.class);
+             ctx.end($.string.replace("Update resource {}: {}. The content type is {}/json", id, car, type));
+         })
+         .router().put("/product/:id").consumes("*/json").produces("application/json")
+         .handler(ctx -> {
+             Car car = ctx.getJsonBody(Car.class);
+             ctx.writeJson(car).end();
+         })
+         .listen(host, port);
 
-        $.httpClient().get("http://localhost:8080/apple/1")
-         .put(HttpHeader.ACCEPT, "text/plain; q=0.9, application/json").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getJsonBody(Apple.class));
-             phaser.arrive();
-         });
+        Car car = new Car();
+        car.id = 20L;
+        car.name = "My car";
+        car.color = "black";
 
-        phaser.arriveAndAwaitAdvance();
-        server.stop();
-        $.httpClient().stop();
+        $.httpClient().put($.string.replace("http://{}:{}/product/20", host, port))
+         .put(HttpHeader.ACCEPT, "text/plain, application/json;q=0.9, */*;q=0.8")
+         .jsonBody(car)
+         .submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
+
+        $.httpClient().put($.string.replace("http://{}:{}/product/20", host, port))
+         .put(HttpHeader.ACCEPT, "application/json, text/plain, */*;q=0.8")
+         .jsonBody(car)
+         .submit()
+         .thenAccept(resp -> System.out.println(resp.getStringBody()));
     }
 }
 ```
-
-In this case, the route will match with any request with an HTTP Accept header that matches application/json.
-
-Here are some examples of accept headers that will match:
+Run it. The console shows:
 ```
-Accept: application/json  
-Accept: application/*  
-Accept: application/json, text/html  
-Accept: application/json;q=0.7, text/html;q=0.8, text/plain  
+Update resource 20: Car{id=20, name='My car', color='black'}. The content type is application/json
+{"color":"black","id":20,"name":"My car"}
 ```
+In the above example, the first request, the `text/plain` weight(1.0) is higher than `application/json`(0.9), so this request matches the first router that responds the text format.   
 
-# Combining routing criteria
-You can combine all the above routing criteria in many different ways, for example:
-
-```java
-public class CombiningRoutingCriteriaDemo {
-    public static class Task {
-        public String name;
-        public Date date;
-
-        public String toString() {
-            return "name:[" + name + "], date[" + date + "]";
-        }
-    }
-
-    public static void main(String[] args) {
-        Phaser phaser = new Phaser(2);
-
-        HTTP2ServerBuilder server = $.httpServer();
-        server.router().post("/task/create")
-              .produces("application/json").consumes("*/json")
-              .handler(ctx -> {
-                  Map<String, Object> ret = new HashMap<>();
-                  ret.put("msg", "create task, " + ctx.getJsonBody(Task.class) + " success ");
-                  ret.put("code", 0);
-                  ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.asString())
-                     .end($.json.toJson(ret));
-              }).listen("localhost", 8080);
-
-        Task task = new Task();
-        task.name = "TODO today";
-        task.date = new Date();
-        $.httpClient().post("http://localhost:8080/task/create")
-         .put(HttpHeader.ACCEPT, "text/plain; q=0.9, application/json")
-         .jsonBody(task).submit()
-         .thenAccept(res -> {
-             System.out.println(res.getJsonObjectBody());
-             phaser.arrive();
-         });
-
-        phaser.arriveAndAwaitAdvance();
-        server.stop();
-        $.httpClient().stop();
-    }
-}
-```
-
-The **httpclient.jsonBody** puts the "Content-Type: application/json" header implicitly, run it result:
-
-```text
-{msg=create task, name:[TODO today], date[Fri Feb 24 16:59:33 CST 2017] success , code=0}
-```  
+The second request, the `application/json` weight equals the `text/plain`, but `application/json` is in front of `text/plain`, so the `application/json` priority is higher than `text/plain`. It matches the second router that responds the JSON format.
 
 # Error handling
 We provide default failure handler **com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler**  to handle some errors.
