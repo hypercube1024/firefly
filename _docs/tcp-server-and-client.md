@@ -1,7 +1,6 @@
 ---
 
 category : docs
-layout: document
 title: TCP server and client
 
 ---

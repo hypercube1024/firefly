@@ -1,11 +1,11 @@
 ---
 layout: post
-title: Blog
 ---
 
 {% for post in paginator.posts %}
     <div>
       <h3>{{ post.title }}</h3>
+      <p class="text-muted"> {{ post.date | date_to_string }}, {{ post.author }}</p>
       <p>{{ post.excerpt }}</p>
       <div><a href="{{ post.url }}">View all</a></div>
     </div>
