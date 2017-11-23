@@ -1,12 +1,38 @@
-plugins: [jekyll-paginate]
+sass:
+  style: compressed
+
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
 
 source:      .
 destination: ./_site
-plugins_dir:     ./_plugins
-layouts_dir:     ./_layouts
-paginate:	15
+plugins_dir: ./_plugins
+layouts_dir: ./_layouts
+paginate:	20
 paginate_path: "blog/page:num/"
 
+defaults:
+  -
+    scope:
+      path: "_docs"
+      type: "docs"
+    values:
+      layout: "document"
+  -
+    scope:
+      path: "_posts"
+      type: "posts"
+    values:
+      layout: "post"
+
 collections:
+  posts:
+    output: true
   docs:
     output: true
+
+url: http://www.fireflysource.com
+
+exclude:
+  - .gitignore
