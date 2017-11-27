@@ -3,7 +3,7 @@ package test.codec.websocket;
 import com.firefly.codec.websocket.encode.Generator;
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.frame.WebSocketFrame;
-import com.firefly.codec.websocket.stream.WebSocketPolicy;
+import com.firefly.codec.websocket.model.WebSocketPolicy;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

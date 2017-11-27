@@ -1,4 +1,4 @@
-package com.firefly.codec.websocket.utils;
+package test.codec.websocket.utils;
 
 import com.firefly.utils.io.BufferUtils;
 
