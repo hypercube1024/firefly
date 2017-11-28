@@ -19,7 +19,7 @@ public class ByteBufferArrayOutputEntry extends AbstractOutputEntry<ByteBuffer[]
 
     @Override
     public long remaining() {
-        return BufferUtils.remaining(Arrays.asList(data));
+        return BufferUtils.remaining(data);
     }
 
 }

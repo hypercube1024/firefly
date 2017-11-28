@@ -172,6 +172,7 @@ public class AsynchronousTcpSession implements Session {
             callback.succeeded();
             outputLock.lock();
             try {
+                // TODO merge ByteBuffer to ByteBuffer Array
                 OutputEntry<?> obj = outputBuffer.poll();
                 if (obj != null) {
                     _write(obj);

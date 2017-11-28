@@ -1139,6 +1139,14 @@ public class BufferUtils {
 
     }
 
+    public static long remaining(ByteBuffer[] byteBuffers) {
+        long count = 0;
+        for (ByteBuffer byteBuffer : byteBuffers) {
+            count += byteBuffer.remaining();
+        }
+        return count;
+    }
+
     public static long remaining(Collection<ByteBuffer> collection) {
         long count = 0;
         for (ByteBuffer byteBuffer : collection) {
