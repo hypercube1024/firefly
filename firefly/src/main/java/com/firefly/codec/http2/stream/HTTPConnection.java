@@ -18,6 +18,6 @@ public interface HTTPConnection extends Connection {
 
     HTTPConnection close(Action1<HTTPConnection> closedCallback);
 
-    HTTPConnection exception(Action2<HTTPConnection, Throwable> exception);
+    HTTPConnection exception(Action2<HTTPConnection, Throwable> exceptionCallback);
 
 }

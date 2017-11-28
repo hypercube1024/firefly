@@ -44,8 +44,8 @@ public class IOState {
         ABNORMAL
     }
 
-    public static interface ConnectionStateListener {
-        public void onConnectionStateChange(ConnectionState state);
+    public interface ConnectionStateListener {
+        void onConnectionStateChange(ConnectionState state);
     }
 
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
@@ -432,7 +432,7 @@ public class IOState {
     /**
      * The local endpoint has reached a write failure.
      * <p>
-     * A low level I/O failure, or even a jetty side EndPoint close (from idle timeout) are a few scenarios
+     * A low level I/O failure, or even a firefly side EndPoint close (from idle timeout) are a few scenarios
      *
      * @param t the throwable that caused the write failure
      */

@@ -105,7 +105,6 @@ public class PerMessageDeflateExtension extends CompressExtension {
             switch (key) {
                 case "client_max_window_bits":
                 case "server_max_window_bits": {
-                    // Not supported by Jetty
                     // Don't negotiate these parameters
                     break;
                 }

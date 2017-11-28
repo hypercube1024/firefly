@@ -145,7 +145,7 @@ public class Parser {
              * Technically, this test is in violation of RFC-6455, Section 5.1
              * http://tools.ietf.org/html/rfc6455#section-5.1
              * 
-             * But we can't trust the client at this point, so Jetty opts to close
+             * But we can't trust the client at this point, so firefly opts to close
              * the connection as a Protocol error.
              */
             if (!f.isMasked()) {
