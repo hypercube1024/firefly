@@ -8,7 +8,7 @@ import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.StatusCode;
 import com.firefly.codec.websocket.model.WebSocketBehavior;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import test.codec.websocket.utils.Hex;
 import com.firefly.utils.StringUtils;
 import org.junit.Assert;

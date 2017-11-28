@@ -5,7 +5,7 @@ import com.firefly.codec.websocket.encode.Generator;
 import com.firefly.codec.websocket.frame.TextFrame;
 import com.firefly.codec.websocket.frame.WebSocketFrame;
 import com.firefly.codec.websocket.model.OpCode;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;

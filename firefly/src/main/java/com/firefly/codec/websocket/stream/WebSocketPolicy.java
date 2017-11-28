@@ -1,6 +1,8 @@
-package com.firefly.codec.websocket.model;
+package com.firefly.codec.websocket.stream;
 
 import com.firefly.codec.websocket.exception.MessageTooLargeException;
+import com.firefly.codec.websocket.model.StatusCode;
+import com.firefly.codec.websocket.model.WebSocketBehavior;
 
 /**
  * Settings for WebSocket operations.

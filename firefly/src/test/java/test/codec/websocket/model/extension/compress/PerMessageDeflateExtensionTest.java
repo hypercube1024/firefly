@@ -6,7 +6,7 @@ import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.extension.compress.CompressExtension;
 import com.firefly.codec.websocket.model.extension.compress.PerMessageDeflateExtension;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
 import org.junit.Assert;

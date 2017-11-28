@@ -2,7 +2,7 @@ package com.firefly.codec.websocket.model.extension;
 
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.model.*;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -8,7 +8,7 @@ import com.firefly.codec.websocket.frame.TextFrame;
 import com.firefly.codec.websocket.frame.WebSocketFrame;
 import com.firefly.codec.websocket.model.*;
 import com.firefly.codec.websocket.model.extension.compress.DeflateFrameExtension;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.io.BufferUtils;

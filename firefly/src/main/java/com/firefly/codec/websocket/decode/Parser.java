@@ -7,7 +7,7 @@ import com.firefly.codec.websocket.frame.*;
 import com.firefly.codec.websocket.model.*;
 import com.firefly.codec.websocket.stream.payload.DeMaskProcessor;
 import com.firefly.codec.websocket.stream.payload.PayloadProcessor;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

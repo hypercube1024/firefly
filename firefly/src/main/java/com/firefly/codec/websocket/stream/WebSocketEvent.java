@@ -4,7 +4,6 @@ import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.IncomingFrames;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
 
 import java.io.IOException;
 import java.io.InputStream;

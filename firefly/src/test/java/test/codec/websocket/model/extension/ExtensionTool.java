@@ -8,7 +8,7 @@ import com.firefly.codec.websocket.model.*;
 import com.firefly.codec.websocket.model.extension.AbstractExtension;
 import com.firefly.codec.websocket.model.extension.ExtensionFactory;
 import com.firefly.codec.websocket.model.extension.WebSocketExtensionFactory;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.lang.TypeUtils;
 import org.junit.Assert;
 import test.codec.websocket.ByteBufferAssert;

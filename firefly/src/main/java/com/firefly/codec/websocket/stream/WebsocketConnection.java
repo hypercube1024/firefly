@@ -3,7 +3,6 @@ package com.firefly.codec.websocket.stream;
 import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.model.OutgoingFrames;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
 import com.firefly.net.Connection;
 import com.firefly.utils.function.Action1;
 

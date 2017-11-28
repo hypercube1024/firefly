@@ -1,6 +1,6 @@
 package test.codec.websocket.model.extension;
 
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;

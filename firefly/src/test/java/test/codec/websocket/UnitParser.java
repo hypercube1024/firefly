@@ -1,7 +1,7 @@
 package test.codec.websocket;
 
 import com.firefly.codec.websocket.decode.Parser;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 
 import java.nio.ByteBuffer;
 

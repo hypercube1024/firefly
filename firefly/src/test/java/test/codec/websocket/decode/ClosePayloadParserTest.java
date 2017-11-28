@@ -5,7 +5,7 @@ import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.StatusCode;
 import com.firefly.codec.websocket.model.WebSocketBehavior;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.codec.websocket.utils.MaskedByteBuffer;
 import org.junit.Assert;
 import org.junit.Test;

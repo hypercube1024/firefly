@@ -6,7 +6,7 @@ import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.Extension;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.WebSocketBehavior;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.io.BufferUtils;
 
 import java.nio.ByteBuffer;

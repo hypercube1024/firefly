@@ -5,7 +5,7 @@ import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.extension.fragment.FragmentExtension;
-import com.firefly.codec.websocket.model.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;
