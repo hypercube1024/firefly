@@ -70,7 +70,7 @@ public class SimpleHTTPClientDemo5 {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
         for (int j = 0; j < 1000; j++) {
-            for (int i = 0; i < 25; i++) {
+            for (int i = 0; i < 100; i++) {
                 long start = System.currentTimeMillis();
                 client.get("https://login.taobao.com").submit()
                       .thenApply(res -> res.getStringBody("GBK"))

@@ -18,10 +18,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,6 +31,8 @@ public class AsynchronousTcpSession implements Session {
     private final long openTime;
     private final Counter activeCount;
     private final Histogram duration;
+    private final Histogram outputBufferSize;
+    private final Histogram mergedOutputBufferSize;
     private long closeTime;
     private long lastReadTime;
     private long lastWrittenTime;
@@ -65,6 +64,8 @@ public class AsynchronousTcpSession implements Session {
         activeCount = metrics.counter("aio.AsynchronousTcpSession.activeCount");
         activeCount.inc();
         duration = metrics.histogram("aio.AsynchronousTcpSession.duration");
+        outputBufferSize = metrics.histogram("aio.AsynchronousTcpSession.outputBufferSize");
+        mergedOutputBufferSize = metrics.histogram("aio.AsynchronousTcpSession.mergedOutputBufferSize");
     }
 
     private ByteBuffer allocateReadBuffer() {
@@ -172,12 +173,37 @@ public class AsynchronousTcpSession implements Session {
             callback.succeeded();
             outputLock.lock();
             try {
-                // TODO merge ByteBuffer to ByteBuffer Array
-                OutputEntry<?> obj = outputBuffer.poll();
-                if (obj != null) {
-                    _write(obj);
-                } else {
+                outputBufferSize.update(outputBuffer.size());
+                if (outputBuffer.isEmpty()) {
                     isWriting = false;
+                } else if (outputBuffer.size() <= 2) {
+                    _write(outputBuffer.poll());
+                } else {
+                    // merge ByteBuffer to ByteBuffer Array
+                    List<Callback> callbackList = new LinkedList<>();
+                    List<ByteBuffer> byteBufferList = new LinkedList<>();
+                    OutputEntry<?> obj;
+                    while ((obj = outputBuffer.peek()) != null
+                            && obj.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
+                        outputBuffer.poll();
+                        callbackList.add(obj.getCallback());
+                        switch (obj.getOutputEntryType()) {
+                            case BYTE_BUFFER:
+                                ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) obj;
+                                byteBufferList.add(byteBufferOutputEntry.getData());
+                                break;
+                            case BYTE_BUFFER_ARRAY:
+                                ByteBufferArrayOutputEntry byteBufferArrayOutputEntry = (ByteBufferArrayOutputEntry) obj;
+                                byteBufferList.addAll(Arrays.asList(byteBufferArrayOutputEntry.getData()));
+                                break;
+                            case MERGED_BUFFER:
+                                MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) obj;
+                                byteBufferList.addAll(Arrays.asList(mergedOutputEntry.getData()));
+                                break;
+                        }
+                    }
+                    mergedOutputBufferSize.update(callbackList.size());
+                    _write(new MergedOutputEntry(callbackList, byteBufferList));
                 }
             } finally {
                 outputLock.unlock();
@@ -221,6 +247,13 @@ public class AsynchronousTcpSession implements Session {
                 socketChannel.write(byteBuffersEntry.getData(), 0, byteBuffersEntry.getData().length,
                         config.getTimeout(), TimeUnit.MILLISECONDS, this,
                         new OutputEntryCompletionHandler<>(byteBuffersEntry));
+            }
+            break;
+            case MERGED_BUFFER: {
+                MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) entry;
+                socketChannel.write(mergedOutputEntry.getData(), 0, mergedOutputEntry.getData().length,
+                        config.getTimeout(), TimeUnit.MILLISECONDS, this,
+                        new OutputEntryCompletionHandler<>(mergedOutputEntry));
             }
             break;
             case DISCONNECTION: {
