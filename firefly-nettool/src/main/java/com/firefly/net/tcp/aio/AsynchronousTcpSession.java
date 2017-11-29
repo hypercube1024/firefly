@@ -31,6 +31,7 @@ public class AsynchronousTcpSession implements Session {
     private final long openTime;
     private final Counter activeCount;
     private final Histogram duration;
+    private final Histogram inputBufferSize;
     private final Histogram outputBufferSize;
     private final Histogram mergedOutputBufferSize;
     private long closeTime;
@@ -66,10 +67,13 @@ public class AsynchronousTcpSession implements Session {
         duration = metrics.histogram("aio.AsynchronousTcpSession.duration");
         outputBufferSize = metrics.histogram("aio.AsynchronousTcpSession.outputBufferSize");
         mergedOutputBufferSize = metrics.histogram("aio.AsynchronousTcpSession.mergedOutputBufferSize");
+        inputBufferSize = metrics.histogram("aio.AsynchronousTcpSession.inputBufferSize");
     }
 
     private ByteBuffer allocateReadBuffer() {
-        return ByteBuffer.allocate(BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize()));
+        int size = BufferUtils.normalizeBufferSize(bufferSizePredictor.nextBufferSize());
+        inputBufferSize.update(size);
+        return ByteBuffer.allocate(size);
     }
 
     void _read() {
