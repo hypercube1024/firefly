@@ -1,7 +1,5 @@
 package com.firefly.codec.http2.model;
 
-import java.util.Optional;
-
 /**
  * @author Pengtao Qiu
  */
