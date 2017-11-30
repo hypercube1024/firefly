@@ -72,7 +72,6 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
     private final URI requestURI;
     private final WebsocketConnection connection;
     private final WebSocketEvent websocket;
-    private final Executor executor;
     private final WebSocketPolicy policy;
     private final AtomicBoolean closed = new AtomicBoolean();
     private ClassLoader classLoader;
@@ -94,7 +93,6 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
         this.requestURI = requestURI;
         this.websocket = websocket;
         this.connection = connection;
-        this.executor = connection.getExecutor();
         this.outgoingHandler = connection;
         this.incomingHandler = websocket;
         this.connection.getIOState().addListener(this);
@@ -156,11 +154,6 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
         // notify of harsh disconnect
         notifyClose(StatusCode.NO_CLOSE, "Harsh disconnect");
     }
-
-    public void dispatch(Runnable runnable) {
-        executor.execute(runnable);
-    }
-
 
     protected void doStart() throws Exception {
         if (LOG.isDebugEnabled())

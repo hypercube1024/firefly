@@ -6,9 +6,6 @@ import com.firefly.codec.websocket.model.OutgoingFrames;
 import com.firefly.net.Connection;
 import com.firefly.utils.function.Action1;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-
 public interface WebsocketConnection extends OutgoingFrames, SuspendToken, Connection {
 
     WebsocketConnection close(Action1<WebsocketConnection> closedCallback);
@@ -28,13 +25,6 @@ public interface WebsocketConnection extends OutgoingFrames, SuspendToken, Conne
     void disconnect();
 
     /**
-     * Get the Executor used by this connection.
-     *
-     * @return the executor
-     */
-    Executor getExecutor();
-
-    /**
      * Get the read/write idle timeout.
      *
      * @return the idle timeout in milliseconds
@@ -49,15 +39,6 @@ public interface WebsocketConnection extends OutgoingFrames, SuspendToken, Conne
     IOState getIOState();
 
     /**
-     * Get the local {@link InetSocketAddress} in use for this connection.
-     * <p>
-     * Note: Non-physical connections, like during the Mux extensions, or during unit testing can result in a InetSocketAddress on port 0 and/or on localhost.
-     *
-     * @return the local address.
-     */
-    InetSocketAddress getLocalAddress();
-
-    /**
      * Set the maximum number of milliseconds of idleness before the connection is closed/disconnected, (ie no frames are either sent or received)
      *
      * @return the idle timeout in milliseconds
@@ -70,22 +51,6 @@ public interface WebsocketConnection extends OutgoingFrames, SuspendToken, Conne
      * @return the policy for the connection
      */
     WebSocketPolicy getPolicy();
-
-    /**
-     * Get the remote Address in use for this connection.
-     * <p>
-     * Note: Non-physical connections, like during the Mux extensions, or during unit testing can result in a InetSocketAddress on port 0 and/or on localhost.
-     *
-     * @return the remote address.
-     */
-    InetSocketAddress getRemoteAddress();
-
-    /**
-     * Test if logical connection is still open
-     *
-     * @return true if connection is open
-     */
-    boolean isOpen();
 
     /**
      * Tests if the connection is actively reading.
@@ -127,10 +92,4 @@ public interface WebsocketConnection extends OutgoingFrames, SuspendToken, Conne
      */
     SuspendToken suspend();
 
-    /**
-     * Get Unique ID for the Connection
-     *
-     * @return the unique ID for the connection
-     */
-    String getId();
 }

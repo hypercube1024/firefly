@@ -72,7 +72,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
     }
 
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
-    private static final AtomicLong ID_GEN = new AtomicLong(0);
 
     /**
      * Minimum size of a buffer is the determined to be what would be the maximum framing header size (not including payload)
@@ -85,7 +84,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
     private final WebSocketPolicy policy;
     private final AtomicBoolean suspendToken;
     private final FrameFlusher flusher;
-    private final String id;
     private WebSocketSession session;
     private List<ExtensionConfig> extensions;
     private boolean isFilling;
@@ -94,10 +92,8 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
     private IOState ioState;
     private Stats stats = new Stats();
 
-    public AbstractWebSocketConnection(com.firefly.net.Session endp, Executor executor, Scheduler scheduler,
+    public AbstractWebSocketConnection(com.firefly.net.Session endpoint, Scheduler scheduler,
                                        WebSocketPolicy policy) {
-
-        this.id = Long.toString(ID_GEN.incrementAndGet());
         this.policy = policy;
         this.generator = new Generator(policy);
         this.parser = new Parser(policy);
@@ -106,14 +102,9 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
         this.suspendToken = new AtomicBoolean(false);
         this.ioState = new IOState();
         this.ioState.addListener(this);
-        this.flusher = new Flusher(generator, endp);
+        this.flusher = new Flusher(generator, endpoint);
 //        this.setInputBufferSize(policy.getInputBufferSize());
         this.setMaxIdleTimeout(policy.getIdleTimeout());
-    }
-
-    @Override
-    public Executor getExecutor() {
-        return null;
     }
 
     @Override
@@ -173,11 +164,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
 
     public Generator getGenerator() {
         return generator;
-    }
-
-    @Override
-    public String getId() {
-        return id;
     }
 
     @Override

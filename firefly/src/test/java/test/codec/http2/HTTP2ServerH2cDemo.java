@@ -76,7 +76,6 @@ public class HTTP2ServerH2cDemo {
 							@Override
 							public void onHeaders(Stream stream, HeadersFrame frame) {
 								System.out.println("stream on headers " + frame.getMetaData() + "|" + stream);
-
 							}
 
 							@Override

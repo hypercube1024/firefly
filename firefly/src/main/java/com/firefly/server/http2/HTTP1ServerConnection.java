@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
+import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.CONTINUE_100_BYTES;
+import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.H2C_BYTES;
+
 public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HTTPServerConnection {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
@@ -41,8 +44,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    protected HttpParser initHttpParser(HTTP2Configuration config, RequestHandler requestHandler,
-                                        ResponseHandler responseHandler) {
+    protected HttpParser initHttpParser(HTTP2Configuration config, RequestHandler requestHandler, ResponseHandler responseHandler) {
         return new HttpParser(requestHandler, config.getMaxRequestHeadLength());
     }
 
@@ -71,19 +73,11 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     }
 
     void response100Continue() {
-        try {
-            serverRequestHandler.outputStream.response100Continue();
-        } catch (IOException e) {
-            log.error("the server session {} sends 100 continue unsuccessfully", e);
-        }
+        serverRequestHandler.outputStream.response100Continue();
     }
 
     private void responseH2c() {
-        try {
-            serverRequestHandler.outputStream.responseH2c();
-        } catch (IOException e) {
-            log.error("the server session {} sends 101 switching protocols unsuccessfully", e);
-        }
+        serverRequestHandler.outputStream.responseH2c();
     }
 
     @Override
@@ -111,14 +105,6 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     static class HTTP1ServerResponseOutputStream extends AbstractHTTP1OutputStream {
 
-        private static final MetaData.Response H2C_RESPONSE = new MetaData.Response(HttpVersion.HTTP_1_1, 101,
-                new HttpFields());
-
-        static {
-            H2C_RESPONSE.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
-            H2C_RESPONSE.getFields().put(HttpHeader.UPGRADE, "h2c");
-        }
-
         private final HTTP1ServerConnection connection;
         private final HttpGenerator httpGenerator;
 
@@ -132,41 +118,12 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
             return connection;
         }
 
-        void responseH2c() throws IOException {
-            ByteBuffer header = getHeaderByteBuffer();
-            HttpGenerator gen = getHttpGenerator();
-            HttpGenerator.Result result = gen.generateResponse(H2C_RESPONSE, false, header, null, null, true);
-            if (result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING) {
-                getSession().encode(header);
-                result = gen.generateResponse(null, false, null, null, null, true);
-                if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.END) {
-                    log.debug("the server session {} sends 101 switching protocols successfully",
-                            getSession().getSessionId());
-                } else {
-                    generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.DONE, HttpGenerator.State.END);
-                }
-            } else {
-                generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMPLETING);
-            }
+        void responseH2c() {
+            getSession().encode(ByteBuffer.wrap(H2C_BYTES));
         }
 
-        void response100Continue() throws IOException {
-            ByteBuffer header = getHeaderByteBuffer();
-            HttpGenerator gen = getHttpGenerator();
-            HttpGenerator.Result result = gen.generateResponse(HttpGenerator.CONTINUE_100_INFO, false, header, null, null,
-                    false);
-            if (result == HttpGenerator.Result.FLUSH && gen.getState() == HttpGenerator.State.COMPLETING_1XX) {
-                getSession().encode(header);
-                result = gen.generateResponse(null, false, null, null, null, false);
-                if (result == HttpGenerator.Result.DONE && gen.getState() == HttpGenerator.State.START) {
-                    log.debug("the server session {} sends 100 continue successfully", getSession().getSessionId());
-                } else {
-                    generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.DONE, HttpGenerator.State.START);
-                }
-            } else {
-                generateHTTPMessageExceptionally(result, gen.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMPLETING_1XX);
-            }
-
+        void response100Continue() {
+            getSession().encode(ByteBuffer.wrap(CONTINUE_100_BYTES));
         }
 
         @Override
@@ -243,9 +200,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     }
 
-    boolean upgradeProtocolToHTTP2(MetaData.Request request, MetaData.Response response) {
+    boolean directUpgradeHTTP2(MetaData.Request request) {
         if (HttpMethod.PRI.is(request.getMethod())) {
-            // XXX need test
             HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config, tcpSession, secureSession,
                     serverSessionListener);
             tcpSession.attachObject(http2ServerConnection);
@@ -253,59 +209,55 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
             upgradeHTTP2Successfully = true;
             return true;
         } else {
-            HttpField connectionField = request.getFields().getField(HttpHeader.CONNECTION);
-            if (connectionField != null) {
-                if (connectionField.contains("Upgrade")) {
+            return false;
+        }
+    }
+
+    boolean upgradeProtocol(MetaData.Request request, MetaData.Response response) {
+        switch (Protocol.from(request)) {
+            case H2: {
+                HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
+                if (settingsField != null) {
+                    response.setStatus(101);
+                    response.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
+                    response.getFields().put(HttpHeader.UPGRADE, "h2c");
+
+                    final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
                     if (log.isDebugEnabled()) {
-                        log.debug("the server will upgrade protocol {}", request.getFields());
+                        log.debug("the server received settings {}", TypeUtils.toHexString(settings));
                     }
 
-                    if (request.getFields().contains(HttpHeader.UPGRADE, "h2c")) {
-                        HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
-                        if (settingsField != null) {
-                            response.setStatus(101);
-                            response.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
-                            response.getFields().put(HttpHeader.UPGRADE, "h2c");
-
-                            final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
-                            if (log.isDebugEnabled()) {
-                                log.debug("the server received settings {}", TypeUtils.toHexString(settings));
-                            }
-
-                            SettingsFrame settingsFrame = SettingsBodyParser.parseBody(BufferUtils.toBuffer(settings));
-                            if (settingsFrame == null) {
-                                throw new BadMessageException("settings frame parsing error");
-                            } else {
-                                responseH2c();
-
-                                HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
-                                        tcpSession, secureSession, serverSessionListener);
-                                tcpSession.attachObject(http2ServerConnection);
-
-                                http2ServerConnection.getParser().standardUpgrade();
-
-                                serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
-                                SessionSPI sessionSPI = http2ServerConnection.getSessionSPI();
-
-                                sessionSPI.onFrame(new PrefaceFrame());
-                                sessionSPI.onFrame(settingsFrame);
-                                sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
-                            }
-
-                            upgradeHTTP2Successfully = true;
-                            return true;
-                        } else {
-                            throw new IllegalStateException("upgrade HTTP2 unsuccessfully");
-                        }
+                    SettingsFrame settingsFrame = SettingsBodyParser.parseBody(BufferUtils.toBuffer(settings));
+                    if (settingsFrame == null) {
+                        throw new BadMessageException("settings frame parsing error");
                     } else {
-                        return false;
+                        responseH2c();
+
+                        HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
+                                tcpSession, secureSession, serverSessionListener);
+                        tcpSession.attachObject(http2ServerConnection);
+                        http2ServerConnection.getParser().standardUpgrade();
+
+                        serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
+                        SessionSPI sessionSPI = http2ServerConnection.getSessionSPI();
+
+                        sessionSPI.onFrame(new PrefaceFrame());
+                        sessionSPI.onFrame(settingsFrame);
+                        sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
                     }
+
+                    upgradeHTTP2Successfully = true;
+                    return true;
                 } else {
-                    return false;
+                    throw new IllegalStateException("upgrade HTTP2 unsuccessfully");
                 }
-            } else {
+            }
+            case WEB_SOCKET: {
+                // TODO
                 return false;
             }
+            default:
+                return false;
         }
     }
 
