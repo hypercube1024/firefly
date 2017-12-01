@@ -140,24 +140,15 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 case HTTP_1_0:
                     if ("keep-alive".equalsIgnoreCase(requestConnectionValue)
                             && "keep-alive".equalsIgnoreCase(responseConnectionValue)) {
-                        log.debug("the server {} connection {} is persistent", response.getHttpVersion(),
-                                connection.getSessionId());
+                        log.debug("the server {} connection {} is persistent", response.getHttpVersion(), connection.getSessionId());
                     } else {
-                        try {
-                            connection.close();
-                        } catch (IOException e) {
-                            log.error("server closes connection exception", e);
-                        }
+                        connection.close();
                     }
                     break;
                 case HTTP_1_1: // the persistent connection is default in HTTP 1.1
                     if ("close".equalsIgnoreCase(requestConnectionValue)
                             || "close".equalsIgnoreCase(responseConnectionValue)) {
-                        try {
-                            connection.close();
-                        } catch (IOException e) {
-                            log.error("server closes connection exception", e);
-                        }
+                        connection.close();
                     } else {
                         log.debug("the server {} connection {} is persistent", response.getHttpVersion(),
                                 connection.getSessionId());
