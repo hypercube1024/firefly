@@ -16,51 +16,36 @@ public abstract class AbstractHTTPHandler implements Handler {
     }
 
     @Override
-    public void messageReceived(Session session, Object message) throws Throwable {
+    public void messageReceived(Session session, Object message) {
     }
 
     @Override
     public void exceptionCaught(Session session, Throwable t) throws Throwable {
         log.error("HTTP handler exception", t);
-        if (session.getAttachment() instanceof AbstractHTTPConnection) {
-            AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment();
-            if (httpConnection != null) {
+        if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
+            try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
                 if (httpConnection.getExceptionListener() != null) {
-                    try {
-                        httpConnection.getExceptionListener().call(httpConnection, t);
-                    } catch (Throwable t1) {
-                        log.error("http connection exception listener error", t1);
-                    }
+                    httpConnection.getExceptionListener().call(httpConnection, t);
                 }
-                if (httpConnection.isOpen()) {
-                    httpConnection.close();
-                }
+            } catch (Exception e) {
+                log.error("http connection exception listener error", e);
             }
+        } else {
+            session.close();
         }
     }
 
     @Override
     public void sessionClosed(Session session) throws Throwable {
         log.info("session {} closed", session.getSessionId());
-        try {
-            if (session.getAttachment() instanceof AbstractHTTPConnection) {
-                AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment();
-                if (httpConnection != null) {
-                    if (httpConnection.getClosedListener() != null) {
-                        try {
-                            httpConnection.getClosedListener().call(httpConnection);
-                        } catch (Throwable t1) {
-                            log.error("http connection closed listener error", t1);
-                        }
-                    }
-
-                    if (httpConnection.isOpen()) {
-                        httpConnection.close();
-                    }
+        if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
+            try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
+                if (httpConnection.getClosedListener() != null) {
+                    httpConnection.getClosedListener().call(httpConnection);
                 }
+            } catch (Exception e) {
+                log.error("http2 connection close exception", e);
             }
-        } catch (Throwable t) {
-            log.error("http2 conection close exception", t);
         }
     }
 

@@ -19,5 +19,11 @@ public class HTTPsServerDemo {
          .router().get("/static/*")
          .handler(new StaticFileHandler(path.toAbsolutePath().toString()))
          .listen("localhost", 8081);
+
+        $.httpServer()
+         .router().get("/").handler(ctx -> ctx.end("hello world!"))
+         .router().get("/static/*")
+         .handler(new StaticFileHandler(path.toAbsolutePath().toString()))
+         .listen("localhost", 8080);
     }
 }

@@ -10,6 +10,7 @@ import com.firefly.utils.function.Action2;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 abstract public class AbstractHTTPConnection implements HTTPConnection {
 
