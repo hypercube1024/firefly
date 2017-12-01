@@ -52,11 +52,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
             @Override
             public void failed(Throwable x) {
-                try {
-                    HTTP2ClientConnection.this.close();
-                } catch (IOException e) {
-                    log.error("http2 client connection initialization error", e);
-                }
+                HTTP2ClientConnection.this.close();
                 promise.failed(x);
             }
         };
