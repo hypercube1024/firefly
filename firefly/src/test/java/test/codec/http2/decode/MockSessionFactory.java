@@ -51,11 +51,6 @@ public class MockSessionFactory {
         }
 
         @Override
-        public Session.State getState() {
-            return State.OPEN;
-        }
-
-        @Override
         public boolean isOpen() {
             return isOpen;
         }

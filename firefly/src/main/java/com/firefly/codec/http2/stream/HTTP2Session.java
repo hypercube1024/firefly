@@ -726,9 +726,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         switch (closed.get()) {
             case NOT_CLOSED: {
                 long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - idleTime);
-                if (elapsed < endPoint.getIdleTimeout())
-                    return false;
-                return notifyIdleTimeout(this);
+                return elapsed >= endPoint.getIdleTimeout() && notifyIdleTimeout(this);
             }
             case LOCALLY_CLOSED:
             case REMOTELY_CLOSED: {

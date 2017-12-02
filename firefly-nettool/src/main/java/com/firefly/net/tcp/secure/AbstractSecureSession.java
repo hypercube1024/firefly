@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ abstract public class AbstractSecureSession implements SecureSession {
     protected ByteBuffer receivedPacketBuf;
     protected ByteBuffer receivedAppBuf;
 
-    protected boolean closed = false;
+    protected volatile boolean closed = false;
     protected SSLEngineResult.HandshakeStatus initialHSStatus;
     protected boolean initialHSComplete;
 
@@ -71,7 +72,7 @@ abstract public class AbstractSecureSession implements SecureSession {
      */
     protected boolean doHandshake(ByteBuffer receiveBuffer) throws IOException {
         if (!session.isOpen()) {
-            sslEngine.closeInbound();
+            close();
             return (initialHSComplete = false);
         }
 
@@ -161,7 +162,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
                     case CLOSED: {
                         log.info("Session {} handshake failure. SSLEngine will close inbound", session.getSessionId());
-                        sslEngine.closeInbound();
+                        closeInbound();
                     }
                     break needIO;
 
@@ -220,7 +221,7 @@ abstract public class AbstractSecureSession implements SecureSession {
                         if (packetBuffer.hasRemaining()) {
                             session.write(packetBuffer, Callback.NOOP);
                         }
-                        sslEngine.closeOutbound();
+                        closeOutbound();
                         break outer;
 
                     default: // BUFFER_UNDERFLOW
@@ -279,14 +280,26 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() {
         if (!closed) {
-            // log.debug("close SSL engine, {}|{}", sslEngine.isInboundDone(),
-            // sslEngine.isOutboundDone());
-            sslEngine.closeOutbound();
-            sslEngine.closeInbound();
+            closeOutbound();
             closed = true;
         }
+    }
+
+    protected void closeInbound() {
+        try {
+            sslEngine.closeInbound();
+        } catch (SSLException e) {
+            log.warn("close inbound exception", e);
+        } finally {
+            session.shutdownInput();
+        }
+    }
+
+    protected void closeOutbound() {
+        sslEngine.closeOutbound();
+        session.close();
     }
 
     @Override
@@ -392,7 +405,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
                 case CLOSED: {
                     log.info("Session {} read data failure. SSLEngine will close inbound", session.getSessionId());
-                    sslEngine.closeInbound();
+                    closeInbound();
                 }
                 break needIO;
 
@@ -439,6 +452,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         final int remain = outAppBuf.remaining();
         int packetBufferSize = sslEngine.getSession().getPacketBufferSize();
         List<ByteBuffer> pocketBuffers = new ArrayList<>();
+        boolean closeOutput = false;
 
         outer:
         while (ret < remain) {
@@ -477,7 +491,7 @@ abstract public class AbstractSecureSession implements SecureSession {
                         if (packetBuffer.hasRemaining()) {
                             pocketBuffers.add(packetBuffer);
                         }
-                        sslEngine.closeOutbound();
+                        closeOutput = true;
                     }
                     break outer;
 
@@ -492,6 +506,9 @@ abstract public class AbstractSecureSession implements SecureSession {
         }
 
         session.write(pocketBuffers, callback);
+        if (closeOutput) {
+            closeOutbound();
+        }
         return ret;
     }
 

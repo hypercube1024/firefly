@@ -34,6 +34,8 @@ public interface Connection extends Closeable {
 
     boolean isOpen();
 
+    boolean isClosed();
+
     InetSocketAddress getLocalAddress();
 
     InetSocketAddress getRemoteAddress();

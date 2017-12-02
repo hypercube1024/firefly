@@ -11,10 +11,6 @@ public interface Session {
 
     DisconnectionOutputEntry DISCONNECTION_FLAG = new DisconnectionOutputEntry(null, null);
 
-    enum State {
-        CLOSE, OPEN, INPUT_SHUTDOWN, OUTPUT_SHUTDOWN
-    }
-
     void attachObject(Object attachment);
 
     Object getAttachment();
@@ -59,9 +55,15 @@ public interface Session {
 
     void shutdownInput();
 
-    State getState();
-
     boolean isOpen();
+
+    boolean isClosed();
+
+    boolean isShutdownOutput();
+
+    boolean isShutdownInput();
+
+    boolean isWaitingForClose();
 
     InetSocketAddress getLocalAddress();
 

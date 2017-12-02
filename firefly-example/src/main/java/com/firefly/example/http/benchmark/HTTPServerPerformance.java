@@ -16,21 +16,21 @@ import java.util.List;
  * Running 1m test @ http://127.0.0.1:4455/
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   457.43us  167.19us  21.41ms   97.88%
- * Req/Sec     8.79k   592.76    10.20k    76.00%
- * 4205803 requests in 1.00m, 493.35MB read
- * Requests/sec:  69977.88
- * Transfer/sec:      8.21MB
+ * Latency   449.92us   84.63us   5.47ms   92.43%
+ * Req/Sec     8.88k   445.93     9.98k    74.94%
+ * 4250215 requests in 1.00m, 498.56MB read
+ * Requests/sec:  70719.40
+ * Transfer/sec:      8.30MB
  * <p>
  * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items
- * Running 1m test @ http://127.0.0.1:4455/items
+ * Running 2m test @ http://127.0.0.1:4455/items
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   475.17us   90.50us  10.45ms   94.61%
- * Req/Sec     8.41k   336.80     9.41k    75.08%
- * 4022717 requests in 1.00m, 1.53GB read
- * Requests/sec:  66934.11
- * Transfer/sec:     26.04MB
+ * Latency   464.88us   89.56us   5.39ms   93.26%
+ * Req/Sec     8.60k   359.89     9.59k    72.21%
+ * 8219381 requests in 2.00m, 3.12GB read
+ * Requests/sec:  68437.31
+ * Transfer/sec:     26.63MB
  *
  * @author Pengtao Qiu
  */

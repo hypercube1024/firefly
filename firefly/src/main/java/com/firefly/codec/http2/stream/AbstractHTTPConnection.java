@@ -44,6 +44,11 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     }
 
     @Override
+    public boolean isClosed() {
+        return tcpSession.isClosed();
+    }
+
+    @Override
     public boolean isOpen() {
         return tcpSession.isOpen();
     }
