@@ -155,4 +155,8 @@ public abstract class AbstractTcpConnection implements TcpConnection {
         return session.getIdleTimeout();
     }
 
+    @Override
+    public long getMaxIdleTimeout() {
+        return session.getMaxIdleTimeout();
+    }
 }

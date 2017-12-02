@@ -136,6 +136,11 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     }
 
     @Override
+    public long getMaxIdleTimeout() {
+        return tcpSession.getMaxIdleTimeout();
+    }
+
+    @Override
     public InetSocketAddress getLocalAddress() {
         return tcpSession.getLocalAddress();
     }

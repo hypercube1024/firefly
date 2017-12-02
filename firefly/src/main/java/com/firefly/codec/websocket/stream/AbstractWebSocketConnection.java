@@ -178,7 +178,7 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
 
     @Override
     public long getMaxIdleTimeout() {
-        return getEndPoint().getIdleTimeout();
+        return getEndPoint().getMaxIdleTimeout();
     }
 
     public Parser getParser() {

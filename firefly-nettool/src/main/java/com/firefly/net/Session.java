@@ -70,4 +70,6 @@ public interface Session {
     InetSocketAddress getRemoteAddress();
 
     long getIdleTimeout();
+
+    long getMaxIdleTimeout();
 }

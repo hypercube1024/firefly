@@ -61,7 +61,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         this.maxLocalStreams = -1;
         this.maxRemoteStreams = -1;
         this.streamIds.set(initialStreamId);
-        this.streamIdleTimeout = streamIdleTimeout > 0 ? streamIdleTimeout : endPoint.getIdleTimeout();
+        this.streamIdleTimeout = streamIdleTimeout > 0 ? streamIdleTimeout : endPoint.getMaxIdleTimeout();
         this.sendWindow.set(FlowControlStrategy.DEFAULT_WINDOW_SIZE);
         this.recvWindow.set(FlowControlStrategy.DEFAULT_WINDOW_SIZE);
         this.pushEnabled = true; // SPEC: by default, push is enabled.
@@ -726,11 +726,11 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         switch (closed.get()) {
             case NOT_CLOSED: {
                 long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - idleTime);
-                return elapsed >= endPoint.getIdleTimeout() && notifyIdleTimeout(this);
+                return elapsed >= endPoint.getMaxIdleTimeout() && notifyIdleTimeout(this);
             }
             case LOCALLY_CLOSED:
             case REMOTELY_CLOSED: {
-                abort(new TimeoutException("Idle timeout " + endPoint.getIdleTimeout() + " ms"));
+                abort(new TimeoutException("Idle timeout " + endPoint.getMaxIdleTimeout() + " ms"));
                 return false;
             }
             default: {

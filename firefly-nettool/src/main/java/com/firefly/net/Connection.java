@@ -32,6 +32,8 @@ public interface Connection extends Closeable {
 
     long getIdleTimeout();
 
+    long getMaxIdleTimeout();
+
     boolean isOpen();
 
     boolean isClosed();

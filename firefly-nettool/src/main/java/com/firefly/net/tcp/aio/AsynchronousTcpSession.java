@@ -119,7 +119,7 @@ public class AsynchronousTcpSession implements Session {
         @Override
         public void failed(Throwable t, AsynchronousTcpSession session) {
             if (t instanceof InterruptedByTimeoutException) {
-                long idleTime = Millisecond100Clock.currentTimeMillis() - getLastActiveTime();
+                long idleTime = getIdleTimeout();
                 log.info("The session {} reading data is timeout. The idle time: {} - {}", getSessionId(), idleTime, getIdleTimeout());
                 if (idleTime >= getIdleTimeout()) {
                     log.info("The session {} is timeout. It will force to close.", getSessionId());
@@ -220,7 +220,7 @@ public class AsynchronousTcpSession implements Session {
 
         private void writingFailedCallback(Callback callback, Throwable t) {
             if (t instanceof InterruptedByTimeoutException) {
-                long idleTime = Millisecond100Clock.currentTimeMillis() - getLastActiveTime();
+                long idleTime = getIdleTimeout();
                 log.info("The session {} writing data is timeout. The idle time: {} - {}", getSessionId(), idleTime, getIdleTimeout());
                 if (idleTime >= getIdleTimeout()) {
                     log.info("The session {} is timeout. It will close.", getSessionId());
@@ -525,6 +525,11 @@ public class AsynchronousTcpSession implements Session {
 
     @Override
     public long getIdleTimeout() {
+        return Millisecond100Clock.currentTimeMillis() - getLastActiveTime();
+    }
+
+    @Override
+    public long getMaxIdleTimeout() {
         return config.getTimeout();
     }
 
