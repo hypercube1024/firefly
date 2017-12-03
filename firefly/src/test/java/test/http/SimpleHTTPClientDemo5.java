@@ -4,6 +4,7 @@ import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
+import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
@@ -21,8 +22,8 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
-    public static void main7(String[] args) {
-        SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
+    public static void main(String[] args) {
+        SimpleHTTPClient client = $.createHTTPsClient(new ConscryptSecureSessionFactory());
         client.get("https://www.jd.com").submit()
               .thenAccept(resp -> System.out.println(resp.getStringBody()));
     }
@@ -67,7 +68,7 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main4(String[] args) throws ExecutionException, InterruptedException {
         SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
         for (int j = 0; j < 1000; j++) {
             for (int i = 0; i < 100; i++) {
