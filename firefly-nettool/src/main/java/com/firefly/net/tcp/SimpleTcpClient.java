@@ -134,15 +134,6 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                         }
                     })));
                 }
-
-                @Override
-                public void sessionClosed(Session session) throws Throwable {
-                    try {
-                        super.secureSessionClosed(session);
-                    } finally {
-                        context.remove(session.getSessionId());
-                    }
-                }
             });
         }
     }

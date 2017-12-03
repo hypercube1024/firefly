@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -15,10 +16,10 @@ import java.util.List;
  */
 public class JettyALPNSelector implements ApplicationProtocolSelector {
 
-    protected static final Logger log = LoggerFactory.getLogger("firefly-system");
+    private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
+    private static final List<String> supportedProtocols = Collections.unmodifiableList(Arrays.asList("h2", "http/1.1"));
     private volatile String applicationProtocol;
-    private final List<String> supportedProtocols = Arrays.asList("h2", "http/1.1");
 
     public JettyALPNSelector(SSLEngine sslEngine) {
         if (sslEngine.getUseClientMode()) {

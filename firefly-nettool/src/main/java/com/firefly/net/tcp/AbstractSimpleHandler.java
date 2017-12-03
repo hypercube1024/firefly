@@ -48,6 +48,10 @@ abstract public class AbstractSimpleHandler implements Handler {
                 c.closeCallback.call();
             }
         }
+        if (o != null && o instanceof SecureTcpConnectionImpl) {
+            SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
+            c.secureSession.close();
+        }
     }
 
     @Override
@@ -62,18 +66,6 @@ abstract public class AbstractSimpleHandler implements Handler {
             AbstractTcpConnection c = (AbstractTcpConnection) o;
             if (c.exception != null) {
                 c.exception.call(t);
-            }
-        }
-    }
-
-    protected void secureSessionClosed(Session session) throws Throwable {
-        try {
-            sessionClosed(session);
-        } finally {
-            Object o = session.getAttachment();
-            if (o != null && o instanceof SecureTcpConnectionImpl) {
-                SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
-                c.secureSession.close();
             }
         }
     }

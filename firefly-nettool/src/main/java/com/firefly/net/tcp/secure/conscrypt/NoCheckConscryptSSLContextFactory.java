@@ -1,18 +1,18 @@
-package com.firefly.net.tcp.secure.jdk;
+package com.firefly.net.tcp.secure.conscrypt;
 
 import com.firefly.net.tcp.secure.utils.SecureUtils;
 
 import javax.net.ssl.SSLContext;
-import java.io.ByteArrayInputStream;
+import javax.net.ssl.TrustManager;
 
 /**
  * @author Pengtao Qiu
  */
-public class DefaultCredentialJdkSSLContextFactory extends AbstractJdkSSLContextFactory {
+public class NoCheckConscryptSSLContextFactory extends AbstractConscryptSSLContextFactory {
     @Override
     public SSLContext getSSLContext() {
         try {
-            return getSSLContext(new ByteArrayInputStream(SecureUtils.DEFAULT_CREDENTIAL), "ptmima1234", "ptmima4321");
+            return getSSLContextWithManager(null, new TrustManager[]{SecureUtils.createX509TrustManagerNoCheck()}, null);
         } catch (Throwable e) {
             log.error("get SSL context error", e);
             return null;

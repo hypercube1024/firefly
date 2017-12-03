@@ -196,16 +196,39 @@ abstract public class AbstractSecureSession implements SecureSession {
                             session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
                 }
                 switch (result.getStatus()) {
-                    case OK:
-                        if (initialHSStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
-                            initialHSStatus = doTasks();
-                        }
-
+                    case OK: {
                         packetBuffer.flip();
-                        if (packetBuffer.hasRemaining()) {
-                            session.write(packetBuffer, Callback.NOOP);
+                        if (log.isDebugEnabled()) {
+                            log.debug("session {} handshake response {} bytes", session.getSessionId(), packetBuffer.remaining());
                         }
-                        break wrap;
+                        switch (initialHSStatus) {
+                            case NEED_TASK: {
+                                initialHSStatus = doTasks();
+                                if (packetBuffer.hasRemaining()) {
+                                    session.write(packetBuffer, Callback.NOOP);
+                                }
+                            }
+                            break;
+                            case FINISHED: {
+                                if (packetBuffer.hasRemaining()) {
+                                    session.write(packetBuffer, new Callback() {
+                                        public void succeeded() {
+                                            handshakeFinish();
+                                        }
+                                    });
+                                } else {
+                                    handshakeFinish();
+                                }
+                            }
+                            break;
+                            default: {
+                                if (packetBuffer.hasRemaining()) {
+                                    session.write(packetBuffer, Callback.NOOP);
+                                }
+                            }
+                        }
+                    }
+                    break wrap;
 
                     case BUFFER_OVERFLOW:
                         ByteBuffer b = newBuffer(packetBuffer.position() + sslEngine.getSession().getPacketBufferSize());

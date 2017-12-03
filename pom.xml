@@ -233,6 +233,11 @@
                 <version>2.0.7.Final</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.conscrypt</groupId>
+                <artifactId>conscrypt-openjdk-uber</artifactId>
+                <version>1.0.0.RC13</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -373,16 +378,6 @@
                     <failOnError>true</failOnError>
                     <charset>UTF-8</charset>
                     <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>
-                        -Xbootclasspath/p:${settings.localRepository}/org/mortbay/jetty/alpn/alpn-boot/${alpn-boot.version}/alpn-boot-${alpn-boot.version}.jar
-                    </argLine>
                 </configuration>
             </plugin>
 

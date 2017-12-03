@@ -1,9 +1,10 @@
-package com.firefly.net.tcp.secure.jdk;
+package com.firefly.net.tcp.secure.conscrypt;
 
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.utils.lang.Pair;
 import com.firefly.utils.time.Millisecond100Clock;
+import org.conscrypt.OpenSSLProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,28 +17,38 @@ import java.security.cert.CertificateException;
 /**
  * @author Pengtao Qiu
  */
-abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory {
+abstract public class AbstractConscryptSSLContextFactory implements SSLContextFactory {
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random) throws NoSuchAlgorithmException, KeyManagementException {
+    static {
+        if (Security.getProvider("Conscrypt") == null) {
+            Security.addProvider(new OpenSSLProvider());
+            log.info("add Conscrypt security provider");
+        }
+    }
+
+    protected String provideName = "Conscrypt";
+
+    public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random)
+            throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
         long start = Millisecond100Clock.currentTimeMillis();
-        final SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+        final SSLContext sslContext = SSLContext.getInstance("TLSv1.2", provideName);
         sslContext.init(km, tm, random);
         long end = Millisecond100Clock.currentTimeMillis();
-        log.info("creating SSL context spends {} ms", (end - start));
+        log.info("creating Conscrypt SSL context spends {} ms", (end - start));
         return sslContext;
     }
 
     public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
-            UnrecoverableKeyException, KeyManagementException {
+            UnrecoverableKeyException, KeyManagementException, NoSuchProviderException {
         return getSSLContext(in, keystorePassword, keyPassword, null, null, null);
     }
 
     public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword,
                                     String keyManagerFactoryType, String trustManagerFactoryType, String sslProtocol)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
-            UnrecoverableKeyException, KeyManagementException {
+            UnrecoverableKeyException, KeyManagementException, NoSuchProviderException {
         long start = Millisecond100Clock.currentTimeMillis();
         final SSLContext sslContext;
 
@@ -52,12 +63,20 @@ abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory 
         tmf.init(ks);
 
         // TLSv1 TLSv1.2
-        sslContext = SSLContext.getInstance(sslProtocol == null ? "TLSv1.2" : sslProtocol);
+        sslContext = SSLContext.getInstance(sslProtocol == null ? "TLSv1.2" : sslProtocol, provideName);
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         long end = Millisecond100Clock.currentTimeMillis();
-        log.info("creating SSL context spends {} ms", (end - start));
+        log.info("creating Conscrypt SSL context spends {} ms", (end - start));
         return sslContext;
+    }
+
+    public String getProvideName() {
+        return provideName;
+    }
+
+    public void setProvideName(String provideName) {
+        this.provideName = provideName;
     }
 
     abstract public SSLContext getSSLContext();
@@ -66,13 +85,13 @@ abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory 
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine();
         sslEngine.setUseClientMode(clientMode);
-        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine));
+        return new Pair<>(sslEngine, new ConscryptALPNSelector(sslEngine));
     }
 
     @Override
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode, String peerHost, int peerPort) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
         sslEngine.setUseClientMode(clientMode);
-        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine));
+        return new Pair<>(sslEngine, new ConscryptALPNSelector(sslEngine));
     }
 }

@@ -1,4 +1,4 @@
-package com.firefly.net.tcp.secure.jdk;
+package com.firefly.net.tcp.secure.conscrypt;
 
 import com.firefly.net.tcp.secure.utils.SecureUtils;
 
@@ -8,7 +8,7 @@ import java.io.ByteArrayInputStream;
 /**
  * @author Pengtao Qiu
  */
-public class DefaultCredentialJdkSSLContextFactory extends AbstractJdkSSLContextFactory {
+public class DefaultCredentialConscryptSSLContextFactory extends AbstractConscryptSSLContextFactory {
     @Override
     public SSLContext getSSLContext() {
         try {

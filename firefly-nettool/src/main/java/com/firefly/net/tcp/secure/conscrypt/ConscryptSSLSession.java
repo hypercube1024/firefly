@@ -1,4 +1,4 @@
-package com.firefly.net.tcp.secure.jdk;
+package com.firefly.net.tcp.secure.conscrypt;
 
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.SecureSessionHandshakeListener;
@@ -11,11 +11,11 @@ import java.io.IOException;
 /**
  * @author Pengtao Qiu
  */
-public class JdkSSLSession extends AbstractJdkSSLSession {
+public class ConscryptSSLSession extends AbstractJdkSSLSession {
 
-    public JdkSSLSession(Session session, SSLEngine sslEngine,
-                         ApplicationProtocolSelector applicationProtocolSelector,
-                         SecureSessionHandshakeListener handshakeListener) throws IOException {
+    public ConscryptSSLSession(Session session, SSLEngine sslEngine,
+                               ApplicationProtocolSelector applicationProtocolSelector,
+                               SecureSessionHandshakeListener handshakeListener) throws IOException {
         super(session, sslEngine, applicationProtocolSelector, handshakeListener);
     }
 }
