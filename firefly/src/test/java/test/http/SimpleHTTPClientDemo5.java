@@ -5,6 +5,7 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
+import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
@@ -24,8 +25,11 @@ public class SimpleHTTPClientDemo5 {
 
     public static void main(String[] args) {
         SimpleHTTPClient client = $.createHTTPsClient(new ConscryptSecureSessionFactory());
-        client.get("https://www.jd.com").submit()
-              .thenAccept(resp -> System.out.println(resp.getStringBody()));
+        client.get("https://login.taobao.com/").submit()
+              .thenAccept(resp -> {
+                  System.out.println(resp.getStringBody().length());
+                  System.out.println(resp.getStringBody());
+              });
     }
 
     public static void main6(String[] args) throws Exception {
@@ -68,16 +72,16 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main4(String[] args) throws ExecutionException, InterruptedException {
+    public static void main4(String[] args) throws InterruptedException {
         SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
         for (int j = 0; j < 1000; j++) {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10; i++) {
                 long start = System.currentTimeMillis();
-                client.get("https://login.taobao.com").submit()
-                      .thenApply(res -> res.getStringBody("GBK"))
+                client.get("https://www.jd.com").submit()
+                      .thenApply(SimpleResponse::getStringBody)
                       .thenAccept(v -> {
-                          System.out.println("----login time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
-                          log.info("----------------> login body -> {}", v);
+                          System.out.println("time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
+                          log.info("---------------->body -> {}", v);
                       });
 
 //                $.httpsClient().get("https://www.taobao.com/")

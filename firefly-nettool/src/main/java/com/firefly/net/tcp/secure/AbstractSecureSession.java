@@ -379,6 +379,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         if (log.isDebugEnabled()) {
             log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
         }
+
         merge(receiveBuffer);
         if (!receivedPacketBuf.hasRemaining()) {
             return null;
@@ -390,10 +391,14 @@ abstract public class AbstractSecureSession implements SecureSession {
         needIO:
         while (true) {
             ByteBuffer buf = splitBuffer(packetBufferSize);
+            if (log.isDebugEnabled()) {
+                log.debug("Session {} read data, buf -> {}", session.getSessionId(), buf.remaining());
+            }
             SSLEngineResult result = unwrap(buf);
 
             if (log.isDebugEnabled()) {
-                log.debug("Session {} read data result -> {}, receivedPacketBuf -> {}", session.getSessionId(), result.toString(), receivedPacketBuf.remaining());
+                log.debug("Session {} read data result -> {}, receivedPacketBuf -> {}, packetSize -> {}",
+                        session.getSessionId(), result.toString().replace('\n', ' '), receivedPacketBuf.remaining(), packetBufferSize);
             }
 
             switch (result.getStatus()) {

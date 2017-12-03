@@ -22,6 +22,9 @@ abstract public class AbstractJdkSSLSession extends AbstractSecureSession {
 
     @Override
     protected SSLEngineResult unwrap(ByteBuffer input) throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug("Session {} read data, src -> {}, dst -> {}", session.getSessionId(), input.isDirect(), receivedAppBuf.isDirect());
+        }
         SSLEngineResult result = sslEngine.unwrap(input, receivedAppBuf);
         if (input != receivedPacketBuf) {
             int consumed = result.bytesConsumed();
