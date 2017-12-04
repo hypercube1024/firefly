@@ -48,13 +48,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>4.6.1</version>
+    <version>4.7.0</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>4.6.1</version>
+    <version>4.7.0</version>
 </dependency>
 ```
 
@@ -106,7 +106,7 @@ Add maven dependency in your pom.xml
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-kotlin-ext</artifactId>
-    <version>4.6.1</version>
+    <version>4.7.0</version>
 </dependency>
 ```
 
