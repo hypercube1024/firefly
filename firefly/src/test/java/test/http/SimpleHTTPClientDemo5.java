@@ -4,8 +4,6 @@ import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.client.http2.SimpleResponse;
-import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
-import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
@@ -13,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
