@@ -2,9 +2,7 @@ package com.firefly.net.tcp;
 
 import com.firefly.net.Config;
 import com.firefly.net.SecureSessionFactory;
-import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.SelfSignedCertificateOpenSSLSecureSessionFactory;
 
 public class TcpConfiguration extends Config {
 

@@ -1,9 +1,7 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.net.SecureSessionFactory;
-import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.SelfSignedCertificateOpenSSLSecureSessionFactory;
 
 public class HTTP2Configuration {
 

@@ -1,19 +1,3 @@
-/*
- * Copyright 2014 The Netty Project
- *
- * The Netty Project licenses this file to you under the Apache License,
- * version 2.0 (the "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at:
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
 package com.firefly.net.tcp.secure.openssl.nativelib;
 
 import com.firefly.utils.Assert;
@@ -59,8 +43,7 @@ public final class OpenSsl {
             Class.forName("io.netty.internal.tcnative.SSL", false, OpenSsl.class.getClassLoader());
         } catch (ClassNotFoundException t) {
             cause = t;
-            logger.debug(
-                    "netty-tcnative not in the classpath; " +
+            logger.debug("netty-tcnative not in the classpath; " +
                     OpenSslEngine.class.getSimpleName() + " will be unavailable.");
         }
 
@@ -71,8 +54,7 @@ public final class OpenSsl {
                 loadTcNative();
             } catch (Throwable t) {
                 cause = t;
-                logger.debug(
-                    "Failed to load netty-tcnative; " +
+                logger.debug("Failed to load netty-tcnative; " +
                         OpenSslEngine.class.getSimpleName() + " will be unavailable, unless the " +
                         "application has already loaded the symbols by some other means. " +
                         "See http://netty.io/wiki/forked-tomcat-native.html for more information.", t);
@@ -89,8 +71,7 @@ public final class OpenSsl {
                 if (cause == null) {
                     cause = t;
                 }
-                logger.debug(
-                    "Failed to initialize netty-tcnative; " +
+                logger.debug("Failed to initialize netty-tcnative; " +
                         OpenSslEngine.class.getSimpleName() + " will be unavailable. " +
                         "See http://netty.io/wiki/forked-tomcat-native.html for more information.", t);
             }
@@ -114,7 +95,7 @@ public final class OpenSsl {
                     SSLContext.setCipherSuite(sslCtx, "ALL");
                     final long ssl = SSL.newSSL(sslCtx, true);
                     try {
-                        for (String c: SSL.getCiphers(ssl)) {
+                        for (String c : SSL.getCiphers(ssl)) {
                             // Filter out bad input.
                             if (c == null || c.isEmpty() || availableOpenSslCipherSuites.contains(c)) {
                                 continue;
@@ -134,7 +115,8 @@ public final class OpenSsl {
                             SSL.setCertificateChainBio(ssl, certBio, false);
                             supportsKeyManagerFactory = true;
                             try {
-                                useKeyManagerFactory = AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> true);
+                                useKeyManagerFactory = AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> SystemPropertyUtil.getBoolean(
+                                        "com.firefly.net.tcp.secure.openssl.nativelib.useKeyManagerFactory", true));
                             } catch (Throwable ignore) {
                                 logger.debug("Failed to get useKeyManagerFactory system property.");
                             }
@@ -157,21 +139,21 @@ public final class OpenSsl {
                 logger.warn("Failed to get the list of available OpenSSL cipher suites.", e);
             }
             AVAILABLE_OPENSSL_CIPHER_SUITES = Collections.unmodifiableSet(availableOpenSslCipherSuites);
-            final Set<String> availableJavaCipherSuites = new LinkedHashSet<String>(
+            final Set<String> availableJavaCipherSuites = new LinkedHashSet<>(
                     AVAILABLE_OPENSSL_CIPHER_SUITES.size() * 2);
-            for (String cipher: AVAILABLE_OPENSSL_CIPHER_SUITES) {
+            for (String cipher : AVAILABLE_OPENSSL_CIPHER_SUITES) {
                 // Included converted but also openssl cipher name
                 availableJavaCipherSuites.add(CipherSuiteConverter.toJava(cipher, "TLS"));
                 availableJavaCipherSuites.add(CipherSuiteConverter.toJava(cipher, "SSL"));
             }
 
+            addIfSupported(availableJavaCipherSuites, defaultCiphers, DEFAULT_CIPHER_SUITES);
             useFallbackCiphersIfDefaultIsEmpty(defaultCiphers, availableJavaCipherSuites);
             DEFAULT_CIPHERS = Collections.unmodifiableList(defaultCiphers);
-            addIfSupported(availableJavaCipherSuites, defaultCiphers, DEFAULT_CIPHER_SUITES);
 
             AVAILABLE_JAVA_CIPHER_SUITES = Collections.unmodifiableSet(availableJavaCipherSuites);
 
-            final Set<String> availableCipherSuites = new LinkedHashSet<String>(
+            final Set<String> availableCipherSuites = new LinkedHashSet<>(
                     AVAILABLE_OPENSSL_CIPHER_SUITES.size() + AVAILABLE_JAVA_CIPHER_SUITES.size());
             availableCipherSuites.addAll(AVAILABLE_OPENSSL_CIPHER_SUITES);
             availableCipherSuites.addAll(AVAILABLE_JAVA_CIPHER_SUITES);
@@ -204,7 +186,7 @@ public final class OpenSsl {
             SUPPORTS_OCSP = doesSupportOcsp();
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Supported protocols (OpenSSL): {} ", Arrays.asList(SUPPORTED_PROTOCOLS_SET));
+                logger.debug("Supported protocols (OpenSSL): {} ", Collections.singletonList(SUPPORTED_PROTOCOLS_SET));
                 logger.debug("Default cipher suites (OpenSSL): {}", DEFAULT_CIPHERS);
             }
         } else {
@@ -238,6 +220,7 @@ public final class OpenSsl {
         }
         return supportsOcsp;
     }
+
     private static boolean doesSupportProtocol(int protocol) {
         long sslCtx = -1;
         try {
@@ -273,7 +256,7 @@ public final class OpenSsl {
      * Returns {@code true} if the used version of OpenSSL supports OCSP stapling.
      */
     public static boolean isOcspSupported() {
-      return SUPPORTS_OCSP;
+        return SUPPORTS_OCSP;
     }
 
     /**
@@ -375,9 +358,10 @@ public final class OpenSsl {
         return Buffer.address(buf);
     }
 
-    private OpenSsl() { }
+    private OpenSsl() {
+    }
 
-    private static void loadTcNative() throws Exception {
+    private static void loadTcNative() {
         String os = PlatformDependent.normalizedOs();
         String arch = PlatformDependent.normalizedArch();
 
@@ -395,7 +379,7 @@ public final class OpenSsl {
         libNames.add(staticLibName);
 
         NativeLibraryLoader.loadFirstAvailable(SSL.class.getClassLoader(),
-            libNames.toArray(new String[libNames.size()]));
+                libNames.toArray(new String[libNames.size()]));
     }
 
     private static boolean initializeTcNative() throws Exception {

@@ -24,7 +24,7 @@ public class SimpleHTTPClientDemo5 {
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
     public static void main(String[] args) {
-        SimpleHTTPClient client = $.createHTTPsClient(new ConscryptSecureSessionFactory());
+        SimpleHTTPClient client = $.httpsClient();
         client.get("https://www.jd.com/").submit()
               .thenAccept(resp -> {
                   System.out.println(resp.getStringBody().length());
