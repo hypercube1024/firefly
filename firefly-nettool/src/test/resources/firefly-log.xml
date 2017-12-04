@@ -9,4 +9,10 @@
  		<enable-console>false</enable-console>
 	</logger>
 
+	<logger>
+		<name>firefly-monitor</name>
+		<level>INFO</level>
+		<path>${log.path}</path>
+	</logger>
+
 </loggers>

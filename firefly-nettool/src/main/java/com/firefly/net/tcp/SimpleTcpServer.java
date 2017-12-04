@@ -92,11 +92,6 @@ public class SimpleTcpServer extends AbstractLifeCycle {
                     })));
                 }
 
-                @Override
-                public void sessionClosed(Session session) throws Throwable {
-                    super.secureSessionClosed(session);
-                }
-
             });
         }
         server.listen(config.getHost(), config.getPort());

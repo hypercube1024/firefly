@@ -15,9 +15,9 @@ data class Item(val name: String, val price: Double)
 data class ItemRepository(val name: String) {
     fun repository(): List<Item> =
             listOf(Item("foo", 33.2),
-                    Item("beer", 5.99),
-                    Item("cola", 2.5),
-                    Item("mineral water", 2.0))
+                   Item("beer", 5.99),
+                   Item("cola", 2.5),
+                   Item("mineral water", 2.0))
 }
 
 /**
@@ -25,18 +25,35 @@ data class ItemRepository(val name: String) {
  * log level: INFO
  * JVM arguments: -XX:+UseG1GC -Xmx1024m -Xms1024m
  *
+ * wrk -t8 -c32 -d60s http://127.0.0.1:4455/
+ * Running 1m test @ http://127.0.0.1:4455/
+ * 8 threads and 32 connections
+ * Thread Stats   Avg      Stdev     Max   +/- Stdev
+ * Latency   473.34us  114.16us   5.82ms   90.43%
+ * Req/Sec     8.43k   433.16     9.56k    76.87%
+ * 4033097 requests in 1.00m, 473.09MB read
+ * Requests/sec:  67105.43
+ * Transfer/sec:      7.87MB
+ *
  * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items
  * Running 1m test @ http://127.0.0.1:4455/items
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   530.31us  135.35us  10.91ms   93.14%
- * Req/Sec     7.54k   428.68     8.72k    82.15%
- * 3609078 requests in 1.00m, 1.37GB read
- * Requests/sec:  60050.09
- * Transfer/sec:     23.37MB
+ * Latency   502.37us  258.08us  32.52ms   98.91%
+ * Req/Sec     8.01k   323.65     8.98k    73.92%
+ * 3834331 requests in 1.00m, 1.46GB read
+ * Requests/sec:  63798.77
+ * Transfer/sec:     24.82MB
  */
 fun main(args: Array<String>) {
     HttpServer {
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/"
+
+            asyncHandler { end("hello world!") }
+        }
+
         router {
             httpMethod = HttpMethod.GET
             path = "/items"

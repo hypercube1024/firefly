@@ -7,6 +7,7 @@ import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.StringParser;
+import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
 import com.firefly.net.tcp.secure.jdk.FileJdkSSLContextFactory;
 import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
@@ -90,6 +91,18 @@ public class TestSimpleTcpServerAndClient {
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
+        run.clientConfig.setSecureSessionFactory(new ConscryptSecureSessionFactory());
+        run.clientConfig.setSecureConnectionEnabled(true);
+        run.serverConfig = new TcpServerConfiguration();
+        run.serverConfig.setSecureConnectionEnabled(true);
+        run.serverConfig.setSecureSessionFactory(new ConscryptSecureSessionFactory());
+        run.port = (int) RandomUtils.random(1000, 65534);
+        run.maxMsg = 20;
+        run.testName = "Test conscrypt self signed certificate";
+        data.add(run);
+
+        run = new Run();
+        run.clientConfig = new TcpConfiguration();
         run.clientConfig.setSecureConnectionEnabled(true);
         run.clientConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
         run.serverConfig = new TcpServerConfiguration();
@@ -140,7 +153,6 @@ public class TestSimpleTcpServerAndClient {
         ClassPathResource privateKey = new ClassPathResource("/myCAPriv8.key");
         return new FileCertificateOpenSSLSecureSessionFactory(certificate.getFile().getAbsolutePath(), privateKey.getFile().getAbsolutePath());
     }
-
 
     @Test
     public void test() {

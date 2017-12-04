@@ -35,10 +35,11 @@ public class HttpGenerator {
     private final static byte[] __colon_space = new byte[]{':', ' '};
     public static final MetaData.Response CONTINUE_100_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 100, null, null, -1);
     public static final MetaData.Response PROGRESS_102_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 102, null, null, -1);
-    public final static MetaData.Response RESPONSE_500_INFO =
-            new MetaData.Response(HttpVersion.HTTP_1_1, INTERNAL_SERVER_ERROR_500, null, new HttpFields() {{
+    public static final MetaData.Response RESPONSE_500_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, INTERNAL_SERVER_ERROR_500, null,
+            new HttpFields() {{
                 put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE);
             }}, 0);
+
 
     // states
     public enum State {

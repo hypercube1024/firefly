@@ -116,13 +116,28 @@ public abstract class AbstractTcpConnection implements TcpConnection {
     }
 
     @Override
-    public Session.State getState() {
-        return session.getState();
+    public boolean isOpen() {
+        return session.isOpen();
     }
 
     @Override
-    public boolean isOpen() {
-        return session.isOpen();
+    public boolean isClosed() {
+        return session.isClosed();
+    }
+
+    @Override
+    public boolean isShutdownOutput() {
+        return session.isShutdownOutput();
+    }
+
+    @Override
+    public boolean isShutdownInput() {
+        return session.isShutdownInput();
+    }
+
+    @Override
+    public boolean isWaitingForClose() {
+        return session.isWaitingForClose();
     }
 
     @Override
@@ -140,4 +155,8 @@ public abstract class AbstractTcpConnection implements TcpConnection {
         return session.getIdleTimeout();
     }
 
+    @Override
+    public long getMaxIdleTimeout() {
+        return session.getMaxIdleTimeout();
+    }
 }

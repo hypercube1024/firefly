@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,10 +20,13 @@ public class SimpleHTTPClientDemo5 {
 
     private final static Logger log = LoggerFactory.getLogger(SimpleHTTPClientDemo5.class);
 
-    public static void main7(String[] args) {
-        SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
-        client.get("https://www.jd.com").submit()
-              .thenAccept(resp -> System.out.println(resp.getStringBody()));
+    public static void main(String[] args) {
+        SimpleHTTPClient client = $.httpsClient();
+        client.get("https://www.jd.com/").submit()
+              .thenAccept(resp -> {
+                  System.out.println(resp.getStringBody().length());
+                  System.out.println(resp.getStringBody());
+              });
     }
 
     public static void main6(String[] args) throws Exception {
@@ -67,16 +69,16 @@ public class SimpleHTTPClientDemo5 {
         }
     }
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    public static void main4(String[] args) throws InterruptedException {
         SimpleHTTPClient client = $.createHTTPsClient(new DefaultOpenSSLSecureSessionFactory());
         for (int j = 0; j < 1000; j++) {
-            for (int i = 0; i < 25; i++) {
+            for (int i = 0; i < 10; i++) {
                 long start = System.currentTimeMillis();
-                client.get("https://login.taobao.com").submit()
-                      .thenApply(res -> res.getStringBody("GBK"))
+                client.get("https://www.jd.com").submit()
+                      .thenApply(SimpleResponse::getStringBody)
                       .thenAccept(v -> {
-                          System.out.println("----login time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
-                          log.info("----------------> login body -> {}", v);
+                          System.out.println("time: " + (System.currentTimeMillis() - start) + "| body size: " + v.length());
+                          log.info("---------------->body -> {}", v);
                       });
 
 //                $.httpsClient().get("https://www.taobao.com/")

@@ -72,6 +72,10 @@ public interface TcpConnection extends Connection {
 
     void shutdownInput();
 
-    Session.State getState();
+    boolean isShutdownOutput();
+
+    boolean isShutdownInput();
+
+    boolean isWaitingForClose();
 
 }

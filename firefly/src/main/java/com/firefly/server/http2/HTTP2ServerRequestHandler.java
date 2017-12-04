@@ -25,12 +25,8 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
     @Override
     public void onClose(Session session, GoAwayFrame frame) {
-        try {
-            log.info("receive the GoAwayFrame -> ", frame);
-            connection.close();
-        } catch (IOException e) {
-            log.error("close http2 connection exception", e);
-        }
+        log.info("receive the GoAwayFrame -> ", frame);
+        connection.close();
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.firefly.net.SecureSession;
 import com.firefly.net.SecureSessionHandshakeListener;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
+import com.firefly.net.exception.SecureNetException;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -36,12 +38,11 @@ abstract public class AbstractSecureSession implements SecureSession {
     protected ByteBuffer receivedPacketBuf;
     protected ByteBuffer receivedAppBuf;
 
-    protected boolean closed = false;
+    protected volatile boolean closed = false;
     protected SSLEngineResult.HandshakeStatus initialHSStatus;
     protected boolean initialHSComplete;
 
-    public AbstractSecureSession(Session session,
-                                 SSLEngine sslEngine,
+    public AbstractSecureSession(Session session, SSLEngine sslEngine,
                                  ApplicationProtocolSelector applicationProtocolSelector,
                                  SecureSessionHandshakeListener handshakeListener) throws IOException {
         this.session = session;
@@ -67,11 +68,11 @@ abstract public class AbstractSecureSession implements SecureSession {
      *
      * @param receiveBuffer Encrypted message
      * @return True means handshake success
-     * @throws IOException A runtime exception
+     * @throws IOException The I/O exception
      */
     protected boolean doHandshake(ByteBuffer receiveBuffer) throws IOException {
         if (!session.isOpen()) {
-            sslEngine.closeInbound();
+            close();
             return (initialHSComplete = false);
         }
 
@@ -96,7 +97,7 @@ abstract public class AbstractSecureSession implements SecureSession {
                 break;
 
             default: // NEED_TASK
-                throw new RuntimeException("Invalid Handshaking State" + initialHSStatus);
+                throw new SecureNetException("Invalid Handshaking State" + initialHSStatus);
         }
         return initialHSComplete;
     }
@@ -115,8 +116,7 @@ abstract public class AbstractSecureSession implements SecureSession {
                 initialHSStatus = result.getHandshakeStatus();
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Session {} handshake result -> {}, initialHSStatus -> {}, inNetRemain -> {}",
-                            session.getSessionId(), result.toString(), initialHSStatus, receivedPacketBuf.remaining());
+                    log.debug("Session {} handshake result -> {}, initialHSStatus -> {}, inNetRemain -> {}", session.getSessionId(), result.toString(), initialHSStatus, receivedPacketBuf.remaining());
                 }
 
                 switch (result.getStatus()) {
@@ -125,7 +125,6 @@ abstract public class AbstractSecureSession implements SecureSession {
                             case NEED_TASK:
                                 initialHSStatus = doTasks();
                                 break unwrap;
-
                             case NOT_HANDSHAKING:
                             case FINISHED:
                                 handshakeFinish();
@@ -161,12 +160,12 @@ abstract public class AbstractSecureSession implements SecureSession {
 
                     case CLOSED: {
                         log.info("Session {} handshake failure. SSLEngine will close inbound", session.getSessionId());
-                        sslEngine.closeInbound();
+                        closeInbound();
                     }
                     break needIO;
 
                     default:
-                        throw new IOException(StringUtils.replace("Session {} handshake exception. status -> {}", session.getSessionId(), result.getStatus()));
+                        throw new SecureNetException(StringUtils.replace("Session {} handshake exception. status -> {}", session.getSessionId(), result.getStatus()));
 
                 }
             }
@@ -196,16 +195,39 @@ abstract public class AbstractSecureSession implements SecureSession {
                             session.getSessionId(), initialHSStatus, result.getStatus(), initialHSComplete);
                 }
                 switch (result.getStatus()) {
-                    case OK:
-                        if (initialHSStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
-                            initialHSStatus = doTasks();
-                        }
-
+                    case OK: {
                         packetBuffer.flip();
-                        if (packetBuffer.hasRemaining()) {
-                            session.write(packetBuffer, Callback.NOOP);
+                        if (log.isDebugEnabled()) {
+                            log.debug("session {} handshake response {} bytes", session.getSessionId(), packetBuffer.remaining());
                         }
-                        break wrap;
+                        switch (initialHSStatus) {
+                            case NEED_TASK: {
+                                initialHSStatus = doTasks();
+                                if (packetBuffer.hasRemaining()) {
+                                    session.write(packetBuffer, Callback.NOOP);
+                                }
+                            }
+                            break;
+                            case FINISHED: {
+                                if (packetBuffer.hasRemaining()) {
+                                    session.write(packetBuffer, new Callback() {
+                                        public void succeeded() {
+                                            handshakeFinish();
+                                        }
+                                    });
+                                } else {
+                                    handshakeFinish();
+                                }
+                            }
+                            break;
+                            default: {
+                                if (packetBuffer.hasRemaining()) {
+                                    session.write(packetBuffer, Callback.NOOP);
+                                }
+                            }
+                        }
+                    }
+                    break wrap;
 
                     case BUFFER_OVERFLOW:
                         ByteBuffer b = newBuffer(packetBuffer.position() + sslEngine.getSession().getPacketBufferSize());
@@ -220,19 +242,20 @@ abstract public class AbstractSecureSession implements SecureSession {
                         if (packetBuffer.hasRemaining()) {
                             session.write(packetBuffer, Callback.NOOP);
                         }
-                        sslEngine.closeOutbound();
+                        closeOutbound();
                         break outer;
 
                     default: // BUFFER_UNDERFLOW
-                        throw new IOException(StringUtils.replace("Session {} handshake exception. status -> {}", session.getSessionId(), result.getStatus()));
+                        throw new SecureNetException(StringUtils.replace("Session {} handshake exception. status -> {}", session.getSessionId(), result.getStatus()));
                 }
             }
         }
     }
 
     protected void merge(ByteBuffer now) {
-        if (!now.hasRemaining())
+        if (!now.hasRemaining()) {
             return;
+        }
 
         if (receivedPacketBuf != null) {
             if (receivedPacketBuf.hasRemaining()) {
@@ -279,14 +302,26 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() {
         if (!closed) {
-            // log.debug("close SSL engine, {}|{}", sslEngine.isInboundDone(),
-            // sslEngine.isOutboundDone());
-            sslEngine.closeOutbound();
-            sslEngine.closeInbound();
+            closeOutbound();
             closed = true;
         }
+    }
+
+    protected void closeInbound() {
+        try {
+            sslEngine.closeInbound();
+        } catch (SSLException e) {
+            log.warn("close inbound exception", e);
+        } finally {
+            session.shutdownInput();
+        }
+    }
+
+    protected void closeOutbound() {
+        sslEngine.closeOutbound();
+        session.close();
     }
 
     @Override
@@ -343,6 +378,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         if (log.isDebugEnabled()) {
             log.debug("SSL read current session {} status -> {}", session.getSessionId(), session.isOpen());
         }
+
         merge(receiveBuffer);
         if (!receivedPacketBuf.hasRemaining()) {
             return null;
@@ -354,10 +390,15 @@ abstract public class AbstractSecureSession implements SecureSession {
         needIO:
         while (true) {
             ByteBuffer buf = splitBuffer(packetBufferSize);
+            if (log.isDebugEnabled()) {
+                log.debug("Session {} read data, buf -> {}", session.getSessionId(), buf.remaining());
+            }
             SSLEngineResult result = unwrap(buf);
 
             if (log.isDebugEnabled()) {
-                log.debug("Session {} read data result -> {}, receivedPacketBuf -> {}", session.getSessionId(), result.toString(), receivedPacketBuf.remaining());
+                log.debug("Session {} read data result -> {}, receivedPacketBuf -> {}, packetSize -> {}",
+                        session.getSessionId(), result.toString().replace('\n', ' '),
+                        receivedPacketBuf.remaining(), packetBufferSize);
             }
 
             switch (result.getStatus()) {
@@ -392,12 +433,12 @@ abstract public class AbstractSecureSession implements SecureSession {
 
                 case CLOSED: {
                     log.info("Session {} read data failure. SSLEngine will close inbound", session.getSessionId());
-                    sslEngine.closeInbound();
+                    closeInbound();
                 }
                 break needIO;
 
                 default:
-                    throw new IOException(StringUtils.replace("Session {} SSLEngine read data exception. status -> {}",
+                    throw new SecureNetException(StringUtils.replace("Session {} SSLEngine read data exception. status -> {}",
                             session.getSessionId(), result.getStatus()));
             }
         }
@@ -439,6 +480,7 @@ abstract public class AbstractSecureSession implements SecureSession {
         final int remain = outAppBuf.remaining();
         int packetBufferSize = sslEngine.getSession().getPacketBufferSize();
         List<ByteBuffer> pocketBuffers = new ArrayList<>();
+        boolean closeOutput = false;
 
         outer:
         while (ret < remain) {
@@ -477,13 +519,12 @@ abstract public class AbstractSecureSession implements SecureSession {
                         if (packetBuffer.hasRemaining()) {
                             pocketBuffers.add(packetBuffer);
                         }
-                        sslEngine.closeOutbound();
+                        closeOutput = true;
                     }
                     break outer;
 
                     default: {
-                        IOException ex = new IOException(StringUtils.replace("Session {} SSLEngine writes data exception. status -> {}",
-                                session.getSessionId(), result.getStatus()));
+                        SecureNetException ex = new SecureNetException(StringUtils.replace("Session {} SSLEngine writes data exception. status -> {}", session.getSessionId(), result.getStatus()));
                         callback.failed(ex);
                         throw ex;
                     }
@@ -492,6 +533,9 @@ abstract public class AbstractSecureSession implements SecureSession {
         }
 
         session.write(pocketBuffers, callback);
+        if (closeOutput) {
+            closeOutbound();
+        }
         return ret;
     }
 

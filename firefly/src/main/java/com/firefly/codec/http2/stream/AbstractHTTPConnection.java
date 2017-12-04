@@ -7,9 +7,11 @@ import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
+import com.firefly.utils.io.IO;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 abstract public class AbstractHTTPConnection implements HTTPConnection {
 
@@ -42,18 +44,25 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     }
 
     @Override
+    public boolean isClosed() {
+        return tcpSession.isClosed();
+    }
+
+    @Override
     public boolean isOpen() {
         return tcpSession.isOpen();
     }
 
     @Override
-    public void close() throws IOException {
-        if (secureSession != null && secureSession.isOpen()) {
-            secureSession.close();
-        }
-        if (tcpSession != null && tcpSession.isOpen()) {
-            tcpSession.close();
-        }
+    public void close() {
+        Optional.ofNullable(secureSession)
+                .filter(SecureSession::isOpen)
+                .ifPresent(IO::close);
+
+        Optional.ofNullable(tcpSession)
+                .filter(Session::isOpen)
+                .ifPresent(Session::close);
+
         attachment = null;
     }
 
@@ -124,6 +133,11 @@ abstract public class AbstractHTTPConnection implements HTTPConnection {
     @Override
     public long getIdleTimeout() {
         return tcpSession.getIdleTimeout();
+    }
+
+    @Override
+    public long getMaxIdleTimeout() {
+        return tcpSession.getMaxIdleTimeout();
     }
 
     @Override

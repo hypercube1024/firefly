@@ -32,8 +32,7 @@ public class HttpGeneratorClientTest {
         ByteBuffer header = BufferUtils.allocate(2048);
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, null, true);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, null, true);
         Assert.assertEquals(HttpGenerator.Result.NEED_INFO, result);
         Assert.assertEquals(HttpGenerator.State.START, gen.getState());
 

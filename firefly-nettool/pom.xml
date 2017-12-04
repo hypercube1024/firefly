@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.6.0</version>
+        <version>4.6.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -66,6 +66,10 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.conscrypt</groupId>
+            <artifactId>conscrypt-openjdk-uber</artifactId>
         </dependency>
 
         <dependency>

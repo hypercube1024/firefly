@@ -33,7 +33,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
         response = new HTTPServerResponse();
         outputStream = new HTTP1ServerResponseOutputStream(response, connection);
 
-        return HttpMethod.PRI.is(method) && connection.upgradeProtocolToHTTP2(request, response);
+        return HttpMethod.PRI.is(method) && connection.directUpgradeHTTP2(request);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
                     return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
                 }
             } else {
-                boolean success = connection.upgradeProtocolToHTTP2(request, response);
+                boolean success = connection.upgradeProtocol(request, response);
                 return success || serverHTTPHandler.headerComplete(request, response, outputStream, connection);
             }
         }

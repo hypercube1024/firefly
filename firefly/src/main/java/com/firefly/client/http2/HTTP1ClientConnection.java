@@ -223,8 +223,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                     byte[] settingsPayload = new byte[settingsFrame.length - 9];
                     System.arraycopy(settingsFrame, 9, settingsPayload, 0, settingsPayload.length);
 
-                    request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS,
-                            Base64Utils.encodeToUrlSafeString(settingsPayload)));
+                    request.getFields().add(new HttpField(HttpHeader.HTTP2_SETTINGS, Base64Utils.encodeToUrlSafeString(settingsPayload)));
                 } catch (IOException e) {
                     log.error("generate http2 upgrading settings exception", e);
                 }

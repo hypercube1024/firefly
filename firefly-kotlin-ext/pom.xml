@@ -12,7 +12,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.6.0</version>
+        <version>4.6.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -38,7 +38,7 @@
 
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jre8</artifactId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>

@@ -56,7 +56,7 @@ abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory 
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         long end = Millisecond100Clock.currentTimeMillis();
-        log.info("creating SSL context spends time in {} ms", (end - start));
+        log.info("creating SSL context spends {} ms", (end - start));
         return sslContext;
     }
 

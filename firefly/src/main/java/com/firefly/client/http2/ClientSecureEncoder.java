@@ -14,15 +14,16 @@ public class ClientSecureEncoder extends EncoderChain {
         HTTPConnection connection = (HTTPConnection) session.getAttachment();
 
         switch (connection.getHttpVersion()) {
-            case HTTP_2: {
+            case HTTP_2:
                 HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) connection;
                 http2ClientConnection.writeEncryptMessage(message);
-            }
-            break;
+                break;
             case HTTP_1_1:
+                HTTP1ClientConnection http1ClientConnection = (HTTP1ClientConnection) connection;
                 if (message instanceof ByteBuffer) {
-                    HTTP1ClientConnection http1ClientConnection = (HTTP1ClientConnection) connection;
                     http1ClientConnection.getSecureSession().write((ByteBuffer) message, Callback.NOOP);
+                } else if (message instanceof ByteBuffer[]) {
+                    http1ClientConnection.getSecureSession().write((ByteBuffer[]) message, Callback.NOOP);
                 } else {
                     throw new IllegalArgumentException(
                             "the http1 encoder must receive the ByteBuffer, but this message type is "

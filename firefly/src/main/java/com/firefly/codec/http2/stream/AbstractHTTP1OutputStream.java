@@ -33,9 +33,11 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 
         generatorResult = generate(info, header, null, data, false);
         if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
-            tcpSession.encode(header);
             if (data != null) {
-                tcpSession.encode(data);
+                ByteBuffer[] headerAndData = new ByteBuffer[]{header, data};
+                tcpSession.encode(headerAndData);
+            } else {
+                tcpSession.encode(header);
             }
             committed = true;
         } else {
@@ -63,8 +65,8 @@ abstract public class AbstractHTTP1OutputStream extends HTTPOutputStream {
 
                 generatorResult = generate(null, null, chunk, data, false);
                 if (generatorResult == HttpGenerator.Result.FLUSH && generator.getState() == HttpGenerator.State.COMMITTED) {
-                    tcpSession.encode(chunk);
-                    tcpSession.encode(data);
+                    ByteBuffer[] chunkAndData = new ByteBuffer[]{chunk, data};
+                    tcpSession.encode(chunkAndData);
                 } else {
                     generateHTTPMessageExceptionally(generatorResult, generator.getState(), HttpGenerator.Result.FLUSH, HttpGenerator.State.COMMITTED);
                 }
