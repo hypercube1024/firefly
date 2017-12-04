@@ -65,14 +65,13 @@ public class DefaultOpenSSLSecureSessionFactory extends AbstractOpenSSLSecureSes
             "U8x8YQXwX+Q8SfGpcmeh2LfC2iwYxV/NPr5stNAxrnpivrsBB88=\r\n" +
             "-----END CERTIFICATE-----";
 
-
-    private static final ByteArrayInputStream privateKeyInputStream = new ByteArrayInputStream(privateKey.getBytes(StandardCharsets.US_ASCII));
-    private static final ByteArrayInputStream certInputStream = new ByteArrayInputStream(cert.getBytes(StandardCharsets.US_ASCII));
-
+    @Override
     public SslContext createSSLContext(boolean clientMode) {
         SslContextBuilder sslContextBuilder = clientMode
                 ? SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE)
-                : SslContextBuilder.forServer(certInputStream, privateKeyInputStream);
+                : SslContextBuilder.forServer(
+                new ByteArrayInputStream(cert.getBytes(StandardCharsets.US_ASCII)),
+                new ByteArrayInputStream(privateKey.getBytes(StandardCharsets.US_ASCII)));
 
         try {
             return sslContextBuilder.ciphers(SecurityUtils.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)

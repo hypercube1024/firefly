@@ -25,7 +25,7 @@ public class SimpleHTTPClientDemo5 {
 
     public static void main(String[] args) {
         SimpleHTTPClient client = $.createHTTPsClient(new ConscryptSecureSessionFactory());
-        client.get("https://login.taobao.com/").submit()
+        client.get("https://www.jd.com/").submit()
               .thenAccept(resp -> {
                   System.out.println(resp.getStringBody().length());
                   System.out.println(resp.getStringBody());

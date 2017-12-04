@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -70,19 +71,19 @@ public class TestHTTPServerAndClient {
         run.maxMsg = 15;
         run.requestURL = "https://localhost:" + run.port + "/";
         run.quitURL = "https://localhost:" + run.port + "/quit";
-        run.testName = "Test HTTP server and client with TLS";
+        run.testName = "Test HTTPs server and client";
         data.add(run);
 
         return data;
     }
 
     @Test
-    public void test() {
-        SimpleHTTPServer server = $.createHTTPServer(r.serverConfig); // new SimpleHTTPServer(r.serverConfig);
-        SimpleHTTPClient client = $.createHTTPClient(r.clientConfig); // new SimpleHTTPClient(r.clientConfig);
+    public void test() throws InterruptedException {
+        SimpleHTTPServer server = $.createHTTPServer(r.serverConfig);
+        SimpleHTTPClient client = $.createHTTPClient(r.clientConfig);
         int port = r.port;
         int maxMsg = r.maxMsg;
-        Phaser phaser = new Phaser(maxMsg + 2);
+        CountDownLatch countDownLatch = new CountDownLatch(maxMsg + 1);
 
         AtomicInteger msgCount = new AtomicInteger();
         server.headerComplete(r -> r.messageComplete(request -> {
@@ -106,21 +107,20 @@ public class TestHTTPServerAndClient {
                 }
                 break;
             }
-            phaser.arrive();
         })).listen("localhost", port);
 
         for (int i = 0; i < maxMsg; i++) {
-            client.post(r.requestURL)
-                  .body("hello world" + i + "!")
-                  .submit()
-                  .thenAcceptAsync(r -> System.out.println("client receives message -> " + r.getStringBody()));
+            client.post(r.requestURL).body("hello world" + i + "!").submit().thenAcceptAsync(r -> {
+                System.out.println("client receives message -> " + r.getStringBody());
+                countDownLatch.countDown();
+            });
         }
-        client.post(r.quitURL)
-              .body("quit test")
-              .submit()
-              .thenAcceptAsync(r -> System.out.println("client receives message -> " + r.getStringBody()));
+        client.post(r.quitURL).body("quit test").submit().thenAcceptAsync(r -> {
+            System.out.println("client receives message -> " + r.getStringBody());
+            countDownLatch.countDown();
+        });
 
-        phaser.arriveAndAwaitAdvance();
+        countDownLatch.await();
         Assert.assertThat(msgCount.get(), is(maxMsg));
         client.stop();
         server.stop();

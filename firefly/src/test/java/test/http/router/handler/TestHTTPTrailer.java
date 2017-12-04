@@ -9,6 +9,7 @@ import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.server.http2.HTTP2ServerBuilder;
+import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,18 +46,18 @@ public class TestHTTPTrailer extends AbstractHTTPHandlerTest {
     public void testHttp2() {
         Phaser phaser = new Phaser(2);
 
-        HTTP2ServerBuilder httpsServer = $.httpsServer();
+        SimpleHTTPServerConfiguration serverConfiguration = new SimpleHTTPServerConfiguration();
+        serverConfiguration.setSecureConnectionEnabled(true);
+        HTTP2ServerBuilder httpsServer = $.httpServer(serverConfiguration);
         startHttpServer(httpsServer);
 
-        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
-        configuration.setSecureConnectionEnabled(true);
-        configuration.setSecureSessionFactory(new DefaultOpenSSLSecureSessionFactory());
-        SimpleHTTPClient httpsClient = new SimpleHTTPClient(configuration);
+        SimpleHTTPClientConfiguration clientConfiguration = new SimpleHTTPClientConfiguration();
+        clientConfiguration.setSecureConnectionEnabled(true);
+        SimpleHTTPClient httpsClient = new SimpleHTTPClient(clientConfiguration);
         testServerResponseTrailer(phaser, httpsClient);
 //        testClientPostTrailer(phaser, httpsClient);
 
         phaser.arriveAndAwaitAdvance();
-
         httpsServer.stop();
         httpsClient.stop();
     }

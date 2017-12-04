@@ -125,7 +125,6 @@ abstract public class AbstractSecureSession implements SecureSession {
                             case NEED_TASK:
                                 initialHSStatus = doTasks();
                                 break unwrap;
-
                             case NOT_HANDSHAKING:
                             case FINISHED:
                                 handshakeFinish();
@@ -398,7 +397,8 @@ abstract public class AbstractSecureSession implements SecureSession {
 
             if (log.isDebugEnabled()) {
                 log.debug("Session {} read data result -> {}, receivedPacketBuf -> {}, packetSize -> {}",
-                        session.getSessionId(), result.toString().replace('\n', ' '), receivedPacketBuf.remaining(), packetBufferSize);
+                        session.getSessionId(), result.toString().replace('\n', ' '),
+                        receivedPacketBuf.remaining(), packetBufferSize);
             }
 
             switch (result.getStatus()) {
