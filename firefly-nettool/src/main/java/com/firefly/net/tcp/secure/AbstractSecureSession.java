@@ -112,11 +112,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
             unwrap:
             while (true) {
-                ByteBuffer buf = splitBuffer(packetBufferSize);
-                if (!receivedAppBuf.hasRemaining()) {
-                    resizeAppBuffer(applicationBufferSize);
-                }
-                SSLEngineResult result = unwrap(buf);
+                SSLEngineResult result = unwrap(packetBufferSize, applicationBufferSize);
                 initialHSStatus = result.getHandshakeStatus();
 
                 if (log.isDebugEnabled()) {
@@ -253,6 +249,13 @@ abstract public class AbstractSecureSession implements SecureSession {
         }
     }
 
+    protected void resizeAppBuffer(int applicationBufferSize) {
+        ByteBuffer b = newBuffer(receivedAppBuf.position() + applicationBufferSize);
+        receivedAppBuf.flip();
+        b.put(receivedAppBuf);
+        receivedAppBuf = b;
+    }
+
     protected void merge(ByteBuffer now) {
         if (!now.hasRemaining()) {
             return;
@@ -366,6 +369,18 @@ abstract public class AbstractSecureSession implements SecureSession {
 
     abstract protected ByteBuffer newBuffer(int size);
 
+    protected SSLEngineResult unwrap(int packetBufferSize, int applicationBufferSize) throws IOException {
+        ByteBuffer buf = splitBuffer(packetBufferSize);
+        if (log.isDebugEnabled()) {
+            log.debug("Session {} read data, buf -> {}, packet -> {}, appBuf -> {}",
+                    session.getSessionId(), buf.remaining(), packetBufferSize, receivedAppBuf.remaining());
+        }
+        if (!receivedAppBuf.hasRemaining()) {
+            resizeAppBuffer(applicationBufferSize);
+        }
+        return unwrap(buf);
+    }
+
     /**
      * This method is used to decrypt data, it implied do handshake
      *
@@ -397,16 +412,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
         needIO:
         while (true) {
-            ByteBuffer buf = splitBuffer(packetBufferSize);
-            if (log.isDebugEnabled()) {
-                log.debug("Session {} read data, buf -> {}, packet -> {}",
-                        session.getSessionId(), buf.remaining(), packetBufferSize);
-                log.debug("Session {} read data, current app buf -> {}, {}", session.getSessionId(), receivedAppBuf.position(), receivedAppBuf.limit());
-            }
-            if (!receivedAppBuf.hasRemaining()) {
-                resizeAppBuffer(applicationBufferSize);
-            }
-            SSLEngineResult result = unwrap(buf);
+            SSLEngineResult result = unwrap(packetBufferSize, applicationBufferSize);
 
             if (log.isDebugEnabled()) {
                 log.debug("Session {} read data result -> {}, receivedPacketBuf -> {}, packetSize -> {}",
@@ -455,12 +461,6 @@ abstract public class AbstractSecureSession implements SecureSession {
         return getReceivedAppBuf();
     }
 
-    private void resizeAppBuffer(int applicationBufferSize) {
-        ByteBuffer b = newBuffer(receivedAppBuf.position() + applicationBufferSize);
-        receivedAppBuf.flip();
-        b.put(receivedAppBuf);
-        receivedAppBuf = b;
-    }
 
     @Override
     public int write(ByteBuffer[] outputBuffers, Callback callback) throws IOException {
