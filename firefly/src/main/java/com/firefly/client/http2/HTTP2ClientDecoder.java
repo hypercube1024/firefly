@@ -14,7 +14,7 @@ public class HTTP2ClientDecoder extends DecoderChain {
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     @Override
-    public void decode(ByteBuffer buffer, Session session) throws Throwable {
+    public void decode(ByteBuffer buffer, Session session) {
         if (!buffer.hasRemaining())
             return;
 
