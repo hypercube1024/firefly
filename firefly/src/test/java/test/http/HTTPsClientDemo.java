@@ -20,7 +20,8 @@ public class HTTPsClientDemo {
             "https://segmentfault.com",
             "https://github.com",
             "https://www.taobao.com",
-            "https://www.baidu.com");
+            "https://www.baidu.com",
+            "https://login.taobao.com");
 
     public static void main(String[] args) throws InterruptedException {
         SimpleHTTPClient client = $.createHTTPsClient(new ConscryptSecureSessionFactory());
