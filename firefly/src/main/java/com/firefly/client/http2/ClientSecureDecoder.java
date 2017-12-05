@@ -52,7 +52,11 @@ public class ClientSecureDecoder extends DecoderChain {
                     throw new IllegalStateException("the client http connection has not been created");
                 }
             } else {
-                log.debug("client ssl session {} is shaking hand", session.getSessionId());
+                if (sslSession.isHandshakeFinished()) {
+                    log.debug("client ssl session {} need more data", session.getSessionId());
+                } else {
+                    log.debug("client ssl session {} is shaking hand", session.getSessionId());
+                }
             }
         }
     }
