@@ -165,7 +165,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
         if (closed)
             return;
 
-        log.debug("http2 output stream is closing");
+        log.debug("http2 output stream is closing. committed -> {}, isChunked -> {}", committed, isChunked);
         if (!committed) {
             commit(true);
         } else {
@@ -189,7 +189,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
         contentLength = info.getFields().getLongField(HttpHeader.CONTENT_LENGTH.asString());
         if (endStream) {
             if (log.isDebugEnabled()) {
-                log.debug("stream {} commits header and closes it", getStream().getId());
+                log.debug("http2 output stream {} commits header and closes it", getStream().getId());
             }
             isChunked = false;
         } else {
@@ -197,7 +197,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("is stream {} using chunked encoding ? {}", getStream().getId(), isChunked);
+            log.debug("is http2 output stream {} using chunked encoding ? {}", getStream().getId(), isChunked);
         }
 
         final Supplier<HttpFields> trailers = info.getTrailerSupplier();
@@ -207,13 +207,13 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
         if (trailers == null) {
             HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, endStream);
             if (log.isDebugEnabled()) {
-                log.debug("stream {} commits the header frame {}", stream.getId(), headersFrame);
+                log.debug("http2 output stream {} commits the header frame {}", stream.getId(), headersFrame);
             }
             writeFrame(headersFrame);
         } else {
             HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, false);
             if (log.isDebugEnabled()) {
-                log.debug("stream {} commits the header frame {}", stream.getId(), headersFrame);
+                log.debug("http2 output stream {} commits the header frame {}", stream.getId(), headersFrame);
             }
             writeFrame(headersFrame);
 
@@ -229,7 +229,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
         MetaData trailerMetaData = new MetaData(info.getHttpVersion(), trailers.get());
         HeadersFrame trailer = new HeadersFrame(stream.getId(), trailerMetaData, null, true);
         if (log.isDebugEnabled()) {
-            log.debug("stream {} write the trailer frame {}", stream.getId(), trailer);
+            log.debug("http2 output stream {} write the trailer frame {}", stream.getId(), trailer);
         }
         writeFrame(trailer);
     }

@@ -1,7 +1,11 @@
 package test.http;
 
 import com.firefly.$;
+import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
+import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
+import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +16,6 @@ import java.util.concurrent.CountDownLatch;
  */
 public class HTTPsClientDemo {
     public static final List<String> urlList = Arrays.asList(
-            "https://www.oschina.net",
             "https://www.jd.com",
             "https://segmentfault.com",
             "https://github.com",
@@ -20,11 +23,12 @@ public class HTTPsClientDemo {
             "https://www.baidu.com");
 
     public static void main(String[] args) throws InterruptedException {
+        SimpleHTTPClient client = $.createHTTPsClient(new ConscryptSecureSessionFactory());
         for (int i = 0; i < 3; i++) {
             CountDownLatch latch = new CountDownLatch(urlList.size());
             urlList.forEach(url -> {
                 long start = System.currentTimeMillis();
-                $.httpsClient().get(url).submit().thenAccept(resp -> {
+                client.get(url).submit().thenAccept(resp -> {
                     long end = System.currentTimeMillis();
                     if (resp.getStatus() == HttpStatus.OK_200) {
                         System.out.println("The " + url + " is OK. " +
@@ -42,6 +46,7 @@ public class HTTPsClientDemo {
             });
             latch.await();
             System.out.println("test " + i + " completion. ");
+            client.stop();
         }
     }
 }

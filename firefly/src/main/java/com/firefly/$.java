@@ -98,6 +98,17 @@ public interface $ {
     /**
      * Create a new HTTPs client.
      *
+     * @return A new HTTPs client.
+     */
+    static SimpleHTTPClient createHTTPsClient() {
+        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
+        configuration.setSecureConnectionEnabled(true);
+        return new SimpleHTTPClient(configuration);
+    }
+
+    /**
+     * Create a new HTTPs client.
+     *
      * @param secureSessionFactory The secure session factory. We provide JDK or OpenSSL secure session factory.
      * @return A new HTTPs client.
      */

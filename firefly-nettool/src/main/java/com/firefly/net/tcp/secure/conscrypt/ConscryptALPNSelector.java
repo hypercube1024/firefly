@@ -18,7 +18,7 @@ import java.util.List;
 public class ConscryptALPNSelector implements ApplicationProtocolSelector {
 
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
-    private static final String[] supportedProtocols = {"http/1.1"};
+    private static final String[] supportedProtocols = {"h2", "http/1.1"};
     private static final List<String> supportedProtocolList = Collections.unmodifiableList(Arrays.asList(supportedProtocols));
 
     private final SSLEngine sslEngine;

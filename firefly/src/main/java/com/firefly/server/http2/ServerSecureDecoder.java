@@ -50,8 +50,6 @@ public class ServerSecureDecoder extends DecoderChain {
                 } else {
                     throw new IllegalStateException("the server http connection has not been created");
                 }
-            } else {
-                log.debug("server ssl session {} is shaking hands", session.getSessionId());
             }
         }
     }
