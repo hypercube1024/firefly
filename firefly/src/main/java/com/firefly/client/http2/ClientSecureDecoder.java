@@ -35,8 +35,9 @@ public class ClientSecureDecoder extends DecoderChain {
                             "client does not support the http version " + connection.getHttpVersion());
             }
 
-            if (plaintext != null && next != null)
+            if (plaintext != null && next != null) {
                 next.decode(plaintext, session);
+            }
         } else if (session.getAttachment() instanceof SecureSession) {
             SecureSession sslSession = (SecureSession) session.getAttachment();
             ByteBuffer plaintext = sslSession.read(buf);
@@ -52,10 +53,12 @@ public class ClientSecureDecoder extends DecoderChain {
                     throw new IllegalStateException("the client http connection has not been created");
                 }
             } else {
-                if (sslSession.isHandshakeFinished()) {
-                    log.debug("client ssl session {} need more data", session.getSessionId());
-                } else {
-                    log.debug("client ssl session {} is shaking hand", session.getSessionId());
+                if (log.isDebugEnabled()) {
+                    if (sslSession.isHandshakeFinished()) {
+                        log.debug("client ssl session {} need more data", session.getSessionId());
+                    } else {
+                        log.debug("client ssl session {} is shaking hand", session.getSessionId());
+                    }
                 }
             }
         }

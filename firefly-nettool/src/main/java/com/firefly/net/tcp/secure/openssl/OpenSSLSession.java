@@ -29,9 +29,6 @@ public class OpenSSLSession extends AbstractSecureSession {
         if (input != receivedPacketBuf) {
             receivedPacketBuf.position(receivedPacketBuf.position() + consumed);
         }
-        if (tmp != input) {
-            input.position(input.position() + consumed);
-        }
         return result;
     }
 
