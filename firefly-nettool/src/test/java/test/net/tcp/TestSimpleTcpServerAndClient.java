@@ -8,6 +8,7 @@ import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.StringParser;
 import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
+import com.firefly.net.tcp.secure.conscrypt.FileConscryptSSLContextFactory;
 import com.firefly.net.tcp.secure.jdk.FileJdkSSLContextFactory;
 import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
@@ -103,6 +104,18 @@ public class TestSimpleTcpServerAndClient {
 
         run = new Run();
         run.clientConfig = new TcpConfiguration();
+        run.clientConfig.setSecureSessionFactory(createConscryptFileSecureSessionFactory());
+        run.clientConfig.setSecureConnectionEnabled(true);
+        run.serverConfig = new TcpServerConfiguration();
+        run.serverConfig.setSecureConnectionEnabled(true);
+        run.serverConfig.setSecureSessionFactory(createConscryptFileSecureSessionFactory());
+        run.port = (int) RandomUtils.random(1000, 65534);
+        run.maxMsg = 20;
+        run.testName = "Test conscrypt file certificate";
+        data.add(run);
+
+        run = new Run();
+        run.clientConfig = new TcpConfiguration();
         run.clientConfig.setSecureConnectionEnabled(true);
         run.clientConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
         run.serverConfig = new TcpServerConfiguration();
@@ -138,6 +151,14 @@ public class TestSimpleTcpServerAndClient {
         data.add(run);
 
         return data;
+    }
+
+    private static SecureSessionFactory createConscryptFileSecureSessionFactory() throws IOException {
+        ClassPathResource pathResource = new ClassPathResource("/fireflySecureKeys.jks");
+        System.out.println(pathResource.getFile().getAbsolutePath());
+        SSLContextFactory factory = new FileConscryptSSLContextFactory(pathResource.getFile().getAbsolutePath(),
+                "123456", "654321");
+        return new JdkSecureSessionFactory(factory, factory);
     }
 
     private static SecureSessionFactory createJDKFileSecureSessionFactory() throws IOException {

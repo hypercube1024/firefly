@@ -4,6 +4,7 @@ import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.SSLContextFactory;
 import com.firefly.utils.lang.Pair;
 import com.firefly.utils.time.Millisecond100Clock;
+import org.conscrypt.Conscrypt;
 import org.conscrypt.OpenSSLProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +21,18 @@ import java.security.cert.CertificateException;
 abstract public class AbstractConscryptSSLContextFactory implements SSLContextFactory {
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
+    private static String provideName;
+
     static {
-        if (Security.getProvider("Conscrypt") == null) {
-            Security.addProvider(new OpenSSLProvider());
-            log.info("add Conscrypt security provider");
-        }
+        Provider provider = Conscrypt.newProvider();
+        provideName = provider.getName();
+        Security.addProvider(provider);
+        log.info("add Conscrypt security provider");
     }
 
-    protected String provideName = "Conscrypt";
+    public static String getProvideName() {
+        return provideName;
+    }
 
     public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random)
             throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
@@ -69,14 +74,6 @@ abstract public class AbstractConscryptSSLContextFactory implements SSLContextFa
         long end = Millisecond100Clock.currentTimeMillis();
         log.info("creating Conscrypt SSL context spends {} ms", (end - start));
         return sslContext;
-    }
-
-    public String getProvideName() {
-        return provideName;
-    }
-
-    public void setProvideName(String provideName) {
-        this.provideName = provideName;
     }
 
     abstract public SSLContext getSSLContext();
