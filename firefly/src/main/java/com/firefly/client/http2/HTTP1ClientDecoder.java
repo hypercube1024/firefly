@@ -7,6 +7,8 @@ import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.net.DecoderChain;
 import com.firefly.net.Session;
 
+import static com.firefly.utils.io.BufferUtils.toHeapBuffer;
+
 public class HTTP1ClientDecoder extends DecoderChain {
 
 	public HTTP1ClientDecoder(DecoderChain next) {
@@ -14,8 +16,9 @@ public class HTTP1ClientDecoder extends DecoderChain {
 	}
 
 	@Override
-	public void decode(ByteBuffer buf, Session session) throws Throwable {
+	public void decode(ByteBuffer buffer, Session session) throws Throwable {
 		HTTPConnection connection = (HTTPConnection) session.getAttachment();
+		ByteBuffer buf = toHeapBuffer(buffer);
 
 		switch (connection.getHttpVersion()) {
 		case HTTP_2:
