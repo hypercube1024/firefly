@@ -107,6 +107,17 @@ public interface $ {
     }
 
     /**
+     * Create a new plaintext HTTP2 client.
+     *
+     * @return a new plaintext HTTP2 client.
+     */
+    static SimpleHTTPClient createPlaintextHTTP2Client() {
+        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
+        configuration.setProtocol(HttpVersion.HTTP_2.asString());
+        return new SimpleHTTPClient(configuration);
+    }
+
+    /**
      * Create a new HTTPs client.
      *
      * @param secureSessionFactory The secure session factory. We provide JDK or OpenSSL secure session factory.
