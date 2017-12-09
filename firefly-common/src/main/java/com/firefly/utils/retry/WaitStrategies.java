@@ -14,6 +14,16 @@ abstract public class WaitStrategies {
         return ctx -> ThreadUtils.sleep(sleepTime, timeUnit);
     }
 
+    /**
+     * The exponential increase sleep time. The formula: initTime * 2 ^ ((count - 1) * (multiple - 1)).
+     *
+     * @param initTime The first sleep time.
+     * @param maxTime  The max sleep time.
+     * @param timeUnit The time unit.
+     * @param multiple The growth factor.
+     * @param <V>      The return value type.
+     * @return The task result.
+     */
     public static <V> Action1<TaskContext<V>> exponentialWait(long initTime, long maxTime, TimeUnit timeUnit, int multiple) {
         Assert.isTrue(multiple > 0, "The multiple must be great than 0");
         Assert.isTrue(maxTime >= initTime, "The max time must be great than or equals init time");

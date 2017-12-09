@@ -73,10 +73,12 @@ public class HTTP2Flusher extends IteratingCallback {
         return false;
     }
 
-    public int getQueueSize() {
-        synchronized (this) {
-            return frames.size();
-        }
+    private synchronized int getWindowQueueSize() {
+        return windows.size();
+    }
+
+    private synchronized int getFrameQueueSize() {
+        return frames.size();
     }
 
     @Override
@@ -240,6 +242,15 @@ public class HTTP2Flusher extends IteratingCallback {
 
     private void closed(Entry entry, Throwable failure) {
         entry.failed(failure);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s[window_queue=%d,frame_queue=%d,actives=%d]",
+                super.toString(),
+                getWindowQueueSize(),
+                getFrameQueueSize(),
+                actives.size());
     }
 
     public static abstract class Entry extends Callback.Nested {
