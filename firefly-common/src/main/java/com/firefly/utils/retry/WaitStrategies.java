@@ -10,11 +10,11 @@ import java.util.concurrent.TimeUnit;
  * @author Pengtao Qiu
  */
 abstract public class WaitStrategies {
-    public static <V> Action1<TaskContext<V>> fixedTime(long sleepTime, TimeUnit timeUnit) {
+    public static <V> Action1<TaskContext<V>> fixedWait(long sleepTime, TimeUnit timeUnit) {
         return ctx -> ThreadUtils.sleep(sleepTime, timeUnit);
     }
 
-    public static <V> Action1<TaskContext<V>> multiple(long initTime, long maxTime, TimeUnit timeUnit, int multiple) {
+    public static <V> Action1<TaskContext<V>> multipleWait(long initTime, long maxTime, TimeUnit timeUnit, int multiple) {
         Assert.isTrue(multiple > 0, "The multiple must be great than 0");
         Assert.isTrue(maxTime >= initTime, "The max time must be great than or equals init time");
         return ctx -> {
@@ -24,12 +24,12 @@ abstract public class WaitStrategies {
         };
     }
 
-    public static <V> Action1<TaskContext<V>> multiple(long initTime, long maxTime, TimeUnit timeUnit) {
-        return multiple(initTime, maxTime, timeUnit, 2);
+    public static <V> Action1<TaskContext<V>> multipleWait(long initTime, long maxTime, TimeUnit timeUnit) {
+        return multipleWait(initTime, maxTime, timeUnit, 2);
     }
 
-    public static <V> Action1<TaskContext<V>> multiple(long initTime, TimeUnit timeUnit) {
-        return multiple(initTime, Long.MAX_VALUE, timeUnit, 2);
+    public static <V> Action1<TaskContext<V>> multipleWait(long initTime, TimeUnit timeUnit) {
+        return multipleWait(initTime, Long.MAX_VALUE, timeUnit, 2);
     }
 
     public static void main(String[] args) {
