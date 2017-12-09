@@ -14,13 +14,28 @@ abstract public class WaitStrategies {
         return ctx -> ThreadUtils.sleep(sleepTime, timeUnit);
     }
 
-    public static <V> Action1<TaskContext<V>> exponentialIncrease(long initTime, long maxTime, TimeUnit timeUnit,
-                                                                  int multiply) {
-        Assert.isTrue(multiply > 0, "The multiply must be great than 0");
+    public static <V> Action1<TaskContext<V>> multiple(long initTime, long maxTime, TimeUnit timeUnit, int multiple) {
+        Assert.isTrue(multiple > 0, "The multiple must be great than 0");
         Assert.isTrue(maxTime >= initTime, "The max time must be great than or equals init time");
         return ctx -> {
-           long timeout = initTime << ctx.getExecutedCount() * multiply;
+            int count = Math.max(ctx.getExecutedCount(), 1) - 1;
+            long sleepTime = initTime << (count * (multiple - 1));
+            ThreadUtils.sleep(Math.min(sleepTime, maxTime), timeUnit);
         };
+    }
+
+    public static <V> Action1<TaskContext<V>> multiple(long initTime, long maxTime, TimeUnit timeUnit) {
+        return multiple(initTime, maxTime, timeUnit, 2);
+    }
+
+    public static <V> Action1<TaskContext<V>> multiple(long initTime, TimeUnit timeUnit) {
+        return multiple(initTime, Long.MAX_VALUE, timeUnit, 2);
+    }
+
+    public static void main(String[] args) {
+        for (int i = 1; i < 5; i++) {
+            System.out.println(3 << ((i - 1) * (3 - 1)));
+        }
     }
 
 }
