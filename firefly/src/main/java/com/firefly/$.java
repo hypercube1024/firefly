@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unsorted utilities. The main functions of Firefly start from here.
@@ -92,6 +93,28 @@ public interface $ {
      * @return A new HTTP client instance.
      */
     static SimpleHTTPClient createHTTPClient(SimpleHTTPClientConfiguration configuration) {
+        return new SimpleHTTPClient(configuration);
+    }
+
+    /**
+     * Create a new HTTPs client.
+     *
+     * @return A new HTTPs client.
+     */
+    static SimpleHTTPClient createHTTPsClient() {
+        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
+        configuration.setSecureConnectionEnabled(true);
+        return new SimpleHTTPClient(configuration);
+    }
+
+    /**
+     * Create a new plaintext HTTP2 client.
+     *
+     * @return a new plaintext HTTP2 client.
+     */
+    static SimpleHTTPClient createPlaintextHTTP2Client() {
+        SimpleHTTPClientConfiguration configuration = new SimpleHTTPClientConfiguration();
+        configuration.setProtocol(HttpVersion.HTTP_2.asString());
         return new SimpleHTTPClient(configuration);
     }
 
@@ -383,6 +406,10 @@ public interface $ {
     interface thread {
         static void sleep(long millis) {
             ThreadUtils.sleep(millis);
+        }
+
+        static void sleep(long sleepTime, TimeUnit timeUnit) {
+            ThreadUtils.sleep(sleepTime, timeUnit);
         }
     }
 
