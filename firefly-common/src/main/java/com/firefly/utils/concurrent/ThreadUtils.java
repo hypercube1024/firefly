@@ -14,9 +14,9 @@ abstract public class ThreadUtils {
         }
     }
 
-    public static void sleep(long timeout, TimeUnit timeUnit) {
+    public static void sleep(long sleepTime, TimeUnit timeUnit) {
         try {
-            timeUnit.sleep(timeout);
+            timeUnit.sleep(sleepTime);
         } catch (InterruptedException ignored) {
         }
     }

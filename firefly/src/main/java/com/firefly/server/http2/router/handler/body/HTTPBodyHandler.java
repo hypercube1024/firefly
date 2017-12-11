@@ -1,10 +1,7 @@
 package com.firefly.server.http2.router.handler.body;
 
 import com.firefly.codec.http2.encode.UrlEncoded;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpHeaderValue;
-import com.firefly.codec.http2.model.MimeTypes;
-import com.firefly.codec.http2.model.MultiPartInputStreamParser;
+import com.firefly.codec.http2.model.*;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.RoutingContext;
@@ -66,8 +63,7 @@ public class HTTPBodyHandler implements Handler {
             return;
         }
 
-        String transferEncoding = request.getFields().get(HttpHeader.TRANSFER_ENCODING);
-        if (HttpHeaderValue.CHUNKED.asString().equals(transferEncoding)) {
+        if (isChunked(request)) {
             httpBodyHandlerSPI.pipedStream = new ByteArrayPipedStream(4 * 1024);
         } else {
             long contentLength = request.getContentLength();
@@ -90,7 +86,7 @@ public class HTTPBodyHandler implements Handler {
             }
 
             try {
-                if (HttpHeaderValue.CHUNKED.asString().equals(transferEncoding)) {
+                if (isChunked(request)) {
                     if (chunkedEncodingContentLength.addAndGet(buf.remaining()) > configuration.getBodyBufferThreshold()
                             && httpBodyHandlerSPI.pipedStream instanceof ByteArrayPipedStream) {
                         // chunked encoding content dump to temp file
@@ -112,12 +108,12 @@ public class HTTPBodyHandler implements Handler {
             try {
                 String contentType = MimeTypes.getContentTypeMIMEType(request.getFields().get(HttpHeader.CONTENT_TYPE));
                 httpBodyHandlerSPI.pipedStream.getOutputStream().close();
-                if ("application/x-www-form-urlencoded".equals(contentType)) {
+                if ("application/x-www-form-urlencoded".equalsIgnoreCase(contentType)) {
                     try (InputStream inputStream = httpBodyHandlerSPI.pipedStream.getInputStream()) {
                         httpBodyHandlerSPI.urlEncodedMap.decode(IO.toString(inputStream, configuration.getCharset()),
                                 Charset.forName(configuration.getCharset()));
                     }
-                } else if ("multipart/form-data".equals(contentType)) {
+                } else if ("multipart/form-data".equalsIgnoreCase(contentType)) {
                     httpBodyHandlerSPI.multiPartInputStreamParser = new MultiPartInputStreamParser(
                             httpBodyHandlerSPI.getInputStream(),
                             request.getFields().get(HttpHeader.CONTENT_TYPE),
@@ -130,4 +126,9 @@ public class HTTPBodyHandler implements Handler {
         }).messageComplete(req -> ctx.next());
     }
 
+    public boolean isChunked(SimpleRequest request) {
+        String transferEncoding = request.getFields().get(HttpHeader.TRANSFER_ENCODING);
+        return HttpHeaderValue.CHUNKED.asString().equals(transferEncoding)
+                || (request.getHttpVersion() == HttpVersion.HTTP_2 && request.getContentLength() < 0);
+    }
 }

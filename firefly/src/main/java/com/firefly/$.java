@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unsorted utilities. The main functions of Firefly start from here.
@@ -405,6 +406,10 @@ public interface $ {
     interface thread {
         static void sleep(long millis) {
             ThreadUtils.sleep(millis);
+        }
+
+        static void sleep(long sleepTime, TimeUnit timeUnit) {
+            ThreadUtils.sleep(sleepTime, timeUnit);
         }
     }
 

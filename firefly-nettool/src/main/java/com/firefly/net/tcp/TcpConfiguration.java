@@ -2,13 +2,13 @@ package com.firefly.net.tcp;
 
 import com.firefly.net.Config;
 import com.firefly.net.SecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
+import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
 
 public class TcpConfiguration extends Config {
 
     // SSL/TLS settings
     private boolean isSecureConnectionEnabled;
-    private SecureSessionFactory secureSessionFactory = new DefaultOpenSSLSecureSessionFactory();
+    private SecureSessionFactory secureSessionFactory = new ConscryptSecureSessionFactory();
 
     /**
      * If the secure connection is enabled, it will create secure connection using SSL/TLS protocol.

@@ -1,6 +1,7 @@
 package test.http.router.handler.body;
 
 import com.firefly.$;
+import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
@@ -24,8 +25,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
-    @Test
-    public void testPostData() {
+    public void testPostData(HTTP2ServerBuilder server, SimpleHTTPClient client) {
         StringBuilder bigData = new StringBuilder();
         int dataSize = 1024 * 1024;
         for (int i = 0; i < dataSize; i++) {
@@ -36,8 +36,7 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
         Phaser phaser = new Phaser(5);
 
-        HTTP2ServerBuilder httpServer = $.httpServer();
-        httpServer.router().post("/data").handler(ctx -> {
+        server.router().post("/data").handler(ctx -> {
             // small data test case
             System.out.println(ctx.getStringBody());
             Assert.assertThat(ctx.getStringBody(), is("test post data"));
@@ -53,31 +52,44 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
             phaser.arrive();
         }).listen(host, port);
 
-        $.httpClient().post(uri + "/data").body("test post data").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("server received data"));
-             phaser.arrive();
-         });
+        client.post(uri + "/data").body("test post data").submit()
+              .thenAccept(res -> {
+                  System.out.println(res.getStringBody());
+                  Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+                  Assert.assertThat(res.getStringBody(), is("server received data"));
+                  phaser.arrive();
+              });
 
         // post big data with content length
-        $.httpClient().post(uri + "/bigData").put(HttpHeader.CONTENT_LENGTH, data.length + "")
-         .write(ByteBuffer.wrap(data))
-         .submit()
-         .thenAccept(res -> {
-             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("server received big data"));
-             phaser.arrive();
-         });
+        client.post(uri + "/bigData").put(HttpHeader.CONTENT_LENGTH, data.length + "")
+              .write(ByteBuffer.wrap(data))
+              .submit()
+              .thenAccept(res -> {
+                  Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+                  Assert.assertThat(res.getStringBody(), is("server received big data"));
+                  phaser.arrive();
+              });
 
         phaser.arriveAndAwaitAdvance();
-        httpServer.stop();
-        $.httpClient().stop();
+        server.stop();
+        client.stop();
     }
 
     @Test
-    public void testPostBigDataUsingChunkedEncoding() {
+    public void testPostDataHttp2() {
+        HTTP2ServerBuilder server = $.httpsServer();
+        SimpleHTTPClient client = $.createHTTPsClient();
+        testPostData(server, client);
+    }
+
+    @Test
+    public void testPostDataHttp1() {
+        HTTP2ServerBuilder server = $.httpServer();
+        SimpleHTTPClient client = $.createHTTPClient();
+        testPostData(server, client);
+    }
+
+    public void testPostBigDataUsingChunkedEncoding(HTTP2ServerBuilder server, SimpleHTTPClient client) {
         StringBuilder bigData = new StringBuilder();
         int dataSize = 1024 * 1024;
         for (int i = 0; i < dataSize; i++) {
@@ -88,8 +100,7 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
         Phaser phaser = new Phaser(3);
 
-        HTTP2ServerBuilder httpServer = $.httpServer();
-        httpServer.router().post("/bigData").handler(ctx -> {
+        server.router().post("/bigData").handler(ctx -> {
             // big data test case
             System.out.println("receive big data size: " + ctx.getContentLength());
             Assert.assertThat($.io.toString(ctx.getInputStream()), is(bigData.toString()));
@@ -110,17 +121,30 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
                 e.printStackTrace();
             }
         });
-        $.httpClient().post(uri + "/bigData").output(promise)
-         .submit()
-         .thenAccept(res -> {
-             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("server received big data"));
-             phaser.arrive();
-         });
-
+        client.post(uri + "/bigData").output(promise)
+              .submit()
+              .thenAccept(res -> {
+                  Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+                  Assert.assertThat(res.getStringBody(), is("server received big data"));
+                  phaser.arrive();
+              });
         phaser.arriveAndAwaitAdvance();
-        httpServer.stop();
-        $.httpClient().stop();
+        server.stop();
+        client.stop();
+    }
+
+    @Test
+    public void testPostBigDataUsingChunkedEncodingHttp2() {
+        HTTP2ServerBuilder server = $.httpsServer();
+        SimpleHTTPClient client = $.createHTTPsClient();
+        testPostBigDataUsingChunkedEncoding(server, client);
+    }
+
+    @Test
+    public void testPostBigDataUsingChunkedEncodingHttp1() {
+        HTTP2ServerBuilder server = $.httpServer();
+        SimpleHTTPClient client = $.createHTTPClient();
+        testPostBigDataUsingChunkedEncoding(server, client);
     }
 
     @Test
