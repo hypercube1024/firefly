@@ -1,6 +1,7 @@
 package test.http.router.handler.body;
 
 import com.firefly.$;
+import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
@@ -36,7 +37,9 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
         Phaser phaser = new Phaser(5);
 
-        HTTP2ServerBuilder httpServer = $.httpServer();
+        HTTP2ServerBuilder httpServer = $.httpsServer();
+        SimpleHTTPClient client = $.createHTTPsClient();
+
         httpServer.router().post("/data").handler(ctx -> {
             // small data test case
             System.out.println(ctx.getStringBody());
@@ -53,27 +56,27 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
             phaser.arrive();
         }).listen(host, port);
 
-        $.httpClient().post(uri + "/data").body("test post data").submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("server received data"));
-             phaser.arrive();
-         });
+        client.post(uri + "/data").body("test post data").submit()
+              .thenAccept(res -> {
+                  System.out.println(res.getStringBody());
+                  Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+                  Assert.assertThat(res.getStringBody(), is("server received data"));
+                  phaser.arrive();
+              });
 
         // post big data with content length
-        $.httpClient().post(uri + "/bigData").put(HttpHeader.CONTENT_LENGTH, data.length + "")
-         .write(ByteBuffer.wrap(data))
-         .submit()
-         .thenAccept(res -> {
-             Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
-             Assert.assertThat(res.getStringBody(), is("server received big data"));
-             phaser.arrive();
-         });
+        client.post(uri + "/bigData").put(HttpHeader.CONTENT_LENGTH, data.length + "")
+              .write(ByteBuffer.wrap(data))
+              .submit()
+              .thenAccept(res -> {
+                  Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
+                  Assert.assertThat(res.getStringBody(), is("server received big data"));
+                  phaser.arrive();
+              });
 
         phaser.arriveAndAwaitAdvance();
         httpServer.stop();
-        $.httpClient().stop();
+        client.stop();
     }
 
     @Test
@@ -88,7 +91,7 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
         Phaser phaser = new Phaser(3);
 
-        HTTP2ServerBuilder httpServer = $.httpServer();
+        HTTP2ServerBuilder httpServer = $.httpsServer();
         httpServer.router().post("/bigData").handler(ctx -> {
             // big data test case
             System.out.println("receive big data size: " + ctx.getContentLength());
@@ -110,7 +113,7 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
                 e.printStackTrace();
             }
         });
-        $.httpClient().post(uri + "/bigData").output(promise)
+        $.httpsClient().post(uri + "/bigData").output(promise)
          .submit()
          .thenAccept(res -> {
              Assert.assertThat(res.getStatus(), is(HttpStatus.OK_200));
@@ -120,7 +123,7 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
         phaser.arriveAndAwaitAdvance();
         httpServer.stop();
-        $.httpClient().stop();
+        $.httpsClient().stop();
     }
 
     @Test

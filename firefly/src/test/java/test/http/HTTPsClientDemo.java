@@ -25,12 +25,15 @@ public class HTTPsClientDemo {
             "https://login.taobao.com");
 
     public static void main(String[] args) throws InterruptedException {
-        test(new DefaultOpenSSLSecureSessionFactory());
-        test(new ConscryptSecureSessionFactory());
-        test(new JdkSecureSessionFactory());
+        List<SimpleHTTPClient> clients = Arrays.asList(
+                test(new DefaultOpenSSLSecureSessionFactory()),
+                test(new ConscryptSecureSessionFactory()),
+                test(new JdkSecureSessionFactory()));
+        clients.forEach(SimpleHTTPClient::stop);
     }
 
-    public static void test(SecureSessionFactory secureSessionFactory) throws InterruptedException {
+    public static SimpleHTTPClient test(SecureSessionFactory secureSessionFactory) throws InterruptedException {
+        long testStart = System.currentTimeMillis();
         System.out.println("The secure session factory is " + secureSessionFactory.getClass().getSimpleName());
         SimpleHTTPClient client = $.createHTTPsClient(secureSessionFactory);
         for (int i = 0; i < 5; i++) {
@@ -55,8 +58,9 @@ public class HTTPsClientDemo {
             });
             latch.await();
             System.out.println("test " + i + " completion. ");
-            client.stop();
         }
-        System.out.println("The secure session factory " + secureSessionFactory.getClass().getSimpleName() + " test completed");
+        long testEnd = System.currentTimeMillis();
+        System.out.println("The secure session factory " + secureSessionFactory.getClass().getSimpleName() + " test completed. " + (testEnd - testStart));
+        return client;
     }
 }
