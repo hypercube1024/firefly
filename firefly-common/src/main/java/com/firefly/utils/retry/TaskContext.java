@@ -8,7 +8,6 @@ public class TaskContext<T> {
     private int executedCount;
     private Exception exception;
     private T result;
-    private TaskStatus status;
     private Object attachment;
 
     public long getStartTime() {
@@ -41,14 +40,6 @@ public class TaskContext<T> {
 
     public void setResult(T result) {
         this.result = result;
-    }
-
-    public TaskStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TaskStatus status) {
-        this.status = status;
     }
 
     public Object getAttachment() {

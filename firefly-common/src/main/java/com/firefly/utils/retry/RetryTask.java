@@ -3,8 +3,10 @@ package com.firefly.utils.retry;
 import com.firefly.utils.Assert;
 import com.firefly.utils.function.Action1;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Predicate;
 
 /**
  * @author Pengtao Qiu
@@ -14,11 +16,14 @@ public class RetryTask<V> implements Callable<V> {
     private Action1<TaskContext<V>> complete;
     private Action1<TaskContext<V>> exception;
     private Action1<TaskContext<V>> waitStrategy;
-    private Action1<TaskContext<V>> retryStrategy;
+    private List<Predicate<TaskContext<V>>> retryStrategies;
+    private List<Predicate<TaskContext<V>>> stopStrategies;
     private Callable<V> taskCallable;
+    private Action1<TaskContext<V>> finish;
 
     public V call() {
-        Assert.notNull(retryStrategy, "The retry strategy must be not null");
+        Assert.notEmpty(retryStrategies, "The retry strategies must be not empty");
+        Assert.notEmpty(stopStrategies, "The stop strategies must be not empty");
         Assert.notNull(waitStrategy, "The wait strategy must be not null");
         Assert.notNull(taskCallable, "The task must be not null");
 
@@ -26,25 +31,21 @@ public class RetryTask<V> implements Callable<V> {
         ctx.setStartTime(System.currentTimeMillis());
         while (true) {
             try {
-                V ret = taskCallable.call();
-                ctx.setExecutedCount(ctx.getExecutedCount() + 1);
-                ctx.setResult(ret);
-                Optional.ofNullable(complete).ifPresent(c -> c.call(ctx));
+                ctx.setResult(taskCallable.call());
             } catch (Exception e) {
                 ctx.setException(e);
-                ctx.setExecutedCount(ctx.getExecutedCount() + 1);
                 Optional.ofNullable(exception).ifPresent(c -> c.call(ctx));
             }
-            try {
-                retryStrategy.call(ctx);
-                if (ctx.getStatus() == TaskStatus.RETRY) {
-                    waitStrategy.call(ctx);
-                } else {
-                    return ctx.getResult();
-                }
-            } catch (Exception e) {
-                Optional.ofNullable(exception).ifPresent(c -> c.call(ctx));
+            ctx.setExecutedCount(ctx.getExecutedCount() + 1);
+            Optional.ofNullable(complete).ifPresent(c -> c.call(ctx));
+            
+            boolean stop = stopStrategies.stream().anyMatch(p -> p.test(ctx));
+            boolean retry = retryStrategies.stream().anyMatch(p -> p.test(ctx));
+            if (stop || !retry) {
+                Optional.ofNullable(finish).ifPresent(c -> c.call(ctx));
                 return ctx.getResult();
+            } else {
+                waitStrategy.call(ctx);
             }
         }
     }
@@ -73,12 +74,20 @@ public class RetryTask<V> implements Callable<V> {
         this.waitStrategy = waitStrategy;
     }
 
-    public Action1<TaskContext<V>> getRetryStrategy() {
-        return retryStrategy;
+    public List<Predicate<TaskContext<V>>> getRetryStrategies() {
+        return retryStrategies;
     }
 
-    public void setRetryStrategy(Action1<TaskContext<V>> retryStrategy) {
-        this.retryStrategy = retryStrategy;
+    public void setRetryStrategies(List<Predicate<TaskContext<V>>> retryStrategies) {
+        this.retryStrategies = retryStrategies;
+    }
+
+    public List<Predicate<TaskContext<V>>> getStopStrategies() {
+        return stopStrategies;
+    }
+
+    public void setStopStrategies(List<Predicate<TaskContext<V>>> stopStrategies) {
+        this.stopStrategies = stopStrategies;
     }
 
     public Callable<V> getTaskCallable() {
@@ -88,4 +97,13 @@ public class RetryTask<V> implements Callable<V> {
     public void setTaskCallable(Callable<V> taskCallable) {
         this.taskCallable = taskCallable;
     }
+
+    public Action1<TaskContext<V>> getFinish() {
+        return finish;
+    }
+
+    public void setFinish(Action1<TaskContext<V>> finish) {
+        this.finish = finish;
+    }
+
 }

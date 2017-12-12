@@ -10,6 +10,15 @@ import java.util.concurrent.TimeUnit;
  * @author Pengtao Qiu
  */
 abstract public class WaitStrategies {
+
+    /**
+     * The fixed sleep time.
+     *
+     * @param sleepTime The sleep time.
+     * @param timeUnit  The time unit.
+     * @param <V>       The return value type.
+     * @return The task result.
+     */
     public static <V> Action1<TaskContext<V>> fixedWait(long sleepTime, TimeUnit timeUnit) {
         return ctx -> ThreadUtils.sleep(sleepTime, timeUnit);
     }
@@ -34,20 +43,29 @@ abstract public class WaitStrategies {
         };
     }
 
+    /**
+     * The exponential increase sleep time.
+     *
+     * @param initTime The first sleep time.
+     * @param maxTime  The max sleep time.
+     * @param timeUnit The time unit.
+     * @param <V>      The return value type.
+     * @return The task result.
+     */
     public static <V> Action1<TaskContext<V>> exponentialWait(long initTime, long maxTime, TimeUnit timeUnit) {
         return exponentialWait(initTime, maxTime, timeUnit, 2);
     }
 
+    /**
+     * The exponential increase sleep time.
+     *
+     * @param initTime The first sleep time.
+     * @param timeUnit The time unit.
+     * @param <V>      The return value type.
+     * @return The task result.
+     */
     public static <V> Action1<TaskContext<V>> exponentialWait(long initTime, TimeUnit timeUnit) {
         return exponentialWait(initTime, Long.MAX_VALUE, timeUnit, 2);
-    }
-
-    public static void main(String[] args) {
-        for (int i = 1; i < 5; i++) {
-            System.out.println(3 << ((i - 1) * (3 - 1)));
-            System.out.println(3 << (i - 1));
-            System.out.println("------------");
-        }
     }
 
 }
