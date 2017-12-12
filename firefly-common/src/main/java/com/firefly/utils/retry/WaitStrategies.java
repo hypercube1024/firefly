@@ -17,7 +17,7 @@ abstract public class WaitStrategies {
      * @param sleepTime The sleep time.
      * @param timeUnit  The time unit.
      * @param <V>       The return value type.
-     * @return The task result.
+     * @return The wait strategy action.
      */
     public static <V> Action1<TaskContext<V>> fixedWait(long sleepTime, TimeUnit timeUnit) {
         return ctx -> ThreadUtils.sleep(sleepTime, timeUnit);
@@ -31,7 +31,7 @@ abstract public class WaitStrategies {
      * @param timeUnit The time unit.
      * @param multiple The growth factor.
      * @param <V>      The return value type.
-     * @return The task result.
+     * @return The wait strategy action.
      */
     public static <V> Action1<TaskContext<V>> exponentialWait(long initTime, long maxTime, TimeUnit timeUnit, int multiple) {
         Assert.isTrue(multiple > 0, "The multiple must be great than 0");
@@ -50,7 +50,7 @@ abstract public class WaitStrategies {
      * @param maxTime  The max sleep time.
      * @param timeUnit The time unit.
      * @param <V>      The return value type.
-     * @return The task result.
+     * @return The wait strategy action.
      */
     public static <V> Action1<TaskContext<V>> exponentialWait(long initTime, long maxTime, TimeUnit timeUnit) {
         return exponentialWait(initTime, maxTime, timeUnit, 2);
@@ -62,7 +62,7 @@ abstract public class WaitStrategies {
      * @param initTime The first sleep time.
      * @param timeUnit The time unit.
      * @param <V>      The return value type.
-     * @return The task result.
+     * @return The wait strategy action.
      */
     public static <V> Action1<TaskContext<V>> exponentialWait(long initTime, TimeUnit timeUnit) {
         return exponentialWait(initTime, Long.MAX_VALUE, timeUnit);
