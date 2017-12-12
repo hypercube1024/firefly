@@ -13,6 +13,7 @@ import static com.firefly.utils.retry.RetryStrategies.ifResult;
 import static com.firefly.utils.retry.StopStrategies.afterAttempt;
 import static com.firefly.utils.retry.WaitStrategies.fixedWait;
 import static java.util.function.Predicate.isEqual;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 /**
  * @author Pengtao Qiu
@@ -30,7 +31,11 @@ public class TestRetry {
                     System.out.println("execute task");
                     return false;
                 })
-                .finish(ctx -> ctx.setResult(true))
+                .finish(ctx -> {
+                    ctx.setResult(true);
+                    long time = System.currentTimeMillis() - ctx.getStartTime();
+                    Assert.assertThat(time, greaterThanOrEqualTo(3000L));
+                })
                 .call();
         Assert.assertTrue(success);
     }
