@@ -1,6 +1,7 @@
 package test.utils.retry;
 
 import com.firefly.utils.RandomUtils;
+import com.firefly.utils.function.Predicates;
 import com.firefly.utils.retry.RetryTaskBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,7 +30,7 @@ public class TestRetry {
                 .retry(ifResult(isEqual(false)))
                 .stop(afterExecute(3))
                 .wait(fixedWait(10, TimeUnit.MILLISECONDS))
-                .execute(() -> {
+                .task(() -> {
                     System.out.println("execute task");
                     return false;
                 })
@@ -48,7 +49,7 @@ public class TestRetry {
                 .retry(ifResult(isEqual(false)))
                 .stop(afterDelay(40, TimeUnit.MILLISECONDS))
                 .wait(fixedWait(10, TimeUnit.MILLISECONDS))
-                .execute(() -> {
+                .task(() -> {
                     System.out.println("execute task time exceed");
                     return false;
                 })
@@ -68,7 +69,7 @@ public class TestRetry {
                 .stop(afterDelay(200, TimeUnit.MILLISECONDS))
                 .stop(afterExecute(2))
                 .wait(fixedWait(10, TimeUnit.MILLISECONDS))
-                .execute(() -> {
+                .task(() -> {
                     System.out.println("execute task time exceed or executed count");
                     return false;
                 })
@@ -87,7 +88,7 @@ public class TestRetry {
                 .retry(ifResult(isEqual(false)))
                 .stop(afterDelay(200, TimeUnit.MILLISECONDS))
                 .wait(exponentialWait(10, TimeUnit.MILLISECONDS))
-                .execute(() -> {
+                .task(() -> {
                     System.out.println("execute task and exponential wait");
                     return false;
                 })
@@ -104,15 +105,16 @@ public class TestRetry {
     @Test
     public void testNeverStop() {
         Integer ret = RetryTaskBuilder.<Integer>newTask()
-                .retry(ifResult(v -> v < 5))
+                .retry(ifResult(Predicates.<Integer>of(v -> v >= 5).and(v -> v < 9)))
                 .stop(never())
                 .wait(fixedWait(10, TimeUnit.MILLISECONDS))
-                .execute(() -> {
+                .task(() -> {
                     System.out.println("never stop");
                     return (int) RandomUtils.random(1, 10);
                 })
                 .call();
-        Assert.assertThat(ret, greaterThanOrEqualTo(5));
+        System.out.println(ret);
+        Assert.assertTrue(ret < 5 || ret >= 9);
     }
 
 }

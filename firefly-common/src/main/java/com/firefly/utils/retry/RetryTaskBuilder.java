@@ -11,9 +11,9 @@ import java.util.function.Predicate;
  */
 public class RetryTaskBuilder<V> implements Callable<V> {
 
-    private RetryTask<V> retryTask;
+    protected RetryTask<V> retryTask;
 
-    private RetryTaskBuilder() {
+    protected RetryTaskBuilder() {
         retryTask = new RetryTask<>();
         retryTask.setRetryStrategies(new ArrayList<>());
         retryTask.setStopStrategies(new ArrayList<>());
@@ -48,7 +48,7 @@ public class RetryTaskBuilder<V> implements Callable<V> {
         return this;
     }
 
-    public RetryTaskBuilder<V> execute(Callable<V> taskCallable) {
+    public RetryTaskBuilder<V> task(Callable<V> taskCallable) {
         retryTask.setTaskCallable(taskCallable);
         return this;
     }
