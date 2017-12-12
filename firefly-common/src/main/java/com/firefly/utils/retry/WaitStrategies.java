@@ -65,7 +65,7 @@ abstract public class WaitStrategies {
      * @return The task result.
      */
     public static <V> Action1<TaskContext<V>> exponentialWait(long initTime, TimeUnit timeUnit) {
-        return exponentialWait(initTime, Long.MAX_VALUE, timeUnit, 2);
+        return exponentialWait(initTime, Long.MAX_VALUE, timeUnit);
     }
 
 }

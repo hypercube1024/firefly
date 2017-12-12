@@ -9,4 +9,8 @@ abstract public class Predicates {
     public static <T> Predicate<T> of(Predicate<T> predicate) {
         return predicate;
     }
+
+    public static <T> Predicate<T> either(Predicate<T> predicate) {
+        return predicate;
+    }
 }
