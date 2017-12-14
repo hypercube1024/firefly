@@ -177,8 +177,9 @@ public class Parser {
         try {
             // parse through all the frames in the buffer
             while (parseFrame(buffer)) {
-                if (LOG.isDebugEnabled())
+                if (LOG.isDebugEnabled()) {
                     LOG.debug("{} Parsed Frame: {}", policy.getBehavior(), frame);
+                }
                 notifyFrame(frame);
                 if (frame.isDataFrame()) {
                     priorDataFrame = !frame.isFin();

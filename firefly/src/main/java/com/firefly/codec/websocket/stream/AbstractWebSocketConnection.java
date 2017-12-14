@@ -2,6 +2,7 @@ package com.firefly.codec.websocket.stream;
 
 import com.firefly.codec.websocket.decode.Parser;
 import com.firefly.codec.websocket.encode.Generator;
+import com.firefly.codec.websocket.exception.CloseException;
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.model.*;
 import com.firefly.codec.websocket.stream.IOState.ConnectionStateListener;
@@ -17,9 +18,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Provides the implementation of {@link WebsocketConnection} within the framework of the new {@link Connection} framework of the Firefly-nettools
@@ -44,24 +43,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
             }
             ioState.onWriteFailure(failure);
             disconnect();
-        }
-    }
-
-    public static class Stats {
-        private AtomicLong countFillInterestedEvents = new AtomicLong(0);
-        private AtomicLong countOnFillableEvents = new AtomicLong(0);
-        private AtomicLong countFillableErrors = new AtomicLong(0);
-
-        public long getFillableErrorCount() {
-            return countFillableErrors.get();
-        }
-
-        public long getFillInterestedCount() {
-            return countFillInterestedEvents.get();
-        }
-
-        public long getOnFillableCount() {
-            return countOnFillableEvents.get();
         }
     }
 
@@ -90,7 +71,7 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
     private ByteBuffer prefillBuffer;
     private ReadMode readMode = ReadMode.PARSE;
     private IOState ioState;
-    private Stats stats = new Stats();
+    private com.firefly.net.Session endpoint;
 
     public AbstractWebSocketConnection(com.firefly.net.Session endpoint, Scheduler scheduler,
                                        WebSocketPolicy policy) {
@@ -103,7 +84,7 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
         this.ioState = new IOState();
         this.ioState.addListener(this);
         this.flusher = new Flusher(generator, endpoint);
-//        this.setInputBufferSize(policy.getInputBufferSize());
+        this.endpoint = endpoint;
         this.setMaxIdleTimeout(policy.getIdleTimeout());
     }
 
@@ -145,10 +126,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
         // SSL close alerts to be sent by Firefly
         endPoint.shutdownOutput();
         endPoint.close();
-    }
-
-    public void fillInterested() {
-        stats.countFillInterestedEvents.incrementAndGet();
     }
 
     /**
@@ -199,10 +176,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
         return scheduler;
     }
 
-    public Stats getStats() {
-        return stats;
-    }
-
     @Override
     public boolean isOpen() {
         return getEndPoint().isOpen();
@@ -240,9 +213,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("OPEN: normal fillInterested");
                 }
-                // TODO: investigate what happens if a failure occurs during prefill, and an attempt to write close fails,
-                // should a fill interested occur? or just a quick disconnect?
-                fillInterested();
                 break;
             case CLOSED:
                 if (LOG.isDebugEnabled())
@@ -297,11 +267,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
 //            isFilling = false;
 //        }
 //    }
-
-    protected void onFillInterestedFailed(Throwable cause) {
-        LOG.warn("Fill interested failure", cause);
-        stats.countFillInterestedEvents.incrementAndGet();
-    }
 
     /**
      * Extra bytes from the initial HTTP upgrade that need to
@@ -366,101 +331,31 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
         flusher.enqueue(frame, callback, batchMode);
     }
 
-    private ReadMode readDiscard(ByteBuffer buffer) {
-//        com.firefly.net.Session endPoint = getEndPoint();
-//        try
-//        {
-//            while (true)
-//            {
-//                int filled = endPoint.fill(buffer);
-//                if (filled == 0)
-//                {
-//                    return ReadMode.DISCARD;
-//                }
-//                else if (filled < 0)
-//                {
-//                    if (LOG.isDebugEnabled())
-//                        LOG.debug("read - EOF Reached (remote: {})",getRemoteAddress());
-//                    return ReadMode.EOF;
-//                }
-//                else
-//                {
-//                    if (LOG.isDebugEnabled())
-//                        LOG.debug("Discarded {} bytes - {}",filled,BufferUtils.toDetailString(buffer));
-//                }
-//            }
-//        }
-//        catch (IOException e)
-//        {
-//            LOG.warn("", e);
-//            return ReadMode.EOF;
-//        }
-//        catch (Throwable t)
-//        {
-//            LOG.ignore(t);
-//            return ReadMode.DISCARD;
-//        }
-        return null;
-    }
-
     private ReadMode readParse(ByteBuffer buffer) {
-//        com.firefly.net.Session endPoint = getEndPoint();
-//        try
-//        {
-//            // Process the content from the Endpoint next
-//            while(true)  // TODO: should this honor the LogicalConnection.suspend() ?
-//            {
-//                int filled = endPoint.fill(buffer);
-//                if (filled < 0)
-//                {
-//                    LOG.debug("read - EOF Reached (remote: {})",getRemoteAddress());
-//                    ioState.onReadFailure(new EOFException("Remote Read EOF"));
-//                    return ReadMode.EOF;
-//                }
-//                else if (filled == 0)
-//                {
-//                    // Done reading, wait for next onFillable
-//                    return ReadMode.PARSE;
-//                }
-//
-//                if (LOG.isDebugEnabled())
-//                {
-//                    LOG.debug("Filled {} bytes - {}",filled,BufferUtils.toDetailString(buffer));
-//                }
-//                parser.parse(buffer);
-//            }
-//        }
-//        catch (IOException e)
-//        {
-//            LOG.warn(e);
-//            session.notifyError(e);
-//            session.abort(StatusCode.PROTOCOL,e.getMessage());
-//            return ReadMode.DISCARD;
-//        }
-//        catch (CloseException e)
-//        {
-//            LOG.debug(e);
-//            session.notifyError(e);
-//            session.close(e.getStatusCode(),e.getMessage());
-//            return ReadMode.DISCARD;
-//        }
-//        catch (Throwable t)
-//        {
-//            LOG.warn(t);
-//            session.abort(StatusCode.ABNORMAL,t.getMessage());
-//            // TODO: should probably only switch to discard if a non-ws-endpoint error
-//            return ReadMode.DISCARD;
-//        }
-        return null;
+        try {
+            // Process the content from the Endpoint next
+            while (true) {
+                if (buffer.hasRemaining()) {
+                    parser.parse(buffer);
+                } else {
+                    return ReadMode.PARSE;
+                }
+            }
+        } catch (CloseException e) {
+            LOG.debug("parse websocket exception", e);
+            session.notifyError(e);
+            session.close(e.getStatusCode(), e.getMessage());
+            return ReadMode.DISCARD;
+        } catch (Throwable t) {
+            LOG.warn("parse websocket exception", t);
+            session.abort(StatusCode.ABNORMAL, t.getMessage());
+            return ReadMode.DISCARD;
+        }
     }
 
     @Override
     public void resume() {
-        if (suspendToken.getAndSet(false)) {
-            if (!isReading()) {
-                fillInterested();
-            }
-        }
+        suspendToken.getAndSet(false);
     }
 
     /**
@@ -473,22 +368,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
     public void setExtensions(List<ExtensionConfig> extensions) {
         this.extensions = extensions;
     }
-
-//    @Override
-//    public void setInputBufferSize(int inputBufferSize)
-//    {
-//        if (inputBufferSize < MIN_BUFFER_SIZE)
-//        {
-//            throw new IllegalArgumentException("Cannot have buffer size less than " + MIN_BUFFER_SIZE);
-//        }
-//        super.setInputBufferSize(inputBufferSize);
-//    }
-//
-//    @Override
-//    public void setMaxIdleTimeout(long ms)
-//    {
-//        getEndPoint().setIdleTimeout(ms);
-//    }
 
     @Override
     public SuspendToken suspend() {
@@ -549,6 +428,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
     }
 
     public com.firefly.net.Session getEndPoint() {
-        return null;
+        return endpoint;
     }
 }
