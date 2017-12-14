@@ -112,7 +112,7 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 
     @Override
     public final boolean messageComplete() {
-        boolean success = connection.upgradeProtocolToHTTP2(request, response);
+        boolean success = connection.completeUpgradeProtocolToHTTP2(response);
         if (success) {
             log.debug("client upgraded http2 successfully");
         }

@@ -10,6 +10,7 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
+import com.firefly.utils.function.Func1;
 import com.firefly.utils.heartbeat.HealthCheck;
 import com.firefly.utils.heartbeat.Task;
 import com.firefly.utils.io.BufferUtils;
@@ -79,6 +80,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         List<ByteBuffer> requestBody = new ArrayList<>();
 
+        Func1<HTTPClientConnection, CompletableFuture<Boolean>> connect;
         Action1<Response> headerComplete;
         Action1<ByteBuffer> content;
         Action1<Response> contentComplete;
@@ -368,6 +370,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
          */
         public RequestBuilder removeFormParam(String name) {
             formUrlEncoded().remove(name);
+            return this;
+        }
+
+        /**
+         * Set the connection establishing callback.
+         *
+         * @param connect the connection establishing callback
+         * @return RequestBuilder
+         */
+        public RequestBuilder connect(Func1<HTTPClientConnection, CompletableFuture<Boolean>> connect) {
+            this.connect = connect;
             return this;
         }
 
@@ -746,7 +759,20 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             if (log.isDebugEnabled()) {
                 log.debug("take the connection {} from pool, released: {}, {}", connection.getSessionId(), pooledConn.isReleased(), connection.getHttpVersion());
             }
-            send(reqBuilder, resTimerCtx, connection, createClientHTTPHandler(reqBuilder, resTimerCtx, pooledConn));
+            if (reqBuilder.connect != null) {
+                reqBuilder.connect.call(connection).thenAccept(isSendReq -> {
+                    if (isSendReq) {
+                        send(reqBuilder, resTimerCtx, connection, createClientHTTPHandler(reqBuilder, resTimerCtx, pooledConn));
+                    } else {
+                        IO.close(connection);
+                    }
+                }).exceptionally(ex -> {
+                    IO.close(connection);
+                    return null;
+                });
+            } else {
+                send(reqBuilder, resTimerCtx, connection, createClientHTTPHandler(reqBuilder, resTimerCtx, pooledConn));
+            }
         }).exceptionally(e -> {
             log.error("SimpleHTTPClient sends message exception", e);
             resTimerCtx.stop();

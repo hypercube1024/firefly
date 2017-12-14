@@ -26,6 +26,7 @@ public class HTTP2Configuration {
     private int maxResponseTrailerLength = 4 * 1024;
     private String characterEncoding = "UTF-8";
     private String protocol; // HTTP/2.0, HTTP/1.1
+    private int http2PingInterval = 10 * 1000;
 
     /**
      * Get the TCP configuration.
@@ -321,5 +322,23 @@ public class HTTP2Configuration {
      */
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    /**
+     * Get the sending ping frame interval. The time unit is millisecond.
+     *
+     * @return the sending ping frame interval. The time unit is millisecond.
+     */
+    public int getHttp2PingInterval() {
+        return http2PingInterval;
+    }
+
+    /**
+     * Set the sending ping frame interval. The time unit is millisecond.
+     *
+     * @param http2PingInterval the sending ping frame interval. The time unit is millisecond.
+     */
+    public void setHttp2PingInterval(int http2PingInterval) {
+        this.http2PingInterval = http2PingInterval;
     }
 }
