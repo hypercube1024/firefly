@@ -54,11 +54,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
 
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
 
-    /**
-     * Minimum size of a buffer is the determined to be what would be the maximum framing header size (not including payload)
-     */
-    private static final int MIN_BUFFER_SIZE = Generator.MAX_HEADER_LENGTH;
-
     private final Scheduler scheduler;
     private final Generator generator;
     private final Parser parser;
@@ -239,35 +234,6 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
         }
     }
 
-//    public void onFillable()
-//    {
-//        if (LOG.isDebugEnabled())
-//            LOG.debug("{} onFillable()",policy.getBehavior());
-//        stats.countOnFillableEvents.incrementAndGet();
-//
-//        ByteBuffer buffer = BufferUtils.allocate(getInputBufferSize());
-//
-//        isFilling = true;
-//
-//        if(readMode == ReadMode.PARSE)
-//        {
-//            readMode = readParse(buffer);
-//        }
-//        else
-//        {
-//            readMode = readDiscard(buffer);
-//        }
-//
-//        if ((readMode != ReadMode.EOF) && (suspendToken.get() == false))
-//        {
-//            fillInterested();
-//        }
-//        else
-//        {
-//            isFilling = false;
-//        }
-//    }
-
     /**
      * Extra bytes from the initial HTTP upgrade that need to
      * be processed by the websocket parser before starting
@@ -351,6 +317,14 @@ public abstract class AbstractWebSocketConnection implements WebsocketConnection
             session.abort(StatusCode.ABNORMAL, t.getMessage());
             return ReadMode.DISCARD;
         }
+    }
+
+    public void parse(ByteBuffer buffer) {
+        isFilling = true;
+        if (readMode == ReadMode.PARSE) {
+            readMode = readParse(buffer);
+        }
+        isFilling = false;
     }
 
     @Override
