@@ -16,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WebSocketSession implements Session, RemoteEndpointFactory, IncomingFrames, ConnectionStateListener {
@@ -332,9 +331,7 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
             throw new IllegalStateException("No valid UpgradeRequest yet");
         }
 
-        URI requestURI = upgradeRequest.getRequestURI();
-
-        return "wss".equalsIgnoreCase(requestURI.getScheme());
+        return "wss".equalsIgnoreCase(upgradeRequest.getRequestURI().getScheme());
     }
 
     public void notifyClose(int statusCode, String reason) {

@@ -1,6 +1,8 @@
 package com.firefly.codec.websocket.model;
 
-import java.net.HttpCookie;
+import com.firefly.codec.http2.model.Cookie;
+import com.firefly.codec.http2.model.HttpURI;
+
 import java.net.URI;
 import java.security.Principal;
 import java.util.List;
@@ -31,19 +33,11 @@ public interface UpgradeRequest {
     void addExtensions(String... configs);
 
     /**
-     * Remove all headers from request.
-     *
-     * @deprecated (no longer supported, as this can undo the required upgrade request headers)
-     */
-    @Deprecated
-    void clearHeaders();
-
-    /**
      * Get the list of Cookies on the Upgrade request
      *
      * @return the list of Cookies
      */
-    List<HttpCookie> getCookies();
+    List<Cookie> getCookies();
 
     /**
      * Get the list of WebSocket Extension Configurations for this Upgrade Request.
@@ -153,7 +147,7 @@ public interface UpgradeRequest {
      *
      * @return the request URI
      */
-    URI getRequestURI();
+    HttpURI getRequestURI();
 
     /**
      * Access the Servlet HTTP Session (if present)
@@ -208,7 +202,7 @@ public interface UpgradeRequest {
      *
      * @param cookies the cookies to use
      */
-    void setCookies(List<HttpCookie> cookies);
+    void setCookies(List<Cookie> cookies);
 
     /**
      * Set the list of WebSocket Extension configurations on the request.
@@ -276,7 +270,7 @@ public interface UpgradeRequest {
      *
      * @param uri the Request URI
      */
-    void setRequestURI(URI uri);
+    void setRequestURI(HttpURI uri);
 
     /**
      * Set the Session associated with this request.
