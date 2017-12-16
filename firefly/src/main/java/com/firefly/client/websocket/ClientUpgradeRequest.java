@@ -48,7 +48,7 @@ public class ClientUpgradeRequest extends UpgradeRequestAdapter {
         this.key = genRandomKey();
     }
 
-    protected ClientUpgradeRequest(HttpURI requestURI) {
+    public ClientUpgradeRequest(HttpURI requestURI) {
         super(requestURI);
         this.key = genRandomKey();
     }
@@ -85,7 +85,7 @@ public class ClientUpgradeRequest extends UpgradeRequestAdapter {
         setMethod(wsRequest.getMethod());
     }
 
-    private final String genRandomKey() {
+    private String genRandomKey() {
         byte[] bytes = new byte[16];
         ThreadLocalRandom.current().nextBytes(bytes);
         return new String(B64Code.encode(bytes));
