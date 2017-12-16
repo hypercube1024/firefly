@@ -147,22 +147,12 @@ public class HTTP2Flusher extends IteratingCallback {
             return Action.IDLE;
         }
 
-        if (log.isDebugEnabled())
-            log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
-                    actives.size(), actives.toString());
-
-        ByteBufferArrayOutputEntry outputEntry = new ByteBufferArrayOutputEntry(this,
-                buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
-        session.getEndPoint().encode(outputEntry);
-        return Action.SCHEDULED;
-    }
-
-    private int getBufferTotalLength() {
-        int length = 0;
-        for (ByteBuffer buf : buffers) {
-            length += buf.remaining();
+        if (log.isDebugEnabled()) {
+            log.debug("Writing {} buffers ({} bytes) for {} frames {}",
+                    buffers.size(), BufferUtils.remaining(buffers), actives.size(), actives.toString());
         }
-        return length;
+        session.getEndPoint().encode(new ByteBufferArrayOutputEntry(this, buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY)));
+        return Action.SCHEDULED;
     }
 
     @Override
