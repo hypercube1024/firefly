@@ -17,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -179,7 +178,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
         StreamSPI stream = getStream(frame.getStreamId());
         if (stream != null)
-            stream.process(frame, Callback.NOOP);
+            stream.process(frame, new ResetCallback());
         else
             notifyReset(this, frame);
     }
@@ -403,7 +402,6 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             flusher.iterate();
     }
 
-
     @Override
     public void settings(SettingsFrame frame, Callback callback) {
         control(null, callback, frame);
@@ -580,8 +578,6 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     public void removeStream(StreamSPI stream) {
         StreamSPI removed = streams.remove(stream.getId());
         if (removed != null) {
-            assert removed == stream;
-
             boolean local = stream.isLocal();
             if (local)
                 localStreamCount.decrementAndGet();
@@ -725,7 +721,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     public boolean onIdleTimeout() {
         switch (closed.get()) {
             case NOT_CLOSED: {
-                long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - idleTime);
+                long elapsed = Millisecond100Clock.currentTimeMillis() - idleTime;
                 return elapsed >= endPoint.getMaxIdleTimeout() && notifyIdleTimeout(this);
             }
             case LOCALLY_CLOSED:
@@ -740,7 +736,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
     }
 
     private void notIdle() {
-        idleTime = System.nanoTime();
+        idleTime = Millisecond100Clock.currentTimeMillis();
     }
 
     @Override
@@ -1050,6 +1046,22 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         @Override
         public void failed(Throwable x) {
             promise.failed(x);
+        }
+    }
+
+    private class ResetCallback implements Callback {
+        @Override
+        public void succeeded() {
+            complete();
+        }
+
+        @Override
+        public void failed(Throwable x) {
+            complete();
+        }
+
+        private void complete() {
+            flusher.iterate();
         }
     }
 

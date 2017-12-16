@@ -57,9 +57,8 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     public void headers(HeadersFrame frame, Callback callback) {
-        if (!checkWrite(callback))
-            return;
-        session.frames(this, this, frame, Frame.EMPTY_ARRAY);
+        if (startWrite(callback))
+            session.frames(this, this, frame, Frame.EMPTY_ARRAY);
     }
 
     @Override
@@ -69,9 +68,8 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     public void data(DataFrame frame, Callback callback) {
-        if (!checkWrite(callback))
-            return;
-        session.data(this, this, frame);
+        if (startWrite(callback))
+            session.data(this, this, frame);
     }
 
     @Override
@@ -82,7 +80,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
         session.frames(this, callback, frame, Frame.EMPTY_ARRAY);
     }
 
-    private boolean checkWrite(Callback callback) {
+    private boolean startWrite(Callback callback) {
         if (writing.compareAndSet(null, callback))
             return true;
         callback.failed(new WritePendingException());
@@ -228,8 +226,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
         remoteReset = true;
         close();
         session.removeStream(this);
-        callback.succeeded();
-        notifyReset(this, frame);
+        notifyReset(this, frame, callback);
     }
 
     private void onPush(PushPromiseFrame frame, Callback callback) {
@@ -299,20 +296,26 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     public void close() {
-        closeState.set(CloseState.CLOSED);
-        onClose();
+        if (closeState.getAndSet(CloseState.CLOSED) != CloseState.CLOSED)
+            onClose();
     }
 
     @Override
     public void succeeded() {
-        Callback callback = writing.getAndSet(null);
-        callback.succeeded();
+        Callback callback = endWrite();
+        if (callback != null)
+            callback.succeeded();
     }
 
     @Override
     public void failed(Throwable x) {
-        Callback callback = writing.getAndSet(null);
-        callback.failed(x);
+        Callback callback = endWrite();
+        if (callback != null)
+            callback.failed(x);
+    }
+
+    private Callback endWrite() {
+        return writing.getAndSet(null);
     }
 
     private void notifyData(Stream stream, DataFrame frame, Callback callback) {
@@ -326,12 +329,12 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
         }
     }
 
-    private void notifyReset(Stream stream, ResetFrame frame) {
+    private void notifyReset(Stream stream, ResetFrame frame, Callback callback) {
         final Listener listener = this.listener;
         if (listener == null)
             return;
         try {
-            listener.onReset(stream, frame);
+            listener.onReset(stream, frame, callback);
         } catch (Throwable x) {
             log.info("Failure while notifying listener " + listener, x);
         }

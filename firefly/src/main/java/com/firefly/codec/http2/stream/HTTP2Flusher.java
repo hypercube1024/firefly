@@ -73,12 +73,16 @@ public class HTTP2Flusher extends IteratingCallback {
         return false;
     }
 
-    private synchronized int getWindowQueueSize() {
-        return windows.size();
+    private int getWindowQueueSize() {
+        synchronized (this) {
+            return windows.size();
+        }
     }
 
-    private synchronized int getFrameQueueSize() {
-        return frames.size();
+    public int getFrameQueueSize() {
+        synchronized (this) {
+            return frames.size();
+        }
     }
 
     @Override
@@ -95,13 +99,11 @@ public class HTTP2Flusher extends IteratingCallback {
                 entry.perform();
             }
 
-            if (!frames.isEmpty()) {
-                for (Entry entry : frames) {
-                    entries.offer(entry);
-                    actives.add(entry);
-                }
-                frames.clear();
+            for (Entry entry : frames) {
+                entries.offer(entry);
+                actives.add(entry);
             }
+            frames.clear();
         }
 
 
@@ -116,10 +118,10 @@ public class HTTP2Flusher extends IteratingCallback {
             if (log.isDebugEnabled())
                 log.debug("Processing {}", entry);
 
-            // If the stream has been reset, don't send the frame.
-            if (entry.reset()) {
+            // If the stream has been reset or removed, don't send the frame.
+            if (entry.isStale()) {
                 if (log.isDebugEnabled())
-                    log.debug("Resetting {}", entry);
+                    log.debug("Stale {}", entry);
                 continue;
             }
 
@@ -145,22 +147,12 @@ public class HTTP2Flusher extends IteratingCallback {
             return Action.IDLE;
         }
 
-        if (log.isDebugEnabled())
-            log.debug("Writing {} buffers ({} bytes) for {} frames {}", buffers.size(), getBufferTotalLength(),
-                    actives.size(), actives.toString());
-
-        ByteBufferArrayOutputEntry outputEntry = new ByteBufferArrayOutputEntry(this,
-                buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
-        session.getEndPoint().encode(outputEntry);
-        return Action.SCHEDULED;
-    }
-
-    private int getBufferTotalLength() {
-        int length = 0;
-        for (ByteBuffer buf : buffers) {
-            length += buf.remaining();
+        if (log.isDebugEnabled()) {
+            log.debug("Writing {} buffers ({} bytes) for {} frames {}",
+                    buffers.size(), BufferUtils.remaining(buffers), actives.size(), actives.toString());
         }
-        return length;
+        session.getEndPoint().encode(new ByteBufferArrayOutputEntry(this, buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY)));
+        return Action.SCHEDULED;
     }
 
     @Override
@@ -256,7 +248,6 @@ public class HTTP2Flusher extends IteratingCallback {
     public static abstract class Entry extends Callback.Nested {
         protected final Frame frame;
         protected final StreamSPI stream;
-        private boolean reset;
 
         protected Entry(Frame frame, StreamSPI stream, Callback callback) {
             super(callback);
@@ -271,7 +262,7 @@ public class HTTP2Flusher extends IteratingCallback {
         protected abstract boolean generate(Queue<ByteBuffer> buffers);
 
         private void complete() {
-            if (reset)
+            if (isStale())
                 failed(new EofException("reset"));
             else
                 succeeded();
@@ -286,20 +277,28 @@ public class HTTP2Flusher extends IteratingCallback {
             super.failed(x);
         }
 
-        private boolean reset() {
-            return this.reset = stream != null && stream.isReset() && !isProtocol();
+        private boolean isStale() {
+            return !isProtocol() && stream != null && stream.isReset();
         }
 
         private boolean isProtocol() {
             switch (frame.getType()) {
+                case DATA:
+                case HEADERS:
+                case PUSH_PROMISE:
+                case CONTINUATION:
+                    return false;
                 case PRIORITY:
                 case RST_STREAM:
+                case SETTINGS:
+                case PING:
                 case GO_AWAY:
                 case WINDOW_UPDATE:
+                case PREFACE:
                 case DISCONNECT:
                     return true;
                 default:
-                    return false;
+                    throw new IllegalStateException();
             }
         }
 
