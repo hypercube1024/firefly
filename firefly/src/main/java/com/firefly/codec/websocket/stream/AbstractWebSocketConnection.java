@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Provides the implementation of {@link WebsocketConnection} within the framework of the new {@link Connection} framework of the Firefly-nettools
+ * Provides the implementation of {@link WebSocketConnection} within the framework of the new {@link Connection} framework of the Firefly-nettools
  */
-public abstract class AbstractWebSocketConnection implements WebsocketConnection, ConnectionStateListener {
+public abstract class AbstractWebSocketConnection implements WebSocketConnection, ConnectionStateListener {
 
     private class Flusher extends FrameFlusher {
         private Flusher(Generator generator, com.firefly.net.Session endpoint) {

@@ -56,8 +56,8 @@ public class HTTP2Client extends AbstractLifeCycle {
     public void connect(String host, int port, Promise<HTTPClientConnection> promise, Listener listener) {
         start();
         HTTP2ClientContext context = new HTTP2ClientContext();
-        context.promise = promise;
-        context.listener = listener;
+        context.setPromise(promise);
+        context.setListener(listener);
         int id = sessionId.getAndIncrement();
         http2ClientContext.put(id, context);
         client.connect(host, port, id);

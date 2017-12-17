@@ -4,5 +4,5 @@ import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.OutgoingFrames;
 
 public interface RemoteEndpointFactory {
-    RemoteEndpoint newRemoteEndpoint(WebsocketConnection connection, OutgoingFrames outgoingFrames, BatchMode batchMode);
+    RemoteEndpoint newRemoteEndpoint(WebSocketConnection connection, OutgoingFrames outgoingFrames, BatchMode batchMode);
 }

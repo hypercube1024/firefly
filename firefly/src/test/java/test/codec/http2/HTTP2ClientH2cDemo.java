@@ -17,18 +17,15 @@ import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 public class HTTP2ClientH2cDemo {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    public static void main(String[] args)
-            throws InterruptedException, ExecutionException, UnsupportedEncodingException {
+    public static void main(String[] args) throws Exception {
         final HTTP2Configuration http2Configuration = new HTTP2Configuration();
         http2Configuration.setFlowControlStrategy("simple");
         http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
@@ -47,7 +44,7 @@ public class HTTP2ClientH2cDemo {
             settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
             SettingsFrame settingsFrame = new SettingsFrame(settings, false);
 
-            FuturePromise<HTTPClientConnection> http2promise = new FuturePromise<>();
+            FuturePromise<HTTP2ClientConnection> http2promise = new FuturePromise<>();
             FuturePromise<Stream> initStream = new FuturePromise<>();
             httpConnection.upgradePlaintextHTTP2(request, settingsFrame, http2promise, initStream,
                     new Stream.Listener.Adapter() {

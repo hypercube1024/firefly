@@ -86,9 +86,9 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
         try {
             HTTP1ClientConnection http1ClientConnection = new HTTP1ClientConnection(config, session, sslSession);
             session.attachObject(http1ClientConnection);
-            context.promise.succeeded(http1ClientConnection);
+            context.getPromise().succeeded(http1ClientConnection);
         } catch (Throwable t) {
-            context.promise.failed(t);
+            context.getPromise().failed(t);
         } finally {
             http2ClientContext.remove(session.getSessionId());
         }
@@ -97,10 +97,9 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
     private void initializeHTTP2ClientConnection(final Session session, final HTTP2ClientContext context,
                                                  final SecureSession sslSession) {
         try {
-            final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession,
-                    context.listener);
+            final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession, context.getListener());
             session.attachObject(connection);
-            connection.initialize(config, context.promise, context.listener);
+            connection.initialize(config, context.getPromise(), context.getListener());
             int id = session.getSessionId();
 
             Scheduler.Future future = pingScheduler.scheduleAtFixedRate(
@@ -133,14 +132,9 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
 
     @Override
     public void failedOpeningSession(Integer sessionId, Throwable t) {
-        try {
-            HTTP2ClientContext context = http2ClientContext.get(sessionId);
-            if (context != null) {
-                context.promise.failed(t);
-            }
-        } finally {
-            http2ClientContext.remove(sessionId);
-        }
+        Optional.ofNullable(http2ClientContext.remove(sessionId))
+                .map(HTTP2ClientContext::getPromise)
+                .ifPresent(promise -> promise.failed(t));
     }
 
     @Override

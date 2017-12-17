@@ -47,17 +47,17 @@ public class WebSocketRemoteEndpoint implements RemoteEndpoint {
     private final static int PARTIAL_TEXT_MASK = 0x00040000;
     private final static int PARTIAL_BINARY_MASK = 0x00080000;
 
-    private final WebsocketConnection connection;
+    private final WebSocketConnection connection;
     private final OutgoingFrames outgoing;
     private final AtomicInteger msgState = new AtomicInteger();
     private final BlockingWriteCallback blocker = new BlockingWriteCallback();
     private volatile BatchMode batchMode;
 
-    public WebSocketRemoteEndpoint(WebsocketConnection connection, OutgoingFrames outgoing) {
+    public WebSocketRemoteEndpoint(WebSocketConnection connection, OutgoingFrames outgoing) {
         this(connection, outgoing, BatchMode.AUTO);
     }
 
-    public WebSocketRemoteEndpoint(WebsocketConnection connection, OutgoingFrames outgoing, BatchMode batchMode) {
+    public WebSocketRemoteEndpoint(WebSocketConnection connection, OutgoingFrames outgoing, BatchMode batchMode) {
         if (connection == null) {
             throw new IllegalArgumentException("LogicalConnection cannot be null");
         }

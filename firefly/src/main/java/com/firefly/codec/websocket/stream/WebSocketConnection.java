@@ -6,11 +6,11 @@ import com.firefly.codec.websocket.model.OutgoingFrames;
 import com.firefly.net.Connection;
 import com.firefly.utils.function.Action1;
 
-public interface WebsocketConnection extends OutgoingFrames, SuspendToken, Connection {
+public interface WebSocketConnection extends OutgoingFrames, SuspendToken, Connection {
 
-    WebsocketConnection close(Action1<WebsocketConnection> closedCallback);
+    WebSocketConnection close(Action1<WebSocketConnection> closedCallback);
 
-    WebsocketConnection exception(Action1<WebsocketConnection> exceptionCallback);
+    WebSocketConnection exception(Action1<WebSocketConnection> exceptionCallback);
 
     /**
      * Called to indicate a close frame was successfully sent to the remote.

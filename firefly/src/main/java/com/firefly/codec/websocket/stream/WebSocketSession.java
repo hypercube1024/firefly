@@ -21,10 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class WebSocketSession implements Session, RemoteEndpointFactory, IncomingFrames, ConnectionStateListener {
     public static class OnCloseLocalCallback implements WriteCallback {
         private final Callback callback;
-        private final WebsocketConnection connection;
+        private final WebSocketConnection connection;
         private final CloseInfo close;
 
-        public OnCloseLocalCallback(Callback callback, WebsocketConnection connection, CloseInfo close) {
+        public OnCloseLocalCallback(Callback callback, WebSocketConnection connection, CloseInfo close) {
             this.callback = callback;
             this.connection = connection;
             this.close = close;
@@ -69,7 +69,7 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     private final URI requestURI;
-    private final WebsocketConnection connection;
+    private final WebSocketConnection connection;
     private final WebSocketEvent websocket;
     private final WebSocketPolicy policy;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -85,7 +85,7 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
     private UpgradeResponse upgradeResponse;
     private CompletableFuture<Session> openFuture;
 
-    public WebSocketSession(URI requestURI, WebSocketEvent websocket, WebsocketConnection connection) {
+    public WebSocketSession(URI requestURI, WebSocketEvent websocket, WebSocketConnection connection) {
         Objects.requireNonNull(requestURI, "Request URI cannot be null");
 
         this.classLoader = Thread.currentThread().getContextClassLoader();
@@ -208,7 +208,7 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
         return this.getClass().getClassLoader();
     }
 
-    public WebsocketConnection getConnection() {
+    public WebSocketConnection getConnection() {
         return connection;
     }
 
@@ -392,7 +392,7 @@ public class WebSocketSession implements Session, RemoteEndpointFactory, Incomin
         }
     }
 
-    public WebSocketRemoteEndpoint newRemoteEndpoint(WebsocketConnection connection, OutgoingFrames outgoingFrames, BatchMode batchMode) {
+    public WebSocketRemoteEndpoint newRemoteEndpoint(WebSocketConnection connection, OutgoingFrames outgoingFrames, BatchMode batchMode) {
         return new WebSocketRemoteEndpoint(connection, outgoingHandler, getBatchMode());
     }
 

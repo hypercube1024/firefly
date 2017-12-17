@@ -9,6 +9,7 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.codec.Base64Utils;
@@ -29,7 +30,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private Promise<HTTPClientConnection> http2ConnectionPromise;
+    private Promise<HTTP2ClientConnection> http2ConnectionPromise;
     private Listener http2SessionListener;
     private Promise<Stream> initStream;
     private Stream.Listener initStreamListener;
@@ -178,8 +179,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    public void upgradeHTTP2(final MetaData.Request request, final SettingsFrame settings,
-                             final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler) {
+    public void upgradeHTTP2(MetaData.Request request, SettingsFrame settings,
+                             Promise<HTTP2ClientConnection> promise, ClientHTTPHandler handler) {
         upgradePlaintextHTTP2(request, settings, promise,
                 new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise.Adapter<>(), true),
                 new HTTP2ClientResponseHandler(request, handler, this), new Listener.Adapter() {
@@ -197,8 +198,13 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                 }, handler);
     }
 
+    @Override
+    public void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise) {
+
+    }
+
     public void upgradePlaintextHTTP2(MetaData.Request request, SettingsFrame settings,
-                                      final Promise<HTTPClientConnection> promise, final Promise<Stream> initStream,
+                                      final Promise<HTTP2ClientConnection> promise, final Promise<Stream> initStream,
                                       final Stream.Listener initStreamListener, final Listener listener,
                                       final ClientHTTPHandler handler) {
         if (isEncrypted()) {
