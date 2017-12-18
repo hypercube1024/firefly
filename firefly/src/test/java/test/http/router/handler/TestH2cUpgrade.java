@@ -165,9 +165,10 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
+                System.out.println("client---------------------------------");
                 System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
                 System.out.println(response.getFields());
-                System.out.println("---------------------------------");
+                System.out.println("client---------------------------------end");
                 Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
                 phaser.arrive(); // 3
                 return true;
@@ -178,10 +179,11 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     }
 
     public boolean dataComplete(Phaser phaser, String content, MetaData.Response response) {
+        System.out.println("client---------------------------------");
         System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
         System.out.println(response.getFields());
         System.out.println(content);
-        System.out.println("---------------------------------");
+        System.out.println("client---------------------------------end");
         Assert.assertThat(response.getStatus(), is(HttpStatus.OK_200));
         try {
             Assert.assertThat(content, is("Receive data stream successful. Thank you!"));
@@ -217,9 +219,10 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response, HTTPOutputStream outputStream,
                                            HTTPConnection connection) {
                 HttpURI uri = request.getURI();
+                System.out.println("server--------------------------------");
                 System.out.println("Server message complete: " + uri);
                 System.out.println(request.getFields());
-                System.out.println("--------------------------------");
+                System.out.println("server--------------------------------end");
                 switch (uri.getPath()) {
                     case "/index":
                         response.setStatus(HttpStatus.Code.OK.getCode());
