@@ -168,9 +168,14 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     public boolean dataComplete(Phaser phaser, String content, MetaData.Response response) {
         System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
         System.out.println(response.getFields());
+        System.out.println(content);
         System.out.println("---------------------------------");
         Assert.assertThat(response.getStatus(), is(HttpStatus.OK_200));
-        Assert.assertThat(content, is("Receive data stream successful. Thank you!"));
+        try {
+            Assert.assertThat(content, is("Receive data stream successful. Thank you!"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         phaser.arrive();
         return true;
     }
