@@ -249,8 +249,10 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                         response.setStatus(HttpStatus.Code.OK.getCode());
                         response.setReason(HttpStatus.Code.OK.getMessage());
                         try (HTTPOutputStream output = outputStream) {
-                            output.write(toBuffer("Receive data stream successful. ", StandardCharsets.UTF_8));
-                            output.write(toBuffer("Thank you!", StandardCharsets.UTF_8));
+                            output.writeWithContentLength(new ByteBuffer[]{
+                                    toBuffer("Receive data stream successful. ", StandardCharsets.UTF_8),
+                                    toBuffer("Thank you!", StandardCharsets.UTF_8)
+                            });
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
