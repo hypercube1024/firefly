@@ -59,7 +59,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                                        HTTPConnection connection) {
             System.out.println("client received 100 continue");
             Assert.assertTrue(buffers != null);
-
+            System.out.println("buffers: " + buffers.length);
             try (HTTPOutputStream out = output) {
                 for (ByteBuffer buf : buffers) {
                     out.write(buf);
@@ -67,6 +67,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            System.out.println("client sends buffers completely");
         }
 
         @Override

@@ -145,7 +145,6 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
                 } catch (IOException e) {
                     log.error("write data unsuccessfully", e);
                 }
-
             }
 
             @Override
