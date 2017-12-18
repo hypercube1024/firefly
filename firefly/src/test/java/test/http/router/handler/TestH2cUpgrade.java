@@ -19,7 +19,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
 
         protected final ByteBuffer[] buffers;
-        protected final List<ByteBuffer> contentList = new ArrayList<>();
+        protected final List<ByteBuffer> contentList = new CopyOnWriteArrayList<>();
 
         public TestH2cHandler() {
             buffers = null;
@@ -116,12 +115,11 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             }
         });
 
-        HTTPClientConnection clientConnection = http2Promise.get();
-
+        HTTP2ClientConnection clientConnection = http2Promise.get();
         HttpFields fields = new HttpFields();
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
         MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP,
-                new HostPortHttpField("127.0.0.1:6677"),
+                new HostPortHttpField(host + ":" + port),
                 "/data", HttpVersion.HTTP_1_1, fields);
         clientConnection.sendRequestWithContinuation(post, new TestH2cHandler(new ByteBuffer[]{
                 ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
