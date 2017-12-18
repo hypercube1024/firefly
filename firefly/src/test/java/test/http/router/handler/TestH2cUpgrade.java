@@ -78,6 +78,14 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             contentList.add(item);
             return false;
         }
+
+        @Override
+        public boolean headerComplete(MetaData.Request request, MetaData.Response response,
+                                      HTTPOutputStream output,
+                                      HTTPConnection connection) {
+            System.out.println("client received response: " + response);
+            return false;
+        }
     }
 
     private HTTP2Client createClient(Phaser phaser) throws Exception {
