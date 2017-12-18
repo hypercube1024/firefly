@@ -32,13 +32,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-//        Phaser phaser = new Phaser(5);
-//        HTTP2Server server = createServer();
-//        HTTP2Client client = createClient(phaser);
-//
-//        phaser.arriveAndAwaitAdvance();
-//        server.stop();
-//        client.stop();
+        Phaser phaser = new Phaser(5);
+        HTTP2Server server = createServer();
+        HTTP2Client client = createClient(phaser);
+
+        phaser.arriveAndAwaitAdvance();
+        server.stop();
+        client.stop();
     }
 
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
@@ -223,7 +223,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 System.out.println("server--------------------------------");
                 System.out.println("Server message complete: " + uri);
                 System.out.println(request.getFields());
-                System.out.println("server--------------------------------end");
+
                 switch (uri.getPath()) {
                     case "/index":
                         response.setStatus(HttpStatus.Code.OK.getCode());
@@ -254,6 +254,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                         }
                         break;
                 }
+                System.out.println("server--------------------------------end");
                 return true;
             }
         });
