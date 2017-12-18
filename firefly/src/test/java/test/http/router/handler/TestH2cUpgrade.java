@@ -32,7 +32,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-        Phaser phaser = new Phaser(4);
+        Phaser phaser = new Phaser(3);
         HTTP2Server server = createServer();
         HTTP2Client client = createClient(phaser);
 
@@ -129,22 +129,22 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             }
         });
 
-        MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
-                new HostPortHttpField(host + ":" + port),
-                "/test2", HttpVersion.HTTP_1_1, new HttpFields());
-        clientConnection.send(get, new TestH2cHandler() {
-            @Override
-            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-                                           HTTPOutputStream output,
-                                           HTTPConnection connection) {
-                System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
-                System.out.println(response.getFields());
-                System.out.println("---------------------------------");
-                Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
-                phaser.arrive(); // 3
-                return true;
-            }
-        });
+//        MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
+//                new HostPortHttpField(host + ":" + port),
+//                "/test2", HttpVersion.HTTP_1_1, new HttpFields());
+//        clientConnection.send(get, new TestH2cHandler() {
+//            @Override
+//            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+//                                           HTTPOutputStream output,
+//                                           HTTPConnection connection) {
+//                System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
+//                System.out.println(response.getFields());
+//                System.out.println("---------------------------------");
+//                Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
+//                phaser.arrive(); // 3
+//                return true;
+//            }
+//        });
 
 //        fields = new HttpFields();
 //        fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
