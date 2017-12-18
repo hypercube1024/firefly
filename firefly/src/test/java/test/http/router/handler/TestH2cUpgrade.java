@@ -230,7 +230,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                                            HTTPConnection connection) {
                 HttpURI uri = request.getURI();
                 System.out.println("server--------------------------------");
-                System.out.println("Server message complete: " + uri);
+                System.out.println("Server message complete: " + uri.getPath());
                 System.out.println(request.getFields());
 
                 switch (uri.getPath()) {
