@@ -33,7 +33,6 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     @Override
     public void onHeaders(final Stream stream, final HeadersFrame headersFrame) {
-        System.out.println("on headers ," + stream + ", " + headersFrame);
         if (headersFrame.getMetaData() == null) {
             throw new IllegalArgumentException("the stream " + stream.getId() + " received a null meta data");
         }
