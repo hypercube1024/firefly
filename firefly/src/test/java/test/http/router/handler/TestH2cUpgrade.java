@@ -279,10 +279,8 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 if (frame.isEndStream()) {
                     if (request.getURI().getPath().equals("/index")) {
                         MetaData.Response response = new MetaData.Response(HttpVersion.HTTP_2, 200, new HttpFields());
-                        HeadersFrame headersFrame = new HeadersFrame(stream.getId(), response, null, false);
-                        DataFrame dataFrame = new DataFrame(stream.getId(), BufferUtils.toBuffer("The server received message"), true);
+                        HeadersFrame headersFrame = new HeadersFrame(stream.getId(), response, null, true);
                         stream.headers(headersFrame, Callback.NOOP);
-                        stream.data(dataFrame, Callback.NOOP);
                     }
                 }
 
@@ -302,10 +300,14 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                         if (frame.isEndStream()) {
                             MetaData.Response response = new MetaData.Response(HttpVersion.HTTP_2, 200, new HttpFields());
                             HeadersFrame responseFrame = new HeadersFrame(stream.getId(), response, null, false);
-                            DataFrame dataFrame = new DataFrame(stream.getId(), BufferUtils.toBuffer("The server received data"), true);
                             System.out.println("Server session on data end: " + BufferUtils.toString(contentList));
-                            stream.headers(responseFrame, Callback.NOOP);
-                            stream.data(dataFrame, Callback.NOOP);
+                            stream.headers(responseFrame, new Callback() {
+                                @Override
+                                public void succeeded() {
+                                    DataFrame dataFrame = new DataFrame(stream.getId(), BufferUtils.toBuffer("The server received data"), true);
+                                    stream.data(dataFrame, Callback.NOOP);
+                                }
+                            });
                         }
                         callback.succeeded();
                     }
