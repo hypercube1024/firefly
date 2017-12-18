@@ -213,16 +213,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     boolean upgradeHTTP2Complete(MetaData.Response response) {
-        return upgradeHTTP2Complete.compareAndSet(false, _upgradeHTTP2Complete(response));
-    }
-
-    private boolean _upgradeHTTP2Complete(MetaData.Response response) {
         if (http2ConnectionPromise != null && http2SessionListener != null) {
             String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
             if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
                 // initialize http2 client connection;
-                final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(
-                        getHTTP2Configuration(),
+                final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
                         getTcpSession(), null, http2SessionListener) {
                     @Override
                     protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
@@ -234,6 +229,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                 };
                 getTcpSession().attachObject(http2Connection);
                 http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
+                upgradeHTTP2Complete.compareAndSet(false, true);
                 return true;
             } else {
                 return false;
@@ -245,7 +241,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
     @Override
     public void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise) {
-
+        // TODO
     }
 
     @Override

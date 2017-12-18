@@ -103,8 +103,6 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
                         log.debug("the client {} connection is persistent", response.getHttpVersion());
                     }
                     break;
-                default:
-                    throw new IllegalStateException("client response does not support the http version " + connection.getHttpVersion());
             }
 
         }
