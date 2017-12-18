@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
 
         protected final ByteBuffer[] buffers;
-        protected final List<ByteBuffer> contentList = new CopyOnWriteArrayList<>();
+        protected final List<ByteBuffer> contentList = new ArrayList<>();
 
         public TestH2cHandler() {
             buffers = null;
@@ -58,16 +59,17 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         public void continueToSendData(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
                                        HTTPConnection connection) {
             System.out.println("client received 100 continue");
-            Assert.assertTrue(buffers != null);
-            System.out.println("buffers: " + buffers.length);
-            try (HTTPOutputStream out = output) {
-                for (ByteBuffer buf : buffers) {
-                    out.write(buf);
+            if (buffers != null) {
+                System.out.println("buffers: " + buffers.length);
+                try (HTTPOutputStream out = output) {
+                    for (ByteBuffer buf : buffers) {
+                        out.write(buf);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("client sends buffers completely");
             }
-            System.out.println("client sends buffers completely");
         }
 
         @Override
