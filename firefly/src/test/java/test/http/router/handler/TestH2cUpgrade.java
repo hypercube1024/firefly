@@ -32,13 +32,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-//        Phaser phaser = new Phaser(5);
-//        HTTP2Server server = createServer();
-//        HTTP2Client client = createClient(phaser);
-//
-//        phaser.arriveAndAwaitAdvance();
-//        server.stop();
-//        client.stop();
+        Phaser phaser = new Phaser(5);
+        HTTP2Server server = createServer();
+        HTTP2Client client = createClient(phaser);
+
+        phaser.arriveAndAwaitAdvance();
+        server.stop();
+        client.stop();
     }
 
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
@@ -89,12 +89,14 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         client.connect(host, port, promise);
 
         final HTTPClientConnection httpConnection = promise.get();
+
         HTTPClientRequest request = new HTTPClientRequest("GET", "/index");
 
         Map<Integer, Integer> settings = new HashMap<>();
         settings.put(SettingsFrame.HEADER_TABLE_SIZE, http2Configuration.getMaxDynamicTableSize());
         settings.put(SettingsFrame.INITIAL_WINDOW_SIZE, http2Configuration.getInitialStreamSendWindow());
         SettingsFrame settingsFrame = new SettingsFrame(settings, false);
+
         FuturePromise<HTTP2ClientConnection> http2Promise = new FuturePromise<>();
 
         httpConnection.upgradeHTTP2(request, settingsFrame, http2Promise, new TestH2cHandler() {
@@ -125,7 +127,33 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
-                return dataComplete(phaser, BufferUtils.toString(contentList), response); // 2
+                try {
+                    return dataComplete(phaser, BufferUtils.toString(contentList), response); // 2
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return true;
+                }
+            }
+        });
+
+        fields = new HttpFields();
+        fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
+        MetaData.Request post2 = new MetaData.Request("POST", HttpScheme.HTTP,
+                new HostPortHttpField(host + ":" + port),
+                "/data", HttpVersion.HTTP_1_1, fields);
+        clientConnection.send(post2, new ByteBuffer[]{
+                ByteBuffer.wrap("test data 2".getBytes("UTF-8")),
+                ByteBuffer.wrap("finished test data 2".getBytes("UTF-8"))}, new TestH2cHandler() {
+            @Override
+            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+                                           HTTPOutputStream output,
+                                           HTTPConnection connection) {
+                try {
+                    return dataComplete(phaser, BufferUtils.toString(contentList), response); // 4
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return true;
+                }
             }
         });
 
@@ -143,22 +171,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
                 phaser.arrive(); // 3
                 return true;
-            }
-        });
-
-        fields = new HttpFields();
-        fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
-        MetaData.Request post2 = new MetaData.Request("POST", HttpScheme.HTTP,
-                new HostPortHttpField(host + ":" + port),
-                "/data", HttpVersion.HTTP_1_1, fields);
-        clientConnection.send(post2, new ByteBuffer[]{
-                ByteBuffer.wrap("test data 2".getBytes("UTF-8")),
-                ByteBuffer.wrap("finished test data 2".getBytes("UTF-8"))}, new TestH2cHandler() {
-            @Override
-            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-                                           HTTPOutputStream output,
-                                           HTTPConnection connection) {
-                return dataComplete(phaser, BufferUtils.toString(contentList), response); // 4
             }
         });
 
