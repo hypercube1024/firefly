@@ -46,7 +46,7 @@ public class HTTP2ClientH2cDemo {
 
             FuturePromise<HTTP2ClientConnection> http2promise = new FuturePromise<>();
             FuturePromise<Stream> initStream = new FuturePromise<>();
-            httpConnection.upgradePlaintextHTTP2(request, settingsFrame, http2promise, initStream,
+            httpConnection.upgradeHTTP2(request, settingsFrame, http2promise, initStream,
                     new Stream.Listener.Adapter() {
                         @Override
                         public void onHeaders(Stream stream, HeadersFrame frame) {
