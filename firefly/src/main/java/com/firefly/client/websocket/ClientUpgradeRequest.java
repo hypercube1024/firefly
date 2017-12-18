@@ -4,7 +4,7 @@ import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpURI;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.UpgradeRequestAdapter;
 import com.firefly.utils.StringUtils;
@@ -20,28 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class ClientUpgradeRequest extends UpgradeRequestAdapter {
 
-    private static final Set<String> FORBIDDEN_HEADERS;
-
-    static {
-        // Headers not allowed to be set in ClientUpgradeRequest.headers.
-        FORBIDDEN_HEADERS = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        // Cookies are handled explicitly, avoid to add them twice.
-        FORBIDDEN_HEADERS.add("cookie");
-        // Headers that cannot be set by applications.
-        FORBIDDEN_HEADERS.add("upgrade");
-        FORBIDDEN_HEADERS.add("host");
-        FORBIDDEN_HEADERS.add("connection");
-        FORBIDDEN_HEADERS.add("sec-websocket-key");
-        FORBIDDEN_HEADERS.add("sec-websocket-extensions");
-        FORBIDDEN_HEADERS.add("sec-websocket-accept");
-        FORBIDDEN_HEADERS.add("sec-websocket-protocol");
-        FORBIDDEN_HEADERS.add("sec-websocket-version");
-        FORBIDDEN_HEADERS.add("pragma");
-        FORBIDDEN_HEADERS.add("cache-control");
-    }
-
     private final String key;
-    private Object localEndpoint;
 
     public ClientUpgradeRequest() {
         super();
@@ -53,7 +32,7 @@ public class ClientUpgradeRequest extends UpgradeRequestAdapter {
         this.key = genRandomKey();
     }
 
-    public ClientUpgradeRequest(MetaData.Request wsRequest) {
+    public ClientUpgradeRequest(Request wsRequest) {
         this(wsRequest.getURI());
         // headers
         Map<String, List<String>> headers = new HashMap<>();
@@ -121,13 +100,5 @@ public class ClientUpgradeRequest extends UpgradeRequestAdapter {
 
             super.setParameterMap(pmap);
         }
-    }
-
-    public void setLocalEndpoint(Object websocket) {
-        this.localEndpoint = websocket;
-    }
-
-    public Object getLocalEndpoint() {
-        return localEndpoint;
     }
 }

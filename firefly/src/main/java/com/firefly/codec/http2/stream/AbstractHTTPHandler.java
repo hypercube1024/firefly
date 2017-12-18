@@ -5,6 +5,8 @@ import com.firefly.net.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 public abstract class AbstractHTTPHandler implements Handler {
 
     protected static Logger log = LoggerFactory.getLogger("firefly-system");
@@ -21,16 +23,19 @@ public abstract class AbstractHTTPHandler implements Handler {
 
     @Override
     public void exceptionCaught(Session session, Throwable t) throws Throwable {
-        log.error("HTTP handler exception", t);
-        if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
-            try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
-                if (httpConnection.getExceptionListener() != null) {
-                    httpConnection.getExceptionListener().call(httpConnection, t);
+        try {
+            log.error("HTTP handler exception", t);
+            if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
+                try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
+                    Optional.ofNullable(httpConnection.getExceptionListener()).ifPresent(c -> {
+                        c.call(httpConnection, t);
+                        log.info("The HTTP handler called connection {} exception listener.", session.getSessionId());
+                    });
+                } catch (Exception e) {
+                    log.error("http connection exception listener error", e);
                 }
-            } catch (Exception e) {
-                log.error("http connection exception listener error", e);
             }
-        } else {
+        } finally {
             session.close();
         }
     }
@@ -40,10 +45,10 @@ public abstract class AbstractHTTPHandler implements Handler {
         log.info("The HTTP handler received the session {} closed event.", session.getSessionId());
         if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
             try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
-                if (httpConnection.getClosedListener() != null) {
-                    httpConnection.getClosedListener().call(httpConnection);
+                Optional.ofNullable(httpConnection.getClosedListener()).ifPresent(c -> {
+                    c.call(httpConnection);
                     log.info("The HTTP handler called connection {} closed listener.", session.getSessionId());
-                }
+                });
             } catch (Exception e) {
                 log.error("http2 connection close exception", e);
             }
