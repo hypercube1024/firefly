@@ -32,13 +32,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-        Phaser phaser = new Phaser(3);
-        HTTP2Server server = createServer();
-        HTTP2Client client = createClient(phaser);
-
-        phaser.arriveAndAwaitAdvance();
-        server.stop();
-        client.stop();
+//        Phaser phaser = new Phaser(5);
+//        HTTP2Server server = createServer();
+//        HTTP2Client client = createClient(phaser);
+//
+//        phaser.arriveAndAwaitAdvance();
+//        server.stop();
+//        client.stop();
     }
 
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
@@ -121,21 +121,21 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP,
                 new HostPortHttpField(host + ":" + port),
                 "/data", HttpVersion.HTTP_1_1, fields);
-//        clientConnection.sendRequestWithContinuation(post, new TestH2cHandler(new ByteBuffer[]{
-//                ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
-//                ByteBuffer.wrap("big hello world!".getBytes("UTF-8"))}) {
-//            @Override
-//            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-//                                           HTTPOutputStream output,
-//                                           HTTPConnection connection) {
-//                try {
-//                    return dataComplete(phaser, BufferUtils.toString(contentList), response); // 2
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    return true;
-//                }
-//            }
-//        });
+        clientConnection.sendRequestWithContinuation(post, new TestH2cHandler(new ByteBuffer[]{
+                ByteBuffer.wrap("hello world!".getBytes("UTF-8")),
+                ByteBuffer.wrap("big hello world!".getBytes("UTF-8"))}) {
+            @Override
+            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+                                           HTTPOutputStream output,
+                                           HTTPConnection connection) {
+                try {
+                    return dataComplete(phaser, BufferUtils.toString(contentList), response); // 2
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return true;
+                }
+            }
+        });
 
         fields = new HttpFields();
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
@@ -158,23 +158,23 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             }
         });
 
-//        MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
-//                new HostPortHttpField(host + ":" + port),
-//                "/test2", HttpVersion.HTTP_1_1, new HttpFields());
-//        clientConnection.send(get, new TestH2cHandler() {
-//            @Override
-//            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-//                                           HTTPOutputStream output,
-//                                           HTTPConnection connection) {
-//                System.out.println("client---------------------------------");
-//                System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
-//                System.out.println(response.getFields());
-//                System.out.println("client---------------------------------end");
-//                Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
-//                phaser.arrive(); // 3
-//                return true;
-//            }
-//        });
+        MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
+                new HostPortHttpField(host + ":" + port),
+                "/test2", HttpVersion.HTTP_1_1, new HttpFields());
+        clientConnection.send(get, new TestH2cHandler() {
+            @Override
+            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+                                           HTTPOutputStream output,
+                                           HTTPConnection connection) {
+                System.out.println("client---------------------------------");
+                System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
+                System.out.println(response.getFields());
+                System.out.println("client---------------------------------end");
+                Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
+                phaser.arrive(); // 3
+                return true;
+            }
+        });
 
         return client;
     }
