@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
-    @Test
+//    @Test
     public void test() throws Exception {
         Phaser phaser = new Phaser(5);
         HTTP2Server server = createServer();
