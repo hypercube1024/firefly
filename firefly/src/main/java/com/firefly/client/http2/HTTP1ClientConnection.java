@@ -216,6 +216,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         if (http2ConnectionPromise != null && http2SessionListener != null) {
             String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
             if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
+                upgradeHTTP2Complete.compareAndSet(false, true);
                 // initialize http2 client connection;
                 final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
                         getTcpSession(), null, http2SessionListener) {
@@ -229,7 +230,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                 };
                 getTcpSession().attachObject(http2Connection);
                 http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
-                upgradeHTTP2Complete.compareAndSet(false, true);
                 return true;
             } else {
                 return false;
@@ -359,6 +359,23 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         } else {
             throw new WritePendingException();
         }
+    }
+
+    @Override
+    public void close() {
+        if (isOpen()) {
+            super.close();
+        }
+    }
+
+    @Override
+    public boolean isClosed() {
+        return !isOpen();
+    }
+
+    @Override
+    public boolean isOpen() {
+        return tcpSession.isOpen() && !upgradeHTTP2Complete.get() && !upgradeWebSocketComplete.get();
     }
 
 }
