@@ -204,15 +204,15 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         }
     }
 
-    boolean upgradeProtocol(MetaData.Request request, MetaData.Response response) {
+    synchronized boolean upgradeProtocol(MetaData.Request request, MetaData.Response response) {
         switch (Protocol.from(request)) {
             case H2: {
                 HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
                 Assert.notNull(settingsField, "The http2 setting field must be not null.");
 
-                response.setStatus(101);
-                response.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
-                response.getFields().put(HttpHeader.UPGRADE, "h2c");
+//                response.setStatus(101);
+//                response.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
+//                response.getFields().put(HttpHeader.UPGRADE, "h2c");
 
                 final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
                 if (log.isDebugEnabled()) {
