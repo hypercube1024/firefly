@@ -32,13 +32,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-//        Phaser phaser = new Phaser(4);
-//        HTTP2Server server = createServer();
-//        HTTP2Client client = createClient(phaser);
-//
-//        phaser.arriveAndAwaitAdvance();
-//        server.stop();
-//        client.stop();
+        Phaser phaser = new Phaser(4);
+        HTTP2Server server = createServer();
+        HTTP2Client client = createClient(phaser);
+
+        phaser.arriveAndAwaitAdvance();
+        server.stop();
+        client.stop();
     }
 
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
