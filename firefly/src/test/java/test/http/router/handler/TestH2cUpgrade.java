@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Phaser;
 
 import static com.firefly.utils.io.BufferUtils.toBuffer;
@@ -33,13 +32,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-//        Phaser phaser = new Phaser(5);
-//        HTTP2Server server = createServer();
-//        HTTP2Client client = createClient(phaser);
-//
-//        phaser.arriveAndAwaitAdvance();
-//        server.stop();
-//        client.stop();
+        Phaser phaser = new Phaser(4);
+        HTTP2Server server = createServer();
+        HTTP2Client client = createClient(phaser);
+
+        phaser.arriveAndAwaitAdvance();
+        server.stop();
+        client.stop();
     }
 
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
@@ -76,7 +75,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         public boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response,
                                HTTPOutputStream output,
                                HTTPConnection connection) {
-            System.out.println("client received data: " + BufferUtils.toUTF8String(item));
+//            System.out.println("client received data: " + BufferUtils.toUTF8String(item));
             contentList.add(item);
             return false;
         }
@@ -85,14 +84,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         public boolean headerComplete(MetaData.Request request, MetaData.Response response,
                                       HTTPOutputStream output,
                                       HTTPConnection connection) {
-            System.out.println("client received response: " + response);
+//            System.out.println("client received header : " + request + "|" + response);
             return false;
         }
     }
 
     private HTTP2Client createClient(Phaser phaser) throws Exception {
         final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-        http2Configuration.setFlowControlStrategy("simple");
         http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
         HTTP2Client client = new HTTP2Client(http2Configuration);
 
@@ -115,13 +113,10 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
-                System.out.println("client---------------------------------");
-                System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
-                System.out.println(response.getFields());
-                System.out.println("client---------------------------------end");
-                Assert.assertThat(response.getStatus(), is(HttpStatus.SWITCHING_PROTOCOLS_101));
-                Assert.assertThat(response.getFields().get(HttpHeader.UPGRADE), is("h2c"));
-                phaser.arrive(); // 1
+                printResponse(request, response, BufferUtils.toString(contentList));
+//                Assert.assertThat(response.getStatus(), is(HttpStatus.SWITCHING_PROTOCOLS_101));
+//                Assert.assertThat(response.getFields().get(HttpHeader.UPGRADE), is("h2c"));
+//                phaser.arrive(); // 1
                 return true;
             }
         });
@@ -140,7 +135,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
                 try {
-                    return dataComplete(phaser, BufferUtils.toString(contentList), response); // 2
+                    return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 2
                 } catch (Exception e) {
                     e.printStackTrace();
                     return true;
@@ -161,7 +156,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
                 try {
-                    return dataComplete(phaser, BufferUtils.toString(contentList), response); // 4
+                    return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 4
                 } catch (Exception e) {
                     e.printStackTrace();
                     return true;
@@ -177,10 +172,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
-                System.out.println("client---------------------------------");
-                System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
-                System.out.println(response.getFields());
-                System.out.println("client---------------------------------end");
+                printResponse(request, response, BufferUtils.toString(contentList));
                 Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
                 phaser.arrive(); // 3
                 return true;
@@ -190,12 +182,17 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         return client;
     }
 
-    public boolean dataComplete(Phaser phaser, String content, MetaData.Response response) {
+    private void printResponse(MetaData.Request request, MetaData.Response response, String content) {
         System.out.println("client---------------------------------");
-        System.out.println("client received frame: " + response.getStatus() + ", " + response.getReason());
+        System.out.println("client received frame: " + request + ", " + response);
         System.out.println(response.getFields());
         System.out.println(content);
         System.out.println("client---------------------------------end");
+        System.out.println();
+    }
+
+    public boolean dataComplete(Phaser phaser, String content, MetaData.Request request, MetaData.Response response) {
+        printResponse(request, response, content);
         Assert.assertThat(response.getStatus(), is(HttpStatus.OK_200));
         try {
             Assert.assertThat(content, is("Receive data stream successful. Thank you!"));
@@ -208,7 +205,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     private HTTP2Server createServer() {
         final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-        http2Configuration.setFlowControlStrategy("simple");
+//        http2Configuration.setFlowControlStrategy("simple");
         http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
 
         HTTP2Server server = new HTTP2Server(host, port, http2Configuration, new ServerHTTPHandler.Adapter() {
@@ -216,14 +213,14 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             @Override
             public boolean accept100Continue(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
                                              HTTPConnection connection) {
-                System.out.println("Server received expect continue ");
+//                System.out.println("Server received expect continue ");
                 return false;
             }
 
             @Override
             public boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
                                    HTTPConnection connection) {
-                System.out.println("Server received data: " + BufferUtils.toString(item, StandardCharsets.UTF_8));
+//                System.out.println("Server received data: " + BufferUtils.toString(item, StandardCharsets.UTF_8));
                 return false;
             }
 
@@ -231,9 +228,9 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response, HTTPOutputStream outputStream,
                                            HTTPConnection connection) {
                 HttpURI uri = request.getURI();
-                System.out.println("server--------------------------------");
-                System.out.println("Server message complete: " + uri.getPath());
-                System.out.println(request.getFields());
+//                System.out.println("server--------------------------------");
+//                System.out.println("Server message complete: " + uri.getPath());
+//                System.out.println(request.getFields());
 
                 switch (uri.getPath()) {
                     case "/index":
@@ -267,7 +264,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                         }
                         break;
                 }
-                System.out.println("server--------------------------------end");
+//                System.out.println("server--------------------------------end");
                 return true;
             }
         });
