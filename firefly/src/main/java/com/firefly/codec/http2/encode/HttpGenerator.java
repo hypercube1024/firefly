@@ -254,8 +254,9 @@ public class HttpGenerator {
 
             case END:
                 if (BufferUtils.hasContent(content)) {
-                    if (LOG.isDebugEnabled())
+                    if (LOG.isDebugEnabled()) {
                         LOG.debug("discarding content in COMPLETING");
+                    }
                     BufferUtils.clear(content);
                 }
                 return Result.DONE;
@@ -427,8 +428,9 @@ public class HttpGenerator {
 
             case END:
                 if (BufferUtils.hasContent(content)) {
-                    if (LOG.isDebugEnabled())
+                    if (LOG.isDebugEnabled()) {
                         LOG.debug("discarding content in COMPLETING");
+                    }
                     BufferUtils.clear(content);
                 }
                 return Result.DONE;
@@ -536,7 +538,7 @@ public class HttpGenerator {
         final MetaData.Response response = (info instanceof MetaData.Response) ? (MetaData.Response) info : null;
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("generateHeaders {} last={} content={}", info, last, BufferUtils.toDetailString(content));
+            LOG.debug("generateHeaders {} last={} content={}", info.toString(), last, BufferUtils.toDetailString(content));
             LOG.debug(info.getFields().toString());
         }
 
@@ -685,9 +687,9 @@ public class HttpGenerator {
             throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Unknown content length for request");
         }
 
-        if (LOG.isDebugEnabled())
+        if (LOG.isDebugEnabled()) {
             LOG.debug(_endOfContent.toString());
-
+        }
         // Add transfer encoding if it is not chunking
         if (transfer_encoding != null) {
             if (chunked_hint) {
