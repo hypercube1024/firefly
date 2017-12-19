@@ -88,7 +88,7 @@ public class HTTP2Flusher extends IteratingCallback {
     }
 
     @Override
-    protected synchronized Action process() throws Throwable {
+    protected Action process() throws Throwable {
         if (log.isDebugEnabled()) {
             log.debug("Flushing {}", session.toString());
         }

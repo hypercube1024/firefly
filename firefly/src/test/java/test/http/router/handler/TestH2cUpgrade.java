@@ -155,12 +155,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
-                try {
-                    return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 4
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return true;
-                }
+                return dataComplete(phaser, BufferUtils.toString(contentList), request, response);
             }
         });
 
@@ -194,11 +189,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     public boolean dataComplete(Phaser phaser, String content, MetaData.Request request, MetaData.Response response) {
         printResponse(request, response, content);
         Assert.assertThat(response.getStatus(), is(HttpStatus.OK_200));
-        try {
-            Assert.assertThat(content, is("Receive data stream successful. Thank you!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Assert.assertThat(content, is("Receive data stream successful. Thank you!"));
         phaser.arrive();
         return true;
     }

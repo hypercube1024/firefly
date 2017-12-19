@@ -212,7 +212,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         send(request, handler);
     }
 
-    boolean upgradeHTTP2Complete(MetaData.Response response) {
+    synchronized boolean upgradeHTTP2Complete(MetaData.Response response) {
         if (http2ConnectionPromise != null && http2SessionListener != null) {
             String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
             if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
