@@ -101,9 +101,9 @@ public class Parser {
     protected boolean parseHeader(ByteBuffer buffer) {
         if (headerParser.parse(buffer)) {
             int frameType = getFrameType();
-//            if (log.isDebugEnabled()) {
-//                log.debug("Parsed {} frame header", FrameType.from(frameType));
-//            }
+            if (log.isDebugEnabled()) {
+                log.debug("Parsed {} frame header", FrameType.from(frameType));
+            }
 
             if (continuation) {
                 if (frameType != FrameType.CONTINUATION.getType()) {
@@ -136,9 +136,9 @@ public class Parser {
         }
 
         FrameType frameType = FrameType.from(type);
-//        if (log.isDebugEnabled()) {
-//            log.debug("Parsing {} frame", frameType);
-//        }
+        if (log.isDebugEnabled()) {
+            log.debug("Parsing {} frame", frameType);
+        }
         BodyParser bodyParser = bodyParsers[type];
         if (headerParser.getLength() == 0) {
             bodyParser.emptyBody(buffer);
@@ -150,9 +150,9 @@ public class Parser {
         } else {
             if (bodyParser.parse(buffer)) {
                 reset();
-//                if (log.isDebugEnabled()) {
-//                    log.debug("Parsed {} frame", frameType);
-//                }
+                if (log.isDebugEnabled()) {
+                    log.debug("Parsed {} frame", frameType);
+                }
                 return true;
             } else {
                 return false;
