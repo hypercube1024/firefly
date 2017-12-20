@@ -37,7 +37,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
         if (log.isDebugEnabled()) {
             System.out.println("Server received stream: " + stream + ", " + headersFrame);
-            log.debug("the remote stream {} is created, the header is {}", stream.getId(), headersFrame.getMetaData());
+            log.debug("Server received stream: {}, {}", stream.getId(), headersFrame.toString());
         }
 
         final MetaData.Request request = (MetaData.Request) headersFrame.getMetaData();
@@ -83,7 +83,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
             public void onHeaders(Stream stream, HeadersFrame trailerFrame) {
                 if (log.isDebugEnabled()) {
                     System.out.println("Server received trailer frame: " + stream + ", " + trailerFrame);
-                    log.debug("the stream {} received the end frame {}", stream.getId(), trailerFrame);
+                    log.debug("Server received trailer frame: {}, {}", stream.toString(), trailerFrame);
                 }
                 if (trailerFrame.isEndStream()) {
                     request.setTrailerSupplier(() -> trailerFrame.getMetaData().getFields());

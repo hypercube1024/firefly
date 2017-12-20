@@ -130,6 +130,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     }
 
     private void test404(Phaser phaser, HTTP2ClientConnection clientConnection) {
+        System.out.println("Client test 404.");
         MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
                 new HostPortHttpField(host + ":" + port),
                 "/test2", HttpVersion.HTTP_1_1, new HttpFields());
@@ -147,6 +148,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     }
 
     private void sendData(Phaser phaser, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
+        System.out.println("Client sends data.");
         HttpFields fields = new HttpFields();
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
         MetaData.Request post2 = new MetaData.Request("POST", HttpScheme.HTTP,
@@ -165,6 +167,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     }
 
     private void sendDataWithContinuation(Phaser phaser, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
+        System.out.println("Client sends data with continuation");
         HttpFields fields = new HttpFields();
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
         MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP,
