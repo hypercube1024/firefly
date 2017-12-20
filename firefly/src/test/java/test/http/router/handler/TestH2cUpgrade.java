@@ -127,8 +127,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         ThreadUtils.sleep(100L);
 
         sendDataWithContinuation(phaser, clientConnection);
+        ThreadUtils.sleep(100L);
+
         sendData(phaser, clientConnection);
+        ThreadUtils.sleep(100L);
+
         test404(phaser, clientConnection);
+        ThreadUtils.sleep(100L);
         return client;
     }
 
