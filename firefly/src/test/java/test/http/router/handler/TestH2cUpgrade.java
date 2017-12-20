@@ -9,6 +9,7 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.utils.concurrent.FuturePromise;
+import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -125,6 +126,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
         HTTP2ClientConnection clientConnection = http2Promise.get();
 //        sendDataWithContinuation(phaser, clientConnection);
+        ThreadUtils.sleep(100L);
         sendData(phaser, clientConnection);
 //        test404(phaser, clientConnection);
         return client;

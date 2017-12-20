@@ -79,12 +79,12 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         return new Listener.Adapter() {
 
             @Override
-            public void onHeaders(Stream stream, HeadersFrame endHeaderframe) {
+            public void onHeaders(Stream stream, HeadersFrame trailerFrame) {
                 if (log.isDebugEnabled()) {
-                    log.debug("the stream {} received the end frame {}", stream.getId(), endHeaderframe);
+                    log.debug("the stream {} received the end frame {}", stream.getId(), trailerFrame);
                 }
-                if (endHeaderframe.isEndStream()) {
-                    request.setTrailerSupplier(() -> endHeaderframe.getMetaData().getFields());
+                if (trailerFrame.isEndStream()) {
+                    request.setTrailerSupplier(() -> trailerFrame.getMetaData().getFields());
                     serverHTTPHandler.contentComplete(request, response, output, connection);
                     serverHTTPHandler.messageComplete(request, response, output, connection);
                 } else {
