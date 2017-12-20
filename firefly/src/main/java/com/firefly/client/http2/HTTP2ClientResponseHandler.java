@@ -104,6 +104,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     @Override
     public void onReset(Stream stream, ResetFrame frame) {
+        System.out.println("Client received reset frame: " + stream + ", " + frame);
         final HTTPOutputStream output = getOutputStream(stream);
         final MetaData.Response response = getResponse(stream);
 

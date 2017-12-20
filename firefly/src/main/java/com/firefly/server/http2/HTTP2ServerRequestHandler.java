@@ -36,6 +36,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         }
 
         if (log.isDebugEnabled()) {
+            System.out.println("Server received stream: " + stream + ", " + headersFrame);
             log.debug("the remote stream {} is created, the header is {}", stream.getId(), headersFrame.getMetaData());
         }
 
@@ -81,6 +82,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
             @Override
             public void onHeaders(Stream stream, HeadersFrame trailerFrame) {
                 if (log.isDebugEnabled()) {
+                    System.out.println("Server received trailer frame: " + stream + ", " + trailerFrame);
                     log.debug("the stream {} received the end frame {}", stream.getId(), trailerFrame);
                 }
                 if (trailerFrame.isEndStream()) {
@@ -109,6 +111,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
             @Override
             public void onReset(Stream stream, ResetFrame resetFrame) {
+                System.out.println("Server received reset frame: " + stream + ", " + resetFrame);
                 ErrorCode errorCode = ErrorCode.from(resetFrame.getError());
                 String reason = errorCode == null ? "error=" + resetFrame.getError() : errorCode.name().toLowerCase();
                 int status = HttpStatus.INTERNAL_SERVER_ERROR_500;
