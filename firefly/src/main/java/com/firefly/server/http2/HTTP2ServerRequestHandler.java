@@ -4,7 +4,6 @@ import com.firefly.Version;
 import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
-import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream2;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
@@ -116,7 +115,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         };
     }
 
-    public static class ServerHttp2OutputStream extends AbstractHTTP2OutputStream2 {
+    public static class ServerHttp2OutputStream extends AbstractHTTP2OutputStream {
 
         public static final String X_POWERED_BY_VALUE = "Firefly " + Version.value;
         public static final String SERVER_VALUE = "Firefly " + Version.value;
