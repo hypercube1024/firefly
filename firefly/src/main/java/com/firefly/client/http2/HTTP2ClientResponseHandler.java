@@ -4,17 +4,14 @@ import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
-import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
+import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream2;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
-import com.firefly.utils.function.Action0;
-import com.firefly.utils.lang.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +36,9 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     @Override
     public void onHeaders(final Stream stream, final HeadersFrame headersFrame) {
-        System.out.println("Client received header: " + stream.toString() + ", " + headersFrame.toString());
+        // System.out.println("Client received header: " + stream.toString() + ", " + headersFrame.toString());
         if (headersFrame.getMetaData() == null) {
-            System.out.println("Client received meta data is null");
+            // System.out.println("Client received meta data is null");
             throw new IllegalArgumentException("the stream " + stream.getId() + " received a null meta data");
         }
 
@@ -104,7 +101,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     @Override
     public void onReset(Stream stream, ResetFrame frame) {
-        System.out.println("Client received reset frame: " + stream + ", " + frame);
+        // System.out.println("Client received reset frame: " + stream + ", " + frame);
         final HTTPOutputStream output = getOutputStream(stream);
         final MetaData.Response response = getResponse(stream);
 
@@ -125,30 +122,30 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
         handler.badMessage(status, reason, request, response, output, connection);
     }
 
-    public static class ClientHttp2OutputStream extends AbstractHTTP2OutputStream {
+    public static class ClientHttp2OutputStream extends AbstractHTTP2OutputStream2 {
 
         private final Stream stream;
 
         public ClientHttp2OutputStream(MetaData info, boolean endStream, Stream stream) {
-            super(info, true);
+            super(info, true, endStream);
             committed = true;
             this.stream = stream;
-            if (endStream) {
-                isChunked = false;
-            } else {
-                if (info.getFields().contains(HttpHeader.CONTENT_LENGTH)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("stream {} commits header that contains content length {}", getStream().getId(),
-                                info.getFields().get(HttpHeader.CONTENT_LENGTH));
-                    }
-                    isChunked = false;
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("stream {} commits header using chunked encoding", getStream().getId());
-                    }
-                    isChunked = true;
-                }
-            }
+//            if (endStream) {
+//                isChunked = false;
+//            } else {
+//                if (info.getFields().contains(HttpHeader.CONTENT_LENGTH)) {
+//                    if (log.isDebugEnabled()) {
+//                        log.debug("stream {} commits header that contains content length {}", getStream().getId(),
+//                                info.getFields().get(HttpHeader.CONTENT_LENGTH));
+//                    }
+//                    isChunked = false;
+//                } else {
+//                    if (log.isDebugEnabled()) {
+//                        log.debug("stream {} commits header using chunked encoding", getStream().getId());
+//                    }
+//                    isChunked = true;
+//                }
+//            }
         }
 
         @Override
@@ -198,7 +195,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
             if (log.isDebugEnabled()) {
                 log.debug("create a new stream {}", stream.getId());
             }
-            final AbstractHTTP2OutputStream output = new ClientHttp2OutputStream(request, endStream, stream);
+            final AbstractHTTP2OutputStream2 output = new ClientHttp2OutputStream(request, endStream, stream);
             stream.setAttribute(OUTPUT_STREAM_KEY, output);
             promise.succeeded(output);
             ContinueData continueData = (ContinueData) stream.getAttribute(CONTINUE_KEY);

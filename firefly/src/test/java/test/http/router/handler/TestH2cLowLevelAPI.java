@@ -41,7 +41,6 @@ public class TestH2cLowLevelAPI extends AbstractHTTPHandlerTest {
         HTTP2Server server = createServerLowLevelAPI();
         HTTP2Client client = createClientLowLevelClient(phaser);
 
-        phaser.arriveAndAwaitAdvance();
         server.stop();
         client.stop();
     }
@@ -165,6 +164,13 @@ public class TestH2cLowLevelAPI extends AbstractHTTPHandlerTest {
         HTTP2ClientConnection clientConnection = http2promise.get();
         Assert.assertThat(clientConnection.getHttpVersion(), is(HttpVersion.HTTP_2));
 
+        for (int i = 0; i < 1; i++) {
+            testReq(phaser, clientConnection);
+        }
+        return client;
+    }
+
+    private void testReq(Phaser phaser, HTTP2ClientConnection clientConnection) throws InterruptedException, java.util.concurrent.ExecutionException {
         HttpFields fields = new HttpFields();
         fields.put(HttpHeader.ACCEPT, "text/html");
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
@@ -202,7 +208,6 @@ public class TestH2cLowLevelAPI extends AbstractHTTPHandlerTest {
                         toBuffer("big hello world!", StandardCharsets.UTF_8), true), Callback.NOOP);
             }
         });
-
-        return client;
+        phaser.arriveAndAwaitAdvance();
     }
 }

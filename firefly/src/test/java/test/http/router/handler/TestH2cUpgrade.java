@@ -35,7 +35,25 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     public void test() throws Exception {
         Phaser phaser = new Phaser(2);
         HTTP2Server server = createServer();
-        HTTP2Client client = createClient(phaser);
+        HTTP2Client client = createClient();
+
+        FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
+        client.connect(host, port, promise);
+
+        final HTTPClientConnection httpConnection = promise.get();
+        final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
+
+        for (int i = 0; i < 1000; i++) {
+            // TODO test the concurrent problem
+            sendData(phaser, clientConnection);
+            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+
+//            sendDataWithContinuation(phaser, clientConnection);
+//            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+
+            test404(phaser, clientConnection);
+            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+        }
 
         server.stop();
         client.stop();
@@ -82,16 +100,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     }
 
-    private HTTP2Client createClient(Phaser phaser) throws Exception {
+    private HTTP2Client createClient() {
         final HTTP2Configuration http2Configuration = new HTTP2Configuration();
         http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
-        HTTP2Client client = new HTTP2Client(http2Configuration);
+        return new HTTP2Client(http2Configuration);
+    }
 
-        FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
-        client.connect(host, port, promise);
-
-        final HTTPClientConnection httpConnection = promise.get();
-
+    private HTTP2ClientConnection upgradeHttp2(HTTP2Configuration http2Configuration, HTTPClientConnection httpConnection) throws InterruptedException, java.util.concurrent.ExecutionException, UnsupportedEncodingException {
         HTTPClientRequest request = new HTTPClientRequest("GET", "/index");
 
         Map<Integer, Integer> settings = new HashMap<>();
@@ -109,24 +124,11 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 printResponse(request, response, BufferUtils.toString(contentList));
                 Assert.assertThat(response.getStatus(), is(HttpStatus.SWITCHING_PROTOCOLS_101));
                 Assert.assertThat(response.getFields().get(HttpHeader.UPGRADE), is("h2c"));
-                phaser.arrive();
                 return true;
             }
         });
 
-        HTTP2ClientConnection clientConnection = http2Promise.get();
-        // TODO test the concurrent problem
-        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
-
-        sendData(phaser, clientConnection);
-        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
-
-        sendDataWithContinuation(phaser, clientConnection);
-        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
-
-        test404(phaser, clientConnection);
-        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
-        return client;
+        return http2Promise.get();
     }
 
     private void test404(Phaser phaser, HTTP2ClientConnection clientConnection) {
@@ -227,10 +229,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response, HTTPOutputStream outputStream,
                                            HTTPConnection connection) {
                 HttpURI uri = request.getURI();
-//                System.out.println("server--------------------------------");
-//                System.out.println("Server message complete: " + uri.getPath());
-//                System.out.println(request.getFields());
-
                 switch (uri.getPath()) {
                     case "/index":
                         response.setStatus(HttpStatus.Code.OK.getCode());

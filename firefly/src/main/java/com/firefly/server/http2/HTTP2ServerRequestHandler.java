@@ -36,7 +36,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         }
 
         if (log.isDebugEnabled()) {
-            System.out.println("Server received stream: " + stream + ", " + headersFrame);
+            // System.out.println("Server received stream: " + stream + ", " + headersFrame);
             log.debug("Server received stream: {}, {}", stream.getId(), headersFrame.toString());
         }
 
@@ -82,7 +82,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
             @Override
             public void onHeaders(Stream stream, HeadersFrame trailerFrame) {
                 if (log.isDebugEnabled()) {
-                    System.out.println("Server received trailer frame: " + stream + ", " + trailerFrame);
+                    // System.out.println("Server received trailer frame: " + stream + ", " + trailerFrame);
                     log.debug("Server received trailer frame: {}, {}", stream.toString(), trailerFrame);
                 }
                 if (trailerFrame.isEndStream()) {
@@ -96,23 +96,22 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
             @Override
             public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
-                System.out.println("Server received data frame: " + stream + ", " + dataFrame);
+                // System.out.println("Server received data frame: " + stream + ", " + dataFrame);
                 try {
                     serverHTTPHandler.content(dataFrame.getData(), request, response, output, connection);
+                    if (dataFrame.isEndStream()) {
+                        serverHTTPHandler.contentComplete(request, response, output, connection);
+                        serverHTTPHandler.messageComplete(request, response, output, connection);
+                    }
                     callback.succeeded();
                 } catch (Throwable t) {
                     callback.failed(t);
-                }
-
-                if (dataFrame.isEndStream()) {
-                    serverHTTPHandler.contentComplete(request, response, output, connection);
-                    serverHTTPHandler.messageComplete(request, response, output, connection);
                 }
             }
 
             @Override
             public void onReset(Stream stream, ResetFrame resetFrame) {
-                System.out.println("Server received reset frame: " + stream + ", " + resetFrame);
+                // System.out.println("Server received reset frame: " + stream + ", " + resetFrame);
 
                 ErrorCode errorCode = ErrorCode.from(resetFrame.getError());
                 String reason = errorCode == null ? "error=" + resetFrame.getError() : errorCode.name().toLowerCase();
