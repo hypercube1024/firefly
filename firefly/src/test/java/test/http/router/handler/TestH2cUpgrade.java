@@ -34,8 +34,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-        // TODO can not pass the test
-        Phaser phaser = new Phaser(2);
+        Phaser phaser = new Phaser(4);
         HTTP2Server server = createServer();
         HTTP2Client client = createClient(phaser);
 
@@ -117,18 +116,19 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
                 printResponse(request, response, BufferUtils.toString(contentList));
-//                Assert.assertThat(response.getStatus(), is(HttpStatus.SWITCHING_PROTOCOLS_101));
-//                Assert.assertThat(response.getFields().get(HttpHeader.UPGRADE), is("h2c"));
-//                phaser.arrive(); // 1
+                Assert.assertThat(response.getStatus(), is(HttpStatus.SWITCHING_PROTOCOLS_101));
+                Assert.assertThat(response.getFields().get(HttpHeader.UPGRADE), is("h2c"));
                 return true;
             }
         });
 
         HTTP2ClientConnection clientConnection = http2Promise.get();
-//        sendDataWithContinuation(phaser, clientConnection);
+        // TODO the concurrent problem
         ThreadUtils.sleep(100L);
+
+        sendDataWithContinuation(phaser, clientConnection);
         sendData(phaser, clientConnection);
-//        test404(phaser, clientConnection);
+        test404(phaser, clientConnection);
         return client;
     }
 
