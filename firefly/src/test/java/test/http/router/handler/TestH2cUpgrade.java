@@ -14,6 +14,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -33,13 +34,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     @Test
     public void test() throws Exception {
         // TODO can not pass the test
-//        Phaser phaser = new Phaser(4);
-//        HTTP2Server server = createServer();
-//        HTTP2Client client = createClient(phaser);
-//
-//        phaser.arriveAndAwaitAdvance();
-//        server.stop();
-//        client.stop();
+        Phaser phaser = new Phaser(2);
+        HTTP2Server server = createServer();
+        HTTP2Client client = createClient(phaser);
+
+        phaser.arriveAndAwaitAdvance();
+        server.stop();
+        client.stop();
     }
 
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
@@ -123,6 +124,48 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         });
 
         HTTP2ClientConnection clientConnection = http2Promise.get();
+//        sendDataWithContinuation(phaser, clientConnection);
+        sendData(phaser, clientConnection);
+//        test404(phaser, clientConnection);
+        return client;
+    }
+
+    private void test404(Phaser phaser, HTTP2ClientConnection clientConnection) {
+        MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
+                new HostPortHttpField(host + ":" + port),
+                "/test2", HttpVersion.HTTP_1_1, new HttpFields());
+        clientConnection.send(get, new TestH2cHandler() {
+            @Override
+            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+                                           HTTPOutputStream output,
+                                           HTTPConnection connection) {
+                printResponse(request, response, BufferUtils.toString(contentList));
+                Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
+                phaser.arrive(); // 4
+                return true;
+            }
+        });
+    }
+
+    private void sendData(Phaser phaser, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
+        HttpFields fields = new HttpFields();
+        fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
+        MetaData.Request post2 = new MetaData.Request("POST", HttpScheme.HTTP,
+                new HostPortHttpField(host + ":" + port),
+                "/data", HttpVersion.HTTP_1_1, fields);
+        clientConnection.send(post2, new ByteBuffer[]{
+                ByteBuffer.wrap("test data 2".getBytes("UTF-8")),
+                ByteBuffer.wrap("finished test data 2".getBytes("UTF-8"))}, new TestH2cHandler() {
+            @Override
+            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+                                           HTTPOutputStream output,
+                                           HTTPConnection connection) {
+                return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 3
+            }
+        });
+    }
+
+    private void sendDataWithContinuation(Phaser phaser, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
         HttpFields fields = new HttpFields();
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
         MetaData.Request post = new MetaData.Request("POST", HttpScheme.HTTP,
@@ -138,39 +181,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 2
             }
         });
-
-        fields = new HttpFields();
-        fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
-        MetaData.Request post2 = new MetaData.Request("POST", HttpScheme.HTTP,
-                new HostPortHttpField(host + ":" + port),
-                "/data", HttpVersion.HTTP_1_1, fields);
-        clientConnection.send(post2, new ByteBuffer[]{
-                ByteBuffer.wrap("test data 2".getBytes("UTF-8")),
-                ByteBuffer.wrap("finished test data 2".getBytes("UTF-8"))}, new TestH2cHandler() {
-            @Override
-            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-                                           HTTPOutputStream output,
-                                           HTTPConnection connection) {
-                return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 3
-            }
-        });
-
-        MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
-                new HostPortHttpField(host + ":" + port),
-                "/test2", HttpVersion.HTTP_1_1, new HttpFields());
-        clientConnection.send(get, new TestH2cHandler() {
-            @Override
-            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-                                           HTTPOutputStream output,
-                                           HTTPConnection connection) {
-                printResponse(request, response, BufferUtils.toString(contentList));
-                Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
-                phaser.arrive(); // 4
-                return true;
-            }
-        });
-
-        return client;
     }
 
     private void printResponse(MetaData.Request request, MetaData.Response response, String content) {

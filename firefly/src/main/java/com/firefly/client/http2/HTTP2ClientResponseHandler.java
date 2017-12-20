@@ -11,7 +11,6 @@ import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Stream;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import org.slf4j.Logger;
@@ -20,6 +19,9 @@ import org.slf4j.LoggerFactory;
 public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
+
+    public static final String OUTPUT_STREAM_KEY = "_outputStream";
+    public static final String RESPONSE_KEY = "_response";
 
     private final Request request;
     private final ClientHTTPHandler handler;
@@ -38,13 +40,13 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
         }
 
         if (headersFrame.getMetaData().isResponse()) {
-            final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
+            final HTTPOutputStream output = getOutputStream(stream);
             final MetaData.Response response = (MetaData.Response) headersFrame.getMetaData();
 
-            if (response.getStatus() == 100) {
+            if (response.getStatus() == HttpStatus.CONTINUE_100) {
                 handler.continueToSendData(request, response, output, connection);
             } else {
-                stream.setAttribute("response", response);
+                stream.setAttribute(RESPONSE_KEY, response);
                 handler.headerComplete(request, response, output, connection);
                 if (headersFrame.isEndStream()) {
                     handler.messageComplete(request, response, output, connection);
@@ -52,8 +54,8 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
             }
         } else {
             if (headersFrame.isEndStream()) {
-                final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-                final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
+                final HTTPOutputStream output = getOutputStream(stream);
+                final MetaData.Response response = getResponse(stream);
                 response.setTrailerSupplier(() -> headersFrame.getMetaData().getFields());
                 handler.contentComplete(request, response, output, connection);
                 handler.messageComplete(request, response, output, connection);
@@ -64,10 +66,14 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     }
 
+    private HTTPOutputStream getOutputStream(Stream stream) {
+        return (HTTPOutputStream) stream.getAttribute(OUTPUT_STREAM_KEY);
+    }
+
     @Override
     public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
-        final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-        final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
+        final HTTPOutputStream output = getOutputStream(stream);
+        final MetaData.Response response = getResponse(stream);
 
         try {
             handler.content(dataFrame.getData(), request, response, output, connection);
@@ -82,10 +88,14 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
         }
     }
 
+    private MetaData.Response getResponse(Stream stream) {
+        return (MetaData.Response) stream.getAttribute(RESPONSE_KEY);
+    }
+
     @Override
     public void onReset(Stream stream, ResetFrame frame) {
-        final HTTPOutputStream output = (HTTPOutputStream) stream.getAttribute("outputStream");
-        final MetaData.Response response = (MetaData.Response) stream.getAttribute("response");
+        final HTTPOutputStream output = getOutputStream(stream);
+        final MetaData.Response response = getResponse(stream);
 
         ErrorCode errorCode = ErrorCode.from(frame.getError());
         String reason = errorCode == null ? "error=" + frame.getError() : errorCode.name().toLowerCase();
@@ -154,7 +164,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
                 log.debug("create a new stream {}", stream.getId());
             }
             final AbstractHTTP2OutputStream output = new ClientHttp2OutputStream(request, endStream, stream);
-            stream.setAttribute("outputStream", output);
+            stream.setAttribute(OUTPUT_STREAM_KEY, output);
             promise.succeeded(output);
         }
 

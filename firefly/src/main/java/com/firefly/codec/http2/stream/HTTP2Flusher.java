@@ -69,22 +69,19 @@ public class HTTP2Flusher extends IteratingCallback {
                 }
             }
         }
-        if (closed == null)
+        if (closed == null) {
             return true;
+        }
         closed(entry, closed);
         return false;
     }
 
-    private int getWindowQueueSize() {
-        synchronized (this) {
-            return windows.size();
-        }
+    private synchronized int getWindowQueueSize() {
+        return windows.size();
     }
 
-    public int getFrameQueueSize() {
-        synchronized (this) {
-            return frames.size();
-        }
+    public synchronized int getFrameQueueSize() {
+        return frames.size();
     }
 
     @Override
@@ -93,8 +90,9 @@ public class HTTP2Flusher extends IteratingCallback {
             log.debug("Flushing {}", session.toString());
         }
         synchronized (this) {
-            if (terminated != null)
+            if (terminated != null) {
                 throw terminated;
+            }
 
             while (!windows.isEmpty()) {
                 WindowEntry entry = windows.poll();
