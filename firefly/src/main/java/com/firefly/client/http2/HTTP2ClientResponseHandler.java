@@ -13,6 +13,8 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.function.Action0;
+import com.firefly.utils.lang.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     public static final String OUTPUT_STREAM_KEY = "_outputStream";
     public static final String RESPONSE_KEY = "_response";
+    public static final String CONTINUE_KEY = "_continue_key";
 
     private final Request request;
     private final ClientHTTPHandler handler;
@@ -32,6 +35,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
         this.handler = handler;
         this.connection = connection;
     }
+
 
     @Override
     public void onHeaders(final Stream stream, final HeadersFrame headersFrame) {
@@ -44,7 +48,11 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
             final MetaData.Response response = (MetaData.Response) headersFrame.getMetaData();
 
             if (response.getStatus() == HttpStatus.CONTINUE_100) {
-                handler.continueToSendData(request, response, output, connection);
+                if (output == null) {
+                    stream.setAttribute(CONTINUE_KEY, new ContinueData(response, handler, connection));
+                } else {
+                    handler.continueToSendData(request, response, output, connection);
+                }
             } else {
                 stream.setAttribute(RESPONSE_KEY, response);
                 handler.headerComplete(request, response, output, connection);
@@ -146,6 +154,30 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
         }
     }
 
+    public static class ContinueData {
+        private final MetaData.Response response;
+        private final ClientHTTPHandler handler;
+        private final HTTPClientConnection connection;
+
+        public ContinueData(MetaData.Response response, ClientHTTPHandler handler, HTTPClientConnection connection) {
+            this.response = response;
+            this.handler = handler;
+            this.connection = connection;
+        }
+
+        public MetaData.Response getResponse() {
+            return response;
+        }
+
+        public ClientHTTPHandler getHandler() {
+            return handler;
+        }
+
+        public HTTPClientConnection getConnection() {
+            return connection;
+        }
+    }
+
     public static class ClientStreamPromise implements Promise<Stream> {
 
         private final Request request;
@@ -166,6 +198,10 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
             final AbstractHTTP2OutputStream output = new ClientHttp2OutputStream(request, endStream, stream);
             stream.setAttribute(OUTPUT_STREAM_KEY, output);
             promise.succeeded(output);
+            ContinueData continueData = (ContinueData) stream.getAttribute(CONTINUE_KEY);
+            if (continueData != null) {
+                continueData.getHandler().continueToSendData(request, continueData.response, output, continueData.connection);
+            }
         }
 
         @Override

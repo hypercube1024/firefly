@@ -21,7 +21,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private final ConcurrentMap<String, Object> attributes = new ConcurrentHashMap<>();
+    private final AtomicReference<ConcurrentMap<String, Object>> attributes = new AtomicReference<>();
     private final AtomicReference<CloseState> closeState = new AtomicReference<>(CloseState.NOT_CLOSED);
     private final AtomicReference<Callback> writing = new AtomicReference<>();
     private final AtomicInteger sendWindow = new AtomicInteger();
@@ -140,7 +140,14 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
     }
 
     private ConcurrentMap<String, Object> attributes() {
-        return attributes;
+        ConcurrentMap<String, Object> map = attributes.get();
+        if (map == null) {
+            map = new ConcurrentHashMap<>();
+            if (!attributes.compareAndSet(null, map)) {
+                map = attributes.get();
+            }
+        }
+        return map;
     }
 
     @Override
