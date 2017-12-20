@@ -9,7 +9,6 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.utils.concurrent.FuturePromise;
-import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,7 +37,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         HTTP2Server server = createServer();
         HTTP2Client client = createClient(phaser);
 
-        phaser.arriveAndAwaitAdvance();
         server.stop();
         client.stop();
     }
@@ -82,13 +80,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             return false;
         }
 
-        @Override
-        public boolean headerComplete(MetaData.Request request, MetaData.Response response,
-                                      HTTPOutputStream output,
-                                      HTTPConnection connection) {
-//            System.out.println("client received header : " + request + "|" + response);
-            return false;
-        }
     }
 
     private HTTP2Client createClient(Phaser phaser) throws Exception {
@@ -118,17 +109,23 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 printResponse(request, response, BufferUtils.toString(contentList));
                 Assert.assertThat(response.getStatus(), is(HttpStatus.SWITCHING_PROTOCOLS_101));
                 Assert.assertThat(response.getFields().get(HttpHeader.UPGRADE), is("h2c"));
+                phaser.arrive();
                 return true;
             }
         });
 
         HTTP2ClientConnection clientConnection = http2Promise.get();
-        // TODO the concurrent problem
-        ThreadUtils.sleep(100L);
+        // TODO test the concurrent problem
+        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
 
         sendData(phaser, clientConnection);
-//        sendDataWithContinuation(phaser, clientConnection);
-//        test404(phaser, clientConnection);
+        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+
+        sendDataWithContinuation(phaser, clientConnection);
+        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+
+        test404(phaser, clientConnection);
+        System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
         return client;
     }
 
