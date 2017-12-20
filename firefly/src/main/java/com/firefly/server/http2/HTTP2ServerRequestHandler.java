@@ -96,6 +96,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
             @Override
             public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
+                System.out.println("Server received data frame: " + stream + ", " + dataFrame);
                 try {
                     serverHTTPHandler.content(dataFrame.getData(), request, response, output, connection);
                     callback.succeeded();
@@ -112,6 +113,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
             @Override
             public void onReset(Stream stream, ResetFrame resetFrame) {
                 System.out.println("Server received reset frame: " + stream + ", " + resetFrame);
+
                 ErrorCode errorCode = ErrorCode.from(resetFrame.getError());
                 String reason = errorCode == null ? "error=" + resetFrame.getError() : errorCode.name().toLowerCase();
                 int status = HttpStatus.INTERNAL_SERVER_ERROR_500;
