@@ -183,7 +183,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
                         final Promise<HTTPOutputStream> promise,
                         final ClientHTTPHandler handler) {
         http2Session.newStream(new HeadersFrame(request, null, endStream),
-                new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise, endStream),
+                new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise),
                 new HTTP2ClientResponseHandler(request, handler, this));
     }
 

@@ -1,277 +1,197 @@
 package com.firefly.codec.http2.stream;
 
-import com.firefly.Version;
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.DisconnectFrame;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
+import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.function.Supplier;
 
-abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream {
+import static com.firefly.codec.http2.frame.FrameType.DISCONNECT;
 
-    protected static final Logger log = LoggerFactory.getLogger("firefly-system");
+/**
+ * @author Pengtao Qiu
+ */
+abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream implements Callback {
 
-    public static final String X_POWERED_BY_VALUE = "Firefly " + Version.value;
-    public static final String SERVER_VALUE = "Firefly " + Version.value;
-
-    protected boolean isChunked;
     private long size;
-    private long contentLength;
     private boolean isWriting;
     private LinkedList<Frame> frames = new LinkedList<>();
-    private FrameCallback frameCallback = new FrameCallback();
-    private DataFrame currentDataFrame;
+    private boolean noContent = true;
 
     public AbstractHTTP2OutputStream(MetaData info, boolean clientMode) {
         super(info, clientMode);
     }
 
     @Override
-    public void commit() throws IOException {
-        commit(false);
+    public synchronized void write(ByteBuffer data) {
+        Stream stream = getStream();
+        Assert.state(!closed, "The stream " + stream + " output is closed.");
+
+        noContent = false;
+        commit();
+        writeFrame(new DataFrame(stream.getId(), data, isLastFrame(data)));
     }
 
     @Override
-    public synchronized void write(ByteBuffer data) throws IOException {
-        if (closed)
+    public synchronized void commit() {
+        if (committed || closed) {
             return;
-
-        if (data == null || !data.hasRemaining())
-            return;
-
-        if (!committed) {
-            commit(false);
         }
 
-        boolean endStream = false;
-        if (!isChunked) {
-            size += data.remaining();
-            log.debug("http2 output size: {}, content length: {}", size, contentLength);
-            if (size >= contentLength) {
-                endStream = true;
+        HeadersFrame headersFrame = new HeadersFrame(getStream().getId(), info, null, noContent);
+        if (log.isDebugEnabled()) {
+            log.debug("http2 output stream {} commits the header frame {}", getStream().toString(), headersFrame.toString());
+        }
+        writeFrame(headersFrame);
+        committed = true;
+    }
+
+    @Override
+    public synchronized void close() {
+        if (closed) {
+            return;
+        }
+
+        commit();
+        if (isChunked()) {
+            DisconnectFrame disconnectFrame = new DisconnectFrame();
+            frames.offer(disconnectFrame);
+            if (!isWriting) {
+                succeeded();
             }
         }
-
-        final Stream stream = getStream();
-        final DataFrame frame = new DataFrame(stream.getId(), data, endStream);
-        writeFrame(frame);
+        closed = true;
     }
 
     public synchronized void writeFrame(Frame frame) {
-        switch (frame.getType()) {
-            case DATA:
-                if (!committed)
-                    throw new IllegalStateException("the output stream is not committed");
-
-                DataFrame dataFrame = (DataFrame) frame;
-                if (isChunked) {
-                    if (dataFrame.isEndStream()) {
-                        if (currentDataFrame == null) {
-                            writeDataFrame(dataFrame);
-                        } else {
-                            writeDataFrame(currentDataFrame);
-                            writeDataFrame(dataFrame);
-                        }
-                    } else {
-                        if (currentDataFrame == null) {
-                            currentDataFrame = dataFrame;
-                        } else {
-                            writeDataFrame(currentDataFrame);
-                            currentDataFrame = dataFrame;
-                        }
-                    }
-                } else {
-                    writeDataFrame(dataFrame);
-                }
-                break;
-            case HEADERS:
-                writeHeadersFrame((HeadersFrame) frame);
-                break;
-            case DISCONNECT:
-                if (isChunked) {
-                    if (currentDataFrame != null) {
-                        if (!currentDataFrame.isEndStream()) {
-                            final Supplier<HttpFields> trailers = info.getTrailerSupplier();
-
-                            if (trailers == null) {
-                                DataFrame theLastDataFrame = new DataFrame(currentDataFrame.getStreamId(), currentDataFrame.getData(), true);
-                                writeDataFrame(theLastDataFrame);
-                                currentDataFrame = null;
-                            } else {
-                                DataFrame theLastDataFrame = new DataFrame(currentDataFrame.getStreamId(), currentDataFrame.getData(), false);
-                                writeDataFrame(theLastDataFrame);
-                                currentDataFrame = null;
-                                writeTrailer();
-                            }
-                        } else {
-                            throw new IllegalStateException("the end data stream is cached");
-                        }
-                    } else {
-                        throw new IllegalStateException("the cached data stream is null");
-                    }
-                } else {
-                    throw new IllegalArgumentException(
-                            "the frame type is error, only the chunked encoding can accept disconnect frame, current frame type is "
-                                    + frame.getType());
-                }
-                break;
-            default:
-                throw new IllegalArgumentException("the frame type is error, the type is " + frame.getType());
-        }
-    }
-
-    protected synchronized void writeDataFrame(DataFrame dataFrame) {
-        closed = dataFrame.isEndStream();
-
-        if (isWriting) {
-            frames.offer(dataFrame);
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("the stream {} writes a frame {}, remaining frames are {}", dataFrame.getStreamId(), dataFrame, frames.toString());
+        if (isChunked()) {
+            frames.offer(frame);
+            if (!isWriting) {
+                succeeded();
             }
-            isWriting = true;
-            getStream().data(dataFrame, frameCallback);
-        }
-    }
-
-    protected synchronized void writeHeadersFrame(HeadersFrame headersFrame) {
-        closed = headersFrame.isEndStream();
-
-        if (isWriting) {
-            frames.offer(headersFrame);
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("the stream {} writes a frame {}", headersFrame.getStreamId(), headersFrame);
+            if (isWriting) {
+                frames.offer(frame);
+            } else {
+                _writeFrame(frame);
             }
-
-            isWriting = true;
-            getStream().headers(headersFrame, frameCallback);
         }
     }
 
     @Override
-    public synchronized void close() throws IOException {
-        if (closed)
-            return;
-
-        log.debug("http2 output stream is closing. committed -> {}, isChunked -> {}", committed, isChunked);
-        if (!committed) {
-            commit(true);
-        } else {
-            if (isChunked) {
-                log.debug("output the last data frame to end stream");
-                writeFrame(new DisconnectFrame());
-            } else {
-                closed = true;
-            }
-        }
-    }
-
-    protected synchronized void commit(final boolean endStream) throws IOException {
-        if (closed)
-            return;
-
-        if (committed)
-            return;
-
-        // does use chunked encoding or content length ?
-        contentLength = info.getFields().getLongField(HttpHeader.CONTENT_LENGTH.asString());
-        if (endStream) {
-            if (log.isDebugEnabled()) {
-                log.debug("http2 output stream {} commits header and closes it", getStream().getId());
-            }
-            isChunked = false;
-        } else {
-            isChunked = (contentLength <= 0);
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("is http2 output stream {} using chunked encoding ? {}", getStream().getId(), isChunked);
-        }
-
-        final Supplier<HttpFields> trailers = info.getTrailerSupplier();
-        final Stream stream = getStream();
-        committed = true;
-
-        if (trailers == null) {
-            HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, endStream);
-            if (log.isDebugEnabled()) {
-                log.debug("http2 output stream {} commits the header frame {}", stream.getId(), headersFrame);
-            }
-            writeFrame(headersFrame);
-        } else {
-            HeadersFrame headersFrame = new HeadersFrame(stream.getId(), info, null, false);
-            if (log.isDebugEnabled()) {
-                log.debug("http2 output stream {} commits the header frame {}", stream.getId(), headersFrame);
-            }
-            writeFrame(headersFrame);
-
-            if (endStream) {
-                writeTrailer();
-            }
-        }
-    }
-
-    private void writeTrailer() {
-        final Supplier<HttpFields> trailers = info.getTrailerSupplier();
-        final Stream stream = getStream();
-        MetaData trailerMetaData = new MetaData(info.getHttpVersion(), trailers.get());
-        HeadersFrame trailer = new HeadersFrame(stream.getId(), trailerMetaData, null, true);
-        if (log.isDebugEnabled()) {
-            log.debug("http2 output stream {} write the trailer frame {}", stream.getId(), trailer);
-        }
-        writeFrame(trailer);
-    }
-
-    private class FrameCallback implements Callback {
-
-        @Override
-        public void succeeded() {
-            synchronized (AbstractHTTP2OutputStream.this) {
-                isWriting = false;
-                final Frame frame = frames.poll();
-                if (frame != null) {
-                    switch (frame.getType()) {
-                        case DATA:
-                            writeDataFrame((DataFrame) frame);
-                            break;
-                        case HEADERS:
-                            writeHeadersFrame((HeadersFrame) frame);
-                            break;
+    public synchronized void succeeded() {
+        if (isChunked()) {
+            if (frames.size() > 2) {
+                _writeFrame(frames.poll());
+            } else if (frames.size() == 2) {
+                Frame frame = frames.getLast();
+                if (frame.getType() == DISCONNECT) {
+                    Frame lastFrame = frames.poll();
+                    frames.clear();
+                    switch (lastFrame.getType()) {
+                        case DATA: {
+                            DataFrame dataFrame = (DataFrame) lastFrame;
+                            DataFrame lastDataFrame = new DataFrame(dataFrame.getStreamId(), dataFrame.getData(), true);
+                            _writeFrame(lastDataFrame);
+                        }
+                        break;
+                        case HEADERS: {
+                            HeadersFrame headersFrame = (HeadersFrame) lastFrame;
+                            if (headersFrame.isEndStream()) {
+                                _writeFrame(headersFrame);
+                            } else {
+                                HeadersFrame lastHeadersFrame = new HeadersFrame(headersFrame.getStreamId(),
+                                        headersFrame.getMetaData(), headersFrame.getPriority(), true);
+                                _writeFrame(lastHeadersFrame);
+                            }
+                        }
+                        break;
                         default:
-                            throw new IllegalArgumentException("the frame type is error, the type is " + frame.getType());
+                            throw new IllegalStateException("The last frame must be data frame or header frame");
                     }
+                } else {
+                    _writeFrame(frames.poll());
+                }
+            } else if (frames.size() == 1) {
+                Frame frame = frames.getLast();
+                if (isLastFrame(frame)) {
+                    _writeFrame(frames.poll());
                 } else {
                     isWriting = false;
                 }
-
-                if (log.isDebugEnabled()) {
-                    log.debug("the stream {} outputs http2 frame successfully, and the queue size is {}",
-                            getStream().getId(), frames.size());
-                }
+            } else {
+                isWriting = false;
             }
-        }
-
-        @Override
-        public void failed(Throwable x) {
-            synchronized (AbstractHTTP2OutputStream.this) {
-                log.error("the stream {} outputs http2 frame unsuccessfully ", x, getStream().getId());
+        } else {
+            Frame frame = frames.poll();
+            if (frame != null) {
+                _writeFrame(frame);
+            } else {
                 isWriting = false;
             }
         }
+    }
 
+    public boolean isLastFrame(Frame frame) {
+        switch (frame.getType()) {
+            case HEADERS:
+                HeadersFrame headersFrame = (HeadersFrame) frame;
+                return headersFrame.isEndStream();
+            case DATA:
+                DataFrame dataFrame = (DataFrame) frame;
+                return dataFrame.isEndStream();
+        }
+        return false;
+    }
+
+    @Override
+    public synchronized void failed(Throwable x) {
+        isWriting = false;
+    }
+
+    public synchronized void _writeFrame(Frame frame) {
+        isWriting = true;
+        switch (frame.getType()) {
+            case HEADERS: {
+                HeadersFrame headersFrame = (HeadersFrame) frame;
+                closed = headersFrame.isEndStream();
+                getStream().headers(headersFrame, this);
+            }
+            break;
+            case DATA: {
+                DataFrame dataFrame = (DataFrame) frame;
+                closed = dataFrame.isEndStream();
+                getStream().data(dataFrame, this);
+            }
+            break;
+        }
+    }
+
+    public synchronized boolean isLastFrame(ByteBuffer data) {
+        long contentLength = getContentLength();
+        if (contentLength < 0) {
+            return false;
+        } else {
+            size += data.remaining();
+            log.debug("http2 output size: {}, content length: {}", size, contentLength);
+            return size >= contentLength;
+        }
+    }
+
+    protected synchronized long getContentLength() {
+        return info.getFields().getLongField(HttpHeader.CONTENT_LENGTH.asString());
+    }
+
+    protected synchronized boolean isChunked() {
+        return !noContent && getContentLength() < 0;
     }
 
     abstract protected Stream getStream();
+
 }

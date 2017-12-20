@@ -42,8 +42,9 @@ public class TestHTTPTrailer extends AbstractHTTPHandlerTest {
         httpClient.stop();
     }
 
-    @Test
+//    @Test
     public void testHttp2() {
+        // TODO
         Phaser phaser = new Phaser(2);
 
         SimpleHTTPServerConfiguration serverConfiguration = new SimpleHTTPServerConfiguration();
@@ -55,7 +56,7 @@ public class TestHTTPTrailer extends AbstractHTTPHandlerTest {
         clientConfiguration.setSecureConnectionEnabled(true);
         SimpleHTTPClient httpsClient = new SimpleHTTPClient(clientConfiguration);
         testServerResponseTrailer(phaser, httpsClient);
-//        testClientPostTrailer(phaser, httpsClient);
+        testClientPostTrailer(phaser, httpsClient);
 
         phaser.arriveAndAwaitAdvance();
         httpsServer.stop();

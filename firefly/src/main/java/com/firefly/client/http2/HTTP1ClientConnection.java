@@ -155,7 +155,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     public void upgradeHTTP2(Request request, SettingsFrame settings,
                              Promise<HTTP2ClientConnection> promise, ClientHTTPHandler handler) {
         upgradeHTTP2(request, settings, promise,
-                new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise.Adapter<>(), true),
+                new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise.Adapter<>()),
                 new HTTP2ClientResponseHandler(request, handler, this), new Listener.Adapter() {
 
                     @Override

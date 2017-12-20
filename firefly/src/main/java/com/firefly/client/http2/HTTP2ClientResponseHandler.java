@@ -7,7 +7,7 @@ import com.firefly.codec.http2.frame.ResetFrame;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
-import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream2;
+import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.Callback;
@@ -122,30 +122,14 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
         handler.badMessage(status, reason, request, response, output, connection);
     }
 
-    public static class ClientHttp2OutputStream extends AbstractHTTP2OutputStream2 {
+    public static class ClientHttp2OutputStream extends AbstractHTTP2OutputStream {
 
         private final Stream stream;
 
-        public ClientHttp2OutputStream(MetaData info, boolean endStream, Stream stream) {
-            super(info, true, endStream);
+        public ClientHttp2OutputStream(MetaData info, Stream stream) {
+            super(info, true);
             committed = true;
             this.stream = stream;
-//            if (endStream) {
-//                isChunked = false;
-//            } else {
-//                if (info.getFields().contains(HttpHeader.CONTENT_LENGTH)) {
-//                    if (log.isDebugEnabled()) {
-//                        log.debug("stream {} commits header that contains content length {}", getStream().getId(),
-//                                info.getFields().get(HttpHeader.CONTENT_LENGTH));
-//                    }
-//                    isChunked = false;
-//                } else {
-//                    if (log.isDebugEnabled()) {
-//                        log.debug("stream {} commits header using chunked encoding", getStream().getId());
-//                    }
-//                    isChunked = true;
-//                }
-//            }
         }
 
         @Override
@@ -182,12 +166,10 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
         private final Request request;
         private final Promise<HTTPOutputStream> promise;
-        private final boolean endStream;
 
-        public ClientStreamPromise(Request request, Promise<HTTPOutputStream> promise, boolean endStream) {
+        public ClientStreamPromise(Request request, Promise<HTTPOutputStream> promise) {
             this.request = request;
             this.promise = promise;
-            this.endStream = endStream;
         }
 
         @Override
@@ -195,7 +177,8 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
             if (log.isDebugEnabled()) {
                 log.debug("create a new stream {}", stream.getId());
             }
-            final AbstractHTTP2OutputStream2 output = new ClientHttp2OutputStream(request, endStream, stream);
+
+            ClientHttp2OutputStream output = new ClientHttp2OutputStream(request, stream);
             stream.setAttribute(OUTPUT_STREAM_KEY, output);
             promise.succeeded(output);
             ContinueData continueData = (ContinueData) stream.getAttribute(CONTINUE_KEY);

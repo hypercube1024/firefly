@@ -33,7 +33,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-        Phaser phaser = new Phaser(2);
+
         HTTP2Server server = createServer();
         HTTP2Client client = createClient();
 
@@ -43,14 +43,10 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTPClientConnection httpConnection = promise.get();
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
-        for (int i = 0; i < 1000; i++) {
-            // TODO test the concurrent problem
+        Phaser phaser = new Phaser(4);
+        for (int i = 0; i < 10; i++) {
             sendData(phaser, clientConnection);
-            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
-
-//            sendDataWithContinuation(phaser, clientConnection);
-//            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
-
+            sendDataWithContinuation(phaser, clientConnection);
             test404(phaser, clientConnection);
             System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
         }

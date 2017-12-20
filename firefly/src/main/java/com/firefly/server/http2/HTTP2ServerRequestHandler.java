@@ -1,5 +1,6 @@
 package com.firefly.server.http2;
 
+import com.firefly.Version;
 import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.AbstractHTTP2OutputStream;
@@ -9,8 +10,6 @@ import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.utils.concurrent.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
@@ -42,23 +41,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
         final MetaData.Request request = (MetaData.Request) headersFrame.getMetaData();
         final MetaData.Response response = new HTTPServerResponse();
-        final AbstractHTTP2OutputStream output = new AbstractHTTP2OutputStream(response, false) {
-
-            @Override
-            protected synchronized void commit(final boolean endStream) throws IOException {
-                if (!committed) {
-                    info.getFields().put(HttpHeader.X_POWERED_BY, X_POWERED_BY_VALUE);
-                    info.getFields().put(HttpHeader.SERVER, SERVER_VALUE);
-                }
-
-                super.commit(endStream);
-            }
-
-            @Override
-            protected Stream getStream() {
-                return stream;
-            }
-        };
+        final ServerHttp2OutputStream output = new ServerHttp2OutputStream(response, stream);
 
         String expectedValue = request.getFields().get(HttpHeader.EXPECT);
         if ("100-continue".equalsIgnoreCase(expectedValue)) {
@@ -130,6 +113,26 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
             }
 
         };
+    }
+
+    public static class ServerHttp2OutputStream extends AbstractHTTP2OutputStream {
+
+        public static final String X_POWERED_BY_VALUE = "Firefly " + Version.value;
+        public static final String SERVER_VALUE = "Firefly " + Version.value;
+
+        private final Stream stream;
+
+        public ServerHttp2OutputStream(MetaData info, Stream stream) {
+            super(info, false);
+            this.stream = stream;
+            info.getFields().put(HttpHeader.X_POWERED_BY, X_POWERED_BY_VALUE);
+            info.getFields().put(HttpHeader.SERVER, SERVER_VALUE);
+        }
+
+        @Override
+        protected Stream getStream() {
+            return stream;
+        }
     }
 
 }

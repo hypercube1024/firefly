@@ -102,10 +102,10 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
 
         server.router().post("/bigData").handler(ctx -> {
             // big data test case
-            System.out.println("receive big data size: " + ctx.getContentLength());
             Assert.assertThat($.io.toString(ctx.getInputStream()), is(bigData.toString()));
             $.io.close(ctx.getInputStream());
             ctx.end("server received big data");
+            System.out.println("receive big data size: " + ctx.getContentLength());
             phaser.arrive();
         }).listen(host, port);
 
@@ -133,9 +133,8 @@ public class TestHTTPBodyHandler extends AbstractHTTPHandlerTest {
         client.stop();
     }
 
-//    @Test
+    @Test
     public void testPostBigDataUsingChunkedEncodingHttp2() {
-        // TODO
         HTTP2ServerBuilder server = $.httpsServer();
         SimpleHTTPClient client = $.createHTTPsClient();
         testPostBigDataUsingChunkedEncoding(server, client);
