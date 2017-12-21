@@ -30,11 +30,10 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
             log.debug("client received the response line, {}, {}, {}", version, status, reason);
         }
 
-        if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
+        if (status == HttpStatus.CONTINUE_100 && HttpStatus.Code.CONTINUE.getMessage().equalsIgnoreCase(reason)) {
             clientHTTPHandler.continueToSendData(request, response, outputStream, connection);
             if (log.isDebugEnabled()) {
-                log.debug("client received 100 continue, current parser state is {}",
-                        connection.getParser().getState());
+                log.debug("client received 100 continue, current parser state is {}", connection.getParser().getState());
             }
             return true;
         } else {

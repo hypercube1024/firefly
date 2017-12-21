@@ -2,12 +2,15 @@ package com.firefly.codec.http2.stream;
 
 import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.Callback;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import static com.firefly.codec.http2.frame.FrameType.DISCONNECT;
 
@@ -57,6 +60,14 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
 
         commit();
         if (isChunked()) {
+            Optional.ofNullable(info.getTrailerSupplier())
+                    .map(Supplier::get)
+                    .ifPresent(trailer -> {
+                        MetaData metaData = new MetaData(HttpVersion.HTTP_1_1, trailer);
+                        HeadersFrame trailerFrame = new HeadersFrame(getStream().getId(), metaData, null, true);
+                        frames.offer(trailerFrame);
+                    });
+
             DisconnectFrame disconnectFrame = new DisconnectFrame();
             frames.offer(disconnectFrame);
             if (!isWriting) {
@@ -94,8 +105,12 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
                     switch (lastFrame.getType()) {
                         case DATA: {
                             DataFrame dataFrame = (DataFrame) lastFrame;
-                            DataFrame lastDataFrame = new DataFrame(dataFrame.getStreamId(), dataFrame.getData(), true);
-                            _writeFrame(lastDataFrame);
+                            if (dataFrame.isEndStream()) {
+                                _writeFrame(dataFrame);
+                            } else {
+                                DataFrame lastDataFrame = new DataFrame(dataFrame.getStreamId(), dataFrame.getData(), true);
+                                _writeFrame(lastDataFrame);
+                            }
                         }
                         break;
                         case HEADERS: {

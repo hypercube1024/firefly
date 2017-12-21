@@ -47,8 +47,9 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         if ("100-continue".equalsIgnoreCase(expectedValue)) {
             boolean skipNext = serverHTTPHandler.accept100Continue(request, response, output, connection);
             if (!skipNext) {
-                MetaData.Response continue100 = new MetaData.Response(HttpVersion.HTTP_1_1, 100, "Continue",
-                        new HttpFields(), Long.MIN_VALUE);
+                MetaData.Response continue100 = new MetaData.Response(HttpVersion.HTTP_1_1,
+                        HttpStatus.CONTINUE_100, HttpStatus.Code.CONTINUE.getMessage(),
+                        new HttpFields(), -1);
                 output.writeFrame(new HeadersFrame(stream.getId(), continue100, null, false));
                 serverHTTPHandler.headerComplete(request, response, output, connection);
             }

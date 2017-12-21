@@ -45,6 +45,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         Phaser phaser = new Phaser(3);
         for (int i = 0; i < 10; i++) {
             sendData(phaser, clientConnection);
+            // TODO sendDataWithContinuation can not pass the test
 //            sendDataWithContinuation(phaser, clientConnection);
             test404(phaser, clientConnection);
             System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
@@ -216,17 +217,9 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     private HTTP2Server createServer() {
         final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-//        http2Configuration.setFlowControlStrategy("simple");
         http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
 
         HTTP2Server server = new HTTP2Server(host, port, http2Configuration, new ServerHTTPHandler.Adapter() {
-
-            @Override
-            public boolean accept100Continue(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
-                                             HTTPConnection connection) {
-//                System.out.println("Server received expect continue ");
-                return false;
-            }
 
             @Override
             public boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
