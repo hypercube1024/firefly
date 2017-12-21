@@ -21,7 +21,6 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     public static final String OUTPUT_STREAM_KEY = "_outputStream";
     public static final String RESPONSE_KEY = "_response";
-    public static final String CONTINUE_KEY = "_continue_key";
 
     private final Request request;
     private final ClientHTTPHandler handler;
