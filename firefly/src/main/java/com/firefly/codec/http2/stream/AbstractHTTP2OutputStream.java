@@ -171,7 +171,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
     }
 
     protected synchronized void _writeFrame(Frame frame) {
-        System.out.println("H2OutputStream writes frame: " + frame);
+//        System.out.println("H2OutputStream writes frame: " + frame);
         isWriting = true;
         switch (frame.getType()) {
             case HEADERS: {
