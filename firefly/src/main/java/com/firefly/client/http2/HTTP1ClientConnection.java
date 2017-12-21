@@ -35,8 +35,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     private Promise<HTTP2ClientConnection> http2ConnectionPromise;
     private volatile HTTP2ClientConnection http2Connection;
     private Listener http2SessionListener;
-    private Promise<Stream> initStream;
-    private Stream.Listener initStreamListener;
     private final AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
     private final AtomicBoolean upgradeWebSocketComplete = new AtomicBoolean(false);
     private final ResponseHandlerWrap wrap;
@@ -184,8 +182,6 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
         this.http2ConnectionPromise = promise;
         this.http2SessionListener = listener;
-        this.initStream = initStream;
-        this.initStreamListener = initStreamListener;
         http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
                 getTcpSession(), null, http2SessionListener) {
             @Override

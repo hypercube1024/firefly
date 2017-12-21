@@ -84,7 +84,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
     @Override
     public boolean messageComplete() {
         try {
-            return connection.upgradeHTTP2Successfully || serverHTTPHandler.messageComplete(request, response, outputStream, connection);
+            return connection.upgradeHTTP2Complete.get() || serverHTTPHandler.messageComplete(request, response, outputStream, connection);
         } finally {
             connection.getParser().reset();
         }

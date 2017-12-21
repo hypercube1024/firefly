@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.CONTINUE_100_BYTES;
 import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.H2C_BYTES;
@@ -32,7 +33,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     private final ServerSessionListener serverSessionListener;
     private final HTTP1ServerRequestHandler serverRequestHandler;
-    boolean upgradeHTTP2Successfully = false;
+    AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
     Promise<HTTPTunnelConnection> tunnelConnectionPromise;
 
     HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
@@ -197,7 +198,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     serverSessionListener);
             tcpSession.attachObject(http2ServerConnection);
             http2ServerConnection.getParser().directUpgrade();
-            upgradeHTTP2Successfully = true;
+            upgradeHTTP2Complete.compareAndSet(false, true);
             return true;
         } else {
             return false;
@@ -233,8 +234,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     sessionSPI.onFrame(settingsFrame);
                     sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
                 }
-
-                upgradeHTTP2Successfully = true;
+                upgradeHTTP2Complete.compareAndSet(false, true);
                 return true;
             }
             case WEB_SOCKET: {

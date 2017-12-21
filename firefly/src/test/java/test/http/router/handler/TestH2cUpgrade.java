@@ -239,6 +239,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             @Override
             public boolean messageComplete(MetaData.Request request, MetaData.Response response, HTTPOutputStream outputStream,
                                            HTTPConnection connection) {
+                System.out.println("Server received request: " + request + ", " + (outputStream != null) + ", " + connection.getHttpVersion());
                 HttpURI uri = request.getURI();
                 switch (uri.getPath()) {
                     case "/index":
