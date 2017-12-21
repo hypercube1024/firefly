@@ -36,7 +36,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
     @Override
     public void onHeaders(final Stream stream, final HeadersFrame headersFrame) {
         // TODO wait local stream creating success.
-        // System.out.println("Client received header: " + stream.toString() + ", " + headersFrame.toString());
+         System.out.println("Client received header: " + stream.toString() + ", " + headersFrame.toString());
         if (headersFrame.getMetaData() == null) {
             // System.out.println("Client received meta data is null");
             throw new IllegalArgumentException("the stream " + stream.getId() + " received a null meta data");
@@ -75,6 +75,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter {
 
     @Override
     public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
+        System.out.println("Client received: " + stream + ", " + dataFrame);
         final HTTPOutputStream output = getOutputStream(stream);
         final MetaData.Response response = getResponse(stream);
 
