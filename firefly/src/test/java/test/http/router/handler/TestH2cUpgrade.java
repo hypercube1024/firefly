@@ -33,26 +33,33 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-//        HTTP2Server server = createServer();
-//        HTTP2Client client = createClient();
-//
-//        FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
-//        client.connect(host, port, promise);
-//
-//        final HTTPClientConnection httpConnection = promise.get();
-//        final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
-//
-//        Phaser phaser = new Phaser(3);
-//        for (int i = 0; i < 1; i++) {
-//            sendData(phaser, clientConnection);
-//            // TODO sendDataWithContinuation can not pass the test
-////            sendDataWithContinuation(phaser, clientConnection);
+        test0();
+    }
+
+    public void test0() throws Exception {
+        HTTP2Server server = createServer();
+        HTTP2Client client = createClient();
+
+        FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
+        client.connect(host, port, promise);
+
+        final HTTPClientConnection httpConnection = promise.get();
+        final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
+
+        int times = 10;
+        Phaser phaser = new Phaser(times + 1);
+        for (int i = 0; i < 1; i++) {
+            for (int j = 0; j < times; j++) {
+                sendData(phaser, clientConnection);
+                // TODO sendDataWithContinuation can not pass the test
+//            sendDataWithContinuation(phaser, clientConnection);
 //            test404(phaser, clientConnection);
-//            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
-//        }
-//
-//        server.stop();
-//        client.stop();
+            }
+            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+        }
+
+        server.stop();
+        client.stop();
     }
 
     private static class TestH2cHandler extends ClientHTTPHandler.Adapter {
