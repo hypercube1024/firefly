@@ -46,7 +46,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTPClientConnection httpConnection = promise.get();
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
-        int times = 10;
+        int times = 5;
         Phaser phaser = new Phaser(times + 1);
         for (int i = 0; i < 1; i++) {
             for (int j = 0; j < times; j++) {
@@ -239,7 +239,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             @Override
             public boolean messageComplete(MetaData.Request request, MetaData.Response response, HTTPOutputStream outputStream,
                                            HTTPConnection connection) {
-                System.out.println("Server received request: " + request + ", " + (outputStream != null) + ", " + connection.getHttpVersion());
+                System.out.println("Server received request: " + request + ", " + outputStream.getClass() + ", " + connection.getHttpVersion());
                 HttpURI uri = request.getURI();
                 switch (uri.getPath()) {
                     case "/index":
