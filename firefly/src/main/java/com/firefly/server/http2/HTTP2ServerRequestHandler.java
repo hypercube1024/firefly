@@ -50,7 +50,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
                 MetaData.Response continue100 = new MetaData.Response(HttpVersion.HTTP_1_1,
                         HttpStatus.CONTINUE_100, HttpStatus.Code.CONTINUE.getMessage(),
                         new HttpFields(), -1);
-                output.writeFrame(new HeadersFrame(stream.getId(), continue100, null, false));
+                stream.headers(new HeadersFrame(stream.getId(), continue100, null, false), Callback.NOOP);
                 serverHTTPHandler.headerComplete(request, response, output, connection);
             }
         } else {

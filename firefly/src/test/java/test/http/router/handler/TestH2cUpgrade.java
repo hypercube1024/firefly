@@ -43,7 +43,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
         Phaser phaser = new Phaser(3);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             sendData(phaser, clientConnection);
             // TODO sendDataWithContinuation can not pass the test
 //            sendDataWithContinuation(phaser, clientConnection);

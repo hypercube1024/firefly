@@ -170,7 +170,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
         log.error("Write frame failure", x);
     }
 
-    public synchronized void _writeFrame(Frame frame) {
+    protected synchronized void _writeFrame(Frame frame) {
         isWriting = true;
         switch (frame.getType()) {
             case HEADERS: {
@@ -187,7 +187,7 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
         }
     }
 
-    public synchronized boolean isLastFrame(ByteBuffer data) {
+    protected synchronized boolean isLastFrame(ByteBuffer data) {
         long contentLength = getContentLength();
         if (contentLength < 0) {
             return false;
