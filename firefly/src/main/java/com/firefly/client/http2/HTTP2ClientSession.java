@@ -44,6 +44,7 @@ public class HTTP2ClientSession extends HTTP2Session {
     public void onHeaders(HeadersFrame frame) {
         if (log.isDebugEnabled()) {
             log.debug("Client received {}", frame);
+            System.out.println("Client session received frame: " + frame);
         }
         Optional.ofNullable(getStream(frame.getStreamId()))
                 .ifPresent(stream -> {

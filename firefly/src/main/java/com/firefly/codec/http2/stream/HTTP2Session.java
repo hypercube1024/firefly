@@ -869,11 +869,13 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
     protected void notifyHeaders(StreamSPI stream, HeadersFrame frame) {
         Stream.Listener listener = stream.getListener();
+        System.out.println(this.getClass() + " notify headers: " + frame + ", " + (listener != null));
         if (listener == null)
             return;
         try {
             listener.onHeaders(stream, frame);
         } catch (Throwable x) {
+            x.printStackTrace();
             log.info("Failure while notifying listener " + listener, x);
         }
     }
