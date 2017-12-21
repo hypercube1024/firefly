@@ -33,7 +33,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-
         HTTP2Server server = createServer();
         HTTP2Client client = createClient();
 
@@ -46,7 +45,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         Phaser phaser = new Phaser(3);
         for (int i = 0; i < 10; i++) {
             sendData(phaser, clientConnection);
-//            sendDataWithContinuation(phaser, clientConnection);
+            sendDataWithContinuation(phaser, clientConnection);
             test404(phaser, clientConnection);
             System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
         }

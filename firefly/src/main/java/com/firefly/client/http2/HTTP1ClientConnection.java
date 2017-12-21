@@ -33,6 +33,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     private Promise<HTTP2ClientConnection> http2ConnectionPromise;
+    private volatile HTTP2ClientConnection http2Connection;
     private Listener http2SessionListener;
     private Promise<Stream> initStream;
     private Stream.Listener initStreamListener;
@@ -183,6 +184,16 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         this.http2SessionListener = listener;
         this.initStream = initStream;
         this.initStreamListener = initStreamListener;
+        http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
+                getTcpSession(), null, http2SessionListener) {
+            @Override
+            protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
+                                                    Listener listener) {
+                return HTTP2ClientSession.initSessionForUpgradingHTTP2(scheduler, this.tcpSession, generator,
+                        listener, flowControl, 3, config.getStreamIdleTimeout(), initStream,
+                        initStreamListener);
+            }
+        };
 
         // generate http2 upgrading headers
         request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
@@ -213,30 +224,17 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     boolean upgradeHTTP2Complete(MetaData.Response response) {
-        if (http2ConnectionPromise != null && http2SessionListener != null) {
+        if (http2ConnectionPromise != null && http2SessionListener != null && http2Connection != null) {
             String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
             if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
                 upgradeHTTP2Complete.compareAndSet(false, true);
-                // initialize http2 client connection;
-                final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
-                        getTcpSession(), null, http2SessionListener) {
-                    @Override
-                    protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
-                                                            Listener listener) {
-                        return HTTP2ClientSession.initSessionForUpgradingHTTP2(scheduler, this.tcpSession, generator,
-                                listener, flowControl, 3, config.getStreamIdleTimeout(), initStream,
-                                initStreamListener);
-                    }
-                };
                 getTcpSession().attachObject(http2Connection);
                 http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
                 return true;
-            } else {
-                return false;
             }
-        } else {
-            return false;
         }
+        http2Connection = null;
+        return false;
     }
 
     @Override
