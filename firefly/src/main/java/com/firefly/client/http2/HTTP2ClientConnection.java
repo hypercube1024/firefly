@@ -189,7 +189,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
     @Override
     public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
-                             ClientHTTPHandler handler) {
+                             ClientHTTPHandler upgradeHandler,
+                             ClientHTTPHandler http2ResponseHandler) {
         throw new CommonRuntimeException("The current connection version is http2, it does not need to upgrading.");
     }
 

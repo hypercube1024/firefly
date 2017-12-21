@@ -26,8 +26,9 @@ public interface HTTPClientConnection extends HTTPConnection {
 
     HTTPOutputStream getHTTPOutputStream(Request request, ClientHTTPHandler handler);
 
-    void upgradeHTTP2(Request request, SettingsFrame settings,
-                      Promise<HTTP2ClientConnection> promise, ClientHTTPHandler handler);
+    void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
+                      ClientHTTPHandler upgradeHandler,
+                      ClientHTTPHandler http2ResponseHandler);
 
     void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise);
 }

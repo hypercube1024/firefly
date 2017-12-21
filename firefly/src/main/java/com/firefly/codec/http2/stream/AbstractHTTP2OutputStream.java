@@ -1,9 +1,6 @@
 package com.firefly.codec.http2.stream;
 
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.DisconnectFrame;
-import com.firefly.codec.http2.frame.Frame;
-import com.firefly.codec.http2.frame.HeadersFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.Assert;
@@ -152,7 +149,10 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
 
     @Override
     public synchronized void failed(Throwable x) {
-        isWriting = false;
+        frames.clear();
+        getStream().getSession().close(ErrorCode.INTERNAL_ERROR.code, "Write frame failure", Callback.NOOP);
+        closed = true;
+        log.error("Write frame failure", x);
     }
 
     public synchronized void _writeFrame(Frame frame) {
@@ -169,7 +169,6 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
                 closed = dataFrame.isEndStream();
                 getStream().data(dataFrame, this);
             }
-            break;
         }
     }
 
@@ -186,6 +185,10 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
 
     protected synchronized long getContentLength() {
         return info.getFields().getLongField(HttpHeader.CONTENT_LENGTH.asString());
+    }
+
+    public synchronized boolean isNoContent() {
+        return noContent;
     }
 
     protected synchronized boolean isChunked() {

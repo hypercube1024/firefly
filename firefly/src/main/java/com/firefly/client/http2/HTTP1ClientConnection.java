@@ -153,29 +153,31 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    public void upgradeHTTP2(Request request, SettingsFrame settings,
-                             Promise<HTTP2ClientConnection> promise, ClientHTTPHandler handler) {
-        upgradeHTTP2(request, settings, promise,
-                new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise.Adapter<>()),
-                new HTTP2ClientResponseHandler(request, handler, this), new Listener.Adapter() {
+    public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
+                             ClientHTTPHandler upgradeHandler,
+                             ClientHTTPHandler http2ResponseHandler) {
+        Promise<Stream> initStream = new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise.Adapter<>());
+        Stream.Listener initStreamListener = new HTTP2ClientResponseHandler(request, http2ResponseHandler, this);
+        Listener listener = new Listener.Adapter() {
 
-                    @Override
-                    public Map<Integer, Integer> onPreface(com.firefly.codec.http2.stream.Session session) {
-                        return settings.getSettings();
-                    }
+            @Override
+            public Map<Integer, Integer> onPreface(com.firefly.codec.http2.stream.Session session) {
+                return settings.getSettings();
+            }
 
-                    @Override
-                    public void onFailure(com.firefly.codec.http2.stream.Session session, Throwable failure) {
-                        log.error("client failure, {}", failure, session);
-                    }
+            @Override
+            public void onFailure(com.firefly.codec.http2.stream.Session session, Throwable failure) {
+                log.error("client failure, {}", failure, session);
+            }
 
-                }, handler);
+        };
+        upgradeHTTP2(request, settings, promise, initStream, initStreamListener, listener, upgradeHandler);
     }
 
     public void upgradeHTTP2(Request request, SettingsFrame settings,
-                             final Promise<HTTP2ClientConnection> promise, final Promise<Stream> initStream,
-                             final Stream.Listener initStreamListener, final Listener listener,
-                             final ClientHTTPHandler handler) {
+                             Promise<HTTP2ClientConnection> promise, Promise<Stream> initStream,
+                             Stream.Listener initStreamListener, Listener listener,
+                             ClientHTTPHandler handler) {
         if (isEncrypted()) {
             throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
         }

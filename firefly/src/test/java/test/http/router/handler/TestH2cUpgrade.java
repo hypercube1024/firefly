@@ -45,7 +45,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         Phaser phaser = new Phaser(3);
         for (int i = 0; i < 10; i++) {
             sendData(phaser, clientConnection);
-            sendDataWithContinuation(phaser, clientConnection);
+//            sendDataWithContinuation(phaser, clientConnection);
             test404(phaser, clientConnection);
             System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
         }
@@ -111,7 +111,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
         FuturePromise<HTTP2ClientConnection> http2Promise = new FuturePromise<>();
 
-        httpConnection.upgradeHTTP2(request, settingsFrame, http2Promise, new TestH2cHandler() {
+        ClientHTTPHandler upgradeHandler = new TestH2cHandler() {
             @Override
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
@@ -121,7 +121,22 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 Assert.assertThat(response.getFields().get(HttpHeader.UPGRADE), is("h2c"));
                 return true;
             }
-        });
+        };
+
+        ClientHTTPHandler h2ResponseHandler = new TestH2cHandler() {
+            @Override
+            public boolean messageComplete(MetaData.Request request, MetaData.Response response,
+                                           HTTPOutputStream output,
+                                           HTTPConnection connection) {
+                String content = BufferUtils.toString(contentList);
+                printResponse(request, response, content);
+                Assert.assertThat(response.getStatus(), is(HttpStatus.OK_200));
+                Assert.assertThat(content, is("receive initial stream successful"));
+                return true;
+            }
+        };
+
+        httpConnection.upgradeHTTP2(request, settingsFrame, http2Promise, upgradeHandler, h2ResponseHandler);
 
         return http2Promise.get();
     }
