@@ -102,7 +102,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         return new HTTP2Client(http2Configuration);
     }
 
-    private HTTP2ClientConnection upgradeHttp2(HTTP2Configuration http2Configuration, HTTPClientConnection httpConnection) throws InterruptedException, java.util.concurrent.ExecutionException, UnsupportedEncodingException {
+    private HTTP2ClientConnection upgradeHttp2(HTTP2Configuration http2Configuration, HTTPClientConnection httpConnection) throws Exception {
         HTTPClientRequest request = new HTTPClientRequest("GET", "/index");
 
         Map<Integer, Integer> settings = new HashMap<>();
@@ -124,21 +124,25 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             }
         };
 
+        Phaser phaser = new Phaser(2);
         ClientHTTPHandler h2ResponseHandler = new TestH2cHandler() {
             @Override
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
+                System.out.println("Client received init status: " + response.getStatus());
                 String content = BufferUtils.toString(contentList);
                 printResponse(request, response, content);
                 Assert.assertThat(response.getStatus(), is(HttpStatus.OK_200));
                 Assert.assertThat(content, is("receive initial stream successful"));
+                phaser.arrive();
                 return true;
             }
         };
 
         httpConnection.upgradeHTTP2(request, settingsFrame, http2Promise, upgradeHandler, h2ResponseHandler);
-
+        phaser.arriveAndAwaitAdvance();
+        System.out.println("get the h2 connection");
         return http2Promise.get();
     }
 

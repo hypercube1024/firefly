@@ -36,7 +36,7 @@ public class HTTPsClientDemo {
         long testStart = System.currentTimeMillis();
         System.out.println("The secure session factory is " + secureSessionFactory.getClass().getSimpleName());
         SimpleHTTPClient client = $.createHTTPsClient(secureSessionFactory);
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 50; i++) {
             CountDownLatch latch = new CountDownLatch(urlList.size());
             urlList.forEach(url -> {
                 long start = System.currentTimeMillis();
