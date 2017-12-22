@@ -1,5 +1,6 @@
 package test.codec.http2;
 
+import com.firefly.client.http2.ClientHTTP2SessionListener;
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTP2ClientConnection;
 import com.firefly.client.http2.HTTPClientConnection;
@@ -35,7 +36,7 @@ public class HTTP2ClientDemo {
 		HTTP2Client client = new HTTP2Client(http2Configuration);
 
 		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
-		client.connect("127.0.0.1", 6677, promise, new Listener() {
+		client.connect("127.0.0.1", 6677, promise, new ClientHTTP2SessionListener() {
 
 			@Override
 			public Map<Integer, Integer> onPreface(Session session) {

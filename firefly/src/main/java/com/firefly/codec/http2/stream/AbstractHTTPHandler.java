@@ -47,7 +47,7 @@ public abstract class AbstractHTTPHandler implements Handler {
             try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
                 Optional.ofNullable(httpConnection.getClosedListener()).ifPresent(c -> {
                     c.call(httpConnection);
-                    log.info("The HTTP handler called connection {} closed listener.", session.getSessionId());
+                    log.info("The HTTP handler called {} closed listener. Session: {}", httpConnection.getClass(), session.getSessionId());
                 });
             } catch (Exception e) {
                 log.error("http2 connection close exception", e);

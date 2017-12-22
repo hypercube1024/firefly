@@ -168,10 +168,10 @@ abstract public class AbstractHTTP2OutputStream extends HTTPOutputStream impleme
         getStream().getSession().close(ErrorCode.INTERNAL_ERROR.code, "Write frame failure", Callback.NOOP);
         closed = true;
         log.error("Write frame failure", x);
+//        x.printStackTrace();
     }
 
     protected synchronized void _writeFrame(Frame frame) {
-//        System.out.println("H2OutputStream writes frame: " + frame);
         isWriting = true;
         switch (frame.getType()) {
             case HEADERS: {

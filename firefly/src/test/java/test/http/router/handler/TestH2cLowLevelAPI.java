@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.is;
  * @author Pengtao Qiu
  */
 public class TestH2cLowLevelAPI extends AbstractHTTPHandlerTest {
-    
+
     @Test
     public void testLowLevelAPI() throws Exception {
         Phaser phaser = new Phaser(2);
@@ -144,7 +144,7 @@ public class TestH2cLowLevelAPI extends AbstractHTTPHandlerTest {
                 System.out.println($.string.replace("client stream {} received init headers: {}", stream.getId(), frame.getMetaData()));
             }
 
-        }, new Session.Listener.Adapter() {
+        }, new ClientHTTP2SessionListener() {
 
             @Override
             public Map<Integer, Integer> onPreface(Session session) {

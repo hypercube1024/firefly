@@ -33,10 +33,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-        test0();
-    }
-
-    public void test0() throws Exception {
         HTTP2Server server = createServer();
         HTTP2Client client = createClient();
 
@@ -47,16 +43,26 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
         int times = 5;
-        int loop = 1;
-        Phaser phaser = new Phaser(times + 1);
+        int loop = 10;
+        Phaser phaser = new Phaser(times * 3 + 1);
+        clientConnection.close(c -> {
+            System.out.println("The client connection closed. ");
+            phaser.forceTermination();
+        });
+
         for (int i = 0; i < loop; i++) {
             for (int j = 0; j < times; j++) {
                 sendData(phaser, clientConnection);
-                // TODO sendDataWithContinuation can not pass the test
-//            sendDataWithContinuation(phaser, clientConnection);
-//            test404(phaser, clientConnection);
+                sendDataWithContinuation(phaser, clientConnection);
+                test404(phaser, clientConnection);
             }
-            System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+
+            if (phaser.isTerminated()) {
+                System.out.println("Complete phase. " + i);
+                break;
+            } else {
+                System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+            }
         }
 
         server.stop();
@@ -107,7 +113,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     private HTTP2Client createClient() {
         final HTTP2Configuration config = new HTTP2Configuration();
         config.getTcpConfiguration().setTimeout(60 * 1000);
-        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
+//        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
         return new HTTP2Client(config);
     }
 
@@ -228,8 +234,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     private HTTP2Server createServer() {
         final HTTP2Configuration config = new HTTP2Configuration();
         config.getTcpConfiguration().setTimeout(60 * 1000);
-        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
-
+//        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
         HTTP2Server server = new HTTP2Server(host, port, config, new ServerHTTPHandler.Adapter() {
 
             @Override

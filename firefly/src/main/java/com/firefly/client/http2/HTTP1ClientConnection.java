@@ -4,6 +4,7 @@ import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
 import com.firefly.codec.http2.encode.HttpGenerator;
+import com.firefly.codec.http2.frame.GoAwayFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Request;
@@ -34,7 +35,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
     private Promise<HTTP2ClientConnection> http2ConnectionPromise;
     private volatile HTTP2ClientConnection http2Connection;
-    private Listener http2SessionListener;
+    private ClientHTTP2SessionListener http2SessionListener;
     private final AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
     private final AtomicBoolean upgradeWebSocketComplete = new AtomicBoolean(false);
     private final ResponseHandlerWrap wrap;
@@ -156,16 +157,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                              ClientHTTPHandler http2ResponseHandler) {
         Promise<Stream> initStream = new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise.Adapter<>());
         Stream.Listener initStreamListener = new HTTP2ClientResponseHandler(request, http2ResponseHandler, this);
-        Listener listener = new Listener.Adapter() {
+        ClientHTTP2SessionListener listener = new ClientHTTP2SessionListener() {
 
             @Override
             public Map<Integer, Integer> onPreface(com.firefly.codec.http2.stream.Session session) {
                 return settings.getSettings();
-            }
-
-            @Override
-            public void onFailure(com.firefly.codec.http2.stream.Session session, Throwable failure) {
-                log.error("client failure, {}", failure, session);
             }
 
         };
@@ -174,7 +170,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
 
     public void upgradeHTTP2(Request request, SettingsFrame settings,
                              Promise<HTTP2ClientConnection> promise, Promise<Stream> initStream,
-                             Stream.Listener initStreamListener, Listener listener,
+                             Stream.Listener initStreamListener, ClientHTTP2SessionListener listener,
                              ClientHTTPHandler handler) {
         if (isEncrypted()) {
             throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
@@ -227,6 +223,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
             if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
                 upgradeHTTP2Complete.compareAndSet(false, true);
                 getTcpSession().attachObject(http2Connection);
+                http2SessionListener.setConnection(http2Connection);
                 http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
                 return true;
             }

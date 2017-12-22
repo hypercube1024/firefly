@@ -99,6 +99,7 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
         try {
             final HTTP2ClientConnection connection = new HTTP2ClientConnection(config, session, sslSession, context.getListener());
             session.attachObject(connection);
+            context.getListener().setConnection(connection);
             connection.initialize(config, context.getPromise(), context.getListener());
             int id = session.getSessionId();
 

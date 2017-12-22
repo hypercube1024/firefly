@@ -8,14 +8,21 @@ import com.firefly.codec.http2.stream.Session;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.firefly.codec.http2.stream.DataFrameHandler.handleDataFrame;
 
 public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
+
+    public static final String CONTINUE_KEY = "_continueKey";
 
     private final ServerHTTPHandler serverHTTPHandler;
     HTTP2ServerConnection connection;
@@ -26,8 +33,33 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
     @Override
     public void onClose(Session session, GoAwayFrame frame) {
-        log.info("receive the GoAwayFrame -> ", frame);
+        log.warn("Server received the GoAwayFrame -> {}", frame.toString());
         connection.close();
+    }
+
+    @Override
+    public void onFailure(Session session, Throwable failure) {
+        log.error("Server failure: " + session, failure);
+        Optional.ofNullable(connection).ifPresent(IO::close);
+    }
+
+    @Override
+    public void onReset(Session session, ResetFrame frame) {
+        log.warn("Server received ResetFrame {}", frame.toString());
+        Optional.ofNullable(connection).ifPresent(IO::close);
+    }
+
+    private void wait100ContinueComplete(Stream stream) {
+        Callback.Completable completable = (Callback.Completable) stream.getAttribute(CONTINUE_KEY);
+        Optional.ofNullable(completable).ifPresent(c -> {
+            try {
+                c.get(2, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                log.error("Wait writing 100 continue frame complete timeout");
+            } catch (Exception e) {
+                log.error("Wait writing 100 continue frame complete", e);
+            }
+        });
     }
 
     @Override
@@ -52,10 +84,18 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
                         HttpStatus.CONTINUE_100, HttpStatus.Code.CONTINUE.getMessage(),
                         new HttpFields(), -1);
 
-                stream.headers(new HeadersFrame(stream.getId(), continue100, null, false), Callback.NOOP);
-                serverHTTPHandler.headerComplete(request, response, output, connection);
+                Callback.Completable completable = new Callback.Completable() {
+                    @Override
+                    public void succeeded() {
+                        serverHTTPHandler.headerComplete(request, response, output, connection);
+                        super.succeeded();
+                    }
+                };
+                stream.setAttribute(CONTINUE_KEY, completable);
+                stream.headers(new HeadersFrame(stream.getId(), continue100, null, false), completable);
             }
         } else {
+            wait100ContinueComplete(stream);
             serverHTTPHandler.headerComplete(request, response, output, connection);
             if (headersFrame.isEndStream()) {
                 serverHTTPHandler.messageComplete(request, response, output, connection);
@@ -71,6 +111,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
                 }
 
                 if (trailerFrame.isEndStream()) {
+                    wait100ContinueComplete(stream);
                     request.setTrailerSupplier(() -> trailerFrame.getMetaData().getFields());
                     serverHTTPHandler.contentComplete(request, response, output, connection);
                     serverHTTPHandler.messageComplete(request, response, output, connection);
@@ -81,6 +122,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
             @Override
             public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
+                wait100ContinueComplete(stream);
                 handleDataFrame(dataFrame, callback, request, response, output, connection, serverHTTPHandler);
             }
 

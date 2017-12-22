@@ -738,6 +738,9 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         switch (closed.get()) {
             case NOT_CLOSED: {
                 long elapsed = Millisecond100Clock.currentTimeMillis() - idleTime;
+                if (log.isDebugEnabled()) {
+                    log.debug("HTTP2 session on idle timeout. The elapsed time is {} - {}", elapsed, endPoint.getMaxIdleTimeout());
+                }
                 return elapsed >= endPoint.getMaxIdleTimeout() && notifyIdleTimeout(this);
             }
             case LOCALLY_CLOSED:

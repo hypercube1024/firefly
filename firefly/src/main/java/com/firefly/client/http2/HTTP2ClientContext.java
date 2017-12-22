@@ -5,7 +5,7 @@ import com.firefly.utils.concurrent.Promise;
 
 public class HTTP2ClientContext {
     private Promise<HTTPClientConnection> promise;
-    private Listener listener;
+    private ClientHTTP2SessionListener listener;
 
     public Promise<HTTPClientConnection> getPromise() {
         return promise;
@@ -15,11 +15,11 @@ public class HTTP2ClientContext {
         this.promise = promise;
     }
 
-    public Listener getListener() {
+    public ClientHTTP2SessionListener getListener() {
         return listener;
     }
 
-    public void setListener(Listener listener) {
+    public void setListener(ClientHTTP2SessionListener listener) {
         this.listener = listener;
     }
 }
