@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.is;
 public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     private int timeout = 3 * 1000;
+    private int corePoolSize = 1;
 
     @Test
     public void test() throws Exception {
@@ -135,7 +136,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     private HTTP2Client createClient() {
         final HTTP2Configuration config = new HTTP2Configuration();
         config.getTcpConfiguration().setTimeout(timeout);
-//        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
+        config.getTcpConfiguration().setAsynchronousCorePoolSize(corePoolSize);
         return new HTTP2Client(config);
     }
 
@@ -256,7 +257,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     private HTTP2Server createServer() {
         final HTTP2Configuration config = new HTTP2Configuration();
         config.getTcpConfiguration().setTimeout(timeout);
-//        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
+        config.getTcpConfiguration().setAsynchronousCorePoolSize(corePoolSize);
         HTTP2Server server = new HTTP2Server(host, port, config, new ServerHTTPHandler.Adapter() {
 
             @Override
