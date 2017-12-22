@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Phaser;
 
 import static com.firefly.utils.io.BufferUtils.toBuffer;
@@ -45,36 +46,19 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTPClientConnection httpConnection = promise.get();
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
-        int times = 5;
         int loop = 10;
-        Phaser phaser = new Phaser(times * 3 + 1);
-        clientConnection.close(c -> {
-            System.out.println("The client connection closed. ");
-            phaser.forceTermination();
-        }).exception((c, ex) -> {
-            ex.printStackTrace();
-            phaser.forceTermination();
-        });
+        CountDownLatch latch = new CountDownLatch(loop * 3);
 
-        for (int i = 0; i < loop; i++) {
-            for (int j = 0; j < times; j++) {
-                sendData(phaser, clientConnection);
-                sendDataWithContinuation(phaser, clientConnection);
-                test404(phaser, clientConnection);
-            }
+        clientConnection.close(c -> System.out.println("The client connection closed."))
+                        .exception((c, ex) -> ex.printStackTrace());
 
-            if (phaser.isTerminated()) {
-                System.out.println("Complete phase. " + i);
-                break;
-            } else {
-                int phase = phaser.arriveAndAwaitAdvance();
-                System.out.println("phase: " + phase);
-                if (phase < 0) {
-                    break;
-                }
-            }
+        for (int j = 0; j < loop; j++) {
+            sendData(latch, clientConnection);
+            sendDataWithContinuation(latch, clientConnection);
+            test404(latch, clientConnection);
         }
 
+        latch.await();
         server.stop();
         client.stop();
     }
@@ -181,7 +165,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         return http2Promise.get();
     }
 
-    private void test404(Phaser phaser, HTTP2ClientConnection clientConnection) {
+    private void test404(CountDownLatch latch, HTTP2ClientConnection clientConnection) {
         System.out.println("Client test 404.");
         MetaData.Request get = new MetaData.Request("GET", HttpScheme.HTTP,
                 new HostPortHttpField(host + ":" + port),
@@ -193,13 +177,14 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                                            HTTPConnection connection) {
                 printResponse(request, response, BufferUtils.toString(contentList));
                 Assert.assertThat(response.getStatus(), is(HttpStatus.NOT_FOUND_404));
-                phaser.arrive(); // 4
+                latch.countDown();
+                System.out.println("Remain task: " + latch.getCount());
                 return true;
             }
         });
     }
 
-    private void sendData(Phaser phaser, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
+    private void sendData(CountDownLatch latch, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
         System.out.println("Client sends data.");
         HttpFields fields = new HttpFields();
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
@@ -213,12 +198,12 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
-                return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 3
+                return dataComplete(latch, BufferUtils.toString(contentList), request, response);
             }
         });
     }
 
-    private void sendDataWithContinuation(Phaser phaser, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
+    private void sendDataWithContinuation(CountDownLatch latch, HTTP2ClientConnection clientConnection) throws UnsupportedEncodingException {
         System.out.println("Client sends data with continuation");
         HttpFields fields = new HttpFields();
         fields.put(HttpHeader.USER_AGENT, "Firefly Client 1.0");
@@ -232,7 +217,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             public boolean messageComplete(MetaData.Request request, MetaData.Response response,
                                            HTTPOutputStream output,
                                            HTTPConnection connection) {
-                return dataComplete(phaser, BufferUtils.toString(contentList), request, response); // 2
+                return dataComplete(latch, BufferUtils.toString(contentList), request, response);
             }
         });
     }
@@ -246,11 +231,12 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         System.out.println();
     }
 
-    public boolean dataComplete(Phaser phaser, String content, MetaData.Request request, MetaData.Response response) {
+    public boolean dataComplete(CountDownLatch latch, String content, MetaData.Request request, MetaData.Response response) {
         printResponse(request, response, content);
         Assert.assertThat(response.getStatus(), is(HttpStatus.OK_200));
         Assert.assertThat(content, is("Receive data stream successful. Thank you!"));
-        phaser.arrive();
+        latch.countDown();
+        System.out.println("Remain task: " + latch.getCount());
         return true;
     }
 
