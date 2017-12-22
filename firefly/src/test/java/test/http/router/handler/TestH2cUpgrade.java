@@ -240,7 +240,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     private HTTP2Server createServer() {
         final HTTP2Configuration config = new HTTP2Configuration();
-        config.getTcpConfiguration().setTimeout(60 * 1000);
+        config.getTcpConfiguration().setTimeout(5 * 1000);
 //        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
         HTTP2Server server = new HTTP2Server(host, port, config, new ServerHTTPHandler.Adapter() {
 

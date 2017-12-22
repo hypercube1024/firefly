@@ -155,7 +155,13 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
                              ClientHTTPHandler upgradeHandler,
                              ClientHTTPHandler http2ResponseHandler) {
-        Promise<Stream> initStream = new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise.Adapter<>());
+        Promise<Stream> initStream = new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise<HTTPOutputStream>() {
+
+            @Override
+            public void failed(Throwable x) {
+                log.error("Create client output stream exception", x);
+            }
+        });
         Stream.Listener initStreamListener = new HTTP2ClientResponseHandler(request, http2ResponseHandler, this);
         ClientHTTP2SessionListener listener = new ClientHTTP2SessionListener() {
 
