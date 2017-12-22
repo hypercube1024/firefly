@@ -11,6 +11,8 @@ import com.firefly.utils.concurrent.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.firefly.codec.http2.stream.DataFrameHandler.handleDataFrame;
+
 public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
@@ -35,7 +37,6 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         }
 
         if (log.isDebugEnabled()) {
-            // System.out.println("Server received stream: " + stream + ", " + headersFrame);
             log.debug("Server received stream: {}, {}", stream.getId(), headersFrame.toString());
         }
 
@@ -50,12 +51,12 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
                 MetaData.Response continue100 = new MetaData.Response(HttpVersion.HTTP_1_1,
                         HttpStatus.CONTINUE_100, HttpStatus.Code.CONTINUE.getMessage(),
                         new HttpFields(), -1);
+
                 stream.headers(new HeadersFrame(stream.getId(), continue100, null, false), Callback.NOOP);
                 serverHTTPHandler.headerComplete(request, response, output, connection);
             }
         } else {
             serverHTTPHandler.headerComplete(request, response, output, connection);
-
             if (headersFrame.isEndStream()) {
                 serverHTTPHandler.messageComplete(request, response, output, connection);
             }
@@ -66,9 +67,9 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
             @Override
             public void onHeaders(Stream stream, HeadersFrame trailerFrame) {
                 if (log.isDebugEnabled()) {
-                    // System.out.println("Server received trailer frame: " + stream + ", " + trailerFrame);
                     log.debug("Server received trailer frame: {}, {}", stream.toString(), trailerFrame);
                 }
+
                 if (trailerFrame.isEndStream()) {
                     request.setTrailerSupplier(() -> trailerFrame.getMetaData().getFields());
                     serverHTTPHandler.contentComplete(request, response, output, connection);
@@ -80,23 +81,11 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
             @Override
             public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
-                // System.out.println("Server received data frame: " + stream + ", " + dataFrame);
-                try {
-                    serverHTTPHandler.content(dataFrame.getData(), request, response, output, connection);
-                    if (dataFrame.isEndStream()) {
-                        serverHTTPHandler.contentComplete(request, response, output, connection);
-                        serverHTTPHandler.messageComplete(request, response, output, connection);
-                    }
-                    callback.succeeded();
-                } catch (Throwable t) {
-                    callback.failed(t);
-                }
+                handleDataFrame(dataFrame, callback, request, response, output, connection, serverHTTPHandler);
             }
 
             @Override
             public void onReset(Stream stream, ResetFrame resetFrame) {
-                // System.out.println("Server received reset frame: " + stream + ", " + resetFrame);
-
                 ErrorCode errorCode = ErrorCode.from(resetFrame.getError());
                 String reason = errorCode == null ? "error=" + resetFrame.getError() : errorCode.name().toLowerCase();
                 int status = HttpStatus.INTERNAL_SERVER_ERROR_500;

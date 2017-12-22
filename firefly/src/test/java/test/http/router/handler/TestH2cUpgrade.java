@@ -47,8 +47,9 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
         int times = 5;
+        int loop = 1;
         Phaser phaser = new Phaser(times + 1);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < loop; i++) {
             for (int j = 0; j < times; j++) {
                 sendData(phaser, clientConnection);
                 // TODO sendDataWithContinuation can not pass the test
@@ -225,10 +226,11 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     }
 
     private HTTP2Server createServer() {
-        final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-        http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
+        final HTTP2Configuration config = new HTTP2Configuration();
+        config.getTcpConfiguration().setTimeout(60 * 1000);
+        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
 
-        HTTP2Server server = new HTTP2Server(host, port, http2Configuration, new ServerHTTPHandler.Adapter() {
+        HTTP2Server server = new HTTP2Server(host, port, config, new ServerHTTPHandler.Adapter() {
 
             @Override
             public boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
