@@ -51,7 +51,7 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
     private void wait100ContinueComplete(Stream stream) {
         Callback.Completable completable = (Callback.Completable) stream.getAttribute(CONTINUE_KEY);
-        Optional.ofNullable(completable).ifPresent(c -> {
+        Optional.ofNullable(completable).filter(c -> !c.isDone()).ifPresent(c -> {
             try {
                 c.get(2, TimeUnit.SECONDS);
             } catch (TimeoutException e) {

@@ -59,7 +59,7 @@ public class HTTP2ClientResponseHandler extends Stream.Listener.Adapter implemen
 
     private void onFrames(Stream stream) {
         final HTTPOutputStream output = getOutputStream(stream);
-        if (output != null) {
+        if (output != null) { // the stream is created completely
             run();
         } else {
             stream.setAttribute(RUN_TASK, this);

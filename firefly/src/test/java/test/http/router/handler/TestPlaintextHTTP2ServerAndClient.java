@@ -2,6 +2,8 @@ package test.http.router.handler;
 
 import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
+import com.firefly.client.http2.SimpleHTTPClientConfiguration;
+import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +32,10 @@ public class TestPlaintextHTTP2ServerAndClient extends AbstractHTTPHandlerTest {
             ctx.end("test plaintext http2");
         }).listen(host, port);
 
-        SimpleHTTPClient client = $.createPlaintextHTTP2Client();
+        SimpleHTTPClientConfiguration config = new SimpleHTTPClientConfiguration();
+        config.setProtocol(HttpVersion.HTTP_2.asString());
+        config.setPoolSize(1);
+        SimpleHTTPClient client = new SimpleHTTPClient(config);
         for (int i = 0; i < times; i++) {
             client.post(uri + "/plaintextHttp2").body("post data").submit()
                   .thenAccept(res -> {
@@ -46,6 +51,7 @@ public class TestPlaintextHTTP2ServerAndClient extends AbstractHTTPHandlerTest {
         }
 
         latch.await();
+        System.out.println("All tasks complete");
 
         server.stop();
         client.stop();

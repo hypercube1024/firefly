@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static com.firefly.utils.io.BufferUtils.toBuffer;
 import static org.hamcrest.Matchers.is;
@@ -57,7 +58,12 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             test404(latch, clientConnection);
         }
 
-        latch.await();
+        try {
+            latch.await(3, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
         server.stop();
         client.stop();
     }
