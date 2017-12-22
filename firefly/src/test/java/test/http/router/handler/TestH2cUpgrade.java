@@ -33,7 +33,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     @Test
     public void test() throws Exception {
-//        test0();
+        test0();
     }
 
     public void test0() throws Exception {
@@ -48,7 +48,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
         int times = 5;
         Phaser phaser = new Phaser(times + 1);
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 10; i++) {
             for (int j = 0; j < times; j++) {
                 sendData(phaser, clientConnection);
                 // TODO sendDataWithContinuation can not pass the test
@@ -104,9 +104,10 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
     }
 
     private HTTP2Client createClient() {
-        final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-        http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
-        return new HTTP2Client(http2Configuration);
+        final HTTP2Configuration config = new HTTP2Configuration();
+        config.getTcpConfiguration().setTimeout(60 * 1000);
+        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
+        return new HTTP2Client(config);
     }
 
     private HTTP2ClientConnection upgradeHttp2(HTTP2Configuration http2Configuration, HTTPClientConnection httpConnection) throws Exception {
