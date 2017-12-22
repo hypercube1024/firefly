@@ -51,7 +51,7 @@ public class TestPlaintextHTTP2ServerAndClient extends AbstractHTTPHandlerTest {
         }
 
         latch.await();
-        System.out.println("All tasks complete");
+        System.out.println("Completed all tasks.");
 
         server.stop();
         client.stop();

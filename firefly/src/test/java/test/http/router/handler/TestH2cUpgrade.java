@@ -66,11 +66,11 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         }
 
         try {
-            latch.await(3, TimeUnit.SECONDS);
-            latch2.await(3, TimeUnit.SECONDS);
-            latch3.await(3, TimeUnit.SECONDS);
+            latch.await(1, TimeUnit.SECONDS);
+            latch2.await(1, TimeUnit.SECONDS);
+            latch3.await(1, TimeUnit.SECONDS);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println(e.getClass() + ", msg: " + e.getMessage());
         }
 
         System.out.println("Completed all tasks.");
