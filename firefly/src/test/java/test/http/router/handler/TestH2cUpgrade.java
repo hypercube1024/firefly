@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Phaser;
 
 import static com.firefly.utils.io.BufferUtils.toBuffer;
 import static org.hamcrest.Matchers.is;
