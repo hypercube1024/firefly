@@ -46,24 +46,34 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTPClientConnection httpConnection = promise.get();
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
-        int loop = 10;
-        CountDownLatch latch = new CountDownLatch(loop * 3);
-
         clientConnection.close(c -> System.out.println("The client connection closed."))
                         .exception((c, ex) -> ex.printStackTrace());
 
+        int loop = 5;
+        CountDownLatch latch = new CountDownLatch(loop);
         for (int j = 0; j < loop; j++) {
             sendData(latch, clientConnection);
-            sendDataWithContinuation(latch, clientConnection);
-            test404(latch, clientConnection);
+        }
+
+        CountDownLatch latch2 = new CountDownLatch(loop);
+        for (int i = 0; i < loop; i++) {
+            sendDataWithContinuation(latch2, clientConnection);
+        }
+
+        CountDownLatch latch3 = new CountDownLatch(loop);
+        for (int i = 0; i < loop; i++) {
+            test404(latch3, clientConnection);
         }
 
         try {
             latch.await(3, TimeUnit.SECONDS);
+            latch2.await(3, TimeUnit.SECONDS);
+            latch3.await(3, TimeUnit.SECONDS);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
 
+        System.out.println("Completed all tasks.");
         server.stop();
         client.stop();
     }
