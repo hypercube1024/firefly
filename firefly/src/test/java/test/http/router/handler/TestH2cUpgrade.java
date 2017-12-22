@@ -31,6 +31,8 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
+    private int timeout = 3 * 1000;
+
     @Test
     public void test() throws Exception {
         HTTP2Server server = createServer();
@@ -43,7 +45,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
         int times = 5;
-        int loop = 500;
+        int loop = 10;
         Phaser phaser = new Phaser(times * 3 + 1);
         clientConnection.close(c -> {
             System.out.println("The client connection closed. ");
@@ -115,11 +117,24 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
             return false;
         }
 
+        @Override
+        public void badMessage(int status, String reason, MetaData.Request request, MetaData.Response response,
+                               HTTPOutputStream output, HTTPConnection connection) {
+            System.out.println("Client received the bad message. " + reason);
+        }
+
+        @Override
+        public void earlyEOF(MetaData.Request request, MetaData.Response response,
+                             HTTPOutputStream output,
+                             HTTPConnection connection) {
+            System.out.println("Client is early EOF. ");
+        }
+
     }
 
     private HTTP2Client createClient() {
         final HTTP2Configuration config = new HTTP2Configuration();
-        config.getTcpConfiguration().setTimeout(5 * 1000);
+        config.getTcpConfiguration().setTimeout(timeout);
 //        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
         return new HTTP2Client(config);
     }
@@ -240,9 +255,22 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     private HTTP2Server createServer() {
         final HTTP2Configuration config = new HTTP2Configuration();
-        config.getTcpConfiguration().setTimeout(5 * 1000);
+        config.getTcpConfiguration().setTimeout(timeout);
 //        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
         HTTP2Server server = new HTTP2Server(host, port, config, new ServerHTTPHandler.Adapter() {
+
+            @Override
+            public void badMessage(int status, String reason, MetaData.Request request, MetaData.Response response,
+                                   HTTPOutputStream output, HTTPConnection connection) {
+                System.out.println("Server received the bad message. " + reason);
+            }
+
+            @Override
+            public void earlyEOF(MetaData.Request request, MetaData.Response response,
+                                 HTTPOutputStream output,
+                                 HTTPConnection connection) {
+                System.out.println("Server is early EOF. ");
+            }
 
             @Override
             public boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
