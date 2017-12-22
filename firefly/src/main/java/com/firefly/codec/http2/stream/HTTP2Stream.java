@@ -81,10 +81,12 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
     }
 
     private boolean startWrite(Callback callback) {
-        if (writing.compareAndSet(null, callback))
+        if (writing.compareAndSet(null, callback)) {
             return true;
-        callback.failed(new WritePendingException());
-        return false;
+        } else {
+            callback.failed(new WritePendingException());
+            return false;
+        }
     }
 
     @Override

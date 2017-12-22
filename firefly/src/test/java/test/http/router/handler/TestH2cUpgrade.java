@@ -43,10 +43,13 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
         int times = 5;
-        int loop = 10;
+        int loop = 500;
         Phaser phaser = new Phaser(times * 3 + 1);
         clientConnection.close(c -> {
             System.out.println("The client connection closed. ");
+            phaser.forceTermination();
+        }).exception((c, ex) -> {
+            ex.printStackTrace();
             phaser.forceTermination();
         });
 
@@ -61,7 +64,11 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
                 System.out.println("Complete phase. " + i);
                 break;
             } else {
-                System.out.println("phase: " + phaser.arriveAndAwaitAdvance());
+                int phase = phaser.arriveAndAwaitAdvance();
+                System.out.println("phase: " + phase);
+                if (phase < 0) {
+                    break;
+                }
             }
         }
 
@@ -112,7 +119,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
     private HTTP2Client createClient() {
         final HTTP2Configuration config = new HTTP2Configuration();
-        config.getTcpConfiguration().setTimeout(60 * 1000);
+        config.getTcpConfiguration().setTimeout(5 * 1000);
 //        config.getTcpConfiguration().setAsynchronousCorePoolSize(1);
         return new HTTP2Client(config);
     }
