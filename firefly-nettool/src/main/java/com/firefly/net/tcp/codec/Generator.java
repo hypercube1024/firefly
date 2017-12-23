@@ -5,8 +5,8 @@ import java.nio.ByteBuffer;
 /**
  * @author Pengtao Qiu
  */
-public interface Generator<T> {
+public interface Generator {
 
-    ByteBuffer generate(T obj);
+    ByteBuffer generate(Object object);
 
 }

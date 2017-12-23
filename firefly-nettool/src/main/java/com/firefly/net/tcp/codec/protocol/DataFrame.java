@@ -12,6 +12,11 @@ public class DataFrame extends MessageFrame {
         this(MAGIC, FrameType.DATA, VERSION, endStream, streamId, endFrame, data);
     }
 
+    public DataFrame(Frame frame, boolean endStream, int streamId,
+                     boolean endFrame, byte[] data) {
+        this(frame.magic, frame.type, frame.version, endStream, streamId, endFrame, data);
+    }
+
     public DataFrame(byte magic, FrameType type, byte version,
                      boolean endStream, int streamId,
                      boolean endFrame, byte[] data) {

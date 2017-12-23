@@ -1,69 +1,54 @@
 package com.firefly.net.tcp.codec.decode;
 
-import com.firefly.net.tcp.codec.AbstractByteBufferMessageHandler;
-import com.firefly.net.tcp.codec.exception.ProtocolException;
-import com.firefly.net.tcp.codec.protocol.*;
+import com.firefly.net.tcp.codec.protocol.ControlFrame;
+import com.firefly.net.tcp.codec.protocol.DataFrame;
+import com.firefly.net.tcp.codec.protocol.Frame;
+import com.firefly.net.tcp.codec.protocol.MessageFrame;
+import com.firefly.utils.lang.Pair;
+
+import java.nio.ByteBuffer;
+
+import static com.firefly.net.tcp.codec.protocol.MessageFrame.MESSAGE_FRAME_HEADER_LENGTH;
 
 /**
  * @author Pengtao Qiu
  */
-public class MessageFrameParser extends AbstractByteBufferMessageHandler<MessageFrame> {
+public class MessageFrameParser implements FfsocksParser<MessageFrame> {
 
-    protected byte magic;
-    protected FrameType type;
-    protected byte version;
+    protected Frame frame;
     protected boolean endStream;
     protected int streamId;
     protected boolean endFrame;
     protected int payloadLength;
     protected byte[] data;
-    protected State state = State.FRAME_HEADER;
+    protected State state = State.MESSAGE_HEADER;
 
     @Override
-    protected void parse() {
-        parsing:
+    public Pair<Result, MessageFrame> parse(ByteBuffer buffer, Frame header) {
         while (true) {
             switch (state) {
-                case FRAME_HEADER: {
-                    switch (parseFrameHeader()) {
+                case MESSAGE_HEADER: {
+                    switch (parseFrameHeader(buffer, header)) {
                         case UNDERFLOW:
                         case COMPLETE:
-                            break parsing;
+                            return new Pair<>(Result.UNDERFLOW, null);
                         case OVERFLOW:
                             break;
                     }
                 }
                 break;
-                case PAYLOAD: {
-                    switch (parsePayload()) {
-                        case UNDERFLOW:
-                        case COMPLETE:
-                            break parsing;
-                        case OVERFLOW:
-                            break;
-                    }
-                }
-                break;
+                case PAYLOAD:
+                    return parsePayload(buffer);
             }
         }
     }
 
-    protected Result parseFrameHeader() {
+    protected Result parseFrameHeader(ByteBuffer buffer, Frame frame) {
         if (buffer.remaining() < minPocketLength()) {
             return Result.UNDERFLOW;
         }
 
-        magic = buffer.get();
-        if (magic != Frame.MAGIC) {
-            throw new ProtocolException("The frame header format error");
-        }
-
-        type = FrameType.from(buffer.get()).orElseThrow(() -> new ProtocolException("not support the frame type"));
-
-        version = buffer.get();
-        if (version != Frame.VERSION) {
-            throw new ProtocolException("not support the protocol version");
-        }
+        this.frame = frame;
 
         int stream = buffer.getInt();
         endStream = Frame.isEnd(stream);
@@ -81,62 +66,56 @@ public class MessageFrameParser extends AbstractByteBufferMessageHandler<Message
         }
     }
 
-    protected Result parsePayload() {
+    protected Pair<Result, MessageFrame> parsePayload(ByteBuffer buffer) {
         if (payloadLength == 0) {
-            return generateResult();
+            return generateResult(buffer);
         }
 
         if (buffer.remaining() < payloadLength) {
-            return Result.UNDERFLOW;
+            return new Pair<>(Result.UNDERFLOW, null);
         }
 
         data = new byte[payloadLength];
         buffer.get(data);
-        return generateResult();
+        return generateResult(buffer);
     }
 
-    private Result generateResult() {
-        switch (type) {
+    private Pair<Result, MessageFrame> generateResult(ByteBuffer buffer) {
+        Pair<Result, MessageFrame> pair = new Pair<>();
+        switch (frame.getType()) {
             case CONTROL:
-                action.call(new ControlFrame(magic, type, version, endStream, streamId, endFrame, data));
+                pair.second = new ControlFrame(frame, endStream, streamId, endFrame, data);
                 break;
             case DATA:
-                action.call(new DataFrame(magic, type, version, endStream, streamId, endFrame, data));
+                pair.second = new DataFrame(frame, endStream, streamId, endFrame, data);
                 break;
         }
         reset();
 
         if (buffer.hasRemaining()) {
-            return Result.OVERFLOW;
+            pair.first = Result.OVERFLOW;
         } else {
-            return Result.COMPLETE;
+            pair.first = Result.COMPLETE;
         }
+        return pair;
     }
 
     protected void reset() {
-        magic = 0;
-        type = null;
-        version = 0;
+        frame = null;
         endStream = false;
         streamId = 0;
         endFrame = false;
         payloadLength = 0;
         data = null;
-        state = State.FRAME_HEADER;
+        state = State.MESSAGE_HEADER;
     }
 
     protected int minPocketLength() {
-        return 9;
-    }
-
-    public enum Result {
-        UNDERFLOW,
-        OVERFLOW,
-        COMPLETE
+        return MESSAGE_FRAME_HEADER_LENGTH;
     }
 
     public enum State {
-        FRAME_HEADER,
+        MESSAGE_HEADER,
         PAYLOAD
     }
 }

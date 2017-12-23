@@ -13,15 +13,28 @@ public class PingFrame extends Frame {
     private final boolean reply;
 
     public PingFrame(boolean reply) {
-        this(MAGIC, VERSION, reply);
+        this(MAGIC, FrameType.PING, VERSION, reply);
     }
 
-    public PingFrame(byte magic, byte version, boolean reply) {
-        super(magic, FrameType.PING, version);
+    public PingFrame(Frame frame, boolean reply) {
+        this(frame.magic, frame.type, frame.version, reply);
+    }
+
+    public PingFrame(byte magic, FrameType type, byte version, boolean reply) {
+        super(magic, type, version);
         this.reply = reply;
     }
 
     public boolean isReply() {
         return reply;
+    }
+
+    @Override
+    public String toString() {
+        return "PingFrame{" +
+                "reply=" + reply +
+                ", type=" + type +
+                ", version=" + version +
+                '}';
     }
 }

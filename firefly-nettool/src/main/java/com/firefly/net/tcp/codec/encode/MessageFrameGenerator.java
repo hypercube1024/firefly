@@ -7,20 +7,21 @@ import com.firefly.net.tcp.codec.protocol.MessageFrame;
 
 import java.nio.ByteBuffer;
 
+import static com.firefly.net.tcp.codec.encode.FrameGenerator.headerGenerator;
+
 /**
  * @author Pengtao Qiu
  */
-public class MessageFrameGenerator implements Generator<MessageFrame> {
-
-    protected final FrameHeaderGenerator frameHeaderGenerator = new FrameHeaderGenerator();
+public class MessageFrameGenerator implements Generator {
 
     @Override
-    public ByteBuffer generate(MessageFrame messageFrame) {
-        ByteBuffer header = frameHeaderGenerator.generate(messageFrame);
-
+    public ByteBuffer generate(Object object) {
+        MessageFrame messageFrame = (MessageFrame) object;
         if (messageFrame.getData().length > Frame.MAX_PAYLOAD_LENGTH) {
             throw new ProtocolException("The payload length must be not greater than " + Frame.MAX_PAYLOAD_LENGTH);
         }
+
+        ByteBuffer header = headerGenerator.generate(messageFrame);
 
         int length = Frame.FRAME_HEADER_LENGTH + MessageFrame.MESSAGE_FRAME_HEADER_LENGTH + messageFrame.getData().length;
         ByteBuffer buffer = ByteBuffer.allocate(length);
