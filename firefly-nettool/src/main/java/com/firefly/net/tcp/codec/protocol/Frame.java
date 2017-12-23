@@ -13,7 +13,8 @@ public class Frame {
 
     public static final byte MAGIC = (byte) 0xE4;
     public static final byte VERSION = (byte) 0x01;
-    public static final int MAX_PAYLOAD_LENGTH = Short.MAX_VALUE + 1;
+    public static final int MAX_PAYLOAD_LENGTH = Short.MAX_VALUE;
+    public static final int FRAME_HEADER_LENGTH = 3;
 
     protected final byte magic;
     protected final FrameType type;

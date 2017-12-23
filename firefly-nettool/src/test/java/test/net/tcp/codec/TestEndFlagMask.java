@@ -31,8 +31,6 @@ public class TestEndFlagMask {
 
         int length2 = Frame.removeEndFlag((short) expectLength);
         Assert.assertThat(length2, is(expectLength));
-
-        Assert.assertThat(Frame.MAX_PAYLOAD_LENGTH, is(32768));
     }
 
     @Test

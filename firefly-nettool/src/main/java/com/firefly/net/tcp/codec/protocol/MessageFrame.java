@@ -1,11 +1,13 @@
 package com.firefly.net.tcp.codec.protocol;
 
+import java.util.Optional;
+
 /**
  * The message frame format:
  * [frame header (3 bytes)] + [stream end flag (1 bit)] + [stream id (31bit)]
  * [frame end flag (1bit)] + [payload length (15bit)] + [data payload]
  * <p>
- * The payload length range of a data frame is from 0 to 32768 bytes.
+ * The payload length range of a data frame is from 0 to 32767 bytes.
  * <p>
  * The frame end flag is 1 represents the last control or data frame.
  * <p>
@@ -15,6 +17,8 @@ package com.firefly.net.tcp.codec.protocol;
  * @author Pengtao Qiu
  */
 public class MessageFrame extends Frame {
+
+    public static final int MESSAGE_FRAME_HEADER_LENGTH = 6;
 
     protected final boolean endStream;
     protected final int streamId;
@@ -43,5 +47,17 @@ public class MessageFrame extends Frame {
 
     public byte[] getData() {
         return data;
+    }
+
+    @Override
+    public String toString() {
+        return "MessageFrame{" +
+                "endStream=" + endStream +
+                ", streamId=" + streamId +
+                ", endFrame=" + endFrame +
+                ", type=" + type +
+                ", version=" + version +
+                ", dataLength=" + Optional.ofNullable(data).map(d -> d.length).orElse(0) +
+                '}';
     }
 }

@@ -2,6 +2,7 @@ package com.firefly.net.tcp.codec.protocol;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
@@ -31,5 +32,9 @@ public enum FrameType {
 
     public String getDescription() {
         return description;
+    }
+
+    public static Optional<FrameType> from(byte value) {
+        return Optional.ofNullable(Holder.map.get(value));
     }
 }
