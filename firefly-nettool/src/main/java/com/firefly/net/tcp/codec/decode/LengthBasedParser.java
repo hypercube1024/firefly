@@ -1,4 +1,6 @@
-package com.firefly.net.tcp.codec;
+package com.firefly.net.tcp.codec.decode;
+
+import com.firefly.net.tcp.codec.AbstractByteBufferMessageHandler;
 
 import static com.firefly.utils.lang.ArrayUtils.EMPTY_BYTE_ARRAY;
 
@@ -28,12 +30,12 @@ public class LengthBasedParser extends AbstractByteBufferMessageHandler<byte[]> 
     }
 
     protected State getState() {
-        if (buffer.remaining() < 4) {
+        if (buffer.remaining() < minPocketLength()) {
             return State.UNDERFLOW;
         }
 
         buffer.mark();
-        int length = buffer.getInt();
+        int length = getLength();
 
         State state;
         if (length <= 0) {
@@ -50,7 +52,7 @@ public class LengthBasedParser extends AbstractByteBufferMessageHandler<byte[]> 
     }
 
     protected void readData() {
-        int length = buffer.getInt();
+        int length = getLength();
         if (length > 0) {
             byte[] data = new byte[length];
             buffer.get(data);
@@ -58,6 +60,14 @@ public class LengthBasedParser extends AbstractByteBufferMessageHandler<byte[]> 
         } else {
             action.call(EMPTY_BYTE_ARRAY);
         }
+    }
+
+    protected int getLength() {
+        return buffer.getInt();
+    }
+
+    protected int minPocketLength() {
+        return 4;
     }
 
     public enum State {

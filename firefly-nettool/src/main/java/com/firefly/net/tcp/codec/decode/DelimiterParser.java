@@ -1,4 +1,6 @@
-package com.firefly.net.tcp.codec;
+package com.firefly.net.tcp.codec.decode;
+
+import com.firefly.net.tcp.codec.AbstractMessageHandler;
 
 public class DelimiterParser extends AbstractMessageHandler<String, String> {
 

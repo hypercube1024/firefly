@@ -6,20 +6,18 @@ import java.util.Map;
 /**
  * @author Pengtao Qiu
  */
-public enum FrameType {
-    CONTROL((byte) 1, "Control frame"),
-    DATA((byte) 2, "Data frame"),
-    PING((byte) 3, "Ping frame"),
-    ERROR((byte) 4, "Error frame");
+public enum ErrorCode {
+    INTERNAL((byte) 1, "Internal error"),
+    BAD_MESSAGE((byte) 2, "Protocol format error");
 
     private final byte value;
     private final String description;
 
     static class Holder {
-        static final Map<Byte, FrameType> map = new HashMap<>();
+        static final Map<Byte, ErrorCode> map = new HashMap<>();
     }
 
-    FrameType(byte value, String description) {
+    ErrorCode(byte value, String description) {
         this.value = value;
         this.description = description;
         Holder.map.put(value, this);

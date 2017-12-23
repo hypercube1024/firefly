@@ -1,4 +1,6 @@
-package com.firefly.net.tcp.codec;
+package com.firefly.net.tcp.codec.decode;
+
+import com.firefly.net.tcp.codec.AbstractByteBufferMessageHandler;
 
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
