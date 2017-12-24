@@ -30,8 +30,13 @@ public class MessageFrameParser implements FfsocksParser<MessageFrame> {
                 case MESSAGE_HEADER: {
                     switch (parseFrameHeader(buffer, header)) {
                         case UNDERFLOW:
-                        case COMPLETE:
                             return new Pair<>(Result.UNDERFLOW, null);
+                        case COMPLETE:
+                            if (payloadLength == 0) {
+                                return generateResult(buffer);
+                            } else {
+                                return new Pair<>(Result.UNDERFLOW, null);
+                            }
                         case OVERFLOW:
                             break;
                     }

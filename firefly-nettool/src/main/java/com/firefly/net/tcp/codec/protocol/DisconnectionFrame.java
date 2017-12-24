@@ -7,17 +7,21 @@ package com.firefly.net.tcp.codec.protocol;
  *
  * @author Pengtao Qiu
  */
-public class ErrorFrame extends Frame {
+public class DisconnectionFrame extends Frame {
 
     private final byte code;
     private final byte[] data;
 
-    public ErrorFrame(byte code, byte[] data) {
+    public DisconnectionFrame(byte code, byte[] data) {
         this(MAGIC, FrameType.ERROR, VERSION, code, data);
     }
 
-    public ErrorFrame(byte magic, FrameType type, byte version,
-                      byte code, byte[] data) {
+    public DisconnectionFrame(Frame frame, byte code, byte[] data) {
+        this(frame.magic, frame.type, frame.version, code, data);
+    }
+
+    public DisconnectionFrame(byte magic, FrameType type, byte version,
+                              byte code, byte[] data) {
         super(magic, type, version);
         this.code = code;
         this.data = data;

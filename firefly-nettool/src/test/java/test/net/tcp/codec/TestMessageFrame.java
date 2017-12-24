@@ -2,10 +2,7 @@ package test.net.tcp.codec;
 
 import com.firefly.net.tcp.codec.decode.FrameParser;
 import com.firefly.net.tcp.codec.encode.FrameGenerator;
-import com.firefly.net.tcp.codec.protocol.ControlFrame;
-import com.firefly.net.tcp.codec.protocol.Frame;
-import com.firefly.net.tcp.codec.protocol.FrameType;
-import com.firefly.net.tcp.codec.protocol.MessageFrame;
+import com.firefly.net.tcp.codec.protocol.*;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,15 +28,15 @@ public class TestMessageFrame {
         FrameParser parser = new FrameParser();
         parser.complete(frame -> {
             Assert.assertThat(frame.getType(), is(FrameType.CONTROL));
-            MessageFrame messageFrame = (MessageFrame) frame;
+            ControlFrame control = (ControlFrame) frame;
 
-            Assert.assertThat(messageFrame.getStreamId(), is(1));
-            Assert.assertTrue(messageFrame.isEndStream());
-            Assert.assertTrue(messageFrame.isEndFrame());
+            Assert.assertThat(control.getStreamId(), is(1));
+            Assert.assertTrue(control.isEndStream());
+            Assert.assertTrue(control.isEndFrame());
 
-            String data = new String(messageFrame.getData(), StandardCharsets.UTF_8);
+            String data = new String(control.getData(), StandardCharsets.UTF_8);
             Assert.assertThat(data, is("Hello"));
-            System.out.println(messageFrame);
+            System.out.println(control);
             System.out.println(data);
         }).exception(Throwable::printStackTrace);
         parser.receive(buffer);
@@ -79,6 +76,25 @@ public class TestMessageFrame {
             Assert.assertThat(data, is("Hello_" + i));
             System.out.println(data);
         }
+    }
+
+    @Test
+    public void testLengthIs0() {
+        DataFrame dataFrame = new DataFrame(true, 11, true, null);
+        ByteBuffer buffer = FrameGenerator.generate(dataFrame);
+
+        FrameParser parser = new FrameParser();
+        parser.complete(frame -> {
+            Assert.assertThat(frame.getType(), is(FrameType.DATA));
+            DataFrame data = (DataFrame) frame;
+
+            Assert.assertThat(data.getStreamId(), is(11));
+            Assert.assertTrue(data.isEndStream());
+            Assert.assertTrue(data.isEndFrame());
+            Assert.assertNull(data.getData());
+            System.out.println(data);
+        }).exception(Throwable::printStackTrace);
+        parser.receive(buffer);
     }
 
 }

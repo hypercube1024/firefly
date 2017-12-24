@@ -1,5 +1,7 @@
 package com.firefly.net.tcp.codec.protocol;
 
+import com.firefly.utils.Assert;
+
 import java.util.Optional;
 
 /**
@@ -31,6 +33,9 @@ public class MessageFrame extends Frame {
         this.streamId = streamId;
         this.endFrame = endFrame;
         this.data = data;
+        if (data != null) {
+            Assert.isTrue(data.length <= MAX_PAYLOAD_LENGTH, "The data length must be not greater than the max payload length");
+        }
     }
 
     public boolean isEndStream() {

@@ -1,13 +1,15 @@
 package com.firefly.net.tcp.codec.encode;
 
 import com.firefly.net.tcp.codec.Generator;
-import com.firefly.net.tcp.codec.exception.ProtocolException;
 import com.firefly.net.tcp.codec.protocol.Frame;
 import com.firefly.net.tcp.codec.protocol.MessageFrame;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
 
 import static com.firefly.net.tcp.codec.encode.FrameGenerator.headerGenerator;
+import static com.firefly.net.tcp.codec.protocol.Frame.FRAME_HEADER_LENGTH;
+import static com.firefly.net.tcp.codec.protocol.MessageFrame.MESSAGE_FRAME_HEADER_LENGTH;
 
 /**
  * @author Pengtao Qiu
@@ -17,29 +19,32 @@ public class MessageFrameGenerator implements Generator {
     @Override
     public ByteBuffer generate(Object object) {
         MessageFrame messageFrame = (MessageFrame) object;
-        if (messageFrame.getData().length > Frame.MAX_PAYLOAD_LENGTH) {
-            throw new ProtocolException("The payload length must be not greater than " + Frame.MAX_PAYLOAD_LENGTH);
-        }
+        short payloadLength = Optional.ofNullable(messageFrame.getData()).map(d -> d.length)
+                                      .filter(len -> len <= Frame.MAX_PAYLOAD_LENGTH)
+                                      .map(Integer::shortValue).orElse((short) 0);
 
-        ByteBuffer header = headerGenerator.generate(messageFrame);
+        ByteBuffer buffer = ByteBuffer.allocate(FRAME_HEADER_LENGTH + MESSAGE_FRAME_HEADER_LENGTH + payloadLength);
 
-        int length = Frame.FRAME_HEADER_LENGTH + MessageFrame.MESSAGE_FRAME_HEADER_LENGTH + messageFrame.getData().length;
-        ByteBuffer buffer = ByteBuffer.allocate(length);
-        buffer.put(header);
-
+        // generate header
+        buffer.put(headerGenerator.generate(messageFrame));
         if (messageFrame.isEndStream()) {
             buffer.putInt(Frame.addEndFlag(messageFrame.getStreamId()));
         } else {
             buffer.putInt(Frame.removeEndFlag(messageFrame.getStreamId()));
         }
 
+        // generate payload
         if (messageFrame.isEndFrame()) {
-            buffer.putShort(Frame.addEndFlag((short) messageFrame.getData().length));
+            buffer.putShort(Frame.addEndFlag(payloadLength));
         } else {
-            buffer.putShort(Frame.removeEndFlag((short) messageFrame.getData().length));
+            buffer.putShort(Frame.removeEndFlag(payloadLength));
         }
-        buffer.put(messageFrame.getData());
+        if (payloadLength > 0) {
+            buffer.put(messageFrame.getData());
+        }
+        
         buffer.flip();
         return buffer;
     }
+
 }

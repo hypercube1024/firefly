@@ -1,7 +1,7 @@
 package com.firefly.net.tcp.codec.stream;
 
 import com.firefly.net.tcp.codec.protocol.ControlFrame;
-import com.firefly.net.tcp.codec.protocol.ErrorFrame;
+import com.firefly.net.tcp.codec.protocol.DisconnectionFrame;
 import com.firefly.net.tcp.codec.protocol.PingFrame;
 
 import java.util.Map;
@@ -29,7 +29,7 @@ public interface Session {
 
     CompletableFuture<Boolean> ping(PingFrame pingFrame);
 
-    CompletableFuture<Boolean> sendError(ErrorFrame errorFrame);
+    CompletableFuture<Boolean> disconnect(DisconnectionFrame disconnectionFrame);
 
     Map<String, Object> getAttibutes();
 
@@ -50,6 +50,6 @@ public interface Session {
 
         void onPing(Session session, PingFrame pingFrame);
 
-        void onError(Session session, ErrorFrame errorFrame);
+        void onDisconnect(Session session, DisconnectionFrame disconnectionFrame);
     }
 }

@@ -7,6 +7,8 @@ import java.util.Map;
  * @author Pengtao Qiu
  */
 public enum ErrorCode {
+    
+    NO_ERROR((byte) 0, "No error"),
     INTERNAL((byte) 1, "Internal error"),
     BAD_MESSAGE((byte) 2, "Protocol format error");
 
