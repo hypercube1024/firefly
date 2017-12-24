@@ -6,7 +6,7 @@ import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
-import com.firefly.net.tcp.codec.decode.StringParser;
+import com.firefly.net.tcp.codec.ffsocks.decode.StringParser;
 import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
 import com.firefly.net.tcp.secure.conscrypt.FileConscryptSSLContextFactory;
 import com.firefly.net.tcp.secure.jdk.FileJdkSSLContextFactory;

@@ -1,10 +1,10 @@
 package test.net.tcp.codec;
 
-import com.firefly.net.tcp.codec.decode.FrameParser;
-import com.firefly.net.tcp.codec.encode.FrameGenerator;
-import com.firefly.net.tcp.codec.protocol.Frame;
-import com.firefly.net.tcp.codec.protocol.FrameType;
-import com.firefly.net.tcp.codec.protocol.PingFrame;
+import com.firefly.net.tcp.codec.ffsocks.decode.FrameParser;
+import com.firefly.net.tcp.codec.ffsocks.encode.FrameGenerator;
+import com.firefly.net.tcp.codec.ffsocks.protocol.Frame;
+import com.firefly.net.tcp.codec.ffsocks.protocol.FrameType;
+import com.firefly.net.tcp.codec.ffsocks.protocol.PingFrame;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Test;

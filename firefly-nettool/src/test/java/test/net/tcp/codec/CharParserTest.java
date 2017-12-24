@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.net.tcp.codec.decode.CharParser;
+import com.firefly.net.tcp.codec.common.decode.CharParser;
 
 public class CharParserTest {
 
