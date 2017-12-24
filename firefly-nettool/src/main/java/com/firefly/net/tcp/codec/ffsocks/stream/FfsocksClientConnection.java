@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface FfsocksClientConnection extends FfsocksConnection {
 
-    <T> CompletableFuture<ClientResponse<T>> send(ClientRequest<T> request);
+    CompletableFuture<ClientResponse> send(ClientRequest request);
 
     void send(Request request, Promise<OutputStream> promise, Listener listener);
 
@@ -24,6 +24,6 @@ public interface FfsocksClientConnection extends FfsocksConnection {
         void content(FfsocksContext context, byte[] data);
 
         void messageComplete(FfsocksContext context);
-        
+
     }
 }

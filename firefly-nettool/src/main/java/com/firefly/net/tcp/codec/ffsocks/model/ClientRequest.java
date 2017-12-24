@@ -3,24 +3,24 @@ package com.firefly.net.tcp.codec.ffsocks.model;
 /**
  * @author Pengtao Qiu
  */
-public class ClientRequest<T> extends Request {
+public class ClientRequest {
 
-    protected T data;
+    protected Request request;
+    protected byte[] data;
 
-    public T getData() {
+    public Request getRequest() {
+        return request;
+    }
+
+    public void setRequest(Request request) {
+        this.request = request;
+    }
+
+    public byte[] getData() {
         return data;
     }
 
-    public void setData(T data) {
+    public void setData(byte[] data) {
         this.data = data;
-    }
-
-    @Override
-    public String toString() {
-        return "ClientRequest{" +
-                "data=" + data +
-                ", path='" + path + '\'' +
-                ", fields=" + fields +
-                '}';
     }
 }

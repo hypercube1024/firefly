@@ -9,15 +9,17 @@ import java.util.Map;
  * @author Pengtao Qiu
  */
 public interface FfsocksContext {
+
     Request getRequest();
 
     Response getResponse();
 
-    <T> T getData();
+    byte[] getData();
 
     Map<String, Object> getAttibutes();
 
     void setAttribute(String key, Object value);
 
     Object getAttribute(String key);
+
 }

@@ -14,4 +14,12 @@ public class Request extends MetaInfo {
     public void setPath(String path) {
         this.path = path;
     }
+
+    @Override
+    public String toString() {
+        return "Request{" +
+                "path='" + path + '\'' +
+                ", fields=" + fields +
+                '}';
+    }
 }
