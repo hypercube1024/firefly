@@ -1,4 +1,4 @@
-package test.net.tcp.codec;
+package test.net.tcp.codec.ffsocks;
 
 import com.firefly.net.tcp.codec.ffsocks.protocol.Frame;
 import org.junit.Assert;

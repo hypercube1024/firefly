@@ -14,4 +14,13 @@ public class ClientRequest<T> extends Request {
     public void setData(T data) {
         this.data = data;
     }
+
+    @Override
+    public String toString() {
+        return "ClientRequest{" +
+                "data=" + data +
+                ", path='" + path + '\'' +
+                ", fields=" + fields +
+                '}';
+    }
 }

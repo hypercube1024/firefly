@@ -71,6 +71,10 @@
             <groupId>org.conscrypt</groupId>
             <artifactId>conscrypt-openjdk-uber</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-ion</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.fireflysource</groupId>

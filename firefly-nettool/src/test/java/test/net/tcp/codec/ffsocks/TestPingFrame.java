@@ -1,4 +1,4 @@
-package test.net.tcp.codec;
+package test.net.tcp.codec.ffsocks;
 
 import com.firefly.net.tcp.codec.ffsocks.decode.FrameParser;
 import com.firefly.net.tcp.codec.ffsocks.encode.FrameGenerator;

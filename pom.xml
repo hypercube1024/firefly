@@ -238,6 +238,12 @@
                 <artifactId>conscrypt-openjdk-uber</artifactId>
                 <version>1.0.0.RC13</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-ion</artifactId>
+                <version>2.9.3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
