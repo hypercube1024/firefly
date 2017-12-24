@@ -17,4 +17,9 @@ public interface FfsocksParser<T extends Frame> {
         OVERFLOW,
         COMPLETE
     }
+
+    enum State {
+        HEADER,
+        PAYLOAD
+    }
 }

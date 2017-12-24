@@ -20,6 +20,7 @@ public class FrameGenerator {
         generatorMap.put(FrameType.CONTROL, new MessageFrameGenerator());
         generatorMap.put(FrameType.DATA, new MessageFrameGenerator());
         generatorMap.put(FrameType.PING, new PingGenerator());
+        generatorMap.put(FrameType.DISCONNECTION, new DisconnectionFrameGenerator());
     }
 
     public static ByteBuffer generate(Frame frame) {

@@ -26,6 +26,7 @@ public class FrameParser extends AbstractByteBufferMessageHandler<Frame> {
         parserMap.put(FrameType.CONTROL, new MessageFrameParser());
         parserMap.put(FrameType.DATA, new MessageFrameParser());
         parserMap.put(FrameType.PING, new PingFrameParser());
+        parserMap.put(FrameType.DISCONNECTION, new DisconnectionFrameParser());
     }
 
     @Override

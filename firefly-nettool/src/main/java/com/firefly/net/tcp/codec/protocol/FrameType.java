@@ -11,7 +11,7 @@ public enum FrameType {
     CONTROL((byte) 1, "Control frame"),
     DATA((byte) 2, "Data frame"),
     PING((byte) 3, "Ping frame"),
-    ERROR((byte) 4, "Error frame");
+    DISCONNECTION((byte) 4, "Disconnection frame");
 
     private final byte value;
     private final String description;
