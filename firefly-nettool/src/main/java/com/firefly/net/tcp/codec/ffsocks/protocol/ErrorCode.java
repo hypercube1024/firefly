@@ -10,7 +10,8 @@ public enum ErrorCode {
     
     NO_ERROR((byte) 0, "No error"),
     INTERNAL((byte) 1, "Internal error"),
-    BAD_MESSAGE((byte) 2, "Protocol format error");
+    BAD_MESSAGE((byte) 2, "Protocol format error"),
+    IO_ERROR((byte) 3, "I/O error");
 
     private final byte value;
     private final String description;

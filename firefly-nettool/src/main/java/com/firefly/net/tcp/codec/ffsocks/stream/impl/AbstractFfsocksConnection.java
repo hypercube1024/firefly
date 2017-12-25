@@ -1,6 +1,8 @@
-package com.firefly.net.tcp.codec.ffsocks.stream;
+package com.firefly.net.tcp.codec.ffsocks.stream.impl;
 
 import com.firefly.net.tcp.TcpConnection;
+import com.firefly.net.tcp.codec.ffsocks.stream.FfsocksConnection;
+import com.firefly.net.tcp.codec.ffsocks.stream.Session;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,7 +13,6 @@ import java.net.InetSocketAddress;
 abstract public class AbstractFfsocksConnection implements FfsocksConnection {
 
     protected TcpConnection tcpConnection;
-    protected Stream stream;
     protected Session session;
 
     @Override
@@ -102,11 +103,6 @@ abstract public class AbstractFfsocksConnection implements FfsocksConnection {
     @Override
     public void close() throws IOException {
         tcpConnection.close();
-    }
-
-    @Override
-    public Stream getStream() {
-        return stream;
     }
 
     @Override

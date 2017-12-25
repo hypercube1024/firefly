@@ -3,23 +3,28 @@ package com.firefly.net.tcp.codec.ffsocks.stream;
 import com.firefly.net.tcp.codec.ffsocks.model.Request;
 import com.firefly.net.tcp.codec.ffsocks.model.Response;
 
+import java.io.OutputStream;
 import java.util.Map;
 
 /**
  * @author Pengtao Qiu
  */
-public interface FfsocksContext {
+public interface Context extends ContextAttribute {
 
     Request getRequest();
 
     Response getResponse();
 
-    byte[] getData();
+    Stream getStream();
 
-    Map<String, Object> getAttibutes();
+    byte[] getRequestData();
 
-    void setAttribute(String key, Object value);
+    void setRequestData(byte[] requestData);
 
-    Object getAttribute(String key);
+    void end();
+
+    OutputStream getOutputStream();
+
+    FfsocksConnection getConnection();
 
 }

@@ -3,6 +3,7 @@ package test.net.tcp.codec.ffsocks;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.ion.IonObjectMapper;
 import com.firefly.net.tcp.codec.ffsocks.model.Request;
+import com.firefly.net.tcp.codec.ffsocks.model.Response;
 import com.firefly.utils.function.Func0;
 import com.firefly.utils.function.Func1;
 import com.firefly.utils.json.Json;
@@ -12,7 +13,9 @@ import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -29,7 +32,18 @@ public class MetaInfoBenchmark {
     }
 
     public static void main(String[] args) {
-        test();
+        Class<?> current = Response.class;
+        while (true) {
+            Arrays.stream(current.getDeclaredFields())
+                  .map(Field::getName)
+                  .forEach(System.out::println);
+            current = current.getSuperclass();
+            if (current == null || current == Object.class) {
+                break;
+            }
+        }
+
+//        test();
     }
 
     public static void test() {

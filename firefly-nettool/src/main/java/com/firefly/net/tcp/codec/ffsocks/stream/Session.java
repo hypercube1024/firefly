@@ -2,15 +2,18 @@ package com.firefly.net.tcp.codec.ffsocks.stream;
 
 import com.firefly.net.tcp.codec.ffsocks.protocol.ControlFrame;
 import com.firefly.net.tcp.codec.ffsocks.protocol.DisconnectionFrame;
+import com.firefly.net.tcp.codec.ffsocks.protocol.Frame;
 import com.firefly.net.tcp.codec.ffsocks.protocol.PingFrame;
+import com.firefly.utils.concurrent.Callback;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Pengtao Qiu
  */
-public interface Session {
+public interface Session extends ContextAttribute {
 
     Stream getStream(int streamId);
 
@@ -31,11 +34,13 @@ public interface Session {
 
     CompletableFuture<Boolean> disconnect(DisconnectionFrame disconnectionFrame);
 
-    Map<String, Object> getAttibutes();
+    CompletableFuture<Boolean> sendFrame(Frame frame);
 
-    void setAttribute(String key, Object value);
+    CompletableFuture<Boolean> sendFrames(List<Frame> frames);
 
-    Object getAttribute(String key);
+    void sendFrame(Frame frame, Callback callback);
+
+    void sendFrames(List<Frame> frames, Callback callback);
 
     interface Listener {
 

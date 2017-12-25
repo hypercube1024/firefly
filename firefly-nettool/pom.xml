@@ -81,28 +81,23 @@
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-api</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-collectionschema</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-runtime</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>com.fireflysource</groupId>
             <artifactId>firefly-slf4j</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -2,14 +2,14 @@ package com.firefly.net.tcp.codec.ffsocks.stream;
 
 import com.firefly.net.tcp.codec.ffsocks.protocol.ControlFrame;
 import com.firefly.net.tcp.codec.ffsocks.protocol.DataFrame;
+import com.firefly.utils.concurrent.Callback;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Pengtao Qiu
  */
-public interface Stream {
+public interface Stream extends ContextAttribute {
 
     int getId();
 
@@ -17,22 +17,22 @@ public interface Stream {
 
     CompletableFuture<Boolean> send(DataFrame dataFrame);
 
+    void send(ControlFrame controlFrame, Callback callback);
+
+    void send(DataFrame dataFrame, Callback callback);
+
     void setListener(Listener listener);
-
-    Map<String, Object> getAttibutes();
-
-    void setAttribute(String key, Object value);
-
-    Object getAttribute(String key);
 
     State getState();
 
-    interface Listener {
+    Session getSession();
 
+    boolean isCommitted();
+
+    interface Listener {
         void onControl(ControlFrame controlFrame);
 
         void onData(DataFrame dataFrame);
-
     }
 
     enum State {

@@ -25,12 +25,12 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(ByteBuffer byteBuffer) {
-        Promise.Completable<Void> c = new Promise.Completable<>();
+    public CompletableFuture<Boolean> writeToFuture(ByteBuffer byteBuffer) {
+        Promise.Completable<Boolean> c = new Promise.Completable<>();
         try {
             secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
-                    c.succeeded(null);
+                    c.succeeded(true);
                 }
 
                 public void failed(Throwable x) {
@@ -44,12 +44,12 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(ByteBuffer[] byteBuffer) {
-        Promise.Completable<Void> c = new Promise.Completable<>();
+    public CompletableFuture<Boolean> writeToFuture(ByteBuffer[] byteBuffer) {
+        Promise.Completable<Boolean> c = new Promise.Completable<>();
         try {
             secureSession.write(byteBuffer, new Callback() {
                 public void succeeded() {
-                    c.succeeded(null);
+                    c.succeeded(true);
                 }
 
                 public void failed(Throwable x) {
@@ -63,28 +63,28 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(Collection<ByteBuffer> byteBuffer) {
+    public CompletableFuture<Boolean> writeToFuture(Collection<ByteBuffer> byteBuffer) {
         return writeToFuture(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(String message) {
+    public CompletableFuture<Boolean> writeToFuture(String message) {
         return writeToFuture(message, DEFAULT_CHARSET);
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(String message, String charset) {
+    public CompletableFuture<Boolean> writeToFuture(String message, String charset) {
         ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
         return writeToFuture(byteBuffer);
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(FileRegion file) {
-        Promise.Completable<Void> c = new Promise.Completable<>();
+    public CompletableFuture<Boolean> writeToFuture(FileRegion file) {
+        Promise.Completable<Boolean> c = new Promise.Completable<>();
         try {
             secureSession.transferFileRegion(file, new Callback() {
                 public void succeeded() {
-                    c.succeeded(null);
+                    c.succeeded(true);
                 }
 
                 public void failed(Throwable x) {

@@ -12,7 +12,7 @@ public abstract class ByteArrayUtils {
 		List<byte[]> list = new ArrayList<>();
 		int srcPos = 0;
 		int len = size;
-		byte[] dest = null;
+		byte[] dest;
 		int blocks = part - 1;
 		for(int i = 0; i < blocks; i++) {
 			dest = new byte[len];
@@ -36,7 +36,7 @@ public abstract class ByteArrayUtils {
 		List<byte[]> list = new ArrayList<>();
 		int srcPos = 0;
 		int len = size;
-		byte[] dest = null;
+		byte[] dest;
 		while(true) {
 			dest = new byte[len];
 			System.arraycopy(data, srcPos, dest, 0, len);
