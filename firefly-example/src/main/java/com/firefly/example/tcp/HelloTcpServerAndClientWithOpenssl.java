@@ -5,7 +5,7 @@ import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
-import com.firefly.net.tcp.codec.ffsocks.decode.StringParser;
+import com.firefly.net.tcp.codec.flex.decode.StringParser;
 import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.IO;
