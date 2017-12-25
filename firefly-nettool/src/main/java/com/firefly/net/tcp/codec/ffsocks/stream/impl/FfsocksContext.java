@@ -42,6 +42,10 @@ public class FfsocksContext implements Context {
         return response;
     }
 
+    public void setResponse(Response response) {
+        this.response = response;
+    }
+
     @Override
     public Stream getStream() {
         return stream;

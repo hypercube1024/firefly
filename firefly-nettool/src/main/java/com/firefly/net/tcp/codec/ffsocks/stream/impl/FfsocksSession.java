@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -38,8 +39,6 @@ public class FfsocksSession implements Session, Callback {
     protected LinkedList<Pair<Frame, Callback>> frames = new LinkedList<>();
 
     public FfsocksSession(int initStreamId, TcpConnection connection, Listener listener) {
-        Assert.notNull(listener, "The session listener must be not null");
-
         this.idGenerator = new AtomicInteger(initStreamId);
         this.connection = connection;
         this.listener = listener;
@@ -123,11 +122,20 @@ public class FfsocksSession implements Session, Callback {
         }
     }
 
+    protected int generateId() {
+        int id = idGenerator.getAndAdd(2);
+        if (id == 0) {
+            return idGenerator.getAndAdd(2);
+        } else {
+            return id;
+        }
+    }
+
     @Override
     public CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener) {
         boolean newLocalStream = (controlFrame.getStreamId() == 0);
         if (newLocalStream) {
-            int id = idGenerator.getAndAdd(2);
+            int id = generateId();
             Stream.State state;
             if (controlFrame.isEndStream()) {
                 state = Stream.State.LOCALLY_CLOSED;
@@ -144,8 +152,8 @@ public class FfsocksSession implements Session, Callback {
             return sendFrame(newFrame).thenAccept(success -> FfsocksSession.this.listener.onNewStream(stream, newFrame))
                                       .thenApply(success -> stream);
         } else {
+            // new remote stream
             int id = controlFrame.getStreamId();
-            Assert.state(id != 0, "The remote new stream id must be not 0");
             Stream.State state;
             if (controlFrame.isEndStream()) {
                 state = Stream.State.REMOTELY_CLOSED;
@@ -218,6 +226,26 @@ public class FfsocksSession implements Session, Callback {
         Callback.Nested nested = new Callback.Nested(callback) {
             @Override
             public void succeeded() {
+                switch (frame.getType()) {
+                    case CONTROL:
+                    case DATA:
+                        MessageFrame messageFrame = (MessageFrame) frame;
+                        if (messageFrame.isEndStream()) {
+                            Optional.ofNullable(streamMap.get(messageFrame.getStreamId()))
+                                    .map(stream -> (FfsocksStream) stream)
+                                    .ifPresent(stream -> {
+                                        switch (stream.getState()) {
+                                            case OPEN:
+                                                stream.setState(Stream.State.LOCALLY_CLOSED);
+                                                break;
+                                            case REMOTELY_CLOSED:
+                                                stream.setState(Stream.State.CLOSED);
+                                                break;
+                                        }
+                                    });
+                        }
+                        break;
+                }
                 super.succeeded();
                 FfsocksSession.this.succeeded();
             }

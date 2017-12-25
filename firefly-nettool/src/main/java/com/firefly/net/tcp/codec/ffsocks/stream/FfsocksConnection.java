@@ -24,6 +24,8 @@ public interface FfsocksConnection extends Connection {
 
         void content(Context context, byte[] receivedData);
 
+        void contentComplete(Context context);
+
         void messageComplete(Context context);
     }
 
