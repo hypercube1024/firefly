@@ -147,7 +147,7 @@ public class FlexOutputStream extends OutputStream implements Callback {
 
     @Override
     public synchronized void failed(Throwable x) {
-        log.error("Write ffsocks frame error", x);
+        log.error("Write flex frame error", x);
         DisconnectionFrame frame = new DisconnectionFrame(ErrorCode.IO_ERROR.getValue(),
                 x.getMessage().getBytes(StandardCharsets.UTF_8));
         getStream().getSession().disconnect(frame);

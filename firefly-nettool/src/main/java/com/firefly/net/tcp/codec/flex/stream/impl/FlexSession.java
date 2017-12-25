@@ -274,7 +274,7 @@ public class FlexSession implements Session, Callback {
 
     @Override
     public synchronized void failed(Throwable x) {
-        log.error("Write ffsocks frame error", x);
+        log.error("Write flex frame error", x);
         isWriting = false;
         IO.close(connection);
     }

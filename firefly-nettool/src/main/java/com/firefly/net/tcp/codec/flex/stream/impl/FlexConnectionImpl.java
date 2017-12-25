@@ -169,7 +169,7 @@ public class FlexConnectionImpl implements FlexConnection {
 
     protected void onDataFrame(Stream stream, DataFrame dataFrame, Listener listener) {
         FlexContext context = getContext(stream);
-        Assert.state(context != null, "The ffsocks context has not been created");
+        Assert.state(context != null, "The flex context has not been created");
 
         if (dataFrame.isEndFrame()) {
             Optional.ofNullable(dataFrame.getData()).ifPresent(data -> listener.content(context, data));
@@ -279,7 +279,7 @@ public class FlexConnectionImpl implements FlexConnection {
                 Assert.state(stream != null, "The stream has not been created");
 
                 FlexContext context = getContext(stream);
-                Assert.state(context != null, "The ffsocks context has not been created");
+                Assert.state(context != null, "The flex context has not been created");
 
                 context.setResponse(Optional.ofNullable(configuration.getMetaInfoParser()).orElse(MetaInfoParser.DEFAULT)
                                             .parse(metaInfoByteArrayOutputStream.toByteArray(), Response.class));
