@@ -12,6 +12,7 @@ public class FfsocksConfiguration {
     private MetaInfoParser metaInfoParser;
     private MetaInfoGenerator metaInfoGenerator;
     private int defaultOutputBufferSize = 2 * 1024;
+    private int heartbeatInterval;
 
     public MetaInfoParser getMetaInfoParser() {
         return metaInfoParser;
@@ -35,5 +36,13 @@ public class FfsocksConfiguration {
 
     public void setDefaultOutputBufferSize(int defaultOutputBufferSize) {
         this.defaultOutputBufferSize = defaultOutputBufferSize;
+    }
+
+    public int getHeartbeatInterval() {
+        return heartbeatInterval;
+    }
+
+    public void setHeartbeatInterval(int heartbeatInterval) {
+        this.heartbeatInterval = heartbeatInterval;
     }
 }

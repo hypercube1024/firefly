@@ -124,17 +124,23 @@ public class FfsocksSession implements Session, Callback {
             case PING: {
                 PingFrame pingFrame = (PingFrame) frame;
                 if (pingFrame.isReply()) {
+                    log.info("Connection {} received ping reply.", connection.getSessionId());
                     if (listener != null) {
                         listener.onPing(this, pingFrame);
                     }
                 } else {
+                    log.info("Connection {} received ping request.", connection.getSessionId());
                     PingFrame reply = new PingFrame(true);
                     sendFrame(reply);
                 }
             }
             break;
             case DISCONNECTION: {
-                log.info("Received disconnection frame" + frame);
+                DisconnectionFrame disconnectionFrame = (DisconnectionFrame) frame;
+                log.info("Received disconnection frame" + disconnectionFrame);
+                if (listener != null) {
+                    listener.onDisconnect(this, disconnectionFrame);
+                }
                 IO.close(connection);
             }
             break;

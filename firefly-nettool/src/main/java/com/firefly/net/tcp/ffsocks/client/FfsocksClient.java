@@ -2,20 +2,28 @@ package com.firefly.net.tcp.ffsocks.client;
 
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.codec.ffsocks.decode.FrameParser;
+import com.firefly.net.tcp.codec.ffsocks.protocol.PingFrame;
 import com.firefly.net.tcp.codec.ffsocks.stream.FfsocksConnection;
 import com.firefly.net.tcp.codec.ffsocks.stream.impl.FfsocksConnectionImpl;
 import com.firefly.net.tcp.codec.ffsocks.stream.impl.FfsocksSession;
+import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Pengtao Qiu
  */
 public class FfsocksClient extends AbstractLifeCycle {
 
+    public static final String HEARTBEAT_KEY = "_heartbeat";
+
     private ClientFfsocksConfiguration configuration = new ClientFfsocksConfiguration();
     private SimpleTcpClient client;
+    private Scheduler heartbeatScheduler = Schedulers.createScheduler();
 
     public FfsocksClient() {
     }
@@ -41,6 +49,17 @@ public class FfsocksClient extends AbstractLifeCycle {
             FrameParser frameParser = new FrameParser();
             frameParser.complete(session::notifyFrame);
             connection.receive(frameParser::receive);
+
+            if (configuration.getHeartbeatInterval() > 0) {
+                session.setAttribute(HEARTBEAT_KEY, heartbeatScheduler.scheduleAtFixedRate(
+                        () -> ffsocksConnection.getSession().ping(new PingFrame(false)),
+                        configuration.getHeartbeatInterval(),
+                        configuration.getHeartbeatInterval(),
+                        TimeUnit.MILLISECONDS));
+                connection.close(() -> Optional.ofNullable(session.getAttribute(HEARTBEAT_KEY))
+                                               .map(o -> (Scheduler.Future) o)
+                                               .ifPresent(Scheduler.Future::cancel));
+            }
             return ffsocksConnection;
         });
     }
@@ -48,10 +67,16 @@ public class FfsocksClient extends AbstractLifeCycle {
     @Override
     protected void init() {
         client = new SimpleTcpClient(configuration.getTcpConfiguration());
+        if (configuration.getHeartbeatInterval() <= 0) {
+            configuration.setHeartbeatInterval(15 * 1000);
+        }
     }
 
     @Override
     protected void destroy() {
         client.stop();
+        if (configuration.getHeartbeatInterval() > 0) {
+            heartbeatScheduler.stop();
+        }
     }
 }
