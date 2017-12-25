@@ -12,7 +12,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.Phaser;
@@ -71,10 +71,8 @@ public class TestServerAndClient {
                 System.out.println("Server message complete: " + data);
                 Assert.assertThat(data, is("Array [0,1,2,3,4,5,6,7,8,9,]"));
 
-                try (OutputStream outputStream = context.getOutputStream()) {
-                    outputStream.write("Server received array".getBytes(StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    e.printStackTrace();
+                try (PrintWriter writer = context.getPrintWriter()) {
+                    writer.write("Server received array");
                 }
             }
         })).listen(host, port);
@@ -87,14 +85,12 @@ public class TestServerAndClient {
                 @Override
                 public void newRequest(Context context) {
                     System.out.println("Client on new request and send data");
-                    try (OutputStream outputStream = context.getOutputStream()) {
-                        outputStream.write("Array [".getBytes(StandardCharsets.UTF_8));
+                    try (PrintWriter writer = context.getPrintWriter()) {
+                        writer.write("Array [");
                         for (int i = 0; i < 10; i++) {
-                            outputStream.write((i + ",").getBytes(StandardCharsets.UTF_8));
+                            writer.write((i + ","));
                         }
-                        outputStream.write("]".getBytes(StandardCharsets.UTF_8));
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        writer.write("]");
                     }
                 }
 
@@ -151,14 +147,12 @@ public class TestServerAndClient {
                 @Override
                 public void newRequest(Context context) {
                     System.out.println("Server push new request and send data");
-                    try (OutputStream outputStream = context.getOutputStream()) {
-                        outputStream.write("Push Array [".getBytes(StandardCharsets.UTF_8));
+                    try (PrintWriter writer = context.getPrintWriter()) {
+                        writer.write("Push Array [");
                         for (int i = 0; i < 10; i++) {
-                            outputStream.write((i + ",").getBytes(StandardCharsets.UTF_8));
+                            writer.write((i + ","));
                         }
-                        outputStream.write("]".getBytes(StandardCharsets.UTF_8));
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        writer.write("]");
                     }
                 }
 
@@ -237,10 +231,8 @@ public class TestServerAndClient {
                 System.out.println("Client message complete: " + data);
                 Assert.assertThat(data, is("Push Array [0,1,2,3,4,5,6,7,8,9,]"));
 
-                try (OutputStream outputStream = context.getOutputStream()) {
-                    outputStream.write("Client received array".getBytes(StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    e.printStackTrace();
+                try (PrintWriter writer = context.getPrintWriter()) {
+                    writer.write("Client received array");
                 }
             }
         }));

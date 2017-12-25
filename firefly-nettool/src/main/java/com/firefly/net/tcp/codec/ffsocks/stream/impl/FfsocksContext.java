@@ -7,10 +7,12 @@ import com.firefly.net.tcp.codec.ffsocks.stream.Context;
 import com.firefly.net.tcp.codec.ffsocks.stream.FfsocksConnection;
 import com.firefly.net.tcp.codec.ffsocks.stream.Stream;
 import com.firefly.utils.Assert;
-import com.firefly.utils.concurrent.LazyInitProperty;
 import com.firefly.utils.io.IO;
 
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -25,7 +27,8 @@ public class FfsocksContext implements Context {
     protected Response response = new Response();
     protected byte[] requestData;
     protected LazyContextAttribute attribute = new LazyContextAttribute();
-    protected LazyInitProperty<BufferedFfsocksOutputStream> output = new LazyInitProperty<>();
+    protected BufferedFfsocksOutputStream bufferedOutputStream;
+    protected PrintWriter printWriter;
 
     public FfsocksContext(Request request, Stream stream, FfsocksConnection connection) {
         Assert.notNull(request, "The request must be not null.");
@@ -70,8 +73,23 @@ public class FfsocksContext implements Context {
     }
 
     @Override
-    public OutputStream getOutputStream() {
-        return output.getProperty(this::newBufferedFfsocksOutputStream);
+    public synchronized OutputStream getOutputStream() {
+        Assert.state(printWriter == null, "The PrintWriter is initialized");
+
+        if (bufferedOutputStream == null) {
+            bufferedOutputStream = newBufferedFfsocksOutputStream();
+        }
+        return bufferedOutputStream;
+    }
+
+    @Override
+    public synchronized PrintWriter getPrintWriter() {
+        Assert.state(bufferedOutputStream == null, "The OutputStream is initialized");
+
+        if (printWriter == null) {
+            printWriter = new PrintWriter(new OutputStreamWriter(newBufferedFfsocksOutputStream(), StandardCharsets.UTF_8));
+        }
+        return printWriter;
     }
 
     protected BufferedFfsocksOutputStream newBufferedFfsocksOutputStream() {
