@@ -87,6 +87,7 @@ public class FfsocksOutputStream extends OutputStream implements Callback {
             return;
         }
 
+        committed = true;
         byte[] metaInfoData = metaInfoGenerator.generate(metaInfo);
         if (metaInfoData.length > Frame.MAX_PAYLOAD_LENGTH) {
             List<byte[]> splitData = ByteArrayUtils.splitData(metaInfoData, Frame.MAX_PAYLOAD_LENGTH);
@@ -105,6 +106,7 @@ public class FfsocksOutputStream extends OutputStream implements Callback {
             return;
         }
 
+        closed = true;
         commit();
         writeFrame(new DataFrame(true, getStream().getId(), true, null));
     }

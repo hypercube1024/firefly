@@ -6,6 +6,7 @@ import com.firefly.net.tcp.codec.ffsocks.model.Response;
 import com.firefly.net.tcp.codec.ffsocks.stream.Context;
 import com.firefly.net.tcp.codec.ffsocks.stream.FfsocksConnection;
 import com.firefly.net.tcp.codec.ffsocks.stream.Stream;
+import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.LazyInitProperty;
 import com.firefly.utils.io.IO;
 
@@ -21,12 +22,14 @@ public class FfsocksContext implements Context {
     protected final FfsocksConnection connection;
     protected final Stream stream;
 
-    protected Response response;
+    protected Response response = new Response();
     protected byte[] requestData;
     protected LazyContextAttribute attribute = new LazyContextAttribute();
     protected LazyInitProperty<BufferedFfsocksOutputStream> output = new LazyInitProperty<>();
 
     public FfsocksContext(Request request, Stream stream, FfsocksConnection connection) {
+        Assert.notNull(request, "The request must be not null.");
+
         this.request = request;
         this.connection = connection;
         this.stream = stream;
@@ -76,7 +79,7 @@ public class FfsocksContext implements Context {
         MetaInfoGenerator metaInfoGenerator = connection.getConfiguration().getMetaInfoGenerator();
         int bufferSize = connection.getConfiguration().getDefaultOutputBufferSize();
         outputStream = new BufferedFfsocksOutputStream(
-                new FfsocksOutputStream(request, stream, metaInfoGenerator, stream.isCommitted()), bufferSize);
+                new FfsocksOutputStream(response, stream, metaInfoGenerator, stream.isCommitted()), bufferSize);
         return outputStream;
     }
 

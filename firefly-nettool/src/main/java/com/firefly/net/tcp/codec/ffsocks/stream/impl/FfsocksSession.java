@@ -38,10 +38,9 @@ public class FfsocksSession implements Session, Callback {
     protected boolean isWriting;
     protected LinkedList<Pair<Frame, Callback>> frames = new LinkedList<>();
 
-    public FfsocksSession(int initStreamId, TcpConnection connection, Listener listener) {
+    public FfsocksSession(int initStreamId, TcpConnection connection) {
         this.idGenerator = new AtomicInteger(initStreamId);
         this.connection = connection;
-        this.listener = listener;
     }
 
     @Override
@@ -60,7 +59,21 @@ public class FfsocksSession implements Session, Callback {
                 ControlFrame controlFrame = (ControlFrame) frame;
                 Stream stream = streamMap.get(controlFrame.getStreamId());
                 if (stream == null) {
-                    newStream(controlFrame, null);
+                    // new remote stream
+                    int id = controlFrame.getStreamId();
+                    Stream.State state;
+                    if (controlFrame.isEndStream()) {
+                        state = Stream.State.REMOTELY_CLOSED;
+                    } else {
+                        state = Stream.State.OPEN;
+                    }
+                    FfsocksStream remoteNewStream = new FfsocksStream(id, this, null, state, false);
+                    Stream old = streamMap.putIfAbsent(id, remoteNewStream);
+                    Assert.state(old == null, "The stream " + id + " has been created.");
+
+                    if (listener != null) {
+                        remoteNewStream.setListener(listener.onNewStream(remoteNewStream, controlFrame));
+                    }
                 } else {
                     switch (stream.getState()) {
                         case REMOTELY_CLOSED:
@@ -68,10 +81,12 @@ public class FfsocksSession implements Session, Callback {
                             throw new IllegalStateException("The stream has been closed");
                         case LOCALLY_CLOSED: {
                             if (controlFrame.isEndStream()) {
+                                ((FfsocksStream) stream).getListener().onControl(controlFrame);
                                 ((FfsocksStream) stream).setState(Stream.State.CLOSED);
                                 streamMap.remove(stream.getId());
+                            } else {
+                                ((FfsocksStream) stream).getListener().onControl(controlFrame);
                             }
-                            ((FfsocksStream) stream).getListener().onControl(controlFrame);
                         }
                         break;
                         case OPEN:
@@ -92,10 +107,12 @@ public class FfsocksSession implements Session, Callback {
                         throw new IllegalStateException("The stream has been closed");
                     case LOCALLY_CLOSED: {
                         if (dataFrame.isEndStream()) {
+                            ((FfsocksStream) stream).getListener().onData(dataFrame);
                             ((FfsocksStream) stream).setState(Stream.State.CLOSED);
                             streamMap.remove(stream.getId());
+                        } else {
+                            ((FfsocksStream) stream).getListener().onData(dataFrame);
                         }
-                        ((FfsocksStream) stream).getListener().onData(dataFrame);
                     }
                     break;
                     case OPEN:
@@ -107,7 +124,9 @@ public class FfsocksSession implements Session, Callback {
             case PING: {
                 PingFrame pingFrame = (PingFrame) frame;
                 if (pingFrame.isReply()) {
-                    listener.onPing(this, pingFrame);
+                    if (listener != null) {
+                        listener.onPing(this, pingFrame);
+                    }
                 } else {
                     PingFrame reply = new PingFrame(true);
                     sendFrame(reply);
@@ -123,52 +142,26 @@ public class FfsocksSession implements Session, Callback {
     }
 
     protected int generateId() {
-        int id = idGenerator.getAndAdd(2);
-        if (id == 0) {
-            return idGenerator.getAndAdd(2);
-        } else {
-            return id;
-        }
+        return idGenerator.getAndAdd(2);
     }
 
     @Override
     public CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener) {
-        boolean newLocalStream = (controlFrame.getStreamId() == 0);
-        if (newLocalStream) {
-            int id = generateId();
-            Stream.State state;
-            if (controlFrame.isEndStream()) {
-                state = Stream.State.LOCALLY_CLOSED;
-            } else {
-                state = Stream.State.OPEN;
-            }
-
-            Assert.notNull(listener, "The stream listener must be not null");
-            FfsocksStream stream = new FfsocksStream(id, this, listener, state, true);
-            Stream old = streamMap.putIfAbsent(id, stream);
-            Assert.state(old == null, "The stream " + id + " has been created.");
-
-            ControlFrame newFrame = new ControlFrame(controlFrame.isEndStream(), id, controlFrame.isEndFrame(), controlFrame.getData());
-            return sendFrame(newFrame).thenAccept(success -> FfsocksSession.this.listener.onNewStream(stream, newFrame))
-                                      .thenApply(success -> stream);
+        int id = generateId();
+        Stream.State state;
+        if (controlFrame.isEndStream()) {
+            state = Stream.State.LOCALLY_CLOSED;
         } else {
-            // new remote stream
-            int id = controlFrame.getStreamId();
-            Stream.State state;
-            if (controlFrame.isEndStream()) {
-                state = Stream.State.REMOTELY_CLOSED;
-            } else {
-                state = Stream.State.OPEN;
-            }
-            FfsocksStream stream = new FfsocksStream(id, this, null, state, true);
-            Stream old = streamMap.putIfAbsent(id, stream);
-            Assert.state(old == null, "The stream " + id + " has been created.");
-
-            stream.setListener(FfsocksSession.this.listener.onNewStream(stream, controlFrame));
-            CompletableFuture<Stream> completableFuture = new CompletableFuture<>();
-            completableFuture.complete(stream);
-            return completableFuture;
+            state = Stream.State.OPEN;
         }
+
+        Assert.notNull(listener, "The stream listener must be not null");
+        FfsocksStream stream = new FfsocksStream(id, this, listener, state, true);
+        Stream old = streamMap.putIfAbsent(id, stream);
+        Assert.state(old == null, "The stream " + id + " has been created.");
+
+        ControlFrame newFrame = new ControlFrame(controlFrame.isEndStream(), id, controlFrame.isEndFrame(), controlFrame.getData());
+        return sendFrame(newFrame).thenApply(success -> stream);
     }
 
     @Override
