@@ -13,16 +13,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.firefly.codec.http2.stream.DataFrameHandler.handleDataFrame;
 
 public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
-
-    public static final String CONTINUE_KEY = "_continueKey";
 
     private final ServerHTTPHandler serverHTTPHandler;
     HTTP2ServerConnection connection;
@@ -49,19 +45,6 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
         Optional.ofNullable(connection).ifPresent(IO::close);
     }
 
-    private void wait100ContinueComplete(Stream stream) {
-        Callback.Completable completable = (Callback.Completable) stream.getAttribute(CONTINUE_KEY);
-        Optional.ofNullable(completable).filter(c -> !c.isDone()).ifPresent(c -> {
-            try {
-                c.get(2, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                log.error("Wait writing 100 continue frame complete timeout");
-            } catch (Exception e) {
-                log.error("Wait writing 100 continue frame complete", e);
-            }
-        });
-    }
-
     @Override
     public Listener onNewStream(final Stream stream, final HeadersFrame headersFrame) {
         if (!headersFrame.getMetaData().isRequest()) {
@@ -83,19 +66,9 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
                 MetaData.Response continue100 = new MetaData.Response(HttpVersion.HTTP_1_1,
                         HttpStatus.CONTINUE_100, HttpStatus.Code.CONTINUE.getMessage(),
                         new HttpFields(), -1);
-
-                Callback.Completable completable = new Callback.Completable() {
-                    @Override
-                    public void succeeded() {
-                        serverHTTPHandler.headerComplete(request, response, output, connection);
-                        super.succeeded();
-                    }
-                };
-                stream.setAttribute(CONTINUE_KEY, completable);
-                stream.headers(new HeadersFrame(stream.getId(), continue100, null, false), completable);
+                output.writeFrame(new HeadersFrame(stream.getId(), continue100, null, false));
             }
         } else {
-            wait100ContinueComplete(stream);
             serverHTTPHandler.headerComplete(request, response, output, connection);
             if (headersFrame.isEndStream()) {
                 serverHTTPHandler.messageComplete(request, response, output, connection);
@@ -111,7 +84,6 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
                 }
 
                 if (trailerFrame.isEndStream()) {
-                    wait100ContinueComplete(stream);
                     request.setTrailerSupplier(() -> trailerFrame.getMetaData().getFields());
                     serverHTTPHandler.contentComplete(request, response, output, connection);
                     serverHTTPHandler.messageComplete(request, response, output, connection);
@@ -122,7 +94,6 @@ public class HTTP2ServerRequestHandler extends ServerSessionListener.Adapter {
 
             @Override
             public void onData(Stream stream, DataFrame dataFrame, Callback callback) {
-                wait100ContinueComplete(stream);
                 handleDataFrame(dataFrame, callback, request, response, output, connection, serverHTTPHandler);
             }
 
