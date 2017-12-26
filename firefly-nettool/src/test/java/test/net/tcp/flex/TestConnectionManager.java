@@ -30,7 +30,7 @@ public class TestConnectionManager {
 
     @Test
     public void test() {
-        int loop = 2000;
+        int loop = 10;
         Phaser phaser = new Phaser(loop + 1);
         String host = "localhost";
         int port1 = (int) RandomUtils.random(1000, 65534);
