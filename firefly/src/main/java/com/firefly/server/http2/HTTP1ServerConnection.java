@@ -124,24 +124,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         }
 
         void responseH2c() {
-//            getSession().encode(ByteBuffer.wrap(H2C_BYTES));
-            CompletableFuture<Boolean> future = new CompletableFuture<>();
-            getSession().write(ByteBuffer.wrap(H2C_BYTES), new Callback() {
-                @Override
-                public void succeeded() {
-                    future.complete(true);
-                }
-
-                @Override
-                public void failed(Throwable x) {
-                    future.completeExceptionally(x);
-                }
-            });
-            try {
-                future.get(2, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                log.error("Write h2c response exception", e);
-            }
+            getSession().encode(ByteBuffer.wrap(H2C_BYTES));
         }
 
         void response100Continue() {
