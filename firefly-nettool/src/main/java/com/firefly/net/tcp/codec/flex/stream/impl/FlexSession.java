@@ -3,6 +3,8 @@ package com.firefly.net.tcp.codec.flex.stream.impl;
 import com.firefly.net.tcp.TcpConnection;
 import com.firefly.net.tcp.codec.flex.encode.FrameGenerator;
 import com.firefly.net.tcp.codec.flex.protocol.*;
+import com.firefly.net.tcp.codec.flex.stream.Context;
+import com.firefly.net.tcp.codec.flex.stream.FlexConnection;
 import com.firefly.net.tcp.codec.flex.stream.Session;
 import com.firefly.net.tcp.codec.flex.stream.Stream;
 import com.firefly.utils.Assert;
@@ -21,6 +23,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl.CONTEXT_KEY;
+import static com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl.CTX_LISTENER_KEY;
 
 /**
  * @author Pengtao Qiu
@@ -53,6 +58,18 @@ public class FlexSession implements Session, Callback {
         return streamMap;
     }
 
+    protected void notifyNewStream(Stream stream, boolean local) {
+
+    }
+
+    protected void notifyCloseStream(Stream stream) {
+        FlexConnection.Listener listener = (FlexConnection.Listener) stream.getAttribute(CTX_LISTENER_KEY);
+        Context context = (Context) stream.getAttribute(CONTEXT_KEY);
+        if (listener != null && context != null) {
+            listener.close(context);
+        }
+    }
+
     public void notifyFrame(Frame frame) {
         switch (frame.getType()) {
             case CONTROL: {
@@ -71,6 +88,10 @@ public class FlexSession implements Session, Callback {
                     Stream old = streamMap.putIfAbsent(id, remoteNewStream);
                     Assert.state(old == null, "The stream " + id + " has been created.");
 
+//                    if (log.isDebugEnabled()) {
+//                        log.debug("Received a new remote stream: {}", remoteNewStream.toString());
+//                    }
+                    notifyNewStream(remoteNewStream, false);
                     if (listener != null) {
                         remoteNewStream.setListener(listener.onNewStream(remoteNewStream, controlFrame));
                     }
@@ -84,6 +105,10 @@ public class FlexSession implements Session, Callback {
                                 ((FlexStream) stream).getListener().onControl(controlFrame);
                                 ((FlexStream) stream).setState(Stream.State.CLOSED);
                                 streamMap.remove(stream.getId());
+//                                if (log.isDebugEnabled()) {
+//                                    log.debug("Closed a stream: {}", stream.toString());
+//                                }
+                                notifyCloseStream(stream);
                             } else {
                                 ((FlexStream) stream).getListener().onControl(controlFrame);
                             }
@@ -110,6 +135,10 @@ public class FlexSession implements Session, Callback {
                             ((FlexStream) stream).getListener().onData(dataFrame);
                             ((FlexStream) stream).setState(Stream.State.CLOSED);
                             streamMap.remove(stream.getId());
+//                            if (log.isDebugEnabled()) {
+//                                log.debug("Closed a stream: {}", stream.toString());
+//                            }
+                            notifyCloseStream(stream);
                         } else {
                             ((FlexStream) stream).getListener().onData(dataFrame);
                         }
@@ -162,12 +191,16 @@ public class FlexSession implements Session, Callback {
         }
 
         Assert.notNull(listener, "The stream listener must be not null");
-        FlexStream stream = new FlexStream(id, this, listener, state, true);
-        Stream old = streamMap.putIfAbsent(id, stream);
+        FlexStream localNewStream = new FlexStream(id, this, listener, state, true);
+        Stream old = streamMap.putIfAbsent(id, localNewStream);
         Assert.state(old == null, "The stream " + id + " has been created.");
 
+//        if (log.isDebugEnabled()) {
+//            log.debug("Create a new local stream: {}", localNewStream.toString());
+//        }
+        notifyNewStream(localNewStream, true);
         ControlFrame newFrame = new ControlFrame(controlFrame.isEndStream(), id, controlFrame.isEndFrame(), controlFrame.getData());
-        return sendFrame(newFrame).thenApply(success -> stream);
+        return sendFrame(newFrame).thenApply(success -> localNewStream);
     }
 
     @Override
@@ -280,6 +313,10 @@ public class FlexSession implements Session, Callback {
     }
 
     protected synchronized void _writeFrame(Frame frame, Callback callback) {
+//        if (log.isDebugEnabled()) {
+//            log.debug("Send a frame: {}", frame.toString());
+//        }
+        System.out.println("s frame: " + frame);
         connection.write(FrameGenerator.generate(frame), callback::succeeded, callback::failed);
     }
 

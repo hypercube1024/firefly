@@ -75,6 +75,16 @@ public class TestServerAndClient {
                     writer.write("Server received array");
                 }
             }
+
+            @Override
+            public void close(Context context) {
+                System.out.println("Server stream " + context.getStream().getId() + " closed");
+            }
+
+            @Override
+            public void exception(Context context, Throwable t) {
+                t.printStackTrace();
+            }
         })).listen(host, port);
 
         MultiplexingClient client = new MultiplexingClient();
@@ -124,6 +134,16 @@ public class TestServerAndClient {
                     Assert.assertThat(context.getResponse().getMessage(), is("OK"));
                     Assert.assertThat(data, is("Server received array"));
                     phaser.arrive();
+                }
+
+                @Override
+                public void close(Context context) {
+                    System.out.println("Client stream " + context.getStream().getId() + " closed");
+                }
+
+                @Override
+                public void exception(Context context, Throwable t) {
+                    t.printStackTrace();
                 }
             });
         });
@@ -187,6 +207,16 @@ public class TestServerAndClient {
                     Assert.assertThat(data, is("Client received array"));
                     phaser.arrive();
                 }
+
+                @Override
+                public void close(Context context) {
+                    System.out.println("Server stream " + context.getStream().getId() + " closed");
+                }
+
+                @Override
+                public void exception(Context context, Throwable t) {
+                    t.printStackTrace();
+                }
             });
         }).listen(host, port);
 
@@ -234,6 +264,16 @@ public class TestServerAndClient {
                 try (PrintWriter writer = context.getPrintWriter()) {
                     writer.write("Client received array");
                 }
+            }
+
+            @Override
+            public void close(Context context) {
+                System.out.println("Client stream " + context.getStream().getId() + " closed");
+            }
+
+            @Override
+            public void exception(Context context, Throwable t) {
+                t.printStackTrace();
             }
         }));
 

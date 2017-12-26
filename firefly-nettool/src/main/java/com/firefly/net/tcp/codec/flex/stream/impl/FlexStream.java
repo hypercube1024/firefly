@@ -99,4 +99,13 @@ public class FlexStream implements Stream {
     public Object getAttribute(String key) {
         return attribute.getAttribute(key);
     }
+
+    @Override
+    public String toString() {
+        return "FlexStream{" +
+                "id=" + id +
+                ", committed=" + committed +
+                ", state=" + state +
+                '}';
+    }
 }

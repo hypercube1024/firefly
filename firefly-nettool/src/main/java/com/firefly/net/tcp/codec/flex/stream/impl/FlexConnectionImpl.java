@@ -31,6 +31,7 @@ public class FlexConnectionImpl implements FlexConnection {
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     public static final String CONTEXT_KEY = "_context";
+    public static final String CTX_LISTENER_KEY = "_contextListener";
 
     protected final TcpConnection tcpConnection;
     protected final Session session;
@@ -140,7 +141,7 @@ public class FlexConnectionImpl implements FlexConnection {
     @Override
     public void newRequest(Request request, Listener listener) {
         Assert.notNull(request, "The request must be not null");
-        Assert.notNull(listener, "The listener must be not null");
+        Assert.notNull(listener, "The context listener must be not null");
 
         byte[] data = Optional.ofNullable(configuration.getMetaInfoGenerator()).orElse(MetaInfoGenerator.DEFAULT)
                               .generate(request);
@@ -148,13 +149,14 @@ public class FlexConnectionImpl implements FlexConnection {
                 new NewRequestStreamListener(listener)).thenAccept(stream -> {
             FlexContext context = new FlexContext(request, stream, FlexConnectionImpl.this);
             stream.setAttribute(CONTEXT_KEY, context);
+            stream.setAttribute(CTX_LISTENER_KEY, listener);
             listener.newRequest(context);
         });
     }
 
     @Override
     public void onRequest(Listener listener) {
-        Assert.notNull(listener, "The listener must be not null");
+        Assert.notNull(listener, "The context listener must be not null");
         session.setListener(new ReceivedRequestSessionListener(listener));
     }
 
@@ -171,15 +173,19 @@ public class FlexConnectionImpl implements FlexConnection {
         FlexContext context = getContext(stream);
         Assert.state(context != null, "The flex context has not been created");
 
-        if (dataFrame.isEndFrame()) {
-            Optional.ofNullable(dataFrame.getData()).ifPresent(data -> listener.content(context, data));
-            listener.contentComplete(context);
+        try {
+            if (dataFrame.isEndFrame()) {
+                Optional.ofNullable(dataFrame.getData()).ifPresent(data -> listener.content(context, data));
+                listener.contentComplete(context);
 
-            if (dataFrame.isEndStream()) {
-                listener.messageComplete(context);
+                if (dataFrame.isEndStream()) {
+                    listener.messageComplete(context);
+                }
+            } else {
+                Optional.ofNullable(dataFrame.getData()).ifPresent(data -> listener.content(context, data));
             }
-        } else {
-            Optional.ofNullable(dataFrame.getData()).ifPresent(data -> listener.content(context, data));
+        } catch (Exception e) {
+            listener.exception(context, e);
         }
     }
 
@@ -213,10 +219,15 @@ public class FlexConnectionImpl implements FlexConnection {
                 saveData(controlFrame.getData());
                 FlexContext context = createContext(stream);
                 stream.setAttribute(CONTEXT_KEY, context);
-                listener.newRequest(context);
+                stream.setAttribute(CTX_LISTENER_KEY, listener);
 
-                if (controlFrame.isEndStream()) {
-                    listener.messageComplete(context);
+                try {
+                    listener.newRequest(context);
+                    if (controlFrame.isEndStream()) {
+                        listener.messageComplete(context);
+                    }
+                } catch (Exception e) {
+                    listener.exception(context, e);
                 }
             } else {
                 saveData(controlFrame.getData());
@@ -285,10 +296,14 @@ public class FlexConnectionImpl implements FlexConnection {
                                             .parse(metaInfoByteArrayOutputStream.toByteArray(), Response.class));
                 Assert.state(context.getResponse() != null, "Parse response meta info failure");
 
-                listener.newResponse(context);
+                try {
+                    listener.newResponse(context);
 
-                if (controlFrame.isEndStream()) {
-                    listener.messageComplete(context);
+                    if (controlFrame.isEndStream()) {
+                        listener.messageComplete(context);
+                    }
+                } catch (Exception e) {
+                    listener.exception(context, e);
                 }
             } else {
                 saveData(controlFrame.getData());

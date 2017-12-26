@@ -27,6 +27,14 @@ public interface FlexConnection extends Connection {
         void contentComplete(Context context);
 
         void messageComplete(Context context);
+
+        default void exception(Context context, Throwable throwable) {
+
+        }
+
+        default void close(Context context) {
+            
+        }
     }
 
 }
