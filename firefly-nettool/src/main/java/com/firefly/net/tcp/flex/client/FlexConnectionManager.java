@@ -49,11 +49,8 @@ public class FlexConnectionManager extends AbstractLifeCycle {
     }
 
     public FlexConnection getConnection() {
-        List<HostPort> list = concurrentMap.keySet().stream()
-                                           .sorted(Comparator.comparing(HostPort::toString))
-                                           .collect(Collectors.toList());
-        int i = Math.abs(index.getAndAdd(1)) % list.size();
-        return Optional.ofNullable(list.get(i)).map(this::getConnection)
+        int i = Math.abs(index.getAndAdd(1)) % hostPorts.size();
+        return Optional.ofNullable(hostPorts.get(i)).map(this::getConnection)
                        .orElseThrow(() -> new ConnectionException("Can not get the connection"));
     }
 
