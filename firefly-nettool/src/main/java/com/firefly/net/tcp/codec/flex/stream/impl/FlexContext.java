@@ -58,16 +58,6 @@ public class FlexContext implements Context {
     }
 
     @Override
-    public byte[] getRequestData() {
-        return requestData;
-    }
-
-    @Override
-    public void setRequestData(byte[] requestData) {
-        this.requestData = requestData;
-    }
-
-    @Override
     public void end() {
         IO.close(getOutputStream());
     }

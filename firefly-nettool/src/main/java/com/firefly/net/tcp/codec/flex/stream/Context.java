@@ -17,10 +17,6 @@ public interface Context extends ContextAttribute {
 
     Stream getStream();
 
-    byte[] getRequestData();
-
-    void setRequestData(byte[] requestData);
-
     void end();
 
     OutputStream getOutputStream();
