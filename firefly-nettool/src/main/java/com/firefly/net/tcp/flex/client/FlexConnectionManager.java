@@ -57,21 +57,27 @@ public class FlexConnectionManager extends AbstractLifeCycle {
     public FlexConnection getConnection(HostPort hostPort) {
         FlexConnection connection = concurrentMap.computeIfAbsent(hostPort, this::createConnection);
         if (connection == null) {
-            throw new ConnectionException("Can not get the connection: " + hostPort);
+            concurrentMap.remove(hostPort);
+            return null;
         }
         if (connection.isOpen()) {
             return connection;
         } else {
             FlexConnection newConnection = createConnection(hostPort);
-            concurrentMap.put(hostPort, newConnection);
-            return newConnection;
+            if (newConnection != null) {
+                concurrentMap.put(hostPort, newConnection);
+                return newConnection;
+            } else {
+                concurrentMap.remove(hostPort);
+                return null;
+            }
         }
     }
 
     public FlexConnection createConnection(HostPort hostPort) {
         return RetryTaskBuilder.<FlexConnection>newTask()
                 .retry(ifException(ex -> ex != null && ex.getCause() instanceof TimeoutException))
-                .stop(afterExecute(5))
+                .stop(afterExecute(10))
                 .wait(exponentialWait(10, TimeUnit.MILLISECONDS))
                 .task(() -> this.connect(hostPort))
                 .call();
@@ -86,11 +92,14 @@ public class FlexConnectionManager extends AbstractLifeCycle {
     }
 
     public List<HostPort> getHostPorts() {
-        return Collections.unmodifiableList(hostPorts);
+        return hostPorts;
     }
 
     private List<HostPort> convert(Set<String> urls) {
-        return urls.stream().map(HostPort::new).sorted(Comparator.comparing(HostPort::toString)).collect(Collectors.toList());
+        return Collections.unmodifiableList(
+                urls.stream().map(HostPort::new)
+                    .sorted(Comparator.comparing(HostPort::toString))
+                    .collect(Collectors.toList()));
     }
 
     @Override

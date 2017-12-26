@@ -8,6 +8,8 @@ import com.firefly.net.tcp.flex.client.MultiplexingClientConfiguration;
 import com.firefly.net.tcp.flex.server.MultiplexingServer;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.IO;
+import com.firefly.utils.lang.AbstractLifeCycle;
+import com.firefly.utils.lang.HostPort;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,10 +17,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.Phaser;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.is;
 
@@ -31,18 +34,15 @@ public class TestConnectionManager {
     public void test() {
         int loop = 10;
         Phaser phaser = new Phaser(loop + 1);
-        String host = "localhost";
-        int port1 = (int) RandomUtils.random(1000, 65534);
-        int port2 = (int) RandomUtils.random(1000, 65534);
-        int port3 = (int) RandomUtils.random(1000, 65534);
-
-        MultiplexingServer server1 = createServer(host, port1);
-        MultiplexingServer server2 = createServer(host, port2);
-        MultiplexingServer server3 = createServer(host, port3);
-
+        List<HostPort> addresses = createAddresses(3);
+        List<MultiplexingServer> servers = addresses.stream()
+                                                    .map(a -> createServer(a.getHost(), a.getPort()))
+                                                    .collect(Collectors.toList());
 
         MultiplexingClientConfiguration configuration = new MultiplexingClientConfiguration();
-        configuration.setServerUrlSet(new HashSet<>(Arrays.asList(getUrl(host, port1), getUrl(host, port2), getUrl(host, port3))));
+        configuration.setServerUrlSet(addresses.stream()
+                                               .map(a -> a.getHost() + ":" + a.getPort())
+                                               .collect(Collectors.toSet()));
         MultiplexingClient client = new MultiplexingClient(configuration);
         client.start();
 
@@ -112,16 +112,14 @@ public class TestConnectionManager {
         }
 
         phaser.arriveAndAwaitAdvance();
-        server1.stop();
-        server2.stop();
-        server3.stop();
+        servers.forEach(AbstractLifeCycle::stop);
         client.stop();
     }
 
-
-
-    private String getUrl(String host, int port) {
-        return host + ":" + port;
+    public List<HostPort> createAddresses(int number) {
+        return IntStream.range(0, number).boxed()
+                        .map(i -> new HostPort("localhost:" + (int) RandomUtils.random(1000, 65534)))
+                        .collect(Collectors.toList());
     }
 
     public MultiplexingServer createServer(String host, int port) {

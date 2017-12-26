@@ -25,7 +25,6 @@ public class FlexContext implements Context {
     protected final Stream stream;
 
     protected Response response = new Response();
-    protected byte[] requestData;
     protected LazyContextAttribute attribute = new LazyContextAttribute();
     protected FlexBufferedOutputStream bufferedOutputStream;
     protected PrintWriter printWriter;
@@ -59,7 +58,13 @@ public class FlexContext implements Context {
 
     @Override
     public void end() {
-        IO.close(getOutputStream());
+        if (bufferedOutputStream != null) {
+            IO.close(bufferedOutputStream);
+        } else if (printWriter != null) {
+            IO.close(printWriter);
+        } else {
+            IO.close(getOutputStream());
+        }
     }
 
     @Override
