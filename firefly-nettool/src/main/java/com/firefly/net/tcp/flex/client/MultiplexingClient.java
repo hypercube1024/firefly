@@ -6,6 +6,7 @@ import com.firefly.net.tcp.codec.flex.protocol.PingFrame;
 import com.firefly.net.tcp.codec.flex.stream.FlexConnection;
 import com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl;
 import com.firefly.net.tcp.codec.flex.stream.impl.FlexSession;
+import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action1;
@@ -30,6 +31,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
     private SimpleTcpClient client;
     private Action1<FlexConnection> accept;
     private Scheduler heartbeatScheduler = Schedulers.createScheduler();
+    private FlexConnectionManager flexConnectionManager;
 
     public MultiplexingClient() {
     }
@@ -52,7 +54,9 @@ public class MultiplexingClient extends AbstractLifeCycle {
     }
 
     public CompletableFuture<FlexConnection> connect(String host, int port) {
-        start();
+        if (!useConnectionManager()) {
+            start();
+        }
         return client.connect(host, port).thenApply(connection -> {
             // create flex connection
             FlexSession session = new FlexSession(1, connection);
@@ -83,11 +87,26 @@ public class MultiplexingClient extends AbstractLifeCycle {
         });
     }
 
+    public FlexConnectionManager getFlexConnectionManager() {
+        return flexConnectionManager;
+    }
+
+    public FlexConnection getConnection() {
+        return flexConnectionManager.getConnection();
+    }
+
+    public boolean useConnectionManager() {
+        return !CollectionUtils.isEmpty(configuration.getServerUrlSet());
+    }
+
     @Override
     protected void init() {
         client = new SimpleTcpClient(configuration.getTcpConfiguration());
         if (configuration.getHeartbeatInterval() <= 0) {
             configuration.setHeartbeatInterval(15 * 1000);
+        }
+        if (useConnectionManager()) {
+            flexConnectionManager = new FlexConnectionManager(this, configuration.getServerUrlSet());
         }
     }
 
@@ -97,5 +116,6 @@ public class MultiplexingClient extends AbstractLifeCycle {
         if (configuration.getHeartbeatInterval() > 0) {
             heartbeatScheduler.stop();
         }
+        Optional.ofNullable(flexConnectionManager).ifPresent(FlexConnectionManager::stop);
     }
 }

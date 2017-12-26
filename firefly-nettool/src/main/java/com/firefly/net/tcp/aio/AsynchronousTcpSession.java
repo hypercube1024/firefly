@@ -178,9 +178,9 @@ public class AsynchronousTcpSession implements Session {
 
 
         private void writingCompletedCallback(Callback callback) {
-            callback.succeeded();
             outputLock.lock();
             try {
+                callback.succeeded();
                 sessionMetric.getOutputBufferQueueSize().update(outputBuffer.size());
                 if (outputBuffer.isEmpty()) {
                     isWriting = false;
@@ -240,10 +240,10 @@ public class AsynchronousTcpSession implements Session {
                 outputBuffer.clear();
                 isWriting = false;
                 shutdownSocketChannel();
+                callback.failed(t);
             } finally {
                 outputLock.unlock();
             }
-            callback.failed(t);
         }
     }
 

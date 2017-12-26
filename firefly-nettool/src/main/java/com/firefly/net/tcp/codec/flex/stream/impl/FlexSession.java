@@ -11,11 +11,9 @@ import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
 import com.firefly.utils.io.IO;
-import com.firefly.utils.lang.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,8 +38,6 @@ public class FlexSession implements Session, Callback {
     protected final LazyContextAttribute attribute = new LazyContextAttribute();
 
     protected volatile Listener listener;
-    protected boolean isWriting;
-    protected LinkedList<Pair<Frame, Callback>> frames = new LinkedList<>();
 
     public FlexSession(int initStreamId, TcpConnection connection) {
         this.idGenerator = new AtomicInteger(initStreamId);
@@ -255,7 +251,7 @@ public class FlexSession implements Session, Callback {
     }
 
     @Override
-    public synchronized void sendFrame(Frame frame, Callback callback) {
+    public void sendFrame(Frame frame, Callback callback) {
         Callback.Nested nested = new Callback.Nested(callback) {
             @Override
             public void succeeded() {
@@ -289,31 +285,20 @@ public class FlexSession implements Session, Callback {
                 FlexSession.this.failed(x);
             }
         };
-        if (isWriting) {
-            frames.offer(new Pair<>(frame, nested));
-        } else {
-            _writeFrame(frame, nested);
-        }
+        _writeFrame(frame, nested);
     }
 
     @Override
-    public synchronized void succeeded() {
-        Pair<Frame, Callback> pair = frames.poll();
-        if (pair != null) {
-            _writeFrame(pair.first, pair.second);
-        } else {
-            isWriting = false;
-        }
+    public void succeeded() {
     }
 
     @Override
-    public synchronized void failed(Throwable x) {
+    public void failed(Throwable x) {
         log.error("Write flex frame error", x);
-        isWriting = false;
         IO.close(connection);
     }
 
-    protected synchronized void _writeFrame(Frame frame, Callback callback) {
+    protected void _writeFrame(Frame frame, Callback callback) {
         if (log.isDebugEnabled()) {
             log.debug("Send a frame: {}", frame.toString());
         }

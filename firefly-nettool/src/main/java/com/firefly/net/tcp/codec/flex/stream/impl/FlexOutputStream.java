@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,10 +31,7 @@ public class FlexOutputStream extends OutputStream implements Callback {
 
     protected boolean closed;
     protected boolean committed;
-
-    private boolean isWriting;
-    private boolean noContent = true;
-    protected LinkedList<Frame> frames = new LinkedList<>();
+    protected boolean noContent = true;
 
     public FlexOutputStream(MetaInfo metaInfo, Stream stream, MetaInfoGenerator metaInfoGenerator, boolean committed) {
         Assert.notNull(metaInfo, "The meta info must be not null");
@@ -112,15 +108,6 @@ public class FlexOutputStream extends OutputStream implements Callback {
     }
 
     protected synchronized void writeFrame(Frame frame) {
-        if (isWriting) {
-            frames.offer(frame);
-        } else {
-            _writeFrame(frame);
-        }
-    }
-
-    protected synchronized void _writeFrame(Frame frame) {
-        isWriting = true;
         switch (frame.getType()) {
             case CONTROL:
                 ControlFrame controlFrame = (ControlFrame) frame;
@@ -136,13 +123,7 @@ public class FlexOutputStream extends OutputStream implements Callback {
     }
 
     @Override
-    public synchronized void succeeded() {
-        Frame frame = frames.poll();
-        if (frame != null) {
-            _writeFrame(frame);
-        } else {
-            isWriting = false;
-        }
+    public void succeeded() {
     }
 
     @Override
@@ -152,7 +133,6 @@ public class FlexOutputStream extends OutputStream implements Callback {
                 x.getMessage().getBytes(StandardCharsets.UTF_8));
         getStream().getSession().disconnect(frame);
         closed = true;
-        isWriting = false;
     }
 
     public Stream getStream() {

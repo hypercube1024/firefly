@@ -117,4 +117,18 @@ public class TestRetry {
         Assert.assertTrue(ret < 5 || ret >= 9);
     }
 
+    @Test
+    public void testException() {
+        Boolean success = RetryTaskBuilder.<Boolean>newTask()
+                .retry(ifException(ex -> ex instanceof RuntimeException))
+                .stop(afterExecute(5))
+                .wait(exponentialWait(10, TimeUnit.MILLISECONDS))
+                .task(() -> {
+                    System.out.println("execute task and exponential wait");
+                    throw new RuntimeException("task exception");
+                })
+                .call();
+        Assert.assertNull(success);
+    }
+
 }
