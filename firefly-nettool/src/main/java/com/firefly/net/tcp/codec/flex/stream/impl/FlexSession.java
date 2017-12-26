@@ -182,7 +182,7 @@ public class FlexSession implements Session, Callback {
     }
 
     @Override
-    public synchronized CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener) {
+    public CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener) {
         int id = generateId();
         Stream.State state;
         if (controlFrame.isEndStream()) {
@@ -317,7 +317,6 @@ public class FlexSession implements Session, Callback {
         if (log.isDebugEnabled()) {
             log.debug("Send a frame: {}", frame.toString());
         }
-        System.out.println("s frame: " + frame);
         connection.write(FrameGenerator.generate(frame), callback::succeeded, callback::failed);
     }
 
