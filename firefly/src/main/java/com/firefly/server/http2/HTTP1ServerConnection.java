@@ -229,6 +229,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
                             tcpSession, secureSession, serverSessionListener);
                     tcpSession.attachObject(http2ServerConnection);
+                    upgradeHTTP2Complete.compareAndSet(false, true);
                     http2ServerConnection.getParser().standardUpgrade();
 
                     serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
@@ -238,7 +239,6 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     sessionSPI.onFrame(settingsFrame);
                     sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
                 }
-                upgradeHTTP2Complete.compareAndSet(false, true);
                 return true;
             }
             case WEB_SOCKET: {
@@ -250,4 +250,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         }
     }
 
+    public boolean getUpgradeHTTP2Complete() {
+        return upgradeHTTP2Complete.get();
+    }
 }

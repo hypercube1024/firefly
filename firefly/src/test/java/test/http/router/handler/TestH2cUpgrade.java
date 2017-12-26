@@ -31,9 +31,9 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
-    private static final int timeout = 2 * 1000;
+    private static final int timeout = 20 * 1000;
     private static final int corePoolSize = 4;
-    private static final int loop = 5;
+    private static final int loop = 10;
 
     @Test
     public void test() throws Exception {

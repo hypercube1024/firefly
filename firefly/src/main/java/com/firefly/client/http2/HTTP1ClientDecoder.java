@@ -29,6 +29,10 @@ public class HTTP1ClientDecoder extends DecoderChain {
                 final HttpParser parser = http1Connection.getParser();
                 while (buf.hasRemaining()) {
                     parser.parseNext(buf);
+                    if (http1Connection.getUpgradeHTTP2Complete()) {
+                        next.decode(buf, session);
+                        break;
+                    }
                 }
                 break;
             default:

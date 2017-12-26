@@ -377,4 +377,11 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         return tcpSession.isOpen() && !upgradeHTTP2Complete.get() && !upgradeWebSocketComplete.get();
     }
 
+    public boolean getUpgradeHTTP2Complete() {
+        return upgradeHTTP2Complete.get();
+    }
+
+    public boolean getUpgradeWebSocketComplete() {
+        return upgradeWebSocketComplete.get();
+    }
 }
