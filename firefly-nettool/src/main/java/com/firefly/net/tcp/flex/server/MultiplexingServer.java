@@ -66,7 +66,7 @@ public class MultiplexingServer extends AbstractLifeCycle {
             // set frame parser
             FrameParser frameParser = new FrameParser();
             frameParser.complete(session::notifyFrame);
-            connection.receive(frameParser::receive).exception(ex -> {
+            connection.receive(frameParser::receive).onException(ex -> {
                 log.error("Connection " + connection.getSessionId() + " exception.", ex);
                 IO.close(connection);
             });

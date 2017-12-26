@@ -68,7 +68,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
             // set frame parser
             FrameParser frameParser = new FrameParser();
             frameParser.complete(session::notifyFrame);
-            connection.receive(frameParser::receive).exception(ex -> {
+            connection.receive(frameParser::receive).onException(ex -> {
                 log.error("Connection " + connection.getSessionId() + " exception.", ex);
                 IO.close(connection);
             });
@@ -79,9 +79,9 @@ public class MultiplexingClient extends AbstractLifeCycle {
                         configuration.getHeartbeatInterval(),
                         configuration.getHeartbeatInterval(),
                         TimeUnit.MILLISECONDS));
-                connection.close(() -> Optional.ofNullable(session.getAttribute(HEARTBEAT_KEY))
-                                               .map(o -> (Scheduler.Future) o)
-                                               .ifPresent(Scheduler.Future::cancel));
+                connection.onClose(() -> Optional.ofNullable(session.getAttribute(HEARTBEAT_KEY))
+                                                 .map(o -> (Scheduler.Future) o)
+                                                 .ifPresent(Scheduler.Future::cancel));
             }
             return flexConnection;
         });

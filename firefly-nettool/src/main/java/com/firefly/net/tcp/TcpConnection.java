@@ -62,9 +62,9 @@ public interface TcpConnection extends Connection {
 
     TcpConnection write(FileRegion file);
 
-    TcpConnection close(Action0 closeCallback);
+    TcpConnection onClose(Action0 closeCallback);
 
-    TcpConnection exception(Action1<Throwable> exception);
+    TcpConnection onException(Action1<Throwable> exception);
 
     void closeNow();
 
