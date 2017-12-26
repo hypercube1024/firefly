@@ -24,7 +24,6 @@ public abstract class AbstractHTTPHandler implements Handler {
     @Override
     public void exceptionCaught(Session session, Throwable t) throws Throwable {
         try {
-            t.printStackTrace();
             log.error("HTTP handler exception", t);
             if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
                 try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {

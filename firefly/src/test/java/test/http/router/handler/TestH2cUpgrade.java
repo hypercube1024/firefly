@@ -31,8 +31,9 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
-    private int timeout = 3 * 1000;
-    private int corePoolSize = 4;
+    private static final int timeout = 2 * 1000;
+    private static final int corePoolSize = 4;
+    private static final int loop = 5;
 
     @Test
     public void test() throws Exception {
@@ -45,7 +46,6 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTPClientConnection httpConnection = promise.get();
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
-        int loop = 10;
         Phaser phaser = new Phaser(loop * 3 + 1);
         clientConnection.close(c -> {
             phaser.forceTermination();
@@ -106,7 +106,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         public boolean content(ByteBuffer item, MetaData.Request request, MetaData.Response response,
                                HTTPOutputStream output,
                                HTTPConnection connection) {
-//            System.out.println("client received data: " + BufferUtils.toUTF8String(item));
+            System.out.println("client received data: " + BufferUtils.toUTF8String(item));
             contentList.add(item);
             return false;
         }

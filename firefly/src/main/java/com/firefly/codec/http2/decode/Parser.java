@@ -236,6 +236,7 @@ public class Parser {
 
             @Override
             public void onConnectionFailure(int error, String reason) {
+                System.out.println("connection failure -> " + error + ", " + reason);
                 log.warn("Connection failure: {}/{}", error, reason);
             }
         }
