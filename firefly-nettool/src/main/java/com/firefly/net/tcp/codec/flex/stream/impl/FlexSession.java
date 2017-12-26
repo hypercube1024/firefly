@@ -88,34 +88,35 @@ public class FlexSession implements Session, Callback {
                     Stream old = streamMap.putIfAbsent(id, remoteNewStream);
                     Assert.state(old == null, "The stream " + id + " has been created.");
 
-//                    if (log.isDebugEnabled()) {
-//                        log.debug("Received a new remote stream: {}", remoteNewStream.toString());
-//                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("Received a new remote stream: {}", remoteNewStream.toString());
+                    }
                     notifyNewStream(remoteNewStream, false);
                     if (listener != null) {
                         remoteNewStream.setListener(listener.onNewStream(remoteNewStream, controlFrame));
                     }
                 } else {
+                    FlexStream flexStream = (FlexStream) stream;
                     switch (stream.getState()) {
                         case REMOTELY_CLOSED:
                         case CLOSED:
                             throw new IllegalStateException("The stream has been closed");
                         case LOCALLY_CLOSED: {
                             if (controlFrame.isEndStream()) {
-                                ((FlexStream) stream).getListener().onControl(controlFrame);
-                                ((FlexStream) stream).setState(Stream.State.CLOSED);
+                                flexStream.getListener().onControl(controlFrame);
+                                flexStream.setState(Stream.State.CLOSED);
                                 streamMap.remove(stream.getId());
-//                                if (log.isDebugEnabled()) {
-//                                    log.debug("Closed a stream: {}", stream.toString());
-//                                }
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Closed a stream: {}", stream.toString());
+                                }
                                 notifyCloseStream(stream);
                             } else {
-                                ((FlexStream) stream).getListener().onControl(controlFrame);
+                                flexStream.getListener().onControl(controlFrame);
                             }
                         }
                         break;
                         case OPEN:
-                            ((FlexStream) stream).getListener().onControl(controlFrame);
+                            flexStream.getListener().onControl(controlFrame);
                             break;
                     }
                 }
@@ -123,7 +124,7 @@ public class FlexSession implements Session, Callback {
             break;
             case DATA: {
                 DataFrame dataFrame = (DataFrame) frame;
-                Stream stream = streamMap.get(dataFrame.getStreamId());
+                FlexStream stream = (FlexStream) streamMap.get(dataFrame.getStreamId());
                 Assert.state(stream != null, "The stream " + dataFrame.getStreamId() + " has been not created");
 
                 switch (stream.getState()) {
@@ -132,20 +133,20 @@ public class FlexSession implements Session, Callback {
                         throw new IllegalStateException("The stream has been closed");
                     case LOCALLY_CLOSED: {
                         if (dataFrame.isEndStream()) {
-                            ((FlexStream) stream).getListener().onData(dataFrame);
-                            ((FlexStream) stream).setState(Stream.State.CLOSED);
+                            stream.getListener().onData(dataFrame);
+                            stream.setState(Stream.State.CLOSED);
                             streamMap.remove(stream.getId());
-//                            if (log.isDebugEnabled()) {
-//                                log.debug("Closed a stream: {}", stream.toString());
-//                            }
+                            if (log.isDebugEnabled()) {
+                                log.debug("Closed a stream: {}", stream.toString());
+                            }
                             notifyCloseStream(stream);
                         } else {
-                            ((FlexStream) stream).getListener().onData(dataFrame);
+                            stream.getListener().onData(dataFrame);
                         }
                     }
                     break;
                     case OPEN:
-                        ((FlexStream) stream).getListener().onData(dataFrame);
+                        stream.getListener().onData(dataFrame);
                         break;
                 }
             }
@@ -181,7 +182,7 @@ public class FlexSession implements Session, Callback {
     }
 
     @Override
-    public CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener) {
+    public synchronized CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener) {
         int id = generateId();
         Stream.State state;
         if (controlFrame.isEndStream()) {
@@ -195,9 +196,9 @@ public class FlexSession implements Session, Callback {
         Stream old = streamMap.putIfAbsent(id, localNewStream);
         Assert.state(old == null, "The stream " + id + " has been created.");
 
-//        if (log.isDebugEnabled()) {
-//            log.debug("Create a new local stream: {}", localNewStream.toString());
-//        }
+        if (log.isDebugEnabled()) {
+            log.debug("Create a new local stream: {}", localNewStream.toString());
+        }
         notifyNewStream(localNewStream, true);
         ControlFrame newFrame = new ControlFrame(controlFrame.isEndStream(), id, controlFrame.isEndFrame(), controlFrame.getData());
         return sendFrame(newFrame).thenApply(success -> localNewStream);
@@ -313,9 +314,9 @@ public class FlexSession implements Session, Callback {
     }
 
     protected synchronized void _writeFrame(Frame frame, Callback callback) {
-//        if (log.isDebugEnabled()) {
-//            log.debug("Send a frame: {}", frame.toString());
-//        }
+        if (log.isDebugEnabled()) {
+            log.debug("Send a frame: {}", frame.toString());
+        }
         System.out.println("s frame: " + frame);
         connection.write(FrameGenerator.generate(frame), callback::succeeded, callback::failed);
     }

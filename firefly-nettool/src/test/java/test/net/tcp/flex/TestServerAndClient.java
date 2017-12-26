@@ -221,7 +221,7 @@ public class TestServerAndClient {
         }).listen(host, port);
 
         MultiplexingClient client = new MultiplexingClient();
-        client.connect(host, port).thenAccept(connection -> connection.onRequest(new FlexConnection.Listener() {
+        client.accept(connection -> connection.onRequest(new FlexConnection.Listener() {
 
             @Override
             public void newRequest(Context context) {
@@ -275,7 +275,7 @@ public class TestServerAndClient {
             public void exception(Context context, Throwable t) {
                 t.printStackTrace();
             }
-        }));
+        })).connect(host, port);
 
         phaser.arriveAndAwaitAdvance();
         server.stop();

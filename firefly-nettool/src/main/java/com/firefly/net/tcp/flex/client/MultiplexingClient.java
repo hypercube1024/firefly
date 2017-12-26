@@ -8,6 +8,7 @@ import com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl;
 import com.firefly.net.tcp.codec.flex.stream.impl.FlexSession;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
+import com.firefly.utils.function.Action1;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
 
     private MultiplexingClientConfiguration configuration = new MultiplexingClientConfiguration();
     private SimpleTcpClient client;
+    private Action1<FlexConnection> accept;
     private Scheduler heartbeatScheduler = Schedulers.createScheduler();
 
     public MultiplexingClient() {
@@ -44,6 +46,11 @@ public class MultiplexingClient extends AbstractLifeCycle {
         this.configuration = configuration;
     }
 
+    public MultiplexingClient accept(Action1<FlexConnection> accept) {
+        this.accept = accept;
+        return this;
+    }
+
     public CompletableFuture<FlexConnection> connect(String host, int port) {
         start();
         return client.connect(host, port).thenApply(connection -> {
@@ -51,6 +58,8 @@ public class MultiplexingClient extends AbstractLifeCycle {
             FlexSession session = new FlexSession(1, connection);
             FlexConnectionImpl flexConnection = new FlexConnectionImpl(configuration, connection, session);
             connection.setAttachment(flexConnection);
+
+            Optional.ofNullable(accept).ifPresent(a -> a.call(flexConnection));
 
             // set frame parser
             FrameParser frameParser = new FrameParser();

@@ -61,6 +61,8 @@ public class MultiplexingServer extends AbstractLifeCycle {
             FlexConnectionImpl flexConnection = new FlexConnectionImpl(configuration, connection, session);
             connection.setAttachment(flexConnection);
 
+            accept.call(flexConnection);
+
             // set frame parser
             FrameParser frameParser = new FrameParser();
             frameParser.complete(session::notifyFrame);
@@ -68,8 +70,7 @@ public class MultiplexingServer extends AbstractLifeCycle {
                 log.error("Connection " + connection.getSessionId() + " exception.", ex);
                 IO.close(connection);
             });
-            
-            accept.call(flexConnection);
+
         });
         server.listen(configuration.getTcpServerConfiguration().getHost(), configuration.getTcpServerConfiguration().getPort());
     }
