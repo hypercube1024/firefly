@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
 
-    private int timeout = 5 * 1000;
+    private int timeout = 3 * 1000;
     private int corePoolSize = 4;
 
     @Test
@@ -62,9 +62,7 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         }
 
         try {
-            if (!phaser.isTerminated()) {
-                phaser.arriveAndAwaitAdvance();
-            }
+            phaser.arriveAndAwaitAdvance();
         } catch (Exception e) {
             System.out.println(e.getClass() + ", msg: " + e.getMessage());
         }
