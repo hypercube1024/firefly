@@ -47,11 +47,11 @@ public class TestConnectionManager {
         MultiplexingClient client = new MultiplexingClient(configuration);
         client.start();
 
-        Request request = new Request();
-        request.setPath("/connectionManager");
-
         for (int i = 0; i < loop; i++) {
-            AtomicInteger completeTask = new AtomicInteger();
+            Request request = new Request();
+            request.setPath("/connectionManager");
+            request.setFields(new HashMap<>());
+            request.getFields().put("taskNo", "req" + i);
             FlexConnection connection = client.getConnection();
             System.out.println(connection.getLocalAddress());
             connection.newRequest(request, new FlexConnection.Listener() {
@@ -96,7 +96,7 @@ public class TestConnectionManager {
                     System.out.println("Client message complete: " + data);
                     Assert.assertThat(context.getResponse().getMessage(), is("OK"));
                     Assert.assertThat(data, is("Server received message"));
-                    System.out.println("Complete task: " + completeTask.incrementAndGet());
+                    Assert.assertThat(context.getResponse().getFields().get("taskNo"), is(context.getRequest().getFields().get("taskNo")));
                     phaser.arrive();
                 }
 
@@ -162,6 +162,7 @@ public class TestConnectionManager {
                 context.getResponse().setMessage("OK");
                 context.getResponse().setFields(new HashMap<>());
                 context.getResponse().getFields().put("Server", "flex v1");
+                context.getResponse().getFields().put("taskNo", context.getRequest().getFields().get("taskNo"));
                 ByteArrayOutputStream out = (ByteArrayOutputStream) context.getAttribute("data");
                 String data = new String(out.toByteArray(), StandardCharsets.UTF_8);
                 System.out.println("Server message complete: " + data);
