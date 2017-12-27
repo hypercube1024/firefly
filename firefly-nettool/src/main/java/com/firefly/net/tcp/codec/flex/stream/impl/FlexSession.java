@@ -7,6 +7,7 @@ import com.firefly.net.tcp.codec.flex.stream.Context;
 import com.firefly.net.tcp.codec.flex.stream.FlexConnection;
 import com.firefly.net.tcp.codec.flex.stream.Session;
 import com.firefly.net.tcp.codec.flex.stream.Stream;
+import com.firefly.net.tcp.flex.metric.FlexMetric;
 import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
@@ -36,12 +37,14 @@ public class FlexSession implements Session, Callback {
     protected final AtomicInteger idGenerator;
     protected final TcpConnection connection;
     protected final LazyContextAttribute attribute = new LazyContextAttribute();
+    protected final FlexMetric flexMetric;
 
     protected volatile Listener listener;
 
-    public FlexSession(int initStreamId, TcpConnection connection) {
+    public FlexSession(int initStreamId, TcpConnection connection, FlexMetric flexMetric) {
         this.idGenerator = new AtomicInteger(initStreamId);
         this.connection = connection;
+        this.flexMetric = flexMetric;
     }
 
     @Override
@@ -54,16 +57,18 @@ public class FlexSession implements Session, Callback {
         return streamMap;
     }
 
-    protected void notifyNewStream(Stream stream, boolean local) {
-
-    }
-
     protected void notifyCloseStream(Stream stream) {
+        flexMetric.getActiveStreamCount().dec();
         FlexConnection.Listener listener = (FlexConnection.Listener) stream.getAttribute(CTX_LISTENER_KEY);
         Context context = (Context) stream.getAttribute(CONTEXT_KEY);
         if (listener != null && context != null) {
             listener.close(context);
         }
+    }
+
+    protected void notifyNewStream(Stream stream, boolean local) {
+        flexMetric.getActiveStreamCount().inc();
+        flexMetric.getRequestMeter().mark();
     }
 
     public void notifyFrame(Frame frame) {
@@ -178,7 +183,7 @@ public class FlexSession implements Session, Callback {
     }
 
     @Override
-    public CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener) {
+    public Stream newStream(ControlFrame controlFrame, Callback callback, Stream.Listener listener) {
         int id = generateId();
         Stream.State state;
         if (controlFrame.isEndStream()) {
@@ -192,12 +197,12 @@ public class FlexSession implements Session, Callback {
         Stream old = streamMap.putIfAbsent(id, localNewStream);
         Assert.state(old == null, "The stream " + id + " has been created.");
 
+        notifyNewStream(localNewStream, false);
         if (log.isDebugEnabled()) {
             log.debug("Create a new local stream: {}", localNewStream.toString());
         }
-        notifyNewStream(localNewStream, true);
-        ControlFrame newFrame = new ControlFrame(controlFrame.isEndStream(), id, controlFrame.isEndFrame(), controlFrame.getData());
-        return sendFrame(newFrame).thenApply(success -> localNewStream);
+        sendFrame(new ControlFrame(controlFrame.isEndStream(), id, controlFrame.isEndFrame(), controlFrame.getData()), callback);
+        return localNewStream;
     }
 
     @Override

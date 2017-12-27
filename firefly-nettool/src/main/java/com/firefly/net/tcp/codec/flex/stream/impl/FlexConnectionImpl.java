@@ -14,6 +14,7 @@ import com.firefly.net.tcp.codec.flex.stream.FlexConnection;
 import com.firefly.net.tcp.codec.flex.stream.Session;
 import com.firefly.net.tcp.codec.flex.stream.Stream;
 import com.firefly.utils.Assert;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,15 +144,21 @@ public class FlexConnectionImpl implements FlexConnection {
         Assert.notNull(request, "The request must be not null");
         Assert.notNull(listener, "The context listener must be not null");
 
-        byte[] data = Optional.ofNullable(configuration.getMetaInfoGenerator()).orElse(MetaInfoGenerator.DEFAULT)
-                              .generate(request);
-        getSession().newStream(new ControlFrame(false, 0, true, data),
-                new NewRequestStreamListener(listener)).thenAccept(stream -> {
-            FlexContext context = new FlexContext(request, stream, FlexConnectionImpl.this);
-            stream.setAttribute(CONTEXT_KEY, context);
-            stream.setAttribute(CTX_LISTENER_KEY, listener);
-            listener.newRequest(context);
-        });
+        byte[] data = generate(request);
+        Stream newLocalStream = getSession().newStream(
+                new ControlFrame(false, 0, true, data),
+                Callback.NOOP, new NewRequestStreamListener(listener));
+
+        FlexContext context = new FlexContext(request, newLocalStream, FlexConnectionImpl.this);
+        newLocalStream.setAttribute(CONTEXT_KEY, context);
+        newLocalStream.setAttribute(CTX_LISTENER_KEY, listener);
+        listener.newRequest(context);
+    }
+
+    private byte[] generate(Request request) {
+        return Optional.ofNullable(configuration.getMetaInfoGenerator())
+                       .orElse(MetaInfoGenerator.DEFAULT)
+                       .generate(request);
     }
 
     @Override

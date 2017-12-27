@@ -23,10 +23,11 @@ public interface Session extends ContextAttribute {
      * Create a new stream and send the first control frame to the remote endpoint.
      *
      * @param controlFrame The first control frame of the stream.
+     * @param callback     The callback of sending the first control frame
      * @param listener     The stream listener.
-     * @return If the control frame send completely, it returns the new stream.
+     * @return The new stream.
      */
-    CompletableFuture<Stream> newStream(ControlFrame controlFrame, Stream.Listener listener);
+    Stream newStream(ControlFrame controlFrame, Callback callback, Stream.Listener listener);
 
     void setListener(Listener listener);
 

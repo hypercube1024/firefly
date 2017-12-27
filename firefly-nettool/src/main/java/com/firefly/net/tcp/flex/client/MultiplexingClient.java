@@ -6,6 +6,7 @@ import com.firefly.net.tcp.codec.flex.protocol.PingFrame;
 import com.firefly.net.tcp.codec.flex.stream.FlexConnection;
 import com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl;
 import com.firefly.net.tcp.codec.flex.stream.impl.FlexSession;
+import com.firefly.net.tcp.flex.metric.FlexMetric;
 import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
@@ -32,6 +33,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
     private Action1<FlexConnection> accept;
     private Scheduler heartbeatScheduler = Schedulers.createScheduler();
     private FlexConnectionManager flexConnectionManager;
+    private FlexMetric flexMetric;
 
     public MultiplexingClient() {
     }
@@ -59,7 +61,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
         }
         return client.connect(host, port).thenApply(connection -> {
             // create flex connection
-            FlexSession session = new FlexSession(1, connection);
+            FlexSession session = new FlexSession(1, connection, flexMetric);
             FlexConnectionImpl flexConnection = new FlexConnectionImpl(configuration, connection, session);
             connection.setAttachment(flexConnection);
 
@@ -101,6 +103,8 @@ public class MultiplexingClient extends AbstractLifeCycle {
 
     @Override
     protected void init() {
+        flexMetric = new FlexMetric(configuration.getTcpConfiguration().getMetricReporterFactory().getMetricRegistry(),
+                "flex.client");
         client = new SimpleTcpClient(configuration.getTcpConfiguration());
         if (configuration.getHeartbeatInterval() <= 0) {
             configuration.setHeartbeatInterval(15 * 1000);
