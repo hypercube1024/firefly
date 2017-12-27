@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl.CONTEXT_KEY;
 import static com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl.CTX_LISTENER_KEY;
+import static com.firefly.net.tcp.codec.flex.stream.impl.StreamStateTransferMap.getNextState;
 
 /**
  * @author Pengtao Qiu
@@ -59,7 +60,6 @@ public class FlexSession implements Session, Callback {
 
     protected void notifyCloseStream(Stream stream) {
         FlexStream flexStream = (FlexStream) stream;
-        flexStream.setState(Stream.State.CLOSED);
         streamMap.remove(flexStream.getId());
         flexMetric.getActiveStreamCount().dec();
         if (log.isDebugEnabled()) {
@@ -87,7 +87,7 @@ public class FlexSession implements Session, Callback {
                     int id = controlFrame.getStreamId();
                     Stream.State state;
                     if (controlFrame.isEndStream()) {
-                        state = Stream.State.REMOTELY_CLOSED;
+                        state = getNextState(Stream.State.OPEN, StreamStateTransferMap.Op.RECV_ES);
                     } else {
                         state = Stream.State.OPEN;
                     }
@@ -104,25 +104,15 @@ public class FlexSession implements Session, Callback {
                     }
                 } else {
                     FlexStream flexStream = (FlexStream) stream;
-                    switch (stream.getState()) {
-                        case REMOTELY_CLOSED:
-                        case CLOSED:
-                            throw new IllegalStateException("The stream has been closed");
-                        case LOCALLY_CLOSED: {
-                            if (controlFrame.isEndStream()) {
-                                flexStream.getListener().onControl(controlFrame);
-                                notifyCloseStream(stream);
-                            } else {
-                                flexStream.getListener().onControl(controlFrame);
-                            }
+                    if (controlFrame.isEndStream()) {
+                        Stream.State next = getNextState(stream.getState(), StreamStateTransferMap.Op.RECV_ES);
+                        flexStream.setState(next);
+                        flexStream.getListener().onControl(controlFrame);
+                        if (next == Stream.State.CLOSED) {
+                            notifyCloseStream(stream);
                         }
-                        break;
-                        case OPEN:
-                            if (controlFrame.isEndStream()) {
-                                flexStream.setState(Stream.State.REMOTELY_CLOSED);
-                            }
-                            flexStream.getListener().onControl(controlFrame);
-                            break;
+                    } else {
+                        flexStream.getListener().onControl(controlFrame);
                     }
                 }
             }
@@ -132,25 +122,15 @@ public class FlexSession implements Session, Callback {
                 FlexStream stream = (FlexStream) streamMap.get(dataFrame.getStreamId());
                 Assert.state(stream != null, "The stream " + dataFrame.getStreamId() + " has been not created");
 
-                switch (stream.getState()) {
-                    case REMOTELY_CLOSED:
-                    case CLOSED:
-                        throw new IllegalStateException("The stream has been closed");
-                    case LOCALLY_CLOSED: {
-                        if (dataFrame.isEndStream()) {
-                            stream.getListener().onData(dataFrame);
-                            notifyCloseStream(stream);
-                        } else {
-                            stream.getListener().onData(dataFrame);
-                        }
+                if (dataFrame.isEndStream()) {
+                    Stream.State next = getNextState(stream.getState(), StreamStateTransferMap.Op.RECV_ES);
+                    stream.setState(next);
+                    stream.getListener().onData(dataFrame);
+                    if (next == Stream.State.CLOSED) {
+                        notifyCloseStream(stream);
                     }
-                    break;
-                    case OPEN:
-                        if (dataFrame.isEndStream()) {
-                            stream.setState(Stream.State.REMOTELY_CLOSED);
-                        }
-                        stream.getListener().onData(dataFrame);
-                        break;
+                } else {
+                    stream.getListener().onData(dataFrame);
                 }
             }
             break;
@@ -189,7 +169,7 @@ public class FlexSession implements Session, Callback {
         int id = generateId();
         Stream.State state;
         if (controlFrame.isEndStream()) {
-            state = Stream.State.LOCALLY_CLOSED;
+            state = getNextState(Stream.State.OPEN, StreamStateTransferMap.Op.SEND_ES);
         } else {
             state = Stream.State.OPEN;
         }
@@ -273,13 +253,10 @@ public class FlexSession implements Session, Callback {
                                         if (log.isDebugEnabled()) {
                                             log.debug("The stream {} sends message frame success.", stream.toString());
                                         }
-                                        switch (stream.getState()) {
-                                            case OPEN:
-                                                stream.setState(Stream.State.LOCALLY_CLOSED);
-                                                break;
-                                            case REMOTELY_CLOSED:
-                                                notifyCloseStream(stream);
-                                                break;
+                                        Stream.State next = getNextState(stream.getState(), StreamStateTransferMap.Op.SEND_ES);
+                                        stream.setState(next);
+                                        if (next == Stream.State.CLOSED) {
+                                            notifyCloseStream(stream);
                                         }
                                     });
                         }
