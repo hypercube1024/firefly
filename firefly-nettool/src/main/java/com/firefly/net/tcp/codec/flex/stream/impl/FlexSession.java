@@ -58,7 +58,13 @@ public class FlexSession implements Session, Callback {
     }
 
     protected void notifyCloseStream(Stream stream) {
+        FlexStream flexStream = (FlexStream) stream;
+        flexStream.setState(Stream.State.CLOSED);
+        streamMap.remove(flexStream.getId());
         flexMetric.getActiveStreamCount().dec();
+        if (log.isDebugEnabled()) {
+            log.debug("Closed stream {}", stream.getId());
+        }
         FlexConnection.Listener listener = (FlexConnection.Listener) stream.getAttribute(CTX_LISTENER_KEY);
         Context context = (Context) stream.getAttribute(CONTEXT_KEY);
         if (listener != null && context != null) {
@@ -105,11 +111,6 @@ public class FlexSession implements Session, Callback {
                         case LOCALLY_CLOSED: {
                             if (controlFrame.isEndStream()) {
                                 flexStream.getListener().onControl(controlFrame);
-                                flexStream.setState(Stream.State.CLOSED);
-                                streamMap.remove(stream.getId());
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Closed a stream: {}", stream.toString());
-                                }
                                 notifyCloseStream(stream);
                             } else {
                                 flexStream.getListener().onControl(controlFrame);
@@ -117,6 +118,9 @@ public class FlexSession implements Session, Callback {
                         }
                         break;
                         case OPEN:
+                            if (controlFrame.isEndStream()) {
+                                flexStream.setState(Stream.State.REMOTELY_CLOSED);
+                            }
                             flexStream.getListener().onControl(controlFrame);
                             break;
                     }
@@ -135,11 +139,6 @@ public class FlexSession implements Session, Callback {
                     case LOCALLY_CLOSED: {
                         if (dataFrame.isEndStream()) {
                             stream.getListener().onData(dataFrame);
-                            stream.setState(Stream.State.CLOSED);
-                            streamMap.remove(stream.getId());
-                            if (log.isDebugEnabled()) {
-                                log.debug("Closed a stream: {}", stream.toString());
-                            }
                             notifyCloseStream(stream);
                         } else {
                             stream.getListener().onData(dataFrame);
@@ -147,6 +146,9 @@ public class FlexSession implements Session, Callback {
                     }
                     break;
                     case OPEN:
+                        if (dataFrame.isEndStream()) {
+                            stream.setState(Stream.State.REMOTELY_CLOSED);
+                        }
                         stream.getListener().onData(dataFrame);
                         break;
                 }
@@ -268,12 +270,15 @@ public class FlexSession implements Session, Callback {
                             Optional.ofNullable(streamMap.get(messageFrame.getStreamId()))
                                     .map(stream -> (FlexStream) stream)
                                     .ifPresent(stream -> {
+                                        if (log.isDebugEnabled()) {
+                                            log.debug("The stream {} sends message frame success.", stream.toString());
+                                        }
                                         switch (stream.getState()) {
                                             case OPEN:
                                                 stream.setState(Stream.State.LOCALLY_CLOSED);
                                                 break;
                                             case REMOTELY_CLOSED:
-                                                stream.setState(Stream.State.CLOSED);
+                                                notifyCloseStream(stream);
                                                 break;
                                         }
                                     });
@@ -299,8 +304,15 @@ public class FlexSession implements Session, Callback {
 
     @Override
     public void failed(Throwable x) {
-        log.error("Write flex frame error", x);
+        log.error("Write frame error", x);
         IO.close(connection);
+    }
+
+    public void clear() {
+        int streamSize = streamMap.size();
+        log.error("Connection closed. It will clear remaining {} streams.", streamSize);
+        flexMetric.getActiveStreamCount().dec(streamSize);
+        streamMap.clear();
     }
 
     protected void _writeFrame(Frame frame, Callback callback) {

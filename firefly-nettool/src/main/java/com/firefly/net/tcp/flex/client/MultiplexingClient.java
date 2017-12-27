@@ -81,7 +81,8 @@ public class MultiplexingClient extends AbstractLifeCycle {
                         configuration.getHeartbeatInterval(),
                         configuration.getHeartbeatInterval(),
                         TimeUnit.MILLISECONDS));
-                connection.onClose(() -> Optional.ofNullable(session.getAttribute(HEARTBEAT_KEY))
+                connection.onClose(session::clear)
+                          .onClose(() -> Optional.ofNullable(session.getAttribute(HEARTBEAT_KEY))
                                                  .map(o -> (Scheduler.Future) o)
                                                  .ifPresent(Scheduler.Future::cancel));
             }

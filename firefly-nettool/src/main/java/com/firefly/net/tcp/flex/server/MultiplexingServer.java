@@ -71,7 +71,7 @@ public class MultiplexingServer extends AbstractLifeCycle {
             connection.receive(frameParser::receive).onException(ex -> {
                 log.error("Connection " + connection.getSessionId() + " exception.", ex);
                 IO.close(connection);
-            });
+            }).onClose(session::clear);
 
         });
         server.listen(configuration.getTcpServerConfiguration().getHost(), configuration.getTcpServerConfiguration().getPort());
