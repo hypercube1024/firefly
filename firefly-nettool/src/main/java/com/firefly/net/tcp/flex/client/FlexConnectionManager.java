@@ -3,6 +3,9 @@ package com.firefly.net.tcp.flex.client;
 import com.firefly.net.tcp.codec.flex.stream.FlexConnection;
 import com.firefly.net.tcp.flex.exception.ConnectionException;
 import com.firefly.utils.Assert;
+import com.firefly.utils.CollectionUtils;
+import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.HostPort;
 import com.firefly.utils.retry.RetryTaskBuilder;
@@ -18,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.firefly.utils.retry.RetryStrategies.ifException;
+import static com.firefly.utils.retry.RetryStrategies.ifResult;
 import static com.firefly.utils.retry.StopStrategies.afterExecute;
 import static com.firefly.utils.retry.WaitStrategies.exponentialWait;
 
@@ -32,6 +36,8 @@ public class FlexConnectionManager extends AbstractLifeCycle {
     private final MultiplexingClient client;
     private final List<HostPort> hostPorts;
     private final AtomicInteger index = new AtomicInteger(0);
+    private final Scheduler scheduler = Schedulers.createScheduler();
+    private volatile List<HostPort> activatedList;
 
     public FlexConnectionManager(MultiplexingClient client, Set<String> hostPorts) {
         Assert.notEmpty(hostPorts);
@@ -49,32 +55,49 @@ public class FlexConnectionManager extends AbstractLifeCycle {
     }
 
     public FlexConnection getConnection() {
-        int i = Math.abs(index.getAndAdd(1)) % hostPorts.size();
-        return Optional.ofNullable(hostPorts.get(i)).map(this::getConnection)
-                       .orElseThrow(() -> new ConnectionException("Can not get the connection"));
+        FlexConnection ret = RetryTaskBuilder.<FlexConnection>newTask()
+                .retry(ifResult(Objects::isNull))
+                .stop(afterExecute(hostPorts.size()))
+                .wait(exponentialWait(10, TimeUnit.MILLISECONDS))
+                .task(() -> {
+                    int i = Math.abs(index.getAndAdd(1)) % activatedList.size();
+                    return getConnection(activatedList.get(i));
+                })
+                .call();
+        if (ret == null) {
+            throw new ConnectionException("Can not get connection");
+        }
+        return ret;
     }
 
-    public FlexConnection getConnection(HostPort hostPort) {
-        FlexConnection connection = concurrentMap.computeIfAbsent(hostPort, this::createConnection);
-        if (connection == null) {
-            concurrentMap.remove(hostPort);
-            return null;
-        }
-        if (connection.isOpen()) {
-            return connection;
-        } else {
-            FlexConnection newConnection = createConnection(hostPort);
-            if (newConnection != null) {
-                concurrentMap.put(hostPort, newConnection);
-                return newConnection;
-            } else {
+    private FlexConnection getConnection(HostPort hostPort) {
+        try {
+            FlexConnection connection = concurrentMap.computeIfAbsent(hostPort, this::createConnection);
+            if (connection == null) {
                 concurrentMap.remove(hostPort);
                 return null;
             }
+            if (connection.isOpen()) {
+                return connection;
+            } else {
+                FlexConnection newConnection = createConnection(hostPort);
+                if (newConnection != null) {
+                    concurrentMap.put(hostPort, newConnection);
+                    return newConnection;
+                } else {
+                    concurrentMap.remove(hostPort);
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            log.error("get connection exception", e);
+            return null;
+        } finally {
+            activatedList = new ArrayList<>(concurrentMap.keySet());
         }
     }
 
-    public FlexConnection createConnection(HostPort hostPort) {
+    private FlexConnection createConnection(HostPort hostPort) {
         return RetryTaskBuilder.<FlexConnection>newTask()
                 .retry(ifException(ex -> ex != null && ex.getCause() instanceof TimeoutException))
                 .stop(afterExecute(10))
@@ -85,8 +108,9 @@ public class FlexConnectionManager extends AbstractLifeCycle {
 
     private FlexConnection connect(HostPort hostPort) {
         try {
-            return client.connect(hostPort.getHost(), hostPort.getPort()).get(2, TimeUnit.SECONDS);
+            return client.connect(hostPort.getHost(), hostPort.getPort()).get(5, TimeUnit.SECONDS);
         } catch (Exception e) {
+            log.error("Connect " + hostPort + " exception", e);
             throw new ConnectionException("connection exception", e);
         }
     }
@@ -104,8 +128,20 @@ public class FlexConnectionManager extends AbstractLifeCycle {
 
     @Override
     protected void init() {
-        Optional.ofNullable(hostPorts).ifPresent(hostPorts ->
-                hostPorts.forEach(hostPort -> concurrentMap.put(hostPort, createConnection(hostPort))));
+        if (!CollectionUtils.isEmpty(hostPorts)) {
+            hostPorts.forEach(hostPort -> {
+                try {
+                    FlexConnection connection = createConnection(hostPort);
+                    if (connection != null) {
+                        concurrentMap.put(hostPort, connection);
+                    }
+                } catch (Exception e) {
+                    log.error("Connect " + hostPort + " exception", e);
+                }
+            });
+            activatedList = new ArrayList<>(concurrentMap.keySet());
+        }
+        scheduler.scheduleWithFixedDelay(() -> activatedList = new ArrayList<>(hostPorts), 5, 5, TimeUnit.SECONDS);
     }
 
     @Override
