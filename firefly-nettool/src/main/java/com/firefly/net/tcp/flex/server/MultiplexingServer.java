@@ -6,6 +6,8 @@ import com.firefly.net.tcp.codec.flex.stream.FlexConnection;
 import com.firefly.net.tcp.codec.flex.stream.impl.FlexConnectionImpl;
 import com.firefly.net.tcp.codec.flex.stream.impl.FlexSession;
 import com.firefly.net.tcp.flex.metric.FlexMetric;
+import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -22,6 +24,7 @@ public class MultiplexingServer extends AbstractLifeCycle {
     private MultiplexingServerConfiguration configuration = new MultiplexingServerConfiguration();
     private SimpleTcpServer server;
     private Action1<FlexConnection> accept;
+    private Scheduler scheduler = Schedulers.createScheduler();
 
     public MultiplexingServer() {
     }
@@ -60,7 +63,7 @@ public class MultiplexingServer extends AbstractLifeCycle {
         server = new SimpleTcpServer(configuration.getTcpServerConfiguration());
         server.accept(connection -> {
             // create flex connection
-            FlexSession session = new FlexSession(2, connection, flexMetric);
+            FlexSession session = new FlexSession(2, connection, flexMetric, configuration.getStreamMaxIdleTime(), scheduler);
             FlexConnectionImpl flexConnection = new FlexConnectionImpl(configuration, connection, session);
             connection.setAttachment(flexConnection);
             accept.call(flexConnection);
@@ -79,6 +82,7 @@ public class MultiplexingServer extends AbstractLifeCycle {
 
     @Override
     protected void destroy() {
+        scheduler.stop();
         server.stop();
     }
 }

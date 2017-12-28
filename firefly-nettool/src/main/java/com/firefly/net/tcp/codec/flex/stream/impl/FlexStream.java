@@ -2,18 +2,30 @@ package com.firefly.net.tcp.codec.flex.stream.impl;
 
 import com.firefly.net.tcp.codec.flex.protocol.ControlFrame;
 import com.firefly.net.tcp.codec.flex.protocol.DataFrame;
+import com.firefly.net.tcp.codec.flex.protocol.DisconnectionFrame;
+import com.firefly.net.tcp.codec.flex.protocol.ErrorCode;
 import com.firefly.net.tcp.codec.flex.stream.Session;
 import com.firefly.net.tcp.codec.flex.stream.Stream;
 import com.firefly.utils.Assert;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.IdleTimeout;
+import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.time.Millisecond100Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Pengtao Qiu
  */
-public class FlexStream implements Stream {
+public class FlexStream extends IdleTimeout implements Stream {
+
+    protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     protected final int id;
     protected final Session session;
@@ -23,7 +35,8 @@ public class FlexStream implements Stream {
     protected volatile Listener listener;
     protected volatile State state;
 
-    public FlexStream(int id, Session session, Listener listener, State state, boolean committed) {
+    public FlexStream(int id, Session session, Listener listener, State state, boolean committed, Scheduler scheduler) {
+        super(scheduler);
         this.id = id;
         this.session = session;
         this.listener = listener;
@@ -107,5 +120,17 @@ public class FlexStream implements Stream {
                 ", committed=" + committed +
                 ", state=" + state +
                 '}';
+    }
+
+    @Override
+    protected void onIdleExpired(TimeoutException timeout) {
+        String err = StringUtils.replace("Idle timeout {}ms expired on {}", getIdleTimeout(), this.toString());
+        log.error(err);
+        session.sendFrame(new DisconnectionFrame(ErrorCode.INTERNAL.getValue(), err.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Override
+    public boolean isOpen() {
+        return state != State.CLOSED;
     }
 }

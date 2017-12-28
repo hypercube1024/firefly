@@ -31,7 +31,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
     private MultiplexingClientConfiguration configuration = new MultiplexingClientConfiguration();
     private SimpleTcpClient client;
     private Action1<FlexConnection> accept;
-    private Scheduler heartbeatScheduler = Schedulers.createScheduler();
+    private Scheduler scheduler = Schedulers.createScheduler();
     private FlexConnectionManager flexConnectionManager;
     private FlexMetric flexMetric;
 
@@ -61,7 +61,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
         }
         return client.connect(host, port).thenApply(connection -> {
             // create flex connection
-            FlexSession session = new FlexSession(1, connection, flexMetric);
+            FlexSession session = new FlexSession(1, connection, flexMetric, configuration.getStreamMaxIdleTime(), scheduler);
             FlexConnectionImpl flexConnection = new FlexConnectionImpl(configuration, connection, session);
             connection.setAttachment(flexConnection);
 
@@ -76,7 +76,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
             });
 
             if (configuration.getHeartbeatInterval() > 0) {
-                session.setAttribute(HEARTBEAT_KEY, heartbeatScheduler.scheduleAtFixedRate(
+                session.setAttribute(HEARTBEAT_KEY, scheduler.scheduleAtFixedRate(
                         () -> flexConnection.getSession().ping(new PingFrame(false)),
                         configuration.getHeartbeatInterval(),
                         configuration.getHeartbeatInterval(),
@@ -119,7 +119,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
     protected void destroy() {
         client.stop();
         if (configuration.getHeartbeatInterval() > 0) {
-            heartbeatScheduler.stop();
+            scheduler.stop();
         }
         Optional.ofNullable(flexConnectionManager).ifPresent(FlexConnectionManager::stop);
     }

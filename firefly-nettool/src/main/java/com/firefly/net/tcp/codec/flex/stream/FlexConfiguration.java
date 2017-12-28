@@ -12,6 +12,7 @@ public class FlexConfiguration {
     private MetaInfoParser metaInfoParser;
     private MetaInfoGenerator metaInfoGenerator;
     private int defaultOutputBufferSize = 2 * 1024;
+    private long streamMaxIdleTime = 10 * 1000;
     private int heartbeatInterval;
 
     public MetaInfoParser getMetaInfoParser() {
@@ -44,5 +45,13 @@ public class FlexConfiguration {
 
     public void setHeartbeatInterval(int heartbeatInterval) {
         this.heartbeatInterval = heartbeatInterval;
+    }
+
+    public long getStreamMaxIdleTime() {
+        return streamMaxIdleTime;
+    }
+
+    public void setStreamMaxIdleTime(long streamMaxIdleTime) {
+        this.streamMaxIdleTime = streamMaxIdleTime;
     }
 }
