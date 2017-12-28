@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.firefly.utils.retry.RetryStrategies.ifException;
@@ -38,6 +39,7 @@ public class FlexConnectionManager extends AbstractLifeCycle {
     private final AtomicInteger index = new AtomicInteger(0);
     private final Scheduler scheduler = Schedulers.createScheduler();
     private volatile List<HostPort> activatedList;
+    private volatile Supplier<List<HostPort>> resetActivatedList;
 
     public FlexConnectionManager(MultiplexingClient client, Set<String> hostPorts) {
         Assert.notEmpty(hostPorts);
@@ -46,18 +48,26 @@ public class FlexConnectionManager extends AbstractLifeCycle {
         start();
     }
 
-    public FlexConnection removeConnection(HostPort hostPort) {
-        return concurrentMap.remove(hostPort);
+    public List<HostPort> getActivatedList() {
+        return activatedList;
     }
 
-    public FlexConnection putConnection(HostPort hostPort, FlexConnection connection) {
-        return concurrentMap.put(hostPort, connection);
+    public void setActivatedList(List<HostPort> activatedList) {
+        this.activatedList = activatedList;
+    }
+
+    public Supplier<List<HostPort>> getResetActivatedList() {
+        return resetActivatedList;
+    }
+
+    public void setResetActivatedList(Supplier<List<HostPort>> resetActivatedList) {
+        this.resetActivatedList = resetActivatedList;
     }
 
     public FlexConnection getConnection() {
         FlexConnection ret = RetryTaskBuilder.<FlexConnection>newTask()
                 .retry(ifResult(Objects::isNull))
-                .stop(afterExecute(hostPorts.size()))
+                .stop(afterExecute(activatedList.size()))
                 .wait(exponentialWait(10, TimeUnit.MILLISECONDS))
                 .task(() -> {
                     int i = Math.abs(index.getAndAdd(1)) % activatedList.size();
@@ -141,7 +151,10 @@ public class FlexConnectionManager extends AbstractLifeCycle {
             });
             activatedList = new ArrayList<>(concurrentMap.keySet());
         }
-        scheduler.scheduleWithFixedDelay(() -> activatedList = new ArrayList<>(hostPorts), 5, 5, TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(
+                () -> activatedList = Optional.ofNullable(resetActivatedList).map(Supplier::get)
+                                              .orElseGet(() -> new ArrayList<>(hostPorts)),
+                5, 5, TimeUnit.SECONDS);
     }
 
     @Override
