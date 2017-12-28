@@ -39,7 +39,6 @@ public class FlexSession implements Session, Callback {
     protected final TcpConnection connection;
     protected final LazyContextAttribute attribute = new LazyContextAttribute();
     protected final FlexMetric flexMetric;
-
     protected volatile Listener listener;
 
     public FlexSession(int initStreamId, TcpConnection connection, FlexMetric flexMetric) {
@@ -167,15 +166,9 @@ public class FlexSession implements Session, Callback {
     @Override
     public Stream newStream(ControlFrame controlFrame, Callback callback, Stream.Listener listener) {
         int id = generateId();
-        Stream.State state;
-        if (controlFrame.isEndStream()) {
-            state = getNextState(Stream.State.OPEN, StreamStateTransferMap.Op.SEND_ES);
-        } else {
-            state = Stream.State.OPEN;
-        }
 
         Assert.notNull(listener, "The stream listener must be not null");
-        FlexStream localNewStream = new FlexStream(id, this, listener, state, true);
+        FlexStream localNewStream = new FlexStream(id, this, listener, Stream.State.OPEN, true);
         Stream old = streamMap.putIfAbsent(id, localNewStream);
         Assert.state(old == null, "The stream " + id + " has been created.");
 
