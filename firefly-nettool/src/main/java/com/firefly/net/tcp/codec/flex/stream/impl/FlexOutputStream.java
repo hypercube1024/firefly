@@ -8,6 +8,7 @@ import com.firefly.utils.Assert;
 import com.firefly.utils.codec.ByteArrayUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,10 +129,6 @@ public class FlexOutputStream extends OutputStream implements Callback {
 
     @Override
     public synchronized void failed(Throwable x) {
-        log.error("Write flex frame error", x);
-        DisconnectionFrame frame = new DisconnectionFrame(ErrorCode.IO_ERROR.getValue(),
-                x.getMessage().getBytes(StandardCharsets.UTF_8));
-        getStream().getSession().disconnect(frame);
         closed = true;
     }
 

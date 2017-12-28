@@ -16,6 +16,7 @@ import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +64,7 @@ public class FlexSession implements Session, Callback {
         return streamMap;
     }
 
-    protected void notifyCloseStream(FlexStream stream) {
+    public void notifyCloseStream(FlexStream stream) {
         streamMap.remove(stream.getId());
         stream.onClose();
         flexMetric.getActiveStreamCount().dec();
@@ -77,7 +78,7 @@ public class FlexSession implements Session, Callback {
         }
     }
 
-    protected void notifyNewStream(FlexStream stream, boolean local) {
+    public void notifyNewStream(FlexStream stream, boolean local) {
         Stream old = streamMap.putIfAbsent(stream.getId(), stream);
         Assert.state(old == null, "The stream " + stream.getId() + " has been created.");
         stream.setIdleTimeout(streamMaxIdleTime);
@@ -198,7 +199,9 @@ public class FlexSession implements Session, Callback {
 
     @Override
     public CompletableFuture<Boolean> disconnect(DisconnectionFrame disconnectionFrame) {
-        return sendFrame(disconnectionFrame);
+        CompletableFuture<Boolean> future = sendFrame(disconnectionFrame);
+        IO.close(connection);
+        return future;
     }
 
     @Override
@@ -279,7 +282,7 @@ public class FlexSession implements Session, Callback {
 
     @Override
     public void failed(Throwable x) {
-        log.error("Write frame error", x);
+        log.error("Write frame error. {}", x.getMessage());
         IO.close(connection);
     }
 
@@ -287,15 +290,28 @@ public class FlexSession implements Session, Callback {
         int streamSize = streamMap.size();
         log.info("Connection closed. It will clear remaining {} streams.", streamSize);
         flexMetric.getActiveStreamCount().dec(streamSize);
+        streamMap.forEach((id, stream) -> {
+            FlexStream flexStream = (FlexStream) stream;
+            flexStream.onClose();
+        });
         streamMap.clear();
     }
 
+    protected boolean canWrite() {
+        return !connection.isWaitingForClose() && !connection.isShutdownOutput() && !connection.isClosed();
+    }
+
     protected void _writeFrame(Frame frame, Callback callback) {
-        if (log.isDebugEnabled()) {
-            log.debug("Send a frame: {}", frame.toString());
+        if (canWrite()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Send a frame: {}", frame);
+            }
+            getStream(frame, s -> true).ifPresent(FlexStream::notIdle);
+            connection.write(FrameGenerator.generate(frame), callback::succeeded, callback::failed);
+        } else {
+            log.warn("The connection is closed. It can not write frame {}", frame);
+            callback.failed(new IOException("The connection is closed"));
         }
-        getStream(frame, s -> true).ifPresent(FlexStream::notIdle);
-        connection.write(FrameGenerator.generate(frame), callback::succeeded, callback::failed);
     }
 
     @Override
@@ -317,5 +333,9 @@ public class FlexSession implements Session, Callback {
     @Override
     public Object getAttribute(String key) {
         return attribute.getAttribute(key);
+    }
+
+    public TcpConnection getConnection() {
+        return connection;
     }
 }

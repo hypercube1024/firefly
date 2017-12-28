@@ -126,7 +126,13 @@ public class FlexStream extends IdleTimeout implements Stream {
     protected void onIdleExpired(TimeoutException timeout) {
         String err = StringUtils.replace("Idle timeout {}ms expired on {}", getIdleTimeout(), this.toString());
         log.error(err);
-        session.sendFrame(new DisconnectionFrame(ErrorCode.INTERNAL.getValue(), err.getBytes(StandardCharsets.UTF_8)));
+
+        if (isOpen()) {
+            session.disconnect(new DisconnectionFrame(ErrorCode.INTERNAL.getValue(), err.getBytes(StandardCharsets.UTF_8)));
+            FlexSession flexSession = (FlexSession) session;
+            setState(State.CLOSED);
+            flexSession.notifyCloseStream(this);
+        }
     }
 
     @Override

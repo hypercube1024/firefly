@@ -353,7 +353,7 @@ public class AsynchronousTcpSession implements Session {
 
     @Override
     public void close() {
-        if (isOpen() && waitingForClose.compareAndSet(false, true)) {
+        if (waitingForClose.compareAndSet(false, true) && isOpen()) {
             write(DISCONNECTION_FLAG);
             log.info("The session {} is waiting for close", sessionId);
         } else {
