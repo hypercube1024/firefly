@@ -287,7 +287,7 @@ public class FlexSession implements Session, Callback {
 
     public void clear() {
         int streamSize = streamMap.size();
-        log.error("Connection closed. It will clear remaining {} streams.", streamSize);
+        log.info("Connection closed. It will clear remaining {} streams.", streamSize);
         flexMetric.getActiveStreamCount().dec(streamSize);
         streamMap.clear();
     }
