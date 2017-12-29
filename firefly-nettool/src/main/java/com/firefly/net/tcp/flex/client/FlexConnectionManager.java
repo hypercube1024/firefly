@@ -13,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,7 +30,7 @@ public class FlexConnectionManager extends AbstractLifeCycle {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private ConcurrentMap<HostPort, FlexConnection> concurrentMap = new ConcurrentHashMap<>();
+    private Map<HostPort, FlexConnection> connectionMap = new HashMap<>();
     private final MultiplexingClient client;
     private final AtomicInteger index = new AtomicInteger(0);
     private final Scheduler scheduler = Schedulers.createScheduler();
@@ -76,17 +74,17 @@ public class FlexConnectionManager extends AbstractLifeCycle {
 
     private synchronized FlexConnection getConnection(HostPort hostPort) {
         try {
-            FlexConnection connection = concurrentMap.get(hostPort);
+            FlexConnection connection = connectionMap.get(hostPort);
             if (connection != null) {
                 if (connection.isOpen()) {
                     return connection;
                 } else {
                     FlexConnection newConnection = createConnection(hostPort);
                     if (newConnection != null) {
-                        concurrentMap.put(hostPort, newConnection);
+                        connectionMap.put(hostPort, newConnection);
                         return newConnection;
                     } else {
-                        concurrentMap.remove(hostPort);
+                        connectionMap.remove(hostPort);
                         updateActivatedList();
                         return null;
                     }
@@ -94,11 +92,11 @@ public class FlexConnectionManager extends AbstractLifeCycle {
             } else {
                 FlexConnection newConnection = createConnection(hostPort);
                 if (newConnection != null) {
-                    concurrentMap.put(hostPort, newConnection);
+                    connectionMap.put(hostPort, newConnection);
                     updateActivatedList();
                     return newConnection;
                 } else {
-                    concurrentMap.remove(hostPort);
+                    connectionMap.remove(hostPort);
                     updateActivatedList();
                     return null;
                 }
@@ -136,7 +134,7 @@ public class FlexConnectionManager extends AbstractLifeCycle {
     }
 
     private void updateActivatedList() {
-        activatedList = Collections.unmodifiableList(new ArrayList<>(concurrentMap.keySet()));
+        activatedList = Collections.unmodifiableList(new ArrayList<>(connectionMap.keySet()));
     }
 
     @Override
@@ -146,7 +144,7 @@ public class FlexConnectionManager extends AbstractLifeCycle {
                 try {
                     FlexConnection connection = createConnection(hostPort);
                     if (connection != null) {
-                        concurrentMap.put(hostPort, connection);
+                        connectionMap.put(hostPort, connection);
                     }
                 } catch (Exception e) {
                     log.error("Connect " + hostPort + " exception", e);
