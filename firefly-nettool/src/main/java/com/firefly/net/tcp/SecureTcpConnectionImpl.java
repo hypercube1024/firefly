@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class SecureTcpConnectionImpl extends AbstractTcpConnection {
@@ -300,4 +301,18 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
         return this;
     }
 
+    @Override
+    public boolean isSecureConnection() {
+        return true;
+    }
+
+    @Override
+    public String getApplicationProtocol() {
+        return secureSession.getApplicationProtocol();
+    }
+
+    @Override
+    public List<String> getSupportedApplicationProtocols() {
+        return secureSession.getSupportedApplicationProtocols();
+    }
 }

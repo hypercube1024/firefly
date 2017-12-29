@@ -1,5 +1,6 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.Connection;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
@@ -10,7 +11,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-public interface TcpConnection extends Connection {
+public interface TcpConnection extends Connection, ApplicationProtocolSelector {
 
     TcpConnection receive(Action1<ByteBuffer> buffer);
 
@@ -77,5 +78,7 @@ public interface TcpConnection extends Connection {
     boolean isShutdownInput();
 
     boolean isWaitingForClose();
+
+    boolean isSecureConnection();
 
 }

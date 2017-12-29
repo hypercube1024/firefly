@@ -11,6 +11,7 @@ import com.firefly.utils.io.BufferUtils;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class TcpConnectionImpl extends AbstractTcpConnection {
@@ -257,4 +258,18 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
         return this;
     }
 
+    @Override
+    public boolean isSecureConnection() {
+        return false;
+    }
+
+    @Override
+    public String getApplicationProtocol() {
+        return null;
+    }
+
+    @Override
+    public List<String> getSupportedApplicationProtocols() {
+        return null;
+    }
 }
