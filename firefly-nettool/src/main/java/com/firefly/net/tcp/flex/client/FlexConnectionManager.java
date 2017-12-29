@@ -30,7 +30,7 @@ public class FlexConnectionManager extends AbstractLifeCycle {
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private Map<HostPort, FlexConnection> connectionMap = new HashMap<>();
+    private final Map<HostPort, FlexConnection> connectionMap = new HashMap<>();
     private final MultiplexingClient client;
     private final AtomicInteger index = new AtomicInteger(0);
     private final Scheduler scheduler = Schedulers.createScheduler();
