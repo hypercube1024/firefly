@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.firefly.utils.retry.RetryStrategies.ifException;
@@ -35,16 +34,19 @@ public class FlexConnectionManager extends AbstractLifeCycle {
 
     private ConcurrentMap<HostPort, FlexConnection> concurrentMap = new ConcurrentHashMap<>();
     private final MultiplexingClient client;
-    private final List<HostPort> hostPorts;
     private final AtomicInteger index = new AtomicInteger(0);
     private final Scheduler scheduler = Schedulers.createScheduler();
+    private final AddressProvider addressProvider;
     private volatile List<HostPort> activatedList;
-    private volatile Supplier<List<HostPort>> resetActivatedList;
 
-    public FlexConnectionManager(MultiplexingClient client, Set<String> hostPorts) {
-        Assert.notEmpty(hostPorts);
+    public FlexConnectionManager(MultiplexingClient client, AddressProvider addressProvider) {
+        Assert.notNull(addressProvider);
+        Assert.notNull(client);
+
         this.client = client;
-        this.hostPorts = convert(hostPorts);
+        this.addressProvider = addressProvider;
+        this.activatedList = convert(addressProvider.getAddressList());
+        Assert.notEmpty(activatedList, "The address list is empty");
         start();
     }
 
@@ -52,16 +54,8 @@ public class FlexConnectionManager extends AbstractLifeCycle {
         return activatedList;
     }
 
-    public void setActivatedList(List<HostPort> activatedList) {
-        this.activatedList = activatedList;
-    }
-
-    public Supplier<List<HostPort>> getResetActivatedList() {
-        return resetActivatedList;
-    }
-
-    public void setResetActivatedList(Supplier<List<HostPort>> resetActivatedList) {
-        this.resetActivatedList = resetActivatedList;
+    public void updateActivatedList(Set<String> activatedList) {
+        this.activatedList = convert(activatedList);
     }
 
     public FlexConnection getConnection() {
@@ -80,30 +74,39 @@ public class FlexConnectionManager extends AbstractLifeCycle {
         return ret;
     }
 
-    private FlexConnection getConnection(HostPort hostPort) {
+    private synchronized FlexConnection getConnection(HostPort hostPort) {
         try {
-            FlexConnection connection = concurrentMap.computeIfAbsent(hostPort, this::createConnection);
-            if (connection == null) {
-                concurrentMap.remove(hostPort);
-                return null;
-            }
-            if (connection.isOpen()) {
-                return connection;
+            FlexConnection connection = concurrentMap.get(hostPort);
+            if (connection != null) {
+                if (connection.isOpen()) {
+                    return connection;
+                } else {
+                    FlexConnection newConnection = createConnection(hostPort);
+                    if (newConnection != null) {
+                        concurrentMap.put(hostPort, newConnection);
+                        return newConnection;
+                    } else {
+                        concurrentMap.remove(hostPort);
+                        updateActivatedList();
+                        return null;
+                    }
+                }
             } else {
                 FlexConnection newConnection = createConnection(hostPort);
                 if (newConnection != null) {
                     concurrentMap.put(hostPort, newConnection);
+                    updateActivatedList();
                     return newConnection;
                 } else {
                     concurrentMap.remove(hostPort);
+                    updateActivatedList();
                     return null;
                 }
             }
         } catch (Exception e) {
             log.error("get connection exception", e);
+            updateActivatedList();
             return null;
-        } finally {
-            activatedList = new ArrayList<>(concurrentMap.keySet());
         }
     }
 
@@ -125,10 +128,6 @@ public class FlexConnectionManager extends AbstractLifeCycle {
         }
     }
 
-    public List<HostPort> getHostPorts() {
-        return hostPorts;
-    }
-
     private List<HostPort> convert(Set<String> urls) {
         return Collections.unmodifiableList(
                 urls.stream().map(HostPort::new)
@@ -136,10 +135,14 @@ public class FlexConnectionManager extends AbstractLifeCycle {
                     .collect(Collectors.toList()));
     }
 
+    private void updateActivatedList() {
+        activatedList = Collections.unmodifiableList(new ArrayList<>(concurrentMap.keySet()));
+    }
+
     @Override
     protected void init() {
-        if (!CollectionUtils.isEmpty(hostPorts)) {
-            hostPorts.forEach(hostPort -> {
+        if (!CollectionUtils.isEmpty(activatedList)) {
+            activatedList.forEach(hostPort -> {
                 try {
                     FlexConnection connection = createConnection(hostPort);
                     if (connection != null) {
@@ -149,16 +152,16 @@ public class FlexConnectionManager extends AbstractLifeCycle {
                     log.error("Connect " + hostPort + " exception", e);
                 }
             });
-            activatedList = new ArrayList<>(concurrentMap.keySet());
+            updateActivatedList();
         }
-        scheduler.scheduleWithFixedDelay(
-                () -> activatedList = Optional.ofNullable(resetActivatedList).map(Supplier::get)
-                                              .orElseGet(() -> new ArrayList<>(hostPorts)),
-                5, 5, TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(() -> {
+            log.info("Client current activated address list: {}", activatedList);
+            activatedList = convert(addressProvider.getAddressList());
+        }, 5, 5, TimeUnit.SECONDS);
     }
 
     @Override
     protected void destroy() {
-
+        scheduler.stop();
     }
 }

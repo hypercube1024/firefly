@@ -12,6 +12,7 @@ public class MultiplexingClientConfiguration extends FlexConfiguration {
 
     private TcpConfiguration tcpConfiguration = new TcpConfiguration();
     private Set<String> serverUrlSet;
+    private AddressProvider addressProvider;
 
     public TcpConfiguration getTcpConfiguration() {
         return tcpConfiguration;
@@ -27,5 +28,13 @@ public class MultiplexingClientConfiguration extends FlexConfiguration {
 
     public void setServerUrlSet(Set<String> serverUrlSet) {
         this.serverUrlSet = serverUrlSet;
+    }
+
+    public AddressProvider getAddressProvider() {
+        return addressProvider;
+    }
+
+    public void setAddressProvider(AddressProvider addressProvider) {
+        this.addressProvider = addressProvider;
     }
 }

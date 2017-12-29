@@ -99,7 +99,7 @@ public class MultiplexingClient extends AbstractLifeCycle {
     }
 
     public boolean useConnectionManager() {
-        return !CollectionUtils.isEmpty(configuration.getServerUrlSet());
+        return configuration.getAddressProvider() != null || !CollectionUtils.isEmpty(configuration.getServerUrlSet());
     }
 
     @Override
@@ -111,7 +111,11 @@ public class MultiplexingClient extends AbstractLifeCycle {
             configuration.setHeartbeatInterval(15 * 1000);
         }
         if (useConnectionManager()) {
-            flexConnectionManager = new FlexConnectionManager(this, configuration.getServerUrlSet());
+            if (configuration.getAddressProvider() != null) {
+                flexConnectionManager = new FlexConnectionManager(this, configuration.getAddressProvider());
+            } else {
+                flexConnectionManager = new FlexConnectionManager(this, () -> configuration.getServerUrlSet());
+            }
         }
     }
 
