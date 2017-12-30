@@ -19,7 +19,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -31,10 +31,10 @@ import static org.hamcrest.Matchers.is;
 public class TestConnectionManager {
 
     @Test
-    public void test() {
+    public void test() throws InterruptedException {
         int loop = 10;
-        Phaser phaser = new Phaser(loop + 1);
-        List<HostPort> addresses = createAddresses(3);
+        CountDownLatch latch = new CountDownLatch(loop);
+        List<HostPort> addresses = createAddresses(1);
         List<MultiplexingServer> servers = addresses.stream()
                                                     .map(a -> createServer(a.getHost(), a.getPort()))
                                                     .collect(Collectors.toList());
@@ -96,7 +96,7 @@ public class TestConnectionManager {
                     Assert.assertThat(context.getResponse().getMessage(), is("OK"));
                     Assert.assertThat(data, is("Server received message"));
                     Assert.assertThat(context.getResponse().getFields().get("taskNo"), is(context.getRequest().getFields().get("taskNo")));
-                    phaser.arrive();
+                    latch.countDown();
                 }
 
                 @Override
@@ -109,9 +109,10 @@ public class TestConnectionManager {
                     t.printStackTrace();
                 }
             });
+            System.out.println("Send request " + i + " complete");
         }
 
-        phaser.arriveAndAwaitAdvance();
+        latch.await();
         servers.forEach(AbstractLifeCycle::stop);
         client.stop();
     }
