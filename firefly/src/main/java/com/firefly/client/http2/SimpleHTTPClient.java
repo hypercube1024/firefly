@@ -97,7 +97,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         UrlEncoded formUrlEncoded;
 
         SettingsFrame settingsFrame;
-        Action1<Response> upgradeH2Complete;
 
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
