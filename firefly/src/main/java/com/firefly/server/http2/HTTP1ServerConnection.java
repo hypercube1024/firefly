@@ -14,7 +14,6 @@ import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.Assert;
 import com.firefly.utils.codec.Base64Utils;
-import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
@@ -23,9 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.CONTINUE_100_BYTES;
@@ -209,9 +205,13 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         }
     }
 
-    boolean upgradeProtocol(MetaData.Request request, MetaData.Response response) {
+    boolean upgradeProtocol(MetaData.Request request) {
         switch (Protocol.from(request)) {
             case H2: {
+                if (upgradeHTTP2Complete.get()) {
+                    return true;
+                }
+
                 HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
                 Assert.notNull(settingsField, "The http2 setting field must be not null.");
 

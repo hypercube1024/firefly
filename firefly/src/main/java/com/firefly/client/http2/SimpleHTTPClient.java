@@ -2,11 +2,13 @@ package com.firefly.client.http2;
 
 import com.codahale.metrics.*;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.StringUtils;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
@@ -93,6 +95,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         Action1<HTTPOutputStream> output;
         MultiPartContentProvider multiPartProvider;
         UrlEncoded formUrlEncoded;
+
+        SettingsFrame settingsFrame;
+        Action1<Response> upgradeH2Complete;
 
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
@@ -459,6 +464,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
 
         /**
+         * send an HTTP2 settings frame
+         *
+         * @param settingsFrame The HTTP2 settings frame
+         * @return RequestBuilder
+         */
+        public RequestBuilder settings(SettingsFrame settingsFrame) {
+            this.settingsFrame = settingsFrame;
+            return this;
+        }
+
+        /**
          * Submit an HTTP request.
          *
          * @return The CompletableFuture of HTTP response.
@@ -754,11 +770,16 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                       .exception((conn, exception) -> pooledConn.release());
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
+                if (reqBuilder.settingsFrame != null) {
+                    HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) connection;
+                    http2ClientConnection.getHttp2Session().settings(reqBuilder.settingsFrame, Callback.NOOP);
+                }
                 pooledConn.release();
             }
             if (log.isDebugEnabled()) {
                 log.debug("take the connection {} from pool, released: {}, {}", connection.getSessionId(), pooledConn.isReleased(), connection.getHttpVersion());
             }
+
             if (reqBuilder.connect != null) {
                 reqBuilder.connect.call(connection).thenAccept(isSendReq -> {
                     if (isSendReq) {
