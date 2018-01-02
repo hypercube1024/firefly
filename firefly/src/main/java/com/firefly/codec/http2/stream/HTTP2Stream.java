@@ -81,10 +81,12 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
     }
 
     private boolean startWrite(Callback callback) {
-        if (writing.compareAndSet(null, callback))
+        if (writing.compareAndSet(null, callback)) {
             return true;
-        callback.failed(new WritePendingException());
-        return false;
+        } else {
+            callback.failed(new WritePendingException());
+            return false;
+        }
     }
 
     @Override
@@ -128,8 +130,9 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     protected void onIdleExpired(TimeoutException timeout) {
-        if (log.isDebugEnabled())
-            log.debug("Idle timeout {}ms expired on {}", getIdleTimeout(), this);
+        if (log.isDebugEnabled()) {
+            log.debug("Idle timeout {}ms expired on {}", getIdleTimeout(), this.toString());
+        }
 
         // Notify the application.
         if (notifyIdleTimeout(this, timeout)) {
@@ -242,9 +245,9 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     public boolean updateClose(boolean update, boolean local) {
-        if (log.isDebugEnabled())
-            log.debug("Update close for {} close={} local={}", this, update, local);
-
+        if (log.isDebugEnabled()) {
+            log.debug("Update close for {} close={} local={}", this.toString(), update, local);
+        }
         if (!update)
             return false;
 

@@ -33,8 +33,7 @@ public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HT
     }
 
     protected Parser initParser(HTTP2Configuration config) {
-        return new ServerParser((HTTP2ServerSession) http2Session, config.getMaxDynamicTableSize(),
-                config.getMaxRequestHeadLength());
+        return new ServerParser((HTTP2ServerSession) http2Session, config.getMaxDynamicTableSize(), config.getMaxRequestHeadLength());
     }
 
     ServerParser getParser() {

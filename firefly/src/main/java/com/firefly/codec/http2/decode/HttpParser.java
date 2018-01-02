@@ -273,7 +273,7 @@ public class HttpParser {
     public HttpHandler getHandler() {
         return _handler;
     }
-    
+
     /* ------------------------------------------------------------------------------- */
 
     /**
@@ -1159,8 +1159,9 @@ public class HttpParser {
      * @return True if an {@link RequestHandler} method was called and it returned true;
      */
     public boolean parseNext(ByteBuffer buffer) {
-        if (DEBUG)
+        if (DEBUG) {
             LOG.debug("parseNext s={} {}", _state, BufferUtils.toDetailString(buffer));
+        }
         try {
             // Start a request/response
             if (_state == State.START) {
@@ -1249,8 +1250,9 @@ public class HttpParser {
                         break;
 
                     default:
-                        if (DEBUG)
-                            LOG.debug("{} EOF in {}", this, _state);
+                        if (DEBUG) {
+                            LOG.debug("{} EOF in {}", this.toString(), _state);
+                        }
                         setState(State.CLOSED);
                         _handler.badMessage(HttpStatus.BAD_REQUEST_400, null);
                         break;
@@ -1420,8 +1422,9 @@ public class HttpParser {
      * Signal that the associated data source is at EOF
      */
     public void atEOF() {
-        if (DEBUG)
-            LOG.debug("atEOF {}", this);
+        if (DEBUG) {
+            LOG.debug("atEOF {}", this.toString());
+        }
         _eof = true;
     }
 
@@ -1431,15 +1434,17 @@ public class HttpParser {
      * Request that the associated data source be closed
      */
     public void close() {
-        if (DEBUG)
-            LOG.debug("close {}", this);
+        if (DEBUG) {
+            LOG.debug("close {}", this.toString());
+        }
         setState(State.CLOSE);
     }
 
     /* ------------------------------------------------------------------------------- */
     public void reset() {
-        if (DEBUG)
-            LOG.debug("reset {}", this);
+        if (DEBUG) {
+            LOG.debug("reset {}", this.toString());
+        }
 
         // reset state
         if (_state == State.CLOSE || _state == State.CLOSED)
@@ -1465,8 +1470,9 @@ public class HttpParser {
 
     /* ------------------------------------------------------------------------------- */
     protected void setState(FieldState state) {
-        if (DEBUG)
+        if (DEBUG) {
             LOG.debug("{}:{} --> {}", _state, _field, state);
+        }
         _fieldState = state;
     }
 

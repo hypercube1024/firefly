@@ -4,13 +4,16 @@ import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
 import com.firefly.codec.http2.encode.HttpGenerator;
+import com.firefly.codec.http2.frame.GoAwayFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
+import com.firefly.utils.Assert;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
@@ -23,18 +26,18 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritePendingException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HTTPClientConnection {
 
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private Promise<HTTPClientConnection> http2ConnectionPromise;
-    private Listener http2SessionListener;
-    private Promise<Stream> initStream;
-    private Stream.Listener initStreamListener;
-    private volatile boolean upgradeHTTP2Successfully = false;
-
+    private Promise<HTTP2ClientConnection> http2ConnectionPromise;
+    private volatile HTTP2ClientConnection http2Connection;
+    private ClientHTTP2SessionListener http2SessionListener;
+    private final AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
+    private final AtomicBoolean upgradeWebSocketComplete = new AtomicBoolean(false);
     private final ResponseHandlerWrap wrap;
 
     private static class ResponseHandlerWrap implements ResponseHandler {
@@ -148,66 +151,49 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         return tcpSession;
     }
 
-    boolean upgradeProtocolToHTTP2(MetaData.Request request, MetaData.Response response) {
-        if (http2ConnectionPromise != null && http2SessionListener != null) {
-            String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
-            if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
-                upgradeHTTP2Successfully = true;
-
-                // initialize http2 client connection;
-                final HTTP2ClientConnection http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
-                        getTcpSession(), null, http2SessionListener) {
-                    @Override
-                    protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
-                                                            Listener listener) {
-                        return HTTP2ClientSession.initSessionForUpgradingHTTP2(scheduler, this.tcpSession, generator,
-                                listener, flowControl, 3, config.getStreamIdleTimeout(), initStream,
-                                initStreamListener);
-                    }
-                };
-                getTcpSession().attachObject(http2Connection);
-                http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
     @Override
-    public void upgradeHTTP2(final MetaData.Request request, final SettingsFrame settings,
-                             final Promise<HTTPClientConnection> promise, final ClientHTTPHandler handler) {
-        upgradePlaintextHTTP2(request, settings,
-                promise, new HTTP2ClientResponseHandler.ClientStreamPromise(request,
-                        new Promise.Adapter<>(), true),
-                new HTTP2ClientResponseHandler(request, handler, this), new Listener.Adapter() {
+    public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
+                             ClientHTTPHandler upgradeHandler,
+                             ClientHTTPHandler http2ResponseHandler) {
+        Promise<Stream> initStream = new HTTP2ClientResponseHandler.ClientStreamPromise(request, new Promise<HTTPOutputStream>() {
 
-                    @Override
-                    public Map<Integer, Integer> onPreface(com.firefly.codec.http2.stream.Session session) {
-                        return settings.getSettings();
-                    }
+            @Override
+            public void failed(Throwable x) {
+                log.error("Create client output stream exception", x);
+            }
+        });
+        Stream.Listener initStreamListener = new HTTP2ClientResponseHandler(request, http2ResponseHandler, this);
+        ClientHTTP2SessionListener listener = new ClientHTTP2SessionListener() {
 
-                    @Override
-                    public void onFailure(com.firefly.codec.http2.stream.Session session, Throwable failure) {
-                        log.error("client failure, {}", failure, session);
-                    }
+            @Override
+            public Map<Integer, Integer> onPreface(com.firefly.codec.http2.stream.Session session) {
+                return settings.getSettings();
+            }
 
-                }, handler);
+        };
+        upgradeHTTP2(request, settings, promise, initStream, initStreamListener, listener, upgradeHandler);
     }
 
-    public void upgradePlaintextHTTP2(MetaData.Request request, SettingsFrame settings,
-                                      final Promise<HTTPClientConnection> promise, final Promise<Stream> initStream,
-                                      final Stream.Listener initStreamListener, final Listener listener, final ClientHTTPHandler handler) {
+    public void upgradeHTTP2(Request request, SettingsFrame settings,
+                             Promise<HTTP2ClientConnection> promise, Promise<Stream> initStream,
+                             Stream.Listener initStreamListener, ClientHTTP2SessionListener listener,
+                             ClientHTTPHandler handler) {
         if (isEncrypted()) {
             throw new IllegalStateException("The TLS TCP connection must use ALPN to upgrade HTTP2");
         }
 
         this.http2ConnectionPromise = promise;
         this.http2SessionListener = listener;
-        this.initStream = initStream;
-        this.initStreamListener = initStreamListener;
+        http2Connection = new HTTP2ClientConnection(getHTTP2Configuration(),
+                getTcpSession(), null, http2SessionListener) {
+            @Override
+            protected HTTP2Session initHTTP2Session(HTTP2Configuration config, FlowControlStrategy flowControl,
+                                                    Listener listener) {
+                return HTTP2ClientSession.initSessionForUpgradingHTTP2(scheduler, this.tcpSession, generator,
+                        listener, flowControl, 3, config.getStreamIdleTimeout(), initStream,
+                        initStreamListener);
+            }
+        };
 
         // generate http2 upgrading headers
         request.getFields().add(new HttpField(HttpHeader.CONNECTION, "Upgrade, HTTP2-Settings"));
@@ -237,8 +223,28 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         send(request, handler);
     }
 
+    boolean upgradeHTTP2Complete(MetaData.Response response) {
+        if (http2ConnectionPromise != null && http2SessionListener != null && http2Connection != null) {
+            String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
+            if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
+                upgradeHTTP2Complete.compareAndSet(false, true);
+                getTcpSession().attachObject(http2Connection);
+                http2SessionListener.setConnection(http2Connection);
+                http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
+                return true;
+            }
+        }
+        http2Connection = null;
+        return false;
+    }
+
     @Override
-    public HTTPOutputStream sendRequestWithContinuation(MetaData.Request request, ClientHTTPHandler handler) {
+    public void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise) {
+        // TODO
+    }
+
+    @Override
+    public HTTPOutputStream sendRequestWithContinuation(Request request, ClientHTTPHandler handler) {
         request.getFields().put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE);
         HTTPOutputStream outputStream = getHTTPOutputStream(request, handler);
         try {
@@ -250,7 +256,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    public void send(MetaData.Request request, ClientHTTPHandler handler) {
+    public void send(Request request, ClientHTTPHandler handler) {
         try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
             log.debug("client request and does not send data");
         } catch (IOException e) {
@@ -259,17 +265,17 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    public void send(MetaData.Request request, ByteBuffer buffer, ClientHTTPHandler handler) {
+    public void send(Request request, ByteBuffer buffer, ClientHTTPHandler handler) {
         send(request, Collections.singleton(buffer), handler);
     }
 
     @Override
-    public void send(MetaData.Request request, ByteBuffer[] buffers, ClientHTTPHandler handler) {
+    public void send(Request request, ByteBuffer[] buffers, ClientHTTPHandler handler) {
         send(request, Arrays.asList(buffers), handler);
     }
 
     @Override
-    public void send(MetaData.Request request, Collection<ByteBuffer> buffers, ClientHTTPHandler handler) {
+    public void send(Request request, Collection<ByteBuffer> buffers, ClientHTTPHandler handler) {
         try (HTTPOutputStream output = getHTTPOutputStream(request, handler)) {
             if (buffers != null) {
                 output.writeWithContentLength(buffers);
@@ -280,7 +286,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    public HTTPOutputStream getHTTPOutputStream(MetaData.Request request, ClientHTTPHandler handler) {
+    public HTTPOutputStream getHTTPOutputStream(Request request, ClientHTTPHandler handler) {
         HTTP1ClientResponseHandler http1ClientResponseHandler = new HTTP1ClientResponseHandler(handler);
         checkWrite(request, http1ClientResponseHandler);
         http1ClientResponseHandler.outputStream = new HTTP1ClientRequestOutputStream(this, wrap.writing.get().request);
@@ -297,7 +303,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         private final HTTP1ClientConnection connection;
         private final HttpGenerator httpGenerator;
 
-        private HTTP1ClientRequestOutputStream(HTTP1ClientConnection connection, MetaData.Request request) {
+        private HTTP1ClientRequestOutputStream(HTTP1ClientConnection connection, Request request) {
             super(request, true);
             this.connection = connection;
             httpGenerator = new HttpGenerator();
@@ -338,19 +344,12 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         }
     }
 
-    private void checkWrite(MetaData.Request request, HTTP1ClientResponseHandler handler) {
-        if (request == null)
-            throw new IllegalArgumentException("the http client request is null");
-
-        if (handler == null)
-            throw new IllegalArgumentException("the http1 client response handler is null");
-
-        if (!isOpen())
-            throw new IllegalStateException("current client session " + tcpSession.getSessionId() + " has been closed");
-
-        if (upgradeHTTP2Successfully)
-            throw new IllegalStateException(
-                    "current client session " + tcpSession.getSessionId() + " has upgraded HTTP2");
+    private void checkWrite(Request request, HTTP1ClientResponseHandler handler) {
+        Assert.notNull(request, "The http client request is null.");
+        Assert.notNull(handler, "The http1 client response handler is null.");
+        Assert.state(isOpen(), "The current connection " + tcpSession.getSessionId() + " has been closed.");
+        Assert.state(!upgradeHTTP2Complete.get(), "The current connection " + tcpSession.getSessionId() + " has upgraded HTTP2.");
+        Assert.state(!upgradeWebSocketComplete.get(), "The current connection " + tcpSession.getSessionId() + " has upgraded WebSocket.");
 
         if (wrap.writing.compareAndSet(null, handler)) {
             request.getFields().put(HttpHeader.HOST, tcpSession.getRemoteAddress().getHostString());
@@ -361,4 +360,28 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         }
     }
 
+    @Override
+    public void close() {
+        if (isOpen()) {
+            super.close();
+        }
+    }
+
+    @Override
+    public boolean isClosed() {
+        return !isOpen();
+    }
+
+    @Override
+    public boolean isOpen() {
+        return tcpSession.isOpen() && !upgradeHTTP2Complete.get() && !upgradeWebSocketComplete.get();
+    }
+
+    public boolean getUpgradeHTTP2Complete() {
+        return upgradeHTTP2Complete.get();
+    }
+
+    public boolean getUpgradeWebSocketComplete() {
+        return upgradeWebSocketComplete.get();
+    }
 }

@@ -56,8 +56,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
                     return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
                 }
             } else {
-                boolean success = connection.upgradeProtocol(request, response);
-                return success || serverHTTPHandler.headerComplete(request, response, outputStream, connection);
+                return serverHTTPHandler.headerComplete(request, response, outputStream, connection);
             }
         }
     }
@@ -84,7 +83,12 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
     @Override
     public boolean messageComplete() {
         try {
-            return connection.upgradeHTTP2Successfully || serverHTTPHandler.messageComplete(request, response, outputStream, connection);
+            if (connection.upgradeHTTP2Complete.get()) {
+                return true;
+            } else {
+                boolean success = connection.upgradeProtocol(request);
+                return success || serverHTTPHandler.messageComplete(request, response, outputStream, connection);
+            }
         } finally {
             connection.getParser().reset();
         }

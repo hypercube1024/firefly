@@ -17,7 +17,7 @@ abstract public class ShutdownHelper {
             try {
                 iLoggerFactory.getClass().getDeclaredMethod("stop").invoke(iLoggerFactory);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                System.out.println(e.getMessage());
+                System.err.println(e.getMessage());
             }
             Millisecond100Clock.stop();
         } catch (Exception e) {

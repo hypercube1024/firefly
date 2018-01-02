@@ -6,6 +6,8 @@ import com.firefly.utils.function.Action1;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public abstract class AbstractTcpConnection implements TcpConnection {
@@ -13,9 +15,9 @@ public abstract class AbstractTcpConnection implements TcpConnection {
     public static final String DEFAULT_CHARSET = "UTF-8";
 
     Session session;
-    Action0 closeCallback;
+    List<Action0> closeCallbacks = new ArrayList<>();
+    List<Action1<Throwable>> exceptions = new ArrayList<>();
     Action1<ByteBuffer> buffer;
-    Action1<Throwable> exception;
     volatile Object attachment;
 
     public AbstractTcpConnection(Session session) {
@@ -29,8 +31,8 @@ public abstract class AbstractTcpConnection implements TcpConnection {
     }
 
     @Override
-    public TcpConnection exception(Action1<Throwable> exception) {
-        this.exception = exception;
+    public TcpConnection onException(Action1<Throwable> exception) {
+        exceptions.add(exception);
         return this;
     }
 
@@ -90,8 +92,8 @@ public abstract class AbstractTcpConnection implements TcpConnection {
     }
 
     @Override
-    public TcpConnection close(Action0 closeCallback) {
-        this.closeCallback = closeCallback;
+    public TcpConnection onClose(Action0 closeCallback) {
+        closeCallbacks.add(closeCallback);
         return this;
     }
 

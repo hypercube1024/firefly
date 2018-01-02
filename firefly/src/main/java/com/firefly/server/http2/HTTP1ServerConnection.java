@@ -12,6 +12,7 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
+import com.firefly.utils.Assert;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
@@ -19,9 +20,9 @@ import com.firefly.utils.lang.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.CONTINUE_100_BYTES;
 import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.H2C_BYTES;
@@ -32,7 +33,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     private final ServerSessionListener serverSessionListener;
     private final HTTP1ServerRequestHandler serverRequestHandler;
-    boolean upgradeHTTP2Successfully = false;
+    AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
     Promise<HTTPTunnelConnection> tunnelConnectionPromise;
 
     HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
@@ -197,51 +198,48 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     serverSessionListener);
             tcpSession.attachObject(http2ServerConnection);
             http2ServerConnection.getParser().directUpgrade();
-            upgradeHTTP2Successfully = true;
+            upgradeHTTP2Complete.compareAndSet(false, true);
             return true;
         } else {
             return false;
         }
     }
 
-    boolean upgradeProtocol(MetaData.Request request, MetaData.Response response) {
+    boolean upgradeProtocol(MetaData.Request request) {
         switch (Protocol.from(request)) {
             case H2: {
-                HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
-                if (settingsField != null) {
-                    response.setStatus(101);
-                    response.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
-                    response.getFields().put(HttpHeader.UPGRADE, "h2c");
-
-                    final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
-                    if (log.isDebugEnabled()) {
-                        log.debug("the server received settings {}", TypeUtils.toHexString(settings));
-                    }
-
-                    SettingsFrame settingsFrame = SettingsBodyParser.parseBody(BufferUtils.toBuffer(settings));
-                    if (settingsFrame == null) {
-                        throw new BadMessageException("settings frame parsing error");
-                    } else {
-                        responseH2c();
-
-                        HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
-                                tcpSession, secureSession, serverSessionListener);
-                        tcpSession.attachObject(http2ServerConnection);
-                        http2ServerConnection.getParser().standardUpgrade();
-
-                        serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
-                        SessionSPI sessionSPI = http2ServerConnection.getSessionSPI();
-
-                        sessionSPI.onFrame(new PrefaceFrame());
-                        sessionSPI.onFrame(settingsFrame);
-                        sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
-                    }
-
-                    upgradeHTTP2Successfully = true;
+                if (upgradeHTTP2Complete.get()) {
                     return true;
-                } else {
-                    throw new IllegalStateException("upgrade HTTP2 unsuccessfully");
                 }
+
+                HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
+                Assert.notNull(settingsField, "The http2 setting field must be not null.");
+
+                final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
+                if (log.isDebugEnabled()) {
+                    log.debug("the server received settings {}", TypeUtils.toHexString(settings));
+                }
+
+                SettingsFrame settingsFrame = SettingsBodyParser.parseBody(BufferUtils.toBuffer(settings));
+                if (settingsFrame == null) {
+                    throw new BadMessageException("settings frame parsing error");
+                } else {
+                    responseH2c();
+
+                    HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
+                            tcpSession, secureSession, serverSessionListener);
+                    tcpSession.attachObject(http2ServerConnection);
+                    upgradeHTTP2Complete.compareAndSet(false, true);
+                    http2ServerConnection.getParser().standardUpgrade();
+
+                    serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
+                    SessionSPI sessionSPI = http2ServerConnection.getSessionSPI();
+
+                    sessionSPI.onFrame(new PrefaceFrame());
+                    sessionSPI.onFrame(settingsFrame);
+                    sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
+                }
+                return true;
             }
             case WEB_SOCKET: {
                 // TODO
@@ -252,4 +250,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         }
     }
 
+    public boolean getUpgradeHTTP2Complete() {
+        return upgradeHTTP2Complete.get();
+    }
 }

@@ -12,6 +12,7 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.concurrent.Callback;
@@ -33,7 +34,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    public void initialize(HTTP2Configuration config, final Promise<HTTPClientConnection> promise,
+    public void initialize(HTTP2Configuration config, final Promise<? super HTTP2ClientConnection> promise,
                            final Listener listener) {
         Map<Integer, Integer> settings = listener.onPreface(getHttp2Session());
         if (settings == null) {
@@ -144,7 +145,6 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
                 } catch (IOException e) {
                     log.error("write data unsuccessfully", e);
                 }
-
             }
 
             @Override
@@ -183,14 +183,20 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
                         final Promise<HTTPOutputStream> promise,
                         final ClientHTTPHandler handler) {
         http2Session.newStream(new HeadersFrame(request, null, endStream),
-                new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise, endStream),
+                new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise),
                 new HTTP2ClientResponseHandler(request, handler, this));
     }
 
     @Override
-    public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTPClientConnection> promise,
-                             ClientHTTPHandler handler) {
-        throw new CommonRuntimeException("current connection version is http2, it does not need to upgrading");
+    public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
+                             ClientHTTPHandler upgradeHandler,
+                             ClientHTTPHandler http2ResponseHandler) {
+        throw new CommonRuntimeException("The current connection version is http2, it does not need to upgrading.");
+    }
+
+    @Override
+    public void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise) {
+        throw new CommonRuntimeException("The current connection version is http2, it can not upgrade WebSocket.");
     }
 
 }

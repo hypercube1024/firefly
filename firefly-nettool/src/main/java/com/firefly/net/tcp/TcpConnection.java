@@ -1,5 +1,6 @@
 package com.firefly.net.tcp;
 
+import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.Connection;
 import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
@@ -10,21 +11,21 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-public interface TcpConnection extends Connection {
+public interface TcpConnection extends Connection, ApplicationProtocolSelector {
 
     TcpConnection receive(Action1<ByteBuffer> buffer);
 
-    CompletableFuture<Void> writeToFuture(ByteBuffer byteBuffer);
+    CompletableFuture<Boolean> writeToFuture(ByteBuffer byteBuffer);
 
-    CompletableFuture<Void> writeToFuture(ByteBuffer[] byteBuffer);
+    CompletableFuture<Boolean> writeToFuture(ByteBuffer[] byteBuffer);
 
-    CompletableFuture<Void> writeToFuture(Collection<ByteBuffer> byteBuffer);
+    CompletableFuture<Boolean> writeToFuture(Collection<ByteBuffer> byteBuffer);
 
-    CompletableFuture<Void> writeToFuture(String message);
+    CompletableFuture<Boolean> writeToFuture(String message);
 
-    CompletableFuture<Void> writeToFuture(String message, String charset);
+    CompletableFuture<Boolean> writeToFuture(String message, String charset);
 
-    CompletableFuture<Void> writeToFuture(FileRegion file);
+    CompletableFuture<Boolean> writeToFuture(FileRegion file);
 
     TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed);
 
@@ -62,9 +63,9 @@ public interface TcpConnection extends Connection {
 
     TcpConnection write(FileRegion file);
 
-    TcpConnection close(Action0 closeCallback);
+    TcpConnection onClose(Action0 closeCallback);
 
-    TcpConnection exception(Action1<Throwable> exception);
+    TcpConnection onException(Action1<Throwable> exception);
 
     void closeNow();
 
@@ -77,5 +78,7 @@ public interface TcpConnection extends Connection {
     boolean isShutdownInput();
 
     boolean isWaitingForClose();
+
+    boolean isSecureConnection();
 
 }

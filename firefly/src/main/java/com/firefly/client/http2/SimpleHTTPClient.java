@@ -2,14 +2,17 @@ package com.firefly.client.http2;
 
 import com.codahale.metrics.*;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.StringUtils;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action3;
+import com.firefly.utils.function.Func1;
 import com.firefly.utils.heartbeat.HealthCheck;
 import com.firefly.utils.heartbeat.Task;
 import com.firefly.utils.io.BufferUtils;
@@ -79,6 +82,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
         List<ByteBuffer> requestBody = new ArrayList<>();
 
+        Func1<HTTPClientConnection, CompletableFuture<Boolean>> connect;
         Action1<Response> headerComplete;
         Action1<ByteBuffer> content;
         Action1<Response> contentComplete;
@@ -91,6 +95,8 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         Action1<HTTPOutputStream> output;
         MultiPartContentProvider multiPartProvider;
         UrlEncoded formUrlEncoded;
+
+        SettingsFrame settingsFrame;
 
         Promise.Completable<SimpleResponse> future;
         SimpleResponse simpleResponse;
@@ -372,6 +378,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
 
         /**
+         * Set the connection establishing callback.
+         *
+         * @param connect the connection establishing callback
+         * @return RequestBuilder
+         */
+        public RequestBuilder connect(Func1<HTTPClientConnection, CompletableFuture<Boolean>> connect) {
+            this.connect = connect;
+            return this;
+        }
+
+        /**
          * Set the HTTP header complete callback.
          *
          * @param headerComplete The HTTP header complete callback. When the HTTP client receives all HTTP headers,
@@ -442,6 +459,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
          */
         public RequestBuilder earlyEof(Action1<Response> earlyEof) {
             this.earlyEof = earlyEof;
+            return this;
+        }
+
+        /**
+         * send an HTTP2 settings frame
+         *
+         * @param settingsFrame The HTTP2 settings frame
+         * @return RequestBuilder
+         */
+        public RequestBuilder settings(SettingsFrame settingsFrame) {
+            this.settingsFrame = settingsFrame;
             return this;
         }
 
@@ -741,12 +769,30 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                       .exception((conn, exception) -> pooledConn.release());
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
+                if (reqBuilder.settingsFrame != null) {
+                    HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) connection;
+                    http2ClientConnection.getHttp2Session().settings(reqBuilder.settingsFrame, Callback.NOOP);
+                }
                 pooledConn.release();
             }
             if (log.isDebugEnabled()) {
                 log.debug("take the connection {} from pool, released: {}, {}", connection.getSessionId(), pooledConn.isReleased(), connection.getHttpVersion());
             }
-            send(reqBuilder, resTimerCtx, connection, createClientHTTPHandler(reqBuilder, resTimerCtx, pooledConn));
+
+            if (reqBuilder.connect != null) {
+                reqBuilder.connect.call(connection).thenAccept(isSendReq -> {
+                    if (isSendReq) {
+                        send(reqBuilder, resTimerCtx, connection, createClientHTTPHandler(reqBuilder, resTimerCtx, pooledConn));
+                    } else {
+                        IO.close(connection);
+                    }
+                }).exceptionally(ex -> {
+                    IO.close(connection);
+                    return null;
+                });
+            } else {
+                send(reqBuilder, resTimerCtx, connection, createClientHTTPHandler(reqBuilder, resTimerCtx, pooledConn));
+            }
         }).exceptionally(e -> {
             log.error("SimpleHTTPClient sends message exception", e);
             resTimerCtx.stop();

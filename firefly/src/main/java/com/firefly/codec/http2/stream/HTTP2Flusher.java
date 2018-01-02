@@ -47,8 +47,9 @@ public class HTTP2Flusher extends IteratingCallback {
             closed = terminated;
             if (closed == null) {
                 frames.offerFirst(entry);
-                if (log.isDebugEnabled())
-                    log.debug("Prepended {}, frames={}", entry, frames.size());
+                if (log.isDebugEnabled()) {
+                    log.debug("Prepended {}, frames={}", entry.toString(), frames.size());
+                }
             }
         }
         if (closed == null)
@@ -63,36 +64,35 @@ public class HTTP2Flusher extends IteratingCallback {
             closed = terminated;
             if (closed == null) {
                 frames.offer(entry);
-                if (log.isDebugEnabled())
-                    log.debug("Appended {}, frames={}", entry, frames.size());
+                if (log.isDebugEnabled()) {
+                    log.debug("Appended {}, frames={}", entry.toString(), frames.size());
+                }
             }
         }
-        if (closed == null)
+        if (closed == null) {
             return true;
+        }
         closed(entry, closed);
         return false;
     }
 
-    private int getWindowQueueSize() {
-        synchronized (this) {
-            return windows.size();
-        }
+    private synchronized int getWindowQueueSize() {
+        return windows.size();
     }
 
-    public int getFrameQueueSize() {
-        synchronized (this) {
-            return frames.size();
-        }
+    public synchronized int getFrameQueueSize() {
+        return frames.size();
     }
 
     @Override
     protected Action process() throws Throwable {
-        if (log.isDebugEnabled())
-            log.debug("Flushing {}", session);
-
+        if (log.isDebugEnabled()) {
+            log.debug("Flushing {}", session.toString());
+        }
         synchronized (this) {
-            if (terminated != null)
+            if (terminated != null) {
                 throw terminated;
+            }
 
             while (!windows.isEmpty()) {
                 WindowEntry entry = windows.poll();
@@ -108,20 +108,22 @@ public class HTTP2Flusher extends IteratingCallback {
 
 
         if (entries.isEmpty()) {
-            if (log.isDebugEnabled())
-                log.debug("Flushed {}", session);
+            if (log.isDebugEnabled()) {
+                log.debug("Flushed {}", session.toString());
+            }
             return Action.IDLE;
         }
 
         while (!entries.isEmpty()) {
             Entry entry = entries.poll();
-            if (log.isDebugEnabled())
-                log.debug("Processing {}", entry);
-
+            if (log.isDebugEnabled()) {
+                log.debug("Processing {}", entry.toString());
+            }
             // If the stream has been reset or removed, don't send the frame.
             if (entry.isStale()) {
-                if (log.isDebugEnabled())
-                    log.debug("Stale {}", entry);
+                if (log.isDebugEnabled()) {
+                    log.debug("Stale {}", entry.toString());
+                }
                 continue;
             }
 
@@ -135,8 +137,9 @@ public class HTTP2Flusher extends IteratingCallback {
                 }
             } catch (Throwable failure) {
                 // Failure to generate the entry is catastrophic.
-                if (log.isDebugEnabled())
+                if (log.isDebugEnabled()) {
                     log.debug("Failure generating frame " + entry.frame, failure);
+                }
                 failed(failure);
                 return Action.SUCCEEDED;
             }
@@ -157,9 +160,9 @@ public class HTTP2Flusher extends IteratingCallback {
 
     @Override
     public void succeeded() {
-        if (log.isDebugEnabled())
-            log.debug("Written {} frames for {}", actives.size(), actives);
-
+        if (log.isDebugEnabled()) {
+            log.debug("Written {} frames for {}", actives.size(), actives.toString());
+        }
         complete();
 
         super.succeeded();
@@ -205,8 +208,9 @@ public class HTTP2Flusher extends IteratingCallback {
         synchronized (this) {
             closed = terminated;
             terminated = x;
-            if (log.isDebugEnabled())
+            if (log.isDebugEnabled()) {
                 log.debug("{}, active/queued={}/{}", closed != null ? "Closing" : "Failing", actives.size(), frames.size());
+            }
             actives.addAll(frames);
             frames.clear();
         }
@@ -225,8 +229,9 @@ public class HTTP2Flusher extends IteratingCallback {
         synchronized (this) {
             closed = terminated;
             terminated = cause;
-            if (log.isDebugEnabled())
+            if (log.isDebugEnabled()) {
                 log.debug("{}", closed != null ? "Terminated" : "Terminating");
+            }
         }
         if (closed == null)
             iterate();

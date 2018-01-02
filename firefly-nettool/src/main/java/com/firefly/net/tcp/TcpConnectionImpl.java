@@ -11,6 +11,7 @@ import com.firefly.utils.io.BufferUtils;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class TcpConnectionImpl extends AbstractTcpConnection {
@@ -20,11 +21,11 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(ByteBuffer byteBuffer) {
-        Promise.Completable<Void> c = new Promise.Completable<>();
+    public CompletableFuture<Boolean> writeToFuture(ByteBuffer byteBuffer) {
+        Promise.Completable<Boolean> c = new Promise.Completable<>();
         session.write(byteBuffer, new Callback() {
             public void succeeded() {
-                c.succeeded(null);
+                c.succeeded(true);
             }
 
             public void failed(Throwable x) {
@@ -35,11 +36,11 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(ByteBuffer[] byteBuffer) {
-        Promise.Completable<Void> c = new Promise.Completable<>();
+    public CompletableFuture<Boolean> writeToFuture(ByteBuffer[] byteBuffer) {
+        Promise.Completable<Boolean> c = new Promise.Completable<>();
         session.write(byteBuffer, new Callback() {
             public void succeeded() {
-                c.succeeded(null);
+                c.succeeded(true);
             }
 
             public void failed(Throwable x) {
@@ -50,11 +51,11 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(Collection<ByteBuffer> byteBuffer) {
-        Promise.Completable<Void> c = new Promise.Completable<>();
+    public CompletableFuture<Boolean> writeToFuture(Collection<ByteBuffer> byteBuffer) {
+        Promise.Completable<Boolean> c = new Promise.Completable<>();
         session.write(byteBuffer, new Callback() {
             public void succeeded() {
-                c.succeeded(null);
+                c.succeeded(true);
             }
 
             public void failed(Throwable x) {
@@ -65,21 +66,21 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(String message) {
+    public CompletableFuture<Boolean> writeToFuture(String message) {
         return writeToFuture(message, DEFAULT_CHARSET);
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(String message, String charset) {
+    public CompletableFuture<Boolean> writeToFuture(String message, String charset) {
         return writeToFuture(BufferUtils.toBuffer(message, Charset.forName(charset)));
     }
 
     @Override
-    public CompletableFuture<Void> writeToFuture(FileRegion file) {
-        Promise.Completable<Void> c = new Promise.Completable<>();
+    public CompletableFuture<Boolean> writeToFuture(FileRegion file) {
+        Promise.Completable<Boolean> c = new Promise.Completable<>();
         session.write(file, new Callback() {
             public void succeeded() {
-                c.succeeded(null);
+                c.succeeded(true);
             }
 
             public void failed(Throwable x) {
@@ -257,4 +258,18 @@ public class TcpConnectionImpl extends AbstractTcpConnection {
         return this;
     }
 
+    @Override
+    public boolean isSecureConnection() {
+        return false;
+    }
+
+    @Override
+    public String getApplicationProtocol() {
+        return null;
+    }
+
+    @Override
+    public List<String> getSupportedApplicationProtocols() {
+        return null;
+    }
 }
