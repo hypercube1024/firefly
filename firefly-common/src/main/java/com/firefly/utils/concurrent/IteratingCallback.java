@@ -208,7 +208,7 @@ public abstract class IteratingCallback implements Callback {
                 action = process();
             } catch (Throwable x) {
                 failed(x);
-                break processing;
+                break;
             }
 
             // acted on the action we have just received

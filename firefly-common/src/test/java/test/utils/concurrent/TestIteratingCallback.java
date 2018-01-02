@@ -20,9 +20,14 @@ public class TestIteratingCallback {
         Queue<String> strings = new LinkedList<>();
         StringBuilder s = new StringBuilder(loop * 2);
         for (int i = 0; i < loop; i++) {
-            strings.offer("e" + i);
-            s.append("e").append(i);
+            if (i == (loop - 1)) {
+                strings.offer("end");
+            } else {
+                strings.offer("e" + i);
+                s.append("e").append(i);
+            }
         }
+        strings.offer("another");
 
         StringBuilder ret = new StringBuilder(loop * 2);
 
@@ -32,18 +37,32 @@ public class TestIteratingCallback {
             protected Action process() {
                 String e = strings.poll();
                 if (e != null) {
-                    ret.append(e);
-                    return Action.SCHEDULED;
+                    System.out.println("current element: " + e);
+                    if (e.equals("end")) {
+                        return Action.SUCCEEDED;
+                    } else {
+                        ret.append(e);
+                        return Action.SCHEDULED;
+                    }
                 } else {
                     return Action.IDLE;
                 }
             }
+
+            @Override
+            protected void onCompleteSuccess() {
+                System.out.println("The tasks complete. Remaining element: " + strings.size());
+                Assert.assertThat(strings.size(), is(1));
+                strings.clear();
+            }
         };
+
         callback.iterate();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop - 1; i++) {
             callback.succeeded();
         }
 
+        Assert.assertThat(strings.size(), is(0));
         Assert.assertThat(ret.toString(), is(s.toString()));
     }
 }
