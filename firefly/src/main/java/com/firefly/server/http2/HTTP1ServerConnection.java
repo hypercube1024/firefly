@@ -10,12 +10,14 @@ import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.*;
+import com.firefly.codec.websocket.model.AcceptHash;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.Assert;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.IO;
 import com.firefly.utils.lang.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -205,7 +207,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
         }
     }
 
-    boolean upgradeProtocol(MetaData.Request request) {
+    boolean upgradeProtocol(MetaData.Request request, MetaData.Response response,
+                            HTTPOutputStream output) {
         switch (Protocol.from(request)) {
             case H2: {
                 if (upgradeHTTP2Complete.get()) {
@@ -242,8 +245,17 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 return true;
             }
             case WEB_SOCKET: {
-                // TODO
-                return false;
+                String key = request.getFields().get("Sec-WebSocket-Key");
+                Assert.hasText(key, "Missing request header 'Sec-WebSocket-Key'");
+
+                response.setStatus(HttpStatus.SWITCHING_PROTOCOLS_101);
+                response.getFields().put("Upgrade", "WebSocket");
+                response.getFields().add("Connection", "Upgrade");
+                response.getFields().add("Sec-WebSocket-Accept", AcceptHash.hashKey(key));
+                IO.close(output);
+                // TODO create websocket connection
+
+                return true;
             }
             default:
                 return false;

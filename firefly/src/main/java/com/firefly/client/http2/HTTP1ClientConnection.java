@@ -4,7 +4,6 @@ import com.firefly.codec.http2.decode.HttpParser;
 import com.firefly.codec.http2.decode.HttpParser.RequestHandler;
 import com.firefly.codec.http2.decode.HttpParser.ResponseHandler;
 import com.firefly.codec.http2.encode.HttpGenerator;
-import com.firefly.codec.http2.frame.GoAwayFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Request;
@@ -14,6 +13,7 @@ import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.Assert;
+import com.firefly.utils.codec.B64Code;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
@@ -26,13 +26,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritePendingException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.firefly.codec.websocket.model.WebSocketConstants.SPEC_VERSION;
 
 public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HTTPClientConnection {
 
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
+    private Promise<WebSocketConnection> webSocketConnectionPromise;
     private Promise<HTTP2ClientConnection> http2ConnectionPromise;
     private volatile HTTP2ClientConnection http2Connection;
     private ClientHTTP2SessionListener http2SessionListener;
@@ -223,24 +227,50 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         send(request, handler);
     }
 
-    boolean upgradeHTTP2Complete(MetaData.Response response) {
-        if (http2ConnectionPromise != null && http2SessionListener != null && http2Connection != null) {
-            String upgradeValue = response.getFields().get(HttpHeader.UPGRADE);
-            if (response.getStatus() == HttpStatus.SWITCHING_PROTOCOLS_101 && "h2c".equalsIgnoreCase(upgradeValue)) {
-                upgradeHTTP2Complete.compareAndSet(false, true);
-                getTcpSession().attachObject(http2Connection);
-                http2SessionListener.setConnection(http2Connection);
-                http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
-                return true;
+    boolean upgradeProtocolComplete(MetaData.Response response) {
+        switch (Protocol.from(response)) {
+            case H2: {
+                if (http2ConnectionPromise != null && http2SessionListener != null && http2Connection != null) {
+                    upgradeHTTP2Complete.compareAndSet(false, true);
+                    getTcpSession().attachObject(http2Connection);
+                    http2SessionListener.setConnection(http2Connection);
+                    http2Connection.initialize(getHTTP2Configuration(), http2ConnectionPromise, http2SessionListener);
+                    return true;
+                } else {
+                    resetUpgradeProtocol();
+                    return false;
+                }
             }
+            case WEB_SOCKET: {
+                // TODO create websocket connection
+                return false;
+            }
+            default:
+                resetUpgradeProtocol();
+                return false;
         }
+    }
+
+    private void resetUpgradeProtocol() {
+        http2ConnectionPromise = null;
+        http2SessionListener = null;
         http2Connection = null;
-        return false;
     }
 
     @Override
     public void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise) {
-        // TODO
+        request.getFields().put(HttpHeader.SEC_WEBSOCKET_VERSION, String.valueOf(SPEC_VERSION));
+        request.getFields().put(HttpHeader.UPGRADE, "websocket");
+        request.getFields().put(HttpHeader.CONNECTION, "Upgrade");
+        request.getFields().put(HttpHeader.SEC_WEBSOCKET_KEY, genRandomKey());
+        webSocketConnectionPromise = promise;
+        send(request, new ClientHTTPHandler.Adapter());
+    }
+
+    private String genRandomKey() {
+        byte[] bytes = new byte[16];
+        ThreadLocalRandom.current().nextBytes(bytes);
+        return new String(B64Code.encode(bytes));
     }
 
     @Override
