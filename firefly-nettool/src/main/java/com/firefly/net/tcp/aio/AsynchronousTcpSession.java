@@ -179,42 +179,53 @@ public class AsynchronousTcpSession implements Session {
 
         private void writingCompletedCallback(Callback callback) {
             callback.succeeded();
+            OutputEntry<?> entry = null;
             outputLock.lock();
             try {
                 sessionMetric.getOutputBufferQueueSize().update(outputBuffer.size());
                 if (outputBuffer.isEmpty()) {
                     isWriting = false;
                 } else if (outputBuffer.size() <= 2) {
-                    _write(outputBuffer.poll());
+                    entry = outputBuffer.poll();
                 } else {
                     // merge ByteBuffer to ByteBuffer Array
                     List<Callback> callbackList = new LinkedList<>();
                     List<ByteBuffer> byteBufferList = new LinkedList<>();
                     OutputEntry<?> obj;
-                    while ((obj = outputBuffer.peek()) != null
-                            && obj.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
-                        outputBuffer.poll();
-                        callbackList.add(obj.getCallback());
-                        switch (obj.getOutputEntryType()) {
-                            case BYTE_BUFFER:
-                                ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) obj;
-                                byteBufferList.add(byteBufferOutputEntry.getData());
-                                break;
-                            case BYTE_BUFFER_ARRAY:
-                                ByteBufferArrayOutputEntry byteBufferArrayOutputEntry = (ByteBufferArrayOutputEntry) obj;
-                                byteBufferList.addAll(Arrays.asList(byteBufferArrayOutputEntry.getData()));
-                                break;
-                            case MERGED_BUFFER:
-                                MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) obj;
-                                byteBufferList.addAll(Arrays.asList(mergedOutputEntry.getData()));
-                                break;
+                    boolean discard = false;
+                    while ((obj = outputBuffer.poll()) != null) {
+                        if (discard) {
+                            log.warn("The session {} is waiting close. The entry [{}/{}] will discard", getSessionId(), obj.getOutputEntryType(), obj.remaining());
+                            continue;
+                        }
+                        if (obj.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
+                            callbackList.add(obj.getCallback());
+                            switch (obj.getOutputEntryType()) {
+                                case BYTE_BUFFER:
+                                    ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) obj;
+                                    byteBufferList.add(byteBufferOutputEntry.getData());
+                                    break;
+                                case BYTE_BUFFER_ARRAY:
+                                    ByteBufferArrayOutputEntry byteBufferArrayOutputEntry = (ByteBufferArrayOutputEntry) obj;
+                                    byteBufferList.addAll(Arrays.asList(byteBufferArrayOutputEntry.getData()));
+                                    break;
+                                case MERGED_BUFFER:
+                                    MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) obj;
+                                    byteBufferList.addAll(Arrays.asList(mergedOutputEntry.getData()));
+                                    break;
+                            }
+                        } else {
+                            discard = true;
                         }
                     }
                     sessionMetric.getMergedOutputBufferSize().update(callbackList.size());
-                    _write(new MergedOutputEntry(callbackList, byteBufferList));
+                    entry = new MergedOutputEntry(callbackList, byteBufferList);
                 }
             } finally {
                 outputLock.unlock();
+            }
+            if (entry != null) {
+                _write(entry);
             }
         }
 
@@ -290,16 +301,26 @@ public class AsynchronousTcpSession implements Session {
         if (entry == null) {
             return;
         }
+        if (waitingForClose.get() && entry.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
+            log.warn("The session {} is waiting for close. The entry [{}/{}] can not write to remote endpoint.",
+                    getSessionId(), entry.getOutputEntryType(), entry.remaining());
+            return;
+        }
+
+        boolean writeEntry = false;
         outputLock.lock();
         try {
             if (!isWriting) {
                 isWriting = true;
-                _write(entry);
+                writeEntry = true;
             } else {
                 outputBuffer.offer(entry);
             }
         } finally {
             outputLock.unlock();
+        }
+        if (writeEntry) {
+            _write(entry);
         }
     }
 
