@@ -12,7 +12,9 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.concurrent.Callback;
@@ -195,7 +197,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
     }
 
     @Override
-    public void upgradeWebSocket(Request request, ClientHTTPHandler upgradeHandler, Promise<WebSocketConnection> promise) {
+    public void upgradeWebSocket(Request request, WebSocketPolicy policy, Promise<WebSocketConnection> promise,
+                                 ClientHTTPHandler upgradeHandler, IncomingFrames incomingFrames) {
         throw new CommonRuntimeException("The current connection version is http2, it can not upgrade WebSocket.");
     }
 

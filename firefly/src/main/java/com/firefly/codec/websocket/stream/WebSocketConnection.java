@@ -1,7 +1,6 @@
 package com.firefly.codec.websocket.stream;
 
 import com.firefly.codec.websocket.model.CloseInfo;
-import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.model.OutgoingFrames;
 import com.firefly.net.Connection;
 import com.firefly.utils.function.Action1;
@@ -40,9 +39,5 @@ public interface WebSocketConnection extends OutgoingFrames, Connection {
      * @return the policy for the connection
      */
     WebSocketPolicy getPolicy();
-
-    void setIncomingFrames(IncomingFrames incomingFrames);
-
-    IncomingFrames getIncomingFrames();
 
 }

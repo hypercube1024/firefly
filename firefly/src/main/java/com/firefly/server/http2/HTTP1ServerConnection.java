@@ -245,6 +245,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 return true;
             }
             case WEB_SOCKET: {
+                Assert.isTrue(HttpMethod.GET.is(request.getMethod()), "The method of the request MUST be GET in the websocket handshake.");
+
                 String key = request.getFields().get("Sec-WebSocket-Key");
                 Assert.hasText(key, "Missing request header 'Sec-WebSocket-Key'");
 

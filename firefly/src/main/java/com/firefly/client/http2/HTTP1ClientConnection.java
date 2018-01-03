@@ -9,7 +9,11 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.model.WebSocketBehavior;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
+import com.firefly.codec.websocket.stream.impl.WebSocketConnectionImpl;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.Assert;
@@ -37,6 +41,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     private Promise<WebSocketConnection> webSocketConnectionPromise;
+    private IncomingFrames incomingFrames;
+    private WebSocketPolicy policy;
     private Promise<HTTP2ClientConnection> http2ConnectionPromise;
     private volatile HTTP2ClientConnection http2Connection;
     private ClientHTTP2SessionListener http2SessionListener;
@@ -242,8 +248,16 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
                 }
             }
             case WEB_SOCKET: {
-                // TODO create websocket connection
-                return false;
+                if (webSocketConnectionPromise != null && incomingFrames != null && policy != null) {
+                    upgradeWebSocketComplete.compareAndSet(false, true);
+                    WebSocketConnection webSocketConnection = new WebSocketConnectionImpl(secureSession, tcpSession, incomingFrames, policy);
+                    getTcpSession().attachObject(webSocketConnection);
+                    webSocketConnectionPromise.succeeded(webSocketConnection);
+                    return true;
+                } else {
+                    resetUpgradeProtocol();
+                    return false;
+                }
             }
             default:
                 resetUpgradeProtocol();
@@ -255,16 +269,24 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         http2ConnectionPromise = null;
         http2SessionListener = null;
         http2Connection = null;
+        webSocketConnectionPromise = null;
+        incomingFrames = null;
+        policy = null;
     }
 
     @Override
-    public void upgradeWebSocket(Request request, ClientHTTPHandler upgradeHandler, Promise<WebSocketConnection> promise) {
+    public void upgradeWebSocket(Request request, WebSocketPolicy policy, Promise<WebSocketConnection> promise,
+                                 ClientHTTPHandler upgradeHandler, IncomingFrames incomingFrames) {
         Assert.isTrue(HttpMethod.GET.is(request.getMethod()), "The method of the request MUST be GET in the websocket handshake.");
+        Assert.isTrue(policy.getBehavior() == WebSocketBehavior.CLIENT, "The websocket behavior MUST be client");
+
         request.getFields().put(HttpHeader.SEC_WEBSOCKET_VERSION, String.valueOf(SPEC_VERSION));
         request.getFields().put(HttpHeader.UPGRADE, "websocket");
         request.getFields().put(HttpHeader.CONNECTION, "Upgrade");
         request.getFields().put(HttpHeader.SEC_WEBSOCKET_KEY, genRandomKey());
         webSocketConnectionPromise = promise;
+        this.incomingFrames = incomingFrames;
+        this.policy = policy;
         send(request, upgradeHandler);
     }
 

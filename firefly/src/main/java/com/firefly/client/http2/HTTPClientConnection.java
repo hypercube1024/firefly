@@ -4,7 +4,9 @@ import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.concurrent.Promise;
 
 import java.nio.ByteBuffer;
@@ -27,8 +29,8 @@ public interface HTTPClientConnection extends HTTPConnection {
     HTTPOutputStream getHTTPOutputStream(Request request, ClientHTTPHandler handler);
 
     void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
-                      ClientHTTPHandler upgradeHandler,
-                      ClientHTTPHandler http2ResponseHandler);
+                      ClientHTTPHandler upgradeHandler, ClientHTTPHandler http2ResponseHandler);
 
-    void upgradeWebSocket(Request request, ClientHTTPHandler upgradeHandler, Promise<WebSocketConnection> promise);
+    void upgradeWebSocket(Request request, WebSocketPolicy policy, Promise<WebSocketConnection> promise,
+                          ClientHTTPHandler upgradeHandler, IncomingFrames incomingFrames);
 }
