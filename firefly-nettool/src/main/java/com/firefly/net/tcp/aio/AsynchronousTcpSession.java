@@ -192,9 +192,9 @@ public class AsynchronousTcpSession implements Session {
                     List<Callback> callbackList = new LinkedList<>();
                     List<ByteBuffer> byteBufferList = new LinkedList<>();
                     OutputEntry<?> obj;
-                    boolean discard = false;
+                    boolean disconnection = false;
                     while ((obj = outputBuffer.poll()) != null) {
-                        if (discard) {
+                        if (disconnection) {
                             log.warn("The session {} is waiting close. The entry [{}/{}] will discard", getSessionId(), obj.getOutputEntryType(), obj.remaining());
                             continue;
                         }
@@ -215,8 +215,11 @@ public class AsynchronousTcpSession implements Session {
                                     break;
                             }
                         } else {
-                            discard = true;
+                            disconnection = true;
                         }
+                    }
+                    if (disconnection) {
+                        outputBuffer.offer(DISCONNECTION_FLAG);
                     }
                     sessionMetric.getMergedOutputBufferSize().update(callbackList.size());
                     entry = new MergedOutputEntry(callbackList, byteBufferList);
