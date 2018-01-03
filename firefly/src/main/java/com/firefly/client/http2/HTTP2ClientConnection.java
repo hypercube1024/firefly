@@ -195,7 +195,7 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
     }
 
     @Override
-    public void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise) {
+    public void upgradeWebSocket(Request request, ClientHTTPHandler upgradeHandler, Promise<WebSocketConnection> promise) {
         throw new CommonRuntimeException("The current connection version is http2, it can not upgrade WebSocket.");
     }
 

@@ -765,8 +765,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         Timer.Context resTimerCtx = responseTimer.time();
         getPool(reqBuilder).take().thenAccept(pooledConn -> {
             HTTPClientConnection connection = pooledConn.getObject();
-            connection.close(conn -> pooledConn.release())
-                      .exception((conn, exception) -> pooledConn.release());
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
                 if (reqBuilder.settingsFrame != null) {
@@ -937,10 +935,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                         String leakMessage = StringUtils.replace(
                                 "The Firefly HTTP client connection leaked. id -> {}, host -> {}:{}",
                                 conn.getSessionId(), host, port);
-                        pooledConn.succeeded(new PooledObject<>(conn, pool, () -> { // connection leak callback
+                        PooledObject<HTTPClientConnection> pooledObject = new PooledObject<>(conn, pool, () -> { // connection leak callback
                             leakedConnectionCounter.inc();
                             log.error(leakMessage);
-                        }));
+                        });
+                        conn.onClose(c -> pooledObject.release())
+                            .onException((c, exception) -> pooledObject.release());
+                        pooledConn.succeeded(pooledObject);
                     }).exceptionally(e -> {
                         pooledConn.failed(e);
                         return null;

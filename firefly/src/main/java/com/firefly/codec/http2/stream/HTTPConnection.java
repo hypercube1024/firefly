@@ -16,8 +16,8 @@ public interface HTTPConnection extends Connection {
 
     ConnectionType getConnectionType();
 
-    HTTPConnection close(Action1<HTTPConnection> closedCallback);
+    HTTPConnection onClose(Action1<HTTPConnection> closedCallback);
 
-    HTTPConnection exception(Action2<HTTPConnection, Throwable> exceptionCallback);
+    HTTPConnection onException(Action2<HTTPConnection, Throwable> exceptionCallback);
 
 }

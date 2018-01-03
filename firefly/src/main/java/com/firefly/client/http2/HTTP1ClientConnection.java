@@ -258,13 +258,14 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     @Override
-    public void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise) {
+    public void upgradeWebSocket(Request request, ClientHTTPHandler upgradeHandler, Promise<WebSocketConnection> promise) {
+        Assert.isTrue(HttpMethod.GET.is(request.getMethod()), "The method of the request MUST be GET in the websocket handshake.");
         request.getFields().put(HttpHeader.SEC_WEBSOCKET_VERSION, String.valueOf(SPEC_VERSION));
         request.getFields().put(HttpHeader.UPGRADE, "websocket");
         request.getFields().put(HttpHeader.CONNECTION, "Upgrade");
         request.getFields().put(HttpHeader.SEC_WEBSOCKET_KEY, genRandomKey());
         webSocketConnectionPromise = promise;
-        send(request, new ClientHTTPHandler.Adapter());
+        send(request, upgradeHandler);
     }
 
     private String genRandomKey() {

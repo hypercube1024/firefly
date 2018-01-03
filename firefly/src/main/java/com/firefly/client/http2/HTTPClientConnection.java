@@ -30,5 +30,5 @@ public interface HTTPClientConnection extends HTTPConnection {
                       ClientHTTPHandler upgradeHandler,
                       ClientHTTPHandler http2ResponseHandler);
 
-    void upgradeWebSocket(Request request, Promise<WebSocketConnection> promise);
+    void upgradeWebSocket(Request request, ClientHTTPHandler upgradeHandler, Promise<WebSocketConnection> promise);
 }

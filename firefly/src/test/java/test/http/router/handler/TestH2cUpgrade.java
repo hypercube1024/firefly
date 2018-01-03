@@ -47,10 +47,10 @@ public class TestH2cUpgrade extends AbstractHTTPHandlerTest {
         final HTTP2ClientConnection clientConnection = upgradeHttp2(client.getHttp2Configuration(), httpConnection);
 
         Phaser phaser = new Phaser(loop * 3 + 1);
-        clientConnection.close(c -> {
+        clientConnection.onClose(c -> {
             phaser.forceTermination();
             System.out.println("The client connection closed.");
-        }).exception((c, ex) -> {
+        }).onException((c, ex) -> {
             phaser.forceTermination();
             ex.printStackTrace();
         });

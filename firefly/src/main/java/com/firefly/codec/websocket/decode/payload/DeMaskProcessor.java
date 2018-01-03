@@ -1,4 +1,4 @@
-package com.firefly.codec.websocket.stream.payload;
+package com.firefly.codec.websocket.decode.payload;
 
 import com.firefly.codec.websocket.frame.Frame;
 
