@@ -2,14 +2,10 @@ package com.firefly.codec.http2.stream;
 
 import com.firefly.codec.common.AbstractConnection;
 import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.net.ByteBufferArrayOutputEntry;
-import com.firefly.net.ByteBufferOutputEntry;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
-
-import java.io.IOException;
 
 abstract public class AbstractHTTPConnection extends AbstractConnection implements HTTPConnection {
 
@@ -36,20 +32,6 @@ abstract public class AbstractHTTPConnection extends AbstractConnection implemen
     @Override
     public HttpVersion getHttpVersion() {
         return httpVersion;
-    }
-
-    public void writeEncryptMessage(Object message) throws IOException {
-        if (isEncrypted()) {
-            if (message instanceof ByteBufferArrayOutputEntry) {
-                ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) message;
-                secureSession.write(outputEntry.getData(), outputEntry.getCallback());
-            } else if (message instanceof ByteBufferOutputEntry) {
-                ByteBufferOutputEntry outputEntry = (ByteBufferOutputEntry) message;
-                secureSession.write(outputEntry.getData(), outputEntry.getCallback());
-            } else {
-                throw new IllegalArgumentException("the encoder must receive the ByteBufferOutputEntry and ByteBufferArrayOutputEntry, but this message type is " + message.getClass());
-            }
-        }
     }
 
     @Override

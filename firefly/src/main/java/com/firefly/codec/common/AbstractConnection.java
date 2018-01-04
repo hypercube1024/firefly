@@ -172,6 +172,22 @@ abstract public class AbstractConnection implements Connection, ConnectionExtInf
         });
     }
 
+    public void encrypt(ByteBuffer buffer) {
+        try {
+            secureSession.write(buffer, Callback.NOOP);
+        } catch (IOException e) {
+            throw new SecureNetException("encrypt exception", e);
+        }
+    }
+
+    public void encrypt(ByteBuffer[] buffers) {
+        try {
+            secureSession.write(buffers, Callback.NOOP);
+        } catch (IOException e) {
+            throw new SecureNetException("encrypt exception", e);
+        }
+    }
+
     private <T> void encrypt(OutputEntry<T> entry, Action2<T, Callback> encrypt) {
         if (isEncrypted()) {
             encrypt.call(entry.getData(), entry.getCallback());
