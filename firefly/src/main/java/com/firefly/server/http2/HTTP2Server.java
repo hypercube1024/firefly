@@ -3,7 +3,6 @@ package com.firefly.server.http2;
 import com.firefly.codec.common.CommonDecoder;
 import com.firefly.codec.common.CommonEncoder;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.ShutdownHelper;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -19,9 +18,8 @@ public class HTTP2Server extends AbstractLifeCycle {
 
     public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
                        ServerHTTPHandler serverHTTPHandler) {
-        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler,
-                new WebSocketHandler() {
-                });
+        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler, new WebSocketHandler() {
+        });
     }
 
     public HTTP2Server(String host, int port, HTTP2Configuration c,
@@ -37,12 +35,9 @@ public class HTTP2Server extends AbstractLifeCycle {
         this.host = host;
         this.port = port;
 
-        c.getTcpConfiguration()
-         .setDecoder(new CommonDecoder(new HTTP1ServerDecoder(new HTTP2ServerDecoder())));
-        c.getTcpConfiguration()
-         .setEncoder(new CommonEncoder());
-        c.getTcpConfiguration()
-         .setHandler(new HTTP2ServerHandler(c, listener, serverHTTPHandler, webSocketHandler));
+        c.getTcpConfiguration().setDecoder(new CommonDecoder(new HTTP1ServerDecoder(new HTTP2ServerDecoder())));
+        c.getTcpConfiguration().setEncoder(new CommonEncoder());
+        c.getTcpConfiguration().setHandler(new HTTP2ServerHandler(c, listener, serverHTTPHandler, webSocketHandler));
         this.server = new AsynchronousTcpServer(c.getTcpConfiguration());
         this.http2Configuration = c;
     }
@@ -73,7 +68,6 @@ public class HTTP2Server extends AbstractLifeCycle {
         if (server != null) {
             server.stop();
         }
-        ShutdownHelper.destroy();
     }
 
 }

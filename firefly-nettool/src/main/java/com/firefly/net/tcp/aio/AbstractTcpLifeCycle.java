@@ -85,12 +85,5 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
                 log.error("stop metric reporter exception -> {}", e.getMessage());
             }
         }
-        ILoggerFactory iLoggerFactory = LoggerFactory.getILoggerFactory();
-        try {
-            iLoggerFactory.getClass().getDeclaredMethod("stop").invoke(iLoggerFactory);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            System.out.println(e.getMessage());
-        }
-        Millisecond100Clock.stop();
     }
 }

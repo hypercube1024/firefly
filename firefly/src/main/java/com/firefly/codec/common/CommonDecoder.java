@@ -34,9 +34,9 @@ public class CommonDecoder extends DecoderChain {
                     next.decode(buf, session);
                 }
             }
-        } else if (attachment instanceof SecureSession) {
-            SecureSession sslSession = (SecureSession) session.getAttachment();
-            ByteBuffer plaintext = sslSession.read(buf);
+        } else if (attachment instanceof SecureSession) { // TLS handshake
+            SecureSession secureSession = (SecureSession) session.getAttachment();
+            ByteBuffer plaintext = secureSession.read(buf);
 
             if (plaintext != null && plaintext.hasRemaining()) {
                 if (log.isDebugEnabled()) {
@@ -52,7 +52,7 @@ public class CommonDecoder extends DecoderChain {
                 }
             } else {
                 if (log.isDebugEnabled()) {
-                    if (sslSession.isHandshakeFinished()) {
+                    if (secureSession.isHandshakeFinished()) {
                         log.debug("The ssl session {} need more data", session.getSessionId());
                     } else {
                         log.debug("The ssl session {} is shaking hand", session.getSessionId());

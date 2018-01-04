@@ -3,11 +3,7 @@ package com.firefly.client.http2;
 import com.firefly.codec.common.CommonDecoder;
 import com.firefly.codec.common.CommonEncoder;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.Session.Listener;
-import com.firefly.codec.http2.stream.ShutdownHelper;
 import com.firefly.net.Client;
-import com.firefly.net.DecoderChain;
-import com.firefly.net.EncoderChain;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -24,15 +20,13 @@ public class HTTP2Client extends AbstractLifeCycle {
     private final HTTP2Configuration http2Configuration;
 
     public HTTP2Client(HTTP2Configuration c) {
-        if (c == null)
+        if (c == null) {
             throw new IllegalArgumentException("the http2 configuration is null");
+        }
 
-        c.getTcpConfiguration()
-         .setDecoder(new CommonDecoder(new HTTP1ClientDecoder(new HTTP2ClientDecoder())));
-        c.getTcpConfiguration()
-         .setEncoder(new CommonEncoder());
-        c.getTcpConfiguration()
-         .setHandler(new HTTP2ClientHandler(c, http2ClientContext));
+        c.getTcpConfiguration().setDecoder(new CommonDecoder(new HTTP1ClientDecoder(new HTTP2ClientDecoder())));
+        c.getTcpConfiguration().setEncoder(new CommonEncoder());
+        c.getTcpConfiguration().setHandler(new HTTP2ClientHandler(c, http2ClientContext));
 
         this.client = new AsynchronousTcpClient(c.getTcpConfiguration());
         this.http2Configuration = c;
@@ -71,7 +65,6 @@ public class HTTP2Client extends AbstractLifeCycle {
         if (client != null) {
             client.stop();
         }
-        ShutdownHelper.destroy();
     }
 
 }
