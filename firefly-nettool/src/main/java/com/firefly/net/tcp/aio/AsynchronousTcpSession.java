@@ -179,18 +179,22 @@ public class AsynchronousTcpSession implements Session {
 
         private void writingCompletedCallback(Callback callback) {
             callback.succeeded();
+            OutputEntry<?> entry = getNextOutputEntry();
+            if (entry != null) {
+                _write(entry);
+            }
+        }
+
+        private OutputEntry<?> getNextOutputEntry() {
             OutputEntry<?> entry = null;
             outputLock.lock();
             try {
                 sessionMetric.getOutputBufferQueueSize().update(outputBuffer.size());
                 if (outputBuffer.isEmpty()) {
                     isWriting = false;
-                } else if (outputBuffer.size() <= 2) {
-                    entry = outputBuffer.poll();
                 } else {
-                    // merge ByteBuffer to ByteBuffer Array
-                    List<Callback> callbackList = new LinkedList<>();
-                    List<ByteBuffer> byteBufferList = new LinkedList<>();
+                    List<OutputEntry<?>> entries = new LinkedList<>();
+
                     OutputEntry<?> obj;
                     boolean disconnection = false;
                     while ((obj = outputBuffer.poll()) != null) {
@@ -199,21 +203,7 @@ public class AsynchronousTcpSession implements Session {
                             continue;
                         }
                         if (obj.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
-                            callbackList.add(obj.getCallback());
-                            switch (obj.getOutputEntryType()) {
-                                case BYTE_BUFFER:
-                                    ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) obj;
-                                    byteBufferList.add(byteBufferOutputEntry.getData());
-                                    break;
-                                case BYTE_BUFFER_ARRAY:
-                                    ByteBufferArrayOutputEntry byteBufferArrayOutputEntry = (ByteBufferArrayOutputEntry) obj;
-                                    byteBufferList.addAll(Arrays.asList(byteBufferArrayOutputEntry.getData()));
-                                    break;
-                                case MERGED_BUFFER:
-                                    MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) obj;
-                                    byteBufferList.addAll(Arrays.asList(mergedOutputEntry.getData()));
-                                    break;
-                            }
+                            entries.add(obj);
                         } else {
                             disconnection = true;
                         }
@@ -221,15 +211,48 @@ public class AsynchronousTcpSession implements Session {
                     if (disconnection) {
                         outputBuffer.offer(DISCONNECTION_FLAG);
                     }
-                    sessionMetric.getMergedOutputBufferSize().update(callbackList.size());
-                    entry = new MergedOutputEntry(callbackList, byteBufferList);
+
+                    if (entries.isEmpty()) {
+                        if (!outputBuffer.isEmpty()) {
+                            obj = outputBuffer.peek();
+                            if (obj.getOutputEntryType() == OutputEntryType.DISCONNECTION) {
+                                entry = DISCONNECTION_FLAG;
+                                outputBuffer.poll();
+                            }
+                        }
+                    } else {
+                        if (entries.size() == 1) {
+                            entry = entries.get(0);
+                        } else {
+                            // merge ByteBuffer to ByteBuffer Array
+                            List<Callback> callbackList = new LinkedList<>();
+                            List<ByteBuffer> byteBufferList = new LinkedList<>();
+                            entries.forEach(e -> {
+                                callbackList.add(e.getCallback());
+                                switch (e.getOutputEntryType()) {
+                                    case BYTE_BUFFER:
+                                        ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) e;
+                                        byteBufferList.add(byteBufferOutputEntry.getData());
+                                        break;
+                                    case BYTE_BUFFER_ARRAY:
+                                        ByteBufferArrayOutputEntry byteBufferArrayOutputEntry = (ByteBufferArrayOutputEntry) e;
+                                        byteBufferList.addAll(Arrays.asList(byteBufferArrayOutputEntry.getData()));
+                                        break;
+                                    case MERGED_BUFFER:
+                                        MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) e;
+                                        byteBufferList.addAll(Arrays.asList(mergedOutputEntry.getData()));
+                                        break;
+                                }
+                            });
+                            sessionMetric.getMergedOutputBufferSize().update(callbackList.size());
+                            entry = new MergedOutputEntry(callbackList, byteBufferList);
+                        }
+                    }
                 }
             } finally {
                 outputLock.unlock();
             }
-            if (entry != null) {
-                _write(entry);
-            }
+            return entry;
         }
 
         private void writingFailedCallback(Callback callback, Throwable t) {
