@@ -44,10 +44,6 @@ public class HTTP2ServerConnection extends AbstractHTTP2Connection implements HT
         return generator;
     }
 
-    SecureSession getSecureSession() {
-        return secureSession;
-    }
-
     SessionSPI getSessionSPI() {
         return http2Session;
     }

@@ -149,16 +149,8 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         return parser;
     }
 
-    SecureSession getSecureSession() {
-        return secureSession;
-    }
-
     HTTP2Configuration getHTTP2Configuration() {
         return config;
-    }
-
-    Session getTcpSession() {
-        return tcpSession;
     }
 
     @Override

@@ -1,17 +1,24 @@
 package com.firefly.codec.common;
 
-import com.firefly.net.Connection;
-import com.firefly.net.SecureSession;
-import com.firefly.net.Session;
+import com.firefly.net.*;
+import com.firefly.net.exception.SecureNetException;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.function.Action2;
 import com.firefly.utils.io.IO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
  */
-abstract public class AbstractConnection implements Connection {
+abstract public class AbstractConnection implements Connection, ConnectionExtInfo {
+
+    protected static Logger log = LoggerFactory.getLogger("firefly-system");
 
     protected final SecureSession secureSession;
     protected final Session tcpSession;
@@ -119,4 +126,56 @@ abstract public class AbstractConnection implements Connection {
 
         attachment = null;
     }
+
+    public SecureSession getSecureSession() {
+        return secureSession;
+    }
+
+    public Session getTcpSession() {
+        return tcpSession;
+    }
+
+    @Override
+    public boolean isEncrypted() {
+        return secureSession != null;
+    }
+
+    public ByteBuffer decrypt(ByteBuffer buffer) {
+        if (isEncrypted()) {
+            try {
+                return secureSession.read(buffer);
+            } catch (IOException e) {
+                throw new SecureNetException("decrypt exception", e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    public void encrypt(ByteBufferOutputEntry entry) {
+        encrypt(entry, (buffers, callback) -> {
+            try {
+                secureSession.write(buffers, callback);
+            } catch (IOException e) {
+                throw new SecureNetException("encrypt exception", e);
+            }
+        });
+    }
+
+    public void encrypt(ByteBufferArrayOutputEntry entry) {
+        encrypt(entry, (buffers, callback) -> {
+            try {
+                secureSession.write(buffers, callback);
+            } catch (IOException e) {
+                throw new SecureNetException("encrypt exception", e);
+            }
+        });
+    }
+
+    private <T> void encrypt(OutputEntry<T> entry, Action2<T, Callback> encrypt) {
+        if (isEncrypted()) {
+            encrypt.call(entry.getData(), entry.getCallback());
+        }
+    }
+
 }

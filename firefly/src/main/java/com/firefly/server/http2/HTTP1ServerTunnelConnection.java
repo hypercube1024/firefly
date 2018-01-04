@@ -2,7 +2,7 @@ package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPConnection;
-import com.firefly.codec.http2.stream.ConnectionType;
+import com.firefly.codec.common.ConnectionType;
 import com.firefly.codec.http2.stream.HTTPTunnelConnection;
 import com.firefly.net.SecureSession;
 import com.firefly.net.buffer.FileRegion;

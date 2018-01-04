@@ -1,5 +1,6 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.common.ConnectionType;
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.model.HttpVersion;

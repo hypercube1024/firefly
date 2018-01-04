@@ -1,11 +1,12 @@
 package com.firefly.codec.websocket.stream;
 
+import com.firefly.codec.common.ConnectionExtInfo;
 import com.firefly.codec.websocket.model.OutgoingFrames;
 import com.firefly.net.Connection;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
 
-public interface WebSocketConnection extends OutgoingFrames, Connection {
+public interface WebSocketConnection extends OutgoingFrames, Connection, ConnectionExtInfo {
 
     WebSocketConnection onClose(Action1<WebSocketConnection> closedListener);
 

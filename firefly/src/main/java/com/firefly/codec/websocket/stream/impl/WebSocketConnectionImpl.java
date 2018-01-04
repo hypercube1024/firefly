@@ -1,6 +1,7 @@
 package com.firefly.codec.websocket.stream.impl;
 
 import com.firefly.codec.common.AbstractConnection;
+import com.firefly.codec.common.ConnectionType;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.websocket.decode.Parser;
 import com.firefly.codec.websocket.encode.Generator;
@@ -101,5 +102,15 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
             break;
         }
         Optional.ofNullable(incomingFrames).ifPresent(e -> e.incomingFrame(frame));
+    }
+
+    @Override
+    public boolean isEncrypted() {
+        return secureSession != null;
+    }
+
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.WEB_SOCKET;
     }
 }

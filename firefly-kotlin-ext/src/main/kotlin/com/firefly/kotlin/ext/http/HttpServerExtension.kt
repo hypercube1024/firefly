@@ -326,7 +326,7 @@ class RouterBlock(private val router: Router,
             return block(this)
         } catch (e: Exception) {
             try {
-                run(NonCancellable) {
+                withContext(NonCancellable) {
                     closed = true
                     this?.close()
                 }
@@ -335,7 +335,7 @@ class RouterBlock(private val router: Router,
             throw e
         } finally {
             if (!closed) {
-                run(NonCancellable) {
+                withContext(NonCancellable) {
                     this?.close()
                 }
             }
