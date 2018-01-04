@@ -86,7 +86,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
             if (connection.upgradeHTTP2Complete.get()) {
                 return true;
             } else {
-                boolean success = connection.upgradeProtocol(request, response, outputStream);
+                boolean success = connection.upgradeProtocol(request, response, outputStream, connection);
                 return success || serverHTTPHandler.messageComplete(request, response, outputStream, connection);
             }
         } finally {

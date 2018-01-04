@@ -10,7 +10,10 @@ import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.*;
+import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.model.AcceptHash;
+import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.stream.impl.WebSocketConnectionImpl;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.Assert;
@@ -33,17 +36,22 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
+    private final WebSocketHandler webSocketHandler;
     private final ServerSessionListener serverSessionListener;
     private final HTTP1ServerRequestHandler serverRequestHandler;
     AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
+    AtomicBoolean upgradeWebSocketComplete = new AtomicBoolean(false);
     Promise<HTTPTunnelConnection> tunnelConnectionPromise;
 
     HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
-                          HTTP1ServerRequestHandler requestHandler, ServerSessionListener serverSessionListener) {
+                          HTTP1ServerRequestHandler requestHandler,
+                          ServerSessionListener serverSessionListener,
+                          WebSocketHandler webSocketHandler) {
         super(config, secureSession, tcpSession, requestHandler, null);
         requestHandler.connection = this;
         this.serverSessionListener = serverSessionListener;
         this.serverRequestHandler = requestHandler;
+        this.webSocketHandler = webSocketHandler;
     }
 
     @Override
@@ -208,11 +216,11 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     }
 
     boolean upgradeProtocol(MetaData.Request request, MetaData.Response response,
-                            HTTPOutputStream output) {
+                            HTTPOutputStream output, HTTPConnection connection) {
         switch (Protocol.from(request)) {
             case H2: {
                 if (upgradeHTTP2Complete.get()) {
-                    return true;
+                    throw new IllegalStateException("The connection has been upgraded HTTP2");
                 }
 
                 HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
@@ -245,7 +253,17 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 return true;
             }
             case WEB_SOCKET: {
+                if (upgradeWebSocketComplete.get()) {
+                    throw new IllegalStateException("The connection has been upgraded WebSocket");
+                }
+
                 Assert.isTrue(HttpMethod.GET.is(request.getMethod()), "The method of the request MUST be GET in the websocket handshake.");
+                Assert.isTrue(request.getHttpVersion() == HttpVersion.HTTP_1_1, "The http version MUST be HTTP/1.1");
+
+                boolean accept = webSocketHandler.acceptUpgrade(request, response, output, connection);
+                if (!accept) {
+                    return false;
+                }
 
                 String key = request.getFields().get("Sec-WebSocket-Key");
                 Assert.hasText(key, "Missing request header 'Sec-WebSocket-Key'");
@@ -255,8 +273,22 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 response.getFields().add("Connection", "Upgrade");
                 response.getFields().add("Sec-WebSocket-Accept", AcceptHash.hashKey(key));
                 IO.close(output);
-                // TODO create websocket connection
 
+                WebSocketConnectionImpl webSocketConnection = new WebSocketConnectionImpl(secureSession, tcpSession,
+                        null, webSocketHandler.getWebSocketPolicy(), request, response);
+                webSocketConnection.setIncomingFrames(new IncomingFrames() {
+                    @Override
+                    public void incomingError(Throwable t) {
+                        webSocketHandler.onError(t, webSocketConnection);
+                    }
+
+                    @Override
+                    public void incomingFrame(Frame frame) {
+                        webSocketHandler.onFrame(frame, webSocketConnection);
+                    }
+                });
+                tcpSession.attachObject(webSocketConnection);
+                upgradeWebSocketComplete.compareAndSet(false, true);
                 return true;
             }
             default:

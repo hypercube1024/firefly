@@ -13,6 +13,7 @@ import com.firefly.codec.http2.stream.Stream;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
+import com.firefly.server.http2.WebSocketHandler;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
@@ -111,7 +112,7 @@ public class TestH2cLowLevelAPI extends AbstractHTTPHandlerTest {
             public void onAccept(Session session) {
                 System.out.println("accept a new session " + session);
             }
-        }, new ServerHTTPHandler.Adapter());
+        }, new ServerHTTPHandler.Adapter(), new WebSocketHandler() {});
         server.start();
         return server;
     }

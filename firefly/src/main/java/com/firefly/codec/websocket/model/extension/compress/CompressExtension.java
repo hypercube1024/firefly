@@ -2,10 +2,9 @@ package com.firefly.codec.websocket.model.extension.compress;
 
 import com.firefly.codec.websocket.frame.DataFrame;
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.model.extension.AbstractExtension;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.OpCode;
-import com.firefly.codec.websocket.model.WriteCallback;
+import com.firefly.codec.websocket.model.extension.AbstractExtension;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IteratingCallback;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
@@ -170,7 +169,7 @@ public abstract class CompressExtension extends AbstractExtension {
     }
 
     @Override
-    public void outgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+    public void outgoingFrame(Frame frame, Callback callback) {
         // We use a queue and an IteratingCallback to handle concurrency.
         // We must compress and write atomically, otherwise the compression
         // context on the other end gets confused.
@@ -180,7 +179,7 @@ public abstract class CompressExtension extends AbstractExtension {
             return;
         }
 
-        FrameEntry entry = new FrameEntry(frame, callback, batchMode);
+        FrameEntry entry = new FrameEntry(frame, callback);
         if (LOG.isDebugEnabled())
             LOG.debug("Queuing {}", entry);
         offerEntry(entry);
@@ -199,20 +198,20 @@ public abstract class CompressExtension extends AbstractExtension {
         }
     }
 
-    protected void notifyCallbackSuccess(WriteCallback callback) {
+    protected void notifyCallbackSuccess(Callback callback) {
         try {
             if (callback != null)
-                callback.writeSuccess();
+                callback.succeeded();
         } catch (Throwable x) {
             if (LOG.isDebugEnabled())
                 LOG.debug("Exception while notifying success of callback " + callback, x);
         }
     }
 
-    protected void notifyCallbackFailure(WriteCallback callback, Throwable failure) {
+    protected void notifyCallbackFailure(Callback callback, Throwable failure) {
         try {
             if (callback != null)
-                callback.writeFailed(failure);
+                callback.failed(failure);
         } catch (Throwable x) {
             if (LOG.isDebugEnabled())
                 LOG.debug("Exception while notifying failure of callback " + callback, x);
@@ -328,13 +327,11 @@ public abstract class CompressExtension extends AbstractExtension {
 
     private static class FrameEntry {
         private final Frame frame;
-        private final WriteCallback callback;
-        private final BatchMode batchMode;
+        private final Callback callback;
 
-        private FrameEntry(Frame frame, WriteCallback callback, BatchMode batchMode) {
+        private FrameEntry(Frame frame, Callback callback) {
             this.frame = frame;
             this.callback = callback;
-            this.batchMode = batchMode;
         }
 
         @Override
@@ -343,15 +340,9 @@ public abstract class CompressExtension extends AbstractExtension {
         }
     }
 
-    private class Flusher extends IteratingCallback implements WriteCallback {
+    private class Flusher extends IteratingCallback {
         private FrameEntry current;
         private boolean finished = true;
-
-        @Override
-        public void failed(Throwable x) {
-            LOG.warn("flush frame failed", x);
-            super.failed(x);
-        }
 
         @Override
         protected Action process() throws Exception {
@@ -369,10 +360,9 @@ public abstract class CompressExtension extends AbstractExtension {
 
         private void deflate(FrameEntry entry) {
             Frame frame = entry.frame;
-            BatchMode batchMode = entry.batchMode;
             if (OpCode.isControlFrame(frame.getOpCode())) {
                 // Do not deflate control frames
-                nextOutgoingFrame(frame, this, batchMode);
+                nextOutgoingFrame(frame, this);
                 return;
             }
 
@@ -463,7 +453,7 @@ public abstract class CompressExtension extends AbstractExtension {
             chunk.setPayload(payload);
             chunk.setFin(fin);
 
-            nextOutgoingFrame(chunk, this, entry.batchMode);
+            nextOutgoingFrame(chunk, this);
         }
 
         @Override
@@ -480,18 +470,20 @@ public abstract class CompressExtension extends AbstractExtension {
         }
 
         @Override
-        public void writeSuccess() {
+        public void succeeded() {
             if (finished)
                 notifyCallbackSuccess(current.callback);
-            succeeded();
+            super.succeeded();
         }
 
         @Override
-        public void writeFailed(Throwable x) {
+        public void failed(Throwable x) {
             notifyCallbackFailure(current.callback, x);
             // If something went wrong, very likely the compression context
             // will be invalid, so we need to fail this IteratingCallback.
-            failed(x);
+            LOG.warn("flush frame failed", x);
+            super.failed(x);
         }
+
     }
 }

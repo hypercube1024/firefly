@@ -1,6 +1,7 @@
 package com.firefly.codec.websocket.model;
 
 import com.firefly.codec.websocket.frame.Frame;
+import com.firefly.utils.concurrent.Callback;
 
 /**
  * Interface for dealing with frames outgoing to (eventually) the network layer.
@@ -15,10 +16,9 @@ public interface OutgoingFrames {
      * If you are implementing a mutation, you are obliged to handle
      * the incoming WriteCallback appropriately.
      *
-     * @param frame     the frame to eventually write to the network layer.
-     * @param callback  the callback to notify when the frame is written.
-     * @param batchMode the batch mode requested by the sender.
+     * @param frame    the frame to eventually write to the network layer.
+     * @param callback the callback to notify when the frame is written.
      */
-    void outgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode);
+    void outgoingFrame(Frame frame, Callback callback);
 
 }

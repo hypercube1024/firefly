@@ -1,8 +1,12 @@
 package com.firefly.codec.websocket.model.extension;
 
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.model.*;
+import com.firefly.codec.websocket.model.Extension;
+import com.firefly.codec.websocket.model.ExtensionConfig;
+import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.model.OutgoingFrames;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,9 +107,9 @@ public abstract class AbstractExtension extends AbstractLifeCycle implements Ext
         this.nextIncoming.incomingFrame(frame);
     }
 
-    protected void nextOutgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+    protected void nextOutgoingFrame(Frame frame, Callback callback) {
         log.debug("nextOutgoingFrame({})", frame);
-        this.nextOutgoing.outgoingFrame(frame, callback, batchMode);
+        this.nextOutgoing.outgoingFrame(frame, callback);
     }
 
     public void setConfig(ExtensionConfig config) {

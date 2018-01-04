@@ -14,6 +14,7 @@ import com.firefly.codec.http2.stream.HTTPOutputStream;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
+import com.firefly.server.http2.WebSocketHandler;
 import com.firefly.utils.io.BufferUtils;
 
 public class HTTP1ServerChunkOutputDemo3 {
@@ -27,13 +28,13 @@ public class HTTP1ServerChunkOutputDemo3 {
 
 					@Override
 					public void earlyEOF(MetaData.Request request, MetaData.Response response, HTTPOutputStream output,
-							HTTPConnection connection) {
+										 HTTPConnection connection) {
 						System.out.println("the server connection " + connection.getSessionId() + " is early EOF");
 					}
 
 					@Override
 					public void badMessage(int status, String reason, MetaData.Request request,
-							MetaData.Response response, HTTPOutputStream output, HTTPConnection connection) {
+										   MetaData.Response response, HTTPOutputStream output, HTTPConnection connection) {
 						System.out.println("the server received a bad message, " + status + "|" + reason);
 
 						try {
@@ -46,7 +47,7 @@ public class HTTP1ServerChunkOutputDemo3 {
 
 					@Override
 					public boolean messageComplete(MetaData.Request request, MetaData.Response response,
-							HTTPOutputStream outputStream, HTTPConnection connection) {
+												   HTTPOutputStream outputStream, HTTPConnection connection) {
 						HttpURI uri = request.getURI();
 						System.out.println("current path is " + uri.getPath());
 						System.out.println("current http headers are " + request.getFields());
@@ -69,7 +70,7 @@ public class HTTP1ServerChunkOutputDemo3 {
 						return true;
 					}
 
-				});
+				}, new WebSocketHandler() {});
 		server.start();
 	}
 

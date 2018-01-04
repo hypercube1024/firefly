@@ -2,10 +2,9 @@ package com.firefly.codec.websocket.model.extension.compress;
 
 import com.firefly.codec.websocket.exception.BadPayloadException;
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.OpCode;
-import com.firefly.codec.websocket.model.WriteCallback;
+import com.firefly.utils.concurrent.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,12 +76,12 @@ public class PerMessageDeflateExtension extends CompressExtension {
     }
 
     @Override
-    protected void nextOutgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+    protected void nextOutgoingFrame(Frame frame, Callback callback) {
         if (frame.isFin() && !outgoingContextTakeover) {
             LOG.debug("Outgoing Context Reset");
             getDeflater().reset();
         }
-        super.nextOutgoingFrame(frame, callback, batchMode);
+        super.nextOutgoingFrame(frame, callback);
     }
 
     @Override

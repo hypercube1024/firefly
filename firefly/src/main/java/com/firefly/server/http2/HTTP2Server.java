@@ -19,11 +19,13 @@ public class HTTP2Server extends AbstractLifeCycle {
 
     public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
                        ServerHTTPHandler serverHTTPHandler) {
-        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler);
+        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler, new WebSocketHandler(){});
     }
 
-    public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration, ServerSessionListener listener,
-                       ServerHTTPHandler serverHTTPHandler) {
+    public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
+                       ServerSessionListener listener,
+                       ServerHTTPHandler serverHTTPHandler,
+                       WebSocketHandler webSocketHandler) {
         if (http2Configuration == null)
             throw new IllegalArgumentException("the http2 configuration is null");
 
@@ -46,7 +48,7 @@ public class HTTP2Server extends AbstractLifeCycle {
 
         http2Configuration.getTcpConfiguration().setDecoder(decoder);
         http2Configuration.getTcpConfiguration().setEncoder(encoder);
-        http2Configuration.getTcpConfiguration().setHandler(new HTTP2ServerHandler(http2Configuration, listener, serverHTTPHandler));
+        http2Configuration.getTcpConfiguration().setHandler(new HTTP2ServerHandler(http2Configuration, listener, serverHTTPHandler, webSocketHandler));
         this.server = new AsynchronousTcpServer(http2Configuration.getTcpConfiguration());
         this.http2Configuration = http2Configuration;
     }

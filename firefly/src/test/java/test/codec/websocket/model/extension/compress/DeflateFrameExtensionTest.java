@@ -6,10 +6,14 @@ import com.firefly.codec.websocket.frame.BinaryFrame;
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.frame.TextFrame;
 import com.firefly.codec.websocket.frame.WebSocketFrame;
-import com.firefly.codec.websocket.model.*;
+import com.firefly.codec.websocket.model.ExtensionConfig;
+import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.model.OpCode;
+import com.firefly.codec.websocket.model.OutgoingFrames;
 import com.firefly.codec.websocket.model.extension.compress.DeflateFrameExtension;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.StringUtils;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
@@ -96,7 +100,7 @@ public class DeflateFrameExtensionTest extends AbstractExtensionTest {
         ext.setNextOutgoingFrames(capture);
 
         Frame frame = new TextFrame().setPayload(text);
-        ext.outgoingFrame(frame, null, BatchMode.OFF);
+        ext.outgoingFrame(frame, null);
 
         capture.assertBytes(0, expectedHex);
     }
@@ -196,9 +200,9 @@ public class DeflateFrameExtensionTest extends AbstractExtensionTest {
         init(ext);
         ext.setNextOutgoingFrames(capture);
 
-        ext.outgoingFrame(new TextFrame().setPayload("time:"), null, BatchMode.OFF);
-        ext.outgoingFrame(new TextFrame().setPayload("time:"), null, BatchMode.OFF);
-        ext.outgoingFrame(new TextFrame().setPayload("time:"), null, BatchMode.OFF);
+        ext.outgoingFrame(new TextFrame().setPayload("time:"), null);
+        ext.outgoingFrame(new TextFrame().setPayload("time:"), null);
+        ext.outgoingFrame(new TextFrame().setPayload("time:"), null);
 
         List<String> actual = capture.getCaptured();
 
@@ -263,9 +267,9 @@ public class DeflateFrameExtensionTest extends AbstractExtensionTest {
         OutgoingNetworkBytesCapture capture = new OutgoingNetworkBytesCapture(generator);
         ext.setNextOutgoingFrames(capture);
 
-        ext.outgoingFrame(new TextFrame().setPayload("Hello"), null, BatchMode.OFF);
-        ext.outgoingFrame(new TextFrame(), null, BatchMode.OFF);
-        ext.outgoingFrame(new TextFrame().setPayload("There"), null, BatchMode.OFF);
+        ext.outgoingFrame(new TextFrame().setPayload("Hello"), null);
+        ext.outgoingFrame(new TextFrame(), null);
+        ext.outgoingFrame(new TextFrame().setPayload("There"), null);
 
         capture.assertBytes(0, "c107f248cdc9c90700");
     }
@@ -354,10 +358,10 @@ public class DeflateFrameExtensionTest extends AbstractExtensionTest {
         // Chain the next element to decompress.
         clientExtension.setNextOutgoingFrames(new OutgoingFrames() {
             @Override
-            public void outgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+            public void outgoingFrame(Frame frame, Callback callback) {
                 LOG.debug("outgoingFrame({})", frame);
                 serverExtension.incomingFrame(frame);
-                callback.writeSuccess();
+                callback.succeeded();
             }
         });
 
@@ -381,7 +385,7 @@ public class DeflateFrameExtensionTest extends AbstractExtensionTest {
         BinaryFrame frame = new BinaryFrame();
         frame.setPayload(input);
         frame.setFin(true);
-        clientExtension.outgoingFrame(frame, null, BatchMode.OFF);
+        clientExtension.outgoingFrame(frame, null);
 
         Assert.assertArrayEquals(input, result.toByteArray());
     }

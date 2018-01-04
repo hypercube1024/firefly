@@ -1,7 +1,6 @@
 package test.codec.websocket.model.extension.fragment;
 
 import com.firefly.codec.websocket.frame.*;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.extension.fragment.FragmentExtension;
@@ -130,7 +129,7 @@ public class FragmentExtensionTest {
         // Write quote as separate frames
         for (String section : quote) {
             Frame frame = new TextFrame().setPayload(section);
-            ext.outgoingFrame(frame, null, BatchMode.OFF);
+            ext.outgoingFrame(frame, null);
         }
 
         // Expected Frames
@@ -200,7 +199,7 @@ public class FragmentExtensionTest {
         // Write quote as separate frames
         for (String section : quote) {
             Frame frame = new TextFrame().setPayload(section);
-            ext.outgoingFrame(frame, null, BatchMode.OFF);
+            ext.outgoingFrame(frame, null);
         }
 
         // Expected Frames
@@ -256,7 +255,7 @@ public class FragmentExtensionTest {
         String payload = "Are you there?";
         Frame ping = new PingFrame().setPayload(payload);
 
-        ext.outgoingFrame(ping, null, BatchMode.OFF);
+        ext.outgoingFrame(ping, null);
 
         capture.assertFrameCount(1);
         capture.assertHasFrame(OpCode.PING, 1);

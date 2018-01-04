@@ -109,7 +109,7 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 
     @Override
     public final boolean messageComplete() {
-        boolean success = connection.upgradeProtocolComplete(response);
+        boolean success = connection.upgradeProtocolComplete(request, response);
         if (success) {
             log.debug("client upgraded protocol successfully");
         }

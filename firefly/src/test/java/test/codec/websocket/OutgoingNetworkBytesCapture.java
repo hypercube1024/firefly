@@ -2,9 +2,8 @@ package test.codec.websocket;
 
 import com.firefly.codec.websocket.encode.Generator;
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.OutgoingFrames;
-import com.firefly.codec.websocket.model.WriteCallback;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
 import org.junit.Assert;
@@ -41,13 +40,13 @@ public class OutgoingNetworkBytesCapture implements OutgoingFrames {
     }
 
     @Override
-    public void outgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+    public void outgoingFrame(Frame frame, Callback callback) {
         ByteBuffer buf = ByteBuffer.allocate(Generator.MAX_HEADER_LENGTH + frame.getPayloadLength());
         generator.generateWholeFrame(frame, buf);
         BufferUtils.flipToFlush(buf, 0);
         captured.add(buf);
         if (callback != null) {
-            callback.writeSuccess();
+            callback.succeeded();
         }
     }
 }

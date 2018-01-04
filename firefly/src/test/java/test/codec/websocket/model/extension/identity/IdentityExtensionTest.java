@@ -3,7 +3,6 @@ package test.codec.websocket.model.extension.identity;
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.frame.TextFrame;
 import com.firefly.codec.websocket.frame.WebSocketFrame;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.Extension;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.extension.identity.IdentityExtension;
@@ -62,7 +61,7 @@ public class IdentityExtensionTest {
         ext.setNextOutgoingFrames(capture);
 
         Frame frame = new TextFrame().setPayload("hello");
-        ext.outgoingFrame(frame, null, BatchMode.OFF);
+        ext.outgoingFrame(frame, null);
 
         capture.assertFrameCount(1);
         capture.assertHasFrame(OpCode.TEXT, 1);

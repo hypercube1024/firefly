@@ -8,6 +8,7 @@ import com.firefly.codec.http2.stream.Stream.Listener;
 import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.ServerSessionListener;
+import com.firefly.server.http2.WebSocketHandler;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
@@ -72,7 +73,7 @@ public class HTTP2ServerDemo {
 						return true;
 					}
 
-					
+
 				};
 			}
 
@@ -108,7 +109,7 @@ public class HTTP2ServerDemo {
 			public boolean onIdleTimeout(Session session) {
 				return false;
 			}
-		}, new ServerHTTPHandler.Adapter());
+		}, new ServerHTTPHandler.Adapter(), new WebSocketHandler() {});
 
 		server.start();
 	}

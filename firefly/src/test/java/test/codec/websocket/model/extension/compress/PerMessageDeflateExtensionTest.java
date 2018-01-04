@@ -1,7 +1,6 @@
 package test.codec.websocket.model.extension.compress;
 
 import com.firefly.codec.websocket.frame.*;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.extension.compress.CompressExtension;
@@ -298,7 +297,7 @@ public class PerMessageDeflateExtensionTest extends AbstractExtensionTest {
         String payload = "Are you there?";
         Frame ping = new PingFrame().setPayload(payload);
 
-        ext.outgoingFrame(ping, null, BatchMode.OFF);
+        ext.outgoingFrame(ping, null);
 
         capture.assertFrameCount(1);
         capture.assertHasFrame(OpCode.PING, 1);

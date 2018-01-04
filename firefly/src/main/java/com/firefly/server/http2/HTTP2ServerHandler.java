@@ -14,11 +14,16 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
 
     private final ServerSessionListener listener;
     private final ServerHTTPHandler serverHTTPHandler;
+    private final WebSocketHandler webSocketHandler;
 
-    public HTTP2ServerHandler(HTTP2Configuration config, ServerSessionListener listener, ServerHTTPHandler serverHTTPHandler) {
+    public HTTP2ServerHandler(HTTP2Configuration config,
+                              ServerSessionListener listener,
+                              ServerHTTPHandler serverHTTPHandler,
+                              WebSocketHandler webSocketHandler) {
         super(config);
         this.listener = listener;
         this.serverHTTPHandler = serverHTTPHandler;
+        this.webSocketHandler = webSocketHandler;
     }
 
     @Override
@@ -33,7 +38,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
                                           .orElse("http/1.1");
                 switch (protocol) {
                     case "http/1.1":
-                        httpConnection = new HTTP1ServerConnection(config, session, sslSession, new HTTP1ServerRequestHandler(serverHTTPHandler), listener);
+                        httpConnection = new HTTP1ServerConnection(config, session, sslSession, new HTTP1ServerRequestHandler(serverHTTPHandler), listener, webSocketHandler);
                         break;
                     case "h2":
                         httpConnection = new HTTP2ServerConnection(config, session, sslSession, listener);
@@ -46,7 +51,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
             }));
         } else {
             if (!StringUtils.hasText(config.getProtocol())) {
-                HTTPConnection httpConnection = new HTTP1ServerConnection(config, session, null, new HTTP1ServerRequestHandler(serverHTTPHandler), listener);
+                HTTPConnection httpConnection = new HTTP1ServerConnection(config, session, null, new HTTP1ServerRequestHandler(serverHTTPHandler), listener, webSocketHandler);
                 session.attachObject(httpConnection);
                 serverHTTPHandler.acceptConnection(httpConnection);
             } else {
@@ -56,7 +61,7 @@ public class HTTP2ServerHandler extends AbstractHTTPHandler {
                 }
                 switch (httpVersion) {
                     case HTTP_1_1: {
-                        HTTPConnection httpConnection = new HTTP1ServerConnection(config, session, null, new HTTP1ServerRequestHandler(serverHTTPHandler), listener);
+                        HTTPConnection httpConnection = new HTTP1ServerConnection(config, session, null, new HTTP1ServerRequestHandler(serverHTTPHandler), listener, webSocketHandler);
                         session.attachObject(httpConnection);
                         serverHTTPHandler.acceptConnection(httpConnection);
                     }

@@ -233,7 +233,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
         send(request, handler);
     }
 
-    boolean upgradeProtocolComplete(MetaData.Response response) {
+    boolean upgradeProtocolComplete(MetaData.Request request, MetaData.Response response) {
         switch (Protocol.from(response)) {
             case H2: {
                 if (http2ConnectionPromise != null && http2SessionListener != null && http2Connection != null) {
@@ -250,7 +250,7 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
             case WEB_SOCKET: {
                 if (webSocketConnectionPromise != null && incomingFrames != null && policy != null) {
                     upgradeWebSocketComplete.compareAndSet(false, true);
-                    WebSocketConnection webSocketConnection = new WebSocketConnectionImpl(secureSession, tcpSession, incomingFrames, policy);
+                    WebSocketConnection webSocketConnection = new WebSocketConnectionImpl(secureSession, tcpSession, incomingFrames, policy, request, response);
                     getTcpSession().attachObject(webSocketConnection);
                     webSocketConnectionPromise.succeeded(webSocketConnection);
                     return true;

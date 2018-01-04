@@ -2,10 +2,9 @@ package test.codec.websocket;
 
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.frame.WebSocketFrame;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.OutgoingFrames;
-import com.firefly.codec.websocket.model.WriteCallback;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 
@@ -57,10 +56,10 @@ public class OutgoingFramesCapture implements OutgoingFrames {
     }
 
     @Override
-    public void outgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+    public void outgoingFrame(Frame frame, Callback callback) {
         frames.add(WebSocketFrame.copy(frame));
         if (callback != null) {
-            callback.writeSuccess();
+            callback.succeeded();
         }
     }
 }

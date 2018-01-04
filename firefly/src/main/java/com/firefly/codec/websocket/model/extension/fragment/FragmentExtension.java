@@ -2,11 +2,10 @@ package com.firefly.codec.websocket.model.extension.fragment;
 
 import com.firefly.codec.websocket.frame.DataFrame;
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.OpCode;
-import com.firefly.codec.websocket.model.WriteCallback;
 import com.firefly.codec.websocket.model.extension.AbstractExtension;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IteratingCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,15 +39,15 @@ public class FragmentExtension extends AbstractExtension {
     }
 
     @Override
-    public void outgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+    public void outgoingFrame(Frame frame, Callback callback) {
         ByteBuffer payload = frame.getPayload();
         int length = payload != null ? payload.remaining() : 0;
         if (OpCode.isControlFrame(frame.getOpCode()) || maxLength <= 0 || length <= maxLength) {
-            nextOutgoingFrame(frame, callback, batchMode);
+            nextOutgoingFrame(frame, callback);
             return;
         }
 
-        FrameEntry entry = new FrameEntry(frame, callback, batchMode);
+        FrameEntry entry = new FrameEntry(frame, callback);
         if (LOG.isDebugEnabled())
             LOG.debug("Queuing {}", entry);
         offerEntry(entry);
@@ -85,13 +84,11 @@ public class FragmentExtension extends AbstractExtension {
 
     private static class FrameEntry {
         private final Frame frame;
-        private final WriteCallback callback;
-        private final BatchMode batchMode;
+        private final Callback callback;
 
-        private FrameEntry(Frame frame, WriteCallback callback, BatchMode batchMode) {
+        private FrameEntry(Frame frame, Callback callback) {
             this.frame = frame;
             this.callback = callback;
-            this.batchMode = batchMode;
         }
 
         @Override
@@ -100,12 +97,12 @@ public class FragmentExtension extends AbstractExtension {
         }
     }
 
-    private class Flusher extends IteratingCallback implements WriteCallback {
+    private class Flusher extends IteratingCallback {
         private FrameEntry current;
         private boolean finished = true;
 
         @Override
-        protected Action process() throws Exception {
+        protected Action process() {
             if (finished) {
                 current = pollEntry();
                 LOG.debug("Processing {}", current);
@@ -140,7 +137,7 @@ public class FragmentExtension extends AbstractExtension {
                 LOG.debug("Fragmented {}->{}", frame, fragment);
             payload.position(newLimit);
 
-            nextOutgoingFrame(fragment, this, entry.batchMode);
+            nextOutgoingFrame(fragment, this);
         }
 
         @Override
@@ -156,15 +153,15 @@ public class FragmentExtension extends AbstractExtension {
         }
 
         @Override
-        public void writeSuccess() {
+        public void succeeded() {
             // Notify first then call succeeded(), otherwise
             // write callbacks may be invoked out of order.
             notifyCallbackSuccess(current.callback);
-            succeeded();
+            super.succeeded();
         }
 
         @Override
-        public void writeFailed(Throwable x) {
+        public void failed(Throwable x) {
             // Notify first, the call succeeded() to drain the queue.
             // We don't want to call failed(x) because that will put
             // this flusher into a final state that cannot be exited,
@@ -174,20 +171,20 @@ public class FragmentExtension extends AbstractExtension {
             succeeded();
         }
 
-        private void notifyCallbackSuccess(WriteCallback callback) {
+        private void notifyCallbackSuccess(Callback callback) {
             try {
                 if (callback != null)
-                    callback.writeSuccess();
+                    callback.succeeded();
             } catch (Throwable x) {
                 if (LOG.isDebugEnabled())
                     LOG.debug("Exception while notifying success of callback " + callback, x);
             }
         }
 
-        private void notifyCallbackFailure(WriteCallback callback, Throwable failure) {
+        private void notifyCallbackFailure(Callback callback, Throwable failure) {
             try {
                 if (callback != null)
-                    callback.writeFailed(failure);
+                    callback.failed(failure);
             } catch (Throwable x) {
                 if (LOG.isDebugEnabled())
                     LOG.debug("Exception while notifying failure of callback " + callback, x);

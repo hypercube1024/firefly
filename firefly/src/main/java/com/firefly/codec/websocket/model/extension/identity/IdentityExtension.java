@@ -1,11 +1,9 @@
 package com.firefly.codec.websocket.model.extension.identity;
 
-
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.model.BatchMode;
 import com.firefly.codec.websocket.model.ExtensionConfig;
-import com.firefly.codec.websocket.model.WriteCallback;
 import com.firefly.codec.websocket.model.extension.AbstractExtension;
+import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.lang.QuotedStringTokenizer;
 
 public class IdentityExtension extends AbstractExtension {
@@ -37,9 +35,9 @@ public class IdentityExtension extends AbstractExtension {
     }
 
     @Override
-    public void outgoingFrame(Frame frame, WriteCallback callback, BatchMode batchMode) {
+    public void outgoingFrame(Frame frame, Callback callback) {
         // pass through
-        nextOutgoingFrame(frame, callback, batchMode);
+        nextOutgoingFrame(frame, callback);
     }
 
     @Override
