@@ -1,6 +1,8 @@
 package test.codec.http2.decode;
 
+import com.firefly.codec.common.CommonEncoder;
 import com.firefly.net.ByteBufferArrayOutputEntry;
+import com.firefly.net.ByteBufferOutputEntry;
 import com.firefly.net.OutputEntry;
 import com.firefly.net.Session;
 import com.firefly.utils.concurrent.Callback;
@@ -18,6 +20,7 @@ import static org.mockito.Mockito.*;
 public class MockSessionFactory {
 
     public final LinkedList<ByteBuffer> output = new LinkedList<>();
+    private static final CommonEncoder encoder = new CommonEncoder();
 
     public Session create() {
         return mock(AbstractMockSession.class, withSettings().useConstructor(output).defaultAnswer(CALLS_REAL_METHODS));
@@ -44,10 +47,7 @@ public class MockSessionFactory {
 
         @Override
         public void encode(Object message) {
-            if (message instanceof ByteBufferArrayOutputEntry) {
-                ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) message;
-                write(outputEntry);
-            }
+            encoder.encode(message, this);
         }
 
         @Override
@@ -79,8 +79,13 @@ public class MockSessionFactory {
 
         @Override
         public void write(OutputEntry<?> entry) {
-            ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) entry;
-            write(outputEntry.getData(), outputEntry.getCallback());
+            if (entry instanceof ByteBufferOutputEntry) {
+                ByteBufferOutputEntry outputEntry = (ByteBufferOutputEntry) entry;
+                write(outputEntry.getData(), outputEntry.getCallback());
+            } else {
+                ByteBufferArrayOutputEntry outputEntry = (ByteBufferArrayOutputEntry) entry;
+                write(outputEntry.getData(), outputEntry.getCallback());
+            }
         }
 
         @Override

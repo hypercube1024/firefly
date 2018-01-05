@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 public class CommonEncoder extends EncoderChain {
 
     @Override
-    public void encode(Object message, Session session) throws Throwable {
+    public void encode(Object message, Session session) {
         Object attachment = session.getAttachment();
         if (attachment instanceof AbstractConnection) {
             AbstractConnection connection = (AbstractConnection) attachment;
