@@ -2,7 +2,6 @@ package com.firefly.codec.http2.stream;
 
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
-import com.firefly.net.ByteBufferArrayOutputEntry;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IteratingCallback;
 import com.firefly.utils.io.BufferUtils;
@@ -154,7 +153,9 @@ public class HTTP2Flusher extends IteratingCallback {
             log.debug("Writing {} buffers ({} bytes) for {} frames {}",
                     buffers.size(), BufferUtils.remaining(buffers), actives.size(), actives.toString());
         }
-        session.getEndPoint().encode(new ByteBufferArrayOutputEntry(this, buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY)));
+
+        session.getEndPoint().encode(buffers.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY));
+        this.succeeded();
         return Action.SCHEDULED;
     }
 
