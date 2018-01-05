@@ -1,4 +1,4 @@
-package com.firefly.db.jdbc.helper.namedparam;
+package com.firefly.db.namedparam;
 
 import java.util.Collections;
 import java.util.List;

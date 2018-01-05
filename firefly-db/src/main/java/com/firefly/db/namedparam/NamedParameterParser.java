@@ -1,4 +1,4 @@
-package com.firefly.db.jdbc.helper.namedparam;
+package com.firefly.db.namedparam;
 
 import com.firefly.utils.Assert;
 import com.firefly.utils.BeanUtils;
