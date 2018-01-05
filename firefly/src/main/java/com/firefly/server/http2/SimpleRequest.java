@@ -21,6 +21,7 @@ import java.util.Spliterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class SimpleRequest {
 
@@ -175,10 +176,10 @@ public class SimpleRequest {
 
     public List<Cookie> getCookies() {
         if (cookies == null) {
-            String v = request.getFields().get(HttpHeader.COOKIE);
-            if (StringUtils.hasText(v)) {
-                cookies = CookieParser.parseCookie(v);
-            }
+            cookies = request.getFields().getValuesList(HttpHeader.COOKIE).stream()
+                             .filter(StringUtils::hasText)
+                             .flatMap(v -> CookieParser.parseCookie(v).stream())
+                             .collect(Collectors.toList());
         }
         return cookies;
     }

@@ -100,7 +100,6 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
     }
 
     private void createCookie() {
-        Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
-        routingContext.addCookie(cookie);
+        routingContext.addCookie(new Cookie(sessionIdParameterName, requestedSessionId));
     }
 }
