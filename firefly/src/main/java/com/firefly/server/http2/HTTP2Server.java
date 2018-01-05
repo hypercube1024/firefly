@@ -3,6 +3,7 @@ package com.firefly.server.http2;
 import com.firefly.codec.common.CommonDecoder;
 import com.firefly.codec.common.CommonEncoder;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
+import com.firefly.codec.websocket.decode.WebSocketDecoder;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -35,7 +36,7 @@ public class HTTP2Server extends AbstractLifeCycle {
         this.host = host;
         this.port = port;
 
-        c.getTcpConfiguration().setDecoder(new CommonDecoder(new HTTP1ServerDecoder(new HTTP2ServerDecoder())));
+        c.getTcpConfiguration().setDecoder(new CommonDecoder(new HTTP1ServerDecoder(new WebSocketDecoder(), new HTTP2ServerDecoder())));
         c.getTcpConfiguration().setEncoder(new CommonEncoder());
         c.getTcpConfiguration().setHandler(new HTTP2ServerHandler(c, listener, serverHTTPHandler, webSocketHandler));
         this.server = new AsynchronousTcpServer(c.getTcpConfiguration());

@@ -291,4 +291,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     public boolean getUpgradeHTTP2Complete() {
         return upgradeHTTP2Complete.get();
     }
+
+    public boolean getUpgradeWebSocketComplete() {
+        return upgradeWebSocketComplete.get();
+    }
 }

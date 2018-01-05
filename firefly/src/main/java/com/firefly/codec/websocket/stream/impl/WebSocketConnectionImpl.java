@@ -113,4 +113,12 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
     public ConnectionType getConnectionType() {
         return ConnectionType.WEB_SOCKET;
     }
+
+    public Parser getParser() {
+        return parser;
+    }
+
+    public Generator getGenerator() {
+        return generator;
+    }
 }

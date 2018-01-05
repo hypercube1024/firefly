@@ -1,7 +1,8 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.common.AbstractConnection;
 import com.firefly.codec.http2.decode.HttpParser;
-import com.firefly.codec.http2.stream.HTTPConnection;
+import com.firefly.codec.websocket.decode.WebSocketDecoder;
 import com.firefly.net.DecoderChain;
 import com.firefly.net.Session;
 
@@ -11,32 +12,45 @@ import static com.firefly.utils.io.BufferUtils.toHeapBuffer;
 
 public class HTTP1ClientDecoder extends DecoderChain {
 
-    public HTTP1ClientDecoder(DecoderChain next) {
-        super(next);
+    private final WebSocketDecoder webSocketDecoder;
+    private final HTTP2ClientDecoder http2ClientDecoder;
+
+    public HTTP1ClientDecoder(WebSocketDecoder webSocketDecoder, HTTP2ClientDecoder http2ClientDecoder) {
+        super(null);
+        this.webSocketDecoder = webSocketDecoder;
+        this.http2ClientDecoder = http2ClientDecoder;
     }
 
     @Override
-    public void decode(ByteBuffer buffer, Session session) throws Throwable {
-        HTTPConnection connection = (HTTPConnection) session.getAttachment();
+    public void decode(ByteBuffer buffer, Session session) {
         ByteBuffer buf = toHeapBuffer(buffer);
-
-        switch (connection.getHttpVersion()) {
-            case HTTP_2:
-                next.decode(buf, session);
-                break;
-            case HTTP_1_1:
-                final HTTP1ClientConnection http1Connection = (HTTP1ClientConnection) connection;
+        AbstractConnection abstractConnection = (AbstractConnection) session.getAttachment();
+        switch (abstractConnection.getConnectionType()) {
+            case HTTP1: {
+                final HTTP1ClientConnection http1Connection = (HTTP1ClientConnection) session.getAttachment();
                 final HttpParser parser = http1Connection.getParser();
                 while (buf.hasRemaining()) {
                     parser.parseNext(buf);
                     if (http1Connection.getUpgradeHTTP2Complete()) {
-                        next.decode(buf, session);
+                        http2ClientDecoder.decode(buf, session);
+                        break;
+                    } else if (http1Connection.getUpgradeWebSocketComplete()) {
+                        webSocketDecoder.decode(buf, session);
                         break;
                     }
                 }
-                break;
+            }
+            break;
+            case HTTP2: {
+                http2ClientDecoder.decode(buf, session);
+            }
+            break;
+            case WEB_SOCKET: {
+                webSocketDecoder.decode(buf, session);
+            }
+            break;
             default:
-                throw new IllegalStateException("client does not support the http version " + connection.getHttpVersion());
+                throw new IllegalStateException("client does not support the protocol " + abstractConnection.getConnectionType());
         }
     }
 
