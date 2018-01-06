@@ -1,7 +1,7 @@
 package com.firefly.net.event;
 
 import com.firefly.net.Config;
-import com.firefly.net.EventManager;
+import com.firefly.net.NetEvent;
 import com.firefly.net.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,28 +11,28 @@ import org.slf4j.LoggerFactory;
  *
  * @author qiupengtao
  */
-public class DefaultEventManager implements EventManager {
+public class DefaultNetEvent implements NetEvent {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private Config config;
 
-    public DefaultEventManager(Config config) {
+    public DefaultNetEvent(Config config) {
         log.info("create default event manager");
         this.config = config;
     }
 
     @Override
-    public void executeCloseTask(Session session) {
+    public void notifySessionClosed(Session session) {
         try {
             config.getHandler().sessionClosed(session);
         } catch (Throwable t) {
-            executeExceptionTask(session, t);
+            notifyExceptionCaught(session, t);
         }
     }
 
     @Override
-    public void executeExceptionTask(Session session, Throwable t) {
+    public void notifyExceptionCaught(Session session, Throwable t) {
         try {
             config.getHandler().exceptionCaught(session, t);
         } catch (Throwable t0) {
@@ -42,21 +42,21 @@ public class DefaultEventManager implements EventManager {
     }
 
     @Override
-    public void executeOpenTask(Session session) {
+    public void notifySessionOpened(Session session) {
         try {
             config.getHandler().sessionOpened(session);
         } catch (Throwable t) {
-            executeExceptionTask(session, t);
+            notifyExceptionCaught(session, t);
         }
     }
 
     @Override
-    public void executeReceiveTask(Session session, Object message) {
+    public void notifyMessageReceived(Session session, Object message) {
         try {
             log.debug("CurrentThreadEventManager");
             config.getHandler().messageReceived(session, message);
         } catch (Throwable t) {
-            executeExceptionTask(session, t);
+            notifyExceptionCaught(session, t);
         }
     }
 

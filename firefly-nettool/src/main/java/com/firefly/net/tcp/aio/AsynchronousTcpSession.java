@@ -1,6 +1,5 @@
 package com.firefly.net.tcp.aio;
 
-import com.codahale.metrics.MetricRegistry;
 import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
@@ -45,7 +44,7 @@ public class AsynchronousTcpSession implements Session {
     private volatile InetSocketAddress remoteAddress;
 
     private final Config config;
-    private final EventManager eventManager;
+    private final NetEvent netEvent;
     private volatile Object attachment;
 
     private final Lock outputLock = new ReentrantLock();
@@ -53,15 +52,14 @@ public class AsynchronousTcpSession implements Session {
     private final Queue<OutputEntry<?>> outputBuffer = new LinkedList<>();
     private final BufferSizePredictor bufferSizePredictor = new AdaptiveBufferSizePredictor();
 
-    AsynchronousTcpSession(int sessionId, Config config, EventManager eventManager, AsynchronousSocketChannel socketChannel) {
+    AsynchronousTcpSession(int sessionId, Config config, SessionMetric sessionMetric, NetEvent netEvent, AsynchronousSocketChannel socketChannel) {
         this.sessionId = sessionId;
         this.openTime = Millisecond100Clock.currentTimeMillis();
         this.config = config;
-        this.eventManager = eventManager;
+        this.netEvent = netEvent;
         this.socketChannel = socketChannel;
-        MetricRegistry metrics = config.getMetricReporterFactory().getMetricRegistry();
-        sessionMetric = new SessionMetric(metrics, "aio.tcpSession");
-        sessionMetric.getActiveSessionCount().inc();
+        this.sessionMetric = sessionMetric;
+        this.sessionMetric.getActiveSessionCount().inc();
     }
 
     private ByteBuffer allocateReadBuffer() {
@@ -110,7 +108,7 @@ public class AsynchronousTcpSession implements Session {
             try {
                 config.getDecoder().decode(buf, session);
             } catch (Throwable t) {
-                eventManager.executeExceptionTask(session, t);
+                netEvent.notifyExceptionCaught(session, t);
             } finally {
                 _read();
             }
@@ -385,8 +383,8 @@ public class AsynchronousTcpSession implements Session {
     }
 
     @Override
-    public void onReceivingMessage(Object message) {
-        eventManager.executeReceiveTask(this, message);
+    public void notifyMessageReceived(Object message) {
+        netEvent.notifyMessageReceived(this, message);
     }
 
     @Override
@@ -394,7 +392,7 @@ public class AsynchronousTcpSession implements Session {
         try {
             config.getEncoder().encode(message, this);
         } catch (Throwable t) {
-            eventManager.executeExceptionTask(this, t);
+            netEvent.notifyExceptionCaught(this, t);
         }
     }
 
@@ -420,7 +418,7 @@ public class AsynchronousTcpSession implements Session {
             } catch (IOException e) {
                 log.error("The session " + sessionId + " close exception", e);
             } finally {
-                eventManager.executeCloseTask(this);
+                netEvent.notifySessionClosed(this);
                 sessionMetric.getActiveSessionCount().dec();
                 sessionMetric.getDuration().update(getDuration());
             }

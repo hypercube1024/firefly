@@ -15,7 +15,7 @@ public interface Session {
 
     Object getAttachment();
 
-    void onReceivingMessage(Object message);
+    void notifyMessageReceived(Object message);
 
     void encode(Object message);
 
