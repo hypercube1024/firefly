@@ -25,7 +25,7 @@ public interface Frame {
 
         private byte opcode;
 
-        private Type(byte code) {
+        Type(byte code) {
             this.opcode = code;
         }
 
@@ -69,15 +69,6 @@ public interface Frame {
     boolean hasPayload();
 
     boolean isFin();
-
-    /**
-     * Same as {@link #isFin()}
-     *
-     * @return true if final frame.
-     * @deprecated use {@link #isFin()} instead
-     */
-    @Deprecated
-    boolean isLast();
 
     boolean isMasked();
 

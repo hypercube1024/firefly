@@ -215,11 +215,6 @@ public abstract class WebSocketFrame implements Frame {
     }
 
     @Override
-    public boolean isLast() {
-        return isFin();
-    }
-
-    @Override
     public boolean isMasked() {
         return masked;
     }
