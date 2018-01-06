@@ -1,6 +1,7 @@
 package com.firefly.codec.http2.stream;
 
 import com.firefly.codec.common.AbstractConnection;
+import com.firefly.codec.common.ConnectionEvent;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
@@ -11,12 +12,12 @@ abstract public class AbstractHTTPConnection extends AbstractConnection implemen
 
     protected final HttpVersion httpVersion;
     protected volatile Object attachment;
-    protected Action1<HTTPConnection> closedListener;
-    protected Action2<HTTPConnection, Throwable> exceptionListener;
+    protected final ConnectionEvent<HTTPConnection> connectionEvent;
 
     public AbstractHTTPConnection(SecureSession secureSession, Session tcpSession, HttpVersion httpVersion) {
         super(secureSession, tcpSession);
         this.httpVersion = httpVersion;
+        connectionEvent = new ConnectionEvent<>(this);
     }
 
     @Override
@@ -41,21 +42,19 @@ abstract public class AbstractHTTPConnection extends AbstractConnection implemen
 
     @Override
     public HTTPConnection onClose(Action1<HTTPConnection> closedListener) {
-        this.closedListener = closedListener;
-        return this;
+        return connectionEvent.onClose(closedListener);
     }
 
     @Override
     public HTTPConnection onException(Action2<HTTPConnection, Throwable> exceptionListener) {
-        this.exceptionListener = exceptionListener;
-        return this;
+        return connectionEvent.onException(exceptionListener);
     }
 
-    Action1<HTTPConnection> getClosedListener() {
-        return closedListener;
+    public void notifyClose() {
+        connectionEvent.notifyClose();
     }
 
-    Action2<HTTPConnection, Throwable> getExceptionListener() {
-        return exceptionListener;
+    public void notifyException(Throwable t) {
+        connectionEvent.notifyException(t);
     }
 }

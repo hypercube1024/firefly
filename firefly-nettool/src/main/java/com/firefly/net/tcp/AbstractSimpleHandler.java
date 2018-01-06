@@ -45,7 +45,7 @@ abstract public class AbstractSimpleHandler implements Handler {
         Object o = session.getAttachment();
         if (o != null && o instanceof AbstractTcpConnection) {
             AbstractTcpConnection c = (AbstractTcpConnection) o;
-            c.closeCallbacks.forEach(Action0::call);
+            c.notifyClose();
         }
         if (o != null && o instanceof SecureTcpConnectionImpl) {
             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
@@ -63,7 +63,7 @@ abstract public class AbstractSimpleHandler implements Handler {
         Object o = session.getAttachment();
         if (o != null && o instanceof AbstractTcpConnection) {
             AbstractTcpConnection c = (AbstractTcpConnection) o;
-            c.exceptions.forEach(a -> a.call(t));
+            c.notifyException(t);
         }
     }
 

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Pengtao Qiu
@@ -38,7 +39,7 @@ abstract public class AbstractSecureSession implements SecureSession {
     protected ByteBuffer receivedPacketBuf;
     protected ByteBuffer receivedAppBuf;
 
-    protected volatile boolean closed = false;
+    protected AtomicBoolean closed = new AtomicBoolean(false);
     protected SSLEngineResult.HandshakeStatus initialHSStatus;
     protected boolean initialHSComplete;
 
@@ -310,10 +311,9 @@ abstract public class AbstractSecureSession implements SecureSession {
     }
 
     @Override
-    public synchronized void close() {
-        if (!closed) {
+    public void close() {
+        if (closed.compareAndSet(false, true)) {
             closeOutbound();
-            closed = true;
         }
     }
 
@@ -346,7 +346,7 @@ abstract public class AbstractSecureSession implements SecureSession {
 
     @Override
     public boolean isOpen() {
-        return !closed;
+        return !closed.get();
     }
 
     protected ByteBuffer splitBuffer(int netSize) {

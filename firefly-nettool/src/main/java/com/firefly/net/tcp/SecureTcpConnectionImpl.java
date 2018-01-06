@@ -7,9 +7,10 @@ import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;
+import com.firefly.utils.function.Action2;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.IO;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -18,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class SecureTcpConnectionImpl extends AbstractTcpConnection {
 
-    SecureSession secureSession;
+    protected final SecureSession secureSession;
 
     public SecureTcpConnectionImpl(Session session, SecureSession secureSession) {
         super(session);
@@ -28,38 +29,14 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public CompletableFuture<Boolean> writeToFuture(ByteBuffer byteBuffer) {
         Promise.Completable<Boolean> c = new Promise.Completable<>();
-        try {
-            secureSession.write(byteBuffer, new Callback() {
-                public void succeeded() {
-                    c.succeeded(true);
-                }
-
-                public void failed(Throwable x) {
-                    c.failed(x);
-                }
-            });
-        } catch (IOException e) {
-            c.failed(e);
-        }
+        write(byteBuffer, () -> c.succeeded(true), c::failed);
         return c;
     }
 
     @Override
     public CompletableFuture<Boolean> writeToFuture(ByteBuffer[] byteBuffer) {
         Promise.Completable<Boolean> c = new Promise.Completable<>();
-        try {
-            secureSession.write(byteBuffer, new Callback() {
-                public void succeeded() {
-                    c.succeeded(true);
-                }
-
-                public void failed(Throwable x) {
-                    c.failed(x);
-                }
-            });
-        } catch (IOException e) {
-            c.failed(e);
-        }
+        write(byteBuffer, () -> c.succeeded(true), c::failed);
         return c;
     }
 
@@ -82,74 +59,68 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public CompletableFuture<Boolean> writeToFuture(FileRegion file) {
         Promise.Completable<Boolean> c = new Promise.Completable<>();
-        try {
-            secureSession.transferFileRegion(file, new Callback() {
-                public void succeeded() {
-                    c.succeeded(true);
-                }
-
-                public void failed(Throwable x) {
-                    c.failed(x);
-                }
-            });
-        } catch (Throwable e) {
-            c.failed(e);
-        }
+        write(file, () -> c.succeeded(true), c::failed);
         return c;
     }
 
     @Override
     public TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
-        try {
-            secureSession.write(byteBuffer, new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-
-                public void failed(Throwable x) {
-                    failed.call(x);
-                }
-            });
-        } catch (Throwable e) {
-            failed.call(e);
-        }
+        _write(byteBuffer, this::_write, succeeded, failed);
         return this;
     }
 
     @Override
     public TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
-        try {
-            secureSession.write(byteBuffer, new Callback() {
-                public void succeeded() {
+        _write(byteBuffer, this::_write, succeeded, failed);
+        return this;
+    }
+
+    private <T> void _write(T byteBuffer, Action2<T, Callback> writeAction, Action0 succeeded, Action1<Throwable> failed) {
+        Callback callback = new Callback() {
+            @Override
+            public void succeeded() {
+                if (succeeded != null) {
                     succeeded.call();
                 }
+            }
 
-                public void failed(Throwable x) {
+            @Override
+            public void failed(Throwable x) {
+                if (failed != null) {
                     failed.call(x);
                 }
-            });
-        } catch (Throwable e) {
-            failed.call(e);
+            }
+        };
+        writeAction.call(byteBuffer, callback);
+    }
+
+    private void _write(ByteBuffer[] byteBuffers, Callback callback) {
+        try {
+            secureSession.write(byteBuffers, callback);
+        } catch (Exception e) {
+            callback.failed(e);
         }
-        return this;
+    }
+
+    private void _write(ByteBuffer byteBuffer, Callback callback) {
+        try {
+            secureSession.write(byteBuffer, callback);
+        } catch (Exception e) {
+            callback.failed(e);
+        }
+    }
+
+    private void _write(FileRegion file, Callback callback) {
+        try {
+            secureSession.transferFileRegion(file, callback);
+        } catch (Exception e) {
+            callback.failed(e);
+        }
     }
 
     @Override
     public TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded, Action1<Throwable> failed) {
-        try {
-            secureSession.write(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-
-                public void failed(Throwable x) {
-                    failed.call(x);
-                }
-            });
-        } catch (Throwable e) {
-            failed.call(e);
-        }
-        return this;
+        return write(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), succeeded, failed);
     }
 
     @Override
@@ -160,115 +131,55 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
 
     @Override
     public TcpConnection write(String message, String charset, Action0 succeeded, Action1<Throwable> failed) {
-        ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
-        write(byteBuffer, succeeded, failed);
+        write(BufferUtils.toBuffer(message, Charset.forName(charset)), succeeded, failed);
         return this;
     }
 
     @Override
     public TcpConnection write(FileRegion file, Action0 succeeded, Action1<Throwable> failed) {
-        try {
-            secureSession.transferFileRegion(file, new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-
-                public void failed(Throwable x) {
-                    failed.call(x);
-                }
-            });
-        } catch (Throwable e) {
-            failed.call(e);
-        }
+        _write(file, this::_write, succeeded, failed);
         return this;
     }
 
     @Override
     public TcpConnection write(ByteBuffer byteBuffer, Action0 succeeded) {
-        try {
-            secureSession.write(byteBuffer, new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-            });
-        } catch (Throwable ignored) {
-        }
-        return this;
+        return write(byteBuffer, succeeded, null);
     }
 
     @Override
     public TcpConnection write(ByteBuffer[] byteBuffer, Action0 succeeded) {
-        try {
-            secureSession.write(byteBuffer, new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-            });
-        } catch (Throwable ignored) {
-        }
-        return this;
+        return write(byteBuffer, succeeded, null);
     }
 
     @Override
     public TcpConnection write(Collection<ByteBuffer> byteBuffer, Action0 succeeded) {
-        try {
-            secureSession.write(byteBuffer.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-            });
-        } catch (Throwable ignored) {
-        }
-        return this;
+        return write(byteBuffer, succeeded, null);
     }
 
     @Override
     public TcpConnection write(String message, Action0 succeeded) {
-        return write(message, DEFAULT_CHARSET, succeeded);
+        return write(message, DEFAULT_CHARSET, succeeded, null);
     }
 
     @Override
     public TcpConnection write(String message, String charset, Action0 succeeded) {
-        ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
-        try {
-            secureSession.write(byteBuffer, new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-            });
-        } catch (Throwable ignored) {
-        }
-        return this;
+        return write(message, charset, succeeded, null);
     }
 
     @Override
     public TcpConnection write(FileRegion file, Action0 succeeded) {
-        try {
-            secureSession.transferFileRegion(file, new Callback() {
-                public void succeeded() {
-                    succeeded.call();
-                }
-            });
-        } catch (Throwable ignored) {
-        }
-        return this;
+        return write(file, succeeded, null);
     }
 
     @Override
     public TcpConnection write(ByteBuffer byteBuffer) {
-        try {
-            secureSession.write(byteBuffer, Callback.NOOP);
-        } catch (Throwable ignored) {
-        }
+        _write(byteBuffer, Callback.NOOP);
         return this;
     }
 
     @Override
     public TcpConnection write(ByteBuffer[] byteBuffer) {
-        try {
-            secureSession.write(byteBuffer, Callback.NOOP);
-        } catch (Throwable ignored) {
-        }
+        _write(byteBuffer, Callback.NOOP);
         return this;
     }
 
@@ -279,26 +190,17 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
 
     @Override
     public TcpConnection write(String message) {
-        return write(message, DEFAULT_CHARSET);
+        return write(message, DEFAULT_CHARSET, null, null);
     }
 
     @Override
     public TcpConnection write(String message, String charset) {
-        ByteBuffer byteBuffer = BufferUtils.toBuffer(message, Charset.forName(charset));
-        try {
-            secureSession.write(byteBuffer, Callback.NOOP);
-        } catch (Throwable ignored) {
-        }
-        return this;
+        return write(message, charset, null, null);
     }
 
     @Override
     public TcpConnection write(FileRegion file) {
-        try {
-            secureSession.transferFileRegion(file, Callback.NOOP);
-        } catch (Throwable ignored) {
-        }
-        return this;
+        return write(file, null, null);
     }
 
     @Override
@@ -314,5 +216,11 @@ public class SecureTcpConnectionImpl extends AbstractTcpConnection {
     @Override
     public List<String> getSupportedApplicationProtocols() {
         return secureSession.getSupportedApplicationProtocols();
+    }
+
+    @Override
+    public void close() {
+        IO.close(secureSession);
+        session.close();
     }
 }

@@ -60,16 +60,7 @@ public abstract class ControlFrame extends WebSocketFrame {
         } else if (!data.equals(other.data)) {
             return false;
         }
-        if (finRsvOp != other.finRsvOp) {
-            return false;
-        }
-        if (!Arrays.equals(mask, other.mask)) {
-            return false;
-        }
-        if (masked != other.masked) {
-            return false;
-        }
-        return true;
+        return finRsvOp == other.finRsvOp && Arrays.equals(mask, other.mask) && masked == other.masked;
     }
 
     public boolean isControlFrame() {
