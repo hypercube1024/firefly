@@ -9,8 +9,10 @@ import com.firefly.codec.websocket.encode.Generator;
 import com.firefly.codec.websocket.frame.CloseFrame;
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.frame.PongFrame;
+import com.firefly.codec.websocket.frame.WebSocketFrame;
 import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.model.WebSocketBehavior;
 import com.firefly.codec.websocket.stream.IOState;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
@@ -29,6 +31,8 @@ import java.util.Optional;
  * @author Pengtao Qiu
  */
 public class WebSocketConnectionImpl extends AbstractConnection implements WebSocketConnection, IncomingFrames {
+
+    public static final byte maskingKey[] = new byte[]{0x01, (byte) 0xfe, 0x22, 0x2d};
 
     protected final ConnectionEvent<WebSocketConnection> connectionEvent;
     protected IncomingFrames incomingFrames;
@@ -85,6 +89,12 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
 
     @Override
     public void outgoingFrame(Frame frame, Callback callback) {
+        if (policy.getBehavior() == WebSocketBehavior.CLIENT && frame instanceof WebSocketFrame) {
+            WebSocketFrame webSocketFrame = (WebSocketFrame) frame;
+            if (!webSocketFrame.isMasked()) {
+                webSocketFrame.setMask(maskingKey);
+            }
+        }
         ByteBuffer buf = ByteBuffer.allocate(Generator.MAX_HEADER_LENGTH + frame.getPayloadLength());
         generator.generateWholeFrame(frame, buf);
         BufferUtils.flipToFlush(buf, 0);
@@ -105,12 +115,18 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
         switch (frame.getType()) {
             case PING: {
                 PongFrame pongFrame = new PongFrame();
+                if (policy.getBehavior() == WebSocketBehavior.CLIENT) {
+                    pongFrame.setMask(maskingKey);
+                }
                 outgoingFrame(pongFrame, Callback.NOOP);
             }
             break;
             case CLOSE: {
                 CloseFrame closeFrame = (CloseFrame) frame;
                 CloseInfo closeInfo = new CloseInfo(closeFrame.getPayload(), false);
+                if (policy.getBehavior() == WebSocketBehavior.CLIENT) {
+                    closeFrame.setMask(maskingKey);
+                }
                 ioState.onCloseRemote(closeInfo);
                 this.close();
             }

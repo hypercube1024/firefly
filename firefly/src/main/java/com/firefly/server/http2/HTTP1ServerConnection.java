@@ -281,6 +281,7 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 });
                 tcpSession.attachObject(webSocketConnection);
                 upgradeWebSocketComplete.compareAndSet(false, true);
+                webSocketHandler.onConnect(webSocketConnection);
                 return true;
             }
             default:

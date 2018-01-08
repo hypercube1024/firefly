@@ -25,6 +25,10 @@ public interface WebSocketHandler {
         return true;
     }
 
+    default void onConnect(WebSocketConnection webSocketConnection) {
+
+    }
+
     default WebSocketPolicy getWebSocketPolicy() {
         return defaultWebSocketPolicy;
     }

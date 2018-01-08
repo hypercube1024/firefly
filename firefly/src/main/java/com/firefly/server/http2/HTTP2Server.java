@@ -23,6 +23,11 @@ public class HTTP2Server extends AbstractLifeCycle {
         });
     }
 
+    public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
+                       ServerHTTPHandler serverHTTPHandler, WebSocketHandler webSocketHandler) {
+        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler, webSocketHandler);
+    }
+
     public HTTP2Server(String host, int port, HTTP2Configuration c,
                        ServerSessionListener listener,
                        ServerHTTPHandler serverHTTPHandler,
