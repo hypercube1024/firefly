@@ -99,6 +99,12 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
         generator.generateWholeFrame(frame, buf);
         BufferUtils.flipToFlush(buf, 0);
         tcpSession.encode(new ByteBufferOutputEntry(callback, buf));
+        if (frame.getType() == Frame.Type.CLOSE && frame instanceof CloseFrame) {
+            CloseFrame closeFrame = (CloseFrame) frame;
+            CloseInfo closeInfo = new CloseInfo(closeFrame.getPayload(), false);
+            getIOState().onCloseLocal(closeInfo);
+            this.close();
+        }
     }
 
     public void setIncomingFrames(IncomingFrames incomingFrames) {
@@ -124,9 +130,6 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
             case CLOSE: {
                 CloseFrame closeFrame = (CloseFrame) frame;
                 CloseInfo closeInfo = new CloseInfo(closeFrame.getPayload(), false);
-                if (policy.getBehavior() == WebSocketBehavior.CLIENT) {
-                    closeFrame.setMask(maskingKey);
-                }
                 ioState.onCloseRemote(closeInfo);
                 this.close();
             }

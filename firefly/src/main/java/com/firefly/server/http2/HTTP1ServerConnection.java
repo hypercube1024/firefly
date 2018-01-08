@@ -39,9 +39,9 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
     private final WebSocketHandler webSocketHandler;
     private final ServerSessionListener serverSessionListener;
     private final HTTP1ServerRequestHandler serverRequestHandler;
-    AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
-    AtomicBoolean upgradeWebSocketComplete = new AtomicBoolean(false);
-    Promise<HTTPTunnelConnection> tunnelConnectionPromise;
+    private final AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
+    private final AtomicBoolean upgradeWebSocketComplete = new AtomicBoolean(false);
+    private Promise<HTTPTunnelConnection> tunnelConnectionPromise;
 
     HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
                           HTTP1ServerRequestHandler requestHandler,
@@ -295,5 +295,9 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     public boolean getUpgradeWebSocketComplete() {
         return upgradeWebSocketComplete.get();
+    }
+
+    public Promise<HTTPTunnelConnection> getTunnelConnectionPromise() {
+        return tunnelConnectionPromise;
     }
 }

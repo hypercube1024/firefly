@@ -29,7 +29,7 @@ public class HTTP1ServerDecoder extends DecoderChain {
         switch (abstractConnection.getConnectionType()) {
             case HTTP1: {
                 final HTTP1ServerConnection http1Connection = (HTTP1ServerConnection) session.getAttachment();
-                if (http1Connection.tunnelConnectionPromise == null) {
+                if (http1Connection.getTunnelConnectionPromise() == null) {
                     final HttpParser parser = http1Connection.getParser();
                     while (buf.hasRemaining()) {
                         parser.parseNext(buf);

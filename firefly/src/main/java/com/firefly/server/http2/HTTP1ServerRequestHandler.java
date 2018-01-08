@@ -83,7 +83,7 @@ public class HTTP1ServerRequestHandler implements RequestHandler {
     @Override
     public boolean messageComplete() {
         try {
-            if (connection.upgradeHTTP2Complete.get()) {
+            if (connection.getUpgradeHTTP2Complete() || connection.getUpgradeWebSocketComplete()) {
                 return true;
             } else {
                 boolean success = connection.upgradeProtocol(request, response, outputStream, connection);
