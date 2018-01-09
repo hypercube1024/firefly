@@ -277,6 +277,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             log.debug("Received {}", frame.toString());
         }
         if (frame.isReply()) {
+            log.info("The session {} received ping reply", endPoint.getSessionId());
             notifyPing(this, frame);
         } else {
             PingFrame reply = new PingFrame(frame.getPayload(), true);

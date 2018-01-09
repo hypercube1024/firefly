@@ -266,8 +266,10 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 response.getFields().add("Sec-WebSocket-Accept", AcceptHash.hashKey(key));
                 IO.close(output);
 
-                WebSocketConnectionImpl webSocketConnection = new WebSocketConnectionImpl(secureSession, tcpSession,
-                        null, webSocketHandler.getWebSocketPolicy(), request, response);
+                WebSocketConnectionImpl webSocketConnection = new WebSocketConnectionImpl(
+                        secureSession, tcpSession,
+                        null, webSocketHandler.getWebSocketPolicy(),
+                        request, response, config);
                 webSocketConnection.setIncomingFrames(new IncomingFrames() {
                     @Override
                     public void incomingError(Throwable t) {

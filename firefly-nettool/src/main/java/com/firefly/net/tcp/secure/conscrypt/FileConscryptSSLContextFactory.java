@@ -1,6 +1,5 @@
 package com.firefly.net.tcp.secure.conscrypt;
 
-import com.firefly.net.tcp.secure.jdk.AbstractJdkSSLContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,7 @@ import java.io.FileInputStream;
 /**
  * @author Pengtao Qiu
  */
-public class FileConscryptSSLContextFactory extends AbstractJdkSSLContextFactory {
+public class FileConscryptSSLContextFactory extends AbstractConscryptSSLContextFactory {
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private File file;

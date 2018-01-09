@@ -3,6 +3,8 @@ package com.firefly.codec.common;
 import com.firefly.net.*;
 import com.firefly.net.exception.SecureNetException;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.Scheduler;
+import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action2;
 import com.firefly.utils.io.IO;
 import org.slf4j.Logger;
@@ -19,6 +21,8 @@ import java.util.Optional;
 abstract public class AbstractConnection implements Connection, ConnectionExtInfo {
 
     protected static Logger log = LoggerFactory.getLogger("firefly-system");
+
+    public static final Scheduler scheduler = Schedulers.createScheduler();
 
     protected final SecureSession secureSession;
     protected final Session tcpSession;

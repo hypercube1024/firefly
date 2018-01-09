@@ -1,6 +1,5 @@
 package com.firefly.client.http2;
 
-import com.firefly.codec.http2.frame.PingFrame;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.AbstractHTTPHandler;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
@@ -8,26 +7,17 @@ import com.firefly.net.SecureSession;
 import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.Session;
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.concurrent.Schedulers;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class HTTP2ClientHandler extends AbstractHTTPHandler {
 
     private final Map<Integer, HTTP2ClientContext> http2ClientContext;
-    private final Scheduler pingScheduler;
-    private final Map<Integer, Scheduler.Future> pingSchedulerFutureMap;
 
     public HTTP2ClientHandler(HTTP2Configuration config, Map<Integer, HTTP2ClientContext> http2ClientContext) {
         super(config);
         this.http2ClientContext = http2ClientContext;
-        pingScheduler = Schedulers.createScheduler();
-        pingSchedulerFutureMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -101,20 +91,6 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
             session.attachObject(connection);
             context.getListener().setConnection(connection);
             connection.initialize(config, context.getPromise(), context.getListener());
-            int id = session.getSessionId();
-
-            Scheduler.Future future = pingScheduler.scheduleAtFixedRate(
-                    () -> connection.getHttp2Session().ping(new PingFrame(false), new Callback() {
-                        public void succeeded() {
-                            log.info("the session {} sends ping frame success", id);
-                        }
-
-                        public void failed(Throwable x) {
-                            log.warn("the session {} sends ping frame failure. {}", id, x.getMessage());
-                        }
-                    }),
-                    config.getHttp2PingInterval(), config.getHttp2PingInterval(), TimeUnit.MILLISECONDS);
-            pingSchedulerFutureMap.putIfAbsent(id, future);
         } finally {
             http2ClientContext.remove(session.getSessionId());
         }
@@ -124,8 +100,6 @@ public class HTTP2ClientHandler extends AbstractHTTPHandler {
     public void sessionClosed(Session session) throws Throwable {
         try {
             super.sessionClosed(session);
-            Optional.ofNullable(pingSchedulerFutureMap.remove(session.getSessionId()))
-                    .ifPresent(Scheduler.Future::cancel);
         } finally {
             http2ClientContext.remove(session.getSessionId());
         }

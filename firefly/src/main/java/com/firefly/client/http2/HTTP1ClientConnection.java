@@ -242,7 +242,10 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
             case WEB_SOCKET: {
                 if (webSocketConnectionPromise != null && incomingFrames != null && policy != null) {
                     upgradeWebSocketComplete.compareAndSet(false, true);
-                    WebSocketConnection webSocketConnection = new WebSocketConnectionImpl(secureSession, tcpSession, incomingFrames, policy, request, response);
+                    WebSocketConnection webSocketConnection = new WebSocketConnectionImpl(
+                            secureSession, tcpSession,
+                            incomingFrames, policy,
+                            request, response, config);
                     getTcpSession().attachObject(webSocketConnection);
                     webSocketConnectionPromise.succeeded(webSocketConnection);
                     return true;

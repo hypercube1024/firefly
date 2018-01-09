@@ -12,12 +12,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.List;
 
 /**
  * @author Pengtao Qiu
  */
 abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory {
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
+
+    private List<String> supportedProtocols;
 
     public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random) throws NoSuchAlgorithmException, KeyManagementException {
         long start = Millisecond100Clock.currentTimeMillis();
@@ -66,13 +69,23 @@ abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory 
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine();
         sslEngine.setUseClientMode(clientMode);
-        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine));
+        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine, supportedProtocols));
     }
 
     @Override
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode, String peerHost, int peerPort) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
         sslEngine.setUseClientMode(clientMode);
-        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine));
+        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine, supportedProtocols));
+    }
+
+    @Override
+    public List<String> getSupportedProtocols() {
+        return supportedProtocols;
+    }
+
+    @Override
+    public void setSupportedProtocols(List<String> supportedProtocols) {
+        this.supportedProtocols = supportedProtocols;
     }
 }

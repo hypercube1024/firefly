@@ -2,6 +2,7 @@ package com.firefly.net.tcp.secure.conscrypt;
 
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.utils.CollectionUtils;
+import com.firefly.utils.StringUtils;
 import org.conscrypt.Conscrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +19,18 @@ import java.util.List;
 public class ConscryptALPNSelector implements ApplicationProtocolSelector {
 
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
-    private static final String[] supportedProtocols = {"h2", "http/1.1"};
-    private static final List<String> supportedProtocolList = Collections.unmodifiableList(Arrays.asList(supportedProtocols));
+    private final String[] supportedProtocols;
+    private final List<String> supportedProtocolList;
 
     private final SSLEngine sslEngine;
 
-    public ConscryptALPNSelector(SSLEngine sslEngine) {
+    public ConscryptALPNSelector(SSLEngine sslEngine, List<String> supportedProtocolList) {
+        if (CollectionUtils.isEmpty(supportedProtocolList)) {
+            this.supportedProtocolList = Collections.unmodifiableList(Arrays.asList("h2", "http/1.1"));
+        } else {
+            this.supportedProtocolList = supportedProtocolList;
+        }
+        supportedProtocols = this.supportedProtocolList.toArray(StringUtils.EMPTY_STRING_ARRAY);
         this.sslEngine = sslEngine;
         if (sslEngine.getUseClientMode()) {
             Conscrypt.setApplicationProtocols(sslEngine, supportedProtocols);

@@ -27,6 +27,7 @@ public class HTTP2Configuration {
     private String characterEncoding = "UTF-8";
     private String protocol; // HTTP/2.0, HTTP/1.1
     private int http2PingInterval = 10 * 1000;
+    private int websocketPingInterval = 10 * 1000;
 
     /**
      * Get the TCP configuration.
@@ -325,7 +326,7 @@ public class HTTP2Configuration {
     }
 
     /**
-     * Get the sending ping frame interval. The time unit is millisecond.
+     * Get the HTTP2 connection sending ping frame interval. The time unit is millisecond.
      *
      * @return the sending ping frame interval. The time unit is millisecond.
      */
@@ -340,5 +341,23 @@ public class HTTP2Configuration {
      */
     public void setHttp2PingInterval(int http2PingInterval) {
         this.http2PingInterval = http2PingInterval;
+    }
+
+    /**
+     * Get the WebSocket connection sending ping frame interval. The time unit is millisecond.
+     *
+     * @return the WebSocket connection sending ping frame interval. The time unit is millisecond.
+     */
+    public int getWebsocketPingInterval() {
+        return websocketPingInterval;
+    }
+
+    /**
+     * Set the WebSocket connection sending ping frame interval. The time unit is millisecond.
+     *
+     * @param websocketPingInterval the WebSocket connection sending ping frame interval. The time unit is millisecond.
+     */
+    public void setWebsocketPingInterval(int websocketPingInterval) {
+        this.websocketPingInterval = websocketPingInterval;
     }
 }

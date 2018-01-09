@@ -4,6 +4,7 @@ import com.firefly.codec.common.AbstractConnection;
 import com.firefly.codec.common.ConnectionEvent;
 import com.firefly.codec.common.ConnectionType;
 import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.websocket.decode.Parser;
 import com.firefly.codec.websocket.encode.Generator;
 import com.firefly.codec.websocket.frame.*;
@@ -17,6 +18,7 @@ import com.firefly.net.ByteBufferOutputEntry;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
 import com.firefly.utils.io.BufferUtils;
@@ -25,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Pengtao Qiu
@@ -39,9 +42,12 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
     protected final MetaData.Request upgradeRequest;
     protected final MetaData.Response upgradeResponse;
     protected IOState ioState;
+    protected final HTTP2Configuration config;
 
-    public WebSocketConnectionImpl(SecureSession secureSession, Session tcpSession, IncomingFrames incomingFrames, WebSocketPolicy policy,
-                                   MetaData.Request upgradeRequest, MetaData.Response upgradeResponse) {
+    public WebSocketConnectionImpl(SecureSession secureSession, Session tcpSession,
+                                   IncomingFrames incomingFrames, WebSocketPolicy policy,
+                                   MetaData.Request upgradeRequest, MetaData.Response upgradeResponse,
+                                   HTTP2Configuration config) {
         super(secureSession, tcpSession);
 
         connectionEvent = new ConnectionEvent<>(this);
@@ -52,8 +58,25 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
         this.incomingFrames = incomingFrames;
         this.upgradeRequest = upgradeRequest;
         this.upgradeResponse = upgradeResponse;
+        this.config = config;
         ioState = new IOState();
         ioState.onOpened();
+
+        if (this.policy.getBehavior() == WebSocketBehavior.CLIENT) {
+            Scheduler.Future pingFuture = scheduler.scheduleAtFixedRate(() -> {
+                PingFrame pingFrame = new PingFrame();
+                outgoingFrame(pingFrame, new Callback() {
+                    public void succeeded() {
+                        log.info("The websocket connection {} sent ping frame success", getSessionId());
+                    }
+
+                    public void failed(Throwable x) {
+                        log.warn("the websocket connection {} sends ping frame failure. {}", getSessionId(), x.getMessage());
+                    }
+                });
+            }, config.getWebsocketPingInterval(), config.getWebsocketPingInterval(), TimeUnit.MILLISECONDS);
+            onClose(c -> pingFuture.cancel());
+        }
     }
 
     @Override
@@ -126,6 +149,10 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
                 CloseInfo closeInfo = new CloseInfo(closeFrame.getPayload(), false);
                 ioState.onCloseRemote(closeInfo);
                 this.close();
+            }
+            break;
+            case PONG: {
+                log.info("The websocket connection {} received pong frame", getSessionId());
             }
             break;
         }

@@ -2,10 +2,7 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.Generator;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PrefaceFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.MetaData;
@@ -20,6 +17,7 @@ import com.firefly.net.Session;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
@@ -31,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HTTPClientConnection {
 
@@ -66,6 +65,18 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
         } else {
             sessionSPI.frames(null, callback, prefaceFrame, settingsFrame);
         }
+
+        Scheduler.Future pingFuture = scheduler.scheduleAtFixedRate(() -> getHttp2Session().ping(new PingFrame(false), new Callback() {
+            public void succeeded() {
+                log.info("The session {} sent ping frame success", getSessionId());
+            }
+
+            public void failed(Throwable x) {
+                log.warn("the session {} sends ping frame failure. {}", getSessionId(), x.getMessage());
+            }
+        }), config.getHttp2PingInterval(), config.getHttp2PingInterval(), TimeUnit.MILLISECONDS);
+
+        onClose(c -> pingFuture.cancel());
     }
 
     public HTTP2ClientConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,

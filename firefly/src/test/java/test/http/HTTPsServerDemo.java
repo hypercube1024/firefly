@@ -24,5 +24,8 @@ public class HTTPsServerDemo {
          .router().get("/static/*")
          .handler(new StaticFileHandler(path.toAbsolutePath().toString()))
          .listen("localhost", 8080);
+
+        $.httpsClient().get("https://localhost:8081/").submit()
+         .thenAccept(res -> System.out.println(res.getStringBody()));
     }
 }
