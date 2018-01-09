@@ -170,8 +170,17 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
 
     @Override
     public CompletableFuture<Boolean> sendData(byte[] data) {
+        return _sendData(data, BinaryFrame::setPayload);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> sendData(ByteBuffer data) {
+        return _sendData(data, BinaryFrame::setPayload);
+    }
+
+    private <T> CompletableFuture<Boolean> _sendData(T data, Action2<BinaryFrame, T> setData) {
         BinaryFrame binaryFrame = new BinaryFrame();
-        binaryFrame.setPayload(data);
+        setData.call(binaryFrame, data);
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         outgoingFrame(binaryFrame, new Callback() {
             @Override

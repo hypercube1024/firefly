@@ -1,6 +1,8 @@
 package com.firefly;
 
 import com.firefly.client.http2.*;
+import com.firefly.client.websocket.SimpleWebSocketClient;
+import com.firefly.client.websocket.WebSocketClientSingleton;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.core.ApplicationContext;
@@ -209,6 +211,15 @@ public interface $ {
      */
     static SimpleHTTPServer createHTTPServer(SimpleHTTPServerConfiguration configuration) {
         return new SimpleHTTPServer(configuration);
+    }
+
+    /**
+     * Get the websocket client singleton.
+     *
+     * @return the websocket client singleton.
+     */
+    static SimpleWebSocketClient websocketClient() {
+        return WebSocketClientSingleton.getInstance().webSocketClient();
     }
 
     /**

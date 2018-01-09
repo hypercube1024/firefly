@@ -7,6 +7,7 @@ import com.firefly.net.Connection;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 public interface WebSocketConnection extends OutgoingFrames, Connection, ConnectionExtInfo {
@@ -70,6 +71,14 @@ public interface WebSocketConnection extends OutgoingFrames, Connection, Connect
      * @return The future result.
      */
     CompletableFuture<Boolean> sendData(byte[] data);
+
+    /**
+     * Send binary message.
+     *
+     * @param data The binary message.
+     * @return The future result.
+     */
+    CompletableFuture<Boolean> sendData(ByteBuffer data);
 
     /**
      * Get the websocket upgrade request.

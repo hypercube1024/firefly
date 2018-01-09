@@ -2,6 +2,11 @@ package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HttpMethod;
+import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.codec.websocket.frame.BinaryFrame;
+import com.firefly.codec.websocket.frame.Frame;
+import com.firefly.codec.websocket.frame.TextFrame;
+import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.net.SecureSessionFactory;
 import com.firefly.server.http2.router.Handler;
 import com.firefly.server.http2.router.Router;
@@ -11,13 +16,13 @@ import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
 import com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler;
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
 import com.firefly.server.http2.router.impl.RoutingContextImpl;
+import com.firefly.utils.function.Action1;
+import com.firefly.utils.function.Action2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 /**
  * @author Pengtao Qiu
@@ -31,6 +36,7 @@ public class HTTP2ServerBuilder {
     private SimpleHTTPServer server;
     private RouterManager routerManager;
     private Router currentRouter;
+    private final List<WebSocketBuilder> webSocketBuilders = new LinkedList<>();
 
     public HTTP2ServerBuilder httpsServer() {
         SimpleHTTPServerConfiguration configuration = new SimpleHTTPServerConfiguration();
@@ -88,12 +94,14 @@ public class HTTP2ServerBuilder {
 
     public HTTP2ServerBuilder listen(String host, int port) {
         check();
+        webSocketBuilders.forEach(WebSocketBuilder::listenWebSocket);
         server.headerComplete(routerManager::accept).listen(host, port);
         return this;
     }
 
     public HTTP2ServerBuilder listen() {
         check();
+        webSocketBuilders.forEach(WebSocketBuilder::listenWebSocket);
         server.headerComplete(routerManager::accept).listen();
         return this;
     }
@@ -193,6 +201,85 @@ public class HTTP2ServerBuilder {
             server.getHandlerExecutorService().execute(() -> handlerWrap(handler, ctx));
         });
         return this;
+    }
+
+    public WebSocketBuilder websocket(String path) {
+        WebSocketBuilder webSocketBuilder = new WebSocketBuilder(path);
+        webSocketBuilders.add(webSocketBuilder);
+        return webSocketBuilder;
+    }
+
+    public class WebSocketBuilder {
+        protected final String path;
+        protected Action1<WebSocketConnection> onConnect;
+        protected Action2<String, WebSocketConnection> onText;
+        protected Action2<ByteBuffer, WebSocketConnection> onData;
+        protected Action2<Throwable, WebSocketConnection> onError;
+
+        public WebSocketBuilder(String path) {
+            this.path = path;
+        }
+
+        public WebSocketBuilder onConnect(Action1<WebSocketConnection> onConnect) {
+            this.onConnect = onConnect;
+            return this;
+        }
+
+        public WebSocketBuilder onText(Action2<String, WebSocketConnection> onText) {
+            this.onText = onText;
+            return this;
+        }
+
+        public WebSocketBuilder onData(Action2<ByteBuffer, WebSocketConnection> onData) {
+            this.onData = onData;
+            return this;
+        }
+
+        public WebSocketBuilder onError(Action2<Throwable, WebSocketConnection> onError) {
+            this.onError = onError;
+            return this;
+        }
+
+        public HTTP2ServerBuilder listen(String host, int port) {
+            return HTTP2ServerBuilder.this.listen(host, port);
+        }
+
+        public HTTP2ServerBuilder listen() {
+            return HTTP2ServerBuilder.this.listen();
+        }
+
+        private HTTP2ServerBuilder listenWebSocket() {
+            server.registerWebSocket(path, new WebSocketHandler() {
+
+                @Override
+                public void onConnect(WebSocketConnection webSocketConnection) {
+                    Optional.ofNullable(onConnect).ifPresent(c -> c.call(webSocketConnection));
+                }
+
+                @Override
+                public void onFrame(Frame frame, WebSocketConnection connection) {
+                    switch (frame.getType()) {
+                        case TEXT:
+                            TextFrame textFrame = (TextFrame) frame;
+                            Optional.ofNullable(onText).ifPresent(t -> t.call(textFrame.getPayloadAsUTF8(), connection));
+                            break;
+                        case BINARY:
+                            BinaryFrame binaryFrame = (BinaryFrame) frame;
+                            Optional.ofNullable(onData).ifPresent(d -> d.call(binaryFrame.getPayload(), connection));
+                            break;
+                    }
+                }
+
+                @Override
+                public void onError(Throwable t, WebSocketConnection connection) {
+                    Optional.ofNullable(onError).ifPresent(e -> e.call(t, connection));
+                }
+            });
+            router().path(path).handler(ctx -> {
+            });
+            return HTTP2ServerBuilder.this;
+        }
+
     }
 
     public static Optional<RoutingContext> getCurrentCtx() {
