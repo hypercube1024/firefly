@@ -5,6 +5,8 @@ import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.extension.compress.DeflateFrameExtension;
 import com.firefly.codec.websocket.model.extension.compress.PerMessageDeflateExtension;
 import com.firefly.codec.websocket.model.extension.compress.XWebkitDeflateFrameExtension;
+import com.firefly.codec.websocket.model.extension.fragment.FragmentExtension;
+import com.firefly.codec.websocket.model.extension.identity.IdentityExtension;
 import com.firefly.utils.CollectionUtils;
 
 import java.util.*;
@@ -23,7 +25,9 @@ public abstract class ExtensionFactory implements Iterable<Class<? extends Exten
         if (CollectionUtils.isEmpty(availableExtensions)) {
             availableExtensions.put(new DeflateFrameExtension().getName(), DeflateFrameExtension.class);
             availableExtensions.put(new PerMessageDeflateExtension().getName(), PerMessageDeflateExtension.class);
-            availableExtensions.put(new XWebkitDeflateFrameExtension().getName(), PerMessageDeflateExtension.class);
+            availableExtensions.put(new XWebkitDeflateFrameExtension().getName(), XWebkitDeflateFrameExtension.class);
+            availableExtensions.put(new IdentityExtension().getName(), IdentityExtension.class);
+            availableExtensions.put(new FragmentExtension().getName(), FragmentExtension.class);
         }
     }
 

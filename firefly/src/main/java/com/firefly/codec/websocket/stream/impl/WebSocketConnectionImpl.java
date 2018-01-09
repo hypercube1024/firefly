@@ -6,10 +6,7 @@ import com.firefly.codec.common.ConnectionType;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.websocket.decode.Parser;
 import com.firefly.codec.websocket.encode.Generator;
-import com.firefly.codec.websocket.frame.CloseFrame;
-import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.frame.PongFrame;
-import com.firefly.codec.websocket.frame.WebSocketFrame;
+import com.firefly.codec.websocket.frame.*;
 import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.model.WebSocketBehavior;
@@ -26,13 +23,13 @@ import com.firefly.utils.io.BufferUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author Pengtao Qiu
  */
 public class WebSocketConnectionImpl extends AbstractConnection implements WebSocketConnection, IncomingFrames {
-
-    public static final byte maskingKey[] = new byte[]{0x01, (byte) 0xfe, 0x22, 0x2d};
 
     protected final ConnectionEvent<WebSocketConnection> connectionEvent;
     protected IncomingFrames incomingFrames;
@@ -92,7 +89,7 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
         if (policy.getBehavior() == WebSocketBehavior.CLIENT && frame instanceof WebSocketFrame) {
             WebSocketFrame webSocketFrame = (WebSocketFrame) frame;
             if (!webSocketFrame.isMasked()) {
-                webSocketFrame.setMask(maskingKey);
+                webSocketFrame.setMask(generateMask());
             }
         }
         ByteBuffer buf = ByteBuffer.allocate(Generator.MAX_HEADER_LENGTH + frame.getPayloadLength());
@@ -121,9 +118,6 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
         switch (frame.getType()) {
             case PING: {
                 PongFrame pongFrame = new PongFrame();
-                if (policy.getBehavior() == WebSocketBehavior.CLIENT) {
-                    pongFrame.setMask(maskingKey);
-                }
                 outgoingFrame(pongFrame, Callback.NOOP);
             }
             break;
@@ -146,6 +140,59 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.WEB_SOCKET;
+    }
+
+    @Override
+    public byte[] generateMask() {
+        byte[] mask = new byte[4];
+        ThreadLocalRandom.current().nextBytes(mask);
+        return mask;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> sendText(String text) {
+        TextFrame textFrame = new TextFrame();
+        textFrame.setPayload(text);
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        outgoingFrame(textFrame, new Callback() {
+            @Override
+            public void succeeded() {
+                future.complete(true);
+            }
+
+            @Override
+            public void failed(Throwable x) {
+                future.completeExceptionally(x);
+            }
+        });
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> sendData(byte[] data) {
+        BinaryFrame binaryFrame = new BinaryFrame();
+        binaryFrame.setPayload(data);
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        outgoingFrame(binaryFrame, new Callback() {
+            @Override
+            public void succeeded() {
+                future.complete(true);
+            }
+
+            @Override
+            public void failed(Throwable x) {
+                future.completeExceptionally(x);
+            }
+        });
+        return future;
+    }
+
+    public MetaData.Request getUpgradeRequest() {
+        return upgradeRequest;
+    }
+
+    public MetaData.Response getUpgradeResponse() {
+        return upgradeResponse;
     }
 
     public Parser getParser() {

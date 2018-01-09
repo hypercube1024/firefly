@@ -17,7 +17,6 @@ import com.firefly.server.http2.HTTP2Server;
 import com.firefly.server.http2.ServerHTTPHandler;
 import com.firefly.server.http2.WebSocketHandler;
 import com.firefly.utils.RandomUtils;
-import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +30,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author Pengtao Qiu
  */
-public class TestWebSocket {
+public class TestWebSocketLowLevelAPI {
 
     private String host = "localhost";
     private int port = (int) RandomUtils.random(3000, 65534);
@@ -74,20 +73,7 @@ public class TestWebSocket {
         });
 
         WebSocketConnection webSocketConnection = promise.get();
-
-        TextFrame textFrame = new TextFrame();
-        textFrame.setPayload("Hello WebSocket");
-        webSocketConnection.outgoingFrame(textFrame, new Callback() {
-            @Override
-            public void succeeded() {
-                System.out.println("Client sends text frame success.");
-            }
-
-            @Override
-            public void failed(Throwable x) {
-                x.printStackTrace();
-            }
-        });
+        webSocketConnection.sendText("Hello WebSocket").thenAccept(r -> System.out.println("Client sends text frame success."));
 
         latch.await(5, TimeUnit.SECONDS);
         server.stop();
@@ -108,19 +94,7 @@ public class TestWebSocket {
 
             @Override
             public void onConnect(WebSocketConnection webSocketConnection) {
-                TextFrame textFrame = new TextFrame();
-                textFrame.setPayload("OK");
-                webSocketConnection.outgoingFrame(textFrame, new Callback() {
-                    @Override
-                    public void succeeded() {
-                        System.out.println("Server sends text frame success.");
-                    }
-
-                    @Override
-                    public void failed(Throwable x) {
-                        x.printStackTrace();
-                    }
-                });
+                webSocketConnection.sendText("OK").thenAccept(r -> System.out.println("Server sends text frame success."));
             }
 
             @Override
@@ -129,6 +103,7 @@ public class TestWebSocket {
                     case TEXT: {
                         TextFrame textFrame = (TextFrame) frame;
                         System.out.println("Server received: " + textFrame + ", " + textFrame.getPayloadAsUTF8());
+                        Assert.assertThat(textFrame.getPayloadAsUTF8(), is("Hello WebSocket"));
                         latch.countDown();
                     }
                 }

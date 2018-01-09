@@ -258,10 +258,16 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     }
 
     private void resetUpgradeProtocol() {
-        http2ConnectionPromise = null;
+        if (http2ConnectionPromise != null) {
+            http2ConnectionPromise.failed(new IllegalStateException("upgrade h2 failed"));
+            http2ConnectionPromise = null;
+        }
         http2SessionListener = null;
         http2Connection = null;
-        webSocketConnectionPromise = null;
+        if (webSocketConnectionPromise != null) {
+            webSocketConnectionPromise.failed(new IllegalStateException("The websocket handshake failed"));
+            webSocketConnectionPromise = null;
+        }
         incomingFrames = null;
         policy = null;
     }
