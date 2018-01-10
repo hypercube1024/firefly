@@ -12,11 +12,13 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.model.AcceptHash;
+import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.stream.impl.WebSocketConnectionImpl;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.Assert;
+import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
@@ -26,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -260,17 +263,11 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 String key = request.getFields().get("Sec-WebSocket-Key");
                 Assert.hasText(key, "Missing request header 'Sec-WebSocket-Key'");
 
-                response.setStatus(HttpStatus.SWITCHING_PROTOCOLS_101);
-                response.getFields().put("Upgrade", "WebSocket");
-                response.getFields().add("Connection", "Upgrade");
-                response.getFields().add("Sec-WebSocket-Accept", AcceptHash.hashKey(key));
-                IO.close(output);
-
                 WebSocketConnectionImpl webSocketConnection = new WebSocketConnectionImpl(
                         secureSession, tcpSession,
                         null, webSocketHandler.getWebSocketPolicy(),
                         request, response, config);
-                webSocketConnection.setIncomingFrames(new IncomingFrames() {
+                webSocketConnection.setNextIncomingFrames(new IncomingFrames() {
                     @Override
                     public void incomingError(Throwable t) {
                         webSocketHandler.onError(t, webSocketConnection);
@@ -281,6 +278,17 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                         webSocketHandler.onFrame(frame, webSocketConnection);
                     }
                 });
+                List<ExtensionConfig> extensionConfigs = webSocketConnection.getExtensionNegotiator().negotiate(request);
+
+                response.setStatus(HttpStatus.SWITCHING_PROTOCOLS_101);
+                response.getFields().put(HttpHeader.UPGRADE, "WebSocket");
+                response.getFields().add(HttpHeader.CONNECTION.asString(), "Upgrade");
+                response.getFields().add(HttpHeader.SEC_WEBSOCKET_ACCEPT.asString(), AcceptHash.hashKey(key));
+                if (!CollectionUtils.isEmpty(extensionConfigs)) {
+                    response.getFields().add(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.asString(), ExtensionConfig.toHeaderValue(extensionConfigs));
+                }
+
+                IO.close(output);
                 tcpSession.attachObject(webSocketConnection);
                 upgradeWebSocketComplete.compareAndSet(false, true);
                 webSocketHandler.onConnect(webSocketConnection);

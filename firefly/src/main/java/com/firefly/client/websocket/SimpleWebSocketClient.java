@@ -44,16 +44,16 @@ public class SimpleWebSocketClient extends AbstractLifeCycle {
         start();
     }
 
-    public HandshakeBuilder url(String url) {
+    public HandshakeBuilder webSocket(String url) {
         try {
-            return url(new URL(url));
+            return webSocket(new URL(url));
         } catch (MalformedURLException e) {
             log.error("url exception", e);
             throw new IllegalArgumentException(e);
         }
     }
 
-    public HandshakeBuilder url(URL url) {
+    public HandshakeBuilder webSocket(URL url) {
         try {
             HttpURI httpURI = new HttpURI(url.toURI());
             if (!StringUtils.hasText(httpURI.getPath().trim())) {

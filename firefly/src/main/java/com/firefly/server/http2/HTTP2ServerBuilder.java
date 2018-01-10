@@ -203,7 +203,7 @@ public class HTTP2ServerBuilder {
         return this;
     }
 
-    public WebSocketBuilder websocket(String path) {
+    public WebSocketBuilder webSocket(String path) {
         WebSocketBuilder webSocketBuilder = new WebSocketBuilder(path);
         webSocketBuilders.add(webSocketBuilder);
         return webSocketBuilder;

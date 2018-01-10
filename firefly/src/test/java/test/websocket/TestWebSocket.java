@@ -67,7 +67,7 @@ public class TestWebSocket {
         int count = r.maxMsg;
 
         CountDownLatch latch = new CountDownLatch(count * 2 + 1);
-        server.websocket("/helloWebSocket")
+        server.webSocket("/helloWebSocket")
               .onConnect(conn -> {
                   for (int i = 0; i < count; i++) {
                       conn.sendText("Msg: " + i);
@@ -80,7 +80,7 @@ public class TestWebSocket {
               })
               .listen(host, port);
 
-        client.url("http://" + host + ":" + port + "/helloWebSocket")
+        client.webSocket("http://" + host + ":" + port + "/helloWebSocket")
               .onText((text, conn) -> {
                   System.out.println("Client received: " + text);
                   latch.countDown();

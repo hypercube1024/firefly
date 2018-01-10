@@ -3,14 +3,17 @@ package com.firefly.codec.websocket.stream.impl;
 import com.firefly.codec.common.AbstractConnection;
 import com.firefly.codec.common.ConnectionEvent;
 import com.firefly.codec.common.ConnectionType;
+import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.websocket.decode.Parser;
 import com.firefly.codec.websocket.encode.Generator;
 import com.firefly.codec.websocket.frame.*;
 import com.firefly.codec.websocket.model.CloseInfo;
+import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.model.WebSocketBehavior;
+import com.firefly.codec.websocket.stream.ExtensionNegotiator;
 import com.firefly.codec.websocket.stream.IOState;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
@@ -24,6 +27,7 @@ import com.firefly.utils.function.Action2;
 import com.firefly.utils.io.BufferUtils;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
@@ -35,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 public class WebSocketConnectionImpl extends AbstractConnection implements WebSocketConnection, IncomingFrames {
 
     protected final ConnectionEvent<WebSocketConnection> connectionEvent;
-    protected IncomingFrames incomingFrames;
     protected final Parser parser;
     protected final Generator generator;
     protected final WebSocketPolicy policy;
@@ -43,9 +46,11 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
     protected final MetaData.Response upgradeResponse;
     protected IOState ioState;
     protected final HTTP2Configuration config;
+    protected List<ExtensionConfig> extensionConfigs;
+    protected final ExtensionNegotiator extensionNegotiator = new ExtensionNegotiator();
 
     public WebSocketConnectionImpl(SecureSession secureSession, Session tcpSession,
-                                   IncomingFrames incomingFrames, WebSocketPolicy policy,
+                                   IncomingFrames nextIncomingFrames, WebSocketPolicy policy,
                                    MetaData.Request upgradeRequest, MetaData.Response upgradeResponse,
                                    HTTP2Configuration config) {
         super(secureSession, tcpSession);
@@ -55,12 +60,32 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
         parser.setIncomingFramesHandler(this);
         generator = new Generator(policy);
         this.policy = policy;
-        this.incomingFrames = incomingFrames;
         this.upgradeRequest = upgradeRequest;
         this.upgradeResponse = upgradeResponse;
         this.config = config;
         ioState = new IOState();
         ioState.onOpened();
+
+        extensionNegotiator.setNextOutgoingFrames((frame, callback) -> {
+            if (policy.getBehavior() == WebSocketBehavior.CLIENT && frame instanceof WebSocketFrame) {
+                WebSocketFrame webSocketFrame = (WebSocketFrame) frame;
+                if (!webSocketFrame.isMasked()) {
+                    webSocketFrame.setMask(generateMask());
+                }
+            }
+            ByteBuffer buf = ByteBuffer.allocate(Generator.MAX_HEADER_LENGTH + frame.getPayloadLength());
+            generator.generateWholeFrame(frame, buf);
+            BufferUtils.flipToFlush(buf, 0);
+            tcpSession.encode(new ByteBufferOutputEntry(callback, buf));
+            if (frame.getType() == Frame.Type.CLOSE && frame instanceof CloseFrame) {
+                CloseFrame closeFrame = (CloseFrame) frame;
+                CloseInfo closeInfo = new CloseInfo(closeFrame.getPayload(), false);
+                getIOState().onCloseLocal(closeInfo);
+                WebSocketConnectionImpl.this.close();
+            }
+        });
+
+        setNextIncomingFrames(nextIncomingFrames);
 
         if (this.policy.getBehavior() == WebSocketBehavior.CLIENT) {
             Scheduler.Future pingFuture = scheduler.scheduleAtFixedRate(() -> {
@@ -77,6 +102,7 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
             }, config.getWebsocketPingInterval(), config.getWebsocketPingInterval(), TimeUnit.MILLISECONDS);
             onClose(c -> pingFuture.cancel());
         }
+
     }
 
     @Override
@@ -109,31 +135,25 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
 
     @Override
     public void outgoingFrame(Frame frame, Callback callback) {
-        if (policy.getBehavior() == WebSocketBehavior.CLIENT && frame instanceof WebSocketFrame) {
-            WebSocketFrame webSocketFrame = (WebSocketFrame) frame;
-            if (!webSocketFrame.isMasked()) {
-                webSocketFrame.setMask(generateMask());
-            }
-        }
-        ByteBuffer buf = ByteBuffer.allocate(Generator.MAX_HEADER_LENGTH + frame.getPayloadLength());
-        generator.generateWholeFrame(frame, buf);
-        BufferUtils.flipToFlush(buf, 0);
-        tcpSession.encode(new ByteBufferOutputEntry(callback, buf));
-        if (frame.getType() == Frame.Type.CLOSE && frame instanceof CloseFrame) {
-            CloseFrame closeFrame = (CloseFrame) frame;
-            CloseInfo closeInfo = new CloseInfo(closeFrame.getPayload(), false);
-            getIOState().onCloseLocal(closeInfo);
-            this.close();
-        }
+        extensionNegotiator.getOutgoingFrames().outgoingFrame(frame, callback);
     }
 
-    public void setIncomingFrames(IncomingFrames incomingFrames) {
-        this.incomingFrames = incomingFrames;
+    public void setNextIncomingFrames(IncomingFrames nextIncomingFrames) {
+        if (nextIncomingFrames != null) {
+            extensionNegotiator.setNextIncomingFrames(nextIncomingFrames);
+            MetaData metaData;
+            if (upgradeResponse.getFields().contains(HttpHeader.SEC_WEBSOCKET_EXTENSIONS)) {
+                metaData = upgradeResponse;
+            } else {
+                metaData = upgradeRequest;
+            }
+            extensionNegotiator.parse(metaData);
+        }
     }
 
     @Override
     public void incomingError(Throwable t) {
-        Optional.ofNullable(incomingFrames).ifPresent(e -> e.incomingError(t));
+        Optional.ofNullable(extensionNegotiator.getIncomingFrames()).ifPresent(e -> e.incomingError(t));
     }
 
     @Override
@@ -156,7 +176,7 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
             }
             break;
         }
-        Optional.ofNullable(incomingFrames).ifPresent(e -> e.incomingFrame(frame));
+        Optional.ofNullable(extensionNegotiator.getIncomingFrames()).ifPresent(e -> e.incomingFrame(frame));
     }
 
     @Override
@@ -223,12 +243,27 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
         return future;
     }
 
+    @Override
     public MetaData.Request getUpgradeRequest() {
         return upgradeRequest;
     }
 
+    @Override
     public MetaData.Response getUpgradeResponse() {
         return upgradeResponse;
+    }
+
+    @Override
+    public List<ExtensionConfig> getExtensionConfigs() {
+        return extensionConfigs;
+    }
+
+    public void setExtensionConfigs(List<ExtensionConfig> extensionConfigs) {
+        this.extensionConfigs = extensionConfigs;
+    }
+
+    public ExtensionNegotiator getExtensionNegotiator() {
+        return extensionNegotiator;
     }
 
     public Parser getParser() {

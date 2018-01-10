@@ -26,8 +26,8 @@ public class SimpleWebSocketServer extends AbstractLifeCycle {
         start();
     }
 
-    public HTTP2ServerBuilder.WebSocketBuilder websocket(String path) {
-        return serverBuilder.websocket(path);
+    public HTTP2ServerBuilder.WebSocketBuilder webSocket(String path) {
+        return serverBuilder.webSocket(path);
     }
 
     @Override
