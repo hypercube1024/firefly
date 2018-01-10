@@ -5,7 +5,6 @@ import com.firefly.client.websocket.SimpleWebSocketClient;
 import com.firefly.server.websocket.SimpleWebSocketServer;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.BufferUtils;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.nio.charset.StandardCharsets;
@@ -17,8 +16,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * @author Pengtao Qiu
  */
-@RunWith(Parameterized.class)
-public class TestWebSocket {
+abstract public class TestWebSocket {
 
     @Parameterized.Parameter
     public Run r;
@@ -57,7 +55,7 @@ public class TestWebSocket {
         return data;
     }
 
-    public void _test(List<String> extensions) throws InterruptedException {
+    public void testServerAndClient(List<String> extensions) throws InterruptedException {
         SimpleWebSocketServer server = r.server;
         SimpleWebSocketClient client = r.client;
         String host = "localhost";
