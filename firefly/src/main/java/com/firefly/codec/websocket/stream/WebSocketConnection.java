@@ -2,14 +2,12 @@ package com.firefly.codec.websocket.stream;
 
 import com.firefly.codec.common.ConnectionExtInfo;
 import com.firefly.codec.http2.model.MetaData;
-import com.firefly.codec.websocket.model.ExtensionConfig;
 import com.firefly.codec.websocket.model.OutgoingFrames;
 import com.firefly.net.Connection;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface WebSocketConnection extends OutgoingFrames, Connection, ConnectionExtInfo {
@@ -95,12 +93,5 @@ public interface WebSocketConnection extends OutgoingFrames, Connection, Connect
      * @return The upgrade response.
      */
     MetaData.Response getUpgradeResponse();
-
-    /**
-     * Get the extension config list.
-     *
-     * @return The extension config list.
-     */
-    List<ExtensionConfig> getExtensionConfigs();
 
 }

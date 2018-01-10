@@ -27,6 +27,8 @@ public class HTTP2Configuration {
     private String characterEncoding = "UTF-8";
     private String protocol; // HTTP/2.0, HTTP/1.1
     private int http2PingInterval = 10 * 1000;
+
+    // WebSocket settings
     private int websocketPingInterval = 10 * 1000;
 
     /**

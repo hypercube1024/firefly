@@ -10,9 +10,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -59,7 +57,16 @@ public class TestWebSocket {
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() throws InterruptedException {
+        _test(Collections.emptyList());
+    }
+
+    @Test
+    public void testDeflate() throws InterruptedException {
+        _test(Collections.singletonList("deflate-frame"));
+    }
+
+    public void _test(List<String> extensions) throws InterruptedException {
         SimpleWebSocketServer server = r.server;
         SimpleWebSocketClient client = r.client;
         String host = "localhost";
@@ -81,6 +88,7 @@ public class TestWebSocket {
               .listen(host, port);
 
         client.webSocket("http://" + host + ":" + port + "/helloWebSocket")
+              .putExtension(extensions)
               .onText((text, conn) -> {
                   System.out.println("Client received: " + text);
                   latch.countDown();

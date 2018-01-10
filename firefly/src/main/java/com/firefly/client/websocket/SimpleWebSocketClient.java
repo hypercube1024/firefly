@@ -6,6 +6,7 @@ import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.websocket.frame.DataFrame;
 import com.firefly.codec.websocket.frame.Frame;
 import com.firefly.codec.websocket.frame.TextFrame;
 import com.firefly.codec.websocket.model.IncomingFrames;
@@ -130,8 +131,9 @@ public class SimpleWebSocketClient extends AbstractLifeCycle {
                     public void incomingFrame(Frame frame) {
                         switch (frame.getType()) {
                             case TEXT:
-                                Optional.ofNullable(onText).ifPresent(t -> t.call(((TextFrame) frame).getPayloadAsUTF8(), webSocketConnection));
+                                Optional.ofNullable(onText).ifPresent(t -> t.call(((DataFrame) frame).getPayloadAsUTF8(), webSocketConnection));
                                 break;
+                            case CONTINUATION:
                             case BINARY:
                                 Optional.ofNullable(onData).ifPresent(d -> d.call(frame.getPayload(), webSocketConnection));
                                 break;

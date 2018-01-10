@@ -11,6 +11,7 @@ import com.firefly.codec.websocket.model.extension.WebSocketExtensionFactory;
 import com.firefly.utils.Assert;
 import com.firefly.utils.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,7 +48,7 @@ public class ExtensionNegotiator {
                               .collect(Collectors.toList());
     }
 
-    public void parse(MetaData metaData) {
+    public List<Extension> parse(MetaData metaData) {
         Assert.notNull(nextIncomingFrames, "The next incoming frames MUST be not null");
         Assert.notNull(nextOutgoingFrames, "The next outgoing frames MUST be not null");
 
@@ -75,9 +76,11 @@ public class ExtensionNegotiator {
                 }
             }
             outgoingFrames = extensions.get(extensions.size() - 1);
+            return extensions;
         } else {
             incomingFrames = nextIncomingFrames;
             outgoingFrames = nextOutgoingFrames;
+            return Collections.emptyList();
         }
     }
 
@@ -104,4 +107,5 @@ public class ExtensionNegotiator {
     public OutgoingFrames getOutgoingFrames() {
         return outgoingFrames;
     }
+
 }

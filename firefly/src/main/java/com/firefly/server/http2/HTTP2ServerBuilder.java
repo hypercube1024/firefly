@@ -2,10 +2,8 @@ package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.websocket.frame.BinaryFrame;
+import com.firefly.codec.websocket.frame.DataFrame;
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.frame.TextFrame;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.net.SecureSessionFactory;
 import com.firefly.server.http2.router.Handler;
@@ -260,12 +258,11 @@ public class HTTP2ServerBuilder {
                 public void onFrame(Frame frame, WebSocketConnection connection) {
                     switch (frame.getType()) {
                         case TEXT:
-                            TextFrame textFrame = (TextFrame) frame;
-                            Optional.ofNullable(onText).ifPresent(t -> t.call(textFrame.getPayloadAsUTF8(), connection));
+                            Optional.ofNullable(onText).ifPresent(t -> t.call(((DataFrame) frame).getPayloadAsUTF8(), connection));
                             break;
+                        case CONTINUATION:
                         case BINARY:
-                            BinaryFrame binaryFrame = (BinaryFrame) frame;
-                            Optional.ofNullable(onData).ifPresent(d -> d.call(binaryFrame.getPayload(), connection));
+                            Optional.ofNullable(onData).ifPresent(d -> d.call(frame.getPayload(), connection));
                             break;
                     }
                 }

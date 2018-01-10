@@ -278,14 +278,14 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                         webSocketHandler.onFrame(frame, webSocketConnection);
                     }
                 });
-                List<ExtensionConfig> extensionConfigs = webSocketConnection.getExtensionNegotiator().negotiate(request);
+                List<ExtensionConfig> negotiatedExtensions = webSocketConnection.getExtensionNegotiator().negotiate(request);
 
                 response.setStatus(HttpStatus.SWITCHING_PROTOCOLS_101);
                 response.getFields().put(HttpHeader.UPGRADE, "WebSocket");
                 response.getFields().add(HttpHeader.CONNECTION.asString(), "Upgrade");
                 response.getFields().add(HttpHeader.SEC_WEBSOCKET_ACCEPT.asString(), AcceptHash.hashKey(key));
-                if (!CollectionUtils.isEmpty(extensionConfigs)) {
-                    response.getFields().add(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.asString(), ExtensionConfig.toHeaderValue(extensionConfigs));
+                if (!CollectionUtils.isEmpty(negotiatedExtensions)) {
+                    response.getFields().add(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.asString(), ExtensionConfig.toHeaderValue(negotiatedExtensions));
                 }
 
                 IO.close(output);

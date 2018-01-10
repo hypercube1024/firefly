@@ -10,9 +10,10 @@ import com.firefly.codec.websocket.decode.Parser;
 import com.firefly.codec.websocket.encode.Generator;
 import com.firefly.codec.websocket.frame.*;
 import com.firefly.codec.websocket.model.CloseInfo;
-import com.firefly.codec.websocket.model.ExtensionConfig;
+import com.firefly.codec.websocket.model.Extension;
 import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.model.WebSocketBehavior;
+import com.firefly.codec.websocket.model.extension.AbstractExtension;
 import com.firefly.codec.websocket.stream.ExtensionNegotiator;
 import com.firefly.codec.websocket.stream.IOState;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
@@ -46,7 +47,6 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
     protected final MetaData.Response upgradeResponse;
     protected IOState ioState;
     protected final HTTP2Configuration config;
-    protected List<ExtensionConfig> extensionConfigs;
     protected final ExtensionNegotiator extensionNegotiator = new ExtensionNegotiator();
 
     public WebSocketConnectionImpl(SecureSession secureSession, Session tcpSession,
@@ -147,7 +147,14 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
             } else {
                 metaData = upgradeRequest;
             }
-            extensionNegotiator.parse(metaData);
+            List<Extension> extensions = extensionNegotiator.parse(metaData);
+            if (!extensions.isEmpty()) {
+                generator.configureFromExtensions(extensions);
+                parser.configureFromExtensions(extensions);
+                extensions.stream().filter(e -> e instanceof AbstractExtension)
+                          .map(e -> (AbstractExtension) e)
+                          .forEach(e -> e.setPolicy(policy));
+            }
         }
     }
 
@@ -251,15 +258,6 @@ public class WebSocketConnectionImpl extends AbstractConnection implements WebSo
     @Override
     public MetaData.Response getUpgradeResponse() {
         return upgradeResponse;
-    }
-
-    @Override
-    public List<ExtensionConfig> getExtensionConfigs() {
-        return extensionConfigs;
-    }
-
-    public void setExtensionConfigs(List<ExtensionConfig> extensionConfigs) {
-        this.extensionConfigs = extensionConfigs;
     }
 
     public ExtensionNegotiator getExtensionNegotiator() {
