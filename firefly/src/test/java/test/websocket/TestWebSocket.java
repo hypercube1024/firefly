@@ -2,27 +2,71 @@ package test.websocket;
 
 import com.firefly.$;
 import com.firefly.client.websocket.SimpleWebSocketClient;
-import com.firefly.server.http2.HTTP2ServerBuilder;
+import com.firefly.server.websocket.SimpleWebSocketServer;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
  * @author Pengtao Qiu
  */
+@RunWith(Parameterized.class)
 public class TestWebSocket {
+
+    @Parameterized.Parameter
+    public Run r;
+
+    static class Run {
+        int port;
+        int maxMsg;
+        String testName;
+        SimpleWebSocketServer server;
+        SimpleWebSocketClient client;
+
+        @Override
+        public String toString() {
+            return testName;
+        }
+    }
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Run> data() {
+        List<Run> data = new ArrayList<>();
+        Run run = new Run();
+        run.port = (int) RandomUtils.random(3000, 65534);
+        run.maxMsg = 10;
+        run.testName = "Test the WebSocket";
+        run.server = $.createWebSocketServer();
+        run.client = $.createWebSocketClient();
+        data.add(run);
+
+        run = new Run();
+        run.port = (int) RandomUtils.random(3000, 65534);
+        run.maxMsg = 10;
+        run.testName = "Test the secure WebSocket";
+        run.server = $.createSecureWebSocketServer();
+        run.client = $.createSecureWebSocketClient();
+        data.add(run);
+        return data;
+    }
 
     @Test
     public void test() throws Exception {
+        SimpleWebSocketServer server = r.server;
+        SimpleWebSocketClient client = r.client;
         String host = "localhost";
-        int port = (int) RandomUtils.random(3000, 65534);
-        int count = 20;
+        int port = r.port;
+        int count = r.maxMsg;
 
         CountDownLatch latch = new CountDownLatch(count * 2 + 1);
-        HTTP2ServerBuilder server = $.httpServer();
         server.websocket("/helloWebSocket")
               .onConnect(conn -> {
                   for (int i = 0; i < count; i++) {
@@ -36,7 +80,6 @@ public class TestWebSocket {
               })
               .listen(host, port);
 
-        SimpleWebSocketClient client = $.websocketClient();
         client.url("http://" + host + ":" + port + "/helloWebSocket")
               .onText((text, conn) -> {
                   System.out.println("Client received: " + text);

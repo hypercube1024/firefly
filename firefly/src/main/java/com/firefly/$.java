@@ -1,6 +1,7 @@
 package com.firefly;
 
 import com.firefly.client.http2.*;
+import com.firefly.client.websocket.SecureWebSocketClientSingleton;
 import com.firefly.client.websocket.SimpleWebSocketClient;
 import com.firefly.client.websocket.WebSocketClientSingleton;
 import com.firefly.codec.http2.encode.UrlEncoded;
@@ -17,6 +18,7 @@ import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.SimpleHTTPServer;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration;
+import com.firefly.server.websocket.SimpleWebSocketServer;
 import com.firefly.utils.BeanUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.ThreadUtils;
@@ -34,6 +36,7 @@ import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -214,12 +217,83 @@ public interface $ {
     }
 
     /**
-     * Get the websocket client singleton.
+     * Create a new WebSocket server.
      *
-     * @return the websocket client singleton.
+     * @return A new WebSocket server.
      */
-    static SimpleWebSocketClient websocketClient() {
+    static SimpleWebSocketServer createWebSocketServer() {
+        return new SimpleWebSocketServer();
+    }
+
+    /**
+     * Create a new secure WebSocket server.
+     *
+     * @return A new secure WebSocket server.
+     */
+    static SimpleWebSocketServer createSecureWebSocketServer() {
+        SimpleHTTPServerConfiguration serverConfiguration = new SimpleHTTPServerConfiguration();
+        serverConfiguration.setSecureConnectionEnabled(true);
+        serverConfiguration.getSecureSessionFactory().setSupportedProtocols(Collections.singletonList("http/1.1"));
+        return new SimpleWebSocketServer(serverConfiguration);
+    }
+
+    /**
+     * Create a new WebSocket server.
+     *
+     * @param serverConfiguration The WebSocket server configuration.
+     * @return A new WebSocket server.
+     */
+    static SimpleWebSocketServer createWebSocketServer(SimpleHTTPServerConfiguration serverConfiguration) {
+        return new SimpleWebSocketServer(serverConfiguration);
+    }
+
+    /**
+     * Get the WebSocket client singleton.
+     *
+     * @return The websocket client singleton.
+     */
+    static SimpleWebSocketClient webSocketClient() {
         return WebSocketClientSingleton.getInstance().webSocketClient();
+    }
+
+    /**
+     * Get the secure WebSocket client singleton.
+     *
+     * @return The secure WebSocket client singleton.
+     */
+    static SimpleWebSocketClient secureWebSocketClient() {
+        return SecureWebSocketClientSingleton.getInstance().secureWebSocketClient();
+    }
+
+    /**
+     * Create a new WebSocket client.
+     *
+     * @return A new WebSocket client.
+     */
+    static SimpleWebSocketClient createWebSocketClient() {
+        return new SimpleWebSocketClient();
+    }
+
+    /**
+     * Create a new secure WebSocket client.
+     *
+     * @return A new secure WebSocket client.
+     */
+    static SimpleWebSocketClient createSecureWebSocketClient() {
+        SimpleHTTPClientConfiguration http2Configuration = new SimpleHTTPClientConfiguration();
+        http2Configuration.setSecureConnectionEnabled(true);
+        http2Configuration.getSecureSessionFactory().setSupportedProtocols(Collections.singletonList("http/1.1"));
+        return new SimpleWebSocketClient(http2Configuration);
+    }
+
+    /**
+     * Create a new WebSocket client.
+     *
+     * @param config The WebSocket client configuration.
+     * @return A new WebSocket client.
+     */
+    static SimpleWebSocketClient createWebSocketClient(SimpleHTTPClientConfiguration config) {
+        return new SimpleWebSocketClient(config);
     }
 
     /**
