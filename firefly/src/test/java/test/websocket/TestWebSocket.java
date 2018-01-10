@@ -5,12 +5,13 @@ import com.firefly.client.websocket.SimpleWebSocketClient;
 import com.firefly.server.websocket.SimpleWebSocketServer;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.BufferUtils;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -54,16 +55,6 @@ public class TestWebSocket {
         run.client = $.createSecureWebSocketClient();
         data.add(run);
         return data;
-    }
-
-    @Test
-    public void test() throws InterruptedException {
-        _test(Collections.emptyList());
-    }
-
-    @Test
-    public void testDeflate() throws InterruptedException {
-        _test(Collections.singletonList("deflate-frame"));
     }
 
     public void _test(List<String> extensions) throws InterruptedException {
