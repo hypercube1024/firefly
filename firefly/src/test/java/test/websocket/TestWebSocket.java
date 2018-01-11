@@ -27,6 +27,7 @@ abstract public class TestWebSocket {
         String testName;
         SimpleWebSocketServer server;
         SimpleWebSocketClient client;
+        String protocol;
 
         @Override
         public String toString() {
@@ -43,6 +44,7 @@ abstract public class TestWebSocket {
         run.testName = "Test the WebSocket";
         run.server = $.createWebSocketServer();
         run.client = $.createWebSocketClient();
+        run.protocol = "ws";
         data.add(run);
 
         run = new Run();
@@ -51,6 +53,7 @@ abstract public class TestWebSocket {
         run.testName = "Test the secure WebSocket";
         run.server = $.createSecureWebSocketServer();
         run.client = $.createSecureWebSocketClient();
+        run.protocol = "wss";
         data.add(run);
         return data;
     }
@@ -59,6 +62,7 @@ abstract public class TestWebSocket {
         SimpleWebSocketServer server = r.server;
         SimpleWebSocketClient client = r.client;
         String host = "localhost";
+        String protocol = r.protocol;
         int port = r.port;
         int count = r.maxMsg;
 
@@ -76,7 +80,7 @@ abstract public class TestWebSocket {
               })
               .listen(host, port);
 
-        client.webSocket("http://" + host + ":" + port + "/helloWebSocket")
+        client.webSocket(protocol + "://" + host + ":" + port + "/helloWebSocket")
               .putExtension(extensions)
               .onText((text, conn) -> {
                   System.out.println("Client received: " + text);
