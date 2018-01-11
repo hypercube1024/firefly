@@ -285,6 +285,8 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                 response.getFields().add(HttpHeader.CONNECTION.asString(), "Upgrade");
                 response.getFields().add(HttpHeader.SEC_WEBSOCKET_ACCEPT.asString(), AcceptHash.hashKey(key));
                 if (!CollectionUtils.isEmpty(negotiatedExtensions)) {
+                    negotiatedExtensions.stream().filter(e -> e.getName().equals("permessage-deflate"))
+                                        .findFirst().ifPresent(e -> e.getParameters().clear());
                     response.getFields().add(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.asString(), ExtensionConfig.toHeaderValue(negotiatedExtensions));
                 }
 

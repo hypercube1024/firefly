@@ -15,7 +15,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.CompletionHandler;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -116,20 +119,8 @@ public class AsynchronousTcpSession implements Session {
 
         @Override
         public void failed(Throwable t, AsynchronousTcpSession session) {
-            if (t instanceof InterruptedByTimeoutException) {
-                long idleTime = getIdleTimeout();
-                log.info("The session {} reading data is timeout. The idle time: {} - {}", getSessionId(), idleTime, getMaxIdleTimeout());
-                if (idleTime >= getIdleTimeout()) {
-                    log.info("The session {} is timeout. It will force to close.", getSessionId());
-                    closeNow();
-                } else {
-                    // The session is active. Register the read event.
-                    _read();
-                }
-            } else {
-                log.warn("The session {} reading data exception. It will force to close.", t, session.getSessionId());
-                closeNow();
-            }
+            log.warn("The session {} reading data failed. It will force to close.", t, session.getSessionId());
+            closeNow();
         }
     }
 
@@ -254,17 +245,8 @@ public class AsynchronousTcpSession implements Session {
         }
 
         private void writingFailedCallback(Callback callback, Throwable t) {
-            if (t instanceof InterruptedByTimeoutException) {
-                long idleTime = getIdleTimeout();
-                log.info("The session {} writing data is timeout. The idle time: {} - {}", getSessionId(), idleTime, getMaxIdleTimeout());
-                if (idleTime >= getIdleTimeout()) {
-                    log.info("The session {} is timeout. It will close.", getSessionId());
-                    _writingFailedCallback(callback, t);
-                }
-            } else {
-                log.warn("The session {} writing data exception. It will close.", t, getSessionId());
-                _writingFailedCallback(callback, t);
-            }
+            log.warn("The session {} writing data failed. It will close.", t, getSessionId());
+            _writingFailedCallback(callback, t);
         }
 
         private void _writingFailedCallback(Callback callback, Throwable t) {
