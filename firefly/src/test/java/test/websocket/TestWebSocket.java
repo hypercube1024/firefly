@@ -13,10 +13,17 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import static com.firefly.codec.common.ProtocolRegister.register;
+
 /**
  * @author Pengtao Qiu
  */
 abstract public class TestWebSocket {
+
+    static {
+        register("ws", 80);
+        register("wss", 443);
+    }
 
     @Parameterized.Parameter
     public Run r;

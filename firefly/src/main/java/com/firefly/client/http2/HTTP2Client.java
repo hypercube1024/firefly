@@ -13,14 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.firefly.codec.common.ProtocolRegister.register;
-
 public class HTTP2Client extends AbstractLifeCycle {
-
-    static {
-        register("ws", 80);
-        register("wss", 443);
-    }
 
     private final Client client;
     private final Map<Integer, HTTP2ClientContext> http2ClientContext = new ConcurrentHashMap<>();
