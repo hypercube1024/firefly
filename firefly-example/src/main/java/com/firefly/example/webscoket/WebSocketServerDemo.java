@@ -1,7 +1,6 @@
 package com.firefly.example.webscoket;
 
 import com.firefly.$;
-import com.firefly.example.http.hello.StaticFileDemo;
 import com.firefly.server.http2.router.handler.file.StaticFileHandler;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
@@ -18,7 +17,7 @@ public class WebSocketServerDemo {
 
     public static void main(String[] args) throws Exception {
         Scheduler scheduler = Schedulers.createScheduler();
-        Path path = Paths.get(StaticFileDemo.class.getResource("/").toURI());
+        Path path = Paths.get(WebSocketServerDemo.class.getResource("/").toURI());
 
         $.httpServer()
          .router().get("/static/*").handler(new StaticFileHandler(path.toAbsolutePath().toString()))
