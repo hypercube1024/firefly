@@ -2,7 +2,6 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.common.CommonDecoder;
 import com.firefly.codec.common.CommonEncoder;
-import com.firefly.codec.common.ProtocolRegister;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.websocket.decode.WebSocketDecoder;
 import com.firefly.net.Client;
@@ -10,15 +9,17 @@ import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.lang.AbstractLifeCycle;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.firefly.codec.common.ProtocolRegister.register;
+
 public class HTTP2Client extends AbstractLifeCycle {
 
     static {
-        ProtocolRegister.register(Arrays.asList("ws", "wss"));
+        register("ws", 80);
+        register("wss", 443);
     }
 
     private final Client client;
