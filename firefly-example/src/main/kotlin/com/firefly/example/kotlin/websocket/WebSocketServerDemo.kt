@@ -25,7 +25,6 @@ fun main(args: Array<String>) {
         router {
             httpMethod = HttpMethod.GET
             path = "/"
-
             asyncHandler { renderTemplate("template/websocket/index.mustache") }
         }
 
