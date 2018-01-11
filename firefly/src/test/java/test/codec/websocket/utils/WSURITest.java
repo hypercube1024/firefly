@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.is;
 
 public class WSURITest {
     private void assertURI(URI actual, URI expected) {
+        System.out.println(actual.getPort() + ", " + expected.getPort());
         Assert.assertThat(actual.toASCIIString(), is(expected.toASCIIString()));
     }
 

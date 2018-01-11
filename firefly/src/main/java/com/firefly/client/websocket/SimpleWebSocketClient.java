@@ -11,6 +11,7 @@ import com.firefly.codec.websocket.model.IncomingFrames;
 import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
+import com.firefly.codec.websocket.utils.WSURI;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action2;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -45,8 +47,8 @@ public class SimpleWebSocketClient extends AbstractLifeCycle {
 
     public HandshakeBuilder webSocket(String url) {
         try {
-            return webSocket(new URL(url));
-        } catch (MalformedURLException e) {
+            return webSocket(WSURI.toHttp(URI.create(url)).toURL());
+        } catch (MalformedURLException | URISyntaxException e) {
             log.error("url exception", e);
             throw new IllegalArgumentException(e);
         }
