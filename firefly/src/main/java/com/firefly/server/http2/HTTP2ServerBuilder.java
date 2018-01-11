@@ -2,8 +2,8 @@ package com.firefly.server.http2;
 
 import com.firefly.codec.http2.model.BadMessageException;
 import com.firefly.codec.http2.model.HttpMethod;
-import com.firefly.codec.websocket.frame.DataFrame;
 import com.firefly.codec.websocket.frame.Frame;
+import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.net.SecureSessionFactory;
 import com.firefly.server.http2.router.Handler;
@@ -207,12 +207,9 @@ public class HTTP2ServerBuilder {
         return webSocketBuilder;
     }
 
-    public class WebSocketBuilder {
+    public class WebSocketBuilder extends AbstractWebSocketBuilder {
         protected final String path;
         protected Action1<WebSocketConnection> onConnect;
-        protected Action2<String, WebSocketConnection> onText;
-        protected Action2<ByteBuffer, WebSocketConnection> onData;
-        protected Action2<Throwable, WebSocketConnection> onError;
 
         public WebSocketBuilder(String path) {
             this.path = path;
@@ -224,17 +221,17 @@ public class HTTP2ServerBuilder {
         }
 
         public WebSocketBuilder onText(Action2<String, WebSocketConnection> onText) {
-            this.onText = onText;
+            super.onText(onText);
             return this;
         }
 
         public WebSocketBuilder onData(Action2<ByteBuffer, WebSocketConnection> onData) {
-            this.onData = onData;
+            super.onData(onData);
             return this;
         }
 
         public WebSocketBuilder onError(Action2<Throwable, WebSocketConnection> onError) {
-            this.onError = onError;
+            super.onError(onError);
             return this;
         }
 
@@ -256,20 +253,12 @@ public class HTTP2ServerBuilder {
 
                 @Override
                 public void onFrame(Frame frame, WebSocketConnection connection) {
-                    switch (frame.getType()) {
-                        case TEXT:
-                            Optional.ofNullable(onText).ifPresent(t -> t.call(((DataFrame) frame).getPayloadAsUTF8(), connection));
-                            break;
-                        case CONTINUATION:
-                        case BINARY:
-                            Optional.ofNullable(onData).ifPresent(d -> d.call(frame.getPayload(), connection));
-                            break;
-                    }
+                    WebSocketBuilder.this.onFrame(frame, connection);
                 }
 
                 @Override
                 public void onError(Throwable t, WebSocketConnection connection) {
-                    Optional.ofNullable(onError).ifPresent(e -> e.call(t, connection));
+                    WebSocketBuilder.this.onError(t, connection);
                 }
             });
             router().path(path).handler(ctx -> {

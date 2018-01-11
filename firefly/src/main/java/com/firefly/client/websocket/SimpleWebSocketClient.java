@@ -6,10 +6,9 @@ import com.firefly.client.http2.SimpleHTTPClientConfiguration;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.codec.websocket.frame.DataFrame;
 import com.firefly.codec.websocket.frame.Frame;
-import com.firefly.codec.websocket.frame.TextFrame;
 import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder;
 import com.firefly.codec.websocket.stream.WebSocketConnection;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.utils.StringUtils;
@@ -24,7 +23,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -68,13 +66,11 @@ public class SimpleWebSocketClient extends AbstractLifeCycle {
         }
     }
 
-    public class HandshakeBuilder {
+    public class HandshakeBuilder extends AbstractWebSocketBuilder {
+
         protected final String host;
         protected final int port;
         protected final MetaData.Request request;
-        protected Action2<String, WebSocketConnection> onText;
-        protected Action2<ByteBuffer, WebSocketConnection> onData;
-        protected Action2<Throwable, WebSocketConnection> onError;
         protected WebSocketPolicy webSocketPolicy;
 
         public HandshakeBuilder(String host, int port, MetaData.Request request) {
@@ -104,17 +100,17 @@ public class SimpleWebSocketClient extends AbstractLifeCycle {
         }
 
         public HandshakeBuilder onText(Action2<String, WebSocketConnection> onText) {
-            this.onText = onText;
+            super.onText(onText);
             return this;
         }
 
         public HandshakeBuilder onData(Action2<ByteBuffer, WebSocketConnection> onData) {
-            this.onData = onData;
+            super.onData(onData);
             return this;
         }
 
         public HandshakeBuilder onError(Action2<Throwable, WebSocketConnection> onError) {
-            this.onError = onError;
+            super.onError(onError);
             return this;
         }
 
@@ -124,20 +120,12 @@ public class SimpleWebSocketClient extends AbstractLifeCycle {
 
                     @Override
                     public void incomingError(Throwable t) {
-                        Optional.ofNullable(onError).ifPresent(e -> e.call(t, webSocketConnection));
+                        HandshakeBuilder.this.onError(t, webSocketConnection);
                     }
 
                     @Override
                     public void incomingFrame(Frame frame) {
-                        switch (frame.getType()) {
-                            case TEXT:
-                                Optional.ofNullable(onText).ifPresent(t -> t.call(((DataFrame) frame).getPayloadAsUTF8(), webSocketConnection));
-                                break;
-                            case CONTINUATION:
-                            case BINARY:
-                                Optional.ofNullable(onData).ifPresent(d -> d.call(frame.getPayload(), webSocketConnection));
-                                break;
-                        }
+                        HandshakeBuilder.this.onFrame(frame, webSocketConnection);
                     }
                 };
                 Promise.Completable<WebSocketConnection> future = new Promise.Completable<>();
@@ -163,7 +151,7 @@ public class SimpleWebSocketClient extends AbstractLifeCycle {
 
     abstract protected class ClientIncomingFrames implements IncomingFrames {
 
-        protected volatile WebSocketConnection webSocketConnection;
+        protected WebSocketConnection webSocketConnection;
 
         public void setWebSocketConnection(WebSocketConnection webSocketConnection) {
             this.webSocketConnection = webSocketConnection;
