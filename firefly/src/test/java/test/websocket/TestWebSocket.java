@@ -93,4 +93,6 @@ abstract public class TestWebSocket {
         server.stop();
         client.stop();
     }
+
+    abstract void test() throws Exception;
 }

@@ -10,10 +10,11 @@ import java.util.Collections;
  * @author Pengtao Qiu
  */
 @RunWith(Parameterized.class)
-public class TestWebSocketServerAndClient extends TestWebSocket {
+public class TestWebSocketNoExtension extends TestWebSocket {
 
     @Test
-    public void test() throws InterruptedException {
+    @Override
+    public void test() throws Exception {
         testServerAndClient(Collections.emptyList());
     }
 }

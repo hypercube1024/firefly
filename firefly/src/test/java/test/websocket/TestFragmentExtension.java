@@ -10,11 +10,11 @@ import java.util.Collections;
  * @author Pengtao Qiu
  */
 @RunWith(Parameterized.class)
-public class TestDeflatedExtension extends TestWebSocket {
+public class TestFragmentExtension extends TestWebSocket {
 
     @Test
     @Override
     public void test() throws Exception {
-        testServerAndClient(Collections.singletonList("deflate-frame"));
+        testServerAndClient(Collections.singletonList("fragment"));
     }
 }
