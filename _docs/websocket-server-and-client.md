@@ -5,6 +5,14 @@ title: WebSocket server and client
 
 ---
 
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Basic concepts](#basic-concepts)
+- [WebSocket extensions](#websocket-extensions)
+- [Upgrade from HTTP connection](#upgrade-from-http-connection)
+
+<!-- /TOC -->
+
 # Basic concepts
 Unlike HTTP, WebSocket provides full-duplex communication. Additionally, WebSocket enables streams of messages on top of TCP. TCP alone deals with streams of bytes with no inherent concept of a message. Before WebSocket, port 80 full-duplex communication was attainable using Comet channels; however, Comet implementation is non-trivial, and due to the TCP handshake and HTTP header overhead, it is inefficient for small messages. WebSocket protocol aims to solve these problems without compromising security assumptions of the web.
 
@@ -34,6 +42,32 @@ The server received: Hello server.
 The WebSocket protocol specification defines `ws` and `wss` as two new uniform resource identifier (URI) schemes that are used for unencrypted and encrypted connections, respectively. Apart from the scheme name and fragment (# is not supported), the rest of the URI components are defined to use URI generic syntax.
 
 If you want to use the TLS encrypted connection, you can use the `createSecureWebSocketServer` and `createSecureWebSocketClient` method to create the WebSocket server and client.
+
+# WebSocket extensions
+The Firefly WebSocket server and client supports some extension protocol, such as `permessage-deflate`, `deflate-frame`, `x-webkit-deflate-frame`, `fragment`, and `identity`.
+```java
+public static void main(String[] args) {
+    SimpleWebSocketServer server = $.createWebSocketServer();
+    server.webSocket("/helloWebSocket")
+          .onConnect(conn -> conn.sendText("OK."))
+          .onText((text, conn) -> System.out.println("The server received: " + text))
+          .listen("localhost", 8080);
+
+    SimpleWebSocketClient client = $.createWebSocketClient();
+    client.webSocket("ws://localhost:8080/helloWebSocket")
+          .addExtension("permessage-deflate")
+          .onText((text, conn) -> System.out.println("The client received: " + text))
+          .connect()
+          .thenAccept(conn -> conn.sendText("Hello server."));
+}
+```
+
+We can add extension using `addExtension` or `putExtension` method conveniently. Run it. And the console shows:
+```
+The client received: OK.
+The server received: Hello server.
+```
+
 
 # Upgrade from HTTP connection
 The WebSocket server can share the same port with HTTP server. The WebSocket use the HTTP upgrade mechanism to upgrade to the WebSocket protocol. Once the connection is established, communication switches to a bidirectional binary protocol which doesn't conform to the HTTP protocol. For example:
