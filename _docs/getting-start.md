@@ -29,6 +29,7 @@ It taps into the fullest potential of hardware using ***SEDA*** architecture, a 
 Firefly core provides functionality for things like:
 - Writing TCP clients and servers
 - Writing HTTP clients and servers
+- Writing WebSocket clients and servers
 - Writing web application with MVC framework and template engine
 - Database access
 
@@ -116,6 +117,23 @@ public class HelloHTTPClient {
 }
 ```
 
+Create WebSocket server and client (Java version)
+```java
+public static void main(String[] args) {
+    SimpleWebSocketServer server = $.createWebSocketServer();
+    server.webSocket("/helloWebSocket")
+          .onConnect(conn -> conn.sendText("OK."))
+          .onText((text, conn) -> System.out.println("The server received: " + text))
+          .listen("localhost", 8080);
+
+    SimpleWebSocketClient client = $.createWebSocketClient();
+    client.webSocket("ws://localhost:8080/helloWebSocket")
+          .onText((text, conn) -> System.out.println("The client received: " + text))
+          .connect()
+          .thenAccept(conn -> conn.sendText("Hello server."));
+}
+```
+
 Firefly also supports to create HTTP server/client using Kotlin DSL.  
 
 Add maven dependency in your pom.xml
@@ -151,8 +169,26 @@ fun main(args: Array<String>) = runBlocking {
 }
 ```
 
+Create WebSocket server and client (Kotlin version)
+```kotlin
+fun main(args: Array<String>) {
+    val server = firefly.createWebSocketServer()
+    server.webSocket("/helloWebSocket")
+          .onConnect { conn -> conn.sendText("OK.") }
+          .onText { text, conn -> println("The server received: " + text) }
+          .listen("localhost", 8080)
+
+    val client = firefly.createWebSocketClient()
+    client.webSocket("ws://localhost:8080/helloWebSocket")
+          .onText { text, conn -> println("The client received: " + text) }
+          .connect()
+          .thenAccept { conn -> conn.sendText("Hello server.") }
+}
+```
+
 More detailed information, please refer to the
 * [HTTP server/client document]({{ site.url }}/docs/http-server-and-client.html)
+* [WebSocket server and client]({{ site.url }}/docs/websocket-server-and-client.html)
 * [TCP server/client document]({{ site.url }}/docs/tcp-server-and-client.html)
 * [SSL/TLS configuration document]({{ site.url }}/docs/ssl-tls-configuration.html)
 * [Inversion of control document]({{ site.url }}/docs/ioc-framework.html)
