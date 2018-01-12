@@ -1,9 +1,9 @@
 package com.firefly.server.http2;
 
+import com.firefly.codec.common.CommonDecoder;
+import com.firefly.codec.common.CommonEncoder;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.ShutdownHelper;
-import com.firefly.net.DecoderChain;
-import com.firefly.net.EncoderChain;
+import com.firefly.codec.websocket.decode.WebSocketDecoder;
 import com.firefly.net.Server;
 import com.firefly.net.tcp.aio.AsynchronousTcpServer;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -19,12 +19,20 @@ public class HTTP2Server extends AbstractLifeCycle {
 
     public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
                        ServerHTTPHandler serverHTTPHandler) {
-        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler);
+        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler, new WebSocketHandler() {
+        });
     }
 
-    public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration, ServerSessionListener listener,
-                       ServerHTTPHandler serverHTTPHandler) {
-        if (http2Configuration == null)
+    public HTTP2Server(String host, int port, HTTP2Configuration http2Configuration,
+                       ServerHTTPHandler serverHTTPHandler, WebSocketHandler webSocketHandler) {
+        this(host, port, http2Configuration, new HTTP2ServerRequestHandler(serverHTTPHandler), serverHTTPHandler, webSocketHandler);
+    }
+
+    public HTTP2Server(String host, int port, HTTP2Configuration c,
+                       ServerSessionListener listener,
+                       ServerHTTPHandler serverHTTPHandler,
+                       WebSocketHandler webSocketHandler) {
+        if (c == null)
             throw new IllegalArgumentException("the http2 configuration is null");
 
         if (host == null)
@@ -33,22 +41,11 @@ public class HTTP2Server extends AbstractLifeCycle {
         this.host = host;
         this.port = port;
 
-        DecoderChain decoder;
-        EncoderChain encoder;
-
-        if (http2Configuration.isSecureConnectionEnabled()) {
-            decoder = new ServerSecureDecoder(new HTTP1ServerDecoder(new HTTP2ServerDecoder()));
-            encoder = new HTTP1ServerEncoder(new HTTP2ServerEncoder(new ServerSecureEncoder()));
-        } else {
-            decoder = new HTTP1ServerDecoder(new HTTP2ServerDecoder());
-            encoder = new HTTP1ServerEncoder(new HTTP2ServerEncoder());
-        }
-
-        http2Configuration.getTcpConfiguration().setDecoder(decoder);
-        http2Configuration.getTcpConfiguration().setEncoder(encoder);
-        http2Configuration.getTcpConfiguration().setHandler(new HTTP2ServerHandler(http2Configuration, listener, serverHTTPHandler));
-        this.server = new AsynchronousTcpServer(http2Configuration.getTcpConfiguration());
-        this.http2Configuration = http2Configuration;
+        c.getTcpConfiguration().setDecoder(new CommonDecoder(new HTTP1ServerDecoder(new WebSocketDecoder(), new HTTP2ServerDecoder())));
+        c.getTcpConfiguration().setEncoder(new CommonEncoder());
+        c.getTcpConfiguration().setHandler(new HTTP2ServerHandler(c, listener, serverHTTPHandler, webSocketHandler));
+        this.server = new AsynchronousTcpServer(c.getTcpConfiguration());
+        this.http2Configuration = c;
     }
 
     public HTTP2Configuration getHttp2Configuration() {
@@ -77,7 +74,6 @@ public class HTTP2Server extends AbstractLifeCycle {
         if (server != null) {
             server.stop();
         }
-        ShutdownHelper.destroy();
     }
 
 }

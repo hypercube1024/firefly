@@ -10,20 +10,18 @@ import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.channels.WritePendingException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
+public class HTTP2Stream extends IdleTimeout implements StreamSPI {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final AtomicReference<ConcurrentMap<String, Object>> attributes = new AtomicReference<>();
     private final AtomicReference<CloseState> closeState = new AtomicReference<>(CloseState.NOT_CLOSED);
-    private final AtomicReference<Callback> writing = new AtomicReference<>();
     private final AtomicInteger sendWindow = new AtomicInteger();
     private final AtomicInteger recvWindow = new AtomicInteger();
     private final SessionSPI session;
@@ -57,8 +55,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     public void headers(HeadersFrame frame, Callback callback) {
-        if (startWrite(callback))
-            session.frames(this, this, frame, Frame.EMPTY_ARRAY);
+        session.frames(this, callback, frame, Frame.EMPTY_ARRAY);
     }
 
     @Override
@@ -68,8 +65,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     public void data(DataFrame frame, Callback callback) {
-        if (startWrite(callback))
-            session.data(this, this, frame);
+        session.data(this, callback, frame);
     }
 
     @Override
@@ -78,13 +74,6 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
             return;
         localReset = true;
         session.frames(this, callback, frame, Frame.EMPTY_ARRAY);
-    }
-
-    private boolean startWrite(Callback callback) {
-        if (writing.compareAndSet(null, callback))
-            return true;
-        callback.failed(new WritePendingException());
-        return false;
     }
 
     @Override
@@ -128,8 +117,9 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     protected void onIdleExpired(TimeoutException timeout) {
-        if (log.isDebugEnabled())
-            log.debug("Idle timeout {}ms expired on {}", getIdleTimeout(), this);
+        if (log.isDebugEnabled()) {
+            log.debug("Idle timeout {}ms expired on {}", getIdleTimeout(), this.toString());
+        }
 
         // Notify the application.
         if (notifyIdleTimeout(this, timeout)) {
@@ -242,9 +232,9 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
 
     @Override
     public boolean updateClose(boolean update, boolean local) {
-        if (log.isDebugEnabled())
-            log.debug("Update close for {} close={} local={}", this, update, local);
-
+        if (log.isDebugEnabled()) {
+            log.debug("Update close for {} close={} local={}", this.toString(), update, local);
+        }
         if (!update)
             return false;
 
@@ -298,24 +288,6 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI, Callback {
     public void close() {
         if (closeState.getAndSet(CloseState.CLOSED) != CloseState.CLOSED)
             onClose();
-    }
-
-    @Override
-    public void succeeded() {
-        Callback callback = endWrite();
-        if (callback != null)
-            callback.succeeded();
-    }
-
-    @Override
-    public void failed(Throwable x) {
-        Callback callback = endWrite();
-        if (callback != null)
-            callback.failed(x);
-    }
-
-    private Callback endWrite() {
-        return writing.getAndSet(null);
     }
 
     private void notifyData(Stream stream, DataFrame frame, Callback callback) {

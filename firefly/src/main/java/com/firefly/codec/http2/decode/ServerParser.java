@@ -68,25 +68,32 @@ public class ServerParser extends Parser {
 			while (true) {
 				switch (state) {
 				case PREFACE: {
-					if (!prefaceParser.parse(buffer))
-						return;
-					if (notifyPreface)
-						onPreface();
-					state = State.SETTINGS;
-					break;
-				}
-				case SETTINGS: {
-					if (!parseHeader(buffer))
-						return;
-					if (getFrameType() != FrameType.SETTINGS.getType() || hasFlag(Flags.ACK)) {
-						BufferUtils.clear(buffer);
-						notifyConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "invalid_preface");
+					if (prefaceParser.parse(buffer)) {
+						if (notifyPreface) {
+							onPreface();
+						}
+						state = State.SETTINGS;
+						break;
+					} else {
 						return;
 					}
-					if (!parseBody(buffer))
+				}
+				case SETTINGS: {
+					if (parseHeader(buffer)) {
+						if (getFrameType() != FrameType.SETTINGS.getType() || hasFlag(Flags.ACK)) {
+							BufferUtils.clear(buffer);
+							notifyConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "invalid_preface");
+							return;
+						}
+						if (parseBody(buffer)) {
+							state = State.FRAMES;
+							break;
+						} else {
+							return;
+						}
+					} else {
 						return;
-					state = State.FRAMES;
-					break;
+					}
 				}
 				case FRAMES: {
 					// Stay forever in the FRAMES state.
@@ -118,9 +125,9 @@ public class ServerParser extends Parser {
 	}
 
 	public interface Listener extends Parser.Listener {
-		public void onPreface();
+		void onPreface();
 
-		public static class Adapter extends Parser.Listener.Adapter implements Listener {
+		class Adapter extends Parser.Listener.Adapter implements Listener {
 			@Override
 			public void onPreface() {
 			}

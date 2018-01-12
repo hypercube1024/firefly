@@ -37,7 +37,7 @@ class AppMain : AbstractLifeCycle() {
             log.info {"install routers [${it::class.qualifiedName}]"}
             it.install()
         }
-
+//        server.server.configuration.isSecureConnectionEnabled = true
         server.listen(projectConfig.host, projectConfig.port)
     }
 

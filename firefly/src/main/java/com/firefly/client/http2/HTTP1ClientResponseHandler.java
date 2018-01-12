@@ -30,11 +30,10 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
             log.debug("client received the response line, {}, {}, {}", version, status, reason);
         }
 
-        if (status == 100 && "Continue".equalsIgnoreCase(reason)) {
+        if (status == HttpStatus.CONTINUE_100 && HttpStatus.Code.CONTINUE.getMessage().equalsIgnoreCase(reason)) {
             clientHTTPHandler.continueToSendData(request, response, outputStream, connection);
             if (log.isDebugEnabled()) {
-                log.debug("client received 100 continue, current parser state is {}",
-                        connection.getParser().getState());
+                log.debug("client received 100 continue, current parser state is {}", connection.getParser().getState());
             }
             return true;
         } else {
@@ -103,8 +102,6 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
                         log.debug("the client {} connection is persistent", response.getHttpVersion());
                     }
                     break;
-                default:
-                    throw new IllegalStateException("client response does not support the http version " + connection.getHttpVersion());
             }
 
         }
@@ -112,9 +109,9 @@ public class HTTP1ClientResponseHandler implements ResponseHandler {
 
     @Override
     public final boolean messageComplete() {
-        boolean success = connection.upgradeProtocolToHTTP2(request, response);
+        boolean success = connection.upgradeProtocolComplete(request, response);
         if (success) {
-            log.debug("client upgraded http2 successfully");
+            log.debug("client upgraded protocol successfully");
         }
         return http1MessageComplete();
     }

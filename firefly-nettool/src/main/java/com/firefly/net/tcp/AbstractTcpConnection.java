@@ -6,17 +6,19 @@ import com.firefly.utils.function.Action1;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 
 public abstract class AbstractTcpConnection implements TcpConnection {
 
     public static final String DEFAULT_CHARSET = "UTF-8";
 
-    Session session;
-    Action0 closeCallback;
-    Action1<ByteBuffer> buffer;
-    Action1<Throwable> exception;
-    volatile Object attachment;
+    protected final Session session;
+    protected final List<Action0> closeListeners = new LinkedList<>();
+    protected final List<Action1<Throwable>> exceptionListeners = new LinkedList<>();
+    protected Action1<ByteBuffer> buffer;
+    protected volatile Object attachment;
 
     public AbstractTcpConnection(Session session) {
         this.session = session;
@@ -29,9 +31,23 @@ public abstract class AbstractTcpConnection implements TcpConnection {
     }
 
     @Override
-    public TcpConnection exception(Action1<Throwable> exception) {
-        this.exception = exception;
+    public TcpConnection onException(Action1<Throwable> exception) {
+        exceptionListeners.add(exception);
         return this;
+    }
+
+    @Override
+    public TcpConnection onClose(Action0 closeCallback) {
+        closeListeners.add(closeCallback);
+        return this;
+    }
+
+    public void notifyClose() {
+        closeListeners.forEach(Action0::call);
+    }
+
+    public void notifyException(Throwable t) {
+        exceptionListeners.forEach(e -> e.call(t));
     }
 
     @Override
@@ -87,12 +103,6 @@ public abstract class AbstractTcpConnection implements TcpConnection {
     @Override
     public long getWrittenBytes() {
         return session.getWrittenBytes();
-    }
-
-    @Override
-    public TcpConnection close(Action0 closeCallback) {
-        this.closeCallback = closeCallback;
-        return this;
     }
 
     @Override

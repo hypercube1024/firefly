@@ -189,7 +189,7 @@ public class HTTP2DecoderTest {
                     @Override
                     public Listener onNewStream(Stream stream, HeadersFrame frame) {
                         System.out.println("on new stream: " + stream.getId());
-                        System.out.println("on new stread headers: " + frame.getMetaData().toString());
+                        System.out.println("on new stream headers: " + frame.getMetaData().toString());
 
                         Assert.assertThat(stream.getId(), is(5));
                         Assert.assertThat(frame.getMetaData().getHttpVersion(), is(HttpVersion.HTTP_2));

@@ -13,6 +13,10 @@ public class HTTP2ServerDecoder extends DecoderChain {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
+    public HTTP2ServerDecoder() {
+        super(null);
+    }
+
     @Override
     public void decode(ByteBuffer buffer, Session session) {
         if (!buffer.hasRemaining()) {

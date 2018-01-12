@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.net.tcp.codec.DelimiterParser;
+import com.firefly.net.tcp.codec.common.decode.DelimiterParser;
 
 public class DelimiterParserTest {
 

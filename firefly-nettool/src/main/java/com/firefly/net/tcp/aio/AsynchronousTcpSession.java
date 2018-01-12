@@ -1,11 +1,10 @@
 package com.firefly.net.tcp.aio;
 
-import com.codahale.metrics.MetricRegistry;
 import com.firefly.net.*;
 import com.firefly.net.buffer.AdaptiveBufferSizePredictor;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.net.exception.NetException;
-import com.firefly.net.metric.SessionMetric;
+import com.firefly.net.tcp.aio.metric.SessionMetric;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.time.Millisecond100Clock;
@@ -45,7 +44,7 @@ public class AsynchronousTcpSession implements Session {
     private volatile InetSocketAddress remoteAddress;
 
     private final Config config;
-    private final EventManager eventManager;
+    private final NetEvent netEvent;
     private volatile Object attachment;
 
     private final Lock outputLock = new ReentrantLock();
@@ -53,15 +52,14 @@ public class AsynchronousTcpSession implements Session {
     private final Queue<OutputEntry<?>> outputBuffer = new LinkedList<>();
     private final BufferSizePredictor bufferSizePredictor = new AdaptiveBufferSizePredictor();
 
-    AsynchronousTcpSession(int sessionId, Config config, EventManager eventManager, AsynchronousSocketChannel socketChannel) {
+    AsynchronousTcpSession(int sessionId, Config config, SessionMetric sessionMetric, NetEvent netEvent, AsynchronousSocketChannel socketChannel) {
         this.sessionId = sessionId;
         this.openTime = Millisecond100Clock.currentTimeMillis();
         this.config = config;
-        this.eventManager = eventManager;
+        this.netEvent = netEvent;
         this.socketChannel = socketChannel;
-        MetricRegistry metrics = config.getMetricReporterFactory().getMetricRegistry();
-        sessionMetric = new SessionMetric(metrics, "aio.tcpSession");
-        sessionMetric.getActiveSessionCount().inc();
+        this.sessionMetric = sessionMetric;
+        this.sessionMetric.getActiveSessionCount().inc();
     }
 
     private ByteBuffer allocateReadBuffer() {
@@ -110,7 +108,7 @@ public class AsynchronousTcpSession implements Session {
             try {
                 config.getDecoder().decode(buf, session);
             } catch (Throwable t) {
-                eventManager.executeExceptionTask(session, t);
+                netEvent.notifyExceptionCaught(session, t);
             } finally {
                 _read();
             }
@@ -119,19 +117,11 @@ public class AsynchronousTcpSession implements Session {
         @Override
         public void failed(Throwable t, AsynchronousTcpSession session) {
             if (t instanceof InterruptedByTimeoutException) {
-                long idleTime = getIdleTimeout();
-                log.info("The session {} reading data is timeout. The idle time: {} - {}", getSessionId(), idleTime, getMaxIdleTimeout());
-                if (idleTime >= getIdleTimeout()) {
-                    log.info("The session {} is timeout. It will force to close.", getSessionId());
-                    closeNow();
-                } else {
-                    // The session is active. Register the read event.
-                    _read();
-                }
+                log.info("The session {} idle {}ms timeout. It will close.", getSessionId(), getIdleTimeout());
             } else {
-                log.warn("The session {} reading data exception. It will force to close.", t, session.getSessionId());
-                closeNow();
+                log.warn("The session {} reading data failed. It will force to close.", t, session.getSessionId());
             }
+            closeNow();
         }
     }
 
@@ -179,57 +169,89 @@ public class AsynchronousTcpSession implements Session {
 
         private void writingCompletedCallback(Callback callback) {
             callback.succeeded();
+            OutputEntry<?> entry = getNextOutputEntry();
+            if (entry != null) {
+                _write(entry);
+            }
+        }
+
+        private OutputEntry<?> getNextOutputEntry() {
+            OutputEntry<?> entry = null;
             outputLock.lock();
             try {
                 sessionMetric.getOutputBufferQueueSize().update(outputBuffer.size());
                 if (outputBuffer.isEmpty()) {
                     isWriting = false;
-                } else if (outputBuffer.size() <= 2) {
-                    _write(outputBuffer.poll());
                 } else {
-                    // merge ByteBuffer to ByteBuffer Array
-                    List<Callback> callbackList = new LinkedList<>();
-                    List<ByteBuffer> byteBufferList = new LinkedList<>();
+                    List<OutputEntry<?>> entries = new LinkedList<>();
+
                     OutputEntry<?> obj;
-                    while ((obj = outputBuffer.peek()) != null
-                            && obj.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
-                        outputBuffer.poll();
-                        callbackList.add(obj.getCallback());
-                        switch (obj.getOutputEntryType()) {
-                            case BYTE_BUFFER:
-                                ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) obj;
-                                byteBufferList.add(byteBufferOutputEntry.getData());
-                                break;
-                            case BYTE_BUFFER_ARRAY:
-                                ByteBufferArrayOutputEntry byteBufferArrayOutputEntry = (ByteBufferArrayOutputEntry) obj;
-                                byteBufferList.addAll(Arrays.asList(byteBufferArrayOutputEntry.getData()));
-                                break;
-                            case MERGED_BUFFER:
-                                MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) obj;
-                                byteBufferList.addAll(Arrays.asList(mergedOutputEntry.getData()));
-                                break;
+                    boolean disconnection = false;
+                    while ((obj = outputBuffer.poll()) != null) {
+                        if (disconnection) {
+                            log.warn("The session {} is waiting close. The entry [{}/{}] will discard", getSessionId(), obj.getOutputEntryType(), obj.remaining());
+                            continue;
+                        }
+                        if (obj.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
+                            entries.add(obj);
+                        } else {
+                            disconnection = true;
                         }
                     }
-                    sessionMetric.getMergedOutputBufferSize().update(callbackList.size());
-                    _write(new MergedOutputEntry(callbackList, byteBufferList));
+                    if (disconnection) {
+                        outputBuffer.offer(DISCONNECTION_FLAG);
+                    }
+
+                    if (entries.isEmpty()) {
+                        if (!outputBuffer.isEmpty()) {
+                            obj = outputBuffer.peek();
+                            if (obj.getOutputEntryType() == OutputEntryType.DISCONNECTION) {
+                                entry = DISCONNECTION_FLAG;
+                                outputBuffer.poll();
+                            }
+                        }
+                    } else {
+                        if (entries.size() == 1) {
+                            entry = entries.get(0);
+                        } else {
+                            // merge ByteBuffer to ByteBuffer Array
+                            List<Callback> callbackList = new LinkedList<>();
+                            List<ByteBuffer> byteBufferList = new LinkedList<>();
+                            entries.forEach(e -> {
+                                callbackList.add(e.getCallback());
+                                switch (e.getOutputEntryType()) {
+                                    case BYTE_BUFFER:
+                                        ByteBufferOutputEntry byteBufferOutputEntry = (ByteBufferOutputEntry) e;
+                                        byteBufferList.add(byteBufferOutputEntry.getData());
+                                        break;
+                                    case BYTE_BUFFER_ARRAY:
+                                        ByteBufferArrayOutputEntry byteBufferArrayOutputEntry = (ByteBufferArrayOutputEntry) e;
+                                        byteBufferList.addAll(Arrays.asList(byteBufferArrayOutputEntry.getData()));
+                                        break;
+                                    case MERGED_BUFFER:
+                                        MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) e;
+                                        byteBufferList.addAll(Arrays.asList(mergedOutputEntry.getData()));
+                                        break;
+                                }
+                            });
+                            sessionMetric.getMergedOutputBufferSize().update(callbackList.size());
+                            entry = new MergedOutputEntry(callbackList, byteBufferList);
+                        }
+                    }
                 }
             } finally {
                 outputLock.unlock();
             }
+            return entry;
         }
 
         private void writingFailedCallback(Callback callback, Throwable t) {
             if (t instanceof InterruptedByTimeoutException) {
-                long idleTime = getIdleTimeout();
-                log.info("The session {} writing data is timeout. The idle time: {} - {}", getSessionId(), idleTime, getMaxIdleTimeout());
-                if (idleTime >= getIdleTimeout()) {
-                    log.info("The session {} is timeout. It will close.", getSessionId());
-                    _writingFailedCallback(callback, t);
-                }
+                log.info("The session {} idle {}ms timeout. It will close.", getSessionId(), getIdleTimeout());
             } else {
-                log.warn("The session {} writing data exception. It will close.", t, getSessionId());
-                _writingFailedCallback(callback, t);
+                log.warn("The session {} writing data failed. It will close.", t, getSessionId());
             }
+            _writingFailedCallback(callback, t);
         }
 
         private void _writingFailedCallback(Callback callback, Throwable t) {
@@ -290,16 +312,26 @@ public class AsynchronousTcpSession implements Session {
         if (entry == null) {
             return;
         }
+        if (waitingForClose.get() && entry.getOutputEntryType() != OutputEntryType.DISCONNECTION) {
+            log.warn("The session {} is waiting for close. The entry [{}/{}] can not write to remote endpoint.",
+                    getSessionId(), entry.getOutputEntryType(), entry.remaining());
+            return;
+        }
+
+        boolean writeEntry = false;
         outputLock.lock();
         try {
             if (!isWriting) {
                 isWriting = true;
-                _write(entry);
+                writeEntry = true;
             } else {
                 outputBuffer.offer(entry);
             }
         } finally {
             outputLock.unlock();
+        }
+        if (writeEntry) {
+            _write(entry);
         }
     }
 
@@ -338,8 +370,8 @@ public class AsynchronousTcpSession implements Session {
     }
 
     @Override
-    public void onReceivingMessage(Object message) {
-        eventManager.executeReceiveTask(this, message);
+    public void notifyMessageReceived(Object message) {
+        netEvent.notifyMessageReceived(this, message);
     }
 
     @Override
@@ -347,13 +379,13 @@ public class AsynchronousTcpSession implements Session {
         try {
             config.getEncoder().encode(message, this);
         } catch (Throwable t) {
-            eventManager.executeExceptionTask(this, t);
+            netEvent.notifyExceptionCaught(this, t);
         }
     }
 
     @Override
     public void close() {
-        if (isOpen() && waitingForClose.compareAndSet(false, true)) {
+        if (waitingForClose.compareAndSet(false, true) && isOpen()) {
             write(DISCONNECTION_FLAG);
             log.info("The session {} is waiting for close", sessionId);
         } else {
@@ -373,7 +405,7 @@ public class AsynchronousTcpSession implements Session {
             } catch (IOException e) {
                 log.error("The session " + sessionId + " close exception", e);
             } finally {
-                eventManager.executeCloseTask(this);
+                netEvent.notifySessionClosed(this);
                 sessionMetric.getActiveSessionCount().dec();
                 sessionMetric.getDuration().update(getDuration());
             }

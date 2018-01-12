@@ -7,7 +7,6 @@ import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.server.http2.SimpleHTTPServerConfiguration;
 import com.firefly.utils.io.BufferUtils;
@@ -17,9 +16,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.concurrent.Phaser;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 /**
  * @author Pengtao Qiu
@@ -44,7 +41,7 @@ public class TestHTTPTrailer extends AbstractHTTPHandlerTest {
 
     @Test
     public void testHttp2() {
-        Phaser phaser = new Phaser(2);
+        Phaser phaser = new Phaser(3);
 
         SimpleHTTPServerConfiguration serverConfiguration = new SimpleHTTPServerConfiguration();
         serverConfiguration.setSecureConnectionEnabled(true);
@@ -55,7 +52,7 @@ public class TestHTTPTrailer extends AbstractHTTPHandlerTest {
         clientConfiguration.setSecureConnectionEnabled(true);
         SimpleHTTPClient httpsClient = new SimpleHTTPClient(clientConfiguration);
         testServerResponseTrailer(phaser, httpsClient);
-//        testClientPostTrailer(phaser, httpsClient);
+        testClientPostTrailer(phaser, httpsClient);
 
         phaser.arriveAndAwaitAdvance();
         httpsServer.stop();

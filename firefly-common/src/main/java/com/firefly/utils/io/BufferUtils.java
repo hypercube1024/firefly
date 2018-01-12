@@ -846,30 +846,6 @@ public class BufferUtils {
         }
     }
 
-
-//    public static ByteBuffer toBuffer(Resource resource,boolean direct) throws IOException
-//    {
-//        int len=(int)resource.length();
-//        if (len<0)
-//            throw new IllegalArgumentException("invalid resource: "+String.valueOf(resource)+" len="+len);
-//
-//        ByteBuffer buffer = direct?BufferUtils.allocateDirect(len):BufferUtils.allocate(len);
-//
-//        int pos=BufferUtils.flipToFill(buffer);
-//        if (resource.getFile()!=null)
-//            BufferUtils.readFrom(resource.getFile(),buffer);
-//        else
-//        {
-//            try (InputStream is = resource.getInputStream();)
-//            {
-//                BufferUtils.readFrom(is,len,buffer);
-//            }
-//        }
-//        BufferUtils.flipToFlush(buffer,pos);
-//
-//        return buffer;
-//    }
-
     public static String toSummaryString(ByteBuffer buffer) {
         if (buffer == null)
             return "null";

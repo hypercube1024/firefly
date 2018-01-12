@@ -2,6 +2,8 @@ package com.firefly.utils.lang;
 
 import com.firefly.utils.StringUtils;
 
+import java.util.Objects;
+
 /**
  * Parse an authority string into Host and Port
  * <p>Parse a string in the form "host:port", handling IPv4 an IPv6 hosts</p>
@@ -77,7 +79,7 @@ public class HostPort {
     public int getPort() {
         return _port;
     }
-    
+
     /* ------------------------------------------------------------ */
 
     /**
@@ -105,5 +107,23 @@ public class HostPort {
 
         // normalize with [ ]
         return "[" + host + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HostPort hostPort = (HostPort) o;
+        return _port == hostPort._port && Objects.equals(_host, hostPort._host);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_host, _port);
+    }
+
+    @Override
+    public String toString() {
+        return _host + ":" + _port;
     }
 }

@@ -1,11 +1,10 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.common.CommonDecoder;
+import com.firefly.codec.common.CommonEncoder;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.Session.Listener;
-import com.firefly.codec.http2.stream.ShutdownHelper;
+import com.firefly.codec.websocket.decode.WebSocketDecoder;
 import com.firefly.net.Client;
-import com.firefly.net.DecoderChain;
-import com.firefly.net.EncoderChain;
 import com.firefly.net.tcp.aio.AsynchronousTcpClient;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.lang.AbstractLifeCycle;
@@ -21,26 +20,17 @@ public class HTTP2Client extends AbstractLifeCycle {
     private final AtomicInteger sessionId = new AtomicInteger(0);
     private final HTTP2Configuration http2Configuration;
 
-    public HTTP2Client(HTTP2Configuration http2Configuration) {
-        if (http2Configuration == null)
+    public HTTP2Client(HTTP2Configuration c) {
+        if (c == null) {
             throw new IllegalArgumentException("the http2 configuration is null");
-
-        DecoderChain decoder;
-        EncoderChain encoder;
-        if (http2Configuration.isSecureConnectionEnabled()) {
-            decoder = new ClientSecureDecoder(new HTTP1ClientDecoder(new HTTP2ClientDecoder()));
-            encoder = new HTTP1ClientEncoder(new HTTP2ClientEncoder(new ClientSecureEncoder()));
-        } else {
-            decoder = new HTTP1ClientDecoder(new HTTP2ClientDecoder());
-            encoder = new HTTP1ClientEncoder(new HTTP2ClientEncoder());
         }
 
-        http2Configuration.getTcpConfiguration().setDecoder(decoder);
-        http2Configuration.getTcpConfiguration().setEncoder(encoder);
-        http2Configuration.getTcpConfiguration().setHandler(new HTTP2ClientHandler(http2Configuration, http2ClientContext));
+        c.getTcpConfiguration().setDecoder(new CommonDecoder(new HTTP1ClientDecoder(new WebSocketDecoder(), new HTTP2ClientDecoder())));
+        c.getTcpConfiguration().setEncoder(new CommonEncoder());
+        c.getTcpConfiguration().setHandler(new HTTP2ClientHandler(c, http2ClientContext));
 
-        this.client = new AsynchronousTcpClient(http2Configuration.getTcpConfiguration());
-        this.http2Configuration = http2Configuration;
+        this.client = new AsynchronousTcpClient(c.getTcpConfiguration());
+        this.http2Configuration = c;
     }
 
     public Promise.Completable<HTTPClientConnection> connect(String host, int port) {
@@ -50,14 +40,14 @@ public class HTTP2Client extends AbstractLifeCycle {
     }
 
     public void connect(String host, int port, Promise<HTTPClientConnection> promise) {
-        connect(host, port, promise, new Listener.Adapter());
+        connect(host, port, promise, new ClientHTTP2SessionListener());
     }
 
-    public void connect(String host, int port, Promise<HTTPClientConnection> promise, Listener listener) {
+    public void connect(String host, int port, Promise<HTTPClientConnection> promise, ClientHTTP2SessionListener listener) {
         start();
         HTTP2ClientContext context = new HTTP2ClientContext();
-        context.promise = promise;
-        context.listener = listener;
+        context.setPromise(promise);
+        context.setListener(listener);
         int id = sessionId.getAndIncrement();
         http2ClientContext.put(id, context);
         client.connect(host, port, id);
@@ -76,7 +66,6 @@ public class HTTP2Client extends AbstractLifeCycle {
         if (client != null) {
             client.stop();
         }
-        ShutdownHelper.destroy();
     }
 
 }

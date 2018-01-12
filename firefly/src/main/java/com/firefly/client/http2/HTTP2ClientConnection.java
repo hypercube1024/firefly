@@ -2,21 +2,22 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.Generator;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PrefaceFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
-import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.codec.http2.model.MetaData.Request;
 import com.firefly.codec.http2.stream.*;
 import com.firefly.codec.http2.stream.Session.Listener;
+import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.stream.WebSocketConnection;
+import com.firefly.codec.websocket.stream.WebSocketPolicy;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.concurrent.Promise;
+import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.exception.CommonRuntimeException;
 import com.firefly.utils.io.BufferUtils;
 import org.slf4j.Logger;
@@ -28,12 +29,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HTTPClientConnection {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    public void initialize(HTTP2Configuration config, final Promise<HTTPClientConnection> promise,
+    public void initialize(HTTP2Configuration config, final Promise<? super HTTP2ClientConnection> promise,
                            final Listener listener) {
         Map<Integer, Integer> settings = listener.onPreface(getHttp2Session());
         if (settings == null) {
@@ -63,6 +65,18 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
         } else {
             sessionSPI.frames(null, callback, prefaceFrame, settingsFrame);
         }
+
+        Scheduler.Future pingFuture = scheduler.scheduleAtFixedRate(() -> getHttp2Session().ping(new PingFrame(false), new Callback() {
+            public void succeeded() {
+                log.info("The session {} sent ping frame success", getSessionId());
+            }
+
+            public void failed(Throwable x) {
+                log.warn("the session {} sends ping frame failure. {}", getSessionId(), x.getMessage());
+            }
+        }), config.getHttp2PingInterval(), config.getHttp2PingInterval(), TimeUnit.MILLISECONDS);
+
+        onClose(c -> pingFuture.cancel());
     }
 
     public HTTP2ClientConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
@@ -87,10 +101,6 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
 
     Generator getGenerator() {
         return generator;
-    }
-
-    SecureSession getSecureSession() {
-        return secureSession;
     }
 
     SessionSPI getSessionSPI() {
@@ -144,7 +154,6 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
                 } catch (IOException e) {
                     log.error("write data unsuccessfully", e);
                 }
-
             }
 
             @Override
@@ -183,14 +192,21 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
                         final Promise<HTTPOutputStream> promise,
                         final ClientHTTPHandler handler) {
         http2Session.newStream(new HeadersFrame(request, null, endStream),
-                new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise, endStream),
+                new HTTP2ClientResponseHandler.ClientStreamPromise(request, promise),
                 new HTTP2ClientResponseHandler(request, handler, this));
     }
 
     @Override
-    public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTPClientConnection> promise,
-                             ClientHTTPHandler handler) {
-        throw new CommonRuntimeException("current connection version is http2, it does not need to upgrading");
+    public void upgradeHTTP2(Request request, SettingsFrame settings, Promise<HTTP2ClientConnection> promise,
+                             ClientHTTPHandler upgradeHandler,
+                             ClientHTTPHandler http2ResponseHandler) {
+        throw new CommonRuntimeException("The current connection version is http2, it does not need to upgrading.");
+    }
+
+    @Override
+    public void upgradeWebSocket(Request request, WebSocketPolicy policy, Promise<WebSocketConnection> promise,
+                                 ClientHTTPHandler upgradeHandler, IncomingFrames incomingFrames) {
+        throw new CommonRuntimeException("The current connection version is http2, it can not upgrade WebSocket.");
     }
 
 }

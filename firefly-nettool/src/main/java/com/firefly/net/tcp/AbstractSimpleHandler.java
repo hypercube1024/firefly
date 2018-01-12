@@ -3,6 +3,7 @@ package com.firefly.net.tcp;
 import com.firefly.net.Decoder;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
+import com.firefly.utils.function.Action0;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,9 +45,7 @@ abstract public class AbstractSimpleHandler implements Handler {
         Object o = session.getAttachment();
         if (o != null && o instanceof AbstractTcpConnection) {
             AbstractTcpConnection c = (AbstractTcpConnection) o;
-            if (c.closeCallback != null) {
-                c.closeCallback.call();
-            }
+            c.notifyClose();
         }
         if (o != null && o instanceof SecureTcpConnectionImpl) {
             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
@@ -55,7 +54,7 @@ abstract public class AbstractSimpleHandler implements Handler {
     }
 
     @Override
-    public void messageReceived(Session session, Object message) throws Throwable {
+    public void messageReceived(Session session, Object message) {
     }
 
     @Override
@@ -64,9 +63,7 @@ abstract public class AbstractSimpleHandler implements Handler {
         Object o = session.getAttachment();
         if (o != null && o instanceof AbstractTcpConnection) {
             AbstractTcpConnection c = (AbstractTcpConnection) o;
-            if (c.exception != null) {
-                c.exception.call(t);
-            }
+            c.notifyException(t);
         }
     }
 

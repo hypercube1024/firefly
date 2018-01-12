@@ -10,18 +10,27 @@ import com.firefly.codec.http2.frame.PrefaceFrame;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.*;
+import com.firefly.codec.websocket.frame.Frame;
+import com.firefly.codec.websocket.model.AcceptHash;
+import com.firefly.codec.websocket.model.ExtensionConfig;
+import com.firefly.codec.websocket.model.IncomingFrames;
+import com.firefly.codec.websocket.stream.impl.WebSocketConnectionImpl;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
+import com.firefly.utils.Assert;
+import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.io.BufferUtils;
+import com.firefly.utils.io.IO;
 import com.firefly.utils.lang.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.CONTINUE_100_BYTES;
 import static com.firefly.codec.http2.encode.PredefinedHTTP1Response.H2C_BYTES;
@@ -30,17 +39,22 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     protected static final Logger log = LoggerFactory.getLogger("firefly-system");
 
+    private final WebSocketHandler webSocketHandler;
     private final ServerSessionListener serverSessionListener;
     private final HTTP1ServerRequestHandler serverRequestHandler;
-    boolean upgradeHTTP2Successfully = false;
-    Promise<HTTPTunnelConnection> tunnelConnectionPromise;
+    private final AtomicBoolean upgradeHTTP2Complete = new AtomicBoolean(false);
+    private final AtomicBoolean upgradeWebSocketComplete = new AtomicBoolean(false);
+    private Promise<HTTPTunnelConnection> tunnelConnectionPromise;
 
     HTTP1ServerConnection(HTTP2Configuration config, Session tcpSession, SecureSession secureSession,
-                          HTTP1ServerRequestHandler requestHandler, ServerSessionListener serverSessionListener) {
+                          HTTP1ServerRequestHandler requestHandler,
+                          ServerSessionListener serverSessionListener,
+                          WebSocketHandler webSocketHandler) {
         super(config, secureSession, tcpSession, requestHandler, null);
         requestHandler.connection = this;
         this.serverSessionListener = serverSessionListener;
         this.serverRequestHandler = requestHandler;
+        this.webSocketHandler = webSocketHandler;
     }
 
     @Override
@@ -50,14 +64,6 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
 
     HttpParser getParser() {
         return parser;
-    }
-
-    SecureSession getSecureSession() {
-        return secureSession;
-    }
-
-    Session getTcpSession() {
-        return tcpSession;
     }
 
     HTTP2Configuration getHTTP2Configuration() {
@@ -197,59 +203,113 @@ public class HTTP1ServerConnection extends AbstractHTTP1Connection implements HT
                     serverSessionListener);
             tcpSession.attachObject(http2ServerConnection);
             http2ServerConnection.getParser().directUpgrade();
-            upgradeHTTP2Successfully = true;
+            upgradeHTTP2Complete.compareAndSet(false, true);
             return true;
         } else {
             return false;
         }
     }
 
-    boolean upgradeProtocol(MetaData.Request request, MetaData.Response response) {
+    boolean upgradeProtocol(MetaData.Request request, MetaData.Response response,
+                            HTTPOutputStream output, HTTPConnection connection) {
         switch (Protocol.from(request)) {
             case H2: {
-                HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
-                if (settingsField != null) {
-                    response.setStatus(101);
-                    response.getFields().put(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE);
-                    response.getFields().put(HttpHeader.UPGRADE, "h2c");
-
-                    final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
-                    if (log.isDebugEnabled()) {
-                        log.debug("the server received settings {}", TypeUtils.toHexString(settings));
-                    }
-
-                    SettingsFrame settingsFrame = SettingsBodyParser.parseBody(BufferUtils.toBuffer(settings));
-                    if (settingsFrame == null) {
-                        throw new BadMessageException("settings frame parsing error");
-                    } else {
-                        responseH2c();
-
-                        HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
-                                tcpSession, secureSession, serverSessionListener);
-                        tcpSession.attachObject(http2ServerConnection);
-                        http2ServerConnection.getParser().standardUpgrade();
-
-                        serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
-                        SessionSPI sessionSPI = http2ServerConnection.getSessionSPI();
-
-                        sessionSPI.onFrame(new PrefaceFrame());
-                        sessionSPI.onFrame(settingsFrame);
-                        sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
-                    }
-
-                    upgradeHTTP2Successfully = true;
-                    return true;
-                } else {
-                    throw new IllegalStateException("upgrade HTTP2 unsuccessfully");
+                if (upgradeHTTP2Complete.get()) {
+                    throw new IllegalStateException("The connection has been upgraded HTTP2");
                 }
+
+                HttpField settingsField = request.getFields().getField(HttpHeader.HTTP2_SETTINGS);
+                Assert.notNull(settingsField, "The http2 setting field must be not null.");
+
+                final byte[] settings = Base64Utils.decodeFromUrlSafeString(settingsField.getValue());
+                if (log.isDebugEnabled()) {
+                    log.debug("the server received settings {}", TypeUtils.toHexString(settings));
+                }
+
+                SettingsFrame settingsFrame = SettingsBodyParser.parseBody(BufferUtils.toBuffer(settings));
+                if (settingsFrame == null) {
+                    throw new BadMessageException("settings frame parsing error");
+                } else {
+                    responseH2c();
+
+                    HTTP2ServerConnection http2ServerConnection = new HTTP2ServerConnection(config,
+                            tcpSession, secureSession, serverSessionListener);
+                    tcpSession.attachObject(http2ServerConnection);
+                    upgradeHTTP2Complete.compareAndSet(false, true);
+                    http2ServerConnection.getParser().standardUpgrade();
+
+                    serverSessionListener.onAccept(http2ServerConnection.getHttp2Session());
+                    SessionSPI sessionSPI = http2ServerConnection.getSessionSPI();
+
+                    sessionSPI.onFrame(new PrefaceFrame());
+                    sessionSPI.onFrame(settingsFrame);
+                    sessionSPI.onFrame(new HeadersFrame(1, request, null, true));
+                }
+                return true;
             }
             case WEB_SOCKET: {
-                // TODO
-                return false;
+                if (upgradeWebSocketComplete.get()) {
+                    throw new IllegalStateException("The connection has been upgraded WebSocket");
+                }
+
+                Assert.isTrue(HttpMethod.GET.is(request.getMethod()), "The method of the request MUST be GET in the websocket handshake.");
+                Assert.isTrue(request.getHttpVersion() == HttpVersion.HTTP_1_1, "The http version MUST be HTTP/1.1");
+
+                boolean accept = webSocketHandler.acceptUpgrade(request, response, output, connection);
+                if (!accept) {
+                    return false;
+                }
+
+                String key = request.getFields().get("Sec-WebSocket-Key");
+                Assert.hasText(key, "Missing request header 'Sec-WebSocket-Key'");
+
+                WebSocketConnectionImpl webSocketConnection = new WebSocketConnectionImpl(
+                        secureSession, tcpSession,
+                        null, webSocketHandler.getWebSocketPolicy(),
+                        request, response, config);
+                webSocketConnection.setNextIncomingFrames(new IncomingFrames() {
+                    @Override
+                    public void incomingError(Throwable t) {
+                        webSocketHandler.onError(t, webSocketConnection);
+                    }
+
+                    @Override
+                    public void incomingFrame(Frame frame) {
+                        webSocketHandler.onFrame(frame, webSocketConnection);
+                    }
+                });
+                List<ExtensionConfig> negotiatedExtensions = webSocketConnection.getExtensionNegotiator().negotiate(request);
+
+                response.setStatus(HttpStatus.SWITCHING_PROTOCOLS_101);
+                response.getFields().put(HttpHeader.UPGRADE, "WebSocket");
+                response.getFields().add(HttpHeader.CONNECTION.asString(), "Upgrade");
+                response.getFields().add(HttpHeader.SEC_WEBSOCKET_ACCEPT.asString(), AcceptHash.hashKey(key));
+                if (!CollectionUtils.isEmpty(negotiatedExtensions)) {
+                    negotiatedExtensions.stream().filter(e -> e.getName().equals("permessage-deflate"))
+                                        .findFirst().ifPresent(e -> e.getParameters().clear());
+                    response.getFields().add(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.asString(), ExtensionConfig.toHeaderValue(negotiatedExtensions));
+                }
+
+                IO.close(output);
+                tcpSession.attachObject(webSocketConnection);
+                upgradeWebSocketComplete.compareAndSet(false, true);
+                webSocketHandler.onConnect(webSocketConnection);
+                return true;
             }
             default:
                 return false;
         }
     }
 
+    public boolean getUpgradeHTTP2Complete() {
+        return upgradeHTTP2Complete.get();
+    }
+
+    public boolean getUpgradeWebSocketComplete() {
+        return upgradeWebSocketComplete.get();
+    }
+
+    public Promise<HTTPTunnelConnection> getTunnelConnectionPromise() {
+        return tunnelConnectionPromise;
+    }
 }

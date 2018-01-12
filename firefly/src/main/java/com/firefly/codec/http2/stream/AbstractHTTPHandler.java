@@ -1,5 +1,6 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.websocket.stream.impl.WebSocketConnectionImpl;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
 import org.slf4j.Logger;
@@ -21,16 +22,26 @@ public abstract class AbstractHTTPHandler implements Handler {
 
     @Override
     public void exceptionCaught(Session session, Throwable t) throws Throwable {
-        log.error("HTTP handler exception", t);
-        if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
-            try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
-                if (httpConnection.getExceptionListener() != null) {
-                    httpConnection.getExceptionListener().call(httpConnection, t);
-                }
-            } catch (Exception e) {
-                log.error("http connection exception listener error", e);
+        try {
+            log.error("HTTP handler exception", t);
+            Object attachment = session.getAttachment();
+            if (attachment == null) {
+                return;
             }
-        } else {
+            if (attachment instanceof AbstractHTTPConnection) {
+                try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) attachment) {
+                    httpConnection.notifyException(t);
+                } catch (Exception e) {
+                    log.error("The http connection exception listener error", e);
+                }
+            } else if (attachment instanceof WebSocketConnectionImpl) {
+                try (WebSocketConnectionImpl webSocketConnection = (WebSocketConnectionImpl) attachment) {
+                    webSocketConnection.notifyException(t);
+                } catch (Exception e) {
+                    log.error("The websocket connection exception listener error", e);
+                }
+            }
+        } finally {
             session.close();
         }
     }
@@ -38,14 +49,21 @@ public abstract class AbstractHTTPHandler implements Handler {
     @Override
     public void sessionClosed(Session session) throws Throwable {
         log.info("The HTTP handler received the session {} closed event.", session.getSessionId());
-        if (session.getAttachment() != null && session.getAttachment() instanceof AbstractHTTPConnection) {
-            try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) session.getAttachment()) {
-                if (httpConnection.getClosedListener() != null) {
-                    httpConnection.getClosedListener().call(httpConnection);
-                    log.info("The HTTP handler called connection {} closed listener.", session.getSessionId());
-                }
+        Object attachment = session.getAttachment();
+        if (attachment == null) {
+            return;
+        }
+        if (attachment instanceof AbstractHTTPConnection) {
+            try (AbstractHTTPConnection httpConnection = (AbstractHTTPConnection) attachment) {
+                httpConnection.notifyClose();
             } catch (Exception e) {
-                log.error("http2 connection close exception", e);
+                log.error("The http2 connection close exception", e);
+            }
+        } else if (attachment instanceof WebSocketConnectionImpl) {
+            try (WebSocketConnectionImpl webSocketConnection = (WebSocketConnectionImpl) attachment) {
+                webSocketConnection.notifyClose();
+            } catch (Exception e) {
+                log.error("The websocket connection close exception", e);
             }
         }
     }

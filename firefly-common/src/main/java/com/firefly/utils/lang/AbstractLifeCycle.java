@@ -1,15 +1,35 @@
 package com.firefly.utils.lang;
 
+import com.firefly.utils.function.Action0;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 public abstract class AbstractLifeCycle implements LifeCycle {
+
+    protected static final List<Action0> stopActions = new CopyOnWriteArrayList<>();
+
+    static {
+        try {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                stopActions.forEach(a -> {
+                    try {
+                        a.call();
+                    } catch (Exception e) {
+                        System.err.println(e.getMessage());
+                    }
+                });
+                stopActions.clear();
+            }, "the firefly shutdown thread"));
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+    }
 
     protected volatile boolean start;
 
     public AbstractLifeCycle() {
-        try {
-            Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "the firefly shutdown thread"));
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-        }
+        stopActions.add(this::stop);
     }
 
     @Override

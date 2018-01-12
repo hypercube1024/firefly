@@ -1,23 +1,22 @@
 package com.firefly.codec.http2.model;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
 
+import java.nio.ByteBuffer;
 
 
 public enum HttpHeader {
-	
-	/* ------------------------------------------------------------ */
-    /** General Fields.
+
+    /**
+     * General Fields.
      */
     CONNECTION("Connection"),
     CACHE_CONTROL("Cache-Control"),
     DATE("Date"),
     PRAGMA("Pragma"),
-    PROXY_CONNECTION ("Proxy-Connection"),
+    PROXY_CONNECTION("Proxy-Connection"),
     TRAILER("Trailer"),
     TRANSFER_ENCODING("Transfer-Encoding"),
     UPGRADE("Upgrade"),
@@ -25,8 +24,8 @@ public enum HttpHeader {
     WARNING("Warning"),
     NEGOTIATE("Negotiate"),
 
-    /* ------------------------------------------------------------ */
-    /** Entity Fields.
+    /**
+     * Entity Fields.
      */
     ALLOW("Allow"),
     CONTENT_ENCODING("Content-Encoding"),
@@ -39,8 +38,8 @@ public enum HttpHeader {
     EXPIRES("Expires"),
     LAST_MODIFIED("Last-Modified"),
 
-    /* ------------------------------------------------------------ */
-    /** Request Fields.
+    /**
+     * Request Fields.
      */
     ACCEPT("Accept"),
     ACCEPT_CHARSET("Accept-Charset"),
@@ -69,8 +68,8 @@ public enum HttpHeader {
     X_FORWARDED_SERVER("X-Forwarded-Server"),
     X_FORWARDED_HOST("X-Forwarded-Host"),
 
-    /* ------------------------------------------------------------ */
-    /** Response Fields.
+    /**
+     * Response Fields.
      */
     ACCEPT_RANGES("Accept-Ranges"),
     AGE("Age"),
@@ -83,72 +82,84 @@ public enum HttpHeader {
     VARY("Vary"),
     WWW_AUTHENTICATE("WWW-Authenticate"),
 
-    /* ------------------------------------------------------------ */
-    /** Other Fields.
+    /**
+     * WebSocket Fields.
+     */
+    ORIGIN("Origin"),
+    SEC_WEBSOCKET_KEY("Sec-WebSocket-Key"),
+    SEC_WEBSOCKET_VERSION("Sec-WebSocket-Version"),
+    SEC_WEBSOCKET_EXTENSIONS("Sec-WebSocket-Extensions"),
+    SEC_WEBSOCKET_SUBPROTOCOL("Sec-WebSocket-Protocol"),
+    SEC_WEBSOCKET_ACCEPT("Sec-WebSocket-Accept"),
+
+    /**
+     * Other Fields.
      */
     COOKIE("Cookie"),
     SET_COOKIE("Set-Cookie"),
     SET_COOKIE2("Set-Cookie2"),
     MIME_VERSION("MIME-Version"),
     IDENTITY("identity"),
-    
+
     X_POWERED_BY("X-Powered-By"),
     HTTP2_SETTINGS("HTTP2-Settings"),
 
-    /* ------------------------------------------------------------ */
-    /** HTTP2 Fields.
+    STRICT_TRANSPORT_SECURITY("Strict-Transport-Security"),
+
+    /**
+     * HTTP2 Fields.
      */
     C_METHOD(":method"),
     C_SCHEME(":scheme"),
     C_AUTHORITY(":authority"),
     C_PATH(":path"),
     C_STATUS(":status"),
-    
+
     UNKNOWN("::UNKNOWN::");
-	
-	public final static Trie<HttpHeader> CACHE= new ArrayTrie<>(530);
-    static
-    {
+
+    public final static Trie<HttpHeader> CACHE = new ArrayTrie<>(630);
+
+    static {
         for (HttpHeader header : HttpHeader.values())
-            if (header!=UNKNOWN)
-                if (!CACHE.put(header.toString(),header))
+            if (header != UNKNOWN)
+                if (!CACHE.put(header.toString(), header))
                     throw new IllegalStateException();
     }
-    
-    private final String string;
-    private final byte[] bytes;
-    private final byte[] bytesColonSpace;
-    private final ByteBuffer buffer;
-    
-    private HttpHeader(String s) {
-        string = s;
-        bytes = s.getBytes(StandardCharsets.UTF_8);
-        bytesColonSpace = (s + ": ").getBytes(StandardCharsets.UTF_8);
-        buffer = ByteBuffer.wrap(bytes);
+
+    private final String _string;
+    private final byte[] _bytes;
+    private final byte[] _bytesColonSpace;
+    private final ByteBuffer _buffer;
+
+    HttpHeader(String s) {
+        _string = s;
+        _bytes = StringUtils.getBytes(s);
+        _bytesColonSpace = StringUtils.getBytes(s + ": ");
+        _buffer = ByteBuffer.wrap(_bytes);
     }
-    
+
     public ByteBuffer toBuffer() {
-        return buffer.asReadOnlyBuffer();
+        return _buffer.asReadOnlyBuffer();
     }
 
     public byte[] getBytes() {
-        return bytes;
+        return _bytes;
     }
 
     public byte[] getBytesColonSpace() {
-        return bytesColonSpace;
+        return _bytesColonSpace;
     }
 
     public boolean is(String s) {
-        return string.equalsIgnoreCase(s);    
+        return _string.equalsIgnoreCase(s);
     }
 
     public String asString() {
-        return string;
+        return _string;
     }
-    
+
     @Override
     public String toString() {
-        return string;
+        return _string;
     }
 }

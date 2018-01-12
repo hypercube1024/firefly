@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.6.5</version>
+        <version>4.7.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -76,6 +76,29 @@
             <groupId>com.fireflysource</groupId>
             <artifactId>firefly-slf4j</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-ion</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-collectionschema</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-runtime</artifactId>
         </dependency>
     </dependencies>
 

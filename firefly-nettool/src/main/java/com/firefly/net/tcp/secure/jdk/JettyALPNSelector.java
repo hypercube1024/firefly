@@ -18,10 +18,15 @@ public class JettyALPNSelector implements ApplicationProtocolSelector {
 
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private static final List<String> supportedProtocols = Collections.unmodifiableList(Arrays.asList("h2", "http/1.1"));
+    private final List<String> supportedProtocols;
     private volatile String applicationProtocol;
 
-    public JettyALPNSelector(SSLEngine sslEngine) {
+    public JettyALPNSelector(SSLEngine sslEngine, List<String> supportedProtocols) {
+        if (CollectionUtils.isEmpty(supportedProtocols)) {
+            this.supportedProtocols = Collections.unmodifiableList(Arrays.asList("h2", "http/1.1"));
+        } else {
+            this.supportedProtocols = supportedProtocols;
+        }
         if (sslEngine.getUseClientMode()) {
             ALPN.put(sslEngine, new ALPN.ClientProvider() {
 

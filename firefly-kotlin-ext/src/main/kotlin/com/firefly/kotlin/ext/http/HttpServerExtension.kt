@@ -1,12 +1,16 @@
 package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.*
+import com.firefly.codec.websocket.frame.Frame
+import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder
+import com.firefly.codec.websocket.stream.WebSocketConnection
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
+import com.firefly.server.http2.WebSocketHandler
 import com.firefly.server.http2.router.Handler
 import com.firefly.server.http2.router.Router
 import com.firefly.server.http2.router.RouterManager
@@ -326,7 +330,7 @@ class RouterBlock(private val router: Router,
             return block(this)
         } catch (e: Exception) {
             try {
-                run(NonCancellable) {
+                withContext(NonCancellable) {
                     closed = true
                     this?.close()
                 }
@@ -335,7 +339,7 @@ class RouterBlock(private val router: Router,
             throw e
         } finally {
             if (!closed) {
-                run(NonCancellable) {
+                withContext(NonCancellable) {
                     this?.close()
                 }
             }
@@ -344,6 +348,37 @@ class RouterBlock(private val router: Router,
 
     override fun toString(): String = router.toString()
 
+}
+
+@HttpServerMarker
+class WebSocketBlock(server: SimpleHTTPServer,
+                     router: Router,
+                     private val path: String) : AbstractWebSocketBuilder() {
+
+    var onConnect: ((WebSocketConnection) -> Unit)? = null
+
+    init {
+        server.registerWebSocket(path, object : WebSocketHandler {
+            override fun onConnect(connection: WebSocketConnection) {
+                this@WebSocketBlock.onConnect?.invoke(connection)
+            }
+
+            override fun onFrame(frame: Frame, connection: WebSocketConnection) {
+                this@WebSocketBlock.onFrame(frame, connection)
+            }
+
+            override fun onError(t: Throwable, connection: WebSocketConnection) {
+                this@WebSocketBlock.onError(t, connection)
+            }
+        })
+        router.path(path).handler { }
+    }
+
+    fun onConnect(onConnect: (WebSocketConnection) -> Unit) {
+        this.onConnect = onConnect
+    }
+
+    override fun toString(): String = "WebSocket(path='$path')"
 }
 
 interface HttpServerLifecycle {
@@ -442,6 +477,12 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
      */
     inline fun router(id: Int, block: RouterBlock.() -> Unit) {
         val r = RouterBlock(routerManager.register(id), requestCtx, coroutineDispatcher)
+        block.invoke(r)
+        sysLogger.info("register $r")
+    }
+
+    inline fun webSocket(path: String, block: WebSocketBlock.() -> Unit) {
+        val r = WebSocketBlock(server, routerManager.register(), path)
         block.invoke(r)
         sysLogger.info("register $r")
     }

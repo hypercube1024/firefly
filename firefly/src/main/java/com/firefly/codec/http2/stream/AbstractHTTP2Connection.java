@@ -1,19 +1,14 @@
 package com.firefly.codec.http2.stream;
 
+import com.firefly.codec.common.ConnectionType;
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.net.SecureSession;
 import com.firefly.net.Session;
-import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.concurrent.Schedulers;
-
-;
 
 abstract public class AbstractHTTP2Connection extends AbstractHTTPConnection {
-
-    public static final Scheduler scheduler = Schedulers.createScheduler();
 
     protected final HTTP2Session http2Session;
     protected final Parser parser;

@@ -4,7 +4,6 @@ import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.codec.http2.stream.HTTPTunnelConnection;
 import com.firefly.net.tcp.SimpleTcpClient;
 import com.firefly.net.tcp.TcpConnection;
 import com.firefly.server.http2.SimpleHTTPServer;
@@ -34,8 +33,8 @@ public class ProxyDemo {
                 p.thenAccept(tcpConn -> {
                     serverConnection.upgradeHTTPTunnel().thenAccept(tunnel -> {
                         tcpConn.receive(dstBuf -> tunnel.write(dstBuf, Callback.NOOP))
-                               .exception(e -> $.io.close(tcpConn))
-                               .close(() -> request.remove("tunnelSuccess"));
+                               .onException(e -> $.io.close(tcpConn))
+                               .onClose(() -> request.remove("tunnelSuccess"));
                         tunnel.receive(tcpConn::write);
                     });
                     $.io.close(response);

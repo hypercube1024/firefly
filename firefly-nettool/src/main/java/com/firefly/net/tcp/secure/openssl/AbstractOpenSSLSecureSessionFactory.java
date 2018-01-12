@@ -69,10 +69,12 @@ abstract public class AbstractOpenSSLSecureSessionFactory implements SecureSessi
         }
     }
 
+    @Override
     public List<String> getSupportedProtocols() {
         return supportedProtocols;
     }
 
+    @Override
     public void setSupportedProtocols(List<String> supportedProtocols) {
         this.supportedProtocols = supportedProtocols;
     }

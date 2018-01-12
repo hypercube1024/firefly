@@ -2,17 +2,13 @@ package com.firefly.net.tcp.aio;
 
 import com.codahale.metrics.ScheduledReporter;
 import com.firefly.net.Config;
-import com.firefly.net.EventManager;
-import com.firefly.net.event.DefaultEventManager;
+import com.firefly.net.event.DefaultNetEvent;
 import com.firefly.net.exception.NetException;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.time.Millisecond100Clock;
-import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -54,8 +50,7 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
                     }, null, true);
             group = AsynchronousChannelGroup.withThreadPool(netExecutorService);
             log.info(config.toString());
-            EventManager eventManager = new DefaultEventManager(config);
-            worker = new AsynchronousTcpWorker(config, eventManager);
+            worker = new AsynchronousTcpWorker(config, new DefaultNetEvent(config));
             if (config.isMonitorEnable()) {
                 reporter = config.getMetricReporterFactory().getScheduledReporter();
                 try {
@@ -85,12 +80,5 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
                 log.error("stop metric reporter exception -> {}", e.getMessage());
             }
         }
-        ILoggerFactory iLoggerFactory = LoggerFactory.getILoggerFactory();
-        try {
-            iLoggerFactory.getClass().getDeclaredMethod("stop").invoke(iLoggerFactory);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            System.out.println(e.getMessage());
-        }
-        Millisecond100Clock.stop();
     }
 }

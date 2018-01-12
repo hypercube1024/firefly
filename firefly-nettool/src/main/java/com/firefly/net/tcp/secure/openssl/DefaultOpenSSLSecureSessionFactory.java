@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class DefaultOpenSSLSecureSessionFactory extends AbstractOpenSSLSecureSessionFactory {
 
-    private static final String privateKey = "-----BEGIN PRIVATE KEY-----\r\n" +
+    private static final byte[] privateKey = ("-----BEGIN PRIVATE KEY-----\r\n" +
             "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDnP/lbvPGx7uRS\r\n" +
             "3AaHeVyyl68qb48AKQ4EN40FrE6Y6iBlKATVMp5dS17B6+WC+05ICdFMxcW2LFgA\r\n" +
             "z7WznBvGxr0/Tv7ngbjP2z90Pv/Xkwo6klnpY07zp297pm9pTJvysK2L3CVwlc4C\r\n" +
@@ -40,9 +40,9 @@ public class DefaultOpenSSLSecureSessionFactory extends AbstractOpenSSLSecureSes
             "QThsNe6FC3kKotcsMM0cZwDmJLJZbn5I//bXN7MM82xnGvcds8xBWWE1NGkjlFFE\r\n" +
             "SMHInhXT4ousxaWxz5I8x6MuG5x2gLcuuV3/oEnBjJN7OEPGQUJwfB32vT0Ary2d\r\n" +
             "RSfzyjsQnjRgT0rAskXvpA8=\r\n" +
-            "-----END PRIVATE KEY-----";
+            "-----END PRIVATE KEY-----").getBytes(StandardCharsets.US_ASCII);
 
-    private static final String cert = "-----BEGIN CERTIFICATE-----\r\n" +
+    private static final byte[] cert = ("-----BEGIN CERTIFICATE-----\r\n" +
             "MIIDsjCCApoCCQC1VNfRtuYWMTANBgkqhkiG9w0BAQsFADCBmTELMAkGA1UEBhMC\r\n" +
             "Q04xDjAMBgNVBAgMBUh1YmVpMQ4wDAYDVQQHDAVXdWhhbjEWMBQGA1UECgwNZmly\r\n" +
             "ZWZseXNvdXJjZTEUMBIGA1UECwwLZGV2ZWxvcG1lbnQxHjAcBgNVBAMMFXd3dy5m\r\n" +
@@ -63,15 +63,13 @@ public class DefaultOpenSSLSecureSessionFactory extends AbstractOpenSSLSecureSes
             "sbgAt1y1y47y7+NWJToNShYPCl6nVVz7AISQ32bW1Ph5u11c0dUEVb5qlxqCw1Ai\r\n" +
             "tkrGzhmDyHglAPspUeF2WXcXRi6i23nF0NictSv3PrRdDa7X7K/UBtIgoUaSrssf\r\n" +
             "U8x8YQXwX+Q8SfGpcmeh2LfC2iwYxV/NPr5stNAxrnpivrsBB88=\r\n" +
-            "-----END CERTIFICATE-----";
+            "-----END CERTIFICATE-----").getBytes(StandardCharsets.US_ASCII);
 
     @Override
     public SslContext createSSLContext(boolean clientMode) {
         SslContextBuilder sslContextBuilder = clientMode
                 ? SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE)
-                : SslContextBuilder.forServer(
-                new ByteArrayInputStream(cert.getBytes(StandardCharsets.US_ASCII)),
-                new ByteArrayInputStream(privateKey.getBytes(StandardCharsets.US_ASCII)));
+                : SslContextBuilder.forServer(new ByteArrayInputStream(cert), new ByteArrayInputStream(privateKey));
 
         try {
             return sslContextBuilder.ciphers(SecurityUtils.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)

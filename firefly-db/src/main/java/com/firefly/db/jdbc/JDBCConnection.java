@@ -2,8 +2,8 @@ package com.firefly.db.jdbc;
 
 import com.firefly.db.*;
 import com.firefly.db.jdbc.helper.JDBCHelper;
-import com.firefly.db.jdbc.helper.namedparam.ParsedSql;
-import com.firefly.db.jdbc.helper.namedparam.PreparedSqlAndValues;
+import com.firefly.db.namedparam.ParsedSql;
+import com.firefly.db.namedparam.PreparedSqlAndValues;
 import com.firefly.utils.BeanUtils;
 import com.firefly.utils.collection.ConcurrentLinkedHashMap;
 import com.firefly.utils.concurrent.Promise.Completable;
@@ -18,8 +18,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.firefly.db.jdbc.helper.namedparam.NamedParameterParser.parseSqlStatement;
-import static com.firefly.db.jdbc.helper.namedparam.NamedParameterParser.replaceParsedSql;
+import static com.firefly.db.namedparam.NamedParameterParser.parseSqlStatement;
+import static com.firefly.db.namedparam.NamedParameterParser.replaceParsedSql;
 
 /**
  * @author Pengtao Qiu

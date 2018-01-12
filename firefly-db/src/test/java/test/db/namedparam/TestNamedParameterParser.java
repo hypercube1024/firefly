@@ -1,8 +1,8 @@
 package test.db.namedparam;
 
-import com.firefly.db.jdbc.helper.namedparam.NamedParameterParser;
-import com.firefly.db.jdbc.helper.namedparam.ParsedSql;
-import com.firefly.db.jdbc.helper.namedparam.PreparedSqlAndValues;
+import com.firefly.db.namedparam.NamedParameterParser;
+import com.firefly.db.namedparam.ParsedSql;
+import com.firefly.db.namedparam.PreparedSqlAndValues;
 import org.junit.Assert;
 import org.junit.Test;
 

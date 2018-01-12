@@ -113,7 +113,7 @@ public class MultiException extends Exception
     /** Throw a Runtime exception.
      * If this multi exception is empty then no action is taken. If it
      * contains a single error or runtime exception that is thrown, otherwise the this
-     * multi exception is thrown, wrapped in a runtime exception. 
+     * multi exception is thrown, wrapped in a runtime onException.
      * @exception Error If this exception contains exactly 1 {@link Error} 
      * @exception RuntimeException If this exception contains 1 {@link Throwable} but it is not an error,
      *                             or it contains more than 1 {@link Throwable} of any type.

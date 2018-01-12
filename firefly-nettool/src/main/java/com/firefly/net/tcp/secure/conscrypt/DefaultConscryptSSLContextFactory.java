@@ -1,13 +1,11 @@
 package com.firefly.net.tcp.secure.conscrypt;
 
-import com.firefly.net.tcp.secure.jdk.AbstractJdkSSLContextFactory;
-
 import javax.net.ssl.SSLContext;
 
 /**
  * @author Pengtao Qiu
  */
-public class DefaultConscryptSSLContextFactory extends AbstractJdkSSLContextFactory {
+public class DefaultConscryptSSLContextFactory extends AbstractConscryptSSLContextFactory {
     @Override
     public SSLContext getSSLContext() {
         try {

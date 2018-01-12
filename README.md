@@ -12,6 +12,7 @@ It taps into the fullest potential of hardware using ***SEDA*** architecture, a 
 Firefly core provides functionality for things like:
 - Writing TCP clients and servers
 - Writing HTTP clients and servers
+- Writing WebSocket clients and servers
 - Writing web application with MVC framework and template engine
 - Database access
 
@@ -48,13 +49,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>4.6.5</version>
+    <version>4.7.0</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>4.6.5</version>
+    <version>4.7.0</version>
 </dependency>
 ```
 
@@ -99,6 +100,23 @@ public class HelloHTTPClient {
 }
 ```
 
+Create WebSocket server and client (Java version)
+```java
+public static void main(String[] args) {
+    SimpleWebSocketServer server = $.createWebSocketServer();
+    server.webSocket("/helloWebSocket")
+          .onConnect(conn -> conn.sendText("OK."))
+          .onText((text, conn) -> System.out.println("The server received: " + text))
+          .listen("localhost", 8080);
+
+    SimpleWebSocketClient client = $.createWebSocketClient();
+    client.webSocket("ws://localhost:8080/helloWebSocket")
+          .onText((text, conn) -> System.out.println("The client received: " + text))
+          .connect()
+          .thenAccept(conn -> conn.sendText("Hello server."));
+}
+```
+
 Firefly also supports to create HTTP server/client using Kotlin DSL.  
 
 Add maven dependency in your pom.xml
@@ -106,7 +124,7 @@ Add maven dependency in your pom.xml
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-kotlin-ext</artifactId>
-    <version>4.6.5</version>
+    <version>4.7.0</version>
 </dependency>
 ```
 
@@ -134,8 +152,26 @@ fun main(args: Array<String>) = runBlocking {
 }
 ```
 
+Create WebSocket server and client (Kotlin version)
+```kotlin
+fun main(args: Array<String>) {
+    val server = firefly.createWebSocketServer()
+    server.webSocket("/helloWebSocket")
+          .onConnect { conn -> conn.sendText("OK.") }
+          .onText { text, conn -> println("The server received: " + text) }
+          .listen("localhost", 8080)
+
+    val client = firefly.createWebSocketClient()
+    client.webSocket("ws://localhost:8080/helloWebSocket")
+          .onText { text, conn -> println("The client received: " + text) }
+          .connect()
+          .thenAccept { conn -> conn.sendText("Hello server.") }
+}
+```
+
 More detailed information, please refer to the 
 * [HTTP server/client document](http://www.fireflysource.com/docs/http-server-and-client.html)
+* [WebSocket server/client document](http://www.fireflysource.com/docs/websocket-server-and-client.html)
 * [TCP server/client document](http://www.fireflysource.com/docs/tcp-server-and-client.html)
 * [SSL/TLS configuration document](http://www.fireflysource.com/docs/ssl-tls-configuration.html)
 * [Inversion of control document](http://www.fireflysource.com/docs/ioc-framework.html)
