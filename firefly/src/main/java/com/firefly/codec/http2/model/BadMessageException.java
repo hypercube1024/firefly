@@ -8,39 +8,43 @@ package com.firefly.codec.http2.model;
  * </p>
  */
 public class BadMessageException extends RuntimeException {
-	private static final long serialVersionUID = -4907256166019479626L;
-	public final int _code;
-	public final String _reason;
+    private static final long serialVersionUID = -4907256166019479626L;
+    public final int _code;
+    public final String _reason;
 
-	public BadMessageException() {
-		this(400, null);
-	}
+    public BadMessageException() {
+        this(400, null);
+    }
 
-	public BadMessageException(int code) {
-		this(code, null);
-	}
+    public BadMessageException(int code) {
+        this(code, null);
+    }
 
-	public BadMessageException(String reason) {
-		this(400, reason);
-	}
+    public BadMessageException(String reason) {
+        this(400, reason);
+    }
 
-	public BadMessageException(int code, String reason) {
-		super(code + ": " + reason);
-		_code = code;
-		_reason = reason;
-	}
+    public BadMessageException(int code, String reason) {
+        super(code + ": " + reason);
+        _code = code;
+        _reason = reason;
+    }
 
-	public BadMessageException(int code, String reason, Throwable cause) {
-		super(code + ": " + reason, cause);
-		_code = code;
-		_reason = reason;
-	}
+    public BadMessageException(String reason, Throwable cause) {
+        this(400, reason, cause);
+    }
 
-	public int getCode() {
-		return _code;
-	}
+    public BadMessageException(int code, String reason, Throwable cause) {
+        super(code + ": " + reason, cause);
+        _code = code;
+        _reason = reason;
+    }
 
-	public String getReason() {
-		return _reason;
-	}
+    public int getCode() {
+        return _code;
+    }
+
+    public String getReason() {
+        return _reason;
+    }
 }

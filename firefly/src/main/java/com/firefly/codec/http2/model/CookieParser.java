@@ -9,7 +9,7 @@ import java.util.List;
 abstract public class CookieParser {
 
     public interface CookieParserCallback {
-        public void cookie(String name, String value);
+        void cookie(String name, String value);
     }
 
     public static void parseCookies(String cookieStr, CookieParserCallback callback) {
