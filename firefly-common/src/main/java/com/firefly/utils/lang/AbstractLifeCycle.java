@@ -19,6 +19,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
                         System.err.println(e.getMessage());
                     }
                 });
+                System.out.println("Shutdown instance: " + stopActions.size());
                 stopActions.clear();
             }, "the firefly shutdown thread"));
         } catch (Exception e) {
