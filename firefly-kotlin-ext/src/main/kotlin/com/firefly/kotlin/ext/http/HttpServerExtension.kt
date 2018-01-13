@@ -429,7 +429,7 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     val server = SimpleHTTPServer(serverConfiguration)
     val routerManager = RouterManager.create(httpBodyConfiguration)
-    val coroutineDispatcher = server.handlerExecutorService.asCoroutineDispatcher()
+    val coroutineDispatcher = Unconfined // server.handlerExecutorService.asCoroutineDispatcher()
     val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
     init {
