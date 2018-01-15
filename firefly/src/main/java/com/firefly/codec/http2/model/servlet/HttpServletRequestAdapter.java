@@ -44,6 +44,7 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
     protected String characterEncoding;
     protected ServletInputStream servletInputStream;
     protected ContextAttribute attribute = new LazyContextAttribute();
+    protected DispatcherType dispatcherType;
 
     public HttpServletRequestAdapter(RoutingContext context) {
         this.context = context;
@@ -164,7 +165,7 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getRequestedSessionId() {
-        return null;
+        return context.getRequestedSessionId();
     }
 
     @Override
@@ -187,37 +188,54 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public HttpSession getSession(boolean create) {
-        return null;
+        try {
+            return new HttpSessionAdapter(context.getSession(create).get());
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
     public HttpSession getSession() {
-        return null;
+        try {
+            return new HttpSessionAdapter(context.getSession().get());
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
     public String changeSessionId() {
-        return null;
+        try {
+            return context.getSession(true).get().getId();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
     public boolean isRequestedSessionIdValid() {
-        return false;
+        try {
+            return context.getSession(false).get().isInvalid();
+        } catch (Exception e) {
+            log.error("get session exception", e);
+            return false;
+        }
     }
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
-        return false;
+        return context.isRequestedSessionIdFromCookie();
     }
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
-        return false;
+        return context.isRequestedSessionIdFromURL();
     }
 
     @Override
     public boolean isRequestedSessionIdFromUrl() {
-        return false;
+        return context.isRequestedSessionIdFromURL();
     }
 
     @Override
@@ -513,7 +531,20 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
-        return null;
+        return new RequestDispatcher() {
+
+            @Override
+            public void forward(ServletRequest request, ServletResponse response) {
+                dispatcherType = DispatcherType.FORWARD;
+                context.renderTemplate(path, attribute.getAttributes());
+            }
+
+            @Override
+            public void include(ServletRequest request, ServletResponse response) {
+                dispatcherType = DispatcherType.INCLUDE;
+                context.renderTemplate(path, attribute.getAttributes());
+            }
+        };
     }
 
     @Override
@@ -580,12 +611,12 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public boolean isAsyncStarted() {
-        return false;
+        return context.getResponse().isAsynchronous();
     }
 
     @Override
     public boolean isAsyncSupported() {
-        return false;
+        return true;
     }
 
     @Override
@@ -595,6 +626,6 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public DispatcherType getDispatcherType() {
-        return null;
+        return dispatcherType;
     }
 }
