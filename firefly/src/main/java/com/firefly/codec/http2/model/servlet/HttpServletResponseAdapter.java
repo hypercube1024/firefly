@@ -5,9 +5,11 @@ import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.server.http2.router.RoutingContext;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Locale;
@@ -139,13 +141,33 @@ public class HttpServletResponseAdapter implements HttpServletResponse {
     }
 
     @Override
-    public ServletOutputStream getOutputStream() throws IOException {
-        return null;
+    public ServletOutputStream getOutputStream() {
+        OutputStream outputStream = context.getResponse().getOutputStream();
+        return new ServletOutputStream() {
+
+            @Override
+            public void write(int b) throws IOException {
+                outputStream.write(b);
+            }
+
+            public void write(byte[] b, int off, int len) throws IOException {
+                outputStream.write(b, off, len);
+            }
+
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+            @Override
+            public void setWriteListener(WriteListener writeListener) {
+            }
+        };
     }
 
     @Override
-    public PrintWriter getWriter() throws IOException {
-        return null;
+    public PrintWriter getWriter() {
+        return context.getResponse().getPrintWriter();
     }
 
     @Override
@@ -155,12 +177,12 @@ public class HttpServletResponseAdapter implements HttpServletResponse {
 
     @Override
     public void setContentLength(int len) {
-
+        context.getResponse().getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(len));
     }
 
     @Override
     public void setContentLengthLong(long len) {
-
+        context.getResponse().getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(len));
     }
 
     @Override
@@ -190,7 +212,7 @@ public class HttpServletResponseAdapter implements HttpServletResponse {
 
     @Override
     public boolean isCommitted() {
-        return false;
+        return context.getResponse().isCommitted();
     }
 
     @Override
