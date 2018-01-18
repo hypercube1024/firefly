@@ -63,7 +63,7 @@ public class TestReactiveHTTPClient {
 
     public static void main(String[] args) {
         ReactiveHTTPClient c = Reactor.http.httpsClient();
-        c.get("https://www.taobao.com")
+        c.get("https://www.taobao.com").put("test", "hello")
          .toMono()
          .map(SimpleResponse::getStringBody)
          .subscribe(System.out::println);
