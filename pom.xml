@@ -47,6 +47,7 @@
         <module>firefly-example</module>
         <module>firefly-kotlin-ext</module>
         <module>firefly-reactive</module>
+        <module>firefly-session</module>
     </modules>
 
     <dependencyManagement>
@@ -85,6 +86,11 @@
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-reactive</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-session</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -159,6 +165,11 @@
                 <groupId>commons-dbutils</groupId>
                 <artifactId>commons-dbutils</artifactId>
                 <version>1.7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson</artifactId>
+                <version>3.5.7</version>
             </dependency>
 
             <!-- kotlin lib -->
@@ -252,6 +263,11 @@
                 <version>1.6.0</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>de.ruedigermoeller</groupId>
+                <artifactId>fst</artifactId>
+                <version>2.57</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
