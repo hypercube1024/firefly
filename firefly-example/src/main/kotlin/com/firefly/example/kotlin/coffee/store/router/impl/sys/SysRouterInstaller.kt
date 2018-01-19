@@ -41,7 +41,7 @@ class SysRouterInstaller : RouterInstaller {
         router {
             httpMethod = HttpMethod.GET
             paths = staticResourceHandler.staticResources
-            handler(staticResourceHandler)
+            asyncHandler(staticResourceHandler)
         }
 
         // global handler
