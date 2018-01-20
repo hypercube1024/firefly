@@ -170,6 +170,10 @@
             <groupId>com.fireflysource</groupId>
             <artifactId>firefly-slf4j</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fireflysource</groupId>
+            <artifactId>firefly-session</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.zaxxer</groupId>

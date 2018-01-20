@@ -43,10 +43,20 @@ public class HTTPSession implements Serializable {
         this.lastAccessedTime = lastAccessedTime;
     }
 
+    /**
+     * Get the max inactive interval. The time unit is second.
+     *
+     * @return The max inactive interval.
+     */
     public int getMaxInactiveInterval() {
         return maxInactiveInterval;
     }
 
+    /**
+     * Set the max inactive interval. The time unit is second.
+     *
+     * @param maxInactiveInterval The max inactive interval.
+     */
     public void setMaxInactiveInterval(int maxInactiveInterval) {
         this.maxInactiveInterval = maxInactiveInterval;
     }
