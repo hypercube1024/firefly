@@ -10,6 +10,8 @@ import com.firefly.utils.time.Millisecond100Clock;
 import org.redisson.api.RMapCacheReactive;
 import org.redisson.api.RedissonReactiveClient;
 import org.redisson.codec.FstCodec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
@@ -21,6 +23,8 @@ import static com.firefly.reactive.adapter.common.ReactiveUtils.toFuture;
  * @author Pengtao Qiu
  */
 public class RedisSessionStore extends AbstractLifeCycle implements SessionStore {
+
+    private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     private RedissonReactiveClient client;
     private String keyPrefix;
@@ -79,9 +83,17 @@ public class RedisSessionStore extends AbstractLifeCycle implements SessionStore
                 future.completeExceptionally(new SessionNotFound());
             } else {
                 session.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
-                session.setNewSession(false);
-                map.fastPut(session.getId(), session);
-                future.complete(session);
+                if (session.isNewSession()) {
+                    session.setNewSession(false);
+                    Mono.from(map.fastPut(session.getId(), session))
+                        .subscribe(success -> {
+                            log.debug("Get the new session success. {}", session.getId());
+                            future.complete(session);
+                        }, future::completeExceptionally);
+                } else {
+                    map.fastPut(session.getId(), session);
+                    future.complete(session);
+                }
             }
             return future;
         });
