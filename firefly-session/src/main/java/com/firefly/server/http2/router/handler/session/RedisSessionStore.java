@@ -67,6 +67,7 @@ public class RedisSessionStore extends AbstractLifeCycle implements SessionStore
 
     @Override
     public CompletableFuture<Boolean> put(String key, HTTPSession value) {
+        value.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
         return toFuture(map.fastPut(key, value, ttl, TimeUnit.SECONDS, value.getMaxInactiveInterval(), TimeUnit.SECONDS));
     }
 
@@ -77,15 +78,10 @@ public class RedisSessionStore extends AbstractLifeCycle implements SessionStore
             if (session == null) {
                 future.completeExceptionally(new SessionNotFound());
             } else {
-                if (session.isInvalid()) {
-                    map.fastRemove(session.getId());
-                    future.completeExceptionally(new SessionInvalidException("the session is expired"));
-                } else {
-                    session.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
-                    session.setNewSession(false);
-                    map.fastPut(session.getId(), session);
-                    future.complete(session);
-                }
+                session.setLastAccessedTime(Millisecond100Clock.currentTimeMillis());
+                session.setNewSession(false);
+                map.fastPut(session.getId(), session);
+                future.complete(session);
             }
             return future;
         });
