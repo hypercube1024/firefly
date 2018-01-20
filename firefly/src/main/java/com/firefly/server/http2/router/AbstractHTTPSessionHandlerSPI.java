@@ -15,7 +15,7 @@ abstract public class AbstractHTTPSessionHandlerSPI implements HTTPSessionHandle
     protected final RoutingContext routingContext;
 
     protected String sessionIdParameterName = "jsessionid";
-    protected int defaultMaxInactiveInterval = 10 * 60; //second
+    protected int defaultMaxInactiveInterval = 5 * 60; //second
 
     protected boolean requestedSessionIdFromURL;
     protected boolean requestedSessionIdFromCookie;
