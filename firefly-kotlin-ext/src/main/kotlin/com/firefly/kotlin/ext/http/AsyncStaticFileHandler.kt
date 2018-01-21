@@ -35,7 +35,6 @@ class AsyncStaticFileHandler(val rootPath: String,
             val contentLength = file.length()
             val ranges = InclusiveByteRange.satisfiableRanges(reqRanges, contentLength)
 
-
             when {
                 CollectionUtils.isEmpty(reqRanges) -> { // no range
                     ctx.setStatus(HttpStatus.OK_200)
@@ -52,7 +51,6 @@ class AsyncStaticFileHandler(val rootPath: String,
                     AsynchronousFileChannel.open(fullPath).use {
                         var totalBytesRead = 0L
                         while (totalBytesRead < contentLength) {
-
                             val buf = ByteBuffer.allocate(bufSize)
                             while (buf.hasRemaining() && totalBytesRead < contentLength) {
                                 totalBytesRead += it.aRead(buf, totalBytesRead)
