@@ -23,8 +23,8 @@ class SysRouterInstaller : RouterInstaller {
     @Inject
     private lateinit var localHTTPSessionHandler: LocalHTTPSessionHandler
 
-    @Inject
-    private lateinit var redisHTTPSessionHandler: RedisSessionHandler
+//    @Inject
+//    private lateinit var redisHTTPSessionHandler: RedisSessionHandler
 
     @Inject
     private lateinit var staticResourceHandler: StaticResourceHandler
@@ -56,7 +56,7 @@ class SysRouterInstaller : RouterInstaller {
         // session handler
         router {
             path = "*"
-            asyncHandler { redisHTTPSessionHandler.handle(this) }
+            asyncHandler { localHTTPSessionHandler.handle(this) }
         }
 
         // login handler

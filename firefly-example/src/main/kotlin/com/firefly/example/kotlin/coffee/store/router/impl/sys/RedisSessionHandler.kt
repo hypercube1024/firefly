@@ -10,7 +10,7 @@ import org.redisson.Redisson
 /**
  * @author Pengtao Qiu
  */
-@Component("redisSessionHandler")
+//@Component("redisSessionHandler")
 class RedisSessionHandler : Handler {
 
     private val handler: RedisHTTPSessionHandler
