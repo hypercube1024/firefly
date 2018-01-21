@@ -109,7 +109,7 @@ public class RedisSessionStore extends AbstractLifeCycle implements SessionStore
         Assert.notNull(client);
         Assert.hasText(keyPrefix);
         Assert.hasText(sessionKey);
-        map = client.getMapCache(keyPrefix + sessionKey, new FstCodec());
+        map = client.getMapCache(keyPrefix + ":" + sessionKey, new FstCodec());
     }
 
     @Override
