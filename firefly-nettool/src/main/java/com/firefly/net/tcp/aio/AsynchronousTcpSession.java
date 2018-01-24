@@ -117,9 +117,9 @@ public class AsynchronousTcpSession implements Session {
         @Override
         public void failed(Throwable t, AsynchronousTcpSession session) {
             if (t instanceof InterruptedByTimeoutException) {
-                log.info("The session {} idle {}ms timeout. It will close.", getSessionId(), getIdleTimeout());
+                log.info("Read data failure. The session {} idle {}ms timeout. It will close.", getSessionId(), getIdleTimeout());
             } else {
-                log.warn("The session {} reading data failed. It will force to close.", t, session.getSessionId());
+                log.warn("The session {} reads data failure. It will force to close.", t, session.getSessionId());
             }
             closeNow();
         }
@@ -247,9 +247,9 @@ public class AsynchronousTcpSession implements Session {
 
         private void writingFailedCallback(Callback callback, Throwable t) {
             if (t instanceof InterruptedByTimeoutException) {
-                log.info("The session {} idle {}ms timeout. It will close.", getSessionId(), getIdleTimeout());
+                log.info("Write data failure. The session {} idle {}ms timeout. It will close.", getSessionId(), getIdleTimeout());
             } else {
-                log.warn("The session {} writing data failed. It will close.", t, getSessionId());
+                log.warn("The session {} writes data failure. It will close.", t, getSessionId());
             }
             _writingFailedCallback(callback, t);
         }
