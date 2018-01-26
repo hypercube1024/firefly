@@ -10,18 +10,21 @@ import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler
 import com.firefly.utils.CollectionUtils
 import com.firefly.utils.StringUtils
 import com.firefly.utils.io.BufferUtils
+import com.firefly.utils.io.IO
 import com.firefly.utils.lang.URIUtils
 import kotlinx.coroutines.experimental.nio.aRead
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.file.Paths
 import java.util.*
+import java.util.zip.GZIPOutputStream
 
 /**
  * @author Pengtao Qiu
  */
 class AsyncStaticFileHandler(val rootPath: String,
-                             val maxBufferSize: Int = 4 * 1024) : AsyncHandler {
+                             val maxBufferSize: Int = 4 * 1024,
+                             val enableGzip: Boolean = false) : AsyncHandler {
 
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
@@ -38,7 +41,11 @@ class AsyncStaticFileHandler(val rootPath: String,
             when {
                 CollectionUtils.isEmpty(reqRanges) -> { // no range
                     ctx.setStatus(HttpStatus.OK_200)
-                    ctx.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
+                    if (enableGzip) {
+                        ctx.put(HttpHeader.CONTENT_ENCODING, "gzip")
+                    } else {
+                        ctx.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
+                    }
                     Optional.ofNullable(MimeTypes.getDefaultMimeByExtension(file.name))
                             .filter(StringUtils::hasText)
                             .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
@@ -48,16 +55,22 @@ class AsyncStaticFileHandler(val rootPath: String,
                         else -> contentLength.toInt()
                     }
 
-                    AsynchronousFileChannel.open(fullPath).use {
-                        var totalBytesRead = 0L
-                        while (totalBytesRead < contentLength) {
-                            val buf = ByteBuffer.allocate(bufSize)
-                            while (buf.hasRemaining() && totalBytesRead < contentLength) {
-                                totalBytesRead += it.aRead(buf, totalBytesRead)
-                            }
+                    val outputStream = if (enableGzip) {
+                        GZIPOutputStream(ctx.response.outputStream)
+                    } else ctx.response.outputStream
 
-                            buf.flip()
-                            ctx.write(BufferUtils.toArray(buf))
+                    outputStream.use { output ->
+                        AsynchronousFileChannel.open(fullPath).use { channel ->
+                            var totalBytesRead = 0L
+                            while (totalBytesRead < contentLength) {
+                                val buf = ByteBuffer.allocate(bufSize)
+                                while (buf.hasRemaining() && totalBytesRead < contentLength) {
+                                    totalBytesRead += channel.aRead(buf, totalBytesRead)
+                                }
+
+                                buf.flip()
+                                output.write(BufferUtils.toArray(buf))
+                            }
                         }
                     }
                 }
@@ -99,10 +112,10 @@ class AsyncStaticFileHandler(val rootPath: String,
                             buf = ByteBuffer.allocate(Math.min(maxBufferSize.toLong(), singleLength - totalBytesRead).toInt())
                         }
                     }
+                    ctx.end()
                 }
                 else -> errorHandler.render(ctx, HttpStatus.RANGE_NOT_SATISFIABLE_416, null)
             }
-            ctx.end()
         } else {
             errorHandler.render(ctx, HttpStatus.NOT_FOUND_404, null)
         }

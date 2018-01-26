@@ -24,7 +24,7 @@ class StaticResourceHandler : AsyncHandler {
         private fun createStaticFileHandler(): AsyncStaticFileHandler {
             try {
                 val path = Paths.get(SysRouterInstaller::class.java.getResource("/").toURI())
-                return AsyncStaticFileHandler(path.toAbsolutePath().toString())
+                return AsyncStaticFileHandler(path.toAbsolutePath().toString(), 4096, true)
             } catch (e: Exception) {
                 throw CommonRuntimeException(e)
             }
