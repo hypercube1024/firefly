@@ -6,7 +6,6 @@ import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.example.kotlin.coffee.store.ProjectConfig
 import com.firefly.example.kotlin.coffee.store.router.RouterInstaller
 import com.firefly.example.kotlin.coffee.store.service.OrderService
-import com.firefly.example.kotlin.coffee.store.service.ProductService
 import com.firefly.example.kotlin.coffee.store.vo.ProductBuyRequest
 import com.firefly.example.kotlin.coffee.store.vo.Response
 import com.firefly.example.kotlin.coffee.store.vo.ResponseStatus
@@ -27,9 +26,6 @@ class ProductRouter : RouterInstaller {
 
     @Inject
     private lateinit var server: HttpServer
-
-    @Inject
-    private lateinit var productService: ProductService
 
     @Inject
     private lateinit var orderService: OrderService
