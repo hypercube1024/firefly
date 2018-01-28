@@ -22,7 +22,7 @@ class TransactionalHandler : AsyncHandler {
     @Inject
     private lateinit var db: AsyncTransactionalManager
 
-    suspend override fun handle(ctx: RoutingContext) {
+    override suspend fun handle(ctx: RoutingContext) {
         log.info("begin transaction -> ${ctx.uri}")
         db.beginTransaction()
         ctx.asyncNext<Unit>(succeeded = {

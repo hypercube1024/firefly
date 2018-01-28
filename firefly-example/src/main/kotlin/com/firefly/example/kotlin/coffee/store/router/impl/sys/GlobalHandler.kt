@@ -18,7 +18,7 @@ class GlobalHandler : AsyncHandler {
 
     private val log = KtLogger.getLogger { }
 
-    suspend override fun handle(ctx: RoutingContext) {
+    override suspend fun handle(ctx: RoutingContext) {
         log.info("request start -> ${ctx.uri}")
         ctx.asyncNext<Unit>(succeeded = {
             log.info("request end -> ${ctx.uri}")

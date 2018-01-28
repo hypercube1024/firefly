@@ -8,20 +8,22 @@ import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.example.kotlin.coffee.store.ProjectConfig
 import com.firefly.example.kotlin.coffee.store.router.RouterInstaller
-import com.firefly.example.kotlin.coffee.store.service.OrderService
 import com.firefly.example.kotlin.coffee.store.service.ProductService
-import com.firefly.example.kotlin.coffee.store.vo.*
+import com.firefly.example.kotlin.coffee.store.vo.MainPage
+import com.firefly.example.kotlin.coffee.store.vo.ProductQuery
+import com.firefly.example.kotlin.coffee.store.vo.ProductStatus
+import com.firefly.example.kotlin.coffee.store.vo.UserInfo
 import com.firefly.kotlin.ext.http.HttpServer
-import com.firefly.kotlin.ext.http.getAttr
-import com.firefly.kotlin.ext.http.getJsonBody
 import com.firefly.kotlin.ext.http.header
 import com.firefly.server.http2.router.RoutingContext
+import com.firefly.server.http2.router.SessionNotFound
+import kotlinx.coroutines.experimental.future.await
 
 /**
  * @author Pengtao Qiu
  */
-@Component("mainPageInstaller")
-class MainPageInstaller : RouterInstaller {
+@Component("mainPageRouter")
+class MainPageRouter : RouterInstaller {
 
     @Inject
     private lateinit var config: ProjectConfig
@@ -31,9 +33,6 @@ class MainPageInstaller : RouterInstaller {
 
     @Inject
     private lateinit var productService: ProductService
-
-    @Inject
-    private lateinit var orderService: OrderService
 
     override fun install() = server.addRouters {
         router {
@@ -51,25 +50,26 @@ class MainPageInstaller : RouterInstaller {
                 header {
                     HttpHeader.CONTENT_TYPE to MimeTypes.Type.TEXT_HTML.asString()
                 }
+
+                val userInfo: UserInfo? = try {
+                    val session = getSession(false).await()
+                    val u = session.attributes[config.loginUserKey]
+                    if (u != null) {
+                        setAttribute(config.loginUserKey, u)
+                        u as UserInfo
+                    } else {
+                        null
+                    }
+                } catch (e: SessionNotFound) {
+                    null
+                }
+
                 val query = toProductQuery(this)
                 val page = productService.list(query)
-                val userInfo = getAttr<UserInfo>(config.loginUserKey)
                 val mainPage = MainPage(userInfo, page, query.type, query.searchKey)
                 renderTemplate("${config.templateRoot}/index.mustache", mainPage)
             }
         }
-
-        router {
-            httpMethod = HttpMethod.POST
-            path = "/product/buy"
-
-            asyncCompleteHandler {
-                val request = toProductBuyRequest(this)
-                orderService.buy(request)
-                writeJson(Response(ResponseStatus.OK.value, ResponseStatus.OK.description, true))
-            }
-        }
-
     }
 
     private fun toProductQuery(ctx: RoutingContext): ProductQuery = ProductQuery(
@@ -77,14 +77,6 @@ class MainPageInstaller : RouterInstaller {
             ProductStatus.ENABLE.value,
             ctx.getParamOpt("type").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(0),
             ctx.getParamOpt("pageNumber").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(1),
-            ctx.getParamOpt("pageSize").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(5)
-    )
-
-    private fun toProductBuyRequest(ctx: RoutingContext): ProductBuyRequest {
-        val userInfo = ctx.getAttr<UserInfo>(config.loginUserKey) ?: throw IllegalStateException("The user does not login")
-        val request = ctx.getJsonBody<ProductBuyRequest>()
-        request.userId = userInfo.id
-        return request
-    }
+            ctx.getParamOpt("pageSize").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(5))
 
 }

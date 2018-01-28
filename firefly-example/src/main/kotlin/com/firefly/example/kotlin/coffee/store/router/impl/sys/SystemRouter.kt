@@ -11,8 +11,8 @@ import com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler
 /**
  * @author Pengtao Qiu
  */
-@Component("sysRouterInstaller")
-class SysRouterInstaller : RouterInstaller {
+@Component("sysRouter")
+class SystemRouter : RouterInstaller {
 
     @Inject
     private lateinit var server: HttpServer
@@ -30,7 +30,7 @@ class SysRouterInstaller : RouterInstaller {
     private lateinit var staticResourceHandler: StaticResourceHandler
 
     @Inject
-    private lateinit var loginHandler: LoginHandler
+    private lateinit var authenticationHandler: AuthenticationHandler
 
     @Inject
     private lateinit var transactionalHandler: TransactionalHandler
@@ -47,22 +47,22 @@ class SysRouterInstaller : RouterInstaller {
             asyncHandler(staticResourceHandler)
         }
 
-        // global handler
-        router {
-            path = "*"
-            asyncHandler(globalHandler)
-        }
-
         // session handler
         router {
             path = "*"
             asyncHandler { localHTTPSessionHandler.handle(this) }
         }
 
-        // login handler
+        // global handler
         router {
             path = "*"
-            asyncHandler(loginHandler)
+            asyncHandler(globalHandler)
+        }
+
+        // authentication handler
+        router {
+            paths = listOf("/product/buy")
+            asyncHandler(authenticationHandler)
         }
 
         // transaction handler
