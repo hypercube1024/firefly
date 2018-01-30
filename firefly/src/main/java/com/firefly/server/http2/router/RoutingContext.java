@@ -296,6 +296,8 @@ public interface RoutingContext extends Closeable {
 
     CompletableFuture<HTTPSession> getSession(boolean create);
 
+    CompletableFuture<HTTPSession> getAndCreateSession(int maxAge);
+
     CompletableFuture<Integer> getSessionSize();
 
     CompletableFuture<Boolean> removeSession();

@@ -14,6 +14,8 @@ public interface HTTPSessionHandlerSPI {
 
     CompletableFuture<HTTPSession> getSession(boolean create);
 
+    CompletableFuture<HTTPSession> getAndCreateSession(int maxAge);
+
     CompletableFuture<Integer> getSessionSize();
 
     CompletableFuture<Boolean> removeSession();

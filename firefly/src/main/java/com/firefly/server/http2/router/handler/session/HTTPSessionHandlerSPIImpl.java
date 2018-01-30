@@ -38,6 +38,15 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
 
     @Override
     public CompletableFuture<HTTPSession> getSession(boolean create) {
+        return _getSession(create, -1);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge) {
+        return _getSession(true, maxAge);
+    }
+
+    private CompletableFuture<HTTPSession> _getSession(boolean create, int maxAge) {
         CompletableFuture<HTTPSession> ret = new CompletableFuture<>();
 
         HTTPSession currentSession = (HTTPSession) routingContext.getAttribute(contextSessionKey);
@@ -52,7 +61,7 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
                                       .map(Throwable::getCause)
                                       .filter(e -> e instanceof SessionNotFound || e instanceof SessionInvalidException)
                                       .isPresent()) {
-                    createSession(ret);
+                    createSession(ret, maxAge);
                 } else {
                     Optional.ofNullable(ex)
                             .map(Throwable::getCause)
@@ -105,10 +114,10 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         return requestedSessionId;
     }
 
-    protected void createSession(CompletableFuture<HTTPSession> ret) {
+    protected void createSession(CompletableFuture<HTTPSession> ret, int maxAge) {
         HTTPSession newSession = HTTPSession.create(requestedSessionId, defaultMaxInactiveInterval);
         sessionStore.put(newSession.getId(), newSession).thenAccept(r -> {
-            createCookie();
+            createCookie(maxAge);
             routingContext.setAttribute(contextSessionKey, newSession);
             ret.complete(newSession);
         }).exceptionally(ex -> {
@@ -117,7 +126,11 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         });
     }
 
-    private void createCookie() {
-        routingContext.addCookie(new Cookie(sessionIdParameterName, requestedSessionId));
+    private void createCookie(int maxAge) {
+        Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
+        if (maxAge > 0) {
+            cookie.setMaxAge(maxAge);
+        }
+        routingContext.addCookie(cookie);
     }
 }

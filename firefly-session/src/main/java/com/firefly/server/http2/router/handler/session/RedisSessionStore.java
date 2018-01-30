@@ -5,6 +5,7 @@ import com.firefly.server.http2.router.SessionInvalidException;
 import com.firefly.server.http2.router.SessionNotFound;
 import com.firefly.server.http2.router.SessionStore;
 import com.firefly.utils.Assert;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.time.Millisecond100Clock;
 import org.redisson.api.RMapCacheReactive;
@@ -77,6 +78,11 @@ public class RedisSessionStore extends AbstractLifeCycle implements SessionStore
 
     @Override
     public CompletableFuture<HTTPSession> get(String key) {
+        if (!StringUtils.hasText(key)) {
+            CompletableFuture<HTTPSession> ret = new CompletableFuture<>();
+            ret.completeExceptionally(new SessionNotFound());
+            return ret;
+        }
         return toFuture(map.get(key)).thenCompose(session -> {
             CompletableFuture<HTTPSession> future = new CompletableFuture<>();
             if (session == null) {
