@@ -8,24 +8,37 @@ import java.security.MessageDigest
 /**
  * @author Pengtao Qiu
  */
+
+
 fun main(args: Array<String>) {
     println(sortedSetOf("timestamp", "nonce", "token"))
+    val wechatToken = "xxxxddd"
     HttpServer {
         router {
             httpMethod = HttpMethod.GET
             path = "/"
 
             asyncHandler {
-                val echoStr = getParameter("echostr")
-                val token = "myTest123456"
-                val signature = getParameter("signature")
+                val echoStr = getParamOpt("echostr").orElse("")
+                val signature = getParamOpt("signature").orElse("")
+                val nonce = getParamOpt("nonce").orElse("")
+                val timestamp = getParamOpt("timestamp").orElse("")
 
+                if (echoStr != "" && signature != "" && nonce != "" && timestamp != "") {
+                    val paramArray = arrayOf(nonce, timestamp, wechatToken).sortedArray()
+                    val sign = StringBuilder()
+                    paramArray.forEach { sign.append(it) }
 
-                val sign = "${getParameter("nonce")}${getParameter("timestamp")}$token"
-
-                val hexSign = HexUtils.bytesToHex(MessageDigest.getInstance("SHA-1").digest(sign.toByteArray()))
-                println("$hexSign, $signature, $echoStr")
-                end(echoStr)
+                    val hexSign = HexUtils.bytesToHex(MessageDigest.getInstance("SHA-1").digest(sign.toString().toByteArray()))
+                    println("verify wechat token $sign | $hexSign | $signature")
+                    if (hexSign == signature) {
+                        end(echoStr)
+                    } else {
+                        end("Welcome to my website")
+                    }
+                } else {
+                    end("Welcome to baby my website")
+                }
             }
         }
 
