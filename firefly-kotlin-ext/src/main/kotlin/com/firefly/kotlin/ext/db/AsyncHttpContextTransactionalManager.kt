@@ -22,9 +22,11 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
             sysLogger.debug("get new db connection from pool")
             sqlClient.connection.await()
         } else {
-            val sqlConn = createConnectionIfEmpty().await()
+            var sqlConn = createConnectionIfEmpty().await()
             if (sqlConn.connection.isClosed) {
-                sqlClient.connection.await()
+                sqlConn = sqlClient.connection.await()
+                requestCtx.get()?.attributes?.put(transactionKey, sqlConn)
+                sqlConn
             } else {
                 sqlConn
             }
