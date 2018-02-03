@@ -50,6 +50,7 @@ public class JDBCConnection implements SQLConnection {
         return jdbcHelper;
     }
 
+    @Override
     public Connection getConnection() {
         return connection;
     }

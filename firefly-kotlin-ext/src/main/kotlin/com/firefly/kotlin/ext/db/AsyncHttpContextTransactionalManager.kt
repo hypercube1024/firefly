@@ -17,12 +17,17 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
 
     val transactionKey = "_currentKotlinTransaction"
 
-    suspend override fun getConnection(): SQLConnection {
+    override suspend fun getConnection(): SQLConnection {
         return if (requestCtx.get() == null) {
             sysLogger.debug("get new db connection from pool")
             sqlClient.connection.await()
         } else {
-            createConnectionIfEmpty().await()
+            val sqlConn = createConnectionIfEmpty().await()
+            if (sqlConn.connection.isClosed) {
+                sqlClient.connection.await()
+            } else {
+                sqlConn
+            }
         }
     }
 
