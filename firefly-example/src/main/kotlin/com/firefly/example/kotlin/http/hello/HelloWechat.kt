@@ -8,8 +8,6 @@ import java.security.MessageDigest
 /**
  * @author Pengtao Qiu
  */
-
-
 fun main(args: Array<String>) {
     println(sortedSetOf("timestamp", "nonce", "token"))
     val wechatToken = "xxxxddd"
@@ -37,7 +35,7 @@ fun main(args: Array<String>) {
                         end("Welcome to my website")
                     }
                 } else {
-                    end("Welcome to baby my website")
+                    end("Welcome to my website")
                 }
             }
         }
