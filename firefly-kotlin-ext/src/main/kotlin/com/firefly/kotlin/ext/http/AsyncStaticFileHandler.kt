@@ -10,12 +10,12 @@ import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler
 import com.firefly.utils.CollectionUtils
 import com.firefly.utils.StringUtils
 import com.firefly.utils.io.BufferUtils
-import com.firefly.utils.io.IO
 import com.firefly.utils.lang.URIUtils
 import kotlinx.coroutines.experimental.nio.aRead
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.zip.GZIPOutputStream
 
@@ -23,7 +23,7 @@ import java.util.zip.GZIPOutputStream
  * @author Pengtao Qiu
  */
 class AsyncStaticFileHandler(val rootPath: String,
-                             val maxBufferSize: Int = 4 * 1024,
+                             val maxBufferSize: Int = 8 * 1024,
                              val enableGzip: Boolean = false) : AsyncHandler {
 
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
@@ -60,7 +60,7 @@ class AsyncStaticFileHandler(val rootPath: String,
                     } else ctx.response.outputStream
 
                     outputStream.use { output ->
-                        AsynchronousFileChannel.open(fullPath).use { channel ->
+                        AsynchronousFileChannel.open(fullPath, StandardOpenOption.READ).use { channel ->
                             var totalBytesRead = 0L
                             while (totalBytesRead < contentLength) {
                                 val buf = ByteBuffer.allocate(bufSize)
