@@ -9,7 +9,6 @@ import java.security.MessageDigest
  * @author Pengtao Qiu
  */
 fun main(args: Array<String>) {
-    println(sortedSetOf("timestamp", "nonce", "token"))
     val wechatToken = "xxxxddd"
     HttpServer {
         router {
@@ -32,10 +31,10 @@ fun main(args: Array<String>) {
                     if (hexSign == signature) {
                         end(echoStr)
                     } else {
-                        end("Welcome to my website")
+                        end("success")
                     }
                 } else {
-                    end("Welcome to my website")
+                    end("success")
                 }
             }
         }

@@ -48,6 +48,7 @@
         <module>firefly-kotlin-ext</module>
         <module>firefly-reactive</module>
         <module>firefly-session</module>
+        <module>firefly-wechat</module>
     </modules>
 
     <dependencyManagement>
@@ -91,6 +92,11 @@
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-session</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-wechat</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
