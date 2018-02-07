@@ -20,6 +20,8 @@ public class WechatServiceImpl implements WechatService {
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private String wechatToken;
+    private String aesKey;
+    private String appId;
 
     public String getWechatToken() {
         return wechatToken;
@@ -27,6 +29,22 @@ public class WechatServiceImpl implements WechatService {
 
     public void setWechatToken(String wechatToken) {
         this.wechatToken = wechatToken;
+    }
+
+    public String getAesKey() {
+        return aesKey;
+    }
+
+    public void setAesKey(String aesKey) {
+        this.aesKey = aesKey;
+    }
+
+    public String getAppId() {
+        return appId;
+    }
+
+    public void setAppId(String appId) {
+        this.appId = appId;
     }
 
     @Override

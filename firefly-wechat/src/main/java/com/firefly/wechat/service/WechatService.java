@@ -9,4 +9,10 @@ public interface WechatService {
 
     boolean verifyEchoString(EchoRequest request);
 
+    String getWechatToken();
+
+    String getAesKey();
+
+    String getAppId();
+
 }
