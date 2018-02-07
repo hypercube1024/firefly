@@ -20,10 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * @author Pengtao Qiu
@@ -75,37 +72,39 @@ public class WechatServiceImpl implements WechatService {
                 log.info("received message -> {}", decryptedXml);
 
                 CommonMessage commonMessage = MessageUtils.parseCommonMessage(decryptedXml);
-                switch (commonMessage.getMsgType()) {
-                    case "text": {
-                        TextMessage textMessage = MessageUtils.parseTextMessage(decryptedXml);
-                        textMessageListeners.forEach(e -> e.call(messageRequest, textMessage, ctx));
-                    }
-                    break;
-                    case "image": {
+                Optional.ofNullable(commonMessage).map(CommonMessage::getMsgType).ifPresent(msgType -> {
+                    switch (msgType) {
+                        case "text": {
+                            TextMessage textMessage = MessageUtils.parseTextMessage(decryptedXml);
+                            textMessageListeners.forEach(e -> e.call(messageRequest, textMessage, ctx));
+                        }
+                        break;
+                        case "image": {
 
-                    }
-                    break;
-                    case "voice": {
+                        }
+                        break;
+                        case "voice": {
 
-                    }
-                    break;
-                    case "video": {
+                        }
+                        break;
+                        case "video": {
 
-                    }
-                    break;
-                    case "shortvideo": {
+                        }
+                        break;
+                        case "shortvideo": {
 
-                    }
-                    break;
-                    case "location": {
+                        }
+                        break;
+                        case "location": {
 
-                    }
-                    break;
-                    case "link": {
+                        }
+                        break;
+                        case "link": {
 
+                        }
+                        break;
                     }
-                    break;
-                }
+                });
             } catch (Exception e) {
                 log.error("decrypt message exception", e);
             }
