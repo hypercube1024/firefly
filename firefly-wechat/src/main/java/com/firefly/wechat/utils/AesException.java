@@ -55,4 +55,9 @@ public class AesException extends Exception {
         this.code = code;
     }
 
+    AesException(int code, Throwable t) {
+        super(getMessage(code), t);
+        this.code = code;
+    }
+
 }

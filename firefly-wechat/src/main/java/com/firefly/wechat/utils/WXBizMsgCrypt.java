@@ -16,16 +16,16 @@ import java.util.Random;
 /**
  * 提供接收和推送给公众平台消息的加解密接口(UTF8编码的字符串).
  * <ol>
- * 	<li>第三方回复加密消息给公众平台</li>
- * 	<li>第三方收到公众平台发送的消息，验证消息的安全性，并对消息进行解密。</li>
+ * <li>第三方回复加密消息给公众平台</li>
+ * <li>第三方收到公众平台发送的消息，验证消息的安全性，并对消息进行解密。</li>
  * </ol>
  * 说明：异常java.security.InvalidKeyException:illegal Key Size的解决方案
  * <ol>
- * 	<li>在官方网站下载JCE无限制权限策略文件（JDK7的下载地址：
- *      http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html</li>
- * 	<li>下载后解压，可以看到local_policy.jar和US_export_policy.jar以及readme.txt</li>
- * 	<li>如果安装了JRE，将两个jar文件放到%JRE_HOME%\lib\security目录下覆盖原来的文件</li>
- * 	<li>如果安装了JDK，将两个jar文件放到%JDK_HOME%\jre\lib\security目录下覆盖原来文件</li>
+ * <li>在官方网站下载JCE无限制权限策略文件（JDK7的下载地址：
+ * http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html</li>
+ * <li>下载后解压，可以看到local_policy.jar和US_export_policy.jar以及readme.txt</li>
+ * <li>如果安装了JRE，将两个jar文件放到%JRE_HOME%\lib\security目录下覆盖原来的文件</li>
+ * <li>如果安装了JDK，将两个jar文件放到%JDK_HOME%\jre\lib\security目录下覆盖原来文件</li>
  * </ol>
  */
 public class WXBizMsgCrypt {
@@ -36,10 +36,10 @@ public class WXBizMsgCrypt {
 
     /**
      * 构造函数
-     * @param token 公众平台上，开发者设置的token
-     * @param encodingAesKey 公众平台上，开发者设置的EncodingAESKey
-     * @param appId 公众平台appid
      *
+     * @param token          公众平台上，开发者设置的token
+     * @param encodingAesKey 公众平台上，开发者设置的EncodingAESKey
+     * @param appId          公众平台appid
      * @throws AesException 执行失败，请查看该异常的错误码和具体的错误信息
      */
     public WXBizMsgCrypt(String token, String encodingAesKey, String appId) throws AesException {
@@ -127,8 +127,7 @@ public class WXBizMsgCrypt {
             // 使用BASE64对加密后的字符串进行编码
             return Base64.encodeBase64String(encrypted);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new AesException(AesException.EncryptAESError);
+            throw new AesException(AesException.EncryptAESError, e);
         }
     }
 
@@ -154,8 +153,7 @@ public class WXBizMsgCrypt {
             // 解密
             original = cipher.doFinal(encrypted);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new AesException(AesException.DecryptAESError);
+            throw new AesException(AesException.DecryptAESError, e);
         }
 
         String xmlContent, from_appid;
@@ -169,11 +167,9 @@ public class WXBizMsgCrypt {
             int xmlLength = recoverNetworkBytesOrder(networkOrder);
 
             xmlContent = new String(Arrays.copyOfRange(bytes, 20, 20 + xmlLength), CHARSET);
-            from_appid = new String(Arrays.copyOfRange(bytes, 20 + xmlLength, bytes.length),
-                    CHARSET);
+            from_appid = new String(Arrays.copyOfRange(bytes, 20 + xmlLength, bytes.length), CHARSET);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new AesException(AesException.IllegalBuffer);
+            throw new AesException(AesException.IllegalBuffer, e);
         }
 
         // appid不相同的情况
@@ -187,15 +183,14 @@ public class WXBizMsgCrypt {
     /**
      * 将公众平台回复用户的消息加密打包.
      * <ol>
-     * 	<li>对要发送的消息进行AES-CBC加密</li>
-     * 	<li>生成安全签名</li>
-     * 	<li>将消息密文和安全签名打包成xml格式</li>
+     * <li>对要发送的消息进行AES-CBC加密</li>
+     * <li>生成安全签名</li>
+     * <li>将消息密文和安全签名打包成xml格式</li>
      * </ol>
      *
-     * @param replyMsg 公众平台待回复用户的消息，xml格式的字符串
+     * @param replyMsg  公众平台待回复用户的消息，xml格式的字符串
      * @param timeStamp 时间戳，可以自己生成，也可以用URL参数的timestamp
-     * @param nonce 随机串，可以自己生成，也可以用URL参数的nonce
-     *
+     * @param nonce     随机串，可以自己生成，也可以用URL参数的nonce
      * @return 加密后的可以直接回复用户的密文，包括msg_signature, timestamp, nonce, encrypt的xml格式的字符串
      * @throws AesException 执行失败，请查看该异常的错误码和具体的错误信息
      */
@@ -209,25 +204,21 @@ public class WXBizMsgCrypt {
         }
 
         String signature = SHA1.getSHA1(token, timeStamp, nonce, encrypt);
-
-        // System.out.println("发送给平台的签名是: " + signature[1].toString());
-        // 生成发送的xml
         return XMLParse.generate(encrypt, signature, timeStamp, nonce);
     }
 
     /**
      * 检验消息的真实性，并且获取解密后的明文.
      * <ol>
-     * 	<li>利用收到的密文生成安全签名，进行签名验证</li>
-     * 	<li>若验证通过，则提取xml中的加密消息</li>
-     * 	<li>对消息进行解密</li>
+     * <li>利用收到的密文生成安全签名，进行签名验证</li>
+     * <li>若验证通过，则提取xml中的加密消息</li>
+     * <li>对消息进行解密</li>
      * </ol>
      *
      * @param msgSignature 签名串，对应URL参数的msg_signature
-     * @param timeStamp 时间戳，对应URL参数的timestamp
-     * @param nonce 随机串，对应URL参数的nonce
-     * @param postData 密文，对应POST请求的数据
-     *
+     * @param timeStamp    时间戳，对应URL参数的timestamp
+     * @param nonce        随机串，对应URL参数的nonce
+     * @param postData     密文，对应POST请求的数据
      * @return 解密后的原文
      * @throws AesException 执行失败，请查看该异常的错误码和具体的错误信息
      */
@@ -242,8 +233,6 @@ public class WXBizMsgCrypt {
         String signature = SHA1.getSHA1(token, timeStamp, nonce, encrypt[1].toString());
 
         // 和URL中的签名比较是否相等
-        // System.out.println("第三方收到URL中的签名：" + msg_sign);
-        // System.out.println("第三方校验签名：" + signature);
         if (!signature.equals(msgSignature)) {
             throw new AesException(AesException.ValidateSignatureError);
         }
@@ -254,11 +243,11 @@ public class WXBizMsgCrypt {
 
     /**
      * 验证URL
-     * @param msgSignature 签名串，对应URL参数的msg_signature
-     * @param timeStamp 时间戳，对应URL参数的timestamp
-     * @param nonce 随机串，对应URL参数的nonce
-     * @param echoStr 随机串，对应URL参数的echostr
      *
+     * @param msgSignature 签名串，对应URL参数的msg_signature
+     * @param timeStamp    时间戳，对应URL参数的timestamp
+     * @param nonce        随机串，对应URL参数的nonce
+     * @param echoStr      随机串，对应URL参数的echostr
      * @return 解密之后的echostr
      * @throws AesException 执行失败，请查看该异常的错误码和具体的错误信息
      */

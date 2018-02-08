@@ -40,8 +40,7 @@ class XMLParse {
             result[2] = nodelist2.item(0).getTextContent();
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new AesException(AesException.ParseXmlError);
+            throw new AesException(AesException.ParseXmlError, e);
         }
     }
 
