@@ -19,7 +19,7 @@ public class CommonMessage {
     protected String fromUserName;
 
     @JacksonXmlProperty(localName = "CreateTime")
-    protected Integer createTime;
+    protected Long createTime;
 
     @JacksonXmlProperty(localName = "MsgType")
     protected String msgType;
@@ -51,11 +51,11 @@ public class CommonMessage {
         this.fromUserName = fromUserName;
     }
 
-    public Integer getCreateTime() {
+    public Long getCreateTime() {
         return createTime;
     }
 
-    public void setCreateTime(Integer createTime) {
+    public void setCreateTime(Long createTime) {
         this.createTime = createTime;
     }
 
