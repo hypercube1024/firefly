@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Pengtao Qiu
  */
-abstract public class MessageUtils {
+abstract public class MessageXmlUtils {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
@@ -19,27 +19,18 @@ abstract public class MessageUtils {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
     }
 
-    public static CommonMessage parseCommonMessage(String xml) {
+    public static <T> T parseXml(String xml, Class<T> clazz) {
         try {
-            return mapper.readValue(xml, CommonMessage.class);
+            return mapper.readValue(xml, clazz);
         } catch (Exception e) {
             log.error("parse text message exception", e);
             return null;
         }
     }
 
-    public static TextMessage parseTextMessage(String xml) {
+    public static String toXml(Object message) {
         try {
-            return mapper.readValue(xml, TextMessage.class);
-        } catch (Exception e) {
-            log.error("parse text message exception", e);
-            return null;
-        }
-    }
-
-    public static String textMessageToXml(TextMessage textMessage) {
-        try {
-            return mapper.writeValueAsString(textMessage);
+            return mapper.writeValueAsString(message);
         } catch (Exception e) {
             log.error("generate text message xml exception", e);
             return null;

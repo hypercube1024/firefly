@@ -15,10 +15,11 @@ public class WechatServiceDemo {
     static {
         WechatServiceImpl service = new WechatServiceImpl();
         service.setWechatToken("myTest123456");
-        service.setAppId("wxef8f7b5d26905586");
+        service.setAppId("12345");
         service.setAesKey("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG");
         service.addEchoStringListener((req, ctx) -> ctx.end(req.getEchostr()));
         service.addTextMessageListener(((msgReq, text, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce()))));
+        service.addImageMessageListener(((msgReq, image, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce()))));
         wechatService = service;
     }
 

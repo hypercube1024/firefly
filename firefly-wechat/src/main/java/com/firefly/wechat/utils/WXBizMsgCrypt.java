@@ -204,7 +204,7 @@ public class WXBizMsgCrypt {
         }
 
         String signature = SHA1.getSHA1(token, timeStamp, nonce, encrypt);
-        return XMLParse.generate(encrypt, signature, timeStamp, nonce);
+        return XMLParser.generate(encrypt, signature, timeStamp, nonce);
     }
 
     /**
@@ -227,7 +227,7 @@ public class WXBizMsgCrypt {
 
         // 密钥，公众账号的app secret
         // 提取密文
-        Object[] encrypt = XMLParse.extract(postData);
+        Object[] encrypt = XMLParser.extract(postData);
 
         // 验证安全签名
         String signature = SHA1.getSHA1(token, timeStamp, nonce, encrypt[1].toString());

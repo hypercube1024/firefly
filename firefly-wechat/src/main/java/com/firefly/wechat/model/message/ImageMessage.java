@@ -8,29 +8,30 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
  * @author Pengtao Qiu
  */
 @JacksonXmlRootElement(localName = "xml")
-public class TextMessage extends CommonMessage {
+public class ImageMessage extends CommonMessage {
 
     @JacksonXmlCData
-    @JacksonXmlProperty(localName = "Content")
-    private String content;
+    @JacksonXmlProperty(localName = "PicUrl")
+    private String picUrl;
 
-    public String getContent() {
-        return content;
+
+    public String getPicUrl() {
+        return picUrl;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setPicUrl(String picUrl) {
+        this.picUrl = picUrl;
     }
 
     @Override
     public String toString() {
-        return "TextMessage{" +
-                "url='" + url + '\'' +
+        return "ImageMessage{" +
+                "picUrl='" + picUrl + '\'' +
+                ", url='" + url + '\'' +
                 ", toUserName='" + toUserName + '\'' +
                 ", fromUserName='" + fromUserName + '\'' +
                 ", createTime=" + createTime +
                 ", msgType='" + msgType + '\'' +
-                ", content='" + content + '\'' +
                 ", msgId=" + msgId +
                 '}';
     }

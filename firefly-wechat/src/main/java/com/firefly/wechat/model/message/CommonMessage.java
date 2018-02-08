@@ -1,5 +1,6 @@
 package com.firefly.wechat.model.message;
 
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlCData;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
@@ -9,12 +10,15 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 @JacksonXmlRootElement(localName = "xml")
 public class CommonMessage {
 
+    @JacksonXmlCData
     @JacksonXmlProperty(localName = "URL")
     protected String url;
 
+    @JacksonXmlCData
     @JacksonXmlProperty(localName = "ToUserName")
     protected String toUserName;
 
+    @JacksonXmlCData
     @JacksonXmlProperty(localName = "FromUserName")
     protected String fromUserName;
 

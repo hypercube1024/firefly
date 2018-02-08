@@ -30,6 +30,7 @@ public class FileLog implements Log, Closeable {
     private long lastFlushTime;
     private long maxLogFlushInterval;
     private LogNameFormatter logNameFormatter;
+    private LogFilter logFilter;
 
     private LogOutputStream output = new LogOutputStream();
 
@@ -240,6 +241,14 @@ public class FileLog implements Log, Closeable {
 
     public void setLogNameFormatter(LogNameFormatter logNameFormatter) {
         this.logNameFormatter = logNameFormatter;
+    }
+
+    public LogFilter getLogFilter() {
+        return logFilter;
+    }
+
+    public void setLogFilter(LogFilter logFilter) {
+        this.logFilter = logFilter;
     }
 
     private void add(String str, String level, Throwable throwable, Object... objs) {

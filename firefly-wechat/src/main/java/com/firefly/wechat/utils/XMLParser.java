@@ -14,7 +14,7 @@ import java.io.StringReader;
  * <p>
  * 提供提取消息格式中的密文及生成回复消息格式的接口.
  */
-class XMLParse {
+class XMLParser {
 
     /**
      * 提取出xml数据包中的加密消息

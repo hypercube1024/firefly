@@ -5,6 +5,7 @@ import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
 import com.firefly.utils.function.Action3;
 import com.firefly.wechat.model.EchoRequest;
+import com.firefly.wechat.model.message.ImageMessage;
 import com.firefly.wechat.model.message.MessageRequest;
 import com.firefly.wechat.model.message.TextMessage;
 
@@ -26,6 +27,8 @@ public interface WechatService {
     void onRequest(RoutingContext ctx);
 
     void addTextMessageListener(Action3<MessageRequest, TextMessage, RoutingContext> action);
+
+    void addImageMessageListener(Action3<MessageRequest, ImageMessage, RoutingContext> action);
 
     void addEchoStringListener(Action2<EchoRequest, RoutingContext> action);
 

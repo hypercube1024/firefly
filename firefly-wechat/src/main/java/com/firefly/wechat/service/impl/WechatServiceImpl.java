@@ -9,11 +9,12 @@ import com.firefly.utils.function.Action3;
 import com.firefly.wechat.model.CommonRequest;
 import com.firefly.wechat.model.EchoRequest;
 import com.firefly.wechat.model.message.CommonMessage;
+import com.firefly.wechat.model.message.ImageMessage;
 import com.firefly.wechat.model.message.MessageRequest;
 import com.firefly.wechat.model.message.TextMessage;
 import com.firefly.wechat.service.WechatService;
 import com.firefly.wechat.utils.CtxUtils;
-import com.firefly.wechat.utils.MessageUtils;
+import com.firefly.wechat.utils.MessageXmlUtils;
 import com.firefly.wechat.utils.WXBizMsgCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class WechatServiceImpl implements WechatService {
     private String appId;
 
     private List<Action3<MessageRequest, TextMessage, RoutingContext>> textMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, ImageMessage, RoutingContext>> imageMessageListeners = new LinkedList<>();
     private List<Action2<EchoRequest, RoutingContext>> echoListeners = new LinkedList<>();
     private List<Action1<RoutingContext>> otherRequestListeners = new LinkedList<>();
 
@@ -64,6 +66,7 @@ public class WechatServiceImpl implements WechatService {
             echoListeners.forEach(e -> e.call((EchoRequest) commonRequest, ctx));
         } else if (commonRequest instanceof MessageRequest) {
             MessageRequest messageRequest = (MessageRequest) commonRequest;
+            log.info("received message request -> {}", messageRequest.toString());
 
             String fromXML = ctx.getStringBody();
             try {
@@ -71,16 +74,17 @@ public class WechatServiceImpl implements WechatService {
                 String decryptedXml = pc.decryptMsg(messageRequest.getMsgSignature(), messageRequest.getTimestamp().toString(), messageRequest.getNonce(), fromXML);
                 log.info("received message -> {}", decryptedXml);
 
-                CommonMessage commonMessage = MessageUtils.parseCommonMessage(decryptedXml);
+                CommonMessage commonMessage = MessageXmlUtils.parseXml(decryptedXml, CommonMessage.class);
                 Optional.ofNullable(commonMessage).map(CommonMessage::getMsgType).ifPresent(msgType -> {
                     switch (msgType) {
                         case "text": {
-                            TextMessage textMessage = MessageUtils.parseTextMessage(decryptedXml);
+                            TextMessage textMessage = MessageXmlUtils.parseXml(decryptedXml, TextMessage.class);
                             textMessageListeners.forEach(e -> e.call(messageRequest, textMessage, ctx));
                         }
                         break;
                         case "image": {
-
+                            ImageMessage imageMessage = MessageXmlUtils.parseXml(decryptedXml, ImageMessage.class);
+                            imageMessageListeners.forEach(e -> e.call(messageRequest, imageMessage, ctx));
                         }
                         break;
                         case "voice": {
@@ -116,6 +120,11 @@ public class WechatServiceImpl implements WechatService {
     @Override
     public void addTextMessageListener(Action3<MessageRequest, TextMessage, RoutingContext> action) {
         textMessageListeners.add(action);
+    }
+
+    @Override
+    public void addImageMessageListener(Action3<MessageRequest, ImageMessage, RoutingContext> action) {
+        imageMessageListeners.add(action);
     }
 
     @Override

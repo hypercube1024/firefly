@@ -25,4 +25,15 @@ public class MessageRequest extends CommonRequest {
     public void setEncryptType(String encryptType) {
         this.encryptType = encryptType;
     }
+
+    @Override
+    public String toString() {
+        return "MessageRequest{" +
+                "msgSignature='" + msgSignature + '\'' +
+                ", encryptType='" + encryptType + '\'' +
+                ", signature='" + signature + '\'' +
+                ", nonce='" + nonce + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }

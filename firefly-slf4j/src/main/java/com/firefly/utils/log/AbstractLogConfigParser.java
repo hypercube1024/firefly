@@ -70,6 +70,16 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
             }
         }
 
+        if (StringUtils.hasText(c.getLogFilter())) {
+            try {
+                Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogFilter());
+                fileLog.setLogFilter((LogFilter) clazz.newInstance());
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                e.printStackTrace();
+                fileLog.setLogFilter(new DefaultLogFilter());
+            }
+        }
+
         System.out.println("initialize log " + fileLog.toString());
         return fileLog;
     }
