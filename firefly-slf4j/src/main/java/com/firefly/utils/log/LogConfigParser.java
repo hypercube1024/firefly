@@ -17,6 +17,7 @@ public interface LogConfigParser {
     boolean DEFAULT_CONSOLE_ENABLED = false;
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     String DEFAULT_LOG_FORMATTER = "com.firefly.utils.log.DefaultLogFormatter";
+    String DEFAULT_LOG_NAME_FORMATTER = "com.firefly.utils.log.DefaultLogNameFormatter";
 
     boolean parse(Action1<FileLog> action);
 

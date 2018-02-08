@@ -36,6 +36,7 @@ public class XmlLogConfigParser extends AbstractLogConfigParser {
                 }
                 c.setCharset(dom.getTextValueByTagName(e, "charset", DEFAULT_CHARSET.name()));
                 c.setFormatter(dom.getTextValueByTagName(e, "formatter", DEFAULT_LOG_FORMATTER));
+                c.setLogNameFormatter(dom.getTextValueByTagName(e, "log-name-formatter", DEFAULT_LOG_NAME_FORMATTER));
                 action.call(createLog(c));
             }
         }

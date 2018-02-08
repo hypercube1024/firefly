@@ -29,6 +29,7 @@ public class FileLog implements Log, Closeable {
     private LogFormatter logFormatter;
     private long lastFlushTime;
     private long maxLogFlushInterval;
+    private LogNameFormatter logNameFormatter;
 
     private LogOutputStream output = new LogOutputStream();
 
@@ -49,12 +50,12 @@ public class FileLog implements Log, Closeable {
         private BufferedOutputStream bufferedOutputStream;
         private long writeSize;
 
-        private String getLogName() {
-            return name + ".txt";
+        private String getLogName(LocalDate localDate) {
+            return logNameFormatter.format(name, localDate);
         }
 
         private String getLogBakName(LocalDate localDate, int index) {
-            return name + "." + localDate.format(TimeUtils.DEFAULT_LOCAL_DATE) + "." + index + ".bak.txt";
+            return logNameFormatter.formatBak(name, localDate, index);
         }
 
         private String getLogBakName(LocalDate localDate) {
@@ -68,10 +69,10 @@ public class FileLog implements Log, Closeable {
         }
 
         private void initializeBufferedWriter(Date newDate, long currentWriteSize) throws IOException {
-            String logName = getLogName();
+            LocalDate newLocalDate = TimeUtils.toLocalDate(newDate);
+            String logName = getLogName(newLocalDate);
             Path logPath = Paths.get(path, logName);
             LocalDate now = LocalDate.now();
-            LocalDate newLocalDate = TimeUtils.toLocalDate(newDate);
 
             if (Files.exists(logPath)) {
                 FileTime fileTime = Files.getLastModifiedTime(logPath);
@@ -231,6 +232,14 @@ public class FileLog implements Log, Closeable {
 
     public void setMaxLogFlushInterval(long maxLogFlushInterval) {
         this.maxLogFlushInterval = maxLogFlushInterval;
+    }
+
+    public LogNameFormatter getLogNameFormatter() {
+        return logNameFormatter;
+    }
+
+    public void setLogNameFormatter(LogNameFormatter logNameFormatter) {
+        this.logNameFormatter = logNameFormatter;
     }
 
     private void add(String str, String level, Throwable throwable, Object... objs) {
