@@ -67,7 +67,13 @@ public class RedisSessionStore extends AbstractLifeCycle implements SessionStore
 
     @Override
     public CompletableFuture<Boolean> remove(String key) {
-        return Mono.from(map.fastRemove(key)).map(i -> i > 0).toFuture();
+        if (StringUtils.hasText(key)) {
+            return Mono.from(map.fastRemove(key)).map(i -> i > 0).toFuture();
+        } else {
+            CompletableFuture<Boolean> ret = new CompletableFuture<>();
+            ret.complete(true);
+            return ret;
+        }
     }
 
     @Override
