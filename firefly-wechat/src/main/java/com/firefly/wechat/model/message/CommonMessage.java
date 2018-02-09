@@ -36,6 +36,14 @@ public class CommonMessage {
     @JacksonXmlProperty(localName = "Event")
     protected String event;
 
+    @JacksonXmlCData
+    @JacksonXmlProperty(localName = "EventKey")
+    protected String eventKey;
+
+    @JacksonXmlCData
+    @JacksonXmlProperty(localName = "Ticket")
+    protected String ticket;
+
     public String getUrl() {
         return url;
     }
@@ -90,5 +98,21 @@ public class CommonMessage {
 
     public void setEvent(String event) {
         this.event = event;
+    }
+
+    public String getEventKey() {
+        return eventKey;
+    }
+
+    public void setEventKey(String eventKey) {
+        this.eventKey = eventKey;
+    }
+
+    public String getTicket() {
+        return ticket;
+    }
+
+    public void setTicket(String ticket) {
+        this.ticket = ticket;
     }
 }

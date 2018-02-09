@@ -39,6 +39,10 @@ public class WechatMessageServiceImpl implements WechatMessageService {
     private List<Action3<MessageRequest, LinkMessage, RoutingContext>> linkMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, CommonMessage, RoutingContext>> subscribedMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, CommonMessage, RoutingContext>> unsubscribedMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> scanMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> clickMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> viewMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, ReportLocationMessage, RoutingContext>> reportMessageListeners = new LinkedList<>();
     private List<Action2<EchoRequest, RoutingContext>> echoListeners = new LinkedList<>();
     private List<Action1<RoutingContext>> otherRequestListeners = new LinkedList<>();
 
@@ -161,6 +165,39 @@ public class WechatMessageServiceImpl implements WechatMessageService {
                                     }
                                 }
                                 break;
+                                case "SCAN": {
+                                    if (scanMessageListeners.isEmpty()) {
+                                        defaultReplyMessage(ctx, msgReq);
+                                    } else {
+                                        scanMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    }
+                                }
+                                break;
+                                case "CLICK": {
+                                    if (clickMessageListeners.isEmpty()) {
+                                        defaultReplyMessage(ctx, msgReq);
+                                    } else {
+                                        clickMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    }
+                                }
+                                break;
+                                case "VIEW": {
+                                    if (viewMessageListeners.isEmpty()) {
+                                        defaultReplyMessage(ctx, msgReq);
+                                    } else {
+                                        viewMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    }
+                                }
+                                break;
+                                case "LOCATION": {
+                                    if (reportMessageListeners.isEmpty()) {
+                                        defaultReplyMessage(ctx, msgReq);
+                                    } else {
+                                        ReportLocationMessage reportLocationMessage = MessageXmlUtils.parseXml(decryptedXml, ReportLocationMessage.class);
+                                        reportMessageListeners.forEach(e -> e.call(msgReq, reportLocationMessage, ctx));
+                                    }
+                                }
+                                break;
                             }
                         }
                         break;
@@ -170,7 +207,11 @@ public class WechatMessageServiceImpl implements WechatMessageService {
                 log.error("decrypt message exception", e);
             }
         } else {
-            otherRequestListeners.forEach(e -> e.call(ctx));
+            if (otherRequestListeners.isEmpty()) {
+                ctx.end("success");
+            } else {
+                otherRequestListeners.forEach(e -> e.call(ctx));
+            }
         }
     }
 
@@ -218,6 +259,26 @@ public class WechatMessageServiceImpl implements WechatMessageService {
     @Override
     public void addUnsubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
         unsubscribedMessageListeners.add(action);
+    }
+
+    @Override
+    public void addScanMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+        scanMessageListeners.add(action);
+    }
+
+    @Override
+    public void addClickMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+        clickMessageListeners.add(action);
+    }
+
+    @Override
+    public void addViewMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+        viewMessageListeners.add(action);
+    }
+
+    @Override
+    public void addReportLocationMessageListener(Action3<MessageRequest, ReportLocationMessage, RoutingContext> action) {
+        reportMessageListeners.add(action);
     }
 
     @Override

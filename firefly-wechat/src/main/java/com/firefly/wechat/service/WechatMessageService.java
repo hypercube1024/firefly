@@ -40,6 +40,14 @@ public interface WechatMessageService {
 
     void addUnsubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action);
 
+    void addScanMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action);
+
+    void addClickMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action);
+
+    void addViewMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action);
+
+    void addReportLocationMessageListener(Action3<MessageRequest, ReportLocationMessage, RoutingContext> action);
+
     void addEchoStringListener(Action2<EchoRequest, RoutingContext> action);
 
     void addOtherRequestListener(Action1<RoutingContext> action);
