@@ -71,10 +71,26 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
         }
 
         if (StringUtils.hasText(c.getLogFilter())) {
-            try {
+            try { // lazy load log filter
                 Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogFilter());
-                fileLog.setLogFilter((LogFilter) clazz.newInstance());
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                fileLog.setLogFilter(new LogFilter() {
+
+                    private LogFilter filter;
+
+                    @Override
+                    public void filter(LogItem logItem) {
+                        if (filter == null) {
+                            try {
+                                filter = (LogFilter) clazz.newInstance();
+                            } catch (InstantiationException | IllegalAccessException e) {
+                                e.printStackTrace();
+                                filter = new DefaultLogFilter();
+                            }
+                        }
+                        filter.filter(logItem);
+                    }
+                });
+            } catch (ClassNotFoundException e) {
                 e.printStackTrace();
                 fileLog.setLogFilter(new DefaultLogFilter());
             }
