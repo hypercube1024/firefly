@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 
 public class FileLog implements Log, Closeable {
 
@@ -35,6 +36,8 @@ public class FileLog implements Log, Closeable {
     private LogOutputStream output = new LogOutputStream();
 
     void write(LogItem logItem) {
+        Optional.ofNullable(logFilter).ifPresent(f -> f.filter(logItem));
+
         if (consoleOutput) {
             System.out.println(logFormatter.format(logItem));
         }
