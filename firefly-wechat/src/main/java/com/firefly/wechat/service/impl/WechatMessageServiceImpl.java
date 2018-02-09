@@ -37,11 +37,11 @@ public class WechatMessageServiceImpl implements WechatMessageService {
     private List<Action3<MessageRequest, VideoMessage, RoutingContext>> videoMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, LocationMessage, RoutingContext>> locationMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, LinkMessage, RoutingContext>> linkMessageListeners = new LinkedList<>();
-    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> subscribedMessageListeners = new LinkedList<>();
-    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> unsubscribedMessageListeners = new LinkedList<>();
-    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> scanMessageListeners = new LinkedList<>();
-    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> clickMessageListeners = new LinkedList<>();
-    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> viewMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, EventMessage, RoutingContext>> subscribedMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, EventMessage, RoutingContext>> unsubscribedMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, EventMessage, RoutingContext>> scanMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, EventMessage, RoutingContext>> clickMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, EventMessage, RoutingContext>> viewMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, ReportLocationMessage, RoutingContext>> reportMessageListeners = new LinkedList<>();
     private List<Action2<EchoRequest, RoutingContext>> echoListeners = new LinkedList<>();
     private List<Action1<RoutingContext>> otherRequestListeners = new LinkedList<>();
@@ -148,57 +148,61 @@ public class WechatMessageServiceImpl implements WechatMessageService {
                         }
                         break;
                         case "event": {
-                            switch (commonMessage.getEvent()) {
-                                case "subscribe": {
-                                    if (subscribedMessageListeners.isEmpty()) {
-                                        defaultReplyMessage(ctx, msgReq);
-                                    } else {
-                                        subscribedMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                            EventMessage eventMessage = MessageXmlUtils.parseXml(decryptedXml, EventMessage.class);
+                            Optional.ofNullable(eventMessage).map(EventMessage::getEvent).ifPresent(evt -> {
+                                switch (evt) {
+                                    case "subscribe": {
+                                        if (subscribedMessageListeners.isEmpty()) {
+                                            defaultReplyMessage(ctx, msgReq);
+                                        } else {
+                                            subscribedMessageListeners.forEach(e -> e.call(msgReq, eventMessage, ctx));
+                                        }
                                     }
-                                }
-                                break;
-                                case "unsubscribe": {
-                                    if (unsubscribedMessageListeners.isEmpty()) {
-                                        defaultReplyMessage(ctx, msgReq);
-                                    } else {
-                                        unsubscribedMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    break;
+                                    case "unsubscribe": {
+                                        if (unsubscribedMessageListeners.isEmpty()) {
+                                            defaultReplyMessage(ctx, msgReq);
+                                        } else {
+                                            unsubscribedMessageListeners.forEach(e -> e.call(msgReq, eventMessage, ctx));
+                                        }
                                     }
-                                }
-                                break;
-                                case "SCAN": {
-                                    if (scanMessageListeners.isEmpty()) {
-                                        defaultReplyMessage(ctx, msgReq);
-                                    } else {
-                                        scanMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    break;
+                                    case "SCAN": {
+                                        if (scanMessageListeners.isEmpty()) {
+                                            defaultReplyMessage(ctx, msgReq);
+                                        } else {
+                                            scanMessageListeners.forEach(e -> e.call(msgReq, eventMessage, ctx));
+                                        }
                                     }
-                                }
-                                break;
-                                case "CLICK": {
-                                    if (clickMessageListeners.isEmpty()) {
-                                        defaultReplyMessage(ctx, msgReq);
-                                    } else {
-                                        clickMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    break;
+                                    case "CLICK": {
+                                        if (clickMessageListeners.isEmpty()) {
+                                            defaultReplyMessage(ctx, msgReq);
+                                        } else {
+                                            clickMessageListeners.forEach(e -> e.call(msgReq, eventMessage, ctx));
+                                        }
                                     }
-                                }
-                                break;
-                                case "VIEW": {
-                                    if (viewMessageListeners.isEmpty()) {
-                                        defaultReplyMessage(ctx, msgReq);
-                                    } else {
-                                        viewMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    break;
+                                    case "VIEW": {
+                                        if (viewMessageListeners.isEmpty()) {
+                                            defaultReplyMessage(ctx, msgReq);
+                                        } else {
+                                            viewMessageListeners.forEach(e -> e.call(msgReq, eventMessage, ctx));
+                                        }
                                     }
-                                }
-                                break;
-                                case "LOCATION": {
-                                    if (reportMessageListeners.isEmpty()) {
-                                        defaultReplyMessage(ctx, msgReq);
-                                    } else {
-                                        ReportLocationMessage reportLocationMessage = MessageXmlUtils.parseXml(decryptedXml, ReportLocationMessage.class);
-                                        reportMessageListeners.forEach(e -> e.call(msgReq, reportLocationMessage, ctx));
+                                    break;
+                                    case "LOCATION": {
+                                        if (reportMessageListeners.isEmpty()) {
+                                            defaultReplyMessage(ctx, msgReq);
+                                        } else {
+                                            ReportLocationMessage reportLocationMessage = MessageXmlUtils.parseXml(decryptedXml, ReportLocationMessage.class);
+                                            reportMessageListeners.forEach(e -> e.call(msgReq, reportLocationMessage, ctx));
+                                        }
                                     }
+                                    break;
                                 }
-                                break;
-                            }
+                            });
+
                         }
                         break;
                     }
@@ -252,27 +256,27 @@ public class WechatMessageServiceImpl implements WechatMessageService {
     }
 
     @Override
-    public void addSubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+    public void addSubscribedMessageListener(Action3<MessageRequest, EventMessage, RoutingContext> action) {
         subscribedMessageListeners.add(action);
     }
 
     @Override
-    public void addUnsubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+    public void addUnsubscribedMessageListener(Action3<MessageRequest, EventMessage, RoutingContext> action) {
         unsubscribedMessageListeners.add(action);
     }
 
     @Override
-    public void addScanMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+    public void addScanMessageListener(Action3<MessageRequest, EventMessage, RoutingContext> action) {
         scanMessageListeners.add(action);
     }
 
     @Override
-    public void addClickMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+    public void addClickMessageListener(Action3<MessageRequest, EventMessage, RoutingContext> action) {
         clickMessageListeners.add(action);
     }
 
     @Override
-    public void addViewMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+    public void addViewMessageListener(Action3<MessageRequest, EventMessage, RoutingContext> action) {
         viewMessageListeners.add(action);
     }
 

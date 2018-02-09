@@ -7,7 +7,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
  * @author Pengtao Qiu
  */
 @JacksonXmlRootElement(localName = "xml")
-public class ReportLocationMessage extends CommonMessage {
+public class ReportLocationMessage extends EventMessage {
 
     @JacksonXmlProperty(localName = "Latitude")
     private Double latitude;
