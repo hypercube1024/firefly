@@ -25,11 +25,16 @@ public class CommonMessage {
     @JacksonXmlProperty(localName = "CreateTime")
     protected Long createTime;
 
+    @JacksonXmlCData
     @JacksonXmlProperty(localName = "MsgType")
     protected String msgType;
 
     @JacksonXmlProperty(localName = "MsgId")
     protected Long msgId;
+
+    @JacksonXmlCData
+    @JacksonXmlProperty(localName = "Event")
+    protected String event;
 
     public String getUrl() {
         return url;
@@ -77,5 +82,13 @@ public class CommonMessage {
 
     public void setMsgId(Long msgId) {
         this.msgId = msgId;
+    }
+
+    public String getEvent() {
+        return event;
+    }
+
+    public void setEvent(String event) {
+        this.event = event;
     }
 }

@@ -8,10 +8,7 @@ import com.firefly.utils.function.Action2;
 import com.firefly.utils.function.Action3;
 import com.firefly.wechat.model.CommonRequest;
 import com.firefly.wechat.model.EchoRequest;
-import com.firefly.wechat.model.message.CommonMessage;
-import com.firefly.wechat.model.message.ImageMessage;
-import com.firefly.wechat.model.message.MessageRequest;
-import com.firefly.wechat.model.message.TextMessage;
+import com.firefly.wechat.model.message.*;
 import com.firefly.wechat.service.WechatService;
 import com.firefly.wechat.utils.CtxUtils;
 import com.firefly.wechat.utils.MessageXmlUtils;
@@ -36,6 +33,12 @@ public class WechatServiceImpl implements WechatService {
 
     private List<Action3<MessageRequest, TextMessage, RoutingContext>> textMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, ImageMessage, RoutingContext>> imageMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, VoiceMessage, RoutingContext>> voiceMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, VideoMessage, RoutingContext>> videoMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, LocationMessage, RoutingContext>> locationMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, LinkMessage, RoutingContext>> linkMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> subscribedMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, CommonMessage, RoutingContext>> unsubscribedMessageListeners = new LinkedList<>();
     private List<Action2<EchoRequest, RoutingContext>> echoListeners = new LinkedList<>();
     private List<Action1<RoutingContext>> otherRequestListeners = new LinkedList<>();
 
@@ -88,23 +91,36 @@ public class WechatServiceImpl implements WechatService {
                         }
                         break;
                         case "voice": {
-
+                            VoiceMessage voiceMessage = MessageXmlUtils.parseXml(decryptedXml, VoiceMessage.class);
+                            voiceMessageListeners.forEach(e -> e.call(messageRequest, voiceMessage, ctx));
                         }
                         break;
                         case "video": {
-
-                        }
-                        break;
-                        case "shortvideo": {
-
+                            VideoMessage videoMessage = MessageXmlUtils.parseXml(decryptedXml, VideoMessage.class);
+                            videoMessageListeners.forEach(e -> e.call(messageRequest, videoMessage, ctx));
                         }
                         break;
                         case "location": {
-
+                            LocationMessage locationMessage = MessageXmlUtils.parseXml(decryptedXml, LocationMessage.class);
+                            locationMessageListeners.forEach(e -> e.call(messageRequest, locationMessage, ctx));
                         }
                         break;
                         case "link": {
-
+                            LinkMessage linkMessage = MessageXmlUtils.parseXml(decryptedXml, LinkMessage.class);
+                            linkMessageListeners.forEach(e -> e.call(messageRequest, linkMessage, ctx));
+                        }
+                        break;
+                        case "event": {
+                            switch (commonMessage.getEvent()) {
+                                case "subscribe": {
+                                    subscribedMessageListeners.forEach(e -> e.call(messageRequest, commonMessage, ctx));
+                                }
+                                break;
+                                case "unsubscribe": {
+                                    unsubscribedMessageListeners.forEach(e -> e.call(messageRequest, commonMessage, ctx));
+                                }
+                                break;
+                            }
                         }
                         break;
                     }
@@ -125,6 +141,36 @@ public class WechatServiceImpl implements WechatService {
     @Override
     public void addImageMessageListener(Action3<MessageRequest, ImageMessage, RoutingContext> action) {
         imageMessageListeners.add(action);
+    }
+
+    @Override
+    public void addVoiceMessageListener(Action3<MessageRequest, VoiceMessage, RoutingContext> action) {
+        voiceMessageListeners.add(action);
+    }
+
+    @Override
+    public void addVideoMessageListener(Action3<MessageRequest, VideoMessage, RoutingContext> action) {
+        videoMessageListeners.add(action);
+    }
+
+    @Override
+    public void addLocationMessageListener(Action3<MessageRequest, LocationMessage, RoutingContext> action) {
+        locationMessageListeners.add(action);
+    }
+
+    @Override
+    public void addLinkMessageListener(Action3<MessageRequest, LinkMessage, RoutingContext> action) {
+        linkMessageListeners.add(action);
+    }
+
+    @Override
+    public void addSubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+        subscribedMessageListeners.add(action);
+    }
+
+    @Override
+    public void addUnsubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action) {
+        unsubscribedMessageListeners.add(action);
     }
 
     @Override

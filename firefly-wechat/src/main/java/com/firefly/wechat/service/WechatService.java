@@ -5,9 +5,7 @@ import com.firefly.utils.function.Action1;
 import com.firefly.utils.function.Action2;
 import com.firefly.utils.function.Action3;
 import com.firefly.wechat.model.EchoRequest;
-import com.firefly.wechat.model.message.ImageMessage;
-import com.firefly.wechat.model.message.MessageRequest;
-import com.firefly.wechat.model.message.TextMessage;
+import com.firefly.wechat.model.message.*;
 
 /**
  * @author Pengtao Qiu
@@ -29,6 +27,18 @@ public interface WechatService {
     void addTextMessageListener(Action3<MessageRequest, TextMessage, RoutingContext> action);
 
     void addImageMessageListener(Action3<MessageRequest, ImageMessage, RoutingContext> action);
+
+    void addVoiceMessageListener(Action3<MessageRequest, VoiceMessage, RoutingContext> action);
+
+    void addVideoMessageListener(Action3<MessageRequest, VideoMessage, RoutingContext> action);
+
+    void addLocationMessageListener(Action3<MessageRequest, LocationMessage, RoutingContext> action);
+
+    void addLinkMessageListener(Action3<MessageRequest, LinkMessage, RoutingContext> action);
+
+    void addSubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action);
+
+    void addUnsubscribedMessageListener(Action3<MessageRequest, CommonMessage, RoutingContext> action);
 
     void addEchoStringListener(Action2<EchoRequest, RoutingContext> action);
 

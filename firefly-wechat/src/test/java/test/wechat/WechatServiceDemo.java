@@ -17,9 +17,19 @@ public class WechatServiceDemo {
         service.setWechatToken("myTest123456");
         service.setAppId("12345");
         service.setAesKey("abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG");
-        service.addEchoStringListener((req, ctx) -> ctx.end(req.getEchostr()));
+        service.addEchoStringListener((req, ctx) -> {
+            if (service.verifyEchoString(req)) {
+                ctx.end(req.getEchostr());
+            } else {
+                ctx.end("success");
+            }
+        });
         service.addTextMessageListener(((msgReq, text, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce()))));
         service.addImageMessageListener(((msgReq, image, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce()))));
+        service.addVoiceMessageListener((msgReq, voice, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce())));
+        service.addVideoMessageListener((msgReq, video, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce())));
+        service.addLocationMessageListener((msgReq, location, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce())));
+        service.addLinkMessageListener((msgReq, link, ctx) -> ctx.end(wechatService.encryptMessage("success", msgReq.getTimestamp(), msgReq.getNonce())));
         wechatService = service;
     }
 
