@@ -18,16 +18,16 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
         fileLog.setMaxFileSize(c.getMaxFileSize());
         fileLog.setCharset(Charset.forName(c.getCharset()));
 
-        boolean createLogDirectorySuccess;
+        boolean success;
         if (VerifyUtils.isNotEmpty(c.getPath())) {
             File file = new File(c.getPath());
-            createLogDirectorySuccess = createLogDirectory(file);
-            if (createLogDirectorySuccess) {
+            success = createLogDirectory(file);
+            if (success) {
                 fileLog.setPath(c.getPath());
                 fileLog.setFileOutput(true);
             } else {
-                createLogDirectorySuccess = createLogDirectory(DEFAULT_LOG_DIRECTORY);
-                if (createLogDirectorySuccess) {
+                success = createLogDirectory(DEFAULT_LOG_DIRECTORY);
+                if (success) {
                     fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
                     fileLog.setFileOutput(true);
                 } else {
@@ -35,8 +35,8 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                 }
             }
         } else {
-            createLogDirectorySuccess = createLogDirectory(DEFAULT_LOG_DIRECTORY);
-            if (createLogDirectorySuccess) {
+            success = createLogDirectory(DEFAULT_LOG_DIRECTORY);
+            if (success) {
                 fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
                 fileLog.setFileOutput(true);
             } else {
@@ -44,7 +44,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
             }
         }
 
-        if (createLogDirectorySuccess) {
+        if (success) {
             fileLog.setConsoleOutput(c.isConsole());
         } else {
             fileLog.setConsoleOutput(true);
