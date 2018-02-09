@@ -10,7 +10,7 @@ import com.firefly.wechat.model.message.*;
 /**
  * @author Pengtao Qiu
  */
-public interface WechatService {
+public interface WechatMessageService {
 
     boolean verifyEchoString(EchoRequest request);
 

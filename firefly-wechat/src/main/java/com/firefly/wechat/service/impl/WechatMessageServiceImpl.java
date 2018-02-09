@@ -9,7 +9,7 @@ import com.firefly.utils.function.Action3;
 import com.firefly.wechat.model.CommonRequest;
 import com.firefly.wechat.model.EchoRequest;
 import com.firefly.wechat.model.message.*;
-import com.firefly.wechat.service.WechatService;
+import com.firefly.wechat.service.WechatMessageService;
 import com.firefly.wechat.utils.CtxUtils;
 import com.firefly.wechat.utils.MessageXmlUtils;
 import com.firefly.wechat.utils.WXBizMsgCrypt;
@@ -23,7 +23,7 @@ import java.util.*;
 /**
  * @author Pengtao Qiu
  */
-public class WechatServiceImpl implements WechatService {
+public class WechatMessageServiceImpl implements WechatMessageService {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
@@ -66,58 +66,99 @@ public class WechatServiceImpl implements WechatService {
     public void onRequest(RoutingContext ctx) {
         CommonRequest commonRequest = CtxUtils.toRequest(ctx);
         if (commonRequest instanceof EchoRequest) {
-            echoListeners.forEach(e -> e.call((EchoRequest) commonRequest, ctx));
+            if (echoListeners.isEmpty()) {
+                EchoRequest req = (EchoRequest) commonRequest;
+                if (verifyEchoString(req)) {
+                    ctx.end(req.getEchostr());
+                } else {
+                    ctx.end("success");
+                }
+            } else {
+                echoListeners.forEach(e -> e.call((EchoRequest) commonRequest, ctx));
+            }
         } else if (commonRequest instanceof MessageRequest) {
-            MessageRequest messageRequest = (MessageRequest) commonRequest;
-            log.info("received message request -> {}", messageRequest.toString());
+            MessageRequest msgReq = (MessageRequest) commonRequest;
+            log.info("received message request -> {}", msgReq.toString());
 
             String fromXML = ctx.getStringBody();
             try {
                 WXBizMsgCrypt pc = new WXBizMsgCrypt(getWechatToken(), getAesKey(), getAppId());
-                String decryptedXml = pc.decryptMsg(messageRequest.getMsgSignature(), messageRequest.getTimestamp().toString(), messageRequest.getNonce(), fromXML);
+                String decryptedXml = pc.decryptMsg(msgReq.getMsgSignature(), msgReq.getTimestamp().toString(), msgReq.getNonce(), fromXML);
                 log.info("received message -> {}", decryptedXml);
 
                 CommonMessage commonMessage = MessageXmlUtils.parseXml(decryptedXml, CommonMessage.class);
                 Optional.ofNullable(commonMessage).map(CommonMessage::getMsgType).ifPresent(msgType -> {
                     switch (msgType) {
                         case "text": {
-                            TextMessage textMessage = MessageXmlUtils.parseXml(decryptedXml, TextMessage.class);
-                            textMessageListeners.forEach(e -> e.call(messageRequest, textMessage, ctx));
+                            if (textMessageListeners.isEmpty()) {
+                                defaultReplyMessage(ctx, msgReq);
+                            } else {
+                                TextMessage textMessage = MessageXmlUtils.parseXml(decryptedXml, TextMessage.class);
+                                textMessageListeners.forEach(e -> e.call(msgReq, textMessage, ctx));
+                            }
                         }
                         break;
                         case "image": {
-                            ImageMessage imageMessage = MessageXmlUtils.parseXml(decryptedXml, ImageMessage.class);
-                            imageMessageListeners.forEach(e -> e.call(messageRequest, imageMessage, ctx));
+                            if (imageMessageListeners.isEmpty()) {
+                                defaultReplyMessage(ctx, msgReq);
+                            } else {
+                                ImageMessage imageMessage = MessageXmlUtils.parseXml(decryptedXml, ImageMessage.class);
+                                imageMessageListeners.forEach(e -> e.call(msgReq, imageMessage, ctx));
+                            }
                         }
                         break;
                         case "voice": {
-                            VoiceMessage voiceMessage = MessageXmlUtils.parseXml(decryptedXml, VoiceMessage.class);
-                            voiceMessageListeners.forEach(e -> e.call(messageRequest, voiceMessage, ctx));
+                            if (voiceMessageListeners.isEmpty()) {
+                                defaultReplyMessage(ctx, msgReq);
+                            } else {
+                                VoiceMessage voiceMessage = MessageXmlUtils.parseXml(decryptedXml, VoiceMessage.class);
+                                voiceMessageListeners.forEach(e -> e.call(msgReq, voiceMessage, ctx));
+                            }
                         }
                         break;
                         case "video": {
-                            VideoMessage videoMessage = MessageXmlUtils.parseXml(decryptedXml, VideoMessage.class);
-                            videoMessageListeners.forEach(e -> e.call(messageRequest, videoMessage, ctx));
+                            if (videoMessageListeners.isEmpty()) {
+                                defaultReplyMessage(ctx, msgReq);
+                            } else {
+                                VideoMessage videoMessage = MessageXmlUtils.parseXml(decryptedXml, VideoMessage.class);
+                                videoMessageListeners.forEach(e -> e.call(msgReq, videoMessage, ctx));
+                            }
                         }
                         break;
                         case "location": {
-                            LocationMessage locationMessage = MessageXmlUtils.parseXml(decryptedXml, LocationMessage.class);
-                            locationMessageListeners.forEach(e -> e.call(messageRequest, locationMessage, ctx));
+                            if (locationMessageListeners.isEmpty()) {
+                                defaultReplyMessage(ctx, msgReq);
+                            } else {
+                                LocationMessage locationMessage = MessageXmlUtils.parseXml(decryptedXml, LocationMessage.class);
+                                locationMessageListeners.forEach(e -> e.call(msgReq, locationMessage, ctx));
+                            }
                         }
                         break;
                         case "link": {
-                            LinkMessage linkMessage = MessageXmlUtils.parseXml(decryptedXml, LinkMessage.class);
-                            linkMessageListeners.forEach(e -> e.call(messageRequest, linkMessage, ctx));
+                            if (linkMessageListeners.isEmpty()) {
+                                defaultReplyMessage(ctx, msgReq);
+                            } else {
+                                LinkMessage linkMessage = MessageXmlUtils.parseXml(decryptedXml, LinkMessage.class);
+                                linkMessageListeners.forEach(e -> e.call(msgReq, linkMessage, ctx));
+                            }
                         }
                         break;
                         case "event": {
                             switch (commonMessage.getEvent()) {
                                 case "subscribe": {
-                                    subscribedMessageListeners.forEach(e -> e.call(messageRequest, commonMessage, ctx));
+                                    if (subscribedMessageListeners.isEmpty()) {
+                                        defaultReplyMessage(ctx, msgReq);
+                                    } else {
+                                        subscribedMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    }
                                 }
                                 break;
                                 case "unsubscribe": {
-                                    unsubscribedMessageListeners.forEach(e -> e.call(messageRequest, commonMessage, ctx));
+                                    if (unsubscribedMessageListeners.isEmpty()) {
+                                        defaultReplyMessage(ctx, msgReq);
+                                    } else {
+                                        unsubscribedMessageListeners.forEach(e -> e.call(msgReq, commonMessage, ctx));
+                                    }
                                 }
                                 break;
                             }
@@ -131,6 +172,12 @@ public class WechatServiceImpl implements WechatService {
         } else {
             otherRequestListeners.forEach(e -> e.call(ctx));
         }
+    }
+
+    protected void defaultReplyMessage(RoutingContext ctx, MessageRequest msgReq) {
+        String replyXml = encryptMessage("success", System.currentTimeMillis() / 1000, msgReq.getNonce());
+        log.info("reply message -> {}", replyXml);
+        ctx.end(replyXml);
     }
 
     @Override
