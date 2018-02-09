@@ -6,6 +6,7 @@ import com.firefly.utils.log.file.FileLog;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
 
 public abstract class AbstractLogConfigParser implements LogConfigParser {
 
@@ -51,49 +52,81 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
         }
 
         if (StringUtils.hasText(c.getFormatter())) {
-            try {
-                Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getFormatter());
-                fileLog.setLogFormatter((LogFormatter) clazz.newInstance());
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-                e.printStackTrace();
-                fileLog.setLogFormatter(new DefaultLogFormatter());
-            }
+            fileLog.setLogFormatter(new LogFormatter() {
+
+                private LogFormatter formatter;
+
+                @Override
+                public String format(LogItem logItem) {
+                    init();
+                    return formatter.format(logItem);
+                }
+
+                private void init() {
+                    try {
+                        Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getFormatter());
+                        formatter = (LogFormatter) clazz.newInstance();
+                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                        e.printStackTrace();
+                        formatter = new DefaultLogFormatter();
+                    }
+                }
+            });
         }
 
         if (StringUtils.hasText(c.getLogNameFormatter())) {
-            try {
-                Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogNameFormatter());
-                fileLog.setLogNameFormatter((LogNameFormatter) clazz.newInstance());
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-                e.printStackTrace();
-                fileLog.setLogNameFormatter(new DefaultLogNameFormatter());
-            }
+            fileLog.setLogNameFormatter(new LogNameFormatter() {
+
+                private LogNameFormatter formatter;
+
+                @Override
+                public String format(String name, LocalDate localDate) {
+                    init();
+                    return formatter.format(name, localDate);
+                }
+
+                @Override
+                public String formatBak(String name, LocalDate localDate, int index) {
+                    init();
+                    return formatter.formatBak(name, localDate, index);
+                }
+
+                private void init() {
+                    try {
+                        Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogNameFormatter());
+                        formatter = (LogNameFormatter) clazz.newInstance();
+                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                        e.printStackTrace();
+                        formatter = new DefaultLogNameFormatter();
+                    }
+                }
+
+            });
         }
 
         if (StringUtils.hasText(c.getLogFilter())) {
-            try { // lazy load log filter
-                Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogFilter());
-                fileLog.setLogFilter(new LogFilter() {
+            fileLog.setLogFilter(new LogFilter() {
 
-                    private LogFilter filter;
+                private LogFilter filter;
 
-                    @Override
-                    public void filter(LogItem logItem) {
-                        if (filter == null) {
-                            try {
-                                filter = (LogFilter) clazz.newInstance();
-                            } catch (InstantiationException | IllegalAccessException e) {
-                                e.printStackTrace();
-                                filter = new DefaultLogFilter();
-                            }
+                @Override
+                public void filter(LogItem logItem) {
+                    init();
+                    filter.filter(logItem);
+                }
+
+                private void init() {
+                    if (filter == null) {
+                        try {
+                            Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogFilter());
+                            filter = (LogFilter) clazz.newInstance();
+                        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                            e.printStackTrace();
+                            filter = new DefaultLogFilter();
                         }
-                        filter.filter(logItem);
                     }
-                });
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                fileLog.setLogFilter(new DefaultLogFilter());
-            }
+                }
+            });
         }
 
         System.out.println("initialize log " + fileLog.toString());
