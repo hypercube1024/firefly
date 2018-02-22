@@ -6,7 +6,6 @@ import com.firefly.net.tcp.SimpleTcpServer;
 import com.firefly.net.tcp.TcpConfiguration;
 import com.firefly.net.tcp.TcpServerConfiguration;
 import com.firefly.net.tcp.codec.flex.decode.StringParser;
-import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.IO;
 
@@ -63,7 +62,6 @@ public class HelloTcpServerAndClientWithOpenssl {
     private static SimpleTcpServer createTcpServer(String host, int port) {
         TcpServerConfiguration serverConfig = new TcpServerConfiguration();
         serverConfig.setSecureConnectionEnabled(true);
-        serverConfig.setSecureSessionFactory(new DefaultOpenSSLSecureSessionFactory());
         serverConfig.setHost(host);
         serverConfig.setPort(port);
         return $.createTCPServer(serverConfig);
@@ -72,7 +70,6 @@ public class HelloTcpServerAndClientWithOpenssl {
     private static SimpleTcpClient createTcpClient() {
         TcpConfiguration clientConfig = new TcpConfiguration();
         clientConfig.setSecureConnectionEnabled(true);
-        clientConfig.setSecureSessionFactory(new DefaultOpenSSLSecureSessionFactory());
         return $.createTCPClient(clientConfig);
     }
 }
