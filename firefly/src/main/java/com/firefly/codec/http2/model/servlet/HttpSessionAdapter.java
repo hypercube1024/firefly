@@ -14,6 +14,7 @@ import java.util.Map;
  * @author Pengtao Qiu
  */
 public class HttpSessionAdapter implements HttpSession {
+
     protected final HTTPSession httpSession;
 
     public HttpSessionAdapter(HTTPSession httpSession) {

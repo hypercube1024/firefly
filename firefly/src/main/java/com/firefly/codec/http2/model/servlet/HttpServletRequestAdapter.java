@@ -36,7 +36,6 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     protected final RoutingContext context;
     protected final MetaData.Request request;
-    protected Authentication authentication;
     protected Cookie[] cookies;
     protected String method;
     protected String pathInfo;
@@ -604,7 +603,7 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
     public AsyncContext getAsyncContext() {
         return null;
     }
-    
+
     @Override
     public boolean isUserInRole(String role) {
         // TODO
