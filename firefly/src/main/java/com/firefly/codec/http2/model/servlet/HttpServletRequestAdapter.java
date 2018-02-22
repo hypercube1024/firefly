@@ -148,12 +148,6 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
     }
 
     @Override
-    public String getAuthType() {
-        // TODO
-        return null;
-    }
-
-    @Override
     public String getRequestedSessionId() {
         return context.getRequestedSessionId();
     }
@@ -601,6 +595,12 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public AsyncContext getAsyncContext() {
+        return null;
+    }
+
+    @Override
+    public String getAuthType() {
+        // TODO
         return null;
     }
 

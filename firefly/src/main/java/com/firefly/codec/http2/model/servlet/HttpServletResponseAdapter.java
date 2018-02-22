@@ -74,8 +74,9 @@ public class HttpServletResponseAdapter implements HttpServletResponse {
     }
 
     protected String toAbsolute(String location) {
-        if (location.startsWith("http"))
+        if (location.startsWith("http")) {
             return location;
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append(servletRequest.getScheme()).append("://")
