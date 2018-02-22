@@ -75,11 +75,6 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
     }
 
     @Override
-    public String getAuthType() {
-        return null;
-    }
-
-    @Override
     public Cookie[] getCookies() {
         if (cookies == null) {
             cookies = request.getFields().getValuesList(HttpHeader.COOKIE).stream()
@@ -154,12 +149,8 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
     }
 
     @Override
-    public boolean isUserInRole(String role) {
-        return false;
-    }
-
-    @Override
-    public Principal getUserPrincipal() {
+    public String getAuthType() {
+        // TODO
         return null;
     }
 
@@ -236,21 +227,6 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public boolean isRequestedSessionIdFromUrl() {
         return context.isRequestedSessionIdFromURL();
-    }
-
-    @Override
-    public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
-        return false;
-    }
-
-    @Override
-    public void login(String username, String password) throws ServletException {
-
-    }
-
-    @Override
-    public void logout() throws ServletException {
-
     }
 
     @Override
@@ -595,6 +571,11 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
     }
 
     @Override
+    public DispatcherType getDispatcherType() {
+        return dispatcherType;
+    }
+
+    @Override
     public ServletContext getServletContext() {
         return null;
     }
@@ -611,21 +592,44 @@ public class HttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public boolean isAsyncStarted() {
-        return context.getResponse().isAsynchronous();
+        return false;
     }
 
     @Override
     public boolean isAsyncSupported() {
-        return true;
+        return false;
     }
 
     @Override
     public AsyncContext getAsyncContext() {
         return null;
     }
+    
+    @Override
+    public boolean isUserInRole(String role) {
+        // TODO
+        return false;
+    }
 
     @Override
-    public DispatcherType getDispatcherType() {
-        return dispatcherType;
+    public Principal getUserPrincipal() {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
+        // TODO
+        return false;
+    }
+
+    @Override
+    public void login(String username, String password) throws ServletException {
+        // TODO
+    }
+
+    @Override
+    public void logout() throws ServletException {
+        // TODO
     }
 }
