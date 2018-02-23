@@ -292,6 +292,8 @@ public interface RoutingContext extends Closeable {
         return updateSession(httpSession).getNow(false);
     }
 
+    CompletableFuture<HTTPSession> getSessionById(String id);
+
     CompletableFuture<HTTPSession> getSession();
 
     CompletableFuture<HTTPSession> getSession(boolean create);
@@ -300,6 +302,8 @@ public interface RoutingContext extends Closeable {
 
     CompletableFuture<Integer> getSessionSize();
 
+    CompletableFuture<Boolean> removeSessionById(String id);
+    
     CompletableFuture<Boolean> removeSession();
 
     CompletableFuture<Boolean> updateSession(HTTPSession httpSession);

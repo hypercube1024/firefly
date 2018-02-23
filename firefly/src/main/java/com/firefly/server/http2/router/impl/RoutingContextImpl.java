@@ -261,37 +261,39 @@ public class RoutingContextImpl implements RoutingContext {
                        .map(HTTPBodyHandlerSPI::getJsonArrayBody)
                        .orElseGet(request::getJsonArrayBody);
     }
-
+    
     public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {
         this.httpBodyHandlerSPI = httpBodyHandlerSPI;
     }
 
     @Override
+    public CompletableFuture<HTTPSession> getSessionById(String id) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.getSessionById(id)).orElse(null);
+    }
+
+    @Override
     public CompletableFuture<HTTPSession> getSession() {
-        return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(HTTPSessionHandlerSPI::getSession)
-                       .orElse(null);
+        return Optional.ofNullable(httpSessionHandlerSPI).map(HTTPSessionHandlerSPI::getSession).orElse(null);
     }
 
     @Override
     public CompletableFuture<HTTPSession> getSession(boolean create) {
-        return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(s -> s.getSession(create))
-                       .orElse(null);
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.getSession(create)).orElse(null);
     }
 
     @Override
     public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge) {
-        return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(s -> s.getAndCreateSession(maxAge))
-                       .orElse(null);
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.getAndCreateSession(maxAge)).orElse(null);
     }
 
     @Override
     public CompletableFuture<Integer> getSessionSize() {
-        return Optional.ofNullable(httpSessionHandlerSPI)
-                       .map(HTTPSessionHandlerSPI::getSessionSize)
-                       .orElse(null);
+        return Optional.ofNullable(httpSessionHandlerSPI).map(HTTPSessionHandlerSPI::getSessionSize).orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeSessionById(String id) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.removeSessionById(id)).orElse(null);
     }
 
     @Override

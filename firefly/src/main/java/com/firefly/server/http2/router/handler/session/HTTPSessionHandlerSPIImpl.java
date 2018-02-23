@@ -32,6 +32,11 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
     }
 
     @Override
+    public CompletableFuture<HTTPSession> getSessionById(String id) {
+        return sessionStore.get(id);
+    }
+
+    @Override
     public CompletableFuture<HTTPSession> getSession() {
         return getSession(true);
     }
@@ -99,6 +104,11 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
             return null;
         });
         return ret;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> removeSessionById(String id) {
+        return sessionStore.remove(id);
     }
 
     @Override
