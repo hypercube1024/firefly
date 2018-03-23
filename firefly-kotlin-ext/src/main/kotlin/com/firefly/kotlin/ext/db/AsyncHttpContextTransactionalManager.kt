@@ -25,7 +25,7 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
             var sqlConn = createConnectionIfEmpty().await()
             if (sqlConn.connection.isClosed) {
                 sqlConn = sqlClient.connection.await()
-                requestCtx.get()?.attributes?.put(transactionKey, sqlConn)
+                requestCtx.get()?.attributes?.put(transactionKey, sqlClient.connection)
                 sqlConn
             } else {
                 sqlConn
