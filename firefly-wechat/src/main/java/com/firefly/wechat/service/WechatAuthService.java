@@ -18,4 +18,9 @@ public interface WechatAuthService {
 
     CompletableFuture<WechatUserInfo> getUserInfo(WechatUserInfoRequest request);
 
+    CompletableFuture<ClientAccessTokenResponse> getClientAccessToken(ClientAccessTokenRequest request);
+
+    CompletableFuture<JsApiTicketResponse> getJsApiTicket(String accessToken);
+
+    JsConfigResponse getJsConfig(JsConfigRequest request);
 }

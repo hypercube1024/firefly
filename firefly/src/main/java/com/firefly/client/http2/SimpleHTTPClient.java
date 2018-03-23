@@ -218,7 +218,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
          * @return RequestBuilder
          */
         public RequestBuilder jsonBody(Object obj) {
-            return put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).body(Json.toJson(obj));
+            return put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.asString()).body(Json.toJson(obj));
         }
 
         /**
