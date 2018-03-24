@@ -60,8 +60,7 @@ val promiseQueueKey = "_promiseQueue"
 fun <C> RoutingContext.getPromiseQueue(): Deque<AsyncPromise<C>>? = getAttr(promiseQueueKey)
 
 @Suppress("UNCHECKED_CAST")
-fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>>
-        = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
 
 /**
  * Set the callback that is called when the asynchronous handler finishes.
@@ -445,6 +444,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
             : this(coroutineLocal, SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
+
+    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?,
+                serverConfiguration: SimpleHTTPServerConfiguration,
+                httpBodyConfiguration: HTTPBodyConfiguration)
+            : this(coroutineLocal, serverConfiguration, httpBodyConfiguration, {})
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
 
