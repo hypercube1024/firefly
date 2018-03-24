@@ -39,8 +39,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 public class SimpleHTTPClient extends AbstractLifeCycle {
@@ -53,7 +51,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     private final Timer responseTimer;
     private final Meter errorMeter;
     private final Counter leakedConnectionCounter;
-    private final ExecutorService blockingIOService;
 
     public SimpleHTTPClient() {
         this(new SimpleHTTPClientConfiguration());
@@ -66,7 +63,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
         errorMeter = metrics.meter("http2.SimpleHTTPClient.error.count");
         leakedConnectionCounter = metrics.counter("http2.SimpleHTTPClient.leak.count");
-        blockingIOService = Executors.newCachedThreadPool(r -> new Thread(r, "simple-http-client-blocking-io"));
         metrics.register("http2.SimpleHTTPClient.error.ratio.1m", new RatioGauge() {
             @Override
             protected Ratio getRatio() {
@@ -823,7 +819,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             }
             Promise.Completable<HTTPOutputStream> p = new Promise.Completable<>();
             connection.send(reqBuilder.request, p, handler);
-            p.thenAccept(output -> blockingIOService.execute(() -> {
+            p.thenAccept(output -> {
                 try (HTTPOutputStream out = output) {
                     for (ByteBuffer buf : reqBuilder.multiPartProvider) {
                         out.write(buf);
@@ -831,7 +827,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 } catch (IOException e) {
                     log.error("SimpleHTTPClient writes data exception", e);
                 }
-            })).exceptionally(t -> {
+            }).exceptionally(t -> {
                 log.error("SimpleHTTPClient gets output stream exception", t);
                 resTimerCtx.stop();
                 errorMeter.mark();
@@ -973,6 +969,5 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         http2Client.stop();
         poolMap.forEach((k, v) -> v.stop());
         Optional.ofNullable(config.getHealthCheck()).ifPresent(HealthCheck::stop);
-        blockingIOService.shutdown();
     }
 }
