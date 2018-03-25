@@ -24,13 +24,20 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
         } else {
             var sqlConn = createConnectionIfEmpty().await()
             if (sqlConn.connection.isClosed) {
-                sqlConn = sqlClient.connection.await()
-                requestCtx.get()?.attributes?.put(transactionKey, sqlClient.connection)
+                val future = sqlClient.connection
+                sqlConn = future.await()
+                requestCtx.get()?.attributes?.put(transactionKey, future)
                 sqlConn
             } else {
                 sqlConn
             }
         }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun getCurrentConnection(): SQLConnection? {
+        val future = requestCtx.get()?.attributes?.get(transactionKey) as CompletableFuture<SQLConnection>?
+        return future?.await()
     }
 
     @Suppress("UNCHECKED_CAST")

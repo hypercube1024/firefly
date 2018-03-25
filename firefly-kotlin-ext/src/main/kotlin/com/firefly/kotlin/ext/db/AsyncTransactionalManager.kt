@@ -10,6 +10,8 @@ interface AsyncTransactionalManager {
 
     suspend fun getConnection(): SQLConnection
 
+    suspend fun getCurrentConnection(): SQLConnection?
+
     suspend fun <T> execSQL(handler: suspend (conn: SQLConnection) -> T): T = getConnection().execSQL(handler)
 
     suspend fun beginTransaction(): Boolean = getConnection().beginTransaction().await()
