@@ -1,6 +1,8 @@
 package com.firefly.kotlin.ext.common
 
 import kotlinx.coroutines.experimental.CoroutineDispatcher
+import kotlinx.coroutines.experimental.asCoroutineDispatcher
+import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import kotlin.coroutines.experimental.CoroutineContext
 
@@ -21,4 +23,11 @@ object CommonCoroutinePool : CoroutineDispatcher() {
         pool.execute(block)
     }
 
+}
+
+object CoroutineDispatchers {
+    val computation: CommonCoroutinePool by lazy { CommonCoroutinePool }
+    val ioBlocking: CoroutineDispatcher by lazy {
+        Executors.newCachedThreadPool { Thread(it, "firefly-io-blocking") }.asCoroutineDispatcher()
+    }
 }
