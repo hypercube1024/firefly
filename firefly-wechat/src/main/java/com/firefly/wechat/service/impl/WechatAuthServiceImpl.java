@@ -1,9 +1,7 @@
 package com.firefly.wechat.service.impl;
 
 import com.firefly.client.http2.SimpleHTTPClient;
-import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.encode.UrlEncoded;
-import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.utils.codec.HexUtils;
 import com.firefly.wechat.model.ErrorResponse;
 import com.firefly.wechat.model.auth.*;
@@ -19,27 +17,18 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author Pengtao Qiu
  */
-public class WechatAuthServiceImpl implements WechatAuthService {
+public class WechatAuthServiceImpl extends AbstractWechatService implements WechatAuthService {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
-
-    private SimpleHTTPClient client;
 
     public WechatAuthServiceImpl() {
 
     }
 
     public WechatAuthServiceImpl(SimpleHTTPClient client) {
-        this.client = client;
+        super(client);
     }
 
-    public SimpleHTTPClient getClient() {
-        return client;
-    }
-
-    public void setClient(SimpleHTTPClient client) {
-        this.client = client;
-    }
 
     @Override
     public CompletableFuture<AccessTokenResponse> getAccessToken(AccessTokenRequest request) {
@@ -96,7 +85,6 @@ public class WechatAuthServiceImpl implements WechatAuthService {
         UrlEncoded encoded = new UrlEncoded();
         encoded.put("access_token", accessToken);
         encoded.put("type", "jsapi");
-
         String param = encoded.encode(StandardCharsets.UTF_8, true);
         return callWechatService("https://api.weixin.qq.com/cgi-bin/ticket/getticket", param, JsApiTicketResponse.class);
     }
@@ -129,28 +117,13 @@ public class WechatAuthServiceImpl implements WechatAuthService {
         }
     }
 
-    protected <T> CompletableFuture<T> callWechatService(String url, String param, Class<T> clazz) {
-        CompletableFuture<T> ret = new CompletableFuture<>();
-        client.get(url + "?" + param).submit()
-              .thenAccept(res -> {
-                  log.info("call wechat service -> {}, {}, {}, {}", url, param, res.getStatus(), res.getStringBody());
-                  complete(ret, res, clazz);
-              });
-        return ret;
-    }
-
-    protected <T> void complete(CompletableFuture<T> ret, SimpleResponse res, Class<T> clazz) {
-        if (res.getStatus() == HttpStatus.OK_200) {
-            if (res.getJsonObjectBody().getInteger("errcode") != 0) {
-                ErrorResponse errorResponse = res.getJsonBody(ErrorResponse.class);
-                ret.completeExceptionally(errorResponse);
-            } else {
-                T response = res.getJsonBody(clazz);
-                ret.complete(response);
-            }
-        } else {
-            ErrorResponse errorResponse = res.getJsonBody(ErrorResponse.class);
-            ret.completeExceptionally(errorResponse);
-        }
+    @Override
+    public CompletableFuture<ApiAccessTokenResponse> getApiAccessToken(ApiAccessTokenRequest request) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("grant_type", request.getGrant_type());
+        encoded.put("appid", request.getAppid());
+        encoded.put("secret", request.getSecret());
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return callWechatService("https://api.weixin.qq.com/cgi-bin/token", param, ApiAccessTokenResponse.class);
     }
 }
