@@ -45,7 +45,7 @@ public class WechatAuthDemo {
             TemplateMessageRequest templateMessageRequest = new TemplateMessageRequest();
             templateMessageRequest.setTouser(openId);
             templateMessageRequest.setTemplate_id(templateListResponse.getTemplate_list().get(0).getTemplate_id());
-            templateMessageRequest.setUrl("http://www.ssss.com");
+            templateMessageRequest.setUrl("http://www.fireflysource.com");
 
             Map<String, TemplateData> data = new HashMap<>();
             TemplateData v1 = new TemplateData();
