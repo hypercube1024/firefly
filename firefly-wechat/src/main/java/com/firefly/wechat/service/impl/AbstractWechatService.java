@@ -43,6 +43,16 @@ public class AbstractWechatService {
         return ret;
     }
 
+    protected <T> CompletableFuture<T> postWechatService(String url, String param, Object data, Class<T> clazz) {
+        CompletableFuture<T> ret = new CompletableFuture<>();
+        client.post(url + "?" + param).jsonBody(data).submit()
+              .thenAccept(res -> {
+                  log.info("call wechat service -> {}, {}, {}, {}, {}", url, param, data, res.getStatus(), res.getStringBody());
+                  complete(ret, res, clazz);
+              });
+        return ret;
+    }
+
     protected <T> void complete(CompletableFuture<T> ret, SimpleResponse res, Class<T> clazz) {
         if (res.getStatus() == HttpStatus.OK_200) {
             if (res.getJsonObjectBody().getInteger("errcode") != 0) {
