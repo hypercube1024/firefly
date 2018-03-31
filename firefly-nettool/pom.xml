@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.7.0</version>
+        <version>4.8.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -62,10 +62,6 @@
         <dependency>
             <groupId>org.mortbay.jetty.alpn</groupId>
             <artifactId>alpn-boot</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-tcnative-boringssl-static</artifactId>
         </dependency>
         <dependency>
             <groupId>org.conscrypt</groupId>

@@ -21,7 +21,7 @@ class ErrorHandler : AsyncHandler {
         ctx.asyncSucceed(Unit)
     }
 
-    suspend override fun handle(ctx: RoutingContext) {
+    override suspend fun handle(ctx: RoutingContext) {
         if (ctx.hasNext()) {
             try {
                 ctx.next()

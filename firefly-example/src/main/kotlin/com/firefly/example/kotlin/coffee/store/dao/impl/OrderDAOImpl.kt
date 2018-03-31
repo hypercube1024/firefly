@@ -16,7 +16,7 @@ class OrderDAOImpl : OrderDAO {
     @Inject
     private lateinit var db: AsyncTransactionalManager
 
-    suspend override fun insertBatch(orders: List<Order>): List<Long> = db.execSQL {
+    override suspend fun insertBatch(orders: List<Order>): List<Long> = db.execSQL {
         it.asyncInsertObjectBatch<Order, Long>(orders)
     }
 

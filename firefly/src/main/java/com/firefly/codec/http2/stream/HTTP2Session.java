@@ -460,13 +460,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             switch (current) {
                 case NOT_CLOSED: {
                     if (closed.compareAndSet(current, CloseState.LOCALLY_CLOSED)) {
-                        byte[] payload = null;
-                        if (reason != null) {
-                            // Trim the reason to avoid attack vectors.
-                            reason = reason.substring(0, Math.min(reason.length(), 32));
-                            payload = reason.getBytes(StandardCharsets.UTF_8);
-                        }
-                        GoAwayFrame frame = new GoAwayFrame(lastStreamId.get(), error, payload);
+                        GoAwayFrame frame = newGoAwayFrame(error, reason);
                         control(null, callback, frame);
                         return true;
                     }
@@ -480,6 +474,16 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
                 }
             }
         }
+    }
+
+    private GoAwayFrame newGoAwayFrame(int error, String reason) {
+        byte[] payload = null;
+        if (reason != null) {
+            // Trim the reason to avoid attack vectors.
+            reason = reason.substring(0, Math.min(reason.length(), 32));
+            payload = reason.getBytes(StandardCharsets.UTF_8);
+        }
+        return new GoAwayFrame(lastStreamId.get(), error, payload);
     }
 
     @Override
@@ -611,9 +615,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
 
     @Override
     public Collection<Stream> getStreams() {
-        List<Stream> result = new ArrayList<>();
-        result.addAll(streams.values());
-        return result;
+        return new ArrayList<>(streams.values());
     }
 
     public int getStreamCount() {
@@ -984,6 +986,14 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
             }
             super.succeeded();
         }
+
+        @Override
+        public void failed(Throwable x) {
+            if (frame.getType() == FrameType.DISCONNECT) {
+                terminate(new ClosedChannelException());
+            }
+            super.failed(x);
+        }
     }
 
     private class DataEntry extends HTTP2Flusher.Entry {
@@ -1122,7 +1132,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         }
 
         private void complete() {
-            control(null, Callback.NOOP, new DisconnectFrame());
+            frames(null, Callback.NOOP, newGoAwayFrame(ErrorCode.NO_ERROR.code, null), new DisconnectFrame());
         }
     }
 

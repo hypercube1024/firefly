@@ -11,9 +11,6 @@ import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
 import com.firefly.net.tcp.secure.conscrypt.FileConscryptSSLContextFactory;
 import com.firefly.net.tcp.secure.jdk.FileJdkSSLContextFactory;
 import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.FileCertificateOpenSSLSecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.SelfSignedCertificateOpenSSLSecureSessionFactory;
 import com.firefly.utils.RandomUtils;
 import com.firefly.utils.io.ClassPathResource;
 import com.firefly.utils.io.IO;
@@ -114,42 +111,6 @@ public class TestSimpleTcpServerAndClient {
         run.testName = "Test conscrypt file certificate";
         data.add(run);
 
-        run = new Run();
-        run.clientConfig = new TcpConfiguration();
-        run.clientConfig.setSecureConnectionEnabled(true);
-        run.clientConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
-        run.serverConfig = new TcpServerConfiguration();
-        run.serverConfig.setSecureConnectionEnabled(true);
-        run.serverConfig.setSecureSessionFactory(new SelfSignedCertificateOpenSSLSecureSessionFactory());
-        run.port = (int) RandomUtils.random(1000, 65534);
-        run.maxMsg = 20;
-        run.testName = "Test openssl self signed certificate";
-        data.add(run);
-
-        run = new Run();
-        run.clientConfig = new TcpConfiguration();
-        run.clientConfig.setSecureConnectionEnabled(true);
-        run.clientConfig.setSecureSessionFactory(new DefaultOpenSSLSecureSessionFactory());
-        run.serverConfig = new TcpServerConfiguration();
-        run.serverConfig.setSecureConnectionEnabled(true);
-        run.serverConfig.setSecureSessionFactory(new DefaultOpenSSLSecureSessionFactory());
-        run.port = (int) RandomUtils.random(1000, 65534);
-        run.maxMsg = 20;
-        run.testName = "Test openssl default certificate";
-        data.add(run);
-
-        run = new Run();
-        run.clientConfig = new TcpConfiguration();
-        run.clientConfig.setSecureConnectionEnabled(true);
-        run.clientConfig.setSecureSessionFactory(createOpenSSLFileSecureSessionFactory());
-        run.serverConfig = new TcpServerConfiguration();
-        run.serverConfig.setSecureConnectionEnabled(true);
-        run.serverConfig.setSecureSessionFactory(createOpenSSLFileSecureSessionFactory());
-        run.port = (int) RandomUtils.random(1000, 65534);
-        run.maxMsg = 20;
-        run.testName = "Test openssl self signed certificate";
-        data.add(run);
-
         return data;
     }
 
@@ -158,7 +119,7 @@ public class TestSimpleTcpServerAndClient {
         System.out.println(pathResource.getFile().getAbsolutePath());
         SSLContextFactory factory = new FileConscryptSSLContextFactory(pathResource.getFile().getAbsolutePath(),
                 "123456", "654321");
-        return new JdkSecureSessionFactory(factory, factory);
+        return new ConscryptSecureSessionFactory(factory, factory);
     }
 
     private static SecureSessionFactory createJDKFileSecureSessionFactory() throws IOException {
@@ -167,12 +128,6 @@ public class TestSimpleTcpServerAndClient {
         SSLContextFactory factory = new FileJdkSSLContextFactory(pathResource.getFile().getAbsolutePath(),
                 "123456", "654321");
         return new JdkSecureSessionFactory(factory, factory);
-    }
-
-    private static SecureSessionFactory createOpenSSLFileSecureSessionFactory() throws IOException {
-        ClassPathResource certificate = new ClassPathResource("/myCA.cer");
-        ClassPathResource privateKey = new ClassPathResource("/myCAPriv8.key");
-        return new FileCertificateOpenSSLSecureSessionFactory(certificate.getFile().getAbsolutePath(), privateKey.getFile().getAbsolutePath());
     }
 
     @Test

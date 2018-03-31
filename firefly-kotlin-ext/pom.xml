@@ -12,7 +12,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.7.0</version>
+        <version>4.8.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -55,6 +55,10 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-reactor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-nio</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>

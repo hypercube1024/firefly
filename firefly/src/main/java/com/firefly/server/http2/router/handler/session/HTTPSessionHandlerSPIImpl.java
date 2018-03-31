@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
 
     private final SessionStore sessionStore;
+    private String contextSessionKey = "_contextSessionKey";
 
     public HTTPSessionHandlerSPIImpl(RoutingContext routingContext,
                                      SessionStore sessionStore,
@@ -22,6 +23,18 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         this.sessionStore = sessionStore;
     }
 
+    public String getContextSessionKey() {
+        return contextSessionKey;
+    }
+
+    public void setContextSessionKey(String contextSessionKey) {
+        this.contextSessionKey = contextSessionKey;
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> getSessionById(String id) {
+        return sessionStore.get(id);
+    }
 
     @Override
     public CompletableFuture<HTTPSession> getSession() {
@@ -30,22 +43,40 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
 
     @Override
     public CompletableFuture<HTTPSession> getSession(boolean create) {
+        return _getSession(create, -1);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge) {
+        return _getSession(true, maxAge);
+    }
+
+    private CompletableFuture<HTTPSession> _getSession(boolean create, int maxAge) {
         CompletableFuture<HTTPSession> ret = new CompletableFuture<>();
-        sessionStore.get(getSessionId(create)).thenAccept(ret::complete).exceptionally(ex -> {
-            if (create && Optional.ofNullable(ex)
-                                  .map(Throwable::getCause)
-                                  .filter(e -> e instanceof SessionNotFound || e instanceof SessionInvalidException)
-                                  .isPresent()) {
-                createSession(ret);
-            } else {
-                Optional.ofNullable(ex)
-                        .map(Throwable::getCause)
-                        .filter(e -> e instanceof SessionInvalidException)
-                        .ifPresent(e -> removeCookie());
-                ret.completeExceptionally(ex);
-            }
-            return null;
-        });
+
+        HTTPSession currentSession = (HTTPSession) routingContext.getAttribute(contextSessionKey);
+        if (currentSession != null) {
+            ret.complete(currentSession);
+        } else {
+            sessionStore.get(getSessionId(create)).thenAccept(s -> {
+                routingContext.setAttribute(contextSessionKey, s);
+                ret.complete(s);
+            }).exceptionally(ex -> {
+                if (create && Optional.ofNullable(ex)
+                                      .map(Throwable::getCause)
+                                      .filter(e -> e instanceof SessionNotFound || e instanceof SessionInvalidException)
+                                      .isPresent()) {
+                    createSession(ret, maxAge);
+                } else {
+                    Optional.ofNullable(ex)
+                            .map(Throwable::getCause)
+                            .filter(e -> e instanceof SessionInvalidException)
+                            .ifPresent(e -> removeCookie());
+                    ret.completeExceptionally(ex);
+                }
+                return null;
+            });
+        }
         return ret;
     }
 
@@ -66,6 +97,7 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         CompletableFuture<Boolean> ret = new CompletableFuture<>();
         sessionStore.remove(requestedSessionId).thenAccept(success -> {
             removeCookie();
+            routingContext.getAttributes().remove(contextSessionKey);
             ret.complete(success);
         }).exceptionally(ex -> {
             ret.completeExceptionally(ex);
@@ -75,7 +107,13 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
     }
 
     @Override
+    public CompletableFuture<Boolean> removeSessionById(String id) {
+        return sessionStore.remove(id);
+    }
+
+    @Override
     public CompletableFuture<Boolean> updateSession(HTTPSession httpSession) {
+        routingContext.setAttribute(contextSessionKey, httpSession);
         return sessionStore.put(requestedSessionId, httpSession);
     }
 
@@ -86,20 +124,23 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         return requestedSessionId;
     }
 
-    protected void createSession(CompletableFuture<HTTPSession> ret) {
+    protected void createSession(CompletableFuture<HTTPSession> ret, int maxAge) {
         HTTPSession newSession = HTTPSession.create(requestedSessionId, defaultMaxInactiveInterval);
-        sessionStore.put(newSession.getId(), newSession)
-                    .thenAccept(r -> {
-                        createCookie();
-                        ret.complete(newSession);
-                    })
-                    .exceptionally(ex -> {
-                        ret.completeExceptionally(ex);
-                        return null;
-                    });
+        sessionStore.put(newSession.getId(), newSession).thenAccept(r -> {
+            createCookie(maxAge);
+            routingContext.setAttribute(contextSessionKey, newSession);
+            ret.complete(newSession);
+        }).exceptionally(ex -> {
+            ret.completeExceptionally(ex);
+            return null;
+        });
     }
 
-    private void createCookie() {
-        routingContext.addCookie(new Cookie(sessionIdParameterName, requestedSessionId));
+    private void createCookie(int maxAge) {
+        Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
+        if (maxAge > 0) {
+            cookie.setMaxAge(maxAge);
+        }
+        routingContext.addCookie(cookie);
     }
 }

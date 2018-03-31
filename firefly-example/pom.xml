@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.7.0</version>
+        <version>4.8.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -169,6 +169,10 @@
         <dependency>
             <groupId>com.fireflysource</groupId>
             <artifactId>firefly-slf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fireflysource</groupId>
+            <artifactId>firefly-session</artifactId>
         </dependency>
 
         <dependency>

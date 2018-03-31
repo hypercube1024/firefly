@@ -208,7 +208,7 @@ public interface RoutingContext extends Closeable {
     }
 
     default RoutingContext writeJson(Object object) {
-        put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString()).write(Json.toJson(object));
+        put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.asString()).write(Json.toJson(object));
         return this;
     }
 
@@ -292,12 +292,18 @@ public interface RoutingContext extends Closeable {
         return updateSession(httpSession).getNow(false);
     }
 
+    CompletableFuture<HTTPSession> getSessionById(String id);
+
     CompletableFuture<HTTPSession> getSession();
 
     CompletableFuture<HTTPSession> getSession(boolean create);
 
+    CompletableFuture<HTTPSession> getAndCreateSession(int maxAge);
+
     CompletableFuture<Integer> getSessionSize();
 
+    CompletableFuture<Boolean> removeSessionById(String id);
+    
     CompletableFuture<Boolean> removeSession();
 
     CompletableFuture<Boolean> updateSession(HTTPSession httpSession);

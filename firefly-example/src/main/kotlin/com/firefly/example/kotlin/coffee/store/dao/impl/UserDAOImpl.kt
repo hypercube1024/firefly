@@ -17,7 +17,7 @@ class UserDAOImpl : UserDAO {
     @Inject
     private lateinit var db: AsyncTransactionalManager
 
-    suspend override fun getByName(name: String): User {
+    override suspend fun getByName(name: String): User {
         if (!StringUtils.hasText(name)) {
             throw IllegalArgumentException("The username is required")
         }

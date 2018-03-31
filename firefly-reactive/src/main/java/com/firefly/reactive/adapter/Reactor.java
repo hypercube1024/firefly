@@ -9,6 +9,9 @@ import com.firefly.reactive.adapter.db.ReactiveSQLConnectionAdapter;
 import com.firefly.reactive.adapter.http.ReactiveHTTPClient;
 import com.firefly.reactive.adapter.http.ReactiveHTTPClientSingleton;
 import com.firefly.reactive.adapter.http.ReactiveHTTPsClientSingleton;
+import org.reactivestreams.Publisher;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Hello world!

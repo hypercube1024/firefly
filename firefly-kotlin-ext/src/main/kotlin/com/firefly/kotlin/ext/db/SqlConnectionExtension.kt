@@ -1,5 +1,6 @@
 package com.firefly.kotlin.ext.db
 
+import com.firefly.db.RecordNotFound
 import com.firefly.db.SQLConnection
 import com.firefly.db.SQLResultSet
 import com.firefly.kotlin.ext.log.KtLogger
@@ -119,6 +120,10 @@ suspend fun <T> SQLConnection.execSQL(handler: suspend (conn: SQLConnection) -> 
             commitAndEndTransaction().await()
         }
         ret
+    } catch (e: RecordNotFound) {
+        sysLogger.warn("execute SQL exception", e)
+        (if (isNew) rollbackAndEndTransaction() else rollback()).await()
+        throw e
     } catch (e: Exception) {
         sysLogger.error("execute SQL exception", e)
         (if (isNew) rollbackAndEndTransaction() else rollback()).await()

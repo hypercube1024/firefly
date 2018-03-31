@@ -58,7 +58,7 @@ public class LogTest {
             ClassNameLogWrap classNameLogWrap = (ClassNameLogWrap) log;
             if (classNameLogWrap.getLog() instanceof FileLog) {
                 FileLog fileLog = (FileLog) classNameLogWrap.getLog();
-                File file = new File(fileLog.getPath(), fileLog.getName() + "." + LogFactory.DAY_DATE_FORMAT.format(new Date()) + ".txt");
+                File file = new File(fileLog.getPath(), fileLog.getName() + ".txt");
                 if (file.exists()) {
                     return file;
                 }

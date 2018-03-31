@@ -10,10 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinWorkerThread;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -42,12 +39,42 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
             throw new NetException("server configuration is null");
 
         try {
-            netExecutorService = new ForkJoinPool
-                    (config.getAsynchronousCorePoolSize(), pool -> {
-                        ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
-                        worker.setName(getThreadName() + worker.getPoolIndex());
-                        return worker;
-                    }, null, true);
+            if (config.getAsynchronousCorePoolSize() <= 0) {
+                ThreadFactory threadFactory = new ThreadFactory() {
+
+                    private AtomicInteger threadId = new AtomicInteger();
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, getThreadName() + threadId.getAndIncrement());
+                    }
+                };
+                netExecutorService = Executors.newCachedThreadPool(threadFactory);
+                log.info("init the cached thread pool");
+            } else if (config.getAsynchronousCorePoolSize() <= Config.defaultPoolSize * 2) {
+                netExecutorService = new ForkJoinPool
+                        (config.getAsynchronousCorePoolSize(), pool -> {
+                            ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+                            worker.setName(getThreadName() + worker.getPoolIndex());
+                            return worker;
+                        }, null, true);
+                log.info("init the fork join pool");
+            } else {
+                ThreadFactory threadFactory = new ThreadFactory() {
+
+                    private AtomicInteger threadId = new AtomicInteger();
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, getThreadName() + threadId.getAndIncrement());
+                    }
+                };
+                netExecutorService = new ThreadPoolExecutor(Config.defaultPoolSize, config.getAsynchronousCorePoolSize(),
+                        15L, TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>(),
+                        threadFactory);
+                log.info("init the fixed size thread pool");
+            }
             group = AsynchronousChannelGroup.withThreadPool(netExecutorService);
             log.info(config.toString());
             worker = new AsynchronousTcpWorker(config, new DefaultNetEvent(config));

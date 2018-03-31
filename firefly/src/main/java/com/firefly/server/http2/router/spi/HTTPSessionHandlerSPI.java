@@ -10,13 +10,19 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface HTTPSessionHandlerSPI {
 
+    CompletableFuture<HTTPSession> getSessionById(String id);
+
     CompletableFuture<HTTPSession> getSession();
 
     CompletableFuture<HTTPSession> getSession(boolean create);
 
+    CompletableFuture<HTTPSession> getAndCreateSession(int maxAge);
+
     CompletableFuture<Integer> getSessionSize();
 
     CompletableFuture<Boolean> removeSession();
+
+    CompletableFuture<Boolean> removeSessionById(String id);
 
     CompletableFuture<Boolean> updateSession(HTTPSession httpSession);
 

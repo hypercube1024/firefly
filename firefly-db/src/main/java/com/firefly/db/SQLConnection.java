@@ -2,6 +2,7 @@ package com.firefly.db;
 
 import com.firefly.utils.function.Func1;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -446,4 +447,6 @@ public interface SQLConnection {
      * @return If return true, commit and then end the transaction success.
      */
     CompletableFuture<Void> commitAndEndTransaction();
+
+    Connection getConnection();
 }

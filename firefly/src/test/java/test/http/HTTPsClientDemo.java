@@ -6,7 +6,6 @@ import com.firefly.codec.http2.model.HttpStatus;
 import com.firefly.net.SecureSessionFactory;
 import com.firefly.net.tcp.secure.conscrypt.ConscryptSecureSessionFactory;
 import com.firefly.net.tcp.secure.jdk.JdkSecureSessionFactory;
-import com.firefly.net.tcp.secure.openssl.DefaultOpenSSLSecureSessionFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +25,6 @@ public class HTTPsClientDemo {
 
     public static void main(String[] args) throws InterruptedException {
         List<SimpleHTTPClient> clients = Arrays.asList(
-                test(new DefaultOpenSSLSecureSessionFactory()),
                 test(new ConscryptSecureSessionFactory()),
                 test(new JdkSecureSessionFactory()));
         clients.forEach(SimpleHTTPClient::stop);
