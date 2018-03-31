@@ -17,6 +17,6 @@ class ProductServiceImpl : ProductService {
     @Inject
     private lateinit var productDAO: ProductDAO
 
-    suspend override fun list(query: ProductQuery): Page<Product> = productDAO.list(query)
+    override suspend fun list(query: ProductQuery): Page<Product> = productDAO.list(query)
 
 }

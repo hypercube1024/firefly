@@ -23,7 +23,7 @@ class InventoryDAOImpl : InventoryDAO {
     @Inject
     private lateinit var db: AsyncTransactionalManager
 
-    suspend override fun updateBatch(list: List<InventoryUpdate>, operator: InventoryOperator): IntArray = db.execSQL {
+    override suspend fun updateBatch(list: List<InventoryUpdate>, operator: InventoryOperator): IntArray = db.execSQL {
         if (CollectionUtils.isEmpty(list)) {
             throw IllegalArgumentException("The inventory update request must be not empty")
         }
@@ -44,7 +44,7 @@ class InventoryDAOImpl : InventoryDAO {
         }.collect(Collectors.toList<Array<Any>>()).toTypedArray()).await()
     }
 
-    suspend override fun listByProductId(productIdList: List<Long>): List<Inventory> {
+    override suspend fun listByProductId(productIdList: List<Long>): List<Inventory> {
         if (CollectionUtils.isEmpty(productIdList)) {
             return listOf()
         }

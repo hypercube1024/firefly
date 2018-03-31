@@ -21,7 +21,7 @@ class ProductDAOImpl : ProductDAO {
     @Inject
     private lateinit var db: AsyncTransactionalManager
 
-    suspend override fun list(query: ProductQuery): Page<Product> {
+    override suspend fun list(query: ProductQuery): Page<Product> {
         val params = ArrayList<Any>()
         val sql = StringBuilder("select p.*, inventory.amount from `coffee_store`.`product` p ")
         sql.append("inner join `coffee_store`.`inventory` inventory on inventory.product_id = p.id where 1 = 1 ")

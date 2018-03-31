@@ -15,6 +15,6 @@ class UserServiceImpl : UserService {
     @Inject
     private lateinit var userDAO: UserDAO
 
-    suspend override fun getByName(name: String): User = userDAO.getByName(name)
+    override suspend fun getByName(name: String): User = userDAO.getByName(name)
 
 }

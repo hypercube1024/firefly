@@ -119,7 +119,7 @@ public class TestSimpleTcpServerAndClient {
         System.out.println(pathResource.getFile().getAbsolutePath());
         SSLContextFactory factory = new FileConscryptSSLContextFactory(pathResource.getFile().getAbsolutePath(),
                 "123456", "654321");
-        return new JdkSecureSessionFactory(factory, factory);
+        return new ConscryptSecureSessionFactory(factory, factory);
     }
 
     private static SecureSessionFactory createJDKFileSecureSessionFactory() throws IOException {

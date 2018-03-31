@@ -31,7 +31,7 @@ class OrderServiceImpl : OrderService {
     @Inject
     private lateinit var productDAO: ProductDAO
 
-    suspend override fun buy(request: ProductBuyRequest) {
+    override suspend fun buy(request: ProductBuyRequest) {
         if (Objects.equals(request.userId, 0L)) {
             throw IllegalArgumentException("The user id is required")
         }
