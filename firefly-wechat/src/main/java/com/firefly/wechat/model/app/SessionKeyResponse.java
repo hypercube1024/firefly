@@ -11,6 +11,7 @@ public class SessionKeyResponse implements Serializable {
 
     private String openid;
     private String session_key;
+    private String unionid;
 
     public String getOpenid() {
         return openid;
@@ -28,11 +29,20 @@ public class SessionKeyResponse implements Serializable {
         this.session_key = session_key;
     }
 
+    public String getUnionid() {
+        return unionid;
+    }
+
+    public void setUnionid(String unionid) {
+        this.unionid = unionid;
+    }
+
     @Override
     public String toString() {
         return "SessionKeyResponse{" +
                 "openid='" + openid + '\'' +
                 ", session_key='" + session_key + '\'' +
+                ", unionid='" + unionid + '\'' +
                 '}';
     }
 }

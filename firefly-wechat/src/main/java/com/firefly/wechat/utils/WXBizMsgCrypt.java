@@ -177,7 +177,6 @@ public class WXBizMsgCrypt {
             throw new AesException(AesException.ValidateAppidError);
         }
         return xmlContent;
-
     }
 
     /**
