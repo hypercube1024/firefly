@@ -227,7 +227,7 @@ public class MultiPartParser {
      *
      * @param buffer the buffer to parse
      * @param last   whether this buffer contains last bit of content
-     * @return True if an {@link RequestHandler} method was called and it returned true;
+     * @return True if an {@link com.firefly.codec.http2.decode.HttpParser.RequestHandler} method was called and it returned true;
      */
     public boolean parse(ByteBuffer buffer, boolean last) {
         boolean handle = false;
