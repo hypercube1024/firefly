@@ -180,7 +180,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
     }
 
     private void onHeaders(HeadersFrame frame, Callback callback) {
-        if (updateClose(frame.isEndStream(), false))
+        if (updateClose(frame.isEndStream(), CloseState.Event.RECEIVED))
             session.removeStream(this);
         callback.succeeded();
     }
@@ -207,7 +207,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
             return;
         }
 
-        if (updateClose(frame.isEndStream(), false))
+        if (updateClose(frame.isEndStream(), CloseState.Event.RECEIVED))
             session.removeStream(this);
         notifyData(this, frame, callback);
     }
@@ -222,7 +222,7 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
     private void onPush(PushPromiseFrame frame, Callback callback) {
         // Pushed streams are implicitly locally closed.
         // They are closed when receiving an end-stream DATA frame.
-        updateClose(true, true);
+        updateClose(true, CloseState.Event.AFTER_SEND);
         callback.succeeded();
     }
 
@@ -231,31 +231,88 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
     }
 
     @Override
-    public boolean updateClose(boolean update, boolean local) {
+    public boolean updateClose(boolean update, CloseState.Event event) {
         if (log.isDebugEnabled()) {
-            log.debug("Update close for {} close={} local={}", this.toString(), update, local);
+            log.debug("Update close for {} update={} event={}", this, update, event);
         }
+
         if (!update)
             return false;
 
+        switch (event) {
+            case RECEIVED:
+                return updateCloseAfterReceived();
+            case BEFORE_SEND:
+                return updateCloseBeforeSend();
+            case AFTER_SEND:
+                return updateCloseAfterSend();
+            default:
+                return false;
+        }
+    }
+
+    private boolean updateCloseAfterReceived() {
         while (true) {
             CloseState current = closeState.get();
             switch (current) {
                 case NOT_CLOSED: {
-                    CloseState newValue = local ? CloseState.LOCALLY_CLOSED : CloseState.REMOTELY_CLOSED;
-                    if (closeState.compareAndSet(current, newValue))
+                    if (closeState.compareAndSet(current, CloseState.REMOTELY_CLOSED))
                         return false;
                     break;
                 }
-                case LOCALLY_CLOSED: {
-                    if (local)
+                case LOCALLY_CLOSING: {
+                    if (closeState.compareAndSet(current, CloseState.CLOSING)) {
+                        updateStreamCount(0, 1);
                         return false;
+                    }
+                    break;
+                }
+                case LOCALLY_CLOSED: {
                     close();
                     return true;
                 }
-                case REMOTELY_CLOSED: {
-                    if (!local)
+                default: {
+                    return false;
+                }
+            }
+        }
+    }
+
+    private boolean updateCloseBeforeSend() {
+        while (true) {
+            CloseState current = closeState.get();
+            switch (current) {
+                case NOT_CLOSED: {
+                    if (closeState.compareAndSet(current, CloseState.LOCALLY_CLOSING))
                         return false;
+                    break;
+                }
+                case REMOTELY_CLOSED: {
+                    if (closeState.compareAndSet(current, CloseState.CLOSING)) {
+                        updateStreamCount(0, 1);
+                        return false;
+                    }
+                    break;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+    }
+
+    private boolean updateCloseAfterSend() {
+        while (true) {
+            CloseState current = closeState.get();
+            switch (current) {
+                case NOT_CLOSED:
+                case LOCALLY_CLOSING: {
+                    if (closeState.compareAndSet(current, CloseState.LOCALLY_CLOSED))
+                        return false;
+                    break;
+                }
+                case REMOTELY_CLOSED:
+                case CLOSING: {
                     close();
                     return true;
                 }
@@ -286,8 +343,16 @@ public class HTTP2Stream extends IdleTimeout implements StreamSPI {
 
     @Override
     public void close() {
-        if (closeState.getAndSet(CloseState.CLOSED) != CloseState.CLOSED)
+        CloseState oldState = closeState.getAndSet(CloseState.CLOSED);
+        if (oldState != CloseState.CLOSED) {
+            int deltaClosing = oldState == CloseState.CLOSING ? -1 : 0;
+            updateStreamCount(-1, deltaClosing);
             onClose();
+        }
+    }
+
+    private void updateStreamCount(int deltaStream, int deltaClosing) {
+        ((HTTP2Session) session).updateStreamCount(isLocal(), deltaStream, deltaClosing);
     }
 
     private void notifyData(Stream stream, DataFrame frame, Callback callback) {
