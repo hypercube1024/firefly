@@ -382,6 +382,18 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>0.8.1</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.reporting</groupId>
+                            <artifactId>maven-reporting-api</artifactId>
+                            <version>3.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.reporting</groupId>
+                            <artifactId>maven-reporting-impl</artifactId>
+                            <version>3.0.0</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
 
                 <plugin>
