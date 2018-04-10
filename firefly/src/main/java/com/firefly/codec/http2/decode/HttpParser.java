@@ -69,8 +69,7 @@ import static com.firefly.codec.http2.model.HttpTokens.*;
  */
 public class HttpParser {
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
-    @Deprecated
-    public final static String __STRICT = "org.eclipse.jetty.http.HttpParser.STRICT";
+
     public final static int INITIAL_URI_LENGTH = 256;
 
     /**
@@ -215,11 +214,6 @@ public class HttpParser {
     }
 
     private static HttpCompliance compliance() {
-        Boolean strict = Boolean.getBoolean(__STRICT);
-        if (strict) {
-            LOG.warn("Deprecated property used: " + __STRICT);
-            return HttpCompliance.LEGACY;
-        }
         return HttpCompliance.RFC7230;
     }
 
