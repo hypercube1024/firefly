@@ -3,17 +3,15 @@ package com.firefly.wechat.service.impl;
 import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.encode.UrlEncoded;
-import com.firefly.utils.Assert;
 import com.firefly.utils.codec.Base64;
-import com.firefly.wechat.model.app.DecryptedUserInfoRequest;
-import com.firefly.wechat.model.app.DecryptedUserInfoResponse;
-import com.firefly.wechat.model.app.SessionKeyRequest;
-import com.firefly.wechat.model.app.SessionKeyResponse;
+import com.firefly.wechat.model.app.*;
 import com.firefly.wechat.service.WechatAppService;
 import com.firefly.wechat.utils.AesUtils;
 import com.firefly.wechat.utils.SHA1;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -56,5 +54,29 @@ public class WechatAppServiceImpl extends AbstractWechatService implements Wecha
         String sign = SHA1.getSHA1(rawData, sessionKey);
         log.info("decryptUserInfo. sign {}, {}", sign, signature);
         return signature.equals(sign);
+    }
+
+    @Override
+    public CompletableFuture<List<ByteBuffer>> getCodeUnlimit(CodeUnlimitRequest request, String accessToken) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("access_token", accessToken);
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return postAndReturnBinaryData("https://api.weixin.qq.com/wxa/getwxacodeunlimit", param, request);
+    }
+
+    @Override
+    public CompletableFuture<List<ByteBuffer>> getCode(CodeUnlimitRequest request, String accessToken) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("access_token", accessToken);
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return postAndReturnBinaryData("https://api.weixin.qq.com/wxa/getwxacode", param, request);
+    }
+
+    @Override
+    public CompletableFuture<List<ByteBuffer>> createQrcode(QrcodeRequest request, String accessToken) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("access_token", accessToken);
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return postAndReturnBinaryData("https://api.weixin.qq.com/cgi-bin/wxaapp/createwxaqrcode", param, request);
     }
 }
