@@ -10,8 +10,7 @@ import static com.firefly.utils.json.JsonStringSymbol.*;
 
 public class JsonStringWriter extends AbstractJsonStringWriter {
 
-    private static final ThreadLocal<SoftReference<LRUHashMap<String, char[]>>> escapedJsonStringCache =
-            ThreadLocal.withInitial(() -> new SoftReference<LRUHashMap<String, char[]>>(new LRUHashMap<>()));
+    private static final ThreadLocal<SoftReference<LRUHashMap<String, char[]>>> escapedJsonStringCache = ThreadLocal.withInitial(() -> new SoftReference<>(new LRUHashMap<>()));
 
     private static class LRUHashMap<K, V> extends LinkedHashMap<K, V> {
 
@@ -26,6 +25,8 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
             return size() > maxCacheSize;
         }
     }
+
+    private static final int MAX_CACHE_SIZE = 1024;
 
     public static Map<Character, char[]> SPECIAL_CHARACTER = new HashMap<Character, char[]>() {{
         for (int i = 0; i <= 0x1f; i++) {
@@ -82,6 +83,9 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
     }
 
     private static char[] getCachedJsonString(String value) {
+        if (value.length() >= MAX_CACHE_SIZE) {
+            return null;
+        }
         SoftReference<LRUHashMap<String, char[]>> softReference = escapedJsonStringCache.get();
         if (softReference != null) {
             LRUHashMap<String, char[]> map = softReference.get();
@@ -93,6 +97,9 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
     }
 
     private static void putJsonStringToCache(String value, char[] chars) {
+        if (value.length() >= MAX_CACHE_SIZE) {
+            return;
+        }
         SoftReference<LRUHashMap<String, char[]>> softReference = escapedJsonStringCache.get();
         if (softReference == null) {
             LRUHashMap<String, char[]> map = new LRUHashMap<>();
