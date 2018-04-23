@@ -46,7 +46,11 @@ public interface WechatMessageService {
 
     void addViewMessageListener(Action3<MessageRequest, EventMessage, RoutingContext> action);
 
+    void addPageMessageListener(Action3<MessageRequest, SmallAppPageMessage, RoutingContext> action);
+
     void addReportLocationMessageListener(Action3<MessageRequest, ReportLocationMessage, RoutingContext> action);
+
+    void addEnterSessionMessageListener(Action3<MessageRequest, SmallAppEnterSessionMessage, RoutingContext> action);
 
     void addEchoStringListener(Action2<EchoRequest, RoutingContext> action);
 

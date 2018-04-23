@@ -8,48 +8,25 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
  * @author Pengtao Qiu
  */
 @JacksonXmlRootElement(localName = "xml")
-public class EventMessage extends CommonMessage {
+public class SmallAppEnterSessionMessage extends EventMessage {
 
     @JacksonXmlCData
-    @JacksonXmlProperty(localName = "Event")
-    protected String event;
+    @JacksonXmlProperty(localName = "SessionFrom")
+    private String sessionFrom;
 
-    @JacksonXmlCData
-    @JacksonXmlProperty(localName = "EventKey")
-    protected String eventKey;
-
-    @JacksonXmlCData
-    @JacksonXmlProperty(localName = "Ticket")
-    protected String ticket;
-
-    public String getEvent() {
-        return event;
+    public String getSessionFrom() {
+        return sessionFrom;
     }
 
-    public void setEvent(String event) {
-        this.event = event;
-    }
-
-    public String getEventKey() {
-        return eventKey;
-    }
-
-    public void setEventKey(String eventKey) {
-        this.eventKey = eventKey;
-    }
-
-    public String getTicket() {
-        return ticket;
-    }
-
-    public void setTicket(String ticket) {
-        this.ticket = ticket;
+    public void setSessionFrom(String sessionFrom) {
+        this.sessionFrom = sessionFrom;
     }
 
     @Override
     public String toString() {
-        return "EventMessage{" +
-                "event='" + event + '\'' +
+        return "SmallAppEnterSessionMessage{" +
+                "sessionFrom='" + sessionFrom + '\'' +
+                ", event='" + event + '\'' +
                 ", eventKey='" + eventKey + '\'' +
                 ", ticket='" + ticket + '\'' +
                 ", url='" + url + '\'' +
