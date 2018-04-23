@@ -22,4 +22,6 @@ public interface WechatAppService {
     CompletableFuture<List<ByteBuffer>> getCode(CodeUnlimitRequest request, String accessToken);
 
     CompletableFuture<List<ByteBuffer>> createQrcode(QrcodeRequest request, String accessToken);
+
+    CompletableFuture<CommonMessageResponse> sendMessage(CommonMessageRequest request, String accessToken);
 }

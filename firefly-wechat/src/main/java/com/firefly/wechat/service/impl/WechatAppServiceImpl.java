@@ -79,4 +79,12 @@ public class WechatAppServiceImpl extends AbstractWechatService implements Wecha
         String param = encoded.encode(StandardCharsets.UTF_8, true);
         return postAndReturnBinaryData("https://api.weixin.qq.com/cgi-bin/wxaapp/createwxaqrcode", param, request);
     }
+
+    @Override
+    public CompletableFuture<CommonMessageResponse> sendMessage(CommonMessageRequest request, String accessToken) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("access_token", accessToken);
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return postWechatService("https://api.weixin.qq.com/cgi-bin/message/custom/send", param, request, CommonMessageResponse.class);
+    }
 }
