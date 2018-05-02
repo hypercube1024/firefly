@@ -14,12 +14,11 @@ import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.log.MappedDiagnosticContextFactory
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.experimental.*
 import org.slf4j.MDC
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.experimental.ContinuationInterceptor
 
 /**
  * Asynchronous HTTP server DSL examples
@@ -35,17 +34,24 @@ private val requestLocal = CoroutineLocal<RoutingContext>()
 @NoArg
 data class Product(var id: String, var type: String)
 
+fun initMDC() {
+    val mdc = MappedDiagnosticContextFactory.getInstance()
+            .mappedDiagnosticContext as CoroutineMappedDiagnosticContext
+    mdc.setRequestCtx(requestLocal)
+}
+
+fun <T> asyncTraceable(context: ContinuationInterceptor = Unconfined, block: suspend CoroutineScope.() -> T): Deferred<T>
+        = asyncTraceable(requestLocal, context, block)
+
 fun main(args: Array<String>) {
+    initMDC()
     val tracingId = AtomicLong()
     val server = HttpServer(requestLocal) {
         router {
             path = "*"
 
             asyncHandler {
-                val mdc = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
-                        as CoroutineMappedDiagnosticContext
-                mdc.setRequestCtx(requestLocal)
-                MDC.put("tracing-id", tracingId.getAndIncrement().toString())
+                MDC.put("tracingId", tracingId.getAndIncrement().toString())
                 next()
             }
         }
@@ -82,6 +88,12 @@ fun main(args: Array<String>) {
                 val type = getRouterParameter("type")
                 val id = getRouterParameter("id")
                 log.info { "req type: $type, id: $id" }
+
+                val n = asyncTraceable {
+                    delay(200)
+                    33
+                }.await()
+                log.info("n: $n")
 
                 writeJson(Response("ok", 200, Product(id, type))).end()
             }
@@ -202,6 +214,6 @@ fun main(args: Array<String>) {
     server.listen("localhost", 8080)
 }
 
-suspend fun testCoroutineCtx() {
+fun testCoroutineCtx() {
     log.info("coroutine local ${requestLocal.get()?.uri?.path} -> ${requestLocal.get()?.getAttribute("reqId")}")
 }
