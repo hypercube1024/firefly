@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * @author Pengtao Qiu
  */
-public class MappedDiagnosticContext {
+public class ThreadLocalMappedDiagnosticContext implements MappedDiagnosticContext {
 
     private InheritableThreadLocal<Map<String, String>> inheritableThreadLocal = new InheritableThreadLocal<Map<String, String>>() {
         @Override
@@ -30,6 +30,7 @@ public class MappedDiagnosticContext {
      *
      * @throws IllegalArgumentException in case the "key" parameter is null
      */
+    @Override
     public void put(String key, String val) {
         if (key == null) {
             throw new IllegalArgumentException("key cannot be null");
@@ -45,6 +46,7 @@ public class MappedDiagnosticContext {
     /**
      * Get the context identified by the <code>key</code> parameter.
      */
+    @Override
     public String get(String key) {
         Map<String, String> map = inheritableThreadLocal.get();
         if ((map != null) && (key != null)) {
@@ -57,6 +59,7 @@ public class MappedDiagnosticContext {
     /**
      * Remove the the context identified by the <code>key</code> parameter.
      */
+    @Override
     public void remove(String key) {
         Map<String, String> map = inheritableThreadLocal.get();
         if (map != null) {
@@ -67,6 +70,7 @@ public class MappedDiagnosticContext {
     /**
      * Clear all entries in the MDC.
      */
+    @Override
     public void clear() {
         Map<String, String> map = inheritableThreadLocal.get();
         if (map != null) {
@@ -81,6 +85,7 @@ public class MappedDiagnosticContext {
      *
      * @return the keys in the MDC
      */
+    @Override
     public Set<String> getKeys() {
         Map<String, String> map = inheritableThreadLocal.get();
         if (map != null) {
@@ -94,6 +99,7 @@ public class MappedDiagnosticContext {
      * Return a copy of the current thread's context map.
      * Returned value may be null.
      */
+    @Override
     public Map<String, String> getCopyOfContextMap() {
         Map<String, String> oldMap = inheritableThreadLocal.get();
         if (oldMap != null) {
@@ -103,6 +109,7 @@ public class MappedDiagnosticContext {
         }
     }
 
+    @Override
     public void setContextMap(Map<String, String> contextMap) {
         inheritableThreadLocal.set(new HashMap<>(contextMap));
     }

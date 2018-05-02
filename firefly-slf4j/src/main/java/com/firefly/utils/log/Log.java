@@ -2,8 +2,6 @@ package com.firefly.utils.log;
 
 public interface Log {
 
-    MappedDiagnosticContext mdc = new MappedDiagnosticContext();
-
     String CL = "\r\n";
 
     String getName();

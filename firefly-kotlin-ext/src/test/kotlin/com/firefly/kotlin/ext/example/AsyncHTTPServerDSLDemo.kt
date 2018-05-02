@@ -9,13 +9,17 @@ import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.http.*
+import com.firefly.kotlin.ext.log.CoroutineMappedDiagnosticContext
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
 import com.firefly.server.http2.router.RoutingContext
+import com.firefly.utils.log.MappedDiagnosticContextFactory
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
+import org.slf4j.MDC
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Asynchronous HTTP server DSL examples
@@ -32,7 +36,20 @@ private val requestLocal = CoroutineLocal<RoutingContext>()
 data class Product(var id: String, var type: String)
 
 fun main(args: Array<String>) {
+    val tracingId = AtomicLong()
     val server = HttpServer(requestLocal) {
+        router {
+            path = "*"
+
+            asyncHandler {
+                val mdc = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
+                        as CoroutineMappedDiagnosticContext
+                mdc.setRequestCtx(requestLocal)
+                MDC.put("tracing-id", tracingId.getAndIncrement().toString())
+                next()
+            }
+        }
+
         router {
             httpMethod = HttpMethod.GET
             path = "/"

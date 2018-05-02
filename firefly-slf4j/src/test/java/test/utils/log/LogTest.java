@@ -2,9 +2,7 @@ package test.utils.log;
 
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.FileUtils;
-import com.firefly.utils.log.ClassNameLogWrap;
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import com.firefly.utils.log.*;
 import com.firefly.utils.log.file.FileLog;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,11 +12,12 @@ import test.utils.log.foo.bar.Bar;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 
 import static org.hamcrest.Matchers.is;
 
 public class LogTest {
+
+    private MappedDiagnosticContext mdc;
 
     private static final Log log = LogFactory.getInstance().getLog("firefly-common");
     private static final Log log2 = LogFactory.getInstance().getLog("test-TRACE");
@@ -37,6 +36,7 @@ public class LogTest {
 
     @Before
     public void init() {
+        mdc = MappedDiagnosticContextFactory.getInstance().getMappedDiagnosticContext();
         deleteLog(log2);
         deleteLog(log3);
         deleteLog(log4);
@@ -107,7 +107,7 @@ public class LogTest {
         logFoo.info("testFoo");
         logBar.info("testBar");
 
-        Log.mdc.put("reqId","hello_req_id");
+        mdc.put("reqId", "hello_req_id");
         testRequestId.info("oooooooooo");
         testRequestId.info("bbbbbbbbbb");
 
