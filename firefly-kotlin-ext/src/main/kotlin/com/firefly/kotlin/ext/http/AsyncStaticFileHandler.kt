@@ -23,7 +23,7 @@ import java.util.zip.GZIPOutputStream
  * @author Pengtao Qiu
  */
 class AsyncStaticFileHandler(val rootPath: String,
-                             val maxBufferSize: Int = 8 * 1024,
+                             val maxBufferSize: Int = 64 * 1024,
                              val enableGzip: Boolean = false) : AsyncHandler {
 
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler

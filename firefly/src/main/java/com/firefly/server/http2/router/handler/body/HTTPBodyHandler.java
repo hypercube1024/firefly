@@ -114,7 +114,7 @@ public class HTTPBodyHandler implements Handler {
                                 Charset.forName(configuration.getCharset()));
                     }
                 } else if ("multipart/form-data".equalsIgnoreCase(contentType)) {
-                    httpBodyHandlerSPI.multiPartInputStreamParser = new MultiPartInputStreamParser(
+                    httpBodyHandlerSPI.multiPartFormInputStream = new MultiPartFormInputStream(
                             httpBodyHandlerSPI.getInputStream(),
                             request.getFields().get(HttpHeader.CONTENT_TYPE),
                             configuration.getMultipartConfigElement(),
