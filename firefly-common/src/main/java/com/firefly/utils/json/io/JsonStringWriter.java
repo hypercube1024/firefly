@@ -174,9 +174,9 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
     private void writeCharsWithQuote(char[] chars) {
         buf[count++] = QUOTE;
         int len = chars.length;
-        int newcount = count + len;
+        int newCount = count + len;
         System.arraycopy(chars, 0, buf, count, len);
-        count = newcount;
+        count = newCount;
         buf[count++] = QUOTE;
     }
 
