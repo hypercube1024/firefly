@@ -26,7 +26,10 @@ public class PooledObject<T> {
         this.leakCallback = leakCallback;
         createTime = Millisecond100Clock.currentTimeMillis();
         activeTime = createTime;
-        phantomReference = pool.getLeakDetector().register(this, leakCallback);
+        phantomReference = pool.getLeakDetector().register(this, () -> {
+            pool.decreaseCreatedObjectSize();
+            leakCallback.call();
+        });
     }
 
     /**

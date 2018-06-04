@@ -64,21 +64,21 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
 
     protected void createObject(Promise.Completable<PooledObject<T>> completable) {
         try {
-            Atomics.getAndIncrement(createdObjectSize, maxSize);
+            increaseCreatedObjectSize();
             CompletableFuture<PooledObject<T>> tmp = objectFactory.createNew(this);
             tmp.thenAccept(completable::succeeded).exceptionally(e0 -> {
-                Atomics.getAndDecrement(createdObjectSize, 0);
+                decreaseCreatedObjectSize();
                 completable.failed(e0);
                 return null;
             });
         } catch (Exception e) {
             System.err.println(e.getMessage());
-            Atomics.getAndDecrement(createdObjectSize, 0);
+            decreaseCreatedObjectSize();
         }
     }
 
     protected void destroyObject(PooledObject<T> pooledObject) {
-        Atomics.getAndDecrement(createdObjectSize, 0);
+        decreaseCreatedObjectSize();
         try {
             dispose.destroy(pooledObject);
         } catch (Exception e) {
@@ -190,6 +190,16 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
     @Override
     public LeakDetector<PooledObject<T>> getLeakDetector() {
         return leakDetector;
+    }
+
+    @Override
+    public void increaseCreatedObjectSize() {
+        Atomics.getAndIncrement(createdObjectSize, maxSize);
+    }
+
+    @Override
+    public void decreaseCreatedObjectSize() {
+        Atomics.getAndDecrement(createdObjectSize, 0);
     }
 
     @Override
