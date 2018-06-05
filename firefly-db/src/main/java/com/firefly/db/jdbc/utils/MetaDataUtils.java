@@ -1,6 +1,5 @@
 package com.firefly.db.jdbc.utils;
 
-import com.firefly.utils.Assert;
 import com.firefly.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +20,7 @@ public class MetaDataUtils {
     protected final static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private static final Map<String, String> defaultTypeMap = new HashMap<>();
+
     static {
         defaultTypeMap.put("bigint", "Long");
         defaultTypeMap.put("int", "Integer");
@@ -107,12 +107,10 @@ public class MetaDataUtils {
         return list;
     }
 
-    public List<PojoSourceCode> toPojo(List<TableMetaData> list, String tablePrefix, String packageName) {
-        Assert.hasText(tablePrefix, "The table prefix must be not null");
+    public List<SourceCode> toPojo(List<TableMetaData> list, String tablePrefix, String packageName) {
         return list.parallelStream().filter(m -> m.getName().startsWith(tablePrefix)).map(m -> {
-            PojoSourceCode code = new PojoSourceCode();
-            String[] tableNameArr = StringUtils.split(m.getName().substring(tablePrefix.length()), '_');
-            code.setName(Arrays.stream(tableNameArr).map(s -> Character.toUpperCase(s.charAt(0)) + (s.length() > 1 ? s.substring(1) : "")).collect(Collectors.joining()));
+            SourceCode code = new SourceCode();
+            code.setName(tableToPojoType(tablePrefix, m.getName()));
             StringBuilder codes = new StringBuilder();
             codes.append("package ").append(packageName).append(";").append(lineSeparator)
                  .append(lineSeparator)
@@ -126,16 +124,24 @@ public class MetaDataUtils {
                  .append(blankString).append("private static final long serialVersionUID = 1L;").append(lineSeparator)
                  .append(lineSeparator);
 
-            m.getColumnMetaDataList().forEach(c -> {
-                String[] colNameArr = StringUtils.split(c.getName(), '_');
-                String p = Arrays.stream(colNameArr).map(s -> Character.toUpperCase(s.charAt(0)) + (s.length() > 1 ? s.substring(1) : "")).collect(Collectors.joining());
-                String r = Character.toLowerCase(p.charAt(0)) + (p.length() > 1 ? p.substring(1) : "");
-                codes.append(blankString).append("private ").append(columnToPojoType(c.getType())).append(" ").append(r).append(";").append(lineSeparator);
-            });
+            m.getColumnMetaDataList()
+             .forEach(c -> codes.append(blankString).append("private ")
+                                .append(columnToPojoType(c.getType())).append(" ")
+                                .append(columnToPropertyName(c.getName())).append(";")
+                                .append(lineSeparator));
             codes.append("}");
             code.setCodes(codes.toString());
             return code;
         }).collect(Collectors.toList());
+    }
+
+    public String tableToPojoType(String tablePrefix, String tableName) {
+        String[] tableNameArr = StringUtils.hasText(tablePrefix)
+                ? StringUtils.split(tableName.substring(tablePrefix.length()), '_')
+                : StringUtils.split(tableName, '_');
+        return Arrays.stream(tableNameArr)
+                     .map(s -> Character.toUpperCase(s.charAt(0)) + (s.length() > 1 ? s.substring(1) : ""))
+                     .collect(Collectors.joining());
     }
 
     public String columnToPojoType(String columnType) {
@@ -145,6 +151,14 @@ public class MetaDataUtils {
         } else {
             return "String";
         }
+    }
+
+    public String columnToPropertyName(String columnName) {
+        String[] colNameArr = StringUtils.split(columnName, '_');
+        String p = Arrays.stream(colNameArr)
+                         .map(s -> Character.toUpperCase(s.charAt(0)) + (s.length() > 1 ? s.substring(1) : ""))
+                         .collect(Collectors.joining());
+        return Character.toLowerCase(p.charAt(0)) + (p.length() > 1 ? p.substring(1) : "");
     }
 
 }

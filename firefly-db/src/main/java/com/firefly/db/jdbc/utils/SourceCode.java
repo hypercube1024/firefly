@@ -3,7 +3,7 @@ package com.firefly.db.jdbc.utils;
 /**
  * @author Pengtao Qiu
  */
-public class PojoSourceCode {
+public class SourceCode {
 
     private String name;
     private String codes;
