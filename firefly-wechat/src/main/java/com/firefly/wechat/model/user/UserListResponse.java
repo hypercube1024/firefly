@@ -12,6 +12,7 @@ public class UserListResponse implements Serializable {
     private Integer total;
     private Integer count;
     private UserData data;
+    private String next_openid;
 
     public Integer getTotal() {
         return total;
@@ -37,12 +38,20 @@ public class UserListResponse implements Serializable {
         this.data = data;
     }
 
+    public String getNext_openid() {
+        return next_openid;
+    }
+
+    public void setNext_openid(String next_openid) {
+        this.next_openid = next_openid;
+    }
+
     @Override
     public String toString() {
         return "UserListResponse{" +
                 "total=" + total +
                 ", count=" + count +
-                ", data=" + data +
+                ", next_openid='" + next_openid + '\'' +
                 '}';
     }
 }
