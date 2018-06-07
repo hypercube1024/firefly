@@ -53,7 +53,7 @@ fun openApiV2(): Swagger {
                             .url("http://www.hellov2.com")))
             .scheme(Scheme.HTTP)
             .host("www.hello.com")
-            .basePath("v2")
+            .basePath("/testV2")
             .consumes(listOf("application/json"))
             .produces(listOf("application/json"))
             .paths(mapOf("/address" to Path().get(
@@ -65,7 +65,7 @@ fun openApiV2(): Swagger {
                                     .type("integer")
                                     .format("int64")
                                     .example("10"))
-                            .response(200, Response()
+                            .response(200, Response().description("Address info")
                                     .responseSchema(RefModel("#/definitions/Address"))
                                     .example("application/json", address.example))
             )))
