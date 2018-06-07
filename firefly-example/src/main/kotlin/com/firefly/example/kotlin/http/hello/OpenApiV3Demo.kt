@@ -11,11 +11,11 @@ import com.firefly.kotlin.ext.http.HttpServer
 import io.swagger.v3.oas.models.*
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
-import io.swagger.v3.oas.models.links.Link
 import io.swagger.v3.oas.models.media.*
 import io.swagger.v3.oas.models.parameters.QueryParameter
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
+import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.tags.Tag
 import java.math.BigDecimal
 import java.util.*
@@ -41,11 +41,11 @@ fun main(args: Array<String>) {
 
 fun openApi(): OpenAPI {
     val oai = OpenAPI()
-            .info(Info()
-                    .contact(Contact()
-                            .email("tony@eatbacon.org")
-                            .name("Tony the Tam")
-                            .url("https://foo.bar")))
+            .info(Info().contact(Contact()
+                    .email("tony@eatbacon.org")
+                    .name("Tony the Tam")
+                    .url("https://foo.bar")))
+            .servers(listOf(Server().url("https://hello/v1").description("address server")))
             .externalDocs(ExternalDocumentation()
                     .description("read more here")
                     .url("http://swagger.io"))
@@ -76,26 +76,31 @@ fun openApi(): OpenAPI {
     schemas["Address"] = Schema<Address>()
             .description("address object")
             .addProperties("street", StringSchema()
+                    .example("Jie dao kou")
                     .description("the street number"))
             .addProperties("city", StringSchema()
+                    .example("Wuhan")
                     .description("city"))
             .addProperties("state", StringSchema()
                     .description("state")
+                    .example("Hubei")
                     .minLength(2)
-                    .maxLength(2))
+                    .maxLength(30))
             .addProperties("zip", StringSchema()
                     .description("zip code")
                     .pattern("^\\d{5}(?:[-\\s]\\d{4})?$")
+                    .example("33")
                     .minLength(2)
                     .maxLength(2))
             .addProperties("country", StringSchema()
                     ._enum(listOf("US"))
                     .description("2-digit country code")
+                    .example("US")
                     .minLength(2)
                     .maxLength(2))
             .example(Address("test street",
                     "test city",
-                    "test state",
+                    "xx",
                     "333",
                     "US"))
 
@@ -105,17 +110,15 @@ fun openApi(): OpenAPI {
                     .get(Operation()
                             .addParametersItem(QueryParameter()
                                     .name("id")
-                                    .description("Records to skip")
+                                    .description("address id")
                                     .required(false)
                                     .schema(IntegerSchema())
                                     .example(1))
                             .responses(ApiResponses()
                                     .addApiResponse("200", ApiResponse()
                                             .description("it worked")
-                                            .content(Content()
-                                                    .addMediaType("application/json",
-                                                            MediaType().schema(Schema<Address>().`$ref`("#/components/schemas/Address"))))
-                                            .link("funky", Link().operationId("getFunky")))
+                                            .content(Content().addMediaType("application/json", MediaType().schema(Schema<Address>()
+                                                    .`$ref`("#/components/schemas/Address")))))
                             )
                     )
             )
