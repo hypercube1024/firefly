@@ -89,10 +89,10 @@ fun openApi(): OpenAPI {
                     .minLength(2)
                     .maxLength(2))
             .addProperties("country", StringSchema()
-                    ._enum(listOf("US")))
-            .description("2-digit country code")
-            .minLength(2)
-            .maxLength(2)
+                    ._enum(listOf("US"))
+                    .description("2-digit country code")
+                    .minLength(2)
+                    .maxLength(2))
             .example(Address("test street",
                     "test city",
                     "test state",
