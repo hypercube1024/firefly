@@ -83,6 +83,8 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
             dispose.destroy(pooledObject);
         } catch (Exception e) {
             System.err.println(e.getMessage());
+        } finally {
+            pooledObject.clear();
         }
     }
 
