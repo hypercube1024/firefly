@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.sql.DataSource;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
@@ -51,13 +52,24 @@ public class TestMetaDataUtils {
                 "other_info VARCHAR(255))");
     }
 
+//    @Test
+    public void testWrite() {
+        metaDataUtils.generateJavaDataClass("test", "%", "hello_%",
+                "hello_", "com.hello.test",
+                Paths.get("/Users/qiupengtao/Develop/test_resource"));
+
+        metaDataUtils.generateKotlinDataClass("test", "%", "hello_%",
+                "hello_", "com.hello.test",
+                Paths.get("/Users/qiupengtao/Develop/test_resource"));
+    }
+
     @Test
-    public void test() {
+    public void testJavaDataClass() {
         List<TableMetaData> list = metaDataUtils.listTableMetaData("test", "%", "hello_%");
         System.out.println(list);
         Assert.assertThat(list.size(), is(2));
 
-        List<SourceCode> codes = metaDataUtils.toPojo(list, "hello_", "com.hello.test");
+        List<SourceCode> codes = metaDataUtils.toJavaDataClass(list, "hello_", "com.hello.test");
         codes.forEach(System.out::println);
         Assert.assertThat(codes.get(0).getName(), is("User"));
         Assert.assertThat(codes.get(0).getCodes(), is("package com.hello.test;\r\n" +
@@ -94,6 +106,51 @@ public class TestMetaDataUtils {
                 "    private Long userId;\r\n" +
                 "    private java.util.Date createTime;\r\n" +
                 "    private String otherInfo;\r\n" +
+                "}"));
+    }
+
+    @Test
+    public void testKotlinDataClass() {
+        List<TableMetaData> list = metaDataUtils.listTableMetaData("test", "%", "hello_%");
+        System.out.println(list);
+        Assert.assertThat(list.size(), is(2));
+
+        List<SourceCode> codes = metaDataUtils.toKotlinDataClass(list, "hello_", "com.hello.test");
+        codes.forEach(System.out::println);
+
+        Assert.assertThat(codes.get(0).getName(), is("User"));
+        Assert.assertThat(codes.get(0).getCodes(), is("package com.hello.test\r\n" +
+                "\r\n" +
+                "import com.firefly.db.annotation.*\r\n" +
+                "import java.io.Serializable\r\n" +
+                "\r\n" +
+                "@Table(value = \"hello_user\", catalog = \"test\")\r\n" +
+                "data class User(\r\n" +
+                "    @Id(\"id\") var id: Long?, \r\n" +
+                "    @Column(\"pt_name\") var ptName: String?, \r\n" +
+                "    @Column(\"pt_password\") var ptPassword: String?, \r\n" +
+                "    @Column(\"create_time\") var createTime: java.util.Date?, \r\n" +
+                "    @Column(\"status\") var status: Integer?) : Serializable {\r\n" +
+                "    companion object {\r\n" +
+                "        private const val serialVersionUID: Long = 1\r\n" +
+                "    }\r\n" +
+                "}"));
+
+        Assert.assertThat(codes.get(1).getName(), is("UserExt"));
+        Assert.assertThat(codes.get(1).getCodes(), is("package com.hello.test\r\n" +
+                "\r\n" +
+                "import com.firefly.db.annotation.*\r\n" +
+                "import java.io.Serializable\r\n" +
+                "\r\n" +
+                "@Table(value = \"hello_user_ext\", catalog = \"test\")\r\n" +
+                "data class UserExt(\r\n" +
+                "    @Id(\"id\") var id: Long?, \r\n" +
+                "    @Column(\"user_id\") var userId: Long?, \r\n" +
+                "    @Column(\"create_time\") var createTime: java.util.Date?, \r\n" +
+                "    @Column(\"other_info\") var otherInfo: String?) : Serializable {\r\n" +
+                "    companion object {\r\n" +
+                "        private const val serialVersionUID: Long = 1\r\n" +
+                "    }\r\n" +
                 "}"));
     }
 }
