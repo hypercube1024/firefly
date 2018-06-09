@@ -82,15 +82,22 @@ public class MetaDataUtils {
     public List<TableMetaData> listTableMetaData(String catalog, String schemaPattern, String tableNamePattern) {
         List<TableMetaData> list = new ArrayList<>();
         try (Connection conn = dataSource.getConnection()) {
-            DatabaseMetaData metaData = conn.getMetaData();
-            ResultSet resultSet = metaData.getTables(catalog, schemaPattern, tableNamePattern, new String[]{"TABLE"});
+            DatabaseMetaData dbMetaData = conn.getMetaData();
+            ResultSet resultSet = dbMetaData.getTables(catalog, schemaPattern, tableNamePattern, new String[]{"TABLE"});
+
             while (resultSet.next()) {
                 String tableName = resultSet.getString("TABLE_NAME");
                 TableMetaData tableMetaData = new TableMetaData();
+                tableMetaData.setCatalog(catalog);
                 tableMetaData.setName(tableName.toLowerCase());
                 tableMetaData.setColumnMetaDataList(new ArrayList<>());
 
-                ResultSet colResultSet = metaData.getColumns(catalog, schemaPattern, tableName, "%");
+                ResultSet pkResultSet = dbMetaData.getPrimaryKeys(catalog, null, tableName);
+                while (pkResultSet.next()) {
+                    tableMetaData.setPkColumnName(pkResultSet.getString("COLUMN_NAME"));
+                }
+
+                ResultSet colResultSet = dbMetaData.getColumns(catalog, schemaPattern, tableName, "%");
                 while (colResultSet.next()) {
                     String colName = colResultSet.getString("COLUMN_NAME");
                     String colType = colResultSet.getString("TYPE_NAME");
@@ -111,6 +118,7 @@ public class MetaDataUtils {
         return list.parallelStream().filter(m -> m.getName().startsWith(tablePrefix)).map(m -> {
             SourceCode code = new SourceCode();
             code.setName(tableToPojoType(tablePrefix, m.getName()));
+
             StringBuilder codes = new StringBuilder();
             codes.append("package ").append(packageName).append(";").append(lineSeparator)
                  .append(lineSeparator)
@@ -131,6 +139,34 @@ public class MetaDataUtils {
                                 .append(lineSeparator));
             codes.append("}");
             code.setCodes(codes.toString());
+            return code;
+        }).collect(Collectors.toList());
+    }
+
+    public List<SourceCode> toKotlinDataClass(List<TableMetaData> list, String tablePrefix, String packageName) {
+        return list.parallelStream().filter(m -> m.getName().startsWith(tablePrefix)).map(m -> {
+            SourceCode code = new SourceCode();
+            code.setName(tableToPojoType(tablePrefix, m.getName()));
+
+            StringBuilder codes = new StringBuilder();
+            codes.append("package ").append(packageName).append(lineSeparator)
+                 .append(lineSeparator)
+                 .append("import com.firefly.db.annotation.*").append(lineSeparator)
+                 .append("import java.io.Serializable").append(lineSeparator)
+                 .append("import java.io.Serializable").append(lineSeparator)
+                 .append(lineSeparator)
+                 .append("@Table(value = ").append('"').append(m.getName()).append('"')
+                 .append(", catalog = ").append('"').append(m.getCatalog()).append('"').append(")").append(lineSeparator)
+                 .append("data class ").append(code.getName()).append('(').append(lineSeparator);
+
+            m.getColumnMetaDataList().forEach(c -> {
+                codes.append(blankString);
+                if (c.getName().equals(m.getPkColumnName())) {
+                    codes.append("@Id(\"").append(c.getName()).append("\")");
+                } else {
+
+                }
+            });
             return code;
         }).collect(Collectors.toList());
     }
