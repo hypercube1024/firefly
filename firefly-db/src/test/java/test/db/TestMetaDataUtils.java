@@ -130,7 +130,7 @@ public class TestMetaDataUtils {
                 "    @Column(\"pt_name\") var ptName: String?, \r\n" +
                 "    @Column(\"pt_password\") var ptPassword: String?, \r\n" +
                 "    @Column(\"create_time\") var createTime: java.util.Date?, \r\n" +
-                "    @Column(\"status\") var status: Integer?) : Serializable {\r\n" +
+                "    @Column(\"status\") var status: Int?) : Serializable {\r\n" +
                 "    companion object {\r\n" +
                 "        private const val serialVersionUID: Long = 1\r\n" +
                 "    }\r\n" +

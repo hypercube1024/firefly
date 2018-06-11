@@ -27,26 +27,32 @@ public class MetaDataUtils {
 
     protected final static Logger log = LoggerFactory.getLogger("firefly-system");
 
-    private static final Map<String, String> defaultTypeMap = new HashMap<>();
+    private static final Map<String, String> defaultJavaTypeMap = new HashMap<>();
+    private static final Map<String, String> defaultKotlinTypeMap = new HashMap<>();
 
     static {
-        defaultTypeMap.put("bigint", "Long");
-        defaultTypeMap.put("int", "Integer");
-        defaultTypeMap.put("integer", "Integer");
-        defaultTypeMap.put("float", "Double");
-        defaultTypeMap.put("double", "Double");
-        defaultTypeMap.put("decimal", "Double");
-        defaultTypeMap.put("real", "Double");
-        defaultTypeMap.put("datetime", "java.util.Date");
-        defaultTypeMap.put("timestamp", "java.util.Date");
-        defaultTypeMap.put("date", "java.util.Date");
-        defaultTypeMap.put("time", "java.util.Date");
+        defaultJavaTypeMap.put("bigint", "Long");
+        defaultJavaTypeMap.put("int", "Integer");
+        defaultJavaTypeMap.put("integer", "Integer");
+        defaultJavaTypeMap.put("float", "Double");
+        defaultJavaTypeMap.put("double", "Double");
+        defaultJavaTypeMap.put("decimal", "Double");
+        defaultJavaTypeMap.put("real", "Double");
+        defaultJavaTypeMap.put("datetime", "java.util.Date");
+        defaultJavaTypeMap.put("timestamp", "java.util.Date");
+        defaultJavaTypeMap.put("date", "java.util.Date");
+        defaultJavaTypeMap.put("time", "java.util.Date");
+
+        defaultKotlinTypeMap.putAll(defaultJavaTypeMap);
+        defaultKotlinTypeMap.put("integer", "Int");
+        defaultKotlinTypeMap.put("int", "Int");
     }
 
     protected DataSource dataSource;
     protected String blankString = "    ";
     protected String lineSeparator = "\r\n";
-    protected Map<String, String> typeMap = defaultTypeMap;
+    protected Map<String, String> javaTypeMap = defaultJavaTypeMap;
+    protected Map<String, String> kotlinTypeMap = defaultKotlinTypeMap;
 
     public MetaDataUtils() {
     }
@@ -71,20 +77,28 @@ public class MetaDataUtils {
         this.blankString = blankString;
     }
 
-    public Map<String, String> getTypeMap() {
-        return typeMap;
-    }
-
-    public void setTypeMap(Map<String, String> typeMap) {
-        this.typeMap = typeMap;
-    }
-
     public String getLineSeparator() {
         return lineSeparator;
     }
 
     public void setLineSeparator(String lineSeparator) {
         this.lineSeparator = lineSeparator;
+    }
+
+    public Map<String, String> getJavaTypeMap() {
+        return javaTypeMap;
+    }
+
+    public void setJavaTypeMap(Map<String, String> javaTypeMap) {
+        this.javaTypeMap = javaTypeMap;
+    }
+
+    public Map<String, String> getKotlinTypeMap() {
+        return kotlinTypeMap;
+    }
+
+    public void setKotlinTypeMap(Map<String, String> kotlinTypeMap) {
+        this.kotlinTypeMap = kotlinTypeMap;
     }
 
     public List<TableMetaData> listTableMetaData(String catalog, String schemaPattern, String tableNamePattern) {
@@ -142,7 +156,7 @@ public class MetaDataUtils {
 
             m.getColumnMetaDataList()
              .forEach(c -> codes.append(blankString).append("private ")
-                                .append(toPropertyType(c.getType())).append(" ")
+                                .append(toJavaPropertyType(c.getType())).append(" ")
                                 .append(toPropertyName(c.getName())).append(";")
                                 .append(lineSeparator));
             codes.append("}");
@@ -175,7 +189,7 @@ public class MetaDataUtils {
                 }
                 codes.append("(\"").append(c.getName()).append("\") var ")
                      .append(toPropertyName(c.getName())).append(": ")
-                     .append(toPropertyType(c.getType())).append("?, ").append(lineSeparator);
+                     .append(toKotlinPropertyType(c.getType())).append("?, ").append(lineSeparator);
             });
             codes.delete(codes.length() - lineSeparator.length() - 2, codes.length());
             codes.append(") : Serializable {").append(lineSeparator)
@@ -226,8 +240,17 @@ public class MetaDataUtils {
                      .collect(Collectors.joining());
     }
 
-    public String toPropertyType(String columnType) {
-        String r = typeMap.get(columnType);
+    public String toJavaPropertyType(String columnType) {
+        String r = javaTypeMap.get(columnType);
+        if (StringUtils.hasText(r)) {
+            return r;
+        } else {
+            return "String";
+        }
+    }
+
+    public String toKotlinPropertyType(String columnType) {
+        String r = kotlinTypeMap.get(columnType);
         if (StringUtils.hasText(r)) {
             return r;
         } else {
