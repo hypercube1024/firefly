@@ -24,5 +24,10 @@ public interface WechatAuthService {
 
     JsConfigResponse getJsConfig(JsConfigRequest request);
 
+    /**
+     * Get the wechat API access token
+     * @param request The access token request
+     * @return The wechat API access token
+     */
     CompletableFuture<ApiAccessTokenResponse> getApiAccessToken(ApiAccessTokenRequest request);
 }
