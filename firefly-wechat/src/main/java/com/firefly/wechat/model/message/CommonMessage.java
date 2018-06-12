@@ -80,4 +80,15 @@ public class CommonMessage {
         this.msgId = msgId;
     }
 
+    @Override
+    public String toString() {
+        return "CommonMessage{" +
+                "url='" + url + '\'' +
+                ", toUserName='" + toUserName + '\'' +
+                ", fromUserName='" + fromUserName + '\'' +
+                ", createTime=" + createTime +
+                ", msgType='" + msgType + '\'' +
+                ", msgId=" + msgId +
+                '}';
+    }
 }

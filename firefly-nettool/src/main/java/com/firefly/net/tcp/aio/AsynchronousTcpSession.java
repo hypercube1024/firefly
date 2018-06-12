@@ -281,14 +281,18 @@ public class AsynchronousTcpSession implements Session {
                 break;
                 case BYTE_BUFFER_ARRAY: {
                     ByteBufferArrayOutputEntry byteBuffersEntry = (ByteBufferArrayOutputEntry) entry;
-                    socketChannel.write(byteBuffersEntry.getData(), 0, byteBuffersEntry.getData().length,
+                    int offset = byteBuffersEntry.getOffset();
+                    int length = byteBuffersEntry.getData().length - offset;
+                    socketChannel.write(byteBuffersEntry.getData(), offset, length,
                             config.getTimeout(), TimeUnit.MILLISECONDS, this,
                             new OutputEntryCompletionHandler<>(byteBuffersEntry));
                 }
                 break;
                 case MERGED_BUFFER: {
                     MergedOutputEntry mergedOutputEntry = (MergedOutputEntry) entry;
-                    socketChannel.write(mergedOutputEntry.getData(), 0, mergedOutputEntry.getData().length,
+                    int offset = mergedOutputEntry.getOffset();
+                    int length = mergedOutputEntry.getData().length - offset;
+                    socketChannel.write(mergedOutputEntry.getData(), offset, length,
                             config.getTimeout(), TimeUnit.MILLISECONDS, this,
                             new OutputEntryCompletionHandler<>(mergedOutputEntry));
                 }

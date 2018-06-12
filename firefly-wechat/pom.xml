@@ -11,7 +11,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.8.0</version>
+        <version>4.8.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -170,6 +170,11 @@
         <dependency>
             <groupId>org.codehaus.woodstox</groupId>
             <artifactId>woodstox-core-asl</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
         </dependency>
 
         <dependency>

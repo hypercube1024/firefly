@@ -3,6 +3,8 @@ package com.firefly.wechat.service.impl;
 import com.firefly.$;
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.wechat.model.user.BatchUserInfoRequest;
+import com.firefly.wechat.model.user.BatchUserInfoResponse;
 import com.firefly.wechat.model.user.UserListRequest;
 import com.firefly.wechat.model.user.UserListResponse;
 import com.firefly.wechat.service.WechatUserService;
@@ -32,6 +34,14 @@ public class WechatUserServiceImpl extends AbstractWechatService implements Wech
         }
         String param = encoded.encode(StandardCharsets.UTF_8, true);
         return callWechatService("https://api.weixin.qq.com/cgi-bin/user/get", param, UserListResponse.class);
+    }
+
+    @Override
+    public CompletableFuture<BatchUserInfoResponse> getUserInfoBatch(BatchUserInfoRequest request, String accessToken) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("access_token", accessToken);
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return postWechatService("https://api.weixin.qq.com/cgi-bin/user/info/batchget", param, request, BatchUserInfoResponse.class);
     }
 
 }

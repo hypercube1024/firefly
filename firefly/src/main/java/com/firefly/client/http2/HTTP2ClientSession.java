@@ -3,10 +3,7 @@ package com.firefly.client.http2;
 import com.firefly.codec.http2.encode.Generator;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PushPromiseFrame;
-import com.firefly.codec.http2.stream.FlowControlStrategy;
-import com.firefly.codec.http2.stream.HTTP2Session;
-import com.firefly.codec.http2.stream.Stream;
-import com.firefly.codec.http2.stream.StreamSPI;
+import com.firefly.codec.http2.stream.*;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.Scheduler;
@@ -30,7 +27,7 @@ public class HTTP2ClientSession extends HTTP2Session {
                 initialStreamId, streamIdleTimeout);
         final StreamSPI stream = session.createLocalStream(1, initStream);
         stream.setListener(initStreamListener);
-        stream.updateClose(true, true);
+        stream.updateClose(true, CloseState.Event.AFTER_SEND);
         initStream.succeeded(stream);
         return session;
     }

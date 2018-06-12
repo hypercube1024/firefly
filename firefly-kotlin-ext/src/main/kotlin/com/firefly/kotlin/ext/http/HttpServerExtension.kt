@@ -24,6 +24,7 @@ import java.net.InetAddress
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.function.Supplier
+import kotlin.coroutines.experimental.ContinuationInterceptor
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
@@ -31,9 +32,7 @@ import kotlin.coroutines.experimental.CoroutineContext
  *
  * @author Pengtao Qiu
  */
-
 val sysLogger = KtLogger.getLogger("firefly-system")
-
 
 // HTTP server API extensions
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
@@ -497,4 +496,13 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
      * @param block Register routers in this block.
      */
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
+}
+
+fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>, context: ContinuationInterceptor = Unconfined, block: suspend CoroutineScope.() -> T): Deferred<T> {
+    val ctx = requestCtx.get()
+    return if (ctx != null) {
+        async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
+    } else {
+        async(context) { block.invoke(this) }
+    }
 }

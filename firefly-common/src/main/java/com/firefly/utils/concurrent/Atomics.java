@@ -46,24 +46,22 @@ abstract public class Atomics {
     }
 
     public static int getAndDecrement(AtomicInteger i, int minValue) {
-        int p = i.getAndUpdate(prev -> {
+        return i.getAndUpdate(prev -> {
             if (prev > minValue) {
                 return prev - 1;
             } else {
                 return minValue;
             }
         });
-        return p;
     }
 
     public static int getAndIncrement(AtomicInteger i, int maxValue) {
-        int p = i.getAndUpdate(prev -> {
+        return i.getAndUpdate(prev -> {
             if (prev < maxValue) {
                 return prev + 1;
             } else {
                 return maxValue;
             }
         });
-        return p;
     }
 }

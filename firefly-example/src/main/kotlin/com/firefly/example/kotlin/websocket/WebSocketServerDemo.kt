@@ -37,7 +37,7 @@ fun main(args: Array<String>) {
             }
 
             onText { text, _ ->
-                println("Server received: " + text)
+                println("Server received: $text")
             }
         }
     }.listen("localhost", 8080)

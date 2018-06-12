@@ -42,7 +42,9 @@ public class WechatMessageServiceImpl implements WechatMessageService {
     private List<Action3<MessageRequest, EventMessage, RoutingContext>> scanMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, EventMessage, RoutingContext>> clickMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, EventMessage, RoutingContext>> viewMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, SmallAppPageMessage, RoutingContext>> pageMessageListeners = new LinkedList<>();
     private List<Action3<MessageRequest, ReportLocationMessage, RoutingContext>> reportMessageListeners = new LinkedList<>();
+    private List<Action3<MessageRequest, SmallAppEnterSessionMessage, RoutingContext>> enterSessionMessageListeners = new LinkedList<>();
     private List<Action2<EchoRequest, RoutingContext>> echoListeners = new LinkedList<>();
     private List<Action1<RoutingContext>> otherRequestListeners = new LinkedList<>();
 
@@ -147,6 +149,15 @@ public class WechatMessageServiceImpl implements WechatMessageService {
                             }
                         }
                         break;
+                        case "miniprogrampage": {
+                            if (pageMessageListeners.isEmpty()) {
+                                defaultReplyMessage(ctx, msgReq);
+                            } else {
+                                SmallAppPageMessage pageMessage = MessageXmlUtils.parseXml(decryptedXml, SmallAppPageMessage.class);
+                                pageMessageListeners.forEach(e -> e.call(msgReq, pageMessage, ctx));
+                            }
+                        }
+                        break;
                         case "event": {
                             EventMessage eventMessage = MessageXmlUtils.parseXml(decryptedXml, EventMessage.class);
                             Optional.ofNullable(eventMessage).map(EventMessage::getEvent).ifPresent(evt -> {
@@ -197,6 +208,15 @@ public class WechatMessageServiceImpl implements WechatMessageService {
                                         } else {
                                             ReportLocationMessage reportLocationMessage = MessageXmlUtils.parseXml(decryptedXml, ReportLocationMessage.class);
                                             reportMessageListeners.forEach(e -> e.call(msgReq, reportLocationMessage, ctx));
+                                        }
+                                    }
+                                    break;
+                                    case "user_enter_tempsession": {
+                                        if (enterSessionMessageListeners.isEmpty()) {
+                                            defaultReplyMessage(ctx, msgReq);
+                                        } else {
+                                            SmallAppEnterSessionMessage enterSessionMessage = MessageXmlUtils.parseXml(decryptedXml, SmallAppEnterSessionMessage.class);
+                                            enterSessionMessageListeners.forEach(e -> e.call(msgReq, enterSessionMessage, ctx));
                                         }
                                     }
                                     break;
@@ -281,8 +301,18 @@ public class WechatMessageServiceImpl implements WechatMessageService {
     }
 
     @Override
+    public void addPageMessageListener(Action3<MessageRequest, SmallAppPageMessage, RoutingContext> action) {
+        pageMessageListeners.add(action);
+    }
+
+    @Override
     public void addReportLocationMessageListener(Action3<MessageRequest, ReportLocationMessage, RoutingContext> action) {
         reportMessageListeners.add(action);
+    }
+
+    @Override
+    public void addEnterSessionMessageListener(Action3<MessageRequest, SmallAppEnterSessionMessage, RoutingContext> action) {
+        enterSessionMessageListeners.add(action);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.firefly.server.http2.router.handler.body;
 
 import com.firefly.codec.http2.encode.UrlEncoded;
-import com.firefly.codec.http2.model.MultiPartInputStreamParser;
+import com.firefly.codec.http2.model.MultiPartFormInputStream;
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.io.PipedStream;
@@ -30,7 +30,7 @@ public class HTTPBodyHandlerSPIImpl implements HTTPBodyHandlerSPI {
     private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     PipedStream pipedStream;
-    MultiPartInputStreamParser multiPartInputStreamParser;
+    MultiPartFormInputStream multiPartFormInputStream;
     UrlEncoded urlEncodedMap;
     String charset;
     private BufferedReader bufferedReader;
@@ -54,11 +54,11 @@ public class HTTPBodyHandlerSPIImpl implements HTTPBodyHandlerSPI {
 
     @Override
     public Collection<Part> getParts() {
-        if (multiPartInputStreamParser == null) {
+        if (multiPartFormInputStream == null) {
             return null;
         } else {
             try {
-                return multiPartInputStreamParser.getParts();
+                return multiPartFormInputStream.getParts();
             } catch (IOException e) {
                 log.error("get multi part exception", e);
                 return null;
@@ -68,11 +68,11 @@ public class HTTPBodyHandlerSPIImpl implements HTTPBodyHandlerSPI {
 
     @Override
     public Part getPart(String name) {
-        if (multiPartInputStreamParser == null) {
+        if (multiPartFormInputStream == null) {
             return null;
         } else {
             try {
-                return multiPartInputStreamParser.getPart(name);
+                return multiPartFormInputStream.getPart(name);
             } catch (IOException e) {
                 log.error("get multi part exception", e);
                 return null;
@@ -144,7 +144,7 @@ public class HTTPBodyHandlerSPIImpl implements HTTPBodyHandlerSPI {
 
     @Override
     public <T> T getJsonBody(GenericTypeReference<T> typeReference) {
-        return Json.toObject(getStringBody(),typeReference);
+        return Json.toObject(getStringBody(), typeReference);
     }
 
     @Override

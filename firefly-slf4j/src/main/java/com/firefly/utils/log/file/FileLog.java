@@ -32,8 +32,12 @@ public class FileLog implements Log, Closeable {
     private long maxLogFlushInterval;
     private LogNameFormatter logNameFormatter;
     private LogFilter logFilter;
-
+    private MappedDiagnosticContext mdc;
     private LogOutputStream output = new LogOutputStream();
+
+    public FileLog() {
+        mdc = MappedDiagnosticContextFactory.getInstance().getMappedDiagnosticContext();
+    }
 
     void write(LogItem logItem) {
         Optional.ofNullable(logFilter).ifPresent(f -> f.filter(logItem));

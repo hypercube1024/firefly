@@ -6,7 +6,7 @@
 
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-framework</artifactId>
-    <version>4.8.0</version>
+    <version>4.8.1</version>
     <packaging>pom</packaging>
 
 
@@ -50,6 +50,24 @@
         <module>firefly-session</module>
         <module>firefly-wechat</module>
     </modules>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <log.level>INFO</log.level>
+        <log.path>../logs</log.path>
+
+        <kotlin.version>1.2.41</kotlin.version>
+        <kotlin.coroutine.version>0.22.5</kotlin.coroutine.version>
+        <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
+        <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+        <kotlin.compiler.languageVersion>1.2</kotlin.compiler.languageVersion>
+        <kotlin.compiler.apiVersion>1.2</kotlin.compiler.apiVersion>
+
+        <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
+        <metrics.version>3.2.5</metrics.version>
+        <jackson.version>2.9.5</jackson.version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -109,14 +127,14 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.21.0-GA</version>
+                <version>3.22.0-GA</version>
             </dependency>
 
             <!-- reactor -->
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>Bismuth-SR7</version>
+                <version>Bismuth-SR9</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -158,7 +176,7 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>2.7.8</version>
+                <version>3.1.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -175,7 +193,7 @@
             <dependency>
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson</artifactId>
-                <version>3.6.2</version>
+                <version>3.7.0</version>
             </dependency>
 
             <!-- kotlin lib -->
@@ -253,25 +271,61 @@
             <dependency>
                 <groupId>org.conscrypt</groupId>
                 <artifactId>conscrypt-openjdk-uber</artifactId>
-                <version>1.0.1</version>
+                <version>1.1.2</version>
             </dependency>
 
             <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-ion</artifactId>
-                <version>${jackson.version}</version>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.59</version>
             </dependency>
 
+            <!--jackson-->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-xml</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-ion</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>woodstox-core-asl</artifactId>
                 <version>4.4.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-models</artifactId>
+                <version>2.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-models</artifactId>
+                <version>1.5.20</version>
             </dependency>
 
             <dependency>
@@ -357,12 +411,17 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.7.9</version>
+                    <version>0.8.1</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.maven.reporting</groupId>
+                            <artifactId>maven-reporting-api</artifactId>
+                            <version>3.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.reporting</groupId>
                             <artifactId>maven-reporting-impl</artifactId>
-                            <version>2.4</version>
+                            <version>3.0.0</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -370,7 +429,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.20.1</version>
+                    <version>2.21.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -450,26 +509,7 @@
         </plugins>
     </build>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <log.level>INFO</log.level>
-        <log.path>../logs</log.path>
-
-        <kotlin.version>1.2.31</kotlin.version>
-        <kotlin.coroutine.version>0.22.5</kotlin.coroutine.version>
-        <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
-        <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-        <kotlin.compiler.languageVersion>1.2</kotlin.compiler.languageVersion>
-        <kotlin.compiler.apiVersion>1.2</kotlin.compiler.apiVersion>
-
-        <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
-        <metrics.version>3.2.5</metrics.version>
-        <jackson.version>2.9.4</jackson.version>
-    </properties>
-
     <profiles>
-
         <profile>
             <id>release</id>
             <build>

@@ -6,7 +6,7 @@ import java.lang.ref.SoftReference;
 
 abstract public class AbstractJsonStringWriter extends JsonWriter {
 
-    protected char buf[];
+    protected char[] buf;
     protected int count;
     protected final static ThreadLocal<SoftReference<char[]>> bufLocal = new ThreadLocal<>();
     public static final char[] NULL = "null".toCharArray();
@@ -25,7 +25,7 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
         }
 
         if (buf == null)
-            buf = new char[1024];
+            buf = new char[1024 * 4];
     }
 
     public AbstractJsonStringWriter(int initialSize) {
@@ -37,12 +37,12 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
 
     @Override
     public void write(int c) {
-        int newcount = count + 1;
-        if (newcount > buf.length) {
-            expandCapacity(newcount);
+        int newCount = count + 1;
+        if (newCount > buf.length) {
+            expandCapacity(newCount);
         }
         buf[count] = (char) c;
-        count = newcount;
+        count = newCount;
     }
 
     @Override
@@ -59,12 +59,12 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
             return;
         }
 
-        int newcount = count + len;
-        if (newcount > buf.length) {
-            expandCapacity(newcount);
+        int newCount = count + len;
+        if (newCount > buf.length) {
+            expandCapacity(newCount);
         }
         System.arraycopy(c, off, buf, count, len);
-        count = newcount;
+        count = newCount;
     }
 
     @Override
@@ -74,12 +74,12 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
 
     @Override
     public void write(String str, int off, int len) {
-        int newcount = count + len;
-        if (newcount > buf.length) {
-            expandCapacity(newcount);
+        int newCount = count + len;
+        if (newCount > buf.length) {
+            expandCapacity(newCount);
         }
         str.getChars(off, off + len, buf, count);
-        count = newcount;
+        count = newCount;
     }
 
     @Override
@@ -137,14 +137,14 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
             return;
         }
         int size = (i < 0) ? IOUtils.stringSize(-i) + 1 : IOUtils.stringSize(i);
-        int newcount = count + size;
+        int newCount = count + size;
 
-        if (newcount > buf.length) {
-            expandCapacity(newcount);
+        if (newCount > buf.length) {
+            expandCapacity(newCount);
         }
 
-        IOUtils.getChars(i, newcount, buf);
-        count = newcount;
+        IOUtils.getChars(i, newCount, buf);
+        count = newCount;
     }
 
     @Override
@@ -166,13 +166,13 @@ abstract public class AbstractJsonStringWriter extends JsonWriter {
 
         int size = (i < 0) ? IOUtils.stringSize(-i) + 1 : IOUtils.stringSize(i);
 
-        int newcount = count + size;
-        if (newcount > buf.length) {
-            expandCapacity(newcount);
+        int newCount = count + size;
+        if (newCount > buf.length) {
+            expandCapacity(newCount);
         }
 
-        IOUtils.getChars(i, newcount, buf);
-        count = newcount;
+        IOUtils.getChars(i, newCount, buf);
+        count = newCount;
     }
 
     public void reset() {

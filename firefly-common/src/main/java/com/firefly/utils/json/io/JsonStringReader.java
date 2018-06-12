@@ -4,7 +4,6 @@ import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.exception.JsonException;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -210,7 +209,7 @@ public class JsonStringReader extends JsonReader {
             if (VerifyUtils.isDigit(ch))
                 value = (value << 3) + (value << 1) + (ch - '0');
             else
-                throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
+                throw new JsonException("read int error, character \"" + ch + "\" is not integer, the position is " + pos);
         }
 
         for (; ; ) {
@@ -226,7 +225,7 @@ public class JsonStringReader extends JsonReader {
                         pos--;
                         break;
                     } else
-                        throw new JsonException("read int error, charactor \"" + ch + "\" is not integer, the position is " + pos);
+                        throw new JsonException("read int error, character \"" + ch + "\" is not integer, the position is " + pos);
                 }
             }
 
@@ -574,12 +573,12 @@ public class JsonStringReader extends JsonReader {
     }
 
     @Override
-    public int read(char[] cbuf, int off, int len) throws IOException {
+    public int read(char[] cbuf, int off, int len) {
         throw new JsonException("method not implements!");
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
     }
 

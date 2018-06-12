@@ -1,8 +1,9 @@
 package com.firefly.wechat.service;
 
-import com.firefly.wechat.model.app.SessionKeyRequest;
-import com.firefly.wechat.model.app.SessionKeyResponse;
+import com.firefly.wechat.model.app.*;
 
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -12,4 +13,15 @@ public interface WechatAppService {
 
     CompletableFuture<SessionKeyResponse> getSessionKey(SessionKeyRequest request);
 
+    DecryptedUserInfoResponse decryptUserInfo(DecryptedUserInfoRequest request);
+
+    boolean verifySignature(String rawData, String sessionKey, String signature);
+
+    CompletableFuture<List<ByteBuffer>> getCodeUnlimit(CodeUnlimitRequest request, String accessToken);
+
+    CompletableFuture<List<ByteBuffer>> getCode(CodeUnlimitRequest request, String accessToken);
+
+    CompletableFuture<List<ByteBuffer>> createQrcode(QrcodeRequest request, String accessToken);
+
+    CompletableFuture<CommonMessageResponse> sendMessage(CommonMessageRequest request, String accessToken);
 }

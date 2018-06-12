@@ -45,4 +45,19 @@ public class EventMessage extends CommonMessage {
     public void setTicket(String ticket) {
         this.ticket = ticket;
     }
+
+    @Override
+    public String toString() {
+        return "EventMessage{" +
+                "event='" + event + '\'' +
+                ", eventKey='" + eventKey + '\'' +
+                ", ticket='" + ticket + '\'' +
+                ", url='" + url + '\'' +
+                ", toUserName='" + toUserName + '\'' +
+                ", fromUserName='" + fromUserName + '\'' +
+                ", createTime=" + createTime +
+                ", msgType='" + msgType + '\'' +
+                ", msgId=" + msgId +
+                '}';
+    }
 }

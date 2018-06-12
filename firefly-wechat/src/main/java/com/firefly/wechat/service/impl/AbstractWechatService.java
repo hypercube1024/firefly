@@ -7,6 +7,8 @@ import com.firefly.wechat.model.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -49,6 +51,25 @@ public class AbstractWechatService {
               .thenAccept(res -> {
                   log.info("call wechat service -> {}, {}, {}, {}, {}", url, param, data, res.getStatus(), res.getStringBody());
                   complete(ret, res, clazz);
+              });
+        return ret;
+    }
+
+    protected CompletableFuture<List<ByteBuffer>> postAndReturnBinaryData(String url, String param, Object data) {
+        CompletableFuture<List<ByteBuffer>> ret = new CompletableFuture<>();
+        client.post(url + "?" + param).jsonBody(data).submit()
+              .thenAccept(res -> {
+                  if (res.getStatus() == HttpStatus.OK_200) {
+                      if (res.getJsonObjectBody().getInteger("errcode") != 0) {
+                          ErrorResponse errorResponse = res.getJsonBody(ErrorResponse.class);
+                          ret.completeExceptionally(errorResponse);
+                      } else {
+                          ret.complete(res.getResponseBody());
+                      }
+                  } else {
+                      ErrorResponse errorResponse = res.getJsonBody(ErrorResponse.class);
+                      ret.completeExceptionally(errorResponse);
+                  }
               });
         return ret;
     }

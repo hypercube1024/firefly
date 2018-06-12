@@ -12,7 +12,7 @@ public class SessionKeyRequest implements Serializable {
     private String appid;
     private String secret;
     private String js_code;
-    private String grant_type;
+    private String grant_type = "authorization_code";
 
     public String getAppid() {
         return appid;

@@ -81,6 +81,16 @@ public interface Pool<T> extends LifeCycle {
     LeakDetector<PooledObject<T>> getLeakDetector();
 
     /**
+     * Created object number adds one.
+     */
+    void increaseCreatedObjectSize();
+
+    /**
+     * Created object number subtracts one.
+     */
+    void decreaseCreatedObjectSize();
+
+    /**
      * Represents the functionality to validate an object of the pool
      *
      * @param <T> The pooled object

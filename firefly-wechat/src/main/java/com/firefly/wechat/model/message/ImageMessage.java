@@ -14,6 +14,10 @@ public class ImageMessage extends CommonMessage {
     @JacksonXmlProperty(localName = "PicUrl")
     private String picUrl;
 
+    @JacksonXmlCData
+    @JacksonXmlProperty(localName = "MediaId")
+    private String mediaId;
+
 
     public String getPicUrl() {
         return picUrl;
@@ -27,6 +31,7 @@ public class ImageMessage extends CommonMessage {
     public String toString() {
         return "ImageMessage{" +
                 "picUrl='" + picUrl + '\'' +
+                ", mediaId='" + mediaId + '\'' +
                 ", url='" + url + '\'' +
                 ", toUserName='" + toUserName + '\'' +
                 ", fromUserName='" + fromUserName + '\'' +
