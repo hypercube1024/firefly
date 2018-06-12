@@ -11,7 +11,7 @@ import static com.firefly.net.OutputEntryType.MERGED_BUFFER;
 /**
  * @author Pengtao Qiu
  */
-public class MergedOutputEntry extends AbstractOutputEntry<ByteBuffer[]> {
+public class MergedOutputEntry extends AbstractByteBufferArrayOutputEntry {
 
     public MergedOutputEntry(List<Callback> callbackList, List<ByteBuffer> byteBufferList) {
         super(new Callback() {

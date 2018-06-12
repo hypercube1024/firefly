@@ -6,7 +6,7 @@ import com.firefly.utils.io.BufferUtils;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class ByteBufferArrayOutputEntry extends AbstractOutputEntry<ByteBuffer[]> {
+public class ByteBufferArrayOutputEntry extends AbstractByteBufferArrayOutputEntry {
 
     public ByteBufferArrayOutputEntry(Callback callback, ByteBuffer[] data) {
         super(callback, data);
