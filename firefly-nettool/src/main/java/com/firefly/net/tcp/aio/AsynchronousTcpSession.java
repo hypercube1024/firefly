@@ -205,7 +205,7 @@ public class AsynchronousTcpSession implements Session {
                     if (entries.isEmpty()) {
                         if (!outputBuffer.isEmpty()) {
                             obj = outputBuffer.peek();
-                            if (obj.getOutputEntryType() == OutputEntryType.DISCONNECTION) {
+                            if (obj != null && obj.getOutputEntryType() == OutputEntryType.DISCONNECTION) {
                                 entry = DISCONNECTION_FLAG;
                                 outputBuffer.poll();
                             }
