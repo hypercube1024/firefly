@@ -16,6 +16,9 @@ public class DecryptedUserInfoResponse implements Serializable {
     private String language;
     private String nickName;
     private String province;
+    private String openId;
+    private String unionId;
+    private Watermark watermark;
 
     public String getAvatarUrl() {
         return avatarUrl;
@@ -73,6 +76,30 @@ public class DecryptedUserInfoResponse implements Serializable {
         this.province = province;
     }
 
+    public String getOpenId() {
+        return openId;
+    }
+
+    public void setOpenId(String openId) {
+        this.openId = openId;
+    }
+
+    public String getUnionId() {
+        return unionId;
+    }
+
+    public void setUnionId(String unionId) {
+        this.unionId = unionId;
+    }
+
+    public Watermark getWatermark() {
+        return watermark;
+    }
+
+    public void setWatermark(Watermark watermark) {
+        this.watermark = watermark;
+    }
+
     @Override
     public String toString() {
         return "DecryptedUserInfoResponse{" +
@@ -83,6 +110,9 @@ public class DecryptedUserInfoResponse implements Serializable {
                 ", language='" + language + '\'' +
                 ", nickName='" + nickName + '\'' +
                 ", province='" + province + '\'' +
+                ", openId='" + openId + '\'' +
+                ", unionId='" + unionId + '\'' +
+                ", watermark=" + watermark +
                 '}';
     }
 }
