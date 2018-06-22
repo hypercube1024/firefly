@@ -66,5 +66,5 @@ fun main(args: Array<String>) {
                 renderTemplate("template/benchmark/items.mustache", ItemRepository("drinks"))
             }
         }
-    }.listen("127.0.0.1", 4455)
+    }.listen("169.254.65.14", 4455)
 }
