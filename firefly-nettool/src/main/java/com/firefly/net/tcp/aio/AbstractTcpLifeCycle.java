@@ -50,7 +50,7 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
                     }
                 };
                 netExecutorService = Executors.newCachedThreadPool(threadFactory);
-                log.info("init the cached thread pool");
+                log.info("initialize the cached thread pool");
             } else if (config.getAsynchronousCorePoolSize() <= Config.defaultPoolSize * 2) {
                 netExecutorService = new ForkJoinPool
                         (config.getAsynchronousCorePoolSize(), pool -> {
@@ -58,7 +58,7 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
                             worker.setName(getThreadName() + worker.getPoolIndex());
                             return worker;
                         }, null, true);
-                log.info("init the fork join pool");
+                log.info("initialize the fork join pool. thread number: {}", config.getAsynchronousCorePoolSize());
             } else {
                 ThreadFactory threadFactory = new ThreadFactory() {
 
@@ -73,7 +73,7 @@ abstract public class AbstractTcpLifeCycle extends AbstractLifeCycle {
                         15L, TimeUnit.SECONDS,
                         new LinkedBlockingQueue<>(),
                         threadFactory);
-                log.info("init the fixed size thread pool");
+                log.info("initialize the fixed size thread pool. thread number: {}", config.getAsynchronousCorePoolSize());
             }
             group = AsynchronousChannelGroup.withThreadPool(netExecutorService);
             log.info(config.toString());
