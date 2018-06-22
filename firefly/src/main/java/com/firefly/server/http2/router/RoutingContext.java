@@ -1,6 +1,9 @@
 package com.firefly.server.http2.router;
 
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
+import com.firefly.codec.oauth2.model.AccessTokenRequest;
+import com.firefly.codec.oauth2.model.AuthorizationRequest;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
@@ -16,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -303,7 +307,7 @@ public interface RoutingContext extends Closeable {
     CompletableFuture<Integer> getSessionSize();
 
     CompletableFuture<Boolean> removeSessionById(String id);
-    
+
     CompletableFuture<Boolean> removeSession();
 
     CompletableFuture<Boolean> updateSession(HTTPSession httpSession);
@@ -327,4 +331,26 @@ public interface RoutingContext extends Closeable {
         renderTemplate(resourceName, Collections.emptyList());
     }
 
+    // OAuth2 API
+    /**
+     * Get the OAuth2 authorized request.
+     *
+     * @return The authorized request.
+     */
+    AuthorizationRequest getAuthorizationRequest();
+
+    /**
+     * When the client gets the code, the client uses the code to exchange the access token.
+     *
+     * @return The access token request.
+     */
+    AccessTokenRequest getAccessTokenRequest();
+
+    default void redirectWithCode(String code) {
+        String redirectUrl = getAuthorizationRequest().getRedirectUri();
+        UrlEncoded urlEncoded = new UrlEncoded();
+        urlEncoded.add("state", getAuthorizationRequest().getState());
+        urlEncoded.add("code", code);
+        redirect(redirectUrl + "?" + urlEncoded.encode(StandardCharsets.UTF_8, true));
+    }
 }

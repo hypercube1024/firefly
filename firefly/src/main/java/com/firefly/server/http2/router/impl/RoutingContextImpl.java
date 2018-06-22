@@ -1,5 +1,8 @@
 package com.firefly.server.http2.router.impl;
 
+import com.firefly.codec.oauth2.model.AccessTokenRequest;
+import com.firefly.codec.oauth2.model.AuthorizationRequest;
+import com.firefly.codec.oauth2.model.OAuth;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.HTTPSession;
@@ -38,6 +41,8 @@ public class RoutingContextImpl implements RoutingContext {
     private final TemplateHandlerSPI templateHandlerSPI = TemplateHandlerSPILoader.getInstance().getTemplateHandlerSPI();
     private volatile boolean asynchronousRead;
     private volatile ConcurrentLinkedDeque<Promise<?>> handlerPromiseQueue;
+    private AuthorizationRequest authorizationRequest;
+    private AccessTokenRequest accessTokenRequest;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -261,7 +266,7 @@ public class RoutingContextImpl implements RoutingContext {
                        .map(HTTPBodyHandlerSPI::getJsonArrayBody)
                        .orElseGet(request::getJsonArrayBody);
     }
-    
+
     public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {
         this.httpBodyHandlerSPI = httpBodyHandlerSPI;
     }
@@ -355,5 +360,35 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public void renderTemplate(String resourceName, List<Object> scopes) {
         templateHandlerSPI.renderTemplate(this, resourceName, scopes);
+    }
+
+    @Override
+    public AuthorizationRequest getAuthorizationRequest() {
+        if (authorizationRequest != null) {
+            return authorizationRequest;
+        } else {
+            AuthorizationRequest req = new AuthorizationRequest();
+            req.setResponseType(getParameter(OAuth.OAUTH_RESPONSE_TYPE));
+            req.setClientId(getParameter(OAuth.OAUTH_CLIENT_ID));
+            req.setRedirectUri(getParameter(OAuth.OAUTH_REDIRECT_URI));
+            req.setScope(getParameter(OAuth.OAUTH_SCOPE));
+            req.setState(getParameter(OAuth.OAUTH_STATE));
+            authorizationRequest = req;
+            return authorizationRequest;
+        }
+    }
+
+    @Override
+    public AccessTokenRequest getAccessTokenRequest() {
+        if (accessTokenRequest != null) {
+            return accessTokenRequest;
+        } else {
+            AccessTokenRequest req = new AccessTokenRequest();
+            req.setClientId(getParameter(OAuth.OAUTH_CLIENT_ID));
+            req.setCode(getParameter(OAuth.OAUTH_CODE));
+            req.setGrantType(getParameter(OAuth.OAUTH_GRANT_TYPE));
+            req.setRedirectUri(getParameter(OAuth.OAUTH_REDIRECT_URI));
+            return accessTokenRequest;
+        }
     }
 }

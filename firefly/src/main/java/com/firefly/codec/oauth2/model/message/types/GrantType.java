@@ -1,5 +1,7 @@
 package com.firefly.codec.oauth2.model.message.types;
 
+import java.util.Arrays;
+
 public enum GrantType {
     // NONE("none"),
     AUTHORIZATION_CODE("authorization_code"),
@@ -13,6 +15,13 @@ public enum GrantType {
 
     GrantType(String grantType) {
         this.grantType = grantType;
+    }
+
+    public static GrantType from(String grantType) {
+        return Arrays.stream(GrantType.values())
+                     .filter(i -> i.toString().equals(grantType))
+                     .findAny()
+                     .orElse(null);
     }
 
     @Override

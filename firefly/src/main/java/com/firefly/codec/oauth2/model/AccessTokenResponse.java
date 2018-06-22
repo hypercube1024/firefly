@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * @author Pengtao Qiu
  */
-public class OAuthToken implements Serializable {
+public class AccessTokenResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
