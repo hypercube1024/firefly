@@ -1,16 +1,20 @@
 package com.firefly.utils.json.compiler;
 
 import com.firefly.utils.BeanUtils;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.json.annotation.JsonProperty;
 import com.firefly.utils.json.serializer.SerialStateMachine;
 import com.firefly.utils.json.support.SerializerMetaInfo;
 import com.firefly.utils.lang.bean.PropertyAccess;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
 import static com.firefly.utils.json.support.PropertyUtils.getDateFormat;
+import static com.firefly.utils.json.support.PropertyUtils.getJsonProperty;
 import static com.firefly.utils.json.support.PropertyUtils.isTransientField;
 
 public class EncodeCompiler {
@@ -38,7 +42,11 @@ public class EncodeCompiler {
 
             SerializerMetaInfo fieldMetaInfo = new SerializerMetaInfo();
             fieldMetaInfo.setPropertyAccess(propertyAccess);
-            fieldMetaInfo.setPropertyName(propertyName, false);
+            String jsonPropertyName = Optional.ofNullable(getJsonProperty(propertyName, clazz, setter, getter))
+                                              .map(JsonProperty::value)
+                                              .filter(StringUtils::hasText)
+                                              .orElse(propertyName);
+            fieldMetaInfo.setPropertyName(jsonPropertyName, false);
             fieldMetaInfo.setSerializer(SerialStateMachine.getSerializer(propertyClass, getDateFormat(propertyName, clazz, setter, getter)));
             fieldSet.add(fieldMetaInfo);
         }
