@@ -2,15 +2,12 @@ package com.firefly.server.http2.router;
 
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
-import com.firefly.codec.oauth2.model.AccessTokenResponse;
-import com.firefly.codec.oauth2.model.AuthorizationCodeAccessTokenRequest;
-import com.firefly.codec.oauth2.model.AuthorizationRequest;
-import com.firefly.codec.oauth2.model.PasswordAccessTokenRequest;
+import com.firefly.codec.oauth2.exception.OAuthProblemException;
+import com.firefly.codec.oauth2.model.*;
 import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
-import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.Json;
@@ -354,12 +351,31 @@ public interface RoutingContext extends Closeable {
      */
     default void redirectWithCode(String code) {
         AuthorizationRequest req = getAuthorizationRequest();
-        Assert.isTrue(req.getResponseType().equals(ResponseType.CODE.toString()), "The response type must be code.");
+        if (!req.getResponseType().equals(ResponseType.CODE.toString())) {
+            throw OAuthProblemException.error(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE, "The response type must be code.")
+                                       .state(req.getState());
+        }
 
         String redirectUrl = req.getRedirectUri();
         UrlEncoded urlEncoded = new UrlEncoded();
         urlEncoded.add(OAUTH_STATE, req.getState());
         urlEncoded.add(OAUTH_CODE, code);
+        redirect(redirectUrl + "?" + urlEncoded.encode(StandardCharsets.UTF_8, true));
+    }
+
+    /**
+     * Response the authorization error.
+     *
+     * @param exception The authorization exception.
+     */
+    default void redirectAuthorizationError(OAuthProblemException exception) {
+        AuthorizationRequest req = getAuthorizationRequest();
+        String redirectUrl = req.getRedirectUri();
+        UrlEncoded urlEncoded = new UrlEncoded();
+        urlEncoded.add(OAuthError.OAUTH_ERROR, exception.getError());
+        urlEncoded.add(OAUTH_STATE, exception.getState());
+        urlEncoded.add(OAuthError.OAUTH_ERROR_DESCRIPTION, exception.getDescription());
+        urlEncoded.add(OAuthError.OAUTH_ERROR_URI, exception.getUri());
         redirect(redirectUrl + "?" + urlEncoded.encode(StandardCharsets.UTF_8, true));
     }
 
@@ -378,6 +394,13 @@ public interface RoutingContext extends Closeable {
     PasswordAccessTokenRequest getPasswordAccessTokenRequest();
 
     /**
+     * Get the client credential that is used to exchange the access token.
+     *
+     * @return The client credential access token request.
+     */
+    ClientCredentialAccessTokenRequest getClientCredentialAccessTokenRequest();
+
+    /**
      * Write the access token to the client.
      *
      * @param accessTokenResponse The access token that is used to get the resources.
@@ -394,7 +417,10 @@ public interface RoutingContext extends Closeable {
      */
     default void redirectAccessToken(AccessTokenResponse accessTokenResponse) {
         AuthorizationRequest req = getAuthorizationRequest();
-        Assert.isTrue(req.getResponseType().equals(ResponseType.TOKEN.toString()), "The response type must be token.");
+        if (!req.getResponseType().equals(ResponseType.TOKEN.toString())) {
+            throw OAuthProblemException.error(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE, "The response type must be token.")
+                                       .state(req.getState());
+        }
 
         String redirectUrl = req.getRedirectUri();
         UrlEncoded urlEncoded = new UrlEncoded();
@@ -403,9 +429,9 @@ public interface RoutingContext extends Closeable {
         urlEncoded.add(OAUTH_EXPIRES_IN, accessTokenResponse.getExpiresIn().toString());
         urlEncoded.add(OAUTH_REFRESH_TOKEN, accessTokenResponse.getRefreshToken());
         urlEncoded.add(OAUTH_SCOPE, accessTokenResponse.getScope());
+        urlEncoded.add(OAUTH_STATE, accessTokenResponse.getState());
         redirect(redirectUrl + "#" + urlEncoded.encode(StandardCharsets.UTF_8, true));
     }
-
 
 
 }

@@ -14,13 +14,19 @@ public class AccessTokenResponse implements Serializable {
 
     @JsonProperty("access_token")
     protected String accessToken;
+
     @JsonProperty("token_type")
     protected String tokenType = TokenType.BEARER.toString();
+
     @JsonProperty("expires_in")
     protected Long expiresIn;
+
     @JsonProperty("refresh_token")
     protected String refreshToken;
+
     protected String scope;
+
+    protected String state;
 
     public String getAccessToken() {
         return accessToken;
@@ -62,4 +68,11 @@ public class AccessTokenResponse implements Serializable {
         this.scope = scope;
     }
 
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }

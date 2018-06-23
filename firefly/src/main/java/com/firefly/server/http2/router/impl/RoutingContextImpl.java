@@ -1,9 +1,9 @@
 package com.firefly.server.http2.router.impl;
 
-import com.firefly.codec.oauth2.model.AuthorizationCodeAccessTokenRequest;
-import com.firefly.codec.oauth2.model.AuthorizationRequest;
-import com.firefly.codec.oauth2.model.PasswordAccessTokenRequest;
+import com.firefly.codec.oauth2.exception.OAuthProblemException;
+import com.firefly.codec.oauth2.model.*;
 import com.firefly.codec.oauth2.model.message.types.GrantType;
+import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.HTTPSession;
@@ -13,7 +13,7 @@ import com.firefly.server.http2.router.handler.template.TemplateHandlerSPILoader
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
-import com.firefly.utils.Assert;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
@@ -48,6 +48,7 @@ public class RoutingContextImpl implements RoutingContext {
     private AuthorizationRequest authorizationRequest;
     private AuthorizationCodeAccessTokenRequest authorizationCodeAccessTokenRequest;
     private PasswordAccessTokenRequest passwordAccessTokenRequest;
+    private ClientCredentialAccessTokenRequest clientCredentialAccessTokenRequest;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -377,7 +378,15 @@ public class RoutingContextImpl implements RoutingContext {
             req.setScope(getParameter(OAUTH_SCOPE));
             req.setState(getParameter(OAUTH_STATE));
 
-            Assert.hasText(req.getResponseType(), "The response type must be not null");
+            if (!StringUtils.hasText(req.getResponseType())) {
+                throw OAuthProblemException.error(OAuthError.CodeResponse.INVALID_REQUEST, "The response type must be not null.")
+                                           .state(req.getState());
+            }
+
+            if (ResponseType.from(req.getResponseType()) == null) {
+                throw OAuthProblemException.error(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE, "The response type '" + req.getResponseType() + "' is not supported.")
+                                           .state(req.getState());
+            }
             authorizationRequest = req;
         }
         return authorizationRequest;
@@ -392,9 +401,15 @@ public class RoutingContextImpl implements RoutingContext {
             req.setCode(getParameter(OAUTH_CODE));
             req.setRedirectUri(getParameter(OAUTH_REDIRECT_URI));
 
-            Assert.hasText(req.getCode(), "The code must be not null.");
-            Assert.hasText(req.getGrantType(), "The grant type must be not null.");
-            Assert.isTrue(req.getGrantType().equals(GrantType.AUTHORIZATION_CODE.toString()), "The grant type must be authorization code.");
+            if (!StringUtils.hasText(req.getCode())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The code must be not null.");
+            }
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.AUTHORIZATION_CODE.toString())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_GRANT, "The grant type must be 'authorization_code'.");
+            }
             authorizationCodeAccessTokenRequest = req;
         }
         return authorizationCodeAccessTokenRequest;
@@ -409,12 +424,39 @@ public class RoutingContextImpl implements RoutingContext {
             req.setPassword(getParameter(OAUTH_PASSWORD));
             req.setScope(getParameter(OAUTH_SCOPE));
 
-            Assert.hasText(req.getUsername(), "The username must be not null.");
-            Assert.hasText(req.getPassword(), "The password must be not null.");
-            Assert.hasText(req.getGrantType(), "The grant type must be not null.");
-            Assert.isTrue(req.getGrantType().equals(GrantType.PASSWORD.toString()), "The grant type must be authorization code.");
+            if (!StringUtils.hasText(req.getUsername())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The username must be not null.");
+            }
+            if (!StringUtils.hasText(req.getPassword())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The password must be not null.");
+            }
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.PASSWORD.toString())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_GRANT, "The grant type must be 'password'.");
+            }
             passwordAccessTokenRequest = req;
         }
         return passwordAccessTokenRequest;
+    }
+
+    @Override
+    public ClientCredentialAccessTokenRequest getClientCredentialAccessTokenRequest() {
+        if (clientCredentialAccessTokenRequest == null) {
+            ClientCredentialAccessTokenRequest req = new ClientCredentialAccessTokenRequest();
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setClientSecret(getParameter(OAUTH_CLIENT_SECRET));
+
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.CLIENT_CREDENTIALS.toString())) {
+                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_GRANT, "The grant type must be 'client_credentials'.");
+            }
+            clientCredentialAccessTokenRequest = req;
+        }
+        return clientCredentialAccessTokenRequest;
     }
 }

@@ -1,5 +1,7 @@
 package com.firefly.codec.oauth2.model;
 
+import com.firefly.utils.json.annotation.JsonProperty;
+
 import java.io.Serializable;
 
 /**
@@ -9,8 +11,11 @@ public class AuthorizationRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @JsonProperty("response_type")
     protected String responseType;
+    @JsonProperty("client_id")
     protected String clientId;
+    @JsonProperty("redirect_uri")
     protected String redirectUri;
     protected String scope;
     protected String state;
