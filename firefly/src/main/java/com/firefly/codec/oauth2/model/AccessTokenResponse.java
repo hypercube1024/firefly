@@ -1,5 +1,8 @@
 package com.firefly.codec.oauth2.model;
 
+import com.firefly.codec.oauth2.model.message.types.TokenType;
+import com.firefly.utils.json.annotation.JsonProperty;
+
 import java.io.Serializable;
 
 /**
@@ -9,9 +12,13 @@ public class AccessTokenResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @JsonProperty("access_token")
     protected String accessToken;
-    protected String tokenType;
+    @JsonProperty("token_type")
+    protected String tokenType = TokenType.BEARER.toString();
+    @JsonProperty("expires_in")
     protected Long expiresIn;
+    @JsonProperty("refresh_token")
     protected String refreshToken;
     protected String scope;
 

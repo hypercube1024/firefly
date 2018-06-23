@@ -2,11 +2,15 @@ package com.firefly.server.http2.router;
 
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
-import com.firefly.codec.oauth2.model.AccessTokenRequest;
+import com.firefly.codec.oauth2.model.AccessTokenResponse;
+import com.firefly.codec.oauth2.model.AuthorizationCodeAccessTokenRequest;
 import com.firefly.codec.oauth2.model.AuthorizationRequest;
+import com.firefly.codec.oauth2.model.PasswordAccessTokenRequest;
+import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
+import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.Json;
@@ -23,6 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.firefly.codec.oauth2.model.OAuth.*;
 
 /**
  * A new RoutingContext(ctx) instance is created for each HTTP request.
@@ -331,26 +337,75 @@ public interface RoutingContext extends Closeable {
         renderTemplate(resourceName, Collections.emptyList());
     }
 
+
     // OAuth2 API
+
     /**
-     * Get the OAuth2 authorized request.
+     * Get the OAuth2 authorization request.
      *
-     * @return The authorized request.
+     * @return The authorization request.
      */
     AuthorizationRequest getAuthorizationRequest();
 
     /**
-     * When the client gets the code, the client uses the code to exchange the access token.
+     * If the the response type is code in the authorization request, response the authorization code. The code is used to exchange the access token.
      *
-     * @return The access token request.
+     * @param code The authorization code.
      */
-    AccessTokenRequest getAccessTokenRequest();
-
     default void redirectWithCode(String code) {
-        String redirectUrl = getAuthorizationRequest().getRedirectUri();
+        AuthorizationRequest req = getAuthorizationRequest();
+        Assert.isTrue(req.getResponseType().equals(ResponseType.CODE.toString()), "The response type must be code.");
+
+        String redirectUrl = req.getRedirectUri();
         UrlEncoded urlEncoded = new UrlEncoded();
-        urlEncoded.add("state", getAuthorizationRequest().getState());
-        urlEncoded.add("code", code);
+        urlEncoded.add(OAUTH_STATE, req.getState());
+        urlEncoded.add(OAUTH_CODE, code);
         redirect(redirectUrl + "?" + urlEncoded.encode(StandardCharsets.UTF_8, true));
     }
+
+    /**
+     * Get the authorization code, the client will use the code to exchange the access token.
+     *
+     * @return The authorization code access token request.
+     */
+    AuthorizationCodeAccessTokenRequest getAuthorizationCodeAccessTokenRequest();
+
+    /**
+     * Get the username and password that are used to exchange the access token.
+     *
+     * @return The password access token request.
+     */
+    PasswordAccessTokenRequest getPasswordAccessTokenRequest();
+
+    /**
+     * Write the access token to the client.
+     *
+     * @param accessTokenResponse The access token that is used to get the resources.
+     * @return The access token.
+     */
+    default RoutingContext writeAccessToken(AccessTokenResponse accessTokenResponse) {
+        return writeJson(accessTokenResponse);
+    }
+
+    /**
+     * If the the response type is token in the authorization request, response the access token.
+     *
+     * @param accessTokenResponse The access token response
+     */
+    default void redirectAccessToken(AccessTokenResponse accessTokenResponse) {
+        AuthorizationRequest req = getAuthorizationRequest();
+        Assert.isTrue(req.getResponseType().equals(ResponseType.TOKEN.toString()), "The response type must be token.");
+
+        String redirectUrl = req.getRedirectUri();
+        UrlEncoded urlEncoded = new UrlEncoded();
+        urlEncoded.add(OAUTH_ACCESS_TOKEN, accessTokenResponse.getAccessToken());
+        urlEncoded.add(OAUTH_TOKEN_TYPE, accessTokenResponse.getTokenType());
+        urlEncoded.add(OAUTH_EXPIRES_IN, accessTokenResponse.getExpiresIn().toString());
+        urlEncoded.add(OAUTH_REFRESH_TOKEN, accessTokenResponse.getRefreshToken());
+        urlEncoded.add(OAUTH_SCOPE, accessTokenResponse.getScope());
+        redirect(redirectUrl + "#" + urlEncoded.encode(StandardCharsets.UTF_8, true));
+    }
+
+
+
 }

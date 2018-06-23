@@ -1,8 +1,9 @@
 package com.firefly.server.http2.router.impl;
 
-import com.firefly.codec.oauth2.model.AccessTokenRequest;
+import com.firefly.codec.oauth2.model.AuthorizationCodeAccessTokenRequest;
 import com.firefly.codec.oauth2.model.AuthorizationRequest;
-import com.firefly.codec.oauth2.model.OAuth;
+import com.firefly.codec.oauth2.model.PasswordAccessTokenRequest;
+import com.firefly.codec.oauth2.model.message.types.GrantType;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.HTTPSession;
@@ -12,6 +13,7 @@ import com.firefly.server.http2.router.handler.template.TemplateHandlerSPILoader
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
+import com.firefly.utils.Assert;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
@@ -28,6 +30,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import static com.firefly.codec.oauth2.model.OAuth.*;
+
 /**
  * @author Pengtao Qiu
  */
@@ -42,7 +46,8 @@ public class RoutingContextImpl implements RoutingContext {
     private volatile boolean asynchronousRead;
     private volatile ConcurrentLinkedDeque<Promise<?>> handlerPromiseQueue;
     private AuthorizationRequest authorizationRequest;
-    private AccessTokenRequest accessTokenRequest;
+    private AuthorizationCodeAccessTokenRequest authorizationCodeAccessTokenRequest;
+    private PasswordAccessTokenRequest passwordAccessTokenRequest;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -364,31 +369,52 @@ public class RoutingContextImpl implements RoutingContext {
 
     @Override
     public AuthorizationRequest getAuthorizationRequest() {
-        if (authorizationRequest != null) {
-            return authorizationRequest;
-        } else {
+        if (authorizationRequest == null) {
             AuthorizationRequest req = new AuthorizationRequest();
-            req.setResponseType(getParameter(OAuth.OAUTH_RESPONSE_TYPE));
-            req.setClientId(getParameter(OAuth.OAUTH_CLIENT_ID));
-            req.setRedirectUri(getParameter(OAuth.OAUTH_REDIRECT_URI));
-            req.setScope(getParameter(OAuth.OAUTH_SCOPE));
-            req.setState(getParameter(OAuth.OAUTH_STATE));
+            req.setResponseType(getParameter(OAUTH_RESPONSE_TYPE));
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setRedirectUri(getParameter(OAUTH_REDIRECT_URI));
+            req.setScope(getParameter(OAUTH_SCOPE));
+            req.setState(getParameter(OAUTH_STATE));
+
+            Assert.hasText(req.getResponseType(), "The response type must be not null");
             authorizationRequest = req;
-            return authorizationRequest;
         }
+        return authorizationRequest;
     }
 
     @Override
-    public AccessTokenRequest getAccessTokenRequest() {
-        if (accessTokenRequest != null) {
-            return accessTokenRequest;
-        } else {
-            AccessTokenRequest req = new AccessTokenRequest();
-            req.setClientId(getParameter(OAuth.OAUTH_CLIENT_ID));
-            req.setCode(getParameter(OAuth.OAUTH_CODE));
-            req.setGrantType(getParameter(OAuth.OAUTH_GRANT_TYPE));
-            req.setRedirectUri(getParameter(OAuth.OAUTH_REDIRECT_URI));
-            return accessTokenRequest;
+    public AuthorizationCodeAccessTokenRequest getAuthorizationCodeAccessTokenRequest() {
+        if (authorizationCodeAccessTokenRequest == null) {
+            AuthorizationCodeAccessTokenRequest req = new AuthorizationCodeAccessTokenRequest();
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setCode(getParameter(OAUTH_CODE));
+            req.setRedirectUri(getParameter(OAUTH_REDIRECT_URI));
+
+            Assert.hasText(req.getCode(), "The code must be not null.");
+            Assert.hasText(req.getGrantType(), "The grant type must be not null.");
+            Assert.isTrue(req.getGrantType().equals(GrantType.AUTHORIZATION_CODE.toString()), "The grant type must be authorization code.");
+            authorizationCodeAccessTokenRequest = req;
         }
+        return authorizationCodeAccessTokenRequest;
+    }
+
+    @Override
+    public PasswordAccessTokenRequest getPasswordAccessTokenRequest() {
+        if (passwordAccessTokenRequest == null) {
+            PasswordAccessTokenRequest req = new PasswordAccessTokenRequest();
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+            req.setUsername(getParameter(OAUTH_USERNAME));
+            req.setPassword(getParameter(OAUTH_PASSWORD));
+            req.setScope(getParameter(OAUTH_SCOPE));
+
+            Assert.hasText(req.getUsername(), "The username must be not null.");
+            Assert.hasText(req.getPassword(), "The password must be not null.");
+            Assert.hasText(req.getGrantType(), "The grant type must be not null.");
+            Assert.isTrue(req.getGrantType().equals(GrantType.PASSWORD.toString()), "The grant type must be authorization code.");
+            passwordAccessTokenRequest = req;
+        }
+        return passwordAccessTokenRequest;
     }
 }
