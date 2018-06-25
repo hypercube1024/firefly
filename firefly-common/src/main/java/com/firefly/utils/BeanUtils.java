@@ -296,4 +296,21 @@ abstract public class BeanUtils {
             genericNameTypeMap.put(typeVariables[i].getName(), types[i]);
         }
     }
+
+    public static Field getField(String propertyName, Class<?> clazz) {
+        Class<?> tmpClass = clazz;
+        while (tmpClass != null) {
+            try {
+                Field field = tmpClass.getDeclaredField(propertyName);
+                if (field != null) {
+                    field.setAccessible(true);
+                    return field;
+                }
+                tmpClass = tmpClass.getSuperclass();
+            } catch (NoSuchFieldException e) {
+                tmpClass = tmpClass.getSuperclass();
+            }
+        }
+        return null;
+    }
 }

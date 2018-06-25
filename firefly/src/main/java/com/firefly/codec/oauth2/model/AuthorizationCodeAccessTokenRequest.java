@@ -1,8 +1,12 @@
 package com.firefly.codec.oauth2.model;
 
+import com.firefly.codec.oauth2.model.message.types.GrantType;
 import com.firefly.utils.json.annotation.JsonProperty;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+
+import static com.firefly.codec.oauth2.model.OAuth.*;
 
 public class AuthorizationCodeAccessTokenRequest extends AccessTokenRequest implements Serializable {
 
@@ -36,5 +40,43 @@ public class AuthorizationCodeAccessTokenRequest extends AccessTokenRequest impl
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public static Builder newInstance() {
+        return new AuthorizationCodeAccessTokenRequest().new Builder();
+    }
+
+    public class Builder extends AbstractOauthBuilder<Builder, AuthorizationCodeAccessTokenRequest> {
+
+        public Builder() {
+            this.instance = this;
+            this.object = AuthorizationCodeAccessTokenRequest.this;
+            AuthorizationCodeAccessTokenRequest.this.grantType = GrantType.AUTHORIZATION_CODE.toString();
+        }
+
+        public Builder code(String code) {
+            AuthorizationCodeAccessTokenRequest.this.code = code;
+            return this;
+        }
+
+        public Builder clientId(String clientId) {
+            AuthorizationCodeAccessTokenRequest.this.clientId = clientId;
+            return this;
+        }
+
+        public Builder redirectUri(String redirectUri) {
+            AuthorizationCodeAccessTokenRequest.this.redirectUri = redirectUri;
+            return this;
+        }
+
+        @Override
+        public String toEncodedUrl() {
+            urlEncoded.put(OAUTH_GRANT_TYPE, grantType);
+            urlEncoded.put(OAUTH_CODE, code);
+            urlEncoded.put(OAUTH_CLIENT_ID, clientId);
+            urlEncoded.put(OAUTH_REDIRECT_URI, redirectUri);
+            return urlEncoded.encode(StandardCharsets.UTF_8, true);
+        }
+
     }
 }

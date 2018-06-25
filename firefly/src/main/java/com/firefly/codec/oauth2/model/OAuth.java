@@ -3,7 +3,7 @@ package com.firefly.codec.oauth2.model;
 import com.firefly.codec.oauth2.model.message.types.ParameterStyle;
 import com.firefly.codec.oauth2.model.message.types.TokenType;
 
-public final class OAuth {
+abstract public class OAuth {
 
     public static final class HttpMethod {
         public static final String POST = "POST";
@@ -60,4 +60,12 @@ public final class OAuth {
     public static final String OAUTH_VERSION_DIFFER = "oauth_signature_method";
     
     public static final String ASSERTION ="assertion";
+
+    public static AuthorizationCodeAccessTokenRequest.Builder authCodeRequest() {
+        return AuthorizationCodeAccessTokenRequest.newInstance();
+    }
+
+    public static AuthorizationRequest.Builder authRequest() {
+        return AuthorizationRequest.newInstance();
+    }
 }
