@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * @author Pengtao Qiu
  */
-public class Token {
+public class Token extends Common {
 
     @JsonProperty("access_token")
     private String accessToken;
@@ -44,6 +44,7 @@ public class Token {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         Token token = (Token) o;
         return Objects.equals(accessToken, token.accessToken) &&
                 Objects.equals(expiresIn, token.expiresIn) &&
@@ -52,6 +53,6 @@ public class Token {
 
     @Override
     public int hashCode() {
-        return Objects.hash(accessToken, expiresIn, scope);
+        return Objects.hash(super.hashCode(), accessToken, expiresIn, scope);
     }
 }

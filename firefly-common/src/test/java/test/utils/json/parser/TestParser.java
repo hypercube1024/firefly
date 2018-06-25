@@ -664,6 +664,7 @@ public class TestParser {
         token.setAccessToken("haha!");
         token.setExpiresIn(30L);
         token.setScope("aa");
+        token.setClientId("asdfg");
         String json = Json.toJson(token);
         System.out.println(json);
 
