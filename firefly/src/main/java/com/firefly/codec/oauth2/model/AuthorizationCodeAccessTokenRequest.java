@@ -14,7 +14,9 @@ public class AuthorizationCodeAccessTokenRequest extends AccessTokenRequest impl
 
     @JsonProperty("client_id")
     protected String clientId;
+
     protected String code;
+
     @JsonProperty("redirect_uri")
     protected String redirectUri;
 
@@ -49,23 +51,23 @@ public class AuthorizationCodeAccessTokenRequest extends AccessTokenRequest impl
     public class Builder extends AbstractOauthBuilder<Builder, AuthorizationCodeAccessTokenRequest> {
 
         public Builder() {
-            this.instance = this;
-            this.object = AuthorizationCodeAccessTokenRequest.this;
-            AuthorizationCodeAccessTokenRequest.this.grantType = GrantType.AUTHORIZATION_CODE.toString();
+            builderInstance = this;
+            object = AuthorizationCodeAccessTokenRequest.this;
+            object.grantType = GrantType.AUTHORIZATION_CODE.toString();
         }
 
         public Builder code(String code) {
-            AuthorizationCodeAccessTokenRequest.this.code = code;
+            object.code = code;
             return this;
         }
 
         public Builder clientId(String clientId) {
-            AuthorizationCodeAccessTokenRequest.this.clientId = clientId;
+            object.clientId = clientId;
             return this;
         }
 
         public Builder redirectUri(String redirectUri) {
-            AuthorizationCodeAccessTokenRequest.this.redirectUri = redirectUri;
+            object.redirectUri = redirectUri;
             return this;
         }
 

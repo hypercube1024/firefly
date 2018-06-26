@@ -1,8 +1,12 @@
 package com.firefly.codec.oauth2.model;
 
+import com.firefly.codec.oauth2.model.message.types.GrantType;
 import com.firefly.utils.json.annotation.JsonProperty;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+
+import static com.firefly.codec.oauth2.model.OAuth.*;
 
 /**
  * @author Pengtao Qiu
@@ -13,8 +17,11 @@ public class ClientCredentialAccessTokenRequest extends AccessTokenRequest imple
 
     @JsonProperty("client_id")
     protected String clientId;
+
     @JsonProperty("client_secret")
     protected String clientSecret;
+
+    protected String scope;
 
     public String getClientId() {
         return clientId;
@@ -30,5 +37,42 @@ public class ClientCredentialAccessTokenRequest extends AccessTokenRequest imple
 
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
+    }
+
+    public static Builder newInstance() {
+        return new ClientCredentialAccessTokenRequest().new Builder();
+    }
+
+    public class Builder extends AbstractOauthBuilder<Builder, ClientCredentialAccessTokenRequest> {
+
+        public Builder() {
+            builderInstance = this;
+            object = ClientCredentialAccessTokenRequest.this;
+            object.grantType = GrantType.CLIENT_CREDENTIALS.toString();
+        }
+
+        public Builder clientId(String clientId) {
+            object.clientId = clientId;
+            return this;
+        }
+
+        public Builder clientSecret(String clientSecret) {
+            object.clientSecret = clientSecret;
+            return this;
+        }
+
+        public Builder scope(String scope) {
+            object.scope = scope;
+            return this;
+        }
+
+        @Override
+        public String toEncodedUrl() {
+            urlEncoded.put(OAUTH_GRANT_TYPE, grantType);
+            urlEncoded.put(OAUTH_CLIENT_ID, clientId);
+            urlEncoded.put(OAUTH_CLIENT_SECRET, clientSecret);
+            urlEncoded.put(OAUTH_SCOPE, scope);
+            return urlEncoded.encode(StandardCharsets.UTF_8, true);
+        }
     }
 }

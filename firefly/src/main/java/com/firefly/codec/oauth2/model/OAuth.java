@@ -1,5 +1,6 @@
 package com.firefly.codec.oauth2.model;
 
+import com.firefly.codec.oauth2.exception.OAuthProblemException;
 import com.firefly.codec.oauth2.model.message.types.ParameterStyle;
 import com.firefly.codec.oauth2.model.message.types.TokenType;
 
@@ -46,7 +47,7 @@ abstract public class OAuth {
     public static final String OAUTH_ACCESS_TOKEN = "access_token";
     public static final String OAUTH_EXPIRES_IN = "expires_in";
     public static final String OAUTH_REFRESH_TOKEN = "refresh_token";
-    
+
     public static final String OAUTH_TOKEN_TYPE = "token_type";
 
     public static final String OAUTH_TOKEN = "oauth_token";
@@ -56,16 +57,28 @@ abstract public class OAuth {
 
     public static final ParameterStyle DEFAULT_PARAMETER_STYLE = ParameterStyle.HEADER;
     public static final TokenType DEFAULT_TOKEN_TYPE = TokenType.BEARER;
-    
-    public static final String OAUTH_VERSION_DIFFER = "oauth_signature_method";
-    
-    public static final String ASSERTION ="assertion";
 
-    public static AuthorizationCodeAccessTokenRequest.Builder authCodeRequest() {
-        return AuthorizationCodeAccessTokenRequest.newInstance();
+    public static final String OAUTH_VERSION_DIFFER = "oauth_signature_method";
+
+    public static final String ASSERTION = "assertion";
+
+    public static OAuthProblemException oauthProblem(String error) {
+        return OAuthProblemException.error(error);
     }
 
     public static AuthorizationRequest.Builder authRequest() {
         return AuthorizationRequest.newInstance();
+    }
+
+    public static AuthorizationCodeAccessTokenRequest.Builder codeAccessTokenRequest() {
+        return AuthorizationCodeAccessTokenRequest.newInstance();
+    }
+
+    public static PasswordAccessTokenRequest.Builder pwdAccessTokenRequest() {
+        return PasswordAccessTokenRequest.newInstance();
+    }
+
+    public static ClientCredentialAccessTokenRequest.Builder credAccessTokenRequest() {
+        return ClientCredentialAccessTokenRequest.newInstance();
     }
 }

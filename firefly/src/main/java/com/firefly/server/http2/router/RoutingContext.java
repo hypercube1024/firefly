@@ -352,8 +352,9 @@ public interface RoutingContext extends Closeable {
     default void redirectWithCode(String code) {
         AuthorizationRequest req = getAuthorizationRequest();
         if (!req.getResponseType().equals(ResponseType.CODE.toString())) {
-            throw OAuthProblemException.error(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE, "The response type must be code.")
-                                       .state(req.getState());
+            throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE)
+                       .description("The response type must be code.")
+                       .state(req.getState());
         }
 
         String redirectUrl = req.getRedirectUri();
@@ -418,8 +419,9 @@ public interface RoutingContext extends Closeable {
     default void redirectAccessToken(AccessTokenResponse accessTokenResponse) {
         AuthorizationRequest req = getAuthorizationRequest();
         if (!req.getResponseType().equals(ResponseType.TOKEN.toString())) {
-            throw OAuthProblemException.error(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE, "The response type must be token.")
-                                       .state(req.getState());
+            throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE)
+                       .description("The response type must be token.")
+                       .state(req.getState());
         }
 
         String redirectUrl = req.getRedirectUri();

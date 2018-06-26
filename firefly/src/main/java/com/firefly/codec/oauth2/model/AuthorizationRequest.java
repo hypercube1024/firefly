@@ -70,32 +70,32 @@ public class AuthorizationRequest implements Serializable {
     public class Builder extends AbstractOauthBuilder<Builder, AuthorizationRequest> {
 
         public Builder() {
-            this.instance = this;
-            this.object = AuthorizationRequest.this;
+            builderInstance = this;
+            object = AuthorizationRequest.this;
         }
 
         public Builder responseType(String responseType) {
-            AuthorizationRequest.this.responseType = responseType;
+            object.responseType = responseType;
             return this;
         }
 
         public Builder clientId(String clientId) {
-            AuthorizationRequest.this.clientId = clientId;
+            object.clientId = clientId;
             return this;
         }
 
         public Builder redirectUri(String redirectUri) {
-            AuthorizationRequest.this.redirectUri = redirectUri;
+            object.redirectUri = redirectUri;
             return this;
         }
 
         public Builder scope(String scope) {
-            AuthorizationRequest.this.scope = scope;
+            object.scope = scope;
             return this;
         }
 
         public Builder state(String state) {
-            AuthorizationRequest.this.state = state;
+            object.state = state;
             return this;
         }
 

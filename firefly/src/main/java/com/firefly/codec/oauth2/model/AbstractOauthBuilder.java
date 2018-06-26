@@ -13,56 +13,56 @@ import java.util.Map;
 abstract public class AbstractOauthBuilder<T extends AbstractOauthBuilder, R> {
 
     protected UrlEncoded urlEncoded = new UrlEncoded();
-    protected T instance;
+    protected T builderInstance;
     protected R object;
 
     public T put(String name, String value) {
         urlEncoded.put(name, value);
-        return instance;
+        return builderInstance;
     }
 
     public T putAllValues(Map<String, String> input) {
         urlEncoded.putAllValues(input);
-        return instance;
+        return builderInstance;
     }
 
     public T putValues(String name, List<String> values) {
         urlEncoded.putValues(name, values);
-        return instance;
+        return builderInstance;
     }
 
     public T putValues(String name, String... values) {
         urlEncoded.putValues(name, values);
-        return instance;
+        return builderInstance;
     }
 
     public T add(String name, String value) {
         urlEncoded.add(name, value);
-        return instance;
+        return builderInstance;
     }
 
     public T addValues(String name, List<String> values) {
         urlEncoded.addValues(name, values);
-        return instance;
+        return builderInstance;
     }
 
     public T addValues(String name, String[] values) {
         urlEncoded.addValues(name, values);
-        return instance;
+        return builderInstance;
     }
 
     public T addAllValues(MultiMap<String> map) {
         urlEncoded.addAllValues(map);
-        return instance;
+        return builderInstance;
     }
 
     public T removeValue(String name, String value) {
         urlEncoded.removeValue(name, value);
-        return instance;
+        return builderInstance;
     }
 
-    public T getInstance() {
-        return instance;
+    public T getBuilderInstance() {
+        return builderInstance;
     }
 
     public R getObject() {

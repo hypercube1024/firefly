@@ -1,6 +1,5 @@
 package com.firefly.server.http2.router.impl;
 
-import com.firefly.codec.oauth2.exception.OAuthProblemException;
 import com.firefly.codec.oauth2.model.*;
 import com.firefly.codec.oauth2.model.message.types.GrantType;
 import com.firefly.codec.oauth2.model.message.types.ResponseType;
@@ -379,13 +378,15 @@ public class RoutingContextImpl implements RoutingContext {
             req.setState(getParameter(OAUTH_STATE));
 
             if (!StringUtils.hasText(req.getResponseType())) {
-                throw OAuthProblemException.error(OAuthError.CodeResponse.INVALID_REQUEST, "The response type must be not null.")
-                                           .state(req.getState());
+                throw OAuth.oauthProblem(OAuthError.CodeResponse.INVALID_REQUEST)
+                           .description("The response type must be not null.")
+                           .state(req.getState());
             }
 
             if (ResponseType.from(req.getResponseType()) == null) {
-                throw OAuthProblemException.error(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE, "The response type '" + req.getResponseType() + "' is not supported.")
-                                           .state(req.getState());
+                throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE)
+                           .description("The response type '" + req.getResponseType() + "' is not supported.")
+                           .state(req.getState());
             }
             authorizationRequest = req;
         }
@@ -402,13 +403,16 @@ public class RoutingContextImpl implements RoutingContext {
             req.setRedirectUri(getParameter(OAUTH_REDIRECT_URI));
 
             if (!StringUtils.hasText(req.getCode())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The code must be not null.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The code must be not null.");
             }
             if (!StringUtils.hasText(req.getGrantType())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The grant type must be not null.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
             }
             if (!req.getGrantType().equals(GrantType.AUTHORIZATION_CODE.toString())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_GRANT, "The grant type must be 'authorization_code'.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'authorization_code'.");
             }
             authorizationCodeAccessTokenRequest = req;
         }
@@ -425,16 +429,20 @@ public class RoutingContextImpl implements RoutingContext {
             req.setScope(getParameter(OAUTH_SCOPE));
 
             if (!StringUtils.hasText(req.getUsername())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The username must be not null.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The username must be not null.");
             }
             if (!StringUtils.hasText(req.getPassword())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The password must be not null.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The password must be not null.");
             }
             if (!StringUtils.hasText(req.getGrantType())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The grant type must be not null.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
             }
             if (!req.getGrantType().equals(GrantType.PASSWORD.toString())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_GRANT, "The grant type must be 'password'.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'password'.");
             }
             passwordAccessTokenRequest = req;
         }
@@ -450,10 +458,12 @@ public class RoutingContextImpl implements RoutingContext {
             req.setClientSecret(getParameter(OAUTH_CLIENT_SECRET));
 
             if (!StringUtils.hasText(req.getGrantType())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST, "The grant type must be not null.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
             }
             if (!req.getGrantType().equals(GrantType.CLIENT_CREDENTIALS.toString())) {
-                throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_GRANT, "The grant type must be 'client_credentials'.");
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'client_credentials'.");
             }
             clientCredentialAccessTokenRequest = req;
         }
