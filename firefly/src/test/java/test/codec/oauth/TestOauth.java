@@ -20,14 +20,16 @@ public class TestOauth {
                                                     .redirectUri("https://www.test1.com")
                                                     .scope("foo")
                                                     .state("a1")
-                                                    .put("x2", "x2");
+                                                    .put("x1", "x1-1")
+                                                    .add("x2", "x2-1")
+                                                    .add("x2", "x2-2");
         String param = builder.toEncodedUrl();
         System.out.println(param);
-        Assert.assertThat(param, is("scope=foo&response%5Ftype=code&x2=x2&redirect%5Furi=https%3A%2F%2Fwww%2Etest1%2Ecom&state=a1&client%5Fid=321"));
+        Assert.assertThat(param, is("scope=foo&x1=x1%2D1&response%5Ftype=code&x2=x2%2D1&x2=x2%2D2&redirect%5Furi=https%3A%2F%2Fwww%2Etest1%2Ecom&state=a1&client%5Fid=321"));
 
         String json = builder.toJson();
         System.out.println(json);
-        Assert.assertThat(json, is("{\"client_id\":\"321\",\"redirect_uri\":\"https:\\/\\/www.test1.com\",\"response_type\":\"code\",\"scope\":\"foo\",\"state\":\"a1\"}"));
+        Assert.assertThat(json, is("{\"scope\":\"foo\",\"x1\":\"x1-1\",\"response_type\":\"code\",\"x2\":[\"x2-1\",\"x2-2\"],\"redirect_uri\":\"https:\\/\\/www.test1.com\",\"state\":\"a1\",\"client_id\":\"321\"}"));
     }
 
     @Test
@@ -43,7 +45,7 @@ public class TestOauth {
 
         String json = builder.toJson();
         System.out.println(json);
-        Assert.assertThat(json, is("{\"client_id\":\"321\",\"code\":\"123\",\"grant_type\":\"authorization_code\",\"redirect_uri\":\"https:\\/\\/www.test1.com\"}"));
+        Assert.assertThat(json, is("{\"code\":\"123\",\"grant_type\":\"authorization_code\",\"x1\":\"x1\",\"redirect_uri\":\"https:\\/\\/www.test1.com\",\"client_id\":\"321\"}"));
     }
 
     @Test
@@ -58,7 +60,7 @@ public class TestOauth {
 
         String json = builder.toJson();
         System.out.println(json);
-        Assert.assertThat(json, is("{\"grant_type\":\"password\",\"password\":\"12345\",\"scope\":\"foo\",\"username\":\"Alvin\"}"));
+        Assert.assertThat(json, is("{\"password\":\"12345\",\"grant_type\":\"password\",\"scope\":\"foo\",\"username\":\"Alvin\"}"));
     }
 
     @Test
@@ -73,7 +75,7 @@ public class TestOauth {
 
         String json = builder.toJson();
         System.out.println(json);
-        Assert.assertThat(json, is("{\"client_id\":\"111\",\"client_secret\":\"dsfsfsfsf\",\"grant_type\":\"client_credentials\"}"));
+        Assert.assertThat(json, is("{\"grant_type\":\"client_credentials\",\"scope\":\"bar\",\"client_secret\":\"dsfsfsfsf\",\"client_id\":\"111\"}"));
     }
 
 }
