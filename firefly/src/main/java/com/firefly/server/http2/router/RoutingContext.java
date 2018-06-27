@@ -405,7 +405,7 @@ public interface RoutingContext extends Closeable {
      * Write the access token to the client.
      *
      * @param accessTokenResponse The access token that is used to get the resources.
-     * @return The access token.
+     * @return RoutingContext.
      */
     default RoutingContext writeAccessToken(AccessTokenResponse accessTokenResponse) {
         return writeJson(accessTokenResponse);
@@ -435,5 +435,18 @@ public interface RoutingContext extends Closeable {
         redirect(redirectUrl + "#" + urlEncoded.encode(StandardCharsets.UTF_8, true));
     }
 
+    /**
+     * Response the access token error.
+     *
+     * @param exception OAuth exception.
+     * @return RoutingContext.
+     */
+    default RoutingContext writeAccessTokenError(OAuthProblemException exception) {
+        AccessTokenErrorResponse r = new AccessTokenErrorResponse();
+        r.setError(exception.getError());
+        r.setErrorDescription(exception.getDescription());
+        r.setErrorUri(exception.getUri());
+        return writeJson(r);
+    }
 
 }

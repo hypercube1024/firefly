@@ -5,26 +5,23 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuer;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuerImpl;
 import com.firefly.codec.oauth2.as.issuer.UUIDValueGenerator;
-import com.firefly.codec.oauth2.model.AccessTokenResponse;
-import com.firefly.codec.oauth2.model.AuthorizationCodeAccessTokenRequest;
-import com.firefly.codec.oauth2.model.AuthorizationCodeResponse;
-import com.firefly.codec.oauth2.model.AuthorizationRequest;
+import com.firefly.codec.oauth2.exception.OAuthProblemException;
+import com.firefly.codec.oauth2.model.*;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.RandomUtils;
-import com.firefly.utils.concurrent.Promise;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
+import static com.firefly.codec.oauth2.model.OAuth.code;
 import static com.firefly.codec.oauth2.model.OAuth.codeRequest;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -65,27 +62,47 @@ public class TestOAuth2 {
 
 
         s.router().get("/authorize").handler(ctx -> {
-            AuthorizationRequest authReq = ctx.getAuthorizationRequest();
-            System.out.println();
-            System.out.println($.json.toJson(authReq));
-            Assert.assertThat(authReq.getScope(), is("foo"));
-            Assert.assertThat(authReq.getRedirectUri(), is("http://test.com/"));
+            try {
+                AuthorizationRequest authReq = ctx.getAuthorizationRequest();
+                System.out.println();
+                System.out.println($.json.toJson(authReq));
+                Assert.assertThat(authReq.getScope(), is("foo"));
+                Assert.assertThat(authReq.getRedirectUri(), is("http://test.com/"));
 
-            String code = issuer.authorizationCode();
-            codeMap.put(code, authReq);
-            ctx.redirectWithCode(code);
+                String code = issuer.authorizationCode();
+                codeMap.put(code, authReq);
+                ctx.redirectWithCode(code);
+            } catch (OAuthProblemException e) {
+                ctx.redirectAuthorizationError(e);
+            }
         }).router().post("/accessToken").handler(ctx -> {
-            AuthorizationCodeAccessTokenRequest codeReq = ctx.getAuthorizationCodeAccessTokenRequest();
+            try {
+                AuthorizationCodeAccessTokenRequest codeReq = ctx.getAuthorizationCodeAccessTokenRequest();
+                if (!codeMap.containsKey(codeReq.getCode())) {
+                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The code does not exist");
+                }
 
+                AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                tokenResponse.setAccessToken(issuer.accessToken());
+                tokenResponse.setExpiresIn(3600L);
+                tokenResponse.setRefreshToken(issuer.refreshToken());
+                tokenResponse.setScope(codeMap.get(codeReq.getCode()).getScope());
+                tokenResponse.setState(codeMap.get(codeReq.getCode()).getState());
+                tokenResponse.setCreateTime(new Date());
+                accessTokenMap.put(tokenResponse.getAccessToken(), tokenResponse);
+                ctx.writeAccessToken(tokenResponse).end();
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
+            }
         }).listen(host, port);
 
         SimpleResponse resp = c.get(url + "/authorize")
-                                 .authRequest(codeRequest()
-                                         .clientId("client1")
-                                         .redirectUri("http://test.com/")
-                                         .scope("foo")
-                                         .state("index"))
-                                 .submit().get();
+                               .authRequest(codeRequest()
+                                       .clientId("client1")
+                                       .redirectUri("http://test.com/")
+                                       .scope("foo")
+                                       .state("index"))
+                               .submit().get();
 
         System.out.println(resp.getStatus());
         Assert.assertThat(resp.getStatus(), is(HttpStatus.FOUND_302));
@@ -97,6 +114,16 @@ public class TestOAuth2 {
         Assert.assertThat(codeResponse, notNullValue());
         Assert.assertThat(codeResponse.getState(), is("index"));
 
-//        c.get(url + "/accessToken")
+        resp = c.post(url + "/accessToken")
+                .codeAccessTokenRequest(code(codeResponse.getCode())
+                        .redirectUri("http://test.com/")
+                        .clientId("client1")).submit().get();
+
+        System.out.println(resp.getStatus());
+        Assert.assertThat(resp.getStatus(), is(HttpStatus.OK_200));
+
+        AccessTokenResponse tokenResponse = resp.getJsonBody(AccessTokenResponse.class);
+        System.out.println($.json.toJson(tokenResponse));
+        Assert.assertThat(accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
     }
 }

@@ -7,11 +7,11 @@ public class UUIDValueGenerator implements ValueGenerator {
 
     @Override
     public String generateValue() {
-        return generateValue(UUID.randomUUID().toString());
+        return generateValue(UUID.randomUUID().toString().replace("-", ""));
     }
 
     @Override
     public String generateValue(String param) {
-        return UUID.fromString(UUID.nameUUIDFromBytes(param.getBytes()).toString()).toString();
+        return UUID.fromString(UUID.nameUUIDFromBytes(param.getBytes()).toString()).toString().replace("-", "");
     }
 }

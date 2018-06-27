@@ -2,8 +2,10 @@ package com.firefly.codec.oauth2.model;
 
 import com.firefly.codec.oauth2.model.message.types.TokenType;
 import com.firefly.utils.json.annotation.JsonProperty;
+import com.firefly.utils.json.annotation.Transient;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * @author Pengtao Qiu
@@ -27,6 +29,9 @@ public class AccessTokenResponse implements Serializable {
     protected String scope;
 
     protected String state;
+
+    @Transient
+    protected Date createTime;
 
     public String getAccessToken() {
         return accessToken;
@@ -74,5 +79,13 @@ public class AccessTokenResponse implements Serializable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
     }
 }
