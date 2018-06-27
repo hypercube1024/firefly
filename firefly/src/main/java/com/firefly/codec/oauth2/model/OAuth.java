@@ -2,6 +2,7 @@ package com.firefly.codec.oauth2.model;
 
 import com.firefly.codec.oauth2.exception.OAuthProblemException;
 import com.firefly.codec.oauth2.model.message.types.ParameterStyle;
+import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.codec.oauth2.model.message.types.TokenType;
 
 abstract public class OAuth {
@@ -70,12 +71,28 @@ abstract public class OAuth {
         return AuthorizationRequest.newInstance();
     }
 
+    public static AuthorizationRequest.Builder codeRequest() {
+        return authRequest().responseType(ResponseType.CODE.toString());
+    }
+
+    public static AuthorizationRequest.Builder tokenRequest() {
+        return authRequest().responseType(ResponseType.TOKEN.toString());
+    }
+
     public static AuthorizationCodeAccessTokenRequest.Builder codeAccessTokenRequest() {
         return AuthorizationCodeAccessTokenRequest.newInstance();
     }
 
+    public static AuthorizationCodeAccessTokenRequest.Builder code(String code) {
+        return codeAccessTokenRequest().code(code);
+    }
+
     public static PasswordAccessTokenRequest.Builder pwdAccessTokenRequest() {
         return PasswordAccessTokenRequest.newInstance();
+    }
+
+    public static PasswordAccessTokenRequest.Builder usernameAndPassword(String username, String password) {
+        return pwdAccessTokenRequest().username(username).password(password);
     }
 
     public static ClientCredentialAccessTokenRequest.Builder credAccessTokenRequest() {

@@ -6,6 +6,10 @@ import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.oauth2.model.AuthorizationCodeAccessTokenRequest;
+import com.firefly.codec.oauth2.model.AuthorizationRequest;
+import com.firefly.codec.oauth2.model.ClientCredentialAccessTokenRequest;
+import com.firefly.codec.oauth2.model.PasswordAccessTokenRequest;
 import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
@@ -471,6 +475,61 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         public RequestBuilder settings(SettingsFrame settingsFrame) {
             this.settingsFrame = settingsFrame;
             return this;
+        }
+
+        /**
+         * Build a OAuth2 authorization request
+         *
+         * @param authRequest The OAuth2 authorization request
+         * @return RequestBuilder
+         */
+        public RequestBuilder authRequest(AuthorizationRequest.Builder authRequest) {
+            request.getURI().setQuery(authRequest.toEncodedUrl());
+            return this;
+        }
+
+        /**
+         * Build code access token request
+         *
+         * @param codeAccessTokenRequest The code access token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder codeAccessTokenRequest(AuthorizationCodeAccessTokenRequest.Builder codeAccessTokenRequest) {
+            buildAccessTokenRequest(codeAccessTokenRequest.toEncodedUrl());
+            return this;
+        }
+
+        /**
+         * Build username and password access token request
+         *
+         * @param pwdAccessTokenRequest The username and password access token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder pwdAccessTokenRequest(PasswordAccessTokenRequest.Builder pwdAccessTokenRequest) {
+            buildAccessTokenRequest(pwdAccessTokenRequest.toEncodedUrl());
+            return this;
+        }
+
+        /**
+         * Build credential access token request
+         *
+         * @param credAccessTokenRequest The credential access token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder credAccessTokenRequest(ClientCredentialAccessTokenRequest.Builder credAccessTokenRequest) {
+            buildAccessTokenRequest(credAccessTokenRequest.toEncodedUrl());
+            return this;
+        }
+
+        protected void buildAccessTokenRequest(String s) {
+            switch (HttpMethod.fromString(request.getMethod())) {
+                case GET:
+                    request.getURI().setQuery(s);
+                    break;
+                case POST:
+                    put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.asString()).body(s);
+                    break;
+            }
         }
 
         /**

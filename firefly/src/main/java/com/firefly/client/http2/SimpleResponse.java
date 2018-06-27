@@ -2,6 +2,8 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.oauth2.model.AuthorizationCodeResponse;
+import com.firefly.utils.collection.MultiMap;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
@@ -14,14 +16,14 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+
+import static com.firefly.codec.oauth2.model.OAuth.OAUTH_CODE;
+import static com.firefly.codec.oauth2.model.OAuth.OAUTH_STATE;
 
 public class SimpleResponse {
 
@@ -132,5 +134,18 @@ public class SimpleResponse {
         } else {
             return cookies;
         }
+    }
+
+    public AuthorizationCodeResponse getAuthorizationCodeResponse() {
+        return Optional.ofNullable(getFields().get(HttpHeader.LOCATION))
+                       .map(HttpURI::new)
+                       .map(uri -> {
+                           MultiMap<String> parameters = new MultiMap<>();
+                           uri.decodeQueryTo(parameters);
+                           AuthorizationCodeResponse r = new AuthorizationCodeResponse();
+                           r.setCode(parameters.getString(OAUTH_CODE));
+                           r.setState(parameters.getString(OAUTH_STATE));
+                           return r;
+                       }).orElse(null);
     }
 }
