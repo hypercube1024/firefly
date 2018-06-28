@@ -44,6 +44,10 @@ public class RefreshingTokenRequest extends AccessTokenRequest implements Serial
         this.scope = scope;
     }
 
+    public static Builder newInstance() {
+        return new RefreshingTokenRequest().new Builder();
+    }
+
     public class Builder extends AbstractOauthBuilder<Builder, RefreshingTokenRequest> {
 
         public Builder() {

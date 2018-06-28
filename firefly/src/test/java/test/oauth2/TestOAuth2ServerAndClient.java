@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.notNullValue;
 /**
  * @author Pengtao Qiu
  */
-public class TestOAuth2 {
+public class TestOAuth2ServerAndClient {
 
     private int port;
     private String host = "localhost";
@@ -58,7 +58,8 @@ public class TestOAuth2 {
     @Test
     public void testCodeAuthorization() throws Exception {
         Map<String, AuthorizationRequest> codeMap = new ConcurrentHashMap<>();
-        Map<String, AccessTokenResponse> accessTokenMap = new ConcurrentHashMap<>();
+        Map<String, AccessToken> accessTokenMap = new ConcurrentHashMap<>();
+        Map<String, AccessToken> refreshTokenMap = new ConcurrentHashMap<>();
 
         s.router().get("/authorize").handler(ctx -> {
             try {
@@ -87,14 +88,47 @@ public class TestOAuth2 {
                 tokenResponse.setRefreshToken(issuer.refreshToken());
                 tokenResponse.setScope(codeMap.get(codeReq.getCode()).getScope());
                 tokenResponse.setState(codeMap.get(codeReq.getCode()).getState());
-                tokenResponse.setCreateTime(new Date());
-                accessTokenMap.put(tokenResponse.getAccessToken(), tokenResponse);
+
+                AccessToken accessToken = new AccessToken();
+                $.javabean.copyBean(codeReq, accessToken);
+                $.javabean.copyBean(tokenResponse, accessToken);
+                accessToken.setCreateTime(new Date());
+                accessTokenMap.put(tokenResponse.getAccessToken(), accessToken);
+                refreshTokenMap.put(tokenResponse.getRefreshToken(), accessToken);
+
+                // invalid code
+                codeMap.remove(codeReq.getCode());
                 ctx.writeAccessToken(tokenResponse).end();
             } catch (OAuthProblemException e) {
                 ctx.writeAccessTokenError(e).end();
             }
-        }).router().get("/refreshToken").handler(ctx -> {
+        }).router().post("/refreshToken").handler(ctx -> {
+            try {
+                RefreshingTokenRequest req = ctx.getRefreshingTokenRequest();
+                if (!refreshTokenMap.containsKey(req.getRefreshToken())) {
+                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The refreshing token does not exist");
+                }
 
+                AccessToken accessToken = refreshTokenMap.get(req.getRefreshToken());
+                accessTokenMap.remove(accessToken.getAccessToken());
+                accessTokenMap.remove(accessToken.getRefreshToken());
+
+                AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                tokenResponse.setAccessToken(issuer.accessToken());
+                tokenResponse.setExpiresIn(3600L);
+                tokenResponse.setRefreshToken(issuer.refreshToken());
+                tokenResponse.setScope(accessToken.getScope());
+                tokenResponse.setState(accessToken.getState());
+
+                $.javabean.copyBean(tokenResponse, accessToken);
+                accessToken.setCreateTime(new Date());
+                accessTokenMap.put(tokenResponse.getAccessToken(), accessToken);
+                refreshTokenMap.put(tokenResponse.getRefreshToken(), accessToken);
+
+                ctx.writeAccessToken(tokenResponse).end();
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
+            }
         }).listen(host, port);
 
         SimpleResponse resp = c.get(url + "/authorize")

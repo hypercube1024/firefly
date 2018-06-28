@@ -449,4 +449,11 @@ public interface RoutingContext extends Closeable {
         return writeJson(r);
     }
 
+    /**
+     * Get the refreshing token request.
+     *
+     * @return The refreshing token request.
+     */
+    RefreshingTokenRequest getRefreshingTokenRequest();
+
 }

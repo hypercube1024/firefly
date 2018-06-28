@@ -39,6 +39,14 @@ public class ClientCredentialAccessTokenRequest extends AccessTokenRequest imple
         this.clientSecret = clientSecret;
     }
 
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
     public static Builder newInstance() {
         return new ClientCredentialAccessTokenRequest().new Builder();
     }

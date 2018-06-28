@@ -78,4 +78,19 @@ public class TestOauth {
         Assert.assertThat(json, is("{\"grant_type\":\"client_credentials\",\"scope\":\"bar\",\"client_secret\":\"dsfsfsfsf\",\"client_id\":\"111\"}"));
     }
 
+    @Test
+    public void testRefreshToken() {
+        RefreshingTokenRequest.Builder builder = OAuth.refreshToken("123456")
+                                                      .clientId("654321")
+                                                      .scope("bar");
+
+        String param = builder.toEncodedUrl();
+        System.out.println(param);
+        Assert.assertThat(param, is("refresh%5Ftoken=123456&grant%5Ftype=refresh%5Ftoken&scope=bar&client%5Fid=654321"));
+
+        String json = builder.toJson();
+        System.out.println(json);
+        Assert.assertThat(json, is("{\"refresh_token\":\"123456\",\"grant_type\":\"refresh_token\",\"scope\":\"bar\",\"client_id\":\"654321\"}"));
+    }
+
 }

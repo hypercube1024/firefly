@@ -48,6 +48,7 @@ public class RoutingContextImpl implements RoutingContext {
     private AuthorizationCodeAccessTokenRequest authorizationCodeAccessTokenRequest;
     private PasswordAccessTokenRequest passwordAccessTokenRequest;
     private ClientCredentialAccessTokenRequest clientCredentialAccessTokenRequest;
+    private RefreshingTokenRequest refreshingTokenRequest;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -468,5 +469,31 @@ public class RoutingContextImpl implements RoutingContext {
             clientCredentialAccessTokenRequest = req;
         }
         return clientCredentialAccessTokenRequest;
+    }
+
+    @Override
+    public RefreshingTokenRequest getRefreshingTokenRequest() {
+        if (refreshingTokenRequest == null) {
+            RefreshingTokenRequest req = new RefreshingTokenRequest();
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setRefreshToken(getParameter(OAUTH_REFRESH_TOKEN));
+            req.setScope(getParameter(OAUTH_SCOPE));
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+
+            if (!StringUtils.hasText(req.getRefreshToken())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The refresh token must be not null.");
+            }
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.REFRESH_TOKEN.toString())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'refresh_token'.");
+            }
+            refreshingTokenRequest = req;
+        }
+        return refreshingTokenRequest;
     }
 }

@@ -98,4 +98,12 @@ abstract public class OAuth {
     public static ClientCredentialAccessTokenRequest.Builder credAccessTokenRequest() {
         return ClientCredentialAccessTokenRequest.newInstance();
     }
+
+    public static RefreshingTokenRequest.Builder refreshingTokenRequest() {
+        return RefreshingTokenRequest.newInstance();
+    }
+
+    public static RefreshingTokenRequest.Builder refreshToken(String refreshToken) {
+        return refreshingTokenRequest().refreshToken(refreshToken);
+    }
 }

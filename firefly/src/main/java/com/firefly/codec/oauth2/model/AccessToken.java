@@ -2,7 +2,6 @@ package com.firefly.codec.oauth2.model;
 
 import com.firefly.codec.oauth2.model.message.types.TokenType;
 import com.firefly.utils.json.annotation.JsonProperty;
-import com.firefly.utils.json.annotation.Transient;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -10,7 +9,7 @@ import java.util.Date;
 /**
  * @author Pengtao Qiu
  */
-public class AccessTokenResponse implements Serializable {
+public class AccessToken implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -29,6 +28,17 @@ public class AccessTokenResponse implements Serializable {
     protected String scope;
 
     protected String state;
+
+    @JsonProperty("create_time")
+    protected Date createTime;
+
+    @JsonProperty("client_id")
+    protected String clientId;
+
+    protected String code;
+
+    @JsonProperty("redirect_uri")
+    protected String redirectUri;
 
     public String getAccessToken() {
         return accessToken;
@@ -78,4 +88,35 @@ public class AccessTokenResponse implements Serializable {
         this.state = state;
     }
 
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
+    }
+
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
+    }
 }
