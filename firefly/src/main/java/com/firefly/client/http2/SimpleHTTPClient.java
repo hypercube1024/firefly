@@ -6,10 +6,7 @@ import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.codec.oauth2.model.AuthorizationCodeAccessTokenRequest;
-import com.firefly.codec.oauth2.model.AuthorizationRequest;
-import com.firefly.codec.oauth2.model.ClientCredentialAccessTokenRequest;
-import com.firefly.codec.oauth2.model.PasswordAccessTokenRequest;
+import com.firefly.codec.oauth2.model.*;
 import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
@@ -518,6 +515,17 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
          */
         public RequestBuilder credAccessTokenRequest(ClientCredentialAccessTokenRequest.Builder credAccessTokenRequest) {
             buildAccessTokenRequest(credAccessTokenRequest.toEncodedUrl());
+            return this;
+        }
+
+        /**
+         * Build refreshing token request
+         *
+         * @param refreshTokenRequest The refreshing token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder refreshTokenRequest(RefreshingTokenRequest.Builder refreshTokenRequest) {
+            buildAccessTokenRequest(refreshTokenRequest.toEncodedUrl());
             return this;
         }
 

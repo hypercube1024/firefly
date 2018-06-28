@@ -21,8 +21,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.firefly.codec.oauth2.model.OAuth.code;
-import static com.firefly.codec.oauth2.model.OAuth.codeRequest;
+import static com.firefly.codec.oauth2.model.OAuth.*;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -131,14 +130,10 @@ public class TestOAuth2ServerAndClient {
             }
         }).listen(host, port);
 
+        // get the authorization code
         SimpleResponse resp = c.get(url + "/authorize")
-                               .authRequest(codeRequest()
-                                       .clientId("client1")
-                                       .redirectUri("http://test.com/")
-                                       .scope("foo")
-                                       .state("index"))
+                               .authRequest(codeRequest().clientId("client1").redirectUri("http://test.com/").scope("foo").state("index"))
                                .submit().get();
-
         System.out.println(resp.getStatus());
         Assert.assertThat(resp.getStatus(), is(HttpStatus.FOUND_302));
 
@@ -149,16 +144,27 @@ public class TestOAuth2ServerAndClient {
         Assert.assertThat(codeResponse, notNullValue());
         Assert.assertThat(codeResponse.getState(), is("index"));
 
+        // get the access token
         resp = c.post(url + "/accessToken")
-                .codeAccessTokenRequest(code(codeResponse.getCode())
-                        .redirectUri("http://test.com/")
-                        .clientId("client1")).submit().get();
-
+                .codeAccessTokenRequest(code(codeResponse.getCode()).redirectUri("http://test.com/").clientId("client1"))
+                .submit().get();
         System.out.println(resp.getStatus());
         Assert.assertThat(resp.getStatus(), is(HttpStatus.OK_200));
 
         AccessTokenResponse tokenResponse = resp.getJsonBody(AccessTokenResponse.class);
         System.out.println($.json.toJson(tokenResponse));
         Assert.assertThat(accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
+
+        // refresh access token
+        resp = c.post(url + "/refreshToken")
+                .refreshTokenRequest(refreshToken(tokenResponse.getRefreshToken()).scope("foo").clientId("client1"))
+                .submit().get();
+        System.out.println(resp.getStatus());
+        Assert.assertThat(resp.getStatus(), is(HttpStatus.OK_200));
+
+        tokenResponse = resp.getJsonBody(AccessTokenResponse.class);
+        System.out.println($.json.toJson(tokenResponse));
+        Assert.assertThat(accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
+
     }
 }
