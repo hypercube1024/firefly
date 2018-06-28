@@ -60,7 +60,6 @@ public class TestOAuth2 {
         Map<String, AuthorizationRequest> codeMap = new ConcurrentHashMap<>();
         Map<String, AccessTokenResponse> accessTokenMap = new ConcurrentHashMap<>();
 
-
         s.router().get("/authorize").handler(ctx -> {
             try {
                 AuthorizationRequest authReq = ctx.getAuthorizationRequest();
@@ -94,6 +93,8 @@ public class TestOAuth2 {
             } catch (OAuthProblemException e) {
                 ctx.writeAccessTokenError(e).end();
             }
+        }).router().get("/refreshToken").handler(ctx -> {
+
         }).listen(host, port);
 
         SimpleResponse resp = c.get(url + "/authorize")

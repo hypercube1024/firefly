@@ -66,13 +66,5 @@ public class PasswordAccessTokenRequest extends AccessTokenRequest implements Se
             return this;
         }
 
-        @Override
-        public String toEncodedUrl() {
-            urlEncoded.put(OAUTH_GRANT_TYPE, grantType);
-            urlEncoded.put(OAUTH_USERNAME, username);
-            urlEncoded.put(OAUTH_PASSWORD, password);
-            urlEncoded.put(OAUTH_SCOPE, scope);
-            return urlEncoded.encode(StandardCharsets.UTF_8, true);
-        }
     }
 }

@@ -99,14 +99,5 @@ public class AuthorizationRequest implements Serializable {
             return this;
         }
 
-        @Override
-        public String toEncodedUrl() {
-            urlEncoded.put(OAUTH_RESPONSE_TYPE, responseType);
-            urlEncoded.put(OAUTH_CLIENT_ID, clientId);
-            urlEncoded.put(OAUTH_REDIRECT_URI, redirectUri);
-            urlEncoded.put(OAUTH_SCOPE, scope);
-            urlEncoded.put(OAUTH_STATE, state);
-            return urlEncoded.encode(StandardCharsets.UTF_8, true);
-        }
     }
 }

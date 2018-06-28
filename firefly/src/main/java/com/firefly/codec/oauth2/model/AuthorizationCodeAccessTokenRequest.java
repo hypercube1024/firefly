@@ -71,14 +71,5 @@ public class AuthorizationCodeAccessTokenRequest extends AccessTokenRequest impl
             return this;
         }
 
-        @Override
-        public String toEncodedUrl() {
-            urlEncoded.put(OAUTH_GRANT_TYPE, grantType);
-            urlEncoded.put(OAUTH_CODE, code);
-            urlEncoded.put(OAUTH_CLIENT_ID, clientId);
-            urlEncoded.put(OAUTH_REDIRECT_URI, redirectUri);
-            return urlEncoded.encode(StandardCharsets.UTF_8, true);
-        }
-
     }
 }

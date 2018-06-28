@@ -10,10 +10,8 @@ import com.firefly.utils.json.annotation.JsonProperty;
 import com.firefly.utils.json.support.PropertyUtils;
 import com.firefly.utils.lang.bean.PropertyAccess;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 /**
  * @author Pengtao Qiu
@@ -82,6 +80,23 @@ abstract public class AbstractOauthBuilder<T extends AbstractOauthBuilder, R> {
     }
 
     public String toJson() {
+        return Json.toJson(toMap());
+    }
+
+    @SuppressWarnings("unchecked")
+    public String toEncodedUrl() {
+        UrlEncoded tmp = new UrlEncoded();
+        toMap().forEach((key, value) -> {
+            if (value instanceof Collection) {
+                tmp.put(key, new ArrayList<>((Collection<String>) value));
+            } else {
+                tmp.put(key, value.toString());
+            }
+        });
+        return tmp.encode(StandardCharsets.UTF_8, true);
+    }
+
+    public Map<String, Object> toMap() {
         Class<?> clazz = object.getClass();
         Map<String, Object> map = new HashMap<>();
 
@@ -107,12 +122,11 @@ abstract public class AbstractOauthBuilder<T extends AbstractOauthBuilder, R> {
                                           .orElse(name);
                      map.put(key, property.getValue(object));
                  });
-        return Json.toJson(map);
+        return map;
     }
 
     protected boolean isTransientField(Class<?> clazz, Map.Entry<String, PropertyAccess> e) {
         return PropertyUtils.isTransientField(e.getKey(), clazz, e.getValue().getSetterMethod(), e.getValue().getGetterMethod());
     }
 
-    abstract public String toEncodedUrl();
 }
