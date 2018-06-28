@@ -31,12 +31,12 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 public class TestOAuth2 {
 
-    int port;
-    String host = "localhost";
-    String url;
-    SimpleHTTPClient c;
-    HTTP2ServerBuilder s;
-    OAuthIssuer issuer;
+    private int port;
+    private String host = "localhost";
+    private String url;
+    private SimpleHTTPClient c;
+    private HTTP2ServerBuilder s;
+    private OAuthIssuer issuer;
 
     @Before
     public void init() {
