@@ -5,11 +5,13 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
+import com.firefly.codec.http2.model.HttpURI;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuer;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuerImpl;
 import com.firefly.codec.oauth2.as.issuer.UUIDValueGenerator;
 import com.firefly.codec.oauth2.exception.OAuthProblemException;
 import com.firefly.codec.oauth2.model.*;
+import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.RandomUtils;
 import org.junit.After;
@@ -55,7 +57,7 @@ public class TestOAuth2ServerAndClient {
     }
 
     @Test
-    public void testCodeAuthorization() throws Exception {
+    public void testAuthorizationCodeGrant() throws Exception {
         Map<String, AuthorizationRequest> codeMap = new ConcurrentHashMap<>();
         Map<String, AccessToken> accessTokenMap = new ConcurrentHashMap<>();
         Map<String, AccessToken> refreshTokenMap = new ConcurrentHashMap<>();
@@ -63,6 +65,9 @@ public class TestOAuth2ServerAndClient {
         s.router().get("/authorize").handler(ctx -> {
             try {
                 AuthorizationRequest authReq = ctx.getAuthorizationRequest();
+                if (!authReq.getResponseType().equals(ResponseType.CODE.toString())) {
+                    throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE).description("The response type must be 'code'");
+                }
                 System.out.println();
                 System.out.println($.json.toJson(authReq));
                 Assert.assertThat(authReq.getScope(), is("foo"));
@@ -190,5 +195,56 @@ public class TestOAuth2ServerAndClient {
                 .putQueryParam(OAUTH_ACCESS_TOKEN, tokenResponse.getAccessToken())
                 .submit().get();
         Assert.assertThat(resp.getStringBody(), is("Hello"));
+    }
+
+    @Test
+    public void testImplicitGrant() throws Exception {
+        Map<String, AccessToken> accessTokenMap = new ConcurrentHashMap<>();
+        Map<String, AccessToken> refreshTokenMap = new ConcurrentHashMap<>();
+
+        s.router().get("/authorize").handler(ctx -> {
+            try {
+                AuthorizationRequest authReq = ctx.getAuthorizationRequest();
+                if (!authReq.getResponseType().equals(ResponseType.TOKEN.toString())) {
+                    throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE).description("The response type must be 'token'");
+                }
+
+                System.out.println();
+                System.out.println($.json.toJson(authReq));
+                Assert.assertThat(authReq.getScope(), is("foo"));
+                Assert.assertThat(authReq.getRedirectUri(), is("http://test.com/"));
+
+                AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                tokenResponse.setAccessToken(issuer.accessToken());
+                tokenResponse.setExpiresIn(3600L);
+                tokenResponse.setRefreshToken(issuer.refreshToken());
+                tokenResponse.setScope(authReq.getScope());
+                tokenResponse.setState(authReq.getState());
+
+                AccessToken accessToken = new AccessToken();
+                $.javabean.copyBean(tokenResponse, accessToken);
+                accessToken.setCreateTime(new Date());
+                accessTokenMap.put(tokenResponse.getAccessToken(), accessToken);
+                refreshTokenMap.put(tokenResponse.getRefreshToken(), accessToken);
+
+                ctx.redirectAccessToken(tokenResponse);
+            } catch (OAuthProblemException e) {
+                ctx.redirectAuthorizationError(e);
+            }
+        }).listen(host, port);
+
+        // get the authorization code
+        SimpleResponse resp = c.get(url + "/authorize")
+                               .authRequest(tokenRequest().clientId("client1").redirectUri("http://test.com/").scope("foo").state("index"))
+                               .submit().get();
+        System.out.println(resp.getStatus());
+        Assert.assertThat(resp.getStatus(), is(HttpStatus.FOUND_302));
+
+        String location = resp.getFields().get(HttpHeader.LOCATION);
+        System.out.println(location);
+
+        AccessTokenResponse token = resp.getAccessTokenResponseFromFragment();
+        System.out.println("client received: " + $.json.toJson(token));
+        Assert.assertThat(accessTokenMap.containsKey(token.getAccessToken()), is(true));
     }
 }

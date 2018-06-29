@@ -1,8 +1,11 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.oauth2.model.AccessTokenResponse;
 import com.firefly.codec.oauth2.model.AuthorizationCodeResponse;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.collection.MultiMap;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
@@ -22,8 +25,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-import static com.firefly.codec.oauth2.model.OAuth.OAUTH_CODE;
-import static com.firefly.codec.oauth2.model.OAuth.OAUTH_STATE;
+import static com.firefly.codec.oauth2.model.OAuth.*;
 
 public class SimpleResponse {
 
@@ -145,6 +147,26 @@ public class SimpleResponse {
                            AuthorizationCodeResponse r = new AuthorizationCodeResponse();
                            r.setCode(parameters.getString(OAUTH_CODE));
                            r.setState(parameters.getString(OAUTH_STATE));
+                           return r;
+                       }).orElse(null);
+    }
+
+    public AccessTokenResponse getAccessTokenResponseFromFragment() {
+        return Optional.ofNullable(getFields().get(HttpHeader.LOCATION))
+                       .map(HttpURI::new)
+                       .map(uri -> {
+                           String fragment = uri.getFragment();
+                           MultiMap<String> parameters = new MultiMap<>();
+                           UrlEncoded.decodeUtf8To(fragment, parameters);
+                           AccessTokenResponse r = new AccessTokenResponse();
+                           r.setState(parameters.getString(OAUTH_STATE));
+                           r.setScope(parameters.getString(OAUTH_SCOPE));
+                           r.setRefreshToken(parameters.getString(OAUTH_REFRESH_TOKEN));
+                           r.setAccessToken(parameters.getString(OAUTH_ACCESS_TOKEN));
+                           r.setTokenType(parameters.getString(OAUTH_TOKEN_TYPE));
+                           r.setExpiresIn(Optional.ofNullable(parameters.getString(OAUTH_EXPIRES_IN))
+                                                  .filter(StringUtils::hasText)
+                                                  .map(Long::parseLong).orElse(null));
                            return r;
                        }).orElse(null);
     }
