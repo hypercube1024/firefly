@@ -108,10 +108,12 @@ public class TestOAuth2ServerAndClient {
                     throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The refreshing token does not exist");
                 }
 
+                // remove old access token
                 AccessToken accessToken = refreshTokenMap.get(req.getRefreshToken());
                 accessTokenMap.remove(accessToken.getAccessToken());
                 accessTokenMap.remove(accessToken.getRefreshToken());
 
+                // refresh access token
                 AccessTokenResponse tokenResponse = new AccessTokenResponse();
                 tokenResponse.setAccessToken(issuer.accessToken());
                 tokenResponse.setExpiresIn(3600L);
@@ -125,6 +127,24 @@ public class TestOAuth2ServerAndClient {
                 refreshTokenMap.put(tokenResponse.getRefreshToken(), accessToken);
 
                 ctx.writeAccessToken(tokenResponse).end();
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
+            }
+        }).router().get("/userInfo").handler(ctx -> {
+            try {
+                String token = ctx.getAccessToken();
+                System.out.println("access token: " + token);
+                if (!accessTokenMap.containsKey(token)) {
+                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The access token does not exist");
+                }
+
+                AccessToken accessToken = accessTokenMap.get(token);
+                Long expiredTime = accessToken.getCreateTime().getTime() + (accessToken.getExpiresIn() * 1000);
+                if (System.currentTimeMillis() > expiredTime) {
+                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The access token is expired");
+                }
+
+                ctx.end("Hello");
             } catch (OAuthProblemException e) {
                 ctx.writeAccessTokenError(e).end();
             }
@@ -166,5 +186,9 @@ public class TestOAuth2ServerAndClient {
         System.out.println($.json.toJson(tokenResponse));
         Assert.assertThat(accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
 
+        resp = c.get(url + "/userInfo?id=10&sign=dsf23")
+                .putQueryParam(OAUTH_ACCESS_TOKEN, tokenResponse.getAccessToken())
+                .submit().get();
+        Assert.assertThat(resp.getStringBody(), is("Hello"));
     }
 }

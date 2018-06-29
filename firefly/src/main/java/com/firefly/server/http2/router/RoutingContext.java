@@ -8,6 +8,7 @@ import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.Json;
@@ -442,6 +443,7 @@ public interface RoutingContext extends Closeable {
      * @return RoutingContext.
      */
     default RoutingContext writeAccessTokenError(OAuthProblemException exception) {
+        setStatus(HttpStatus.BAD_REQUEST_400);
         AccessTokenErrorResponse r = new AccessTokenErrorResponse();
         r.setError(exception.getError());
         r.setErrorDescription(exception.getDescription());
@@ -456,4 +458,17 @@ public interface RoutingContext extends Closeable {
      */
     RefreshingTokenRequest getRefreshingTokenRequest();
 
+    /**
+     * Get the access token.
+     *
+     * @return The access token.
+     */
+    default String getAccessToken() {
+        String accessToken = getParameter(OAuth.OAUTH_ACCESS_TOKEN);
+        if (!StringUtils.hasText(accessToken)) {
+            throw OAuth.oauthProblem(OAuthError.CodeResponse.INVALID_REQUEST)
+                       .description("The access token must be not null.");
+        }
+        return accessToken;
+    }
 }
