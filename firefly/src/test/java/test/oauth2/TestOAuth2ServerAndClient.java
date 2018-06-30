@@ -5,23 +5,14 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpStatus;
-import com.firefly.codec.http2.model.HttpURI;
-import com.firefly.codec.oauth2.as.issuer.OAuthIssuer;
-import com.firefly.codec.oauth2.as.issuer.OAuthIssuerImpl;
-import com.firefly.codec.oauth2.as.issuer.UUIDValueGenerator;
 import com.firefly.codec.oauth2.exception.OAuthProblemException;
 import com.firefly.codec.oauth2.model.*;
-import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.server.http2.HTTP2ServerBuilder;
 import com.firefly.utils.RandomUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.firefly.codec.oauth2.model.OAuth.*;
 import static org.hamcrest.Matchers.is;
@@ -37,7 +28,7 @@ public class TestOAuth2ServerAndClient {
     private String url;
     private SimpleHTTPClient c;
     private HTTP2ServerBuilder s;
-    private OAuthIssuer issuer;
+    private AuthorizationService authorizationService;
 
     @Before
     public void init() {
@@ -45,7 +36,7 @@ public class TestOAuth2ServerAndClient {
         url = "https://" + host + ":" + port;
         s = $.httpsServer();
         c = $.createHTTPsClient();
-        issuer = new OAuthIssuerImpl(new UUIDValueGenerator());
+        authorizationService = new AuthorizationService();
         System.out.println("init");
     }
 
@@ -58,23 +49,16 @@ public class TestOAuth2ServerAndClient {
 
     @Test
     public void testAuthorizationCodeGrant() throws Exception {
-        Map<String, AuthorizationRequest> codeMap = new ConcurrentHashMap<>();
-        Map<String, AccessToken> accessTokenMap = new ConcurrentHashMap<>();
-        Map<String, AccessToken> refreshTokenMap = new ConcurrentHashMap<>();
-
         s.router().get("/authorize").handler(ctx -> {
             try {
                 AuthorizationRequest authReq = ctx.getAuthorizationRequest();
-                if (!authReq.getResponseType().equals(ResponseType.CODE.toString())) {
-                    throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE).description("The response type must be 'code'");
-                }
+
                 System.out.println();
                 System.out.println($.json.toJson(authReq));
                 Assert.assertThat(authReq.getScope(), is("foo"));
                 Assert.assertThat(authReq.getRedirectUri(), is("http://test.com/"));
 
-                String code = issuer.authorizationCode();
-                codeMap.put(code, authReq);
+                String code = authorizationService.getCode(authReq);
                 ctx.redirectWithCode(code);
             } catch (OAuthProblemException e) {
                 ctx.redirectAuthorizationError(e);
@@ -82,26 +66,7 @@ public class TestOAuth2ServerAndClient {
         }).router().post("/accessToken").handler(ctx -> {
             try {
                 AuthorizationCodeAccessTokenRequest codeReq = ctx.getAuthorizationCodeAccessTokenRequest();
-                if (!codeMap.containsKey(codeReq.getCode())) {
-                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The code does not exist");
-                }
-
-                AccessTokenResponse tokenResponse = new AccessTokenResponse();
-                tokenResponse.setAccessToken(issuer.accessToken());
-                tokenResponse.setExpiresIn(3600L);
-                tokenResponse.setRefreshToken(issuer.refreshToken());
-                tokenResponse.setScope(codeMap.get(codeReq.getCode()).getScope());
-                tokenResponse.setState(codeMap.get(codeReq.getCode()).getState());
-
-                AccessToken accessToken = new AccessToken();
-                $.javabean.copyBean(codeReq, accessToken);
-                $.javabean.copyBean(tokenResponse, accessToken);
-                accessToken.setCreateTime(new Date());
-                accessTokenMap.put(tokenResponse.getAccessToken(), accessToken);
-                refreshTokenMap.put(tokenResponse.getRefreshToken(), accessToken);
-
-                // invalid code
-                codeMap.remove(codeReq.getCode());
+                AccessTokenResponse tokenResponse = authorizationService.getAccessToken(codeReq);
                 ctx.writeAccessToken(tokenResponse).end();
             } catch (OAuthProblemException e) {
                 ctx.writeAccessTokenError(e).end();
@@ -109,28 +74,7 @@ public class TestOAuth2ServerAndClient {
         }).router().post("/refreshToken").handler(ctx -> {
             try {
                 RefreshingTokenRequest req = ctx.getRefreshingTokenRequest();
-                if (!refreshTokenMap.containsKey(req.getRefreshToken())) {
-                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The refreshing token does not exist");
-                }
-
-                // remove old access token
-                AccessToken accessToken = refreshTokenMap.get(req.getRefreshToken());
-                accessTokenMap.remove(accessToken.getAccessToken());
-                accessTokenMap.remove(accessToken.getRefreshToken());
-
-                // refresh access token
-                AccessTokenResponse tokenResponse = new AccessTokenResponse();
-                tokenResponse.setAccessToken(issuer.accessToken());
-                tokenResponse.setExpiresIn(3600L);
-                tokenResponse.setRefreshToken(issuer.refreshToken());
-                tokenResponse.setScope(accessToken.getScope());
-                tokenResponse.setState(accessToken.getState());
-
-                $.javabean.copyBean(tokenResponse, accessToken);
-                accessToken.setCreateTime(new Date());
-                accessTokenMap.put(tokenResponse.getAccessToken(), accessToken);
-                refreshTokenMap.put(tokenResponse.getRefreshToken(), accessToken);
-
+                AccessTokenResponse tokenResponse = authorizationService.refreshToken(req);
                 ctx.writeAccessToken(tokenResponse).end();
             } catch (OAuthProblemException e) {
                 ctx.writeAccessTokenError(e).end();
@@ -138,17 +82,7 @@ public class TestOAuth2ServerAndClient {
         }).router().get("/userInfo").handler(ctx -> {
             try {
                 String token = ctx.getAccessToken();
-                System.out.println("access token: " + token);
-                if (!accessTokenMap.containsKey(token)) {
-                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The access token does not exist");
-                }
-
-                AccessToken accessToken = accessTokenMap.get(token);
-                Long expiredTime = accessToken.getCreateTime().getTime() + (accessToken.getExpiresIn() * 1000);
-                if (System.currentTimeMillis() > expiredTime) {
-                    throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The access token is expired");
-                }
-
+                authorizationService.verifyAccessToken(token);
                 ctx.end("Hello");
             } catch (OAuthProblemException e) {
                 ctx.writeAccessTokenError(e).end();
@@ -178,7 +112,7 @@ public class TestOAuth2ServerAndClient {
 
         AccessTokenResponse tokenResponse = resp.getJsonBody(AccessTokenResponse.class);
         System.out.println($.json.toJson(tokenResponse));
-        Assert.assertThat(accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
+        Assert.assertThat(authorizationService.accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
 
         // refresh access token
         resp = c.post(url + "/refreshToken")
@@ -189,7 +123,7 @@ public class TestOAuth2ServerAndClient {
 
         tokenResponse = resp.getJsonBody(AccessTokenResponse.class);
         System.out.println($.json.toJson(tokenResponse));
-        Assert.assertThat(accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
+        Assert.assertThat(authorizationService.accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
 
         resp = c.get(url + "/userInfo?id=10&sign=dsf23")
                 .putQueryParam(OAUTH_ACCESS_TOKEN, tokenResponse.getAccessToken())
@@ -199,37 +133,28 @@ public class TestOAuth2ServerAndClient {
 
     @Test
     public void testImplicitGrant() throws Exception {
-        Map<String, AccessToken> accessTokenMap = new ConcurrentHashMap<>();
-        Map<String, AccessToken> refreshTokenMap = new ConcurrentHashMap<>();
 
         s.router().get("/authorize").handler(ctx -> {
             try {
                 AuthorizationRequest authReq = ctx.getAuthorizationRequest();
-                if (!authReq.getResponseType().equals(ResponseType.TOKEN.toString())) {
-                    throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE).description("The response type must be 'token'");
-                }
 
                 System.out.println();
                 System.out.println($.json.toJson(authReq));
                 Assert.assertThat(authReq.getScope(), is("foo"));
                 Assert.assertThat(authReq.getRedirectUri(), is("http://test.com/"));
 
-                AccessTokenResponse tokenResponse = new AccessTokenResponse();
-                tokenResponse.setAccessToken(issuer.accessToken());
-                tokenResponse.setExpiresIn(3600L);
-                tokenResponse.setRefreshToken(issuer.refreshToken());
-                tokenResponse.setScope(authReq.getScope());
-                tokenResponse.setState(authReq.getState());
-
-                AccessToken accessToken = new AccessToken();
-                $.javabean.copyBean(tokenResponse, accessToken);
-                accessToken.setCreateTime(new Date());
-                accessTokenMap.put(tokenResponse.getAccessToken(), accessToken);
-                refreshTokenMap.put(tokenResponse.getRefreshToken(), accessToken);
-
+                AccessTokenResponse tokenResponse = authorizationService.getAccessToken(authReq);
                 ctx.redirectAccessToken(tokenResponse);
             } catch (OAuthProblemException e) {
                 ctx.redirectAuthorizationError(e);
+            }
+        }).router().get("/userInfo").handler(ctx -> {
+            try {
+                String token = ctx.getAccessToken();
+                authorizationService.verifyAccessToken(token);
+                ctx.end("Hello implicit grant");
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
             }
         }).listen(host, port);
 
@@ -245,6 +170,11 @@ public class TestOAuth2ServerAndClient {
 
         AccessTokenResponse token = resp.getAccessTokenResponseFromFragment();
         System.out.println("client received: " + $.json.toJson(token));
-        Assert.assertThat(accessTokenMap.containsKey(token.getAccessToken()), is(true));
+        Assert.assertThat(authorizationService.accessTokenMap.containsKey(token.getAccessToken()), is(true));
+
+        resp = c.get(url + "/userInfo?id=10&sign=dsf23")
+                .putQueryParam(OAUTH_ACCESS_TOKEN, token.getAccessToken())
+                .submit().get();
+        Assert.assertThat(resp.getStringBody(), is("Hello implicit grant"));
     }
 }
