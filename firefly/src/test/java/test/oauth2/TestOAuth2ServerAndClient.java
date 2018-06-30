@@ -133,7 +133,6 @@ public class TestOAuth2ServerAndClient {
 
     @Test
     public void testImplicitGrant() throws Exception {
-
         s.router().get("/authorize").handler(ctx -> {
             try {
                 AuthorizationRequest authReq = ctx.getAuthorizationRequest();
