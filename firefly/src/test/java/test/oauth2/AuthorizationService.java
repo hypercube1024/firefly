@@ -1,4 +1,4 @@
-package com.firefly.codec.oauth2.as.service;
+package test.oauth2;
 
 import com.firefly.codec.oauth2.model.*;
 
