@@ -157,7 +157,6 @@ public class TestOAuth2ServerAndClient {
             }
         }).listen(host, port);
 
-        // get the authorization code
         SimpleResponse resp = c.get(url + "/authorize")
                                .authRequest(tokenRequest().clientId("client1").redirectUri("http://test.com/").scope("foo").state("index"))
                                .submit().get();
@@ -175,5 +174,77 @@ public class TestOAuth2ServerAndClient {
                 .putQueryParam(OAUTH_ACCESS_TOKEN, token.getAccessToken())
                 .submit().get();
         Assert.assertThat(resp.getStringBody(), is("Hello implicit grant"));
+    }
+
+    @Test
+    public void testResourceOwnerPasswordCredentialsGrant() throws Exception {
+        s.router().get("/accessToken").handler(ctx -> {
+            try {
+                PasswordAccessTokenRequest request = ctx.getPasswordAccessTokenRequest();
+                AccessTokenResponse tokenResponse = authorizationService.generateAccessToken(request);
+                ctx.writeAccessToken(tokenResponse).end();
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
+            }
+        }).router().get("/userInfo").handler(ctx -> {
+            try {
+                String token = ctx.getAccessToken();
+                authorizationService.verifyAccessToken(token);
+                ctx.end("Hello password credential grant");
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
+            }
+        }).listen(host, port);
+
+        SimpleResponse resp = c.get(url + "/accessToken")
+                               .pwdAccessTokenRequest(usernameAndPassword("pt", "pt123").scope("bar"))
+                               .submit().get();
+        System.out.println(resp.getStatus());
+        Assert.assertThat(resp.getStatus(), is(HttpStatus.OK_200));
+
+        AccessTokenResponse tokenResponse = resp.getJsonBody(AccessTokenResponse.class);
+        System.out.println($.json.toJson(tokenResponse));
+        Assert.assertThat(authorizationService.accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
+
+        resp = c.get(url + "/userInfo?id=10&sign=dsf23")
+                .putQueryParam(OAUTH_ACCESS_TOKEN, tokenResponse.getAccessToken())
+                .submit().get();
+        Assert.assertThat(resp.getStringBody(), is("Hello password credential grant"));
+    }
+
+    @Test
+    public void testClientCredentialsGrant() throws Exception {
+        s.router().get("/accessToken").handler(ctx -> {
+            try {
+                ClientCredentialAccessTokenRequest request = ctx.getClientCredentialAccessTokenRequest();
+                AccessTokenResponse tokenResponse = authorizationService.generateAccessToken(request);
+                ctx.writeAccessToken(tokenResponse).end();
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
+            }
+        }).router().get("/userInfo").handler(ctx -> {
+            try {
+                String token = ctx.getAccessToken();
+                authorizationService.verifyAccessToken(token);
+                ctx.end("Hello client credentials grant");
+            } catch (OAuthProblemException e) {
+                ctx.writeAccessTokenError(e).end();
+            }
+        }).listen(host, port);
+
+        SimpleResponse resp = c.get(url + "/accessToken")
+                               .credAccessTokenRequest(credAccessTokenRequest().scope("bar").clientId("pt123").clientSecret("1234565"))
+                               .submit().get();
+        System.out.println(resp.getStatus());
+        Assert.assertThat(resp.getStatus(), is(HttpStatus.OK_200));
+
+        AccessTokenResponse tokenResponse = resp.getJsonBody(AccessTokenResponse.class);
+        System.out.println($.json.toJson(tokenResponse));
+        Assert.assertThat(authorizationService.accessTokenMap.containsKey(tokenResponse.getAccessToken()), is(true));
+
+        resp = c.get(url + "/userInfo?id=10&sign=dsf23")
+                .putQueryParam(OAUTH_ACCESS_TOKEN, tokenResponse.getAccessToken())
+                .submit().get();
+        Assert.assertThat(resp.getStringBody(), is("Hello client credentials grant"));
     }
 }
