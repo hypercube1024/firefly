@@ -4,6 +4,7 @@ import com.firefly.$;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuer;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuerImpl;
 import com.firefly.codec.oauth2.as.issuer.UUIDValueGenerator;
+import com.firefly.codec.oauth2.as.service.AuthorizationService;
 import com.firefly.codec.oauth2.model.*;
 import com.firefly.codec.oauth2.model.message.types.ResponseType;
 
@@ -11,7 +12,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class AuthorizationService {
+public class LocalAuthorizationServiceImpl implements AuthorizationService {
 
     Map<String, AuthorizationRequest> codeMap = new ConcurrentHashMap<>();
     Map<String, AccessToken> accessTokenMap = new ConcurrentHashMap<>();
@@ -19,11 +20,11 @@ public class AuthorizationService {
 
     private OAuthIssuer issuer;
 
-    public AuthorizationService() {
+    public LocalAuthorizationServiceImpl() {
         issuer = new OAuthIssuerImpl(new UUIDValueGenerator());
     }
 
-    public String getCode(AuthorizationRequest request) {
+    public String generateCode(AuthorizationRequest request) {
         if (!request.getResponseType().equals(ResponseType.CODE.toString())) {
             throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE).description("The response type must be 'code'");
         }
@@ -33,7 +34,7 @@ public class AuthorizationService {
         return code;
     }
 
-    public AccessTokenResponse getAccessToken(AuthorizationCodeAccessTokenRequest request) {
+    public AccessTokenResponse generateAccessToken(AuthorizationCodeAccessTokenRequest request) {
         if (!codeMap.containsKey(request.getCode())) {
             throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT).description("The code does not exist");
         }
@@ -57,17 +58,32 @@ public class AuthorizationService {
         return tokenResponse;
     }
 
-    public AccessTokenResponse getAccessToken(AuthorizationRequest request) {
+    public AccessTokenResponse generateAccessToken(AuthorizationRequest request) {
         if (!request.getResponseType().equals(ResponseType.TOKEN.toString())) {
             throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE).description("The response type must be 'token'");
         }
 
+        return generateAccessToken(request.getScope(), request.getState());
+    }
+
+    @Override
+    public AccessTokenResponse generateAccessToken(PasswordAccessTokenRequest request) {
+        return generateAccessToken(request.getScope(), null);
+    }
+
+
+    @Override
+    public AccessTokenResponse generateAccessToken(ClientCredentialAccessTokenRequest request) {
+        return generateAccessToken(request.getScope(), null);
+    }
+
+    protected AccessTokenResponse generateAccessToken(String scope, String state) {
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
         tokenResponse.setAccessToken(issuer.accessToken());
         tokenResponse.setExpiresIn(3600L);
         tokenResponse.setRefreshToken(issuer.refreshToken());
-        tokenResponse.setScope(request.getScope());
-        tokenResponse.setState(request.getState());
+        tokenResponse.setScope(scope);
+        tokenResponse.setState(state);
 
         AccessToken accessToken = new AccessToken();
         $.javabean.copyBean(tokenResponse, accessToken);

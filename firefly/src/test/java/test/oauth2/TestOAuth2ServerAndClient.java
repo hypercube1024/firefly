@@ -28,7 +28,7 @@ public class TestOAuth2ServerAndClient {
     private String url;
     private SimpleHTTPClient c;
     private HTTP2ServerBuilder s;
-    private AuthorizationService authorizationService;
+    private LocalAuthorizationServiceImpl authorizationService;
 
     @Before
     public void init() {
@@ -36,7 +36,7 @@ public class TestOAuth2ServerAndClient {
         url = "https://" + host + ":" + port;
         s = $.httpsServer();
         c = $.createHTTPsClient();
-        authorizationService = new AuthorizationService();
+        authorizationService = new LocalAuthorizationServiceImpl();
         System.out.println("init");
     }
 
@@ -58,7 +58,7 @@ public class TestOAuth2ServerAndClient {
                 Assert.assertThat(authReq.getScope(), is("foo"));
                 Assert.assertThat(authReq.getRedirectUri(), is("http://test.com/"));
 
-                String code = authorizationService.getCode(authReq);
+                String code = authorizationService.generateCode(authReq);
                 ctx.redirectWithCode(code);
             } catch (OAuthProblemException e) {
                 ctx.redirectAuthorizationError(e);
@@ -66,7 +66,7 @@ public class TestOAuth2ServerAndClient {
         }).router().post("/accessToken").handler(ctx -> {
             try {
                 AuthorizationCodeAccessTokenRequest codeReq = ctx.getAuthorizationCodeAccessTokenRequest();
-                AccessTokenResponse tokenResponse = authorizationService.getAccessToken(codeReq);
+                AccessTokenResponse tokenResponse = authorizationService.generateAccessToken(codeReq);
                 ctx.writeAccessToken(tokenResponse).end();
             } catch (OAuthProblemException e) {
                 ctx.writeAccessTokenError(e).end();
@@ -142,7 +142,7 @@ public class TestOAuth2ServerAndClient {
                 Assert.assertThat(authReq.getScope(), is("foo"));
                 Assert.assertThat(authReq.getRedirectUri(), is("http://test.com/"));
 
-                AccessTokenResponse tokenResponse = authorizationService.getAccessToken(authReq);
+                AccessTokenResponse tokenResponse = authorizationService.generateAccessToken(authReq);
                 ctx.redirectAccessToken(tokenResponse);
             } catch (OAuthProblemException e) {
                 ctx.redirectAuthorizationError(e);
