@@ -4,7 +4,6 @@ import com.firefly.$;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuer;
 import com.firefly.codec.oauth2.as.issuer.OAuthIssuerImpl;
 import com.firefly.codec.oauth2.as.issuer.UUIDValueGenerator;
-import com.firefly.codec.oauth2.as.service.AuthorizationService;
 import com.firefly.codec.oauth2.model.*;
 import com.firefly.codec.oauth2.model.message.types.ResponseType;
 
