@@ -34,6 +34,7 @@ public class MetaDataUtils {
         defaultJavaTypeMap.put("bigint", "Long");
         defaultJavaTypeMap.put("int", "Integer");
         defaultJavaTypeMap.put("integer", "Integer");
+        defaultJavaTypeMap.put("tinyint", "Integer");
         defaultJavaTypeMap.put("float", "Double");
         defaultJavaTypeMap.put("double", "Double");
         defaultJavaTypeMap.put("decimal", "Double");
@@ -46,6 +47,7 @@ public class MetaDataUtils {
         defaultKotlinTypeMap.putAll(defaultJavaTypeMap);
         defaultKotlinTypeMap.put("integer", "Int");
         defaultKotlinTypeMap.put("int", "Int");
+        defaultKotlinTypeMap.put("tinyint", "Int");
     }
 
     protected DataSource dataSource;
