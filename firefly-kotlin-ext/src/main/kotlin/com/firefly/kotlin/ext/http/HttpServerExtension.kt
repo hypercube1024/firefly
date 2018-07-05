@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.ContinuationInterceptor
 import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.experimental.coroutineContext
 
 /**
  * Firefly HTTP server extensions.
