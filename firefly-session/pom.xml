@@ -3,7 +3,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.9.1-SNAPSHOT</version>
+        <version>4.9.1-dev1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
