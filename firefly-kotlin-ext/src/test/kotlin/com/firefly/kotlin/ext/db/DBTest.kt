@@ -53,13 +53,13 @@ class DBTest {
             it.asyncUpdate(table)
             val params = Array<Array<Any>>(size) { Array(2) { } }
             for (i in 0 until size) {
-                params[i][0] = "test transaction " + i
-                params[i][1] = "pwd transaction " + i
+                params[i][0] = "test transaction $i"
+                params[i][1] = "pwd transaction $i"
             }
             val sql = "insert into `test`.`user`(pt_name, pt_password) values(?,?)"
-            val id = it.insertBatch(sql, params, { rs ->
+            val id = it.insertBatch(sql, params) { rs ->
                 rs.stream().map { r -> r.getInt(1) }.collect(Collectors.toList<Any>())
-            }).await()
+            }.await()
             println(id)
         }
     }
