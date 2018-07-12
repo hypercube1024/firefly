@@ -227,8 +227,9 @@ public class MimeTypes {
     public void setMimeMap(Map<String, String> mimeMap) {
         _mimeMap.clear();
         if (mimeMap != null) {
-            for (Entry<String, String> ext : mimeMap.entrySet())
+            for (Entry<String, String> ext : mimeMap.entrySet()) {
                 _mimeMap.put(StringUtils.asciiToLowerCase(ext.getKey()), normalizeMimeType(ext.getValue()));
+            }
         }
     }
 
@@ -252,14 +253,12 @@ public class MimeTypes {
                     break;
 
                 String ext = StringUtils.asciiToLowerCase(filename.substring(i + 1));
-                if (type == null)
-                    type = __dftMimeMap.get(ext);
+                type = __dftMimeMap.get(ext);
             }
         }
 
         if (type == null) {
-            if (type == null)
-                type = __dftMimeMap.get("*");
+            type = __dftMimeMap.get("*");
         }
 
         return type;
@@ -285,18 +284,17 @@ public class MimeTypes {
                     break;
 
                 String ext = StringUtils.asciiToLowerCase(filename.substring(i + 1));
-                if (_mimeMap != null)
-                    type = _mimeMap.get(ext);
+                type = _mimeMap.get(ext);
                 if (type == null)
                     type = __dftMimeMap.get(ext);
             }
         }
 
         if (type == null) {
-            if (_mimeMap != null)
-                type = _mimeMap.get("*");
-            if (type == null)
+            type = _mimeMap.get("*");
+            if (type == null) {
                 type = __dftMimeMap.get("*");
+            }
         }
 
         return type;
