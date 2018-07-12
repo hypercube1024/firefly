@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * HPACK - Header Compression for HTTP/2
@@ -31,67 +28,67 @@ public class HpackContext {
     public static final String[][] STATIC_TABLE =
             {
                     {null, null},
-        /* 1  */ {":authority", EMPTY},
-        /* 2  */ {":method", "GET"},
-        /* 3  */ {":method", "POST"},
-        /* 4  */ {":path", "/"},
-        /* 5  */ {":path", "/index.html"},
-        /* 6  */ {":scheme", "http"},
-        /* 7  */ {":scheme", "https"},
-        /* 8  */ {":status", "200"},
-        /* 9  */ {":status", "204"},
-        /* 10 */ {":status", "206"},
-        /* 11 */ {":status", "304"},
-        /* 12 */ {":status", "400"},
-        /* 13 */ {":status", "404"},
-        /* 14 */ {":status", "500"},
-        /* 15 */ {"accept-charset", EMPTY},
-        /* 16 */ {"accept-encoding", "gzip, deflate"},
-        /* 17 */ {"accept-language", EMPTY},
-        /* 18 */ {"accept-ranges", EMPTY},
-        /* 19 */ {"accept", EMPTY},
-        /* 20 */ {"access-control-allow-origin", EMPTY},
-        /* 21 */ {"age", EMPTY},
-        /* 22 */ {"allow", EMPTY},
-        /* 23 */ {"authorization", EMPTY},
-        /* 24 */ {"cache-control", EMPTY},
-        /* 25 */ {"content-disposition", EMPTY},
-        /* 26 */ {"content-encoding", EMPTY},
-        /* 27 */ {"content-language", EMPTY},
-        /* 28 */ {"content-length", EMPTY},
-        /* 29 */ {"content-location", EMPTY},
-        /* 30 */ {"content-range", EMPTY},
-        /* 31 */ {"content-type", EMPTY},
-        /* 32 */ {"cookie", EMPTY},
-        /* 33 */ {"date", EMPTY},
-        /* 34 */ {"etag", EMPTY},
-        /* 35 */ {"expect", EMPTY},
-        /* 36 */ {"expires", EMPTY},
-        /* 37 */ {"from", EMPTY},
-        /* 38 */ {"host", EMPTY},
-        /* 39 */ {"if-match", EMPTY},
-        /* 40 */ {"if-modified-since", EMPTY},
-        /* 41 */ {"if-none-match", EMPTY},
-        /* 42 */ {"if-range", EMPTY},
-        /* 43 */ {"if-unmodified-since", EMPTY},
-        /* 44 */ {"last-modified", EMPTY},
-        /* 45 */ {"link", EMPTY},
-        /* 46 */ {"location", EMPTY},
-        /* 47 */ {"max-forwards", EMPTY},
-        /* 48 */ {"proxy-authenticate", EMPTY},
-        /* 49 */ {"proxy-authorization", EMPTY},
-        /* 50 */ {"range", EMPTY},
-        /* 51 */ {"referer", EMPTY},
-        /* 52 */ {"refresh", EMPTY},
-        /* 53 */ {"retry-after", EMPTY},
-        /* 54 */ {"server", EMPTY},
-        /* 55 */ {"set-cookie", EMPTY},
-        /* 56 */ {"strict-transport-security", EMPTY},
-        /* 57 */ {"transfer-encoding", EMPTY},
-        /* 58 */ {"user-agent", EMPTY},
-        /* 59 */ {"vary", EMPTY},
-        /* 60 */ {"via", EMPTY},
-        /* 61 */ {"www-authenticate", EMPTY},
+                    /* 1  */ {":authority", EMPTY},
+                    /* 2  */ {":method", "GET"},
+                    /* 3  */ {":method", "POST"},
+                    /* 4  */ {":path", "/"},
+                    /* 5  */ {":path", "/index.html"},
+                    /* 6  */ {":scheme", "http"},
+                    /* 7  */ {":scheme", "https"},
+                    /* 8  */ {":status", "200"},
+                    /* 9  */ {":status", "204"},
+                    /* 10 */ {":status", "206"},
+                    /* 11 */ {":status", "304"},
+                    /* 12 */ {":status", "400"},
+                    /* 13 */ {":status", "404"},
+                    /* 14 */ {":status", "500"},
+                    /* 15 */ {"accept-charset", EMPTY},
+                    /* 16 */ {"accept-encoding", "gzip, deflate"},
+                    /* 17 */ {"accept-language", EMPTY},
+                    /* 18 */ {"accept-ranges", EMPTY},
+                    /* 19 */ {"accept", EMPTY},
+                    /* 20 */ {"access-control-allow-origin", EMPTY},
+                    /* 21 */ {"age", EMPTY},
+                    /* 22 */ {"allow", EMPTY},
+                    /* 23 */ {"authorization", EMPTY},
+                    /* 24 */ {"cache-control", EMPTY},
+                    /* 25 */ {"content-disposition", EMPTY},
+                    /* 26 */ {"content-encoding", EMPTY},
+                    /* 27 */ {"content-language", EMPTY},
+                    /* 28 */ {"content-length", EMPTY},
+                    /* 29 */ {"content-location", EMPTY},
+                    /* 30 */ {"content-range", EMPTY},
+                    /* 31 */ {"content-type", EMPTY},
+                    /* 32 */ {"cookie", EMPTY},
+                    /* 33 */ {"date", EMPTY},
+                    /* 34 */ {"etag", EMPTY},
+                    /* 35 */ {"expect", EMPTY},
+                    /* 36 */ {"expires", EMPTY},
+                    /* 37 */ {"from", EMPTY},
+                    /* 38 */ {"host", EMPTY},
+                    /* 39 */ {"if-match", EMPTY},
+                    /* 40 */ {"if-modified-since", EMPTY},
+                    /* 41 */ {"if-none-match", EMPTY},
+                    /* 42 */ {"if-range", EMPTY},
+                    /* 43 */ {"if-unmodified-since", EMPTY},
+                    /* 44 */ {"last-modified", EMPTY},
+                    /* 45 */ {"link", EMPTY},
+                    /* 46 */ {"location", EMPTY},
+                    /* 47 */ {"max-forwards", EMPTY},
+                    /* 48 */ {"proxy-authenticate", EMPTY},
+                    /* 49 */ {"proxy-authorization", EMPTY},
+                    /* 50 */ {"range", EMPTY},
+                    /* 51 */ {"referer", EMPTY},
+                    /* 52 */ {"refresh", EMPTY},
+                    /* 53 */ {"retry-after", EMPTY},
+                    /* 54 */ {"server", EMPTY},
+                    /* 55 */ {"set-cookie", EMPTY},
+                    /* 56 */ {"strict-transport-security", EMPTY},
+                    /* 57 */ {"transfer-encoding", EMPTY},
+                    /* 58 */ {"user-agent", EMPTY},
+                    /* 59 */ {"vary", EMPTY},
+                    /* 60 */ {"via", EMPTY},
+                    /* 61 */ {"www-authenticate", EMPTY},
             };
 
     private static final Map<HttpField, Entry> __staticFieldMap = new HashMap<>();
@@ -219,6 +216,7 @@ public class HpackContext {
         if (size > _maxDynamicTableSizeInBytes) {
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("HdrTbl[%x] !added size %d>%d", hashCode(), size, _maxDynamicTableSizeInBytes));
+            _dynamicTable.evictAll();
             return null;
         }
         _dynamicTableSizeInBytes += size;
@@ -327,7 +325,7 @@ public class HpackContext {
                 _offset = (_offset + 1) % _entries.length;
                 _size--;
                 if (LOG.isDebugEnabled())
-                    LOG.debug(String.format("HdrTbl[%x] evict %s", hashCode(), entry));
+                    LOG.debug(String.format("HdrTbl[%x] evict %s", HpackContext.this.hashCode(), entry));
                 _dynamicTableSizeInBytes -= entry.getSize();
                 entry._slot = -1;
                 _fieldMap.remove(entry.getHttpField());
@@ -337,9 +335,19 @@ public class HpackContext {
 
             }
             if (LOG.isDebugEnabled())
-                LOG.debug(String.format("HdrTbl[%x] entries=%d, size=%d, max=%d", hashCode(), _dynamicTable.size(), _dynamicTableSizeInBytes, _maxDynamicTableSizeInBytes));
+                LOG.debug(String.format("HdrTbl[%x] entries=%d, size=%d, max=%d", HpackContext.this.hashCode(), _dynamicTable.size(), _dynamicTableSizeInBytes, _maxDynamicTableSizeInBytes));
         }
 
+        private void evictAll() {
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("HdrTbl[%x] evictAll", HpackContext.this.hashCode()));
+            _fieldMap.clear();
+            _nameMap.clear();
+            _offset = 0;
+            _size = 0;
+            _dynamicTableSizeInBytes = 0;
+            Arrays.fill(_entries, null);
+        }
     }
 
     public static class Entry {
@@ -372,6 +380,7 @@ public class HpackContext {
             return null;
         }
 
+        @Override
         public String toString() {
             return String.format("{%s,%d,%s,%x}", isStatic() ? "S" : "D", _slot, _field, hashCode());
         }

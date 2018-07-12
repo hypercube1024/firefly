@@ -157,18 +157,26 @@ public class HpackDecoderTest {
     }
 
     @Test
+    public void testResize() throws Exception {
+        String encoded = "3f6166871e33A13a47497f205f8841E92b043d492d49";
+        ByteBuffer buffer = ByteBuffer.wrap(TypeUtils.fromHexString(encoded));
+        HpackDecoder decoder = new HpackDecoder(4096, 8192);
+        MetaData metaData = decoder.decode(buffer);
+        assertThat(metaData.getFields().get(HttpHeader.HOST), is("aHostName"));
+        assertThat(metaData.getFields().get(HttpHeader.CONTENT_TYPE), is("some/content"));
+        assertThat(decoder.getHpackContext().getDynamicTableSize(), is(0));
+    }
+
+    @Test
     public void testTooBigToIndex() {
         String encoded = "44FfEc02Df3990A190A0D4Ee5b3d2940Ec98Aa4a62D127D29e273a0aA20dEcAa190a503b262d8a2671D4A2672a927aA874988a2471D05510750c951139EdA2452a3a548cAa1aA90bE4B228342864A9E0D450A5474a92992a1aA513395448E3A0Aa17B96cFe3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f14E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F3E7Cf9f3e7cF9F353F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F7F54f";
         ByteBuffer buffer = ByteBuffer.wrap(TypeUtils.fromHexString(encoded));
 
         HpackDecoder decoder = new HpackDecoder(128, 8192);
-        try {
-            decoder.decode(buffer);
-            Assert.fail();
-        } catch (BadMessageException e) {
-            assertThat(e.getCode(), equalTo(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431));
-            assertThat(e.getReason(), Matchers.startsWith("Indexed field value too large"));
-        }
+        MetaData metaData = decoder.decode(buffer);
+
+        assertThat(decoder.getHpackContext().getDynamicTableSize(), is(0));
+        assertThat(metaData.getFields().get(HttpHeader.C_PATH), Matchers.startsWith("This is a very large field"));
     }
 
     @Test
@@ -184,7 +192,5 @@ public class HpackDecoderTest {
             assertThat(e.getCode(), equalTo(HttpStatus.BAD_REQUEST_400));
             assertThat(e.getReason(), Matchers.startsWith("Unknown index"));
         }
-
     }
-
 }

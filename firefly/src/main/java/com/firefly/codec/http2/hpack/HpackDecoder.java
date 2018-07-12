@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
  * </p>
  */
 public class HpackDecoder {
-    public static final Logger log = LoggerFactory.getLogger("firefly-system");
+    public static final Logger LOG = LoggerFactory.getLogger("firefly-system");
     public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 =
             new HttpField.LongValueHttpField(HttpHeader.CONTENT_LENGTH, 0L);
 
@@ -42,17 +42,17 @@ public class HpackDecoder {
     }
 
     public MetaData decode(ByteBuffer buffer) {
-        if (log.isDebugEnabled())
-            log.debug(String.format("CtxTbl[%x] decoding %d octets", _context.hashCode(), buffer.remaining()));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("CtxTbl[%x] decoding %d octets", _context.hashCode(), buffer.remaining()));
 
         // If the buffer is big, don't even think about decoding it
         if (buffer.remaining() > _builder.getMaxSize())
             throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431, "Header frame size " + buffer.remaining() + ">" + _builder.getMaxSize());
 
         while (buffer.hasRemaining()) {
-            if (log.isDebugEnabled() && buffer.hasArray()) {
+            if (LOG.isDebugEnabled() && buffer.hasArray()) {
                 int l = Math.min(buffer.remaining(), 32);
-                log.debug("decode {}{}",
+                LOG.debug("decode {}{}",
                         TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + buffer.position(), l),
                         l < buffer.remaining() ? "..." : "");
             }
@@ -65,16 +65,16 @@ public class HpackDecoder {
                 if (entry == null) {
                     throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Unknown index " + index);
                 } else if (entry.isStatic()) {
-                    if (log.isDebugEnabled())
-                        log.debug("decode IdxStatic {}", entry);
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("decode IdxStatic {}", entry);
                     // emit field
                     _builder.emit(entry.getHttpField());
 
                     // TODO copy and add to reference set if there is room
                     // _context.add(entry.getHttpField());
                 } else {
-                    if (log.isDebugEnabled())
-                        log.debug("decode Idx {}", entry);
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("decode Idx {}", entry);
                     // emit
                     _builder.emit(entry.getHttpField());
                 }
@@ -93,8 +93,8 @@ public class HpackDecoder {
                     case 3: // 7.3
                         // change table size
                         int size = NBitInteger.decode(buffer, 5);
-                        if (log.isDebugEnabled())
-                            log.debug("decode resize=" + size);
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("decode resize=" + size);
                         if (size > _localMaxDynamicTableSize)
                             throw new IllegalArgumentException();
                         _context.resize(size);
@@ -184,8 +184,8 @@ public class HpackDecoder {
                     }
                 }
 
-                if (log.isDebugEnabled()) {
-                    log.debug("decoded '{}' by {}/{}/{}",
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("decoded '{}' by {}/{}/{}",
                             field,
                             name_index > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"),
                             huffmanValue ? "HuffVal" : "LitVal",
@@ -195,13 +195,9 @@ public class HpackDecoder {
                 // emit the field
                 _builder.emit(field);
 
-                // if indexed
-                if (indexed) {
-                    // add to dynamic table
-                    if (_context.add(field) == null)
-                        throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431, "Indexed field value too large");
-                }
-
+                // if indexed add to dynamic table
+                if (indexed)
+                    _context.add(field);
             }
         }
 

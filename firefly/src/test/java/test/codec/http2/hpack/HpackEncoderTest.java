@@ -222,5 +222,4 @@ public class HpackEncoderTest {
                 context.get(HpackContext.STATIC_SIZE + 1).getSize() + context.get(HpackContext.STATIC_SIZE + 2).getSize()));
 
     }
-
 }

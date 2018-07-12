@@ -12,7 +12,7 @@ import java.util.EnumSet;
 
 public class HpackEncoder {
 
-    private static final Logger log = LoggerFactory.getLogger("firefly-system");
+    private static final Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     private final static HttpField[] __status = new HttpField[599];
 
@@ -81,7 +81,7 @@ public class HpackEncoder {
         _remoteMaxDynamicTableSize = remoteMaxDynamicTableSize;
         _localMaxDynamicTableSize = localMaxDynamicTableSize;
         _maxHeaderListSize = maxHeaderListSize;
-        _debug = log.isDebugEnabled();
+        _debug = LOG.isDebugEnabled();
     }
 
     public int getMaxHeaderListSize() {
@@ -105,8 +105,8 @@ public class HpackEncoder {
     }
 
     public void encode(ByteBuffer buffer, MetaData metadata) {
-        if (log.isDebugEnabled())
-            log.debug(String.format("CtxTbl[%x] encoding", _context.hashCode()));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("CtxTbl[%x] encoding", _context.hashCode()));
 
         _headerListSize = 0;
         int pos = buffer.position();
@@ -141,13 +141,13 @@ public class HpackEncoder {
 
         // Check size
         if (_maxHeaderListSize > 0 && _headerListSize > _maxHeaderListSize) {
-            log.warn("Header list size too large {} > {} for {}", _headerListSize, _maxHeaderListSize);
-            if (log.isDebugEnabled())
-                log.debug("metadata={}", metadata);
+            LOG.warn("Header list size too large {} > {} for {}", _headerListSize, _maxHeaderListSize);
+            if (LOG.isDebugEnabled())
+                LOG.debug("metadata={}", metadata);
         }
 
-        if (log.isDebugEnabled())
-            log.debug(String.format("CtxTbl[%x] encoded %d octets", _context.hashCode(), buffer.position() - pos));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("CtxTbl[%x] encoded %d octets", _context.hashCode(), buffer.position() - pos));
     }
 
     public void encodeMaxDynamicTableSize(ByteBuffer buffer, int maxDynamicTableSize) {
@@ -267,17 +267,15 @@ public class HpackEncoder {
                 }
             }
 
-            // If we want the field referenced, then we add it to our
-            // table and reference set.
+            // If we want the field referenced, then we add it to our table and reference set.
             if (indexed)
-                if (_context.add(field) == null)
-                    throw new IllegalStateException();
+                _context.add(field);
         }
 
         if (_debug) {
             int e = buffer.position();
-            if (log.isDebugEnabled())
-                log.debug("encode {}:'{}' to '{}'", encoding, field, TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + p, e - p));
+            if (LOG.isDebugEnabled())
+                LOG.debug("encode {}:'{}' to '{}'", encoding, field, TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + p, e - p));
         }
     }
 
