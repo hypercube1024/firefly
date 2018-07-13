@@ -42,7 +42,10 @@ public class BoundedAsynchronousPool<T> extends AbstractLifeCycle implements Asy
                                    ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
                                    Action0 noLeakCallback) {
         this(maxSize, timeout,
-                Executors.newFixedThreadPool(defaultPoolServiceThreadNumber, r -> new Thread(r, "firefly bounded asynchronous pool")),
+                new ThreadPoolExecutor(defaultPoolServiceThreadNumber, defaultPoolServiceThreadNumber + 8,
+                        30L, TimeUnit.SECONDS,
+                        new ArrayBlockingQueue<>(10000),
+                        r -> new Thread(r, "firefly-bounded-asynchronous-pool")),
                 objectFactory, validator, dispose,
                 new LeakDetector<>(noLeakCallback));
     }
