@@ -69,6 +69,8 @@
         <jackson.version>2.9.6</jackson.version>
         <redisson.version>3.7.3</redisson.version>
         <conscrypt.version>1.1.3</conscrypt.version>
+        <hikariCP.version>3.2.0</hikariCP.version>
+        <spring.reactor.version>Bismuth-SR10</spring.reactor.version>
     </properties>
 
     <dependencyManagement>
@@ -136,7 +138,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>Bismuth-SR10</version>
+                <version>${spring.reactor.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -178,7 +180,7 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>3.1.0</version>
+                <version>${hikariCP.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
