@@ -122,7 +122,9 @@ suspend fun <T> SQLConnection.execSQL(handler: suspend (conn: SQLConnection) -> 
         ret
     } catch (e: RecordNotFound) {
         sysLogger.warn("execute SQL exception", e)
-        (if (isNew) rollbackAndEndTransaction() else rollback()).await()
+        if (isNew) {
+            commitAndEndTransaction().await()
+        }
         throw e
     } catch (e: Exception) {
         sysLogger.error("execute SQL exception", e)

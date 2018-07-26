@@ -67,8 +67,8 @@
         <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
         <metrics.version>3.2.5</metrics.version>
         <jackson.version>2.9.6</jackson.version>
-        <redisson.version>3.7.3</redisson.version>
-        <conscrypt.version>1.1.3</conscrypt.version>
+        <redisson.version>3.7.5</redisson.version>
+        <conscrypt.version>1.1.4</conscrypt.version>
         <hikariCP.version>3.2.0</hikariCP.version>
         <spring.reactor.version>Bismuth-SR10</spring.reactor.version>
     </properties>
