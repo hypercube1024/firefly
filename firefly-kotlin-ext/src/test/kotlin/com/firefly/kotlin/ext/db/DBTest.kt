@@ -16,6 +16,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 import kotlin.test.assertEquals
 
@@ -37,7 +38,7 @@ class DBTest {
     }
 
     private suspend fun <T> exec(handler: suspend (conn: SQLConnection) -> T): T
-            = sqlClient.connection.await().execSQL(handler)
+            = sqlClient.connection.await().execSQL(10000, TimeUnit.MILLISECONDS, handler)
 
     @Before
     fun before() = runBlocking {

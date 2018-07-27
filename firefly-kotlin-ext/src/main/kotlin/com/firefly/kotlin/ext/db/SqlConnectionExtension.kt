@@ -5,7 +5,10 @@ import com.firefly.db.SQLConnection
 import com.firefly.db.SQLResultSet
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.utils.function.Func1
+import kotlinx.coroutines.experimental.TimeoutCancellationException
 import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.experimental.withTimeout
+import java.util.concurrent.TimeUnit
 
 /**
  * @author Pengtao Qiu
@@ -112,19 +115,24 @@ suspend inline fun <reified T> SQLConnection.asyncDeleteById(id: Any): Int =
         this.deleteById(id, T::class.java).await() ?: 0
 
 
-suspend fun <T> SQLConnection.execSQL(handler: suspend (conn: SQLConnection) -> T): T {
+suspend fun <T> SQLConnection.execSQL(time: Long = 10000L, unit: TimeUnit = TimeUnit.MILLISECONDS,
+                                      handler: suspend (conn: SQLConnection) -> T): T {
     val isNew = beginTransaction().await()
     return try {
-        val ret = handler.invoke(this)
+        val ret = withTimeout(time, unit) { handler.invoke(this@execSQL) }
         if (isNew) {
             commitAndEndTransaction().await()
         }
         ret
     } catch (e: RecordNotFound) {
-        sysLogger.warn("execute SQL exception", e)
+        sysLogger.warn("execute SQL exception. record not found", e)
         if (isNew) {
             commitAndEndTransaction().await()
         }
+        throw e
+    } catch (e: TimeoutCancellationException) {
+        sysLogger.error("execute SQL exception. timeout", e)
+        (if (isNew) rollbackAndEndTransaction() else rollback()).await()
         throw e
     } catch (e: Exception) {
         sysLogger.error("execute SQL exception", e)

@@ -31,11 +31,13 @@ class TestCoroutineInterceptor {
                 val intContext = InterceptingContext(dispatcher, i, threadInt)
 
                 async(intContext) {
-                    log.info("beforeSuspend [local: $i, thread: ${threadInt.get()}]")
-                    assertEquals(i, threadInt.get())
-                    delay(1000)
-                    log.info("afterSuspend [local: $i, thread: ${threadInt.get()}]")
-                    assertEquals(i, threadInt.get())
+                    withTimeout(2000) {
+                        log.info("beforeSuspend [local: $i, thread: ${threadInt.get()}]")
+                        assertEquals(i, threadInt.get())
+                        delay(1000)
+                        log.info("afterSuspend [local: $i, thread: ${threadInt.get()}]")
+                        assertEquals(i, threadInt.get())
+                    }
                 }
             }
 
