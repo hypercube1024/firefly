@@ -49,6 +49,22 @@ class TestCoroutineInterceptor {
             delay(2000)
         }
     }
+
+    @Test
+    fun testTimeout() {
+        runBlocking {
+            val r = try {
+                withTimeout(1000) {
+                    delay(2000)
+                }
+                true
+            } catch (e: TimeoutCancellationException) {
+                println("timeout")
+                false
+            }
+            assertEquals(false, r)
+        }
+    }
 }
 
 
