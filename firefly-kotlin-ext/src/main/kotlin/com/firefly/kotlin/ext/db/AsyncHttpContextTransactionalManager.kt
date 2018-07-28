@@ -5,7 +5,9 @@ import com.firefly.db.SQLConnection
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.server.http2.router.RoutingContext
 import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.experimental.withTimeout
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Manage transaction in the HTTP request lifecycle.
@@ -17,8 +19,8 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
 
     val transactionKey = "_currentKotlinTransaction"
 
-    override suspend fun getConnection(): SQLConnection {
-        return if (requestCtx.get() == null) {
+    override suspend fun getConnection(time: Long, unit: TimeUnit): SQLConnection = withTimeout(time, unit) {
+        if (requestCtx.get() == null) {
             sysLogger.debug("get new db connection from pool")
             sqlClient.connection.await()
         } else {
@@ -35,9 +37,8 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
     }
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun getCurrentConnection(): SQLConnection? {
-        val future = requestCtx.get()?.attributes?.get(transactionKey) as CompletableFuture<SQLConnection>?
-        return future?.await()
+    override suspend fun getCurrentConnection(time: Long, unit: TimeUnit): SQLConnection? = withTimeout(time, unit) {
+        (requestCtx.get()?.attributes?.get(transactionKey) as CompletableFuture<SQLConnection>?)?.await()
     }
 
     @Suppress("UNCHECKED_CAST")

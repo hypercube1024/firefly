@@ -5,6 +5,8 @@ import com.firefly.client.http2.SimpleResponse
 import com.firefly.codec.http2.model.HttpFields
 import com.firefly.kotlin.ext.common.Json
 import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.experimental.withTimeout
+import java.util.concurrent.TimeUnit
 
 /**
  * Firefly HTTP client extensions
@@ -16,6 +18,6 @@ inline fun <reified T : Any> SimpleResponse.getJsonBody(charset: String): T = Js
 
 inline fun <reified T : Any> SimpleResponse.getJsonBody(): T = Json.parse(stringBody)
 
-suspend fun SimpleHTTPClient.RequestBuilder.asyncSubmit(): SimpleResponse = submit().await()
+suspend fun SimpleHTTPClient.RequestBuilder.asyncSubmit(time: Long = 60 * 1000L, unit: TimeUnit = TimeUnit.MILLISECONDS): SimpleResponse = withTimeout(time, unit) { submit().await() }
 
 fun SimpleResponse.getTrailer(): HttpFields = trailerSupplier.get()

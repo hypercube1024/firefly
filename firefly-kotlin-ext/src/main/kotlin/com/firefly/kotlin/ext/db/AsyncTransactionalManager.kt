@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit
  */
 interface AsyncTransactionalManager {
 
-    suspend fun getConnection(): SQLConnection
+    suspend fun getConnection(time: Long = 10000L, unit: TimeUnit = TimeUnit.MILLISECONDS): SQLConnection
 
-    suspend fun getCurrentConnection(): SQLConnection?
+    suspend fun getCurrentConnection(time: Long = 10000L, unit: TimeUnit = TimeUnit.MILLISECONDS): SQLConnection?
 
     suspend fun <T> execSQL(time: Long = 10000L, unit: TimeUnit = TimeUnit.MILLISECONDS, handler: suspend (conn: SQLConnection) -> T): T = getConnection().execSQL(time, unit, handler)
 
