@@ -10,6 +10,7 @@ title: Log configuration
 - [Overview](#overview)
 - [Configuration](#configuration)
 - [Log formatter](#log-formatter)
+- [Log filter](#log-filter)
 - [Lazy logger](#lazy-logger)
 
 <!-- /TOC -->
@@ -42,6 +43,7 @@ Add `firefly-log.xml` to classpath
         <level>INFO</level>
         <path>${log.path}</path>
         <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
+        <log-filter>com.firefly.example.common.ErrorLogFilter</log-filter>
     </logger>
 
     <logger>
@@ -55,15 +57,21 @@ Add `firefly-log.xml` to classpath
         <name>com.firefly.example.reactive</name>
         <level>INFO</level>
         <path>${log.path}</path>
-        <!--<enable-console>true</enable-console>-->
-        <max-file-size>300000</max-file-size>
-        <charset>UTF-8</charset>
         <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
+        <log-filter>com.firefly.example.common.ErrorLogFilter</log-filter>
     </logger>
 
     <logger>
         <name>com.firefly.example.kotlin</name>
         <level>INFO</level>
+        <path>${log.path}</path>
+        <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
+        <log-filter>com.firefly.example.common.ErrorLogFilter</log-filter>
+    </logger>
+
+    <logger>
+        <name>firefly-example-error</name>
+        <level>ERROR</level>
         <path>${log.path}</path>
         <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
     </logger>
@@ -115,6 +123,23 @@ public class ExampleLogFormatter implements LogFormatter {
 }
 ```
 When the logger writes log records to a file or console, it will call the `LogFormatter.format` method. You can convert LogItem to a String using custom format.
+
+# Log filter
+Sometimes we want collect error log and print it in a single log file. The firefly provides the `<log-filter>` that specifies a class that implements `LogFilter`. For example:
+```java
+public class ErrorLogFilter implements LogFilter {
+
+    private static Logger logger = LoggerFactory.getLogger("firefly-example-error");
+
+    @Override
+    public void filter(LogItem logItem) {
+        if (logItem.getLevel().equals("ERROR")) {
+            logger.error(logItem.getContent(), logItem.getThrowable());
+        }
+    }
+}
+```
+In this case, we collect and print error information via `ErrorLogFilter`.
 
 # Lazy logger
 When we want to print a large data object that helps us to debug programming in development stage, we need use the `logger.isDebugEnabled()` condition to avoid the resources are consumed excessively in the production environment. Just like:
