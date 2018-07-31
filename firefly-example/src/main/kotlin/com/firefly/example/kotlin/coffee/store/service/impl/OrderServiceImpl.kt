@@ -75,6 +75,6 @@ class OrderServiceImpl : OrderService {
                 .filter { i -> Objects.equals(i.productId, product.id) }
                 .map { it.amount }
                 .findFirst()
-                .orElseThrow({ IllegalStateException("The product amounts must be more than 0") })
+                .orElseThrow { IllegalStateException("The product amounts must be more than 0") }
     }
 }
