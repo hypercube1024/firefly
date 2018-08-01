@@ -71,7 +71,7 @@ public class CORSHandler implements Handler {
                         ctx.getResponse().getFields().put(HttpHeader.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
                         ctx.getResponse().getFields().put(HttpHeader.ACCESS_CONTROL_ALLOW_CREDENTIALS, configuration.getAllowCredentials().toString());
                         if (!CollectionUtils.isEmpty(configuration.getAllowHeaders())) {
-                            ctx.getResponse().getFields().put(HttpHeader.ACCESS_CONTROL_EXPOSE_HEADERS, String.join(", ", configuration.getAllowHeaders()));
+                            ctx.getResponse().getFields().put(HttpHeader.ACCESS_CONTROL_EXPOSE_HEADERS, String.join(", ", configuration.getExposeHeaders()));
                         }
                     }
                 }
