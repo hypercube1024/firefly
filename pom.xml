@@ -57,7 +57,7 @@
         <log.level>INFO</log.level>
         <log.path>../logs</log.path>
 
-        <kotlin.version>1.2.51</kotlin.version>
+        <kotlin.version>1.2.60</kotlin.version>
         <kotlin.coroutine.version>0.24.0</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
