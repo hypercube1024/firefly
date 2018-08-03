@@ -11,7 +11,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.9.1-SNAPSHOT</version>
+        <version>4.9.1-dev12</version>
     </parent>
 
     <build>
