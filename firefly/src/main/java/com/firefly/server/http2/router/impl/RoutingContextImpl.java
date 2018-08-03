@@ -298,6 +298,21 @@ public class RoutingContextImpl implements RoutingContext {
     }
 
     @Override
+    public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge, String domain) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.getAndCreateSession(maxAge, domain)).orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> createSession(int maxAge) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.createSession(maxAge)).orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> createSession(int maxAge, String domain) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.createSession(maxAge, domain)).orElse(null);
+    }
+
+    @Override
     public CompletableFuture<Integer> getSessionSize() {
         return Optional.ofNullable(httpSessionHandlerSPI).map(HTTPSessionHandlerSPI::getSessionSize).orElse(null);
     }

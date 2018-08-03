@@ -308,6 +308,12 @@ public interface RoutingContext extends Closeable {
 
     CompletableFuture<HTTPSession> getAndCreateSession(int maxAge);
 
+    CompletableFuture<HTTPSession> getAndCreateSession(int maxAge, String domain);
+
+    CompletableFuture<HTTPSession> createSession(int maxAge);
+
+    CompletableFuture<HTTPSession> createSession(int maxAge, String domain);
+
     CompletableFuture<Integer> getSessionSize();
 
     CompletableFuture<Boolean> removeSessionById(String id);
