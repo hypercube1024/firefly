@@ -14,7 +14,7 @@ public class JsonStringWriter extends AbstractJsonStringWriter {
 
     private static class LRUHashMap<K, V> extends LinkedHashMap<K, V> {
 
-        private static final int maxCacheSize = Integer.getInteger("com.fireflysource.utils.json.writer.string.cache", 128);
+        private static final int maxCacheSize = Integer.getInteger("com.fireflysource.utils.json.writer.string.cache", 512);
 
         LRUHashMap() {
             super(maxCacheSize, 0.75f, true);

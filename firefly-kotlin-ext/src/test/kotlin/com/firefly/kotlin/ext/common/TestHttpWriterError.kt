@@ -8,7 +8,6 @@ import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.http.header
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import java.io.Serializable
 
 /**
@@ -829,26 +828,10 @@ val jsonString = """
 }
 """.trimIndent()
 
-fun main(args: Array<String>) = runBlocking {
-    //    println(jsonString[365].toInt())
-//    println(' '.toInt())
-//    println('\n'.toInt())
-//    println('\r'.toInt())
-//    println('\t'.toInt())
+fun main(args: Array<String>) {
     val resp = Json.parse<Response<List<AppColumnVO>>>(jsonString)
     println(resp.code)
     println(resp.data.size)
-//    val json = Json.toJson(resp)
-
-//    val respList = (1..100).map {
-//        async {
-//            //            delay(50)
-//            Json.toJson(resp)
-//        }
-//    }
-//    respList.map { it.await() }.forEach {
-//        println(it == json)
-//    }
 
     HttpServer {
         router {
@@ -868,6 +851,5 @@ fun main(args: Array<String>) = runBlocking {
                 }.await().end()
             }
         }
-    }.listen("localhost", 8080)
-
+    }.enableSecureConnection().listen("localhost", 8080)
 }

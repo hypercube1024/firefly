@@ -462,6 +462,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 
     override fun listen() = server.headerComplete(routerManager::accept).listen()
 
+    fun enableSecureConnection(): HttpServer {
+        this.server.configuration.isSecureConnectionEnabled = true
+        return this
+    }
+
     /**
      * Register a router using the DSL with a autoincrement ID.
      *
