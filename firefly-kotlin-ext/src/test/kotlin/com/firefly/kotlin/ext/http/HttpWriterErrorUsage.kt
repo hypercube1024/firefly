@@ -1,11 +1,10 @@
-package com.firefly.kotlin.ext.common
+package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.HttpHeader
 import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.kotlin.ext.annotation.NoArg
-import com.firefly.kotlin.ext.http.HttpServer
-import com.firefly.kotlin.ext.http.header
+import com.firefly.kotlin.ext.common.Json
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import java.io.Serializable

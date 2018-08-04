@@ -60,7 +60,10 @@ public class FlexOutputStream extends OutputStream implements Callback {
     @Override
     public void write(byte[] array, int offset, int length) {
         Assert.notNull(array, "The data must be not null");
-        write(ByteBuffer.wrap(array, offset, length));
+
+        byte[] tmpArr = new byte[length];
+        System.arraycopy(array, offset, tmpArr, 0, length);
+        write(ByteBuffer.wrap(tmpArr));
     }
 
     public synchronized void write(ByteBuffer data) {
