@@ -3,27 +3,29 @@ package com.firefly.codec.http2.hpack;
 import com.firefly.codec.http2.hpack.HpackContext.Entry;
 import com.firefly.codec.http2.hpack.HpackContext.StaticEntry;
 import com.firefly.codec.http2.model.*;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.collection.ArrayTrie;
+import com.firefly.utils.collection.Trie;
 import com.firefly.utils.lang.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class HpackEncoder {
 
     private static final Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     private final static HttpField[] __status = new HttpField[599];
-
-
     final static EnumSet<HttpHeader> __DO_NOT_HUFFMAN =
             EnumSet.of(
                     HttpHeader.AUTHORIZATION,
                     HttpHeader.CONTENT_MD5,
                     HttpHeader.PROXY_AUTHENTICATE,
                     HttpHeader.PROXY_AUTHORIZATION);
-
     final static EnumSet<HttpHeader> __DO_NOT_INDEX =
             EnumSet.of(
                     // HttpHeader.C_PATH,  // TODO more data needed
@@ -44,17 +46,20 @@ public class HpackEncoder {
                     HttpHeader.LAST_MODIFIED,
                     HttpHeader.SET_COOKIE,
                     HttpHeader.SET_COOKIE2);
-
-
     final static EnumSet<HttpHeader> __NEVER_INDEX =
             EnumSet.of(
                     HttpHeader.AUTHORIZATION,
                     HttpHeader.SET_COOKIE,
                     HttpHeader.SET_COOKIE2);
+    private static final PreEncodedHttpField CONNECTION_TE = new PreEncodedHttpField(HttpHeader.CONNECTION, "te");
+    private static final PreEncodedHttpField TE_TRAILERS = new PreEncodedHttpField(HttpHeader.TE, "trailers");
+    private static final Trie<Boolean> specialHopHeaders = new ArrayTrie<>(6);
 
     static {
         for (HttpStatus.Code code : HttpStatus.Code.values())
             __status[code.getCode()] = new PreEncodedHttpField(HttpHeader.C_STATUS, Integer.toString(code.getCode()));
+        specialHopHeaders.put("close", true);
+        specialHopHeaders.put("te", true);
     }
 
     private final HpackContext _context;
@@ -135,9 +140,27 @@ public class HpackEncoder {
             encode(buffer, status);
         }
 
-        // Add all the other fields
-        for (HttpField field : metadata)
-            encode(buffer, field);
+        // Add all non-connection fields.
+        HttpFields fields = metadata.getFields();
+        if (fields != null) {
+            Set<String> hopHeaders = fields.getCSV(HttpHeader.CONNECTION, false).stream()
+                                           .filter(v -> specialHopHeaders.get(v) == Boolean.TRUE)
+                                           .map(StringUtils::asciiToLowerCase)
+                                           .collect(Collectors.toSet());
+            for (HttpField field : fields) {
+                if (field.getHeader() == HttpHeader.CONNECTION)
+                    continue;
+                if (!hopHeaders.isEmpty() && hopHeaders.contains(StringUtils.asciiToLowerCase(field.getName())))
+                    continue;
+                if (field.getHeader() == HttpHeader.TE) {
+                    if (!field.contains("trailers"))
+                        continue;
+                    encode(buffer, CONNECTION_TE);
+                    encode(buffer, TE_TRAILERS);
+                }
+                encode(buffer, field);
+            }
+        }
 
         // Check size
         if (_maxHeaderListSize > 0 && _headerListSize > _maxHeaderListSize) {
@@ -247,7 +270,7 @@ public class HpackEncoder {
                         encoding = "Lit" +
                                 ((name == null) ? "HuffN" : ("IdxN" + (name.isStatic() ? "S" : "") + (1 + NBitInteger.octectsNeeded(4, _context.index(name))))) +
                                 (huffman ? "HuffV" : "LitV") +
-                                (indexed ? "Idx" : (never_index ? "!!Idx" : "!Idx"));
+                                (never_index ? "!!Idx" : "!Idx");
                 } else if (field_size >= _context.getMaxDynamicTableSize() || header == HttpHeader.CONTENT_LENGTH && field.getValue().length() > 2) {
                     // Non indexed if field too large or a content length for 3 digits or more
                     indexed = false;

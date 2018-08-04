@@ -1,7 +1,9 @@
 package com.firefly.codec.http2.hpack;
 
 import com.firefly.codec.http2.hpack.HpackContext.Entry;
-import com.firefly.codec.http2.model.*;
+import com.firefly.codec.http2.model.HttpField;
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.lang.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +18,8 @@ import java.nio.ByteBuffer;
  */
 public class HpackDecoder {
     public static final Logger LOG = LoggerFactory.getLogger("firefly-system");
-    public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 =
-            new HttpField.LongValueHttpField(HttpHeader.CONTENT_LENGTH, 0L);
+    
+    public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 = new HttpField.LongValueHttpField(HttpHeader.CONTENT_LENGTH, 0L);
 
     private final HpackContext _context;
     private final MetaDataBuilder _builder;
@@ -41,13 +43,15 @@ public class HpackDecoder {
         _localMaxDynamicTableSize = localMaxdynamciTableSize;
     }
 
-    public MetaData decode(ByteBuffer buffer) {
+    public MetaData decode(ByteBuffer buffer) throws HpackException.SessionException, HpackException.StreamException {
         if (LOG.isDebugEnabled())
             LOG.debug(String.format("CtxTbl[%x] decoding %d octets", _context.hashCode(), buffer.remaining()));
 
         // If the buffer is big, don't even think about decoding it
         if (buffer.remaining() > _builder.getMaxSize())
-            throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431, "Header frame size " + buffer.remaining() + ">" + _builder.getMaxSize());
+            throw new HpackException.SessionException("431 Request Header Fields too large");
+
+        boolean emitted = false;
 
         while (buffer.hasRemaining()) {
             if (LOG.isDebugEnabled() && buffer.hasArray()) {
@@ -62,12 +66,14 @@ public class HpackDecoder {
                 // 7.1 indexed if the high bit is set
                 int index = NBitInteger.decode(buffer, 7);
                 Entry entry = _context.get(index);
-                if (entry == null) {
-                    throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Unknown index " + index);
-                } else if (entry.isStatic()) {
+                if (entry == null)
+                    throw new HpackException.SessionException("Unknown index %d", index);
+
+                if (entry.isStatic()) {
                     if (LOG.isDebugEnabled())
                         LOG.debug("decode IdxStatic {}", entry);
                     // emit field
+                    emitted = true;
                     _builder.emit(entry.getHttpField());
 
                     // TODO copy and add to reference set if there is room
@@ -76,6 +82,7 @@ public class HpackDecoder {
                     if (LOG.isDebugEnabled())
                         LOG.debug("decode Idx {}", entry);
                     // emit
+                    emitted = true;
                     _builder.emit(entry.getHttpField());
                 }
             } else {
@@ -97,6 +104,8 @@ public class HpackDecoder {
                             LOG.debug("decode resize=" + size);
                         if (size > _localMaxDynamicTableSize)
                             throw new IllegalArgumentException();
+                        if (emitted)
+                            throw new HpackException.CompressionException("Dynamic table resize after fields");
                         _context.resize(size);
                         continue;
 
@@ -136,7 +145,8 @@ public class HpackDecoder {
                     for (int i = 0; i < name.length(); i++) {
                         char c = name.charAt(i);
                         if (c >= 'A' && c <= 'Z') {
-                            throw new BadMessageException(400, "Uppercase header name");
+                            _builder.streamException("Uppercase header name %s", name);
+                            break;
                         }
                     }
                     header = HttpHeader.CACHE.get(name);
@@ -193,6 +203,7 @@ public class HpackDecoder {
                 }
 
                 // emit the field
+                emitted = true;
                 _builder.emit(field);
 
                 // if indexed add to dynamic table

@@ -181,7 +181,7 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         }
         StreamSPI stream = getStream(frame.getStreamId());
         if (stream != null)
-            stream.process(frame, new ResetCallback());
+            stream.process(frame, new OnResetCallback());
         else
             notifyReset(this, frame);
     }
@@ -345,6 +345,16 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         } else {
             onWindowUpdate(null, frame);
         }
+    }
+
+    @Override
+    public void onStreamFailure(int streamId, int error, String reason) {
+        Callback callback = new ResetCallback(streamId, error, Callback.NOOP);
+        StreamSPI stream = getStream(streamId);
+        if (stream != null)
+            stream.process(new FailureFrame(error, reason), callback);
+        else
+            callback.succeeded();
     }
 
     @Override
@@ -1089,7 +1099,32 @@ public abstract class HTTP2Session implements SessionSPI, Parser.Listener {
         }
     }
 
-    private class ResetCallback implements Callback {
+    private class ResetCallback extends Callback.Nested {
+        private final int streamId;
+        private final int error;
+
+        private ResetCallback(int streamId, int error, Callback callback) {
+            super(callback);
+            this.streamId = streamId;
+            this.error = error;
+        }
+
+        @Override
+        public void succeeded() {
+            complete();
+        }
+
+        @Override
+        public void failed(Throwable x) {
+            complete();
+        }
+
+        private void complete() {
+            reset(new ResetFrame(streamId, error), getCallback());
+        }
+    }
+
+    private class OnResetCallback implements Callback {
         @Override
         public void succeeded() {
             complete();

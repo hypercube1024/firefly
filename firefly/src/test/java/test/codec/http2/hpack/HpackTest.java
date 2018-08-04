@@ -3,6 +3,7 @@ package test.codec.http2.hpack;
 import com.firefly.codec.http2.hpack.HpackContext;
 import com.firefly.codec.http2.hpack.HpackDecoder;
 import com.firefly.codec.http2.hpack.HpackEncoder;
+import com.firefly.codec.http2.hpack.HpackException;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.utils.io.BufferUtils;
@@ -10,18 +11,21 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class HpackTest {
+
     final static HttpField ServerFirefly = new PreEncodedHttpField(HttpHeader.SERVER, "firefly");
     final static HttpField XPowerFirefly = new PreEncodedHttpField(HttpHeader.X_POWERED_BY, "firefly");
-    final static HttpField Date = new PreEncodedHttpField(HttpHeader.DATE, DateGenerator.formatDate(System.currentTimeMillis()));
+    final static HttpField Date = new PreEncodedHttpField(HttpHeader.DATE, DateGenerator.formatDate(TimeUnit.NANOSECONDS.toMillis(System.nanoTime())));
 
     @Test
-    public void encodeDecodeResponseTest() {
+    public void encodeDecodeResponseTest() throws Exception {
         HpackEncoder encoder = new HpackEncoder();
         HpackDecoder decoder = new HpackDecoder(4096, 8192);
         ByteBuffer buffer = BufferUtils.allocate(16 * 1024);
@@ -73,7 +77,7 @@ public class HpackTest {
     }
 
     @Test
-    public void encodeDecodeTooLargeTest() {
+    public void encodeDecodeTooLargeTest() throws Exception {
         HpackEncoder encoder = new HpackEncoder();
         HpackDecoder decoder = new HpackDecoder(4096, 164);
         ByteBuffer buffer = BufferUtils.allocate(16 * 1024);
@@ -102,13 +106,13 @@ public class HpackTest {
         try {
             decoder.decode(buffer);
             Assert.fail();
-        } catch (BadMessageException e) {
-            assertEquals(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431, e.getCode());
+        } catch (HpackException.SessionException e) {
+            assertThat(e.getMessage(), containsString("Header too large"));
         }
     }
 
     @Test
-    public void evictReferencedFieldTest() {
+    public void evictReferencedFieldTest() throws Exception {
         HpackEncoder encoder = new HpackEncoder(200, 200);
         HpackDecoder decoder = new HpackDecoder(200, 1024);
         ByteBuffer buffer = BufferUtils.allocate(16 * 1024);
