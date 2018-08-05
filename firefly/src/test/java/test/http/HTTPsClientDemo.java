@@ -17,8 +17,8 @@ import java.util.concurrent.CountDownLatch;
 public class HTTPsClientDemo {
     public static final List<String> urlList = Arrays.asList(
             "https://www.jd.com",
-            "https://segmentfault.com",
-            "https://github.com",
+//            "https://segmentfault.com",
+//            "https://github.com",
             "https://www.taobao.com",
             "https://www.baidu.com",
             "https://login.taobao.com");
