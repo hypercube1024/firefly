@@ -19,9 +19,11 @@ import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader
 import com.firefly.server.http2.router.impl.RoutingContextImpl
 import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.future.await
 import java.io.Closeable
 import java.net.InetAddress
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.ContinuationInterceptor
@@ -87,6 +89,12 @@ fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit, failed: suspend
 fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
     asyncComplete(succeeded, { this.asyncFail<Throwable?>(it) })
     return next()
+}
+
+suspend fun <C> RoutingContext.asyncNext(): Pair<Boolean, C> {
+    val future = CompletableFuture<C>()
+    val r = asyncNext<C>({ future.complete(it) }, { future.completeExceptionally(it) })
+    return r to future.await()
 }
 
 /**
