@@ -25,6 +25,7 @@ import java.net.InetAddress
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.ContinuationInterceptor
 import kotlin.coroutines.experimental.CoroutineContext
@@ -93,8 +94,14 @@ fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
 
 suspend fun <C> RoutingContext.asyncNext(): Pair<Boolean, C> {
     val future = CompletableFuture<C>()
-    val r = asyncNext<C>({ future.complete(it) }, { future.completeExceptionally(it) })
-    return r to future.await()
+    val hasNext = asyncNext<C>({ future.complete(it) }, { future.completeExceptionally(it) })
+    return hasNext to future.await()
+}
+
+suspend fun <C> RoutingContext.asyncNext(time: Long = 5000L, unit: TimeUnit = TimeUnit.MILLISECONDS): Pair<Boolean, C> {
+    val future = CompletableFuture<C>()
+    val hasNext = asyncNext<C>({ future.complete(it) }, { future.completeExceptionally(it) })
+    return withTimeout(time, unit) { hasNext to future.await() }
 }
 
 /**
