@@ -1,10 +1,14 @@
 package com.firefly.kotlin.ext.http
 
 import com.firefly.codec.http2.model.HttpMethod
+import com.firefly.codec.http2.model.HttpStatus
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.utils.RandomUtils
+import kotlinx.coroutines.experimental.TimeoutCancellationException
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 
 /**
@@ -17,7 +21,7 @@ class TestRouterChain {
         val host = "localhost"
         val port = RandomUtils.random(3000, 65534).toInt()
 
-        HttpServer {
+        val s = HttpServer {
             router {
                 httpMethod = HttpMethod.GET
                 path = "/chain"
@@ -49,9 +53,11 @@ class TestRouterChain {
                     write("complete chain3\n")
                 }
             }
-        }.enableSecureConnection().listen(host, port)
+        }.enableSecureConnection()
+        s.listen(host, port)
+        val c = firefly.createHTTPsClient()
 
-        val resp = firefly.httpsClient().get("https://$host:$port/chain").asyncSubmit()
+        val resp = c.get("https://$host:$port/chain").asyncSubmit()
         println(resp.status)
         println(resp.stringBody)
         assertEquals(200, resp.status)
@@ -61,5 +67,87 @@ class TestRouterChain {
                 "complete chain3\n" +
                 "complete chain2\n" +
                 "complete chain1\n", resp.stringBody)
+        c.stop()
+        s.stop()
+    }
+
+    @Test
+    fun testErrorAndTimeout() = runBlocking {
+        val host = "localhost"
+        val port = RandomUtils.random(3000, 65534).toInt()
+
+        val s = HttpServer {
+            router {
+                httpMethod = HttpMethod.GET
+                path = "/*"
+
+                asyncHandler {
+                    try {
+                        asyncNext<Unit>(1, TimeUnit.SECONDS)
+                        end()
+                    } catch (e: TimeoutCancellationException) {
+                        statusLine {
+                            status = HttpStatus.GATEWAY_TIMEOUT_504
+                        }
+                        end("The server is overloaded")
+                    } catch (e: Exception) {
+                        statusLine {
+                            status = HttpStatus.INTERNAL_SERVER_ERROR_500
+                        }
+                        end("The server exception. ${e.message}")
+                    }
+                }
+            }
+
+            router {
+                httpMethod = HttpMethod.GET
+                path = "/testError"
+
+                asyncCompleteHandler {
+                    throw IllegalArgumentException("Hoo!")
+                }
+            }
+
+            router {
+                httpMethod = HttpMethod.GET
+                path = "/testTimeout"
+
+                asyncCompleteHandler {
+                    delay(2, TimeUnit.SECONDS)
+                    write("ok!")
+                }
+            }
+
+            router {
+                httpMethod = HttpMethod.GET
+                path = "/test"
+
+                asyncCompleteHandler {
+                    write("ok!")
+                }
+            }
+        }.enableSecureConnection()
+        s.listen(host, port)
+        val c = firefly.createHTTPsClient()
+
+        val resp = c.get("https://$host:$port/testTimeout").asyncSubmit()
+        println(resp.status)
+        println(resp.stringBody)
+        assertEquals(504, resp.status)
+        assertEquals("The server is overloaded", resp.stringBody)
+
+        val resp1 = c.get("https://$host:$port/testError").asyncSubmit()
+        println(resp1.status)
+        println(resp1.stringBody)
+        assertEquals(500, resp1.status)
+        assertEquals("The server exception. Hoo!", resp1.stringBody)
+
+        val resp2 = c.get("https://$host:$port/test").asyncSubmit()
+        println(resp2.status)
+        println(resp2.stringBody)
+        assertEquals(200, resp2.status)
+        assertEquals("ok!", resp2.stringBody)
+        c.stop()
+        s.stop()
     }
 }
