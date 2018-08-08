@@ -205,3 +205,7 @@ QQ Group: 126079579
 
 Treat author to a cup of coffee:  
 <img src="{{ site.url }}/images/author-ali-pay.jpg" width="260" />
+<img src="{{ site.url }}/images/author-wechat-pay.jpg" width="260" />
+
+Get the red envelope:  
+<img src="{{ site.url }}/images/author-red-envelope.png" width="260" />
