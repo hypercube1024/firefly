@@ -344,6 +344,12 @@
                 <artifactId>fst</artifactId>
                 <version>2.57</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.webjars.npm</groupId>
+                <artifactId>mdui</artifactId>
+                <version>0.4.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

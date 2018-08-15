@@ -55,8 +55,8 @@ class TestRouterChain {
             }
         }.enableSecureConnection()
         s.listen(host, port)
-        val c = firefly.createHTTPsClient()
 
+        val c = firefly.createHTTPsClient()
         val resp = c.get("https://$host:$port/chain").asyncSubmit()
         println(resp.status)
         println(resp.stringBody)
