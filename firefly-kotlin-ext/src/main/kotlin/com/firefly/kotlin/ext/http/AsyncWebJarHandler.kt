@@ -16,10 +16,12 @@ import java.util.zip.GZIPOutputStream
 /**
  * @author Pengtao Qiu
  */
-class AsyncWebJarHandler(val rootPath: String = "/META-INF/resources",
-                         val enableGzip: Boolean = false) : AsyncHandler {
+class AsyncWebJarHandler(val rootPath: String,
+                         val enableGzip: Boolean) : AsyncHandler {
 
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
+
+    constructor(enableGzip: Boolean = false) : this("/META-INF/resources", enableGzip)
 
     override suspend fun handle(ctx: RoutingContext) = withContext(ioBlocking) {
         val path = URIUtils.canonicalPath(ctx.uri.path)

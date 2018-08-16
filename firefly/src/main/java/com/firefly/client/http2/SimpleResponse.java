@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Consumer;
@@ -90,10 +91,8 @@ public class SimpleResponse {
 
     public String getStringBody(String charset) {
         if (stringBody == null) {
-            String contentEncoding = getFields().get(HttpHeader.CONTENT_ENCODING);
-            if ("gzip".equalsIgnoreCase(contentEncoding)) {
-                byte[] bytes = BufferUtils.toArray(responseBody);
-                if (bytes != null) {
+            stringBody = Optional.ofNullable(BufferUtils.toArray(responseBody)).map(bytes -> {
+                if ("gzip".equalsIgnoreCase(getFields().get(HttpHeader.CONTENT_ENCODING))) {
                     try (GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
                         return IO.toString(gzipInputStream, charset);
                     } catch (IOException e) {
@@ -101,12 +100,15 @@ public class SimpleResponse {
                         return null;
                     }
                 } else {
-                    return null;
+                    try {
+                        return new String(bytes, charset);
+                    } catch (UnsupportedEncodingException e) {
+                        log.error("bytes to string exception", e);
+                        return null;
+                    }
                 }
-            } else {
-                stringBody = BufferUtils.toString(responseBody, charset);
-                return stringBody;
-            }
+            }).orElse(null);
+            return stringBody;
         } else {
             return stringBody;
         }
