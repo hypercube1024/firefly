@@ -49,6 +49,7 @@
         <module>firefly-reactive</module>
         <module>firefly-session</module>
         <module>firefly-wechat</module>
+        <module>firefly-boot</module>
     </modules>
 
     <properties>
@@ -119,6 +120,11 @@
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-wechat</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-boot</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

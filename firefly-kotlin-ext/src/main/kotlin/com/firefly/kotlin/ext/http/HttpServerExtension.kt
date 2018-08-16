@@ -1,5 +1,6 @@
 package com.firefly.kotlin.ext.http
 
+import com.firefly.`$`
 import com.firefly.codec.http2.model.*
 import com.firefly.codec.websocket.frame.Frame
 import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder
@@ -11,10 +12,7 @@ import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
 import com.firefly.server.http2.WebSocketHandler
-import com.firefly.server.http2.router.Handler
-import com.firefly.server.http2.router.Router
-import com.firefly.server.http2.router.RouterManager
-import com.firefly.server.http2.router.RoutingContext
+import com.firefly.server.http2.router.*
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader
 import com.firefly.server.http2.router.impl.RoutingContextImpl
@@ -24,6 +22,7 @@ import java.io.Closeable
 import java.net.InetAddress
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
@@ -112,12 +111,43 @@ suspend fun <C> RoutingContext.asyncSucceed(result: C) {
 }
 
 /**
- * Execute asynchronous failed callback
+ * Execute asynchronous failed callback.
  */
 suspend fun <C> RoutingContext.asyncFail(x: Throwable? = null) {
     getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
 }
 
+/**
+ * Get the real client ip.
+ */
+fun RoutingContext.getRealClientIp(): String = Optional
+        .ofNullable(fields["X-Forwarded-For"])
+        .map { `$`.string.split(it, ",") }
+        .filter { it.isNotEmpty() }
+        .map { it[0].trim() }
+        .orElseGet { request.connection.remoteAddress.toString() }
+
+/**
+ * Get current HTTPSession. This function does not throw any exception.
+ */
+suspend fun RoutingContext.getCurrentSessionQuietly(sessionKey: String = "_sessionKey"): HTTPSession? = try {
+    val ret = attributes[sessionKey]
+    if (ret != null) {
+        ret as HTTPSession
+    } else {
+        val session = getSession(false).await()
+        attributes[sessionKey] = session
+        session
+    }
+} catch (e: SessionNotFound) {
+    null
+} catch (e: CompletionException) {
+    sysLogger.info("get session failure. ${e.cause}")
+    null
+} catch (e: Exception) {
+    sysLogger.error("get session exception", e)
+    null
+}
 
 // HTTP server DSL
 
