@@ -5,6 +5,7 @@ import com.firefly.codec.http2.model.*
 import com.firefly.codec.websocket.frame.Frame
 import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder
 import com.firefly.codec.websocket.stream.WebSocketConnection
+import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.KtLogger
@@ -549,7 +550,9 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
 }
 
-fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>, context: ContinuationInterceptor = Unconfined, block: suspend CoroutineScope.() -> T): Deferred<T> {
+fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>,
+                       context: ContinuationInterceptor = Unconfined,
+                       block: suspend CoroutineScope.() -> T): Deferred<T> {
     val ctx = requestCtx.get()
     return if (ctx != null) {
         async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
@@ -557,3 +560,38 @@ fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>, context: Cont
         async(context) { block.invoke(this) }
     }
 }
+
+class AccessLogService(val logName: String = "firefly-access",
+                       val userTracingId: String = "_const_firefly_user_id_") {
+
+    private val log = KtLogger.getLogger(logName)
+
+    fun recordAccessLog(ctx: RoutingContext, startTime: Long, endTime: Long) {
+        val accessLog = toAccessLog(ctx, endTime - startTime)
+        log.info(`$`.json.toJson(accessLog))
+    }
+
+    fun toAccessLog(ctx: RoutingContext, time: Long): AccessLog {
+        val requestBody = if (ctx.method == HttpMethod.POST.asString() || ctx.method == HttpMethod.PUT.asString()) {
+            val contentType = ctx.fields[HttpHeader.CONTENT_TYPE.asString()]
+            if (`$`.string.hasText(contentType)) {
+                if (contentType.startsWith("application/json") || contentType.startsWith("application/x-www-form-urlencoded")) {
+                    ctx.stringBody
+                } else ""
+            } else ""
+        } else ""
+        val tid = ctx.getAttr<String>(userTracingId)
+        return AccessLog(ctx.getRealClientIp(), ctx.method, ctx.uri.toString(), requestBody, time, ctx.response.status, tid)
+    }
+
+}
+
+@NoArg
+data class AccessLog(
+        var ip: String,
+        var method: String,
+        var uri: String,
+        var requestBody: String?,
+        var time: Long,
+        var responseStatus: Int,
+        var tid: String?)
