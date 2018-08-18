@@ -13,12 +13,11 @@ object KotlinNameResolver {
      */
     fun name(func: () -> Unit): String {
         val name = func.javaClass.name
-        val slicedName = when {
+        return when {
             name.contains("Kt$") -> name.substringBefore("Kt$")
             name.contains("$") -> name.substringBefore("$")
             else -> name
         }
-        return slicedName
     }
 
     /**
@@ -39,7 +38,7 @@ object KotlinNameResolver {
                     // the above might be safer but problematic with initialization order
                     return clazz.enclosingClass
                 }
-            } catch(e: Exception) {
+            } catch (e: Exception) {
                 //ok, it is not a companion object
             }
         }

@@ -58,7 +58,7 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringB
 
 data class AsyncPromise<in C>(val succeeded: suspend (C) -> Unit, val failed: suspend (Throwable?) -> Unit)
 
-val promiseQueueKey = "_promiseQueue"
+const val promiseQueueKey = "_promiseQueue"
 
 fun <C> RoutingContext.getPromiseQueue(): Deque<AsyncPromise<C>>? = getAttr(promiseQueueKey)
 
