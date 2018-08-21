@@ -47,7 +47,7 @@ public class TestMetaDataUtils {
                 "status INT)");
         jdbcHelper.update("CREATE TABLE `test`.`hello_user_ext`(" +
                 "id BIGINT(20) AUTO_INCREMENT PRIMARY KEY, " +
-                "user_id BIGINT(20), " +
+                "user_id BIGINT(20) unsigned, " +
                 "create_time DATETIME, " +
                 "other_info VARCHAR(255))");
     }
