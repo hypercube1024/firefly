@@ -561,7 +561,7 @@ fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>,
     }
 }
 
-class AccessLogService(val logName: String = "firefly-access",
+class AccessLogService(logName: String = "firefly-access",
                        val userTracingId: String = "_const_firefly_user_id_") {
 
     private val log = KtLogger.getLogger(logName)
