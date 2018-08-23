@@ -5,4 +5,5 @@ package com.firefly.boot.model
  */
 data class Project(var groupId: String,
                    var artifactId: String,
-                   var packageName: String)
+                   var packageName: String,
+                   var packJarName: String)

@@ -1,3 +1,5 @@
+package com.firefly.boot.java.pkg;
+
 /**
  * @author Pengtao Qiu
  */
