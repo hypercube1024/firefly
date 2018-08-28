@@ -2,6 +2,7 @@ package com.firefly.wechat.service.impl;
 
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.wechat.model.template.SmappTemplateMessageRequest;
 import com.firefly.wechat.model.template.TemplateListResponse;
 import com.firefly.wechat.model.template.TemplateMessageRequest;
 import com.firefly.wechat.model.template.TemplateMessageResponse;
@@ -38,6 +39,15 @@ public class WechatTemplateServiceImpl extends AbstractWechatService implements 
         encoded.put("access_token", accessToken);
         String param = encoded.encode(StandardCharsets.UTF_8, true);
         return postWechatService("https://api.weixin.qq.com/cgi-bin/message/template/send",
+                param, request, TemplateMessageResponse.class);
+    }
+
+    @Override
+    public CompletableFuture<TemplateMessageResponse> sendMessage(SmappTemplateMessageRequest request, String accessToken) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("access_token", accessToken);
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return postWechatService("https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send",
                 param, request, TemplateMessageResponse.class);
     }
 
