@@ -10,7 +10,6 @@ import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler
 import com.firefly.utils.CollectionUtils
 import com.firefly.utils.StringUtils
 import com.firefly.utils.io.BufferUtils
-import com.firefly.utils.lang.URIUtils
 import kotlinx.coroutines.experimental.nio.aRead
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -29,7 +28,7 @@ class AsyncStaticFileHandler(val rootPath: String,
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
     override suspend fun handle(ctx: RoutingContext) {
-        val path = URIUtils.canonicalPath(ctx.uri.path)
+        val path = ctx.uri.decodedPath
         val fullPath = Paths.get(rootPath, path)
         val file = fullPath.toFile()
         if (file.exists() && file.isFile) {

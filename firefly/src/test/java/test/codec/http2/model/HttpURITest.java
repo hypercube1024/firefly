@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class HttpURITest {
     
@@ -90,11 +91,11 @@ public class HttpURITest {
     }
 
     @Test
-    public void testParams() throws Exception {
+    public void testParams() {
         HttpURI uri = new HttpURI("/foo/bar");
         assertEquals("/foo/bar", uri.getPath());
         assertEquals("/foo/bar", uri.getDecodedPath());
-        assertEquals(null, uri.getParam());
+        assertNull(uri.getParam());
 
         uri = new HttpURI("/foo/bar;jsessionid=12345");
         assertEquals("/foo/bar;jsessionid=12345", uri.getPath());
@@ -115,6 +116,11 @@ public class HttpURITest {
         assertEquals("/foo;abc=123/bar;jsessionid=12345", uri.getPath());
         assertEquals("/foo/bar", uri.getDecodedPath());
         assertEquals("jsessionid=12345", uri.getParam());
+
+        uri = new HttpURI("/trainingCamp/poster.jpeg;jsessionid=12345?id=420");
+        assertEquals("/trainingCamp/poster.jpeg;jsessionid=12345", uri.getPath());
+        assertEquals("jsessionid=12345", uri.getParam());
+        assertEquals("/trainingCamp/poster.jpeg", uri.getDecodedPath());
     }
 
     @Test

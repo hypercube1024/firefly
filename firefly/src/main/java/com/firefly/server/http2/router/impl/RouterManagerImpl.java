@@ -105,8 +105,7 @@ public class RouterManagerImpl implements RouterManager {
                   .map(m -> m.match(value))
                   .filter(Objects::nonNull)
                   .forEach(result -> result.getRouters().forEach(router -> {
-                      routerMatchTypes.computeIfAbsent(router, k -> new HashSet<>())
-                                      .add(result.getMatchType());
+                      routerMatchTypes.computeIfAbsent(router, k -> new HashSet<>()).add(result.getMatchType());
                       if (!CollectionUtils.isEmpty(result.getParameters())) {
                           routerParameters.computeIfAbsent(router, k -> new HashMap<>())
                                           .putAll(result.getParameters().get(router));
@@ -128,7 +127,7 @@ public class RouterManagerImpl implements RouterManager {
     public void accept(SimpleRequest request) {
         NavigableSet<RouterMatchResult> routers = findRouter(
                 request.getMethod(),
-                request.getURI().getPath(),
+                request.getURI().getDecodedPath(),
                 request.getFields().get(HttpHeader.CONTENT_TYPE),
                 request.getFields().get(HttpHeader.ACCEPT));
         RoutingContext routingContext = new RoutingContextImpl(request, routers);
