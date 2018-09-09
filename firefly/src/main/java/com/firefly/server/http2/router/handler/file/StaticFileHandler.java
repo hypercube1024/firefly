@@ -10,7 +10,6 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
-import com.firefly.utils.lang.URIUtils;
 
 import java.io.*;
 import java.util.List;
@@ -36,7 +35,7 @@ public class StaticFileHandler implements Handler {
 
     @Override
     public void handle(RoutingContext ctx) {
-        File file = new File(configuration.getRootPath(), URIUtils.canonicalPath(ctx.getURI().getPath()));
+        File file = new File(configuration.getRootPath(), ctx.getURI().getDecodedPath());
         if (file.exists()) {
             long contentLength = file.length();
             String mimeType = MimeTypes.getDefaultMimeByExtension(file.getName());
