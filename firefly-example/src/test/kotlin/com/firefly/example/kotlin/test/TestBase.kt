@@ -6,6 +6,7 @@ import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.context.getBean
 import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
 import com.firefly.server.http2.router.RoutingContext
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.launch
@@ -35,7 +36,7 @@ open class TestBase {
         val ctx = mock(RoutingContext::class.java)
         `when`(ctx.getAttribute(db.transactionKey)).thenReturn(db.sqlClient.connection.await())
         `when`(ctx.attributes).thenReturn(map)
-        return launch(coroutineLocal.createContext(ctx)) {
+        return GlobalScope.launch(coroutineLocal.createContext(ctx)) {
             db.beginTransaction()
             try {
                 action.invoke()

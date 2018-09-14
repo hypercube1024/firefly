@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.ContinuationInterceptor
 import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.coroutineContext
 
 /**
  * Firefly HTTP server extensions.
@@ -321,7 +320,7 @@ class RouterBlock(private val router: Router,
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
-            launch(requestCtx?.createContext(it, coroutineDispatcher) ?: coroutineDispatcher) {
+            GlobalScope.launch(requestCtx?.createContext(it, coroutineDispatcher) ?: coroutineDispatcher) {
                 handler.invoke(it, coroutineContext)
             }
         }
@@ -377,7 +376,7 @@ class RouterBlock(private val router: Router,
             try {
                 withContext(NonCancellable) {
                     closed = true
-                    this?.close()
+                    this@safeUse?.close()
                 }
             } catch (closeException: Exception) {
             }
@@ -385,7 +384,7 @@ class RouterBlock(private val router: Router,
         } finally {
             if (!closed) {
                 withContext(NonCancellable) {
-                    this?.close()
+                    this@safeUse?.close()
                 }
             }
         }
@@ -473,9 +472,9 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
                  block: HttpServer.() -> Unit) : HttpServerLifecycle {
 
     val server = SimpleHTTPServer(serverConfiguration)
-    val routerManager = RouterManager.create(httpBodyConfiguration)
-    val coroutineDispatcher = Unconfined // server.handlerExecutorService.asCoroutineDispatcher()
-    val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
+    val routerManager = RouterManager.create(httpBodyConfiguration)!!
+    val coroutineDispatcher = Dispatchers.Unconfined // server.handlerExecutorService.asCoroutineDispatcher()
+    val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler!!
 
     init {
         server.badMessage { status, reason, request ->
@@ -551,13 +550,13 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
 }
 
 fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>,
-                       context: ContinuationInterceptor = Unconfined,
+                       context: ContinuationInterceptor = Dispatchers.Unconfined,
                        block: suspend CoroutineScope.() -> T): Deferred<T> {
     val ctx = requestCtx.get()
     return if (ctx != null) {
-        async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
+        GlobalScope.async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
     } else {
-        async(context) { block.invoke(this) }
+        GlobalScope.async(context) { block.invoke(this) }
     }
 }
 

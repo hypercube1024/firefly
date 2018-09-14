@@ -17,16 +17,16 @@ class UserServiceImpl : UserService {
     @Inject
     lateinit var userDao: UserDao
 
-    suspend override fun getUser(request: Request<Long>): Response<User> {
+    override suspend fun getUser(request: Request<Long>): Response<User> {
         val list = userDao.listUsers(listOf(request.data))
         return Response(0, "success", if (list.isEmpty()) null else list[0])
     }
 
-    suspend override fun listUsers(request: Request<List<Long>>): Response<List<User>> {
+    override suspend fun listUsers(request: Request<List<Long>>): Response<List<User>> {
         return Response(0, "success", userDao.listUsers(request.data))
     }
 
-    suspend override fun insert(request: Request<User>): Response<Long> {
+    override suspend fun insert(request: Request<User>): Response<Long> {
         return Response(0, "success", userDao.insert(request.data))
     }
 

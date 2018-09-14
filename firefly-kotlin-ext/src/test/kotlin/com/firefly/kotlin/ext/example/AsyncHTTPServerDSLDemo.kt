@@ -40,7 +40,7 @@ fun initMDC() {
     mdc.setRequestCtx(requestLocal)
 }
 
-fun <T> asyncTraceable(context: ContinuationInterceptor = Unconfined, block: suspend CoroutineScope.() -> T): Deferred<T>
+fun <T> asyncTraceable(context: ContinuationInterceptor = Dispatchers.Unconfined, block: suspend CoroutineScope.() -> T): Deferred<T>
         = asyncTraceable(requestLocal, context, block)
 
 fun main(args: Array<String>) {

@@ -1,8 +1,8 @@
 package com.firefly.kotlin.ext.http
 
 import com.firefly.utils.concurrent.ThreadUtils
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.Unconfined
+import kotlinx.coroutines.experimental.Dispatchers
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
@@ -14,7 +14,7 @@ import java.util.function.Supplier
 /**
  * @author Pengtao Qiu
  */
-val service = Executors.newCachedThreadPool()
+val service = Executors.newCachedThreadPool()!!
 
 fun main(args: Array<String>) {
     testUnconfined()
@@ -32,7 +32,7 @@ fun testBlocking() = runBlocking {
 }
 
 fun testUnconfined() {
-    launch(Unconfined) {
+    GlobalScope.launch(Dispatchers.Unconfined) {
         println(Thread.currentThread().name + ". unconfined start")
         val ret = CompletableFuture.supplyAsync(Supplier<String> {
             ThreadUtils.sleep(2, TimeUnit.SECONDS)
@@ -43,7 +43,7 @@ fun testUnconfined() {
 }
 
 fun testCommonPool() {
-    launch(CommonPool) {
+    GlobalScope.launch {
         println(Thread.currentThread().name + ". common start")
         val ret = CompletableFuture.supplyAsync(Supplier<String> {
             ThreadUtils.sleep(2, TimeUnit.SECONDS)

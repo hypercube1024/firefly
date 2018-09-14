@@ -3,12 +3,13 @@ package com.firefly.kotlin.ext.http
 import com.firefly.codec.http2.model.HttpHeader
 import com.firefly.codec.http2.model.HttpStatus
 import com.firefly.codec.http2.model.MimeTypes
-import com.firefly.kotlin.ext.common.CoroutineDispatchers.ioBlocking
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader
 import com.firefly.utils.StringUtils
 import com.firefly.utils.lang.URIUtils
+import kotlinx.coroutines.experimental.Dispatchers
+import kotlinx.coroutines.experimental.IO
 import kotlinx.coroutines.experimental.withContext
 import java.util.*
 import java.util.zip.GZIPOutputStream
@@ -23,7 +24,7 @@ class AsyncWebJarHandler(val rootPath: String,
 
     constructor(enableGzip: Boolean = false) : this("/META-INF/resources", enableGzip)
 
-    override suspend fun handle(ctx: RoutingContext) = withContext(ioBlocking) {
+    override suspend fun handle(ctx: RoutingContext) = withContext(Dispatchers.IO) {
         val path = URIUtils.canonicalPath(ctx.uri.path)
         try {
             val url = AsyncWebJarHandler::class.java.getResource(rootPath + path)

@@ -17,11 +17,11 @@ class UserDaoImpl : UserDao {
     @Inject
     lateinit var dbClient: AsyncTransactionalManager
 
-    suspend override fun insert(user: User): Long? = dbClient.execSQL {
+    override suspend fun insert(user: User): Long? = dbClient.execSQL {
         it.asyncInsertObject<User, Long>(user)
     }
 
-    suspend override fun listUsers(userIdList: List<Long>): List<User> = dbClient.execSQL {
+    override suspend fun listUsers(userIdList: List<Long>): List<User> = dbClient.execSQL {
         val sql = "select * from test.user where id in (${userIdList.joinToString(",") { "?" }})"
         it.asyncQueryForList<User>(sql, *userIdList.toTypedArray())
     }

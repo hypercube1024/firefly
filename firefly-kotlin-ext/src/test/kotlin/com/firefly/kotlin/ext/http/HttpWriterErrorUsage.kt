@@ -5,6 +5,7 @@ import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.Json
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import java.io.Serializable
@@ -841,7 +842,7 @@ fun main(args: Array<String>) {
                 header {
                     HttpHeader.CONTENT_TYPE to MimeTypes.Type.APPLICATION_JSON_UTF_8.asString()
                 }
-                async {
+                GlobalScope.async {
                     delay(50)
                     val ret = Json.toJson(resp)
                     println(ret)

@@ -15,7 +15,7 @@ import kotlinx.coroutines.experimental.runBlocking
 
 private val log = KtLogger.getLogger { }
 
-private val host = "http://localhost:8080"
+private const val host = "http://localhost:8080"
 
 fun main(args: Array<String>): Unit = runBlocking {
     val hello = firefly.httpClient().get(host).asyncSubmit().stringBody
