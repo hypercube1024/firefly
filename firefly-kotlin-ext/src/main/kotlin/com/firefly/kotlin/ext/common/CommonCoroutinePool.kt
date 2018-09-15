@@ -2,8 +2,11 @@ package com.firefly.kotlin.ext.common
 
 import kotlinx.coroutines.experimental.CoroutineDispatcher
 import kotlinx.coroutines.experimental.asCoroutineDispatcher
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
@@ -28,6 +31,10 @@ object CommonCoroutinePool : CoroutineDispatcher() {
 object CoroutineDispatchers {
     val computation: CommonCoroutinePool by lazy { CommonCoroutinePool }
     val ioBlocking: CoroutineDispatcher by lazy {
-        Executors.newCachedThreadPool { Thread(it, "firefly-io-blocking") }.asCoroutineDispatcher()
+        val threadId = AtomicInteger()
+        ThreadPoolExecutor(16, 64,
+                30L, TimeUnit.SECONDS,
+                ArrayBlockingQueue<Runnable>(10000)
+        ) { r -> Thread(r, "firefly-kt-io-blocking-pool-" + threadId.getAndIncrement()) }.asCoroutineDispatcher()
     }
 }

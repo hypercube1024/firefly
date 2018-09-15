@@ -84,7 +84,7 @@ public class JDBCHelper extends AbstractLifeCycle {
         if (executorService != null) {
             this.executorService = executorService;
         } else {
-            this.executorService = new ThreadPoolExecutor(16, 128,
+            this.executorService = new ThreadPoolExecutor(16, 64,
                     30L, TimeUnit.SECONDS,
                     new ArrayBlockingQueue<>(10000),
                     r -> new Thread(r, "firefly-JDBC-helper"));
