@@ -6,22 +6,31 @@ import com.firefly.utils.concurrent.CountingCallback;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 
 abstract public class FileUtils {
 
     public static final long FILE_READER_BUFFER_SIZE = 8 * 1024;
 
-    public static void recursiveDelete(File dir) {
-        dir.listFiles(f -> {
-            if (f.isDirectory())
-                recursiveDelete(f);
-            else
-                f.delete();
-            return false;
-        });
-        dir.delete();
+    public static void delete(Path dir) throws IOException {
+        try {
+            Files.deleteIfExists(dir);
+        } catch (DirectoryNotEmptyException e) {
+            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return super.postVisitDirectory(dir, exc);
+                }
+            });
+        }
     }
 
     public static void read(File file, LineReaderHandler handler, String charset) throws IOException {
