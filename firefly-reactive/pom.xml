@@ -58,7 +58,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <additionalJOption>-Xdoclint:none</additionalJOption>
                     <failOnError>true</failOnError>
                     <charset>UTF-8</charset>
                     <encoding>UTF-8</encoding>

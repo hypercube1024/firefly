@@ -41,8 +41,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
                             Paths.get(srcDir.toString(), "test", "kotlin")).forEach { srcPath ->
                         Files.createDirectories(srcPath)
                         println("create src directory -> $srcPath")
-
-                        
+                        // TODO
                     }
                 }
 
