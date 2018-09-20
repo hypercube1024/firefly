@@ -59,7 +59,7 @@
         <log.path>../logs</log.path>
 
         <kotlin.version>1.2.70</kotlin.version>
-        <kotlin.coroutine.version>0.26.0</kotlin.coroutine.version>
+        <kotlin.coroutine.version>0.26.1</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.2</kotlin.compiler.languageVersion>
