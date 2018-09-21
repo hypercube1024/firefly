@@ -76,7 +76,7 @@ abstract public class ImageUtils {
     }
 
     public static TextLayout getFontMaxHeight(Font font) {
-        return getTextLayout("lg", font);
+        return getTextLayout("lg拥抱", font);
     }
 
     public static BufferedImage drawTextInRect(String text, Font font, Color textColor,

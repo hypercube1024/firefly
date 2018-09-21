@@ -4,13 +4,14 @@ import com.firefly.utils.image.component.FlowLayoutComponent;
 import com.firefly.utils.image.component.ImageComponent;
 import com.firefly.utils.image.component.OvalComponent;
 import com.firefly.utils.image.component.TextComponent;
+import com.firefly.utils.time.TimeUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -20,8 +21,9 @@ import java.util.Comparator;
 public class ImageComponentDemo {
 
     public static void main(String[] args) throws Exception {
+        long start = System.currentTimeMillis();
         ImageComponent poster = new ImageComponent();
-        poster.setSrc(new File("/Users/bjhl/Downloads/score_card.png"));
+        poster.setSrc(ImageComponentDemo.class.getResource("/score_card.png"));
 
         OvalComponent avatarOval = new OvalComponent();
         avatarOval.setColor(Color.WHITE);
@@ -39,6 +41,33 @@ public class ImageComponentDemo {
         avatar.setY(40);
         avatar.setArc(180);
         poster.addChild(avatar);
+
+        TextComponent title = new TextComponent();
+        title.setText("世界原来广阔辽远");
+        title.setFont(new Font("微软雅黑", Font.BOLD, 28));
+        title.setColor(Color.WHITE);
+        title.setX(162);
+        title.setY(42);
+        title.setPaddingHeight(5);
+        poster.addChild(title);
+
+        TextComponent lesson = new TextComponent();
+        lesson.setText("Lesson 1 - How much is that doggie in the window".substring(0, 34) + " ... ");
+        lesson.setFont(new Font("微软雅黑", Font.PLAIN, 28));
+        lesson.setColor(new Color(207, 140, 12));
+        lesson.setX(162);
+        lesson.setY(88);
+        lesson.setPaddingHeight(10);
+        poster.addChild(lesson);
+
+        TextComponent date = new TextComponent();
+        date.setText(LocalDate.now().format(TimeUtils.DEFAULT_LOCAL_DATE));
+        date.setFont(new Font("微软雅黑", Font.BOLD, 24));
+        date.setColor(Color.WHITE);
+        date.setX(555);
+        date.setY(42);
+        date.setPaddingHeight(5);
+        poster.addChild(date);
 
         TextComponent score = new TextComponent();
         score.setText("79");
@@ -80,5 +109,8 @@ public class ImageComponentDemo {
         try (OutputStream out = new FileOutputStream("/Users/bjhl/Downloads/test_component.png")) {
             ImageIO.write(poster.draw(), "png", out);
         }
+
+        long end = System.currentTimeMillis();
+        System.out.println("complete. " + (end - start));
     }
 }
