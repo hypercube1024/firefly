@@ -2,6 +2,7 @@ package test.utils.image;
 
 import com.firefly.utils.image.component.FlowLayoutComponent;
 import com.firefly.utils.image.component.ImageComponent;
+import com.firefly.utils.image.component.OvalComponent;
 import com.firefly.utils.image.component.TextComponent;
 
 import javax.imageio.ImageIO;
@@ -9,6 +10,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -20,6 +22,23 @@ public class ImageComponentDemo {
     public static void main(String[] args) throws Exception {
         ImageComponent poster = new ImageComponent();
         poster.setSrc(new File("/Users/bjhl/Downloads/score_card.png"));
+
+        OvalComponent avatarOval = new OvalComponent();
+        avatarOval.setColor(Color.WHITE);
+        avatarOval.setX(34);
+        avatarOval.setY(34);
+        avatarOval.setWidth(110);
+        avatarOval.setHeight(110);
+        poster.addChild(avatarOval);
+
+        ImageComponent avatar = new ImageComponent();
+        avatar.setSrc(new URL("http://thirdwx.qlogo.cn/mmopen/vi_32/DYAIOgq83eqpswuRZ6cKo7AMHm6mHCVCOjfeiaml69vAPwSsHP0jkfzNkKm7j1dsDgKj0XTmGt1nAsicpxp9GUpg/132"));
+        avatar.setWidth(98);
+        avatar.setHeight(98);
+        avatar.setX(40);
+        avatar.setY(40);
+        avatar.setArc(180);
+        poster.addChild(avatar);
 
         TextComponent score = new TextComponent();
         score.setText("79");

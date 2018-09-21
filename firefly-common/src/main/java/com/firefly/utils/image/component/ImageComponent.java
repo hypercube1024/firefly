@@ -16,6 +16,8 @@ import java.net.URL;
  */
 public class ImageComponent extends AbstractGraphicsComponent {
 
+    private int arc;
+
     public void setSrc(File file) {
         try {
             bufferedImage = ImageIO.read(file);
@@ -48,11 +50,22 @@ public class ImageComponent extends AbstractGraphicsComponent {
         }
     }
 
+    public int getArc() {
+        return arc;
+    }
+
+    public void setArc(int arc) {
+        this.arc = arc;
+    }
+
     @Override
     public BufferedImage draw() {
         Assert.notNull(bufferedImage, "The image is not found. Please set the src");
         if (width > 0 || height > 0) {
             bufferedImage = ImageUtils.resize(bufferedImage, width, height);
+        }
+        if (arc != 0) {
+            bufferedImage = ImageUtils.makeRoundedCornerImg(bufferedImage, arc);
         }
         drawChildren();
         return bufferedImage;
