@@ -46,8 +46,9 @@ public class ImageComponentDemo {
         title.setText("世界原来广阔辽远");
         title.setFont(new Font("微软雅黑", Font.BOLD, 28));
         title.setColor(Color.WHITE);
-        title.setX(162);
+        title.setX(157);
         title.setY(42);
+        title.setPaddingWidth(10);
         title.setPaddingHeight(5);
         poster.addChild(title);
 
@@ -55,8 +56,9 @@ public class ImageComponentDemo {
         lesson.setText("Lesson 1 - How much is that doggie in the window".substring(0, 34) + " ... ");
         lesson.setFont(new Font("微软雅黑", Font.PLAIN, 28));
         lesson.setColor(new Color(207, 140, 12));
-        lesson.setX(162);
+        lesson.setX(157);
         lesson.setY(88);
+        lesson.setPaddingWidth(10);
         lesson.setPaddingHeight(10);
         poster.addChild(lesson);
 
