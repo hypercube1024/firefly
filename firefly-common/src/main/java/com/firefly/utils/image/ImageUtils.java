@@ -17,12 +17,6 @@ import java.io.IOException;
  */
 abstract public class ImageUtils {
 
-    public static class ImageItem {
-        public BufferedImage bufferedImage;
-        public int x;
-        public int y;
-    }
-
     public static BufferedImage resize(File file, int width, int height) {
         BufferedImage image;
         try {
@@ -46,12 +40,6 @@ abstract public class ImageUtils {
     public static void mergeImage(BufferedImage backgroundImage, BufferedImage frontImage, int x, int y) {
         Graphics2D graph = backgroundImage.createGraphics();
         graph.drawImage(frontImage, x, y, frontImage.getWidth(), frontImage.getHeight(), null);
-        graph.dispose();
-    }
-
-    public static void mergeImage(BufferedImage backgroundImage, java.util.List<ImageItem> list) {
-        Graphics2D graph = backgroundImage.createGraphics();
-        list.forEach(item -> graph.drawImage(item.bufferedImage, item.x, item.y, item.bufferedImage.getWidth(), item.bufferedImage.getHeight(), null));
         graph.dispose();
     }
 

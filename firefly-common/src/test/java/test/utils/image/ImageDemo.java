@@ -28,9 +28,6 @@ public class ImageDemo {
         Color textColor = new Color(151, 75, 0);
 
         BufferedImage wordCard = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = wordCard.createGraphics();
-        g.setComposite(AlphaComposite.Src);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         int x = 0;
         int y = 0;
@@ -50,14 +47,13 @@ public class ImageDemo {
                 x += fontImage.getWidth() + margin * 2;
             }
         }
-        g.dispose();
 
-        Font scoreFont = new Font("微软雅黑", Font.BOLD, 150);
+        Font scoreFont = new Font("微软雅黑", Font.BOLD, 140);
         BufferedImage score = ImageUtils.drawTextInRect("79", scoreFont, Color.WHITE, 20, 20, null, 0);
 
         BufferedImage poster = ImageIO.read(new File("/Users/bjhl/Downloads/score_card.png"));
         ImageUtils.mergeImage(poster, wordCard, 100, 733);
-        ImageUtils.mergeImage(poster, score, 262, 238);
+        ImageUtils.mergeImage(poster, score, 269, 238);
 
         try (OutputStream out = new FileOutputStream("/Users/bjhl/Downloads/test.png")) {
             ImageIO.write(poster, "png", out);
