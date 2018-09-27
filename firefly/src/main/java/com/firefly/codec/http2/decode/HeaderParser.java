@@ -1,8 +1,8 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.frame.Frame;
+
+import java.nio.ByteBuffer;
 
 /**
  * <p>

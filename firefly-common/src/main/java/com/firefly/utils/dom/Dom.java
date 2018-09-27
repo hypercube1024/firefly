@@ -1,9 +1,9 @@
 package com.firefly.utils.dom;
 
-import java.util.List;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import java.util.List;
 
 public interface Dom {
 

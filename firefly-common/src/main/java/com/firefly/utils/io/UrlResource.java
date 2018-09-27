@@ -1,18 +1,13 @@
 package com.firefly.utils.io;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-
 import com.firefly.utils.Assert;
 import com.firefly.utils.ResourceUtils;
 import com.firefly.utils.StringUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.*;
 
 /**
  * {@link Resource} implementation for {@code java.net.URL} locators.

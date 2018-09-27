@@ -8,7 +8,6 @@ import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncNext
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.RoutingContext
-import java.lang.IllegalArgumentException
 
 /**
  * @author Pengtao Qiu

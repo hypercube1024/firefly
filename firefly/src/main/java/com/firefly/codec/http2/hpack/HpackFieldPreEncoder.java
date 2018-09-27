@@ -1,11 +1,11 @@
 package com.firefly.codec.http2.hpack;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.encode.HttpFieldPreEncoder;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.utils.io.BufferUtils;
+
+import java.nio.ByteBuffer;
 
 public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 

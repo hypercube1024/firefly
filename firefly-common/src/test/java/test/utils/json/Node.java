@@ -1,9 +1,9 @@
 package test.utils.json;
 
+import com.firefly.utils.json.annotation.CircularReferenceCheck;
+
 import java.util.Date;
 import java.util.Map;
-
-import com.firefly.utils.json.annotation.CircularReferenceCheck;
 
 @CircularReferenceCheck
 public class Node {

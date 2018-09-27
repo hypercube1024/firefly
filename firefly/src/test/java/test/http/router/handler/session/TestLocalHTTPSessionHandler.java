@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.concurrent.Phaser;
 
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 /**

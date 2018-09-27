@@ -1,10 +1,10 @@
 package com.firefly.utils.json.parser;
 
-import java.io.IOException;
-import java.util.Date;
-
 import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
+
+import java.io.IOException;
+import java.util.Date;
 
 public class TimestampParser implements Parser {
 

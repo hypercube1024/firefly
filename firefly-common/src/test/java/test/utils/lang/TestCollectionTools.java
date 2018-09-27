@@ -1,18 +1,17 @@
 package test.utils.lang;
 
-import static org.hamcrest.Matchers.is;
+import com.firefly.utils.lang.CollectionTools;
+import com.firefly.utils.lang.MultiReturnFunction;
+import com.firefly.utils.lang.Pair;
+import com.firefly.utils.lang.SingleReturnFunction;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.utils.lang.CollectionTools;
-import com.firefly.utils.lang.MultiReturnFunction;
-import com.firefly.utils.lang.Pair;
-import com.firefly.utils.lang.SingleReturnFunction;
+import static org.hamcrest.Matchers.is;
 
 public class TestCollectionTools {
 

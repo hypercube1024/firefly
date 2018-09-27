@@ -1,13 +1,13 @@
 package com.firefly.codec.http2.encode;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
 import com.firefly.codec.http2.hpack.HpackEncoder;
 import com.firefly.utils.lang.Pair;
+
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public class Generator {
     private final HeaderGenerator headerGenerator;

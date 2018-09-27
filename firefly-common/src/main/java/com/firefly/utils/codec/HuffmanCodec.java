@@ -1,13 +1,7 @@
 package com.firefly.utils.codec;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.*;
 
 public class HuffmanCodec<T> implements Serializable {
 

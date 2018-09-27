@@ -1,11 +1,10 @@
 package com.firefly.core.support.xml.parse;
 
-import org.w3c.dom.Element;
-
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.*;
-
 import com.firefly.core.support.xml.ManagedValue;
 import com.firefly.utils.dom.Dom;
+import org.w3c.dom.Element;
+
+import static com.firefly.core.support.xml.parse.XmlNodeConstants.TYPE_ATTRIBUTE;
 
 public class ValueNodeParser extends AbstractXmlNodeParser implements XmlNodeParser {
 

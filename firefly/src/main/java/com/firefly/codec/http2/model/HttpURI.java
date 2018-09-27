@@ -1,15 +1,15 @@
 package com.firefly.codec.http2.model;
 
+import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.utils.collection.MultiMap;
+import com.firefly.utils.lang.TypeUtils;
+import com.firefly.utils.lang.URIUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import com.firefly.codec.http2.encode.UrlEncoded;
-import com.firefly.utils.collection.MultiMap;
-import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.lang.URIUtils;
 
 /**
  * Http URI. Parse a HTTP URI from a string or byte array. Given a URI

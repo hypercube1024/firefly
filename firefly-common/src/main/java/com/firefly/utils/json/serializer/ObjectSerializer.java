@@ -1,14 +1,14 @@
 package com.firefly.utils.json.serializer;
 
-import static com.firefly.utils.json.JsonStringSymbol.OBJ_PRE;
-import static com.firefly.utils.json.JsonStringSymbol.OBJ_SUF;
-
-import java.io.IOException;
-
 import com.firefly.utils.json.JsonWriter;
 import com.firefly.utils.json.Serializer;
 import com.firefly.utils.json.compiler.EncodeCompiler;
 import com.firefly.utils.json.support.SerializerMetaInfo;
+
+import java.io.IOException;
+
+import static com.firefly.utils.json.JsonStringSymbol.OBJ_PRE;
+import static com.firefly.utils.json.JsonStringSymbol.OBJ_SUF;
 
 public class ObjectSerializer implements Serializer {
 

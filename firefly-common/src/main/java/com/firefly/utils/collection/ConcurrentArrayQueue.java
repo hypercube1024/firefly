@@ -1,19 +1,12 @@
 package com.firefly.utils.collection;
 
-import java.util.AbstractQueue;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Queue;
+import com.firefly.utils.concurrent.MemoryUtils;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceArray;
-
-import com.firefly.utils.concurrent.MemoryUtils;
 
 /**
  * A concurrent, unbounded implementation of {@link Queue} that uses

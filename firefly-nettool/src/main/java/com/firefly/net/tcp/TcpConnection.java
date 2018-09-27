@@ -2,7 +2,6 @@ package com.firefly.net.tcp;
 
 import com.firefly.net.ApplicationProtocolSelector;
 import com.firefly.net.Connection;
-import com.firefly.net.Session;
 import com.firefly.net.buffer.FileRegion;
 import com.firefly.utils.function.Action0;
 import com.firefly.utils.function.Action1;

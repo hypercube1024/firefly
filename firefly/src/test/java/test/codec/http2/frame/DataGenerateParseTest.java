@@ -1,20 +1,19 @@
 package test.codec.http2.frame;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
-import com.firefly.codec.http2.frame.Frame;
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.DataGenerator;
 import com.firefly.codec.http2.encode.HeaderGenerator;
 import com.firefly.codec.http2.frame.DataFrame;
+import com.firefly.codec.http2.frame.Frame;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.Pair;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class DataGenerateParseTest {
     private final byte[] smallContent = new byte[128];

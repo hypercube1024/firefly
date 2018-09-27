@@ -1,23 +1,16 @@
 package test.http;
 
-import java.io.IOException;
-
-import java.nio.charset.StandardCharsets;
-
-import java.util.concurrent.ExecutionException;
-
 import com.firefly.client.http2.ClientHTTPHandler;
 import com.firefly.client.http2.HTTP2Client;
 import com.firefly.client.http2.HTTPClientConnection;
-import com.firefly.codec.http2.model.HostPortHttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpScheme;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
 
 public class HTTP2ClientTLSDemo2 {
 

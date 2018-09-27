@@ -3,7 +3,6 @@ package com.firefly.codec.websocket.model;
 import com.firefly.codec.http2.model.Cookie;
 import com.firefly.codec.http2.model.HttpURI;
 
-import java.net.URI;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;

@@ -1,15 +1,14 @@
 package test.codec.http2.hpack;
 
-import static org.junit.Assert.assertEquals;
-
-import java.nio.ByteBuffer;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.hpack.NBitInteger;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+
+import static org.junit.Assert.assertEquals;
 
 public class TestNBitInteger {
 

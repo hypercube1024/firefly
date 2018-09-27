@@ -1,29 +1,20 @@
 package test.codec.http2.model;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Locale;
-import java.util.NoSuchElementException;
-
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.encode.HttpGenerator;
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpFields;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpHeaderValue;
 import com.firefly.utils.io.BufferUtils;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+import java.util.*;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.*;
 
 public class HttpFieldsTest {
     @Test

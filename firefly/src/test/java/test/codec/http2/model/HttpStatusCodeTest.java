@@ -1,12 +1,11 @@
 package test.codec.http2.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import org.junit.Test;
-
 import com.firefly.codec.http2.model.HttpMethod;
 import com.firefly.codec.http2.model.HttpStatus;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class HttpStatusCodeTest {
     @Test

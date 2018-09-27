@@ -6,7 +6,6 @@ import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.HTTPHandler;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.codec.http2.stream.HTTPTunnelConnection;
 import com.firefly.utils.function.*;
 
 import java.nio.ByteBuffer;

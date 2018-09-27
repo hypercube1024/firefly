@@ -1,18 +1,5 @@
 package test.codec.http2.frame;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.decode.SettingsBodyParser;
 import com.firefly.codec.http2.encode.Generator;
@@ -24,6 +11,14 @@ import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.TypeUtils;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SettingsGenerateParseTest {
 

@@ -1,20 +1,16 @@
 package test.codec.http2;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Phaser;
-
-import com.firefly.client.http2.ClientHTTPHandler;
-import com.firefly.client.http2.HTTP1ClientConnection;
-import com.firefly.client.http2.HTTP2Client;
-import com.firefly.client.http2.HTTPClientConnection;
-import com.firefly.client.http2.HTTPClientRequest;
+import com.firefly.client.http2.*;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.utils.concurrent.FuturePromise;
 import com.firefly.utils.io.BufferUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Phaser;
 
 public class HTTPClientDemo4 {
 

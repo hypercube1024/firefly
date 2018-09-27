@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 public class HttpURITest {
 

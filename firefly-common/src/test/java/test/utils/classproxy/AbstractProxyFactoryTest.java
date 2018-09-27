@@ -1,7 +1,8 @@
 package test.utils.classproxy;
 
 import com.firefly.utils.ReflectUtils;
-import com.firefly.utils.classproxy.*;
+import com.firefly.utils.classproxy.JavaReflectionProxyFactory;
+import com.firefly.utils.classproxy.JavassistReflectionProxyFactory;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;

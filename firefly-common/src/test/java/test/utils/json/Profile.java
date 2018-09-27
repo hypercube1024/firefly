@@ -1,8 +1,8 @@
 package test.utils.json;
 
-import java.util.Map;
-
 import com.firefly.utils.json.Json;
+
+import java.util.Map;
 
 public class Profile {
     private int readbookcount; //已看过的图书数量

@@ -2,7 +2,6 @@ package test.component.impl;
 
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
-
 import test.component.AddService;
 import test.component.MethodInject;
 

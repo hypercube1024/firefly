@@ -1,10 +1,10 @@
 package test.utils.json;
 
+import com.firefly.utils.json.Json;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.firefly.utils.json.Json;
 
 public class NodeDemo {
 

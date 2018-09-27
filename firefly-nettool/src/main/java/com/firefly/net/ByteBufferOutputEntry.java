@@ -1,8 +1,8 @@
 package com.firefly.net;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.utils.concurrent.Callback;
+
+import java.nio.ByteBuffer;
 
 public class ByteBufferOutputEntry extends AbstractOutputEntry<ByteBuffer> {
 

@@ -1,7 +1,7 @@
 package test.component.impl;
 
-import test.component.AddService;
 import com.firefly.annotation.Component;
+import test.component.AddService;
 
 @Component("addService")
 public class AddServiceImpl implements AddService {

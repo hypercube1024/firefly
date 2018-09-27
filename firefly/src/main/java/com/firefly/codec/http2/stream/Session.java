@@ -1,17 +1,11 @@
 package com.firefly.codec.http2.stream;
 
-import java.util.Collection;
-import java.util.Map;
-
-import com.firefly.codec.http2.frame.DataFrame;
-import com.firefly.codec.http2.frame.GoAwayFrame;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PingFrame;
-import com.firefly.codec.http2.frame.PriorityFrame;
-import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.frame.SettingsFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.Promise;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * <p>A {@link Session} represents the client-side endpoint of a HTTP/2 connection to a single origin server.</p>

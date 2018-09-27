@@ -1,25 +1,21 @@
 
 package test.codec.http2.encode;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import com.firefly.codec.http2.encode.UrlEncoded;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.collection.MultiMap;
+import com.firefly.utils.lang.TypeUtils;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import com.firefly.utils.StringUtils;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-
-import com.firefly.codec.http2.encode.UrlEncoded;
-import com.firefly.utils.collection.MultiMap;
-import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.lang.Utf8Appendable;
-import org.junit.rules.ExpectedException;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 
 /**
  * Util meta Tests.

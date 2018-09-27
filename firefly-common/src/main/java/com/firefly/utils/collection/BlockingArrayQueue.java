@@ -1,19 +1,14 @@
 package com.firefly.utils.collection;
 
-import java.util.AbstractList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import com.firefly.utils.concurrent.MemoryUtils;
+
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.firefly.utils.concurrent.MemoryUtils;
 
 /**
  * A BlockingQueue backed by a circular array capable or growing.

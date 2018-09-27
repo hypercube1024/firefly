@@ -1,11 +1,11 @@
 package com.firefly.codec.http2.encode;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.HttpVersion;
 
 import java.util.Arrays;
 
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.HttpVersion;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Http1FieldPreEncoder implements HttpFieldPreEncoder {
 

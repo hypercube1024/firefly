@@ -1,16 +1,15 @@
 package test.codec.http2.model;
 
-import static org.hamcrest.Matchers.is;
+import com.firefly.codec.http2.model.Cookie;
+import com.firefly.codec.http2.model.CookieGenerator;
+import com.firefly.codec.http2.model.CookieParser;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.codec.http2.model.Cookie;
-import com.firefly.codec.http2.model.CookieGenerator;
-import com.firefly.codec.http2.model.CookieParser;
+import static org.hamcrest.Matchers.is;
 
 public class CookieTest {
 

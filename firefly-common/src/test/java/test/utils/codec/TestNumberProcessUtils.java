@@ -1,11 +1,10 @@
 package test.utils.codec;
 
-import static org.hamcrest.Matchers.is;
-
+import com.firefly.utils.codec.NumberProcessUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.utils.codec.NumberProcessUtils;
+import static org.hamcrest.Matchers.is;
 
 public class TestNumberProcessUtils {
 

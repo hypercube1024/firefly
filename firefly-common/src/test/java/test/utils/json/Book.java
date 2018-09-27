@@ -1,8 +1,8 @@
 package test.utils.json;
 
-import java.util.List;
-
 import com.firefly.utils.json.annotation.Transient;
+
+import java.util.List;
 
 public class Book {
     @Transient

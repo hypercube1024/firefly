@@ -1,24 +1,21 @@
 package test.codec.http2.model;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assume.assumeNoException;
-import static org.junit.Assume.assumeNotNull;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.List;
-
+import com.firefly.codec.http2.model.HttpURI;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.firefly.codec.http2.model.HttpURI;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeNoException;
+import static org.junit.Assume.assumeNotNull;
 
 @RunWith(Parameterized.class)
 public class HttpURIParseTest {

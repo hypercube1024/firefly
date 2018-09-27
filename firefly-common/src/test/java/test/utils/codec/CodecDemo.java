@@ -1,9 +1,9 @@
 package test.utils.codec;
 
-import java.util.Arrays;
-
 import com.firefly.utils.codec.Base64Utils;
 import com.firefly.utils.codec.HexUtils;
+
+import java.util.Arrays;
 
 public class CodecDemo {
 

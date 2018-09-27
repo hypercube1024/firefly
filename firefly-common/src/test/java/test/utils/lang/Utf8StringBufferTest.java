@@ -1,15 +1,14 @@
 package test.utils.lang;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.firefly.utils.lang.Utf8Appendable;
+import com.firefly.utils.lang.Utf8StringBuffer;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Test;
-
-import com.firefly.utils.lang.Utf8Appendable;
-import com.firefly.utils.lang.Utf8StringBuffer;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class Utf8StringBufferTest {
     @Test

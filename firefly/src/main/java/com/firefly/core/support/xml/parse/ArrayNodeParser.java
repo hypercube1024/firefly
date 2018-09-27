@@ -1,12 +1,11 @@
 package com.firefly.core.support.xml.parse;
 
-import java.util.List;
-
-import org.w3c.dom.Element;
-
 import com.firefly.core.support.xml.ManagedArray;
 import com.firefly.core.support.xml.XmlManagedNode;
 import com.firefly.utils.dom.Dom;
+import org.w3c.dom.Element;
+
+import java.util.List;
 
 public class ArrayNodeParser extends AbstractXmlNodeParser implements XmlNodeParser {
 

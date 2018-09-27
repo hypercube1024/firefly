@@ -1,5 +1,8 @@
 package com.firefly.utils.io;
 
+import com.firefly.utils.Assert;
+import com.firefly.utils.ResourceUtils;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,9 +10,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-
-import com.firefly.utils.Assert;
-import com.firefly.utils.ResourceUtils;
 
 /**
  * Convenience base class for {@link Resource} implementations,

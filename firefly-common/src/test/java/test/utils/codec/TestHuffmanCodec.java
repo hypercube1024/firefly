@@ -1,19 +1,18 @@
 package test.utils.codec;
 
-import static org.hamcrest.Matchers.is;
-
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.utils.codec.HexUtils;
 import com.firefly.utils.codec.HuffmanCodec;
 import com.firefly.utils.codec.HuffmanCodec.BitBuilder;
 import com.firefly.utils.codec.HuffmanCodec.HuffmanCode;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.Matchers.is;
 
 public class TestHuffmanCodec {
 

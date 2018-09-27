@@ -99,7 +99,7 @@ package com.firefly.utils.collection;
  * overhead, which is what we originally desired.
  */
 
-import java.util.*; // For AbstractList
+import java.util.AbstractList;
 
 @SuppressWarnings("unchecked")
 public final class HashedArrayTree<T> extends AbstractList<T> {

@@ -3,9 +3,6 @@ package com.firefly.codec.oauth2.model;
 import com.firefly.utils.json.annotation.JsonProperty;
 
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
-
-import static com.firefly.codec.oauth2.model.OAuth.*;
 
 /**
  * @author Pengtao Qiu

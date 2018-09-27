@@ -1,8 +1,8 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.frame.PriorityFrame;
+
+import java.nio.ByteBuffer;
 
 public class HeaderBlockFragments {
     private PriorityFrame priorityFrame;

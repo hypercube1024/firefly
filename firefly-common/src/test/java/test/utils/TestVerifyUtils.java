@@ -1,10 +1,10 @@
 package test.utils;
 
+import com.firefly.utils.VerifyUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import com.firefly.utils.VerifyUtils;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
 public class TestVerifyUtils {
 

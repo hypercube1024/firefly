@@ -1,21 +1,19 @@
 package test.utils;
 
-import java.lang.reflect.Method;
-import java.nio.charset.Charset;
-import java.util.Arrays;
+import com.firefly.utils.CompilerUtils;
+import com.firefly.utils.CompilerUtils.JavaSourceFromString;
+import org.junit.Assert;
+import org.junit.Test;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileManager;
 import javax.tools.ToolProvider;
+import java.lang.reflect.Method;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 
-import static org.hamcrest.Matchers.*;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.utils.CompilerUtils;
-import com.firefly.utils.CompilerUtils.JavaSourceFromString;
+import static org.hamcrest.Matchers.is;
 
 public class TestCompilerUtils {
 

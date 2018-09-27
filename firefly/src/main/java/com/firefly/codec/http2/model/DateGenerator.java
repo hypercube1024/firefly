@@ -1,10 +1,10 @@
 package com.firefly.codec.http2.model;
 
+import com.firefly.utils.StringUtils;
+
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
-
-import com.firefly.utils.StringUtils;
 
 /**
  * ThreadLocal Date formatters for HTTP style dates.

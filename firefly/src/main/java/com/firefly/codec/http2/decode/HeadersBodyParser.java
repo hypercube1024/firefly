@@ -1,13 +1,13 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.Flags;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PriorityFrame;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.io.BufferUtils;
+
+import java.nio.ByteBuffer;
 
 public class HeadersBodyParser extends BodyParser {
     private final HeaderBlockParser headerBlockParser;

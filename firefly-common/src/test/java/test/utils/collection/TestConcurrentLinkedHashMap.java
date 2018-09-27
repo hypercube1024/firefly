@@ -1,12 +1,11 @@
 package test.utils.collection;
 
-import static org.hamcrest.Matchers.is;
-
+import com.firefly.utils.collection.ConcurrentLinkedHashMap;
+import com.firefly.utils.collection.ConcurrentLinkedHashMap.MapEventListener;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.utils.collection.ConcurrentLinkedHashMap;
-import com.firefly.utils.collection.ConcurrentLinkedHashMap.MapEventListener;
+import static org.hamcrest.Matchers.is;
 
 public class TestConcurrentLinkedHashMap {
     static MapEventListener<String, String> listener = new MapEventListener<String, String>() {

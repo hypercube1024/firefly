@@ -1,7 +1,6 @@
 package com.firefly.server.http2.router.handler.session;
 
 import com.firefly.server.http2.router.HTTPSession;
-import com.firefly.server.http2.router.SessionInvalidException;
 import com.firefly.server.http2.router.SessionNotFound;
 import com.firefly.server.http2.router.SessionStore;
 import com.firefly.utils.Assert;

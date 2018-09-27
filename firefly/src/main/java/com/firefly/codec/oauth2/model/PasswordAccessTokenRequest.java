@@ -3,9 +3,6 @@ package com.firefly.codec.oauth2.model;
 import com.firefly.codec.oauth2.model.message.types.GrantType;
 
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
-
-import static com.firefly.codec.oauth2.model.OAuth.*;
 
 public class PasswordAccessTokenRequest extends AccessTokenRequest implements Serializable {
 

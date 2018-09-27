@@ -1,16 +1,15 @@
 package test.codec.http2.frame;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.HeaderGenerator;
 import com.firefly.codec.http2.encode.PriorityGenerator;
 import com.firefly.codec.http2.frame.PriorityFrame;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PriorityGenerateParseTest {
 

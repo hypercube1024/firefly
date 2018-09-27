@@ -1,9 +1,7 @@
 package com.firefly.utils.json.serializer;
 
-import static com.firefly.utils.json.JsonStringSymbol.EMPTY_ARRAY;
-import static com.firefly.utils.json.JsonStringSymbol.OBJ_PRE;
-import static com.firefly.utils.json.JsonStringSymbol.OBJ_SUF;
-import static com.firefly.utils.json.JsonStringSymbol.SEPARATOR;
+import com.firefly.utils.json.JsonWriter;
+import com.firefly.utils.json.Serializer;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -11,8 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.firefly.utils.json.JsonWriter;
-import com.firefly.utils.json.Serializer;
+import static com.firefly.utils.json.JsonStringSymbol.*;
 
 public class MapSerializer implements Serializer {
 

@@ -1,5 +1,12 @@
 package com.firefly.db.init;
 
+import com.firefly.utils.Assert;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.io.EncodedResource;
+import com.firefly.utils.io.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.sql.Connection;
@@ -8,13 +15,6 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
-
-import com.firefly.utils.Assert;
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.io.EncodedResource;
-import com.firefly.utils.io.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Generic utility methods for working with SQL scripts.

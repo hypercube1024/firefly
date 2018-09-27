@@ -1,15 +1,15 @@
 package com.firefly.codec.http2.encode;
 
-import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.Flags;
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.lang.Pair;
+
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 public class DataGenerator {
     private final HeaderGenerator headerGenerator;

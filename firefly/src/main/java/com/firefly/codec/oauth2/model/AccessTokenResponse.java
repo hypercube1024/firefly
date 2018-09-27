@@ -2,10 +2,8 @@ package com.firefly.codec.oauth2.model;
 
 import com.firefly.codec.oauth2.model.message.types.TokenType;
 import com.firefly.utils.json.annotation.JsonProperty;
-import com.firefly.utils.json.annotation.Transient;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * @author Pengtao Qiu

@@ -1,16 +1,15 @@
 package test.utils.lang;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.nio.charset.StandardCharsets;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.utils.lang.TypeUtils;
 import com.firefly.utils.lang.Utf8Appendable;
 import com.firefly.utils.lang.Utf8StringBuilder;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class Utf8StringBuilderTest {
     @Test

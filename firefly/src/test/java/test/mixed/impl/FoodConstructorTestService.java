@@ -1,10 +1,9 @@
 package test.mixed.impl;
 
-import test.ioc.TestConstructorsIoc.BeanTest;
-import test.mixed.FoodRepository;
-
 import com.firefly.annotation.Component;
 import com.firefly.annotation.Inject;
+import test.ioc.TestConstructorsIoc.BeanTest;
+import test.mixed.FoodRepository;
 
 @Component
 public class FoodConstructorTestService {

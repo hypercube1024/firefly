@@ -1,11 +1,11 @@
 package com.firefly.utils.json.serializer;
 
-import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
+import com.firefly.utils.json.JsonWriter;
+import com.firefly.utils.json.Serializer;
 
 import java.io.IOException;
 
-import com.firefly.utils.json.JsonWriter;
-import com.firefly.utils.json.Serializer;
+import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
 
 public class CharacterSerializer implements Serializer {
 

@@ -12,7 +12,6 @@ import test.mixed.FoodService;
 import test.mixed.FoodService2;
 
 import java.util.Collection;
-import java.util.List;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;

@@ -1,10 +1,10 @@
 package com.firefly.codec.http2.model;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public enum HttpVersion {
     HTTP_0_9("HTTP/0.9", 9), HTTP_1_0("HTTP/1.0", 10), HTTP_1_1("HTTP/1.1", 11), HTTP_2("HTTP/2.0", 20);

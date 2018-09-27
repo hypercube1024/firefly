@@ -1,9 +1,9 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
+
+import java.nio.ByteBuffer;
 
 public class WindowUpdateBodyParser extends BodyParser {
     private State state = State.PREPARE;

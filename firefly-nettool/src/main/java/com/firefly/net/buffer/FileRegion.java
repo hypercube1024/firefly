@@ -1,5 +1,9 @@
 package com.firefly.net.buffer;
 
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.io.BufferReaderHandler;
+import com.firefly.utils.io.FileUtils;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -7,10 +11,6 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.io.BufferReaderHandler;
-import com.firefly.utils.io.FileUtils;
 
 public class FileRegion implements Closeable {
 

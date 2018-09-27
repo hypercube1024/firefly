@@ -1,10 +1,10 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.codec.http2.frame.Flags;
 import com.firefly.codec.http2.frame.PingFrame;
+
+import java.nio.ByteBuffer;
 
 public class PingBodyParser extends BodyParser {
     private State state = State.PREPARE;

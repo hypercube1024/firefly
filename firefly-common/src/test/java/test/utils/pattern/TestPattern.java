@@ -1,12 +1,11 @@
 package test.utils.pattern;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-
+import com.firefly.utils.pattern.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.utils.pattern.Pattern;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 public class TestPattern {
     @Test

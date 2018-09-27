@@ -1,13 +1,13 @@
 package com.firefly.utils.json.serializer;
 
-import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
+import com.firefly.utils.json.JsonWriter;
+import com.firefly.utils.json.Serializer;
+import com.firefly.utils.time.SafeSimpleDateFormat;
 
 import java.io.IOException;
 import java.util.Date;
 
-import com.firefly.utils.json.JsonWriter;
-import com.firefly.utils.json.Serializer;
-import com.firefly.utils.time.SafeSimpleDateFormat;
+import static com.firefly.utils.json.JsonStringSymbol.QUOTE;
 
 public class DateSerializer implements Serializer {
 

@@ -1,14 +1,14 @@
 package com.firefly.utils.io;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-
 import com.firefly.utils.Assert;
 import com.firefly.utils.ClassUtils;
 import com.firefly.utils.ObjectUtils;
 import com.firefly.utils.StringUtils;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 /**
  * {@link Resource} implementation for class path resources. Uses either a

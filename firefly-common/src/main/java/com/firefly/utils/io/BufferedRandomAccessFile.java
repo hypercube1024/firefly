@@ -1,9 +1,9 @@
 package com.firefly.utils.io;
 
-import java.io.RandomAccessFile;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class BufferedRandomAccessFile extends RandomAccessFile {
 

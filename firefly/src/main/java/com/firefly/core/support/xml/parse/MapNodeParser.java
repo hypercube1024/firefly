@@ -1,13 +1,12 @@
 package com.firefly.core.support.xml.parse;
 
-import java.util.List;
-
-import org.w3c.dom.Element;
-
 import com.firefly.core.support.xml.ManagedMap;
 import com.firefly.core.support.xml.ManagedValue;
 import com.firefly.core.support.xml.XmlManagedNode;
 import com.firefly.utils.dom.Dom;
+import org.w3c.dom.Element;
+
+import java.util.List;
 
 public class MapNodeParser extends AbstractXmlNodeParser implements
         XmlNodeParser {

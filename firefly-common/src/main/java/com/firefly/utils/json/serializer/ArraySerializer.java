@@ -1,14 +1,11 @@
 package com.firefly.utils.json.serializer;
 
-import static com.firefly.utils.json.JsonStringSymbol.ARRAY_PRE;
-import static com.firefly.utils.json.JsonStringSymbol.ARRAY_SUF;
-import static com.firefly.utils.json.JsonStringSymbol.SEPARATOR;
-import static com.firefly.utils.json.JsonStringSymbol.EMPTY_ARRAY;
+import com.firefly.utils.json.JsonWriter;
+import com.firefly.utils.json.Serializer;
 
 import java.io.IOException;
 
-import com.firefly.utils.json.JsonWriter;
-import com.firefly.utils.json.Serializer;
+import static com.firefly.utils.json.JsonStringSymbol.*;
 
 public class ArraySerializer implements Serializer {
 

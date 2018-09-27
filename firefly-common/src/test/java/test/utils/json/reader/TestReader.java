@@ -1,15 +1,15 @@
 package test.utils.json.reader;
 
-import java.io.IOException;
-import java.util.Arrays;
-
+import com.firefly.utils.json.JsonReader;
+import com.firefly.utils.json.io.JsonStringReader;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.utils.json.JsonReader;
-import com.firefly.utils.json.io.JsonStringReader;
+import java.io.IOException;
+import java.util.Arrays;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 public class TestReader {
     @Test

@@ -1,12 +1,11 @@
 package test.component2.impl;
 
-import test.component.AddService;
-import test.component.FieldInject;
-import test.component2.MethodInject2;
-
 import com.firefly.annotation.Component;
 import com.firefly.annotation.InitialMethod;
 import com.firefly.annotation.Inject;
+import test.component.AddService;
+import test.component.FieldInject;
+import test.component2.MethodInject2;
 
 @Component("methodInject2")
 public class MethodInjectImpl2 implements MethodInject2 {

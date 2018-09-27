@@ -1,9 +1,9 @@
 package test.mixed.impl;
 
-import java.util.List;
-
 import test.mixed.Food;
 import test.mixed.FoodRepository;
+
+import java.util.List;
 
 public class FoodRepositoryImpl implements FoodRepository {
 

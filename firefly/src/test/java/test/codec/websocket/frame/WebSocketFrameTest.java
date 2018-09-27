@@ -5,11 +5,11 @@ import com.firefly.codec.websocket.frame.*;
 import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.StatusCode;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
-import test.codec.websocket.utils.Hex;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import test.codec.websocket.utils.Hex;
 
 import java.nio.ByteBuffer;
 

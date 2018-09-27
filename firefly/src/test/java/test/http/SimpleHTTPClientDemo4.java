@@ -2,7 +2,6 @@ package test.http;
 
 import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.client.http2.SimpleResponse;
-import com.firefly.utils.concurrent.Promise;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;

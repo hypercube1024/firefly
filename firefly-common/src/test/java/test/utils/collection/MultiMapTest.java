@@ -1,17 +1,16 @@
 package test.utils.collection;
 
-import static org.hamcrest.Matchers.nullValue;
+import com.firefly.utils.collection.LazyList;
+import com.firefly.utils.collection.MultiMap;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.utils.collection.LazyList;
-import com.firefly.utils.collection.MultiMap;
+import static org.hamcrest.Matchers.nullValue;
 
 public class MultiMapTest {
     /**

@@ -1,15 +1,9 @@
 package test.utils.json;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.firefly.utils.json.annotation.DateFormat;
 import com.firefly.utils.json.annotation.DateFormatType;
+
+import java.util.*;
 
 public class DateFormatObject {
 

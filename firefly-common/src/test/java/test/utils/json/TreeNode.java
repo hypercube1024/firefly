@@ -1,9 +1,9 @@
 package test.utils.json;
 
+import com.firefly.utils.json.Json;
+
 import java.util.LinkedList;
 import java.util.List;
-
-import com.firefly.utils.json.Json;
 
 public class TreeNode {
     private transient TreeNode parent;

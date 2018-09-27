@@ -3,7 +3,6 @@ package test.http.router.handler.chain;
 import com.firefly.$;
 import com.firefly.client.http2.SimpleResponse;
 import com.firefly.server.http2.HTTP2ServerBuilder;
-import com.firefly.utils.concurrent.Promise;
 import org.junit.Assert;
 import org.junit.Test;
 import test.http.router.handler.AbstractHTTPHandlerTest;

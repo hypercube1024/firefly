@@ -1,11 +1,10 @@
 package test.utils.collection;
 
+import com.firefly.utils.collection.HashedArrayTree;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.*;
-
-import com.firefly.utils.collection.HashedArrayTree;
+import static org.hamcrest.Matchers.is;
 
 public class TestHashedArrayTree {
     @Test

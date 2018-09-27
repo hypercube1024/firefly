@@ -1,8 +1,8 @@
 package com.firefly.codec.http2.model;
 
-import java.util.List;
-
 import com.firefly.utils.VerifyUtils;
+
+import java.util.List;
 
 abstract public class CookieGenerator {
 

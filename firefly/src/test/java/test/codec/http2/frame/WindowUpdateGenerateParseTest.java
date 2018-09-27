@@ -1,16 +1,15 @@
 package test.codec.http2.frame;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.HeaderGenerator;
 import com.firefly.codec.http2.encode.WindowUpdateGenerator;
 import com.firefly.codec.http2.frame.WindowUpdateFrame;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WindowUpdateGenerateParseTest {
 

@@ -1,11 +1,10 @@
 package test.utils.collection;
 
-import org.junit.Test;
-import org.junit.Assert;
-
-import static org.hamcrest.Matchers.*;
-
 import com.firefly.utils.collection.ConsistentHash;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
 
 public class TestConsistentHash {
 

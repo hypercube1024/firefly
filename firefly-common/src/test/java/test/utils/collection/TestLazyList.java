@@ -1,25 +1,14 @@
 package test.utils.collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-
+import com.firefly.utils.collection.LazyList;
+import com.firefly.utils.lang.ArrayUtils;
 import org.junit.Assume;
 import org.junit.Test;
 
-import com.firefly.utils.collection.LazyList;
-import com.firefly.utils.lang.ArrayUtils;
+import java.net.URI;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for LazyList utility class.

@@ -1,17 +1,16 @@
 package test.utils.lang;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+import com.firefly.utils.lang.TypeUtils;
+import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
+import com.firefly.utils.lang.Utf8StringBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.firefly.utils.lang.TypeUtils;
-import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
-import com.firefly.utils.lang.Utf8StringBuilder;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Test various invalid UTF8 byte sequences.

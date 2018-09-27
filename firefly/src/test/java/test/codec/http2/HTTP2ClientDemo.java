@@ -9,7 +9,6 @@ import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTP2Configuration;
 import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session;
-import com.firefly.codec.http2.stream.Session.Listener;
 import com.firefly.codec.http2.stream.Stream;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.FuturePromise;

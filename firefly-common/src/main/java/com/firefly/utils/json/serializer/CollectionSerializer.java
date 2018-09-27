@@ -1,16 +1,13 @@
 package com.firefly.utils.json.serializer;
 
-import static com.firefly.utils.json.JsonStringSymbol.ARRAY_PRE;
-import static com.firefly.utils.json.JsonStringSymbol.ARRAY_SUF;
-import static com.firefly.utils.json.JsonStringSymbol.EMPTY_ARRAY;
-import static com.firefly.utils.json.JsonStringSymbol.SEPARATOR;
+import com.firefly.utils.json.JsonWriter;
+import com.firefly.utils.json.Serializer;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-import com.firefly.utils.json.JsonWriter;
-import com.firefly.utils.json.Serializer;
+import static com.firefly.utils.json.JsonStringSymbol.*;
 
 public class CollectionSerializer implements Serializer {
 

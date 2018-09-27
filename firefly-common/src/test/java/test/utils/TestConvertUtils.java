@@ -1,16 +1,15 @@
 package test.utils;
 
-import static org.hamcrest.Matchers.is;
+import com.firefly.utils.ConvertUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.utils.ConvertUtils;
+import static org.hamcrest.Matchers.is;
 
 public class TestConvertUtils {
 

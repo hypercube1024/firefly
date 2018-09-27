@@ -1,9 +1,9 @@
 package com.firefly.utils.json.serializer;
 
-import java.io.IOException;
-
 import com.firefly.utils.json.JsonWriter;
 import com.firefly.utils.json.Serializer;
+
+import java.io.IOException;
 
 public class DynamicObjectSerializer implements Serializer {
 

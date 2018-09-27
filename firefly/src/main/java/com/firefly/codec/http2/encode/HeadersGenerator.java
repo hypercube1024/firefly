@@ -1,17 +1,13 @@
 package com.firefly.codec.http2.encode;
 
-import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-
-import com.firefly.codec.http2.frame.Flags;
-import com.firefly.codec.http2.frame.Frame;
-import com.firefly.codec.http2.frame.FrameType;
-import com.firefly.codec.http2.frame.HeadersFrame;
-import com.firefly.codec.http2.frame.PriorityFrame;
+import com.firefly.codec.http2.frame.*;
 import com.firefly.codec.http2.hpack.HpackEncoder;
 import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.io.BufferUtils;
+
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 public class HeadersGenerator extends FrameGenerator {
     private final HpackEncoder encoder;

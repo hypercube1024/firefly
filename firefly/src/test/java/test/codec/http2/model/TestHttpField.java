@@ -1,20 +1,16 @@
 package test.codec.http2.model;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.nio.ByteBuffer;
-
-import org.junit.Test;
-
 import com.firefly.codec.http2.model.HttpField;
 import com.firefly.codec.http2.model.HttpHeader;
 import com.firefly.codec.http2.model.HttpVersion;
 import com.firefly.codec.http2.model.PreEncodedHttpField;
 import com.firefly.utils.io.BufferUtils;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 
 public class TestHttpField {
 

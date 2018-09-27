@@ -1,7 +1,7 @@
 package com.firefly.utils.lang.pool;
 
-import com.firefly.utils.lang.LifeCycle;
 import com.firefly.utils.lang.LeakDetector;
+import com.firefly.utils.lang.LifeCycle;
 
 import java.util.concurrent.CompletableFuture;
 

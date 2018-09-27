@@ -1,14 +1,13 @@
 package test.net.tcp.codec;
 
-import static org.hamcrest.Matchers.is;
+import com.firefly.net.tcp.codec.common.decode.DelimiterParser;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.net.tcp.codec.common.decode.DelimiterParser;
+import static org.hamcrest.Matchers.is;
 
 public class DelimiterParserTest {
 

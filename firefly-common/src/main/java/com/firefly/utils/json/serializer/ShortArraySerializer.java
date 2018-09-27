@@ -1,8 +1,8 @@
 package com.firefly.utils.json.serializer;
 
-import java.io.IOException;
-
 import com.firefly.utils.json.JsonWriter;
+
+import java.io.IOException;
 
 public class ShortArraySerializer extends SimpleArraySerializer {
 

@@ -18,11 +18,11 @@
 
 package com.firefly.codec.http2.model;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
 import com.firefly.utils.io.BufferUtils;
+
+import java.nio.ByteBuffer;
 
 public enum HttpScheme {
     HTTP("http"), HTTPS("https"), WS("ws"), WSS("wss");

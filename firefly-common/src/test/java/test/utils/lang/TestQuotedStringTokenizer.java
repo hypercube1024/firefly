@@ -18,13 +18,10 @@
 
 package test.utils.lang;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+import com.firefly.utils.lang.QuotedStringTokenizer;
 import org.junit.Test;
 
-import com.firefly.utils.lang.QuotedStringTokenizer;
+import static org.junit.Assert.*;
 
 /**
  *

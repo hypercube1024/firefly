@@ -1,9 +1,9 @@
 package com.firefly.codec.http2.encode;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
+
+import java.nio.ByteBuffer;
 
 public class HeaderGenerator {
     private int maxFrameSize = Frame.DEFAULT_MAX_LENGTH;

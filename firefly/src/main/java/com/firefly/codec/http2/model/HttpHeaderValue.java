@@ -18,12 +18,12 @@
 
 package com.firefly.codec.http2.model;
 
+import com.firefly.utils.collection.ArrayTrie;
+import com.firefly.utils.collection.Trie;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
-
-import com.firefly.utils.collection.ArrayTrie;
-import com.firefly.utils.collection.Trie;
 
 /**
  *

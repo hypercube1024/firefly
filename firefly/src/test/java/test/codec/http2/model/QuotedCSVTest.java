@@ -1,13 +1,12 @@
 package test.codec.http2.model;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
+import com.firefly.codec.http2.model.QuotedCSV;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.firefly.codec.http2.model.QuotedCSV;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class QuotedCSVTest {
     @Test

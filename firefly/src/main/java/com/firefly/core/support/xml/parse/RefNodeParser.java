@@ -1,12 +1,11 @@
 package com.firefly.core.support.xml.parse;
 
-import org.w3c.dom.Element;
-
-import static com.firefly.core.support.xml.parse.XmlNodeConstants.*;
-
 import com.firefly.core.support.xml.ManagedRef;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.dom.Dom;
+import org.w3c.dom.Element;
+
+import static com.firefly.core.support.xml.parse.XmlNodeConstants.BEAN_REF_ATTRIBUTE;
 
 public class RefNodeParser extends AbstractXmlNodeParser implements XmlNodeParser {
 

@@ -1,10 +1,10 @@
 package com.firefly.db.jdbc.helper;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import org.apache.commons.dbutils.RowProcessor;
 import org.apache.commons.dbutils.handlers.AbstractKeyedHandler;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class DefaultBeanMapHandler<K, V> extends AbstractKeyedHandler<K, V> {
     /**

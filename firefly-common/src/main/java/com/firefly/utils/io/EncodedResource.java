@@ -1,13 +1,13 @@
 package com.firefly.utils.io;
 
+import com.firefly.utils.Assert;
+import com.firefly.utils.ObjectUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
-
-import com.firefly.utils.Assert;
-import com.firefly.utils.ObjectUtils;
 
 /**
  * Holder that combines a {@link Resource} descriptor with a specific encoding

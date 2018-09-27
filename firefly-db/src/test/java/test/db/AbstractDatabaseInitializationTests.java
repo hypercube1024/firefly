@@ -1,16 +1,15 @@
 package test.db;
 
-import org.junit.After;
-import org.junit.Before;
-
 import com.firefly.db.jdbc.helper.JDBCHelper;
 import com.firefly.utils.io.ClassRelativeResourceLoader;
 import com.firefly.utils.io.Resource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.junit.After;
+import org.junit.Before;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 
 /**
  * Abstract base class for integration tests involving database initialization.

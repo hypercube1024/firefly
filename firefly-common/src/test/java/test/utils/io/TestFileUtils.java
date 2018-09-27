@@ -1,6 +1,12 @@
 package test.utils.io;
 
-import static org.hamcrest.Matchers.is;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.io.BufferReaderHandler;
+import com.firefly.utils.io.FileUtils;
+import com.firefly.utils.io.LineReaderHandler;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,14 +16,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.CountingCallback;
-import com.firefly.utils.io.BufferReaderHandler;
-import com.firefly.utils.io.FileUtils;
-import com.firefly.utils.io.LineReaderHandler;
+import static org.hamcrest.Matchers.is;
 
 public class TestFileUtils {
 

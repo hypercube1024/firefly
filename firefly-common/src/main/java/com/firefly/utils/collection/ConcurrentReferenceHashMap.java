@@ -1,25 +1,17 @@
 package com.firefly.utils.collection;
 
+import com.firefly.utils.Assert;
+import com.firefly.utils.ObjectUtils;
+import com.firefly.utils.function.Func1;
+
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.firefly.utils.Assert;
-import com.firefly.utils.ObjectUtils;
-import com.firefly.utils.function.Func1;
 
 /**
  * A {@link ConcurrentHashMap} that uses {@link ReferenceType#SOFT soft} or

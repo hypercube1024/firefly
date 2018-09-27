@@ -2,8 +2,6 @@ package com.firefly.wechat.utils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.firefly.wechat.model.message.CommonMessage;
-import com.firefly.wechat.model.message.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

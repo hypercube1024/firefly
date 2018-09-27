@@ -1,10 +1,10 @@
 package com.firefly.codec.http2.decode;
 
-import java.nio.ByteBuffer;
-
 import com.firefly.codec.http2.frame.DataFrame;
 import com.firefly.codec.http2.frame.ErrorCode;
 import com.firefly.utils.io.BufferUtils;
+
+import java.nio.ByteBuffer;
 
 public class DataBodyParser extends BodyParser {
     private State state = State.PREPARE;

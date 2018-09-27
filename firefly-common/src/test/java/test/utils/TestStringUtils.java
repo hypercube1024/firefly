@@ -1,21 +1,15 @@
 package test.utils;
 
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.emptyArray;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import com.firefly.utils.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.utils.StringUtils;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 public class TestStringUtils {
     @Test

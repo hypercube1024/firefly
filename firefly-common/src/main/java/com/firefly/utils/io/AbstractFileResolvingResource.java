@@ -1,5 +1,7 @@
 package com.firefly.utils.io;
 
+import com.firefly.utils.ResourceUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,8 +9,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-
-import com.firefly.utils.ResourceUtils;
 
 /**
  * Abstract base class for resources which resolve URLs into File references,

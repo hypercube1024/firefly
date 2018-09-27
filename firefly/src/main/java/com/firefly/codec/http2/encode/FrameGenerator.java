@@ -1,10 +1,10 @@
 package com.firefly.codec.http2.encode;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-
 import com.firefly.codec.http2.frame.Frame;
 import com.firefly.codec.http2.frame.FrameType;
+
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public abstract class FrameGenerator {
     private final HeaderGenerator headerGenerator;

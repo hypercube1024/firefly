@@ -1,12 +1,5 @@
 package test.codec.http2.frame;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.decode.Parser;
 import com.firefly.codec.http2.encode.HeaderGenerator;
 import com.firefly.codec.http2.encode.HeadersGenerator;
@@ -15,12 +8,13 @@ import com.firefly.codec.http2.frame.FrameType;
 import com.firefly.codec.http2.frame.HeadersFrame;
 import com.firefly.codec.http2.frame.PriorityFrame;
 import com.firefly.codec.http2.hpack.HpackEncoder;
-import com.firefly.codec.http2.model.HostPortHttpField;
-import com.firefly.codec.http2.model.HttpField;
-import com.firefly.codec.http2.model.HttpFields;
-import com.firefly.codec.http2.model.HttpScheme;
-import com.firefly.codec.http2.model.HttpVersion;
-import com.firefly.codec.http2.model.MetaData;
+import com.firefly.codec.http2.model.*;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ContinuationParseTest {
     @Test
