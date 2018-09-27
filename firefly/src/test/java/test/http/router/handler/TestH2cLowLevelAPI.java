@@ -112,7 +112,8 @@ public class TestH2cLowLevelAPI extends AbstractHTTPHandlerTest {
             public void onAccept(Session session) {
                 System.out.println("accept a new session " + session);
             }
-        }, new ServerHTTPHandler.Adapter(), new WebSocketHandler() {});
+        }, new ServerHTTPHandler.Adapter(), new WebSocketHandler() {
+        });
         server.start();
         return server;
     }

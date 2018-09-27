@@ -23,30 +23,30 @@ public class TestRouterChain extends AbstractHTTPHandlerTest {
         httpServer.router().get("/routerChain").asyncHandler(ctx -> {
             ctx.setAttribute("reqId", 1000);
             ctx.write("enter router 1\r\n")
-               .<String>nextFuture()
-               .thenAccept(result -> ctx.write("router 1 success\r\n").end(result))
-               .exceptionally(ex -> {
-                   ctx.end(ex.getMessage());
-                   return null;
-               });
+                    .<String>nextFuture()
+                    .thenAccept(result -> ctx.write("router 1 success\r\n").end(result))
+                    .exceptionally(ex -> {
+                        ctx.end(ex.getMessage());
+                        return null;
+                    });
         }).router().get("/routerChain").asyncHandler(ctx -> {
             Integer reqId = (Integer) ctx.getAttribute("reqId");
             ctx.write("enter router 2, request id " + reqId + "\r\n")
-               .<String>nextFuture()
-               .thenAccept(result -> ctx.write("router 2 success, request id " + reqId + "\r\n").succeed(result))
-               .exceptionally(ex -> {
-                   ctx.fail(ex);
-                   return null;
-               });
+                    .<String>nextFuture()
+                    .thenAccept(result -> ctx.write("router 2 success, request id " + reqId + "\r\n").succeed(result))
+                    .exceptionally(ex -> {
+                        ctx.fail(ex);
+                        return null;
+                    });
         }).router().get("/routerChain").asyncHandler(ctx -> {
             Integer reqId = (Integer) ctx.getAttribute("reqId");
             ctx.write("enter router 3, request id " + reqId + "\r\n")
-               .<String>complete()
-               .thenAccept(result -> ctx.write("router 3 success, request id " + reqId + "\r\n").succeed(result))
-               .exceptionally(ex -> {
-                   ctx.fail(ex);
-                   return null;
-               });
+                    .<String>complete()
+                    .thenAccept(result -> ctx.write("router 3 success, request id " + reqId + "\r\n").succeed(result))
+                    .exceptionally(ex -> {
+                        ctx.fail(ex);
+                        return null;
+                    });
             ctx.succeed("request complete");
         }).listen(host, port);
 

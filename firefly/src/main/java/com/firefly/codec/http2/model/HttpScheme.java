@@ -25,38 +25,38 @@ import com.firefly.utils.collection.Trie;
 import com.firefly.utils.io.BufferUtils;
 
 public enum HttpScheme {
-	HTTP("http"), HTTPS("https"), WS("ws"), WSS("wss");
+    HTTP("http"), HTTPS("https"), WS("ws"), WSS("wss");
 
-	public final static Trie<HttpScheme> CACHE = new ArrayTrie<HttpScheme>();
+    public final static Trie<HttpScheme> CACHE = new ArrayTrie<HttpScheme>();
 
-	static {
-		for (HttpScheme version : HttpScheme.values())
-			CACHE.put(version.asString(), version);
-	}
+    static {
+        for (HttpScheme version : HttpScheme.values())
+            CACHE.put(version.asString(), version);
+    }
 
-	private final String string;
-	private final ByteBuffer buffer;
+    private final String string;
+    private final ByteBuffer buffer;
 
-	HttpScheme(String s) {
-		string = s;
-		buffer = BufferUtils.toBuffer(s);
-	}
+    HttpScheme(String s) {
+        string = s;
+        buffer = BufferUtils.toBuffer(s);
+    }
 
-	public ByteBuffer asByteBuffer() {
-		return buffer.asReadOnlyBuffer();
-	}
+    public ByteBuffer asByteBuffer() {
+        return buffer.asReadOnlyBuffer();
+    }
 
-	public boolean is(String s) {
-		return s != null && string.equalsIgnoreCase(s);
-	}
+    public boolean is(String s) {
+        return s != null && string.equalsIgnoreCase(s);
+    }
 
-	public String asString() {
-		return string;
-	}
+    public String asString() {
+        return string;
+    }
 
-	@Override
-	public String toString() {
-		return string;
-	}
+    @Override
+    public String toString() {
+        return string;
+    }
 
 }

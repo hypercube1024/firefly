@@ -6,10 +6,10 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractXmlNodeParser implements XmlNodeParser {
 
-	protected static Logger log = LoggerFactory.getLogger("firefly-system");
+    protected static Logger log = LoggerFactory.getLogger("firefly-system");
 
-	protected void error(String msg) {
-		log.error(msg);
-		throw new BeanDefinitionParsingException(msg);
-	}
+    protected void error(String msg) {
+        log.error(msg);
+        throw new BeanDefinitionParsingException(msg);
+    }
 }

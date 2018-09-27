@@ -18,7 +18,7 @@ val ktCtx = Context.create("kotlin-example.xml")
 
 class AppMain : AbstractLifeCycle() {
 
-    private val log = KtLogger.getLogger {  }
+    private val log = KtLogger.getLogger { }
 
     @Inject
     private lateinit var server: HttpServer
@@ -34,7 +34,7 @@ class AppMain : AbstractLifeCycle() {
         dbUtils.initializeData()
 
         ktCtx.getBeans(RouterInstaller::class.java).sorted().forEach {
-            log.info {"install routers [${it::class.qualifiedName}]"}
+            log.info { "install routers [${it::class.qualifiedName}]" }
             it.install()
         }
 //        server.server.configuration.isSecureConnectionEnabled = true

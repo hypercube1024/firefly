@@ -7,5 +7,7 @@ import java.io.Serializable
  * @author Pengtao Qiu
  */
 @NoArg
-data class UserInfo(var id: Long,
-                    var name: String) : Serializable
+data class UserInfo(
+    var id: Long,
+    var name: String
+                   ) : Serializable

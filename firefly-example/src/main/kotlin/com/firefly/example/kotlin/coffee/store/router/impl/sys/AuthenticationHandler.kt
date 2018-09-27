@@ -31,7 +31,7 @@ class AuthenticationHandler : AsyncHandler {
         } else {
             val urlEncoded = UrlEncoded()
             urlEncoded.put("backURL", ctx.uri.pathQuery)
-            ctx.redirect( "${projectConfig.loginURL}?${urlEncoded.encode(StandardCharsets.UTF_8, true)}")
+            ctx.redirect("${projectConfig.loginURL}?${urlEncoded.encode(StandardCharsets.UTF_8, true)}")
             ctx.asyncSucceed(Unit)
         }
     }

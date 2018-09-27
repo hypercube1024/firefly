@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 public class HttpURITest {
-    
+
     @Test
     public void testInvalidAddress() throws Exception {
         assertInvalidURI("http://[ffff::1:8080/", "Invalid URL; no closing ']' -- should throw exception");

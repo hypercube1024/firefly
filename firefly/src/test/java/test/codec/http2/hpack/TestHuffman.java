@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.Locale;
 
 public class TestHuffman {
-    
+
     String[][] tests =
             {
                     {"D.4.1", "f1e3c2e5f23a6ba0ab90f4ff", "www.example.com"},

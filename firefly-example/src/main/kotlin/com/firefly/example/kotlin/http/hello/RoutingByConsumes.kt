@@ -29,11 +29,13 @@ fun main(args: Array<String>) = runBlocking {
     }.listen(host, port)
 
     val resp = firefly.httpClient().put("http://$host:$port/product/20")
-            .jsonBody(Car(20, "My car", "black")).asyncSubmit()
+        .jsonBody(Car(20, "My car", "black")).asyncSubmit()
     println(resp.stringBody)
 }
 
 @NoArg
-data class Car(var id: Long,
-               var name: String,
-               var color: String)
+data class Car(
+    var id: Long,
+    var name: String,
+    var color: String
+              )

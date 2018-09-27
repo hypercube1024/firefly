@@ -139,12 +139,12 @@ public class Parser {
 
         if (policy.getBehavior() == WebSocketBehavior.SERVER) {
             /* Parsing on server.
-             * 
+             *
              * Then you MUST make sure all incoming frames are masked!
-             * 
+             *
              * Technically, this test is in violation of RFC-6455, Section 5.1
              * http://tools.ietf.org/html/rfc6455#section-5.1
-             * 
+             *
              * But we can't trust the client at this point, so firefly opts to close
              * the connection as a Protocol error.
              */
@@ -295,7 +295,7 @@ public class Parser {
                     if ((b & 0x70) != 0) {
                         /*
                          * RFC 6455 Section 5.2
-                         * 
+                         *
                          * MUST be 0 unless an extension is negotiated that defines meanings for non-zero values. If a nonzero value is received and none of the
                          * negotiated extensions defines the meaning of such a nonzero value, the receiving endpoint MUST _Fail the WebSocket Connection_.
                          */

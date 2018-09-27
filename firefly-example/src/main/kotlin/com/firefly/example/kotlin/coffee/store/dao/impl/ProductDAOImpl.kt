@@ -27,28 +27,34 @@ class ProductDAOImpl : ProductDAO {
         sql.append("inner join `coffee_store`.`inventory` inventory on inventory.product_id = p.id where 1 = 1 ")
 
         Optional.ofNullable(query.searchKey)
-                .filter(StringUtils::hasText)
-                .ifPresent { key ->
-                    sql.append(" and p.`name` like ?")
-                    params.add(key + "%")
-                }
+            .filter(StringUtils::hasText)
+            .ifPresent { key ->
+                sql.append(" and p.`name` like ?")
+                params.add(key + "%")
+            }
 
         Optional.ofNullable(query.status)
-                .filter { status -> status > 0 }
-                .ifPresent { status ->
-                    sql.append(" and p.`status` = ?")
-                    params.add(status)
-                }
+            .filter { status -> status > 0 }
+            .ifPresent { status ->
+                sql.append(" and p.`status` = ?")
+                params.add(status)
+            }
 
         Optional.ofNullable(query.type)
-                .filter { type -> type > 0 }
-                .ifPresent { type ->
-                    sql.append(" and p.`type` = ?")
-                    params.add(type)
-                }
+            .filter { type -> type > 0 }
+            .ifPresent { type ->
+                sql.append(" and p.`type` = ?")
+                params.add(type)
+            }
 
         sql.append(" order by id desc ").append(Page.getPageSQLWithoutCount(query.pageNumber, query.pageSize))
-        return db.execSQL { Page(it.asyncQueryForList<Product>(sql.toString(), *params.toTypedArray()).toMutableList(), query.pageNumber, query.pageSize) }
+        return db.execSQL {
+            Page(
+                it.asyncQueryForList<Product>(sql.toString(), *params.toTypedArray()).toMutableList(),
+                query.pageNumber,
+                query.pageSize
+                )
+        }
     }
 
     suspend override fun get(id: Long): Product = db.execSQL { it.asyncQueryById<Product>(id) }

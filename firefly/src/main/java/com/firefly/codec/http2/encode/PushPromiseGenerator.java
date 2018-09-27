@@ -13,47 +13,47 @@ import com.firefly.codec.http2.model.MetaData;
 import com.firefly.utils.io.BufferUtils;
 
 public class PushPromiseGenerator extends FrameGenerator {
-	private final HpackEncoder encoder;
+    private final HpackEncoder encoder;
 
-	public PushPromiseGenerator(HeaderGenerator headerGenerator, HpackEncoder encoder) {
-		super(headerGenerator);
-		this.encoder = encoder;
-	}
+    public PushPromiseGenerator(HeaderGenerator headerGenerator, HpackEncoder encoder) {
+        super(headerGenerator);
+        this.encoder = encoder;
+    }
 
-	@Override
-	public List<ByteBuffer> generate(Frame frame) {
-		PushPromiseFrame pushPromiseFrame = (PushPromiseFrame) frame;
-		return generatePushPromise(pushPromiseFrame.getStreamId(), pushPromiseFrame.getPromisedStreamId(),
-				pushPromiseFrame.getMetaData());
-	}
+    @Override
+    public List<ByteBuffer> generate(Frame frame) {
+        PushPromiseFrame pushPromiseFrame = (PushPromiseFrame) frame;
+        return generatePushPromise(pushPromiseFrame.getStreamId(), pushPromiseFrame.getPromisedStreamId(),
+                pushPromiseFrame.getMetaData());
+    }
 
-	public List<ByteBuffer> generatePushPromise(int streamId, int promisedStreamId, MetaData metaData) {
-		if (streamId < 0)
-			throw new IllegalArgumentException("Invalid stream id: " + streamId);
-		if (promisedStreamId < 0)
-			throw new IllegalArgumentException("Invalid promised stream id: " + promisedStreamId);
+    public List<ByteBuffer> generatePushPromise(int streamId, int promisedStreamId, MetaData metaData) {
+        if (streamId < 0)
+            throw new IllegalArgumentException("Invalid stream id: " + streamId);
+        if (promisedStreamId < 0)
+            throw new IllegalArgumentException("Invalid promised stream id: " + promisedStreamId);
 
-		List<ByteBuffer> list = new LinkedList<>();
-		int maxFrameSize = getMaxFrameSize();
-		// The promised streamId space.
-		int extraSpace = 4;
-		maxFrameSize -= extraSpace;
+        List<ByteBuffer> list = new LinkedList<>();
+        int maxFrameSize = getMaxFrameSize();
+        // The promised streamId space.
+        int extraSpace = 4;
+        maxFrameSize -= extraSpace;
 
-		ByteBuffer hpacked = ByteBuffer.allocate(maxFrameSize);
-		BufferUtils.clearToFill(hpacked);
-		encoder.encode(hpacked, metaData);
-		int hpackedLength = hpacked.position();
-		BufferUtils.flipToFlush(hpacked, 0);
+        ByteBuffer hpacked = ByteBuffer.allocate(maxFrameSize);
+        BufferUtils.clearToFill(hpacked);
+        encoder.encode(hpacked, metaData);
+        int hpackedLength = hpacked.position();
+        BufferUtils.flipToFlush(hpacked, 0);
 
-		int length = hpackedLength + extraSpace;
-		int flags = Flags.END_HEADERS;
+        int length = hpackedLength + extraSpace;
+        int flags = Flags.END_HEADERS;
 
-		ByteBuffer header = generateHeader(FrameType.PUSH_PROMISE, length, flags, streamId);
-		header.putInt(promisedStreamId);
-		BufferUtils.flipToFlush(header, 0);
+        ByteBuffer header = generateHeader(FrameType.PUSH_PROMISE, length, flags, streamId);
+        header.putInt(promisedStreamId);
+        BufferUtils.flipToFlush(header, 0);
 
-		list.add(header);
-		list.add(hpacked);
-		return list;
-	}
+        list.add(header);
+        list.add(hpacked);
+        return list;
+    }
 }

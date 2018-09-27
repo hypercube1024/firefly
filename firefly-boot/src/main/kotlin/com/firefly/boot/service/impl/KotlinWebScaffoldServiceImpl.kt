@@ -23,27 +23,31 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
         // init project dir
         FileUtils.delete(projectDir)
         Files.createDirectories(projectDir)
-        listOf("${project.artifactId}-api",
-                "${project.artifactId}-common",
-                "${project.artifactId}-server")
-                .map { Paths.get(projectDir.toAbsolutePath().toString(), it) }
-                .forEach { moduleDir ->
-                    Files.createDirectory(moduleDir)
-                    println("create module directory -> $moduleDir")
+        listOf(
+            "${project.artifactId}-api",
+            "${project.artifactId}-common",
+            "${project.artifactId}-server"
+              )
+            .map { Paths.get(projectDir.toAbsolutePath().toString(), it) }
+            .forEach { moduleDir ->
+                Files.createDirectory(moduleDir)
+                println("create module directory -> $moduleDir")
 
-                    val srcDir = Paths.get(moduleDir.toString(), "src")
-                    Files.createDirectory(srcDir)
-                    println("create src directory -> $srcDir")
+                val srcDir = Paths.get(moduleDir.toString(), "src")
+                Files.createDirectory(srcDir)
+                println("create src directory -> $srcDir")
 
-                    listOf(Paths.get(srcDir.toString(), "main", "java"),
-                            Paths.get(srcDir.toString(), "main", "kotlin"),
-                            Paths.get(srcDir.toString(), "test", "java"),
-                            Paths.get(srcDir.toString(), "test", "kotlin")).forEach { srcPath ->
-                        Files.createDirectories(srcPath)
-                        println("create src directory -> $srcPath")
-                        // TODO
-                    }
+                listOf(
+                    Paths.get(srcDir.toString(), "main", "java"),
+                    Paths.get(srcDir.toString(), "main", "kotlin"),
+                    Paths.get(srcDir.toString(), "test", "java"),
+                    Paths.get(srcDir.toString(), "test", "kotlin")
+                      ).forEach { srcPath ->
+                    Files.createDirectories(srcPath)
+                    println("create src directory -> $srcPath")
+                    // TODO
                 }
+            }
 
         when (BuildTool.from(project.buildTool)) {
             BuildTool.MAVEN -> {

@@ -16,8 +16,10 @@ import java.util.zip.GZIPOutputStream
 /**
  * @author Pengtao Qiu
  */
-class AsyncWebJarHandler(val rootPath: String,
-                         val enableGzip: Boolean) : AsyncHandler {
+class AsyncWebJarHandler(
+    val rootPath: String,
+    val enableGzip: Boolean
+                        ) : AsyncHandler {
 
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
@@ -34,8 +36,8 @@ class AsyncWebJarHandler(val rootPath: String,
 
                 ctx.setStatus(HttpStatus.OK_200)
                 Optional.ofNullable(MimeTypes.getDefaultMimeByExtension(path))
-                        .filter(StringUtils::hasText)
-                        .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
+                    .filter(StringUtils::hasText)
+                    .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
 
                 if (enableGzip) {
                     ctx.put(HttpHeader.CONTENT_ENCODING, "gzip")

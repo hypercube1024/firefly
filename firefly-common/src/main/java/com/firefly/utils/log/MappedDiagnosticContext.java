@@ -7,7 +7,7 @@ import java.util.Set;
  * @author Pengtao Qiu
  */
 public interface MappedDiagnosticContext {
-    
+
     void put(String key, String val);
 
     String get(String key);

@@ -61,12 +61,14 @@ class TestRouterChain {
         println(resp.status)
         println(resp.stringBody)
         assertEquals(200, resp.status)
-        assertEquals("into chain1\n" +
-                "into chain2\n" +
-                "into chain3\n" +
-                "complete chain3\n" +
-                "complete chain2\n" +
-                "complete chain1\n", resp.stringBody)
+        assertEquals(
+            "into chain1\n" +
+                    "into chain2\n" +
+                    "into chain3\n" +
+                    "complete chain3\n" +
+                    "complete chain2\n" +
+                    "complete chain1\n", resp.stringBody
+                    )
         c.stop()
         s.stop()
     }

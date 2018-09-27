@@ -37,8 +37,8 @@ class DBTest {
         sqlClient = JDBCClient(ds)
     }
 
-    private suspend fun <T> exec(handler: suspend (conn: SQLConnection) -> T): T
-            = sqlClient.connection.await().execSQL(10000, TimeUnit.MILLISECONDS, handler)
+    private suspend fun <T> exec(handler: suspend (conn: SQLConnection) -> T): T =
+        sqlClient.connection.await().execSQL(10000, TimeUnit.MILLISECONDS, handler)
 
     @Before
     fun before() = runBlocking {
@@ -148,8 +148,10 @@ class DBTest {
         assertEquals(size.toLong() - 5L, count2)
 
         val count3 = exec {
-            it.asyncNamedQueryForSingleColumn<Long>("select count(*) from test.user where id > :id",
-                    mapOf("id" to 5L))
+            it.asyncNamedQueryForSingleColumn<Long>(
+                "select count(*) from test.user where id > :id",
+                mapOf("id" to 5L)
+                                                   )
         }
         assertEquals(size.toLong() - 5L, count3)
     }
@@ -160,8 +162,10 @@ class DBTest {
         assertEquals("test transaction 1", user.name)
 
         val user2 = exec {
-            it.asyncNamedQueryForObject<User>("select * from test.user where id = :id",
-                    mapOf("id" to 2L))
+            it.asyncNamedQueryForObject<User>(
+                "select * from test.user where id = :id",
+                mapOf("id" to 2L)
+                                             )
         }
         assertEquals("test transaction 1", user2.name)
     }
@@ -214,8 +218,10 @@ class DBTest {
     @Test
     fun testInsert() = runBlocking {
         val newUserId = exec {
-            it.asyncInsert<Long>("insert into `test`.`user`(pt_name, pt_password) values(?,?)",
-                    "hello user", "hello user pwd")
+            it.asyncInsert<Long>(
+                "insert into `test`.`user`(pt_name, pt_password) values(?,?)",
+                "hello user", "hello user pwd"
+                                )
         }
         assertEquals(size + 1L, newUserId)
 
@@ -239,23 +245,29 @@ class DBTest {
         assertEquals(rows, 1)
 
         val rows2 = exec {
-            it.asyncNamedUpdate("update test.user set `pt_name` = :name where id = :id",
-                    mapOf("id" to 2L, "name" to "update xxx"))
+            it.asyncNamedUpdate(
+                "update test.user set `pt_name` = :name where id = :id",
+                mapOf("id" to 2L, "name" to "update xxx")
+                               )
         }
         assertEquals(rows2, 1)
 
         val rows3 = exec {
-            it.asyncNamedUpdate("update test.user set `pt_name` = :name where id = :id",
-                    User(2L, "update xxx", null, null))
+            it.asyncNamedUpdate(
+                "update test.user set `pt_name` = :name where id = :id",
+                User(2L, "update xxx", null, null)
+                               )
         }
         assertEquals(rows3, 1)
     }
 
     @Table(value = "user", catalog = "test")
-    data class User(@Id("id") var id: Long?,
-                    @Column("pt_name") var name: String?,
-                    @Column("pt_password") var password: String?,
-                    var otherInfo: String?) {
+    data class User(
+        @Id("id") var id: Long?,
+        @Column("pt_name") var name: String?,
+        @Column("pt_password") var password: String?,
+        var otherInfo: String?
+                   ) {
 
         override fun equals(other: Any?): Boolean = if (other is User) Objects.equals(id, other.id) else false
 

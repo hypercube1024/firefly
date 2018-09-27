@@ -12,15 +12,15 @@ import com.firefly.utils.dom.Dom;
 
 public class ListNodeParser extends AbstractXmlNodeParser implements XmlNodeParser {
 
-	@Override
-	public Object parse(Element ele, Dom dom) {
-		String typeName = ele.getAttribute(TYPE_ATTRIBUTE);
-		ManagedList<XmlManagedNode> target = new ManagedList<XmlManagedNode>();
-		target.setTypeName(typeName);
-		List<Element> elements = dom.elements(ele);
-		for (Element e : elements) {
-			target.add((XmlManagedNode)XmlNodeStateMachine.stateProcessor(e, dom));
-		}
-		return target;
-	}
+    @Override
+    public Object parse(Element ele, Dom dom) {
+        String typeName = ele.getAttribute(TYPE_ATTRIBUTE);
+        ManagedList<XmlManagedNode> target = new ManagedList<XmlManagedNode>();
+        target.setTypeName(typeName);
+        List<Element> elements = dom.elements(ele);
+        for (Element e : elements) {
+            target.add((XmlManagedNode) XmlNodeStateMachine.stateProcessor(e, dom));
+        }
+        return target;
+    }
 }

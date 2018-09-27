@@ -3,8 +3,10 @@ package com.firefly.example.kotlin.coffee.store.vo
 /**
  * @author Pengtao Qiu
  */
-enum class OrderStatus(val value: Int,
-                       val description: String) {
+enum class OrderStatus(
+    val value: Int,
+    val description: String
+                      ) {
     UNPAID(1, "unpaid"),
     PURCHASED(2, "purchased"),
     SHIPPED(3, "shipped"),

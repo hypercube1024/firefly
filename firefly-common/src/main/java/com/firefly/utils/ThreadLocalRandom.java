@@ -44,8 +44,8 @@ import java.util.Random;
  * <p>This class also provides additional commonly used bounded random
  * generation methods.
  *
- * @since 1.7
  * @author Doug Lea
+ * @since 1.7
  */
 public final class ThreadLocalRandom extends Random {
     // same constants as Random, but must be redeclared because private
@@ -114,7 +114,7 @@ public final class ThreadLocalRandom extends Random {
     @Override
     protected int next(int bits) {
         rnd = rnd * multiplier + addend & mask;
-        return (int) (rnd >>> 48-bits);
+        return (int) (rnd >>> 48 - bits);
     }
 
     private static final long serialVersionUID = -5851777807851030925L;

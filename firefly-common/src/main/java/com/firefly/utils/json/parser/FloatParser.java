@@ -5,9 +5,9 @@ import com.firefly.utils.json.Parser;
 
 public class FloatParser implements Parser {
 
-	@Override
-	public Object convertTo(JsonReader reader, Class<?> clazz) {
-		return reader.readFloat();
-	}
+    @Override
+    public Object convertTo(JsonReader reader, Class<?> clazz) {
+        return reader.readFloat();
+    }
 
 }

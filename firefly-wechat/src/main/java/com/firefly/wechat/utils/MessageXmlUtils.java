@@ -15,8 +15,9 @@ abstract public class MessageXmlUtils {
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private static XmlMapper mapper = new XmlMapper();
+
     static {
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     public static <T> T parseXml(String xml, Class<T> clazz) {

@@ -33,6 +33,6 @@ public enum ProductType {
     }
 
     public static Optional<ProductType> from(int value) {
-         return Optional.ofNullable(Holder.map.get(value));
+        return Optional.ofNullable(Holder.map.get(value));
     }
 }

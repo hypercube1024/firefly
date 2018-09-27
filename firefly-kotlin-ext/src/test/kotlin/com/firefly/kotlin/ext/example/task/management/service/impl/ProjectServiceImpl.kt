@@ -28,7 +28,7 @@ class ProjectServiceImpl : ProjectService {
 
     override suspend fun createProject(request: Request<ProjectEditor>): Response<Long> {
         val projectId = projectDao.insert(request.data.project)
-                ?: throw IllegalStateException("create project exception, the project id is null")
+            ?: throw IllegalStateException("create project exception, the project id is null")
         log.info("create project -> $projectId")
         val ret = projectDao.addProjectMembers(projectId, request.data.userIdList)
         log.info("add members -> $ret")

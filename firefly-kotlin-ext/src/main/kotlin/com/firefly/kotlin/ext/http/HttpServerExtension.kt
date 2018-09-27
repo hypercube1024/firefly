@@ -62,12 +62,16 @@ const val promiseQueueKey = "_promiseQueue"
 fun <C> RoutingContext.getPromiseQueue(): Deque<AsyncPromise<C>>? = getAttr(promiseQueueKey)
 
 @Suppress("UNCHECKED_CAST")
-fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> =
+    attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
 
 /**
  * Set the callback that is called when the asynchronous handler finishes.
  */
-fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
+fun <C> RoutingContext.asyncComplete(
+    succeeded: suspend (C) -> Unit,
+    failed: suspend (Throwable?) -> Unit
+                                    ): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
     queue.push(AsyncPromise(succeeded, failed))
     return this
@@ -121,11 +125,11 @@ suspend fun <C> RoutingContext.asyncFail(x: Throwable? = null) {
  * Get the real client ip.
  */
 fun RoutingContext.getRealClientIp(): String = Optional
-        .ofNullable(fields["X-Forwarded-For"])
-        .map { `$`.string.split(it, ",") }
-        .filter { it.isNotEmpty() }
-        .map { it[0].trim() }
-        .orElseGet { request.connection.remoteAddress.toString() }
+    .ofNullable(fields["X-Forwarded-For"])
+    .map { `$`.string.split(it, ",") }
+    .filter { it.isNotEmpty() }
+    .map { it[0].trim() }
+    .orElseGet { request.connection.remoteAddress.toString() }
 
 /**
  * Get current HTTPSession. This function does not throw any exception.
@@ -253,9 +257,11 @@ interface AsyncHandler {
 }
 
 @HttpServerMarker
-class RouterBlock(private val router: Router,
-                  private val requestCtx: CoroutineLocal<RoutingContext>?,
-                  private val coroutineDispatcher: CoroutineDispatcher) {
+class RouterBlock(
+    private val router: Router,
+    private val requestCtx: CoroutineLocal<RoutingContext>?,
+    private val coroutineDispatcher: CoroutineDispatcher
+                 ) {
 
     var method: String = HttpMethod.GET.asString()
         set(value) {
@@ -395,9 +401,11 @@ class RouterBlock(private val router: Router,
 }
 
 @HttpServerMarker
-class WebSocketBlock(server: SimpleHTTPServer,
-                     router: Router,
-                     private val path: String) : AbstractWebSocketBuilder() {
+class WebSocketBlock(
+    server: SimpleHTTPServer,
+    router: Router,
+    private val path: String
+                    ) : AbstractWebSocketBuilder() {
 
     var onConnect: ((WebSocketConnection) -> Unit)? = null
 
@@ -466,10 +474,12 @@ annotation class HttpServerMarker
  * @param block The HTTP server DSL block. You can register routers in this block.
  */
 @HttpServerMarker
-class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
-                 serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
-                 httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
-                 block: HttpServer.() -> Unit) : HttpServerLifecycle {
+class HttpServer(
+    val requestCtx: CoroutineLocal<RoutingContext>? = null,
+    serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
+    httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
+    block: HttpServer.() -> Unit
+                ) : HttpServerLifecycle {
 
     val server = SimpleHTTPServer(serverConfiguration)
     val routerManager = RouterManager.create(httpBodyConfiguration)!!
@@ -490,9 +500,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
             : this(coroutineLocal, SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
 
-    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?,
-                serverConfiguration: SimpleHTTPServerConfiguration,
-                httpBodyConfiguration: HTTPBodyConfiguration)
+    constructor(
+        coroutineLocal: CoroutineLocal<RoutingContext>?,
+        serverConfiguration: SimpleHTTPServerConfiguration,
+        httpBodyConfiguration: HTTPBodyConfiguration
+               )
             : this(coroutineLocal, serverConfiguration, httpBodyConfiguration, {})
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
@@ -549,9 +561,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
 }
 
-fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>,
-                       context: ContinuationInterceptor = Dispatchers.Unconfined,
-                       block: suspend CoroutineScope.() -> T): Deferred<T> {
+fun <T> asyncTraceable(
+    requestCtx: CoroutineLocal<RoutingContext>,
+    context: ContinuationInterceptor = Dispatchers.Unconfined,
+    block: suspend CoroutineScope.() -> T
+                      ): Deferred<T> {
     val ctx = requestCtx.get()
     return if (ctx != null) {
         GlobalScope.async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
@@ -560,8 +574,10 @@ fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>,
     }
 }
 
-class AccessLogService(logName: String = "firefly-access",
-                       val userTracingId: String = "_const_firefly_user_id_") {
+class AccessLogService(
+    logName: String = "firefly-access",
+    val userTracingId: String = "_const_firefly_user_id_"
+                      ) {
 
     private val log = KtLogger.getLogger(logName)
 
@@ -580,17 +596,26 @@ class AccessLogService(logName: String = "firefly-access",
             } else ""
         } else ""
         val tid = ctx.getAttr<String>(userTracingId)
-        return AccessLog(ctx.getRealClientIp(), ctx.method, ctx.uri.toString(), requestBody, time, ctx.response.status, tid)
+        return AccessLog(
+            ctx.getRealClientIp(),
+            ctx.method,
+            ctx.uri.toString(),
+            requestBody,
+            time,
+            ctx.response.status,
+            tid
+                        )
     }
 
 }
 
 @NoArg
 data class AccessLog(
-        var ip: String,
-        var method: String,
-        var uri: String,
-        var requestBody: String?,
-        var time: Long,
-        var responseStatus: Int,
-        var tid: String?)
+    var ip: String,
+    var method: String,
+    var uri: String,
+    var requestBody: String?,
+    var time: Long,
+    var responseStatus: Int,
+    var tid: String?
+                    )

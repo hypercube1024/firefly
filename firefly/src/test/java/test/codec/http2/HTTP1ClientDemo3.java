@@ -23,83 +23,83 @@ import com.firefly.utils.io.BufferUtils;
 
 public class HTTP1ClientDemo3 {
 
-	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
-		final HTTP2Configuration http2Configuration = new HTTP2Configuration();
-		http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
-		HTTP2Client client = new HTTP2Client(http2Configuration);
+    public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
+        final HTTP2Configuration http2Configuration = new HTTP2Configuration();
+        http2Configuration.getTcpConfiguration().setTimeout(60 * 1000);
+        HTTP2Client client = new HTTP2Client(http2Configuration);
 
-		FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
-		client.connect("localhost", 6678, promise);
+        FuturePromise<HTTPClientConnection> promise = new FuturePromise<>();
+        client.connect("localhost", 6678, promise);
 
-		HTTPConnection connection = promise.get();
-		System.out.println(connection.getHttpVersion());
+        HTTPConnection connection = promise.get();
+        System.out.println(connection.getHttpVersion());
 
-		if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
-			HTTP1ClientConnection http1ClientConnection = (HTTP1ClientConnection) connection;
+        if (connection.getHttpVersion() == HttpVersion.HTTP_1_1) {
+            HTTP1ClientConnection http1ClientConnection = (HTTP1ClientConnection) connection;
 
-			final Phaser phaser = new Phaser(2);
+            final Phaser phaser = new Phaser(2);
 
-			// request index.html
-			HTTPClientRequest request = new HTTPClientRequest("GET", "/index?version=1&test=ok");
-			http1ClientConnection.send(request, new ClientHTTPHandler.Adapter() {
+            // request index.html
+            HTTPClientRequest request = new HTTPClientRequest("GET", "/index?version=1&test=ok");
+            http1ClientConnection.send(request, new ClientHTTPHandler.Adapter() {
 
-				@Override
-				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
-						HTTPConnection connection) {
-					System.out.println(BufferUtils.toString(item, StandardCharsets.UTF_8));
-					return false;
-				}
+                @Override
+                public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
+                                       HTTPConnection connection) {
+                    System.out.println(BufferUtils.toString(item, StandardCharsets.UTF_8));
+                    return false;
+                }
 
-				@Override
-				public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
-						HTTPConnection connection) {
-					System.out.println(response);
-					System.out.println(response.getFields());
-					int currentPhaseNumber = phaser.arrive();
-					System.out.println("current phase number: " + currentPhaseNumber);
-					return true;
-				}
-			});
-			phaser.arriveAndAwaitAdvance();
+                @Override
+                public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
+                                               HTTPConnection connection) {
+                    System.out.println(response);
+                    System.out.println(response.getFields());
+                    int currentPhaseNumber = phaser.arrive();
+                    System.out.println("current phase number: " + currentPhaseNumber);
+                    return true;
+                }
+            });
+            phaser.arriveAndAwaitAdvance();
 
-			// test 100-continue
-			HTTPClientRequest post = new HTTPClientRequest("POST", "/testContinue");
-			final ByteBuffer data = BufferUtils.toBuffer("client test continue 100 ", StandardCharsets.UTF_8);
-			post.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
+            // test 100-continue
+            HTTPClientRequest post = new HTTPClientRequest("POST", "/testContinue");
+            final ByteBuffer data = BufferUtils.toBuffer("client test continue 100 ", StandardCharsets.UTF_8);
+            post.getFields().put(HttpHeader.CONTENT_LENGTH, String.valueOf(data.remaining()));
 
-			http1ClientConnection.sendRequestWithContinuation(post, new ClientHTTPHandler.Adapter() {
-				@Override
-				public void continueToSendData(Request request, Response response, HTTPOutputStream outputStream,
-						HTTPConnection connection) {
-					try (HTTPOutputStream output = outputStream) {
-						output.write(data);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
+            http1ClientConnection.sendRequestWithContinuation(post, new ClientHTTPHandler.Adapter() {
+                @Override
+                public void continueToSendData(Request request, Response response, HTTPOutputStream outputStream,
+                                               HTTPConnection connection) {
+                    try (HTTPOutputStream output = outputStream) {
+                        output.write(data);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
 
-				@Override
-				public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
-						HTTPConnection connection) {
-					System.out.println(BufferUtils.toString(item, StandardCharsets.UTF_8));
-					return false;
-				}
+                @Override
+                public boolean content(ByteBuffer item, Request request, Response response, HTTPOutputStream output,
+                                       HTTPConnection connection) {
+                    System.out.println(BufferUtils.toString(item, StandardCharsets.UTF_8));
+                    return false;
+                }
 
-				@Override
-				public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
-						HTTPConnection connection) {
-					System.out.println(response);
-					System.out.println(response.getFields());
-					int currentPhaseNumber = phaser.arrive();
-					System.out.println("current phase number: " + currentPhaseNumber);
-					return true;
-				}
-			});
-			phaser.arriveAndAwaitAdvance();
+                @Override
+                public boolean messageComplete(Request request, Response response, HTTPOutputStream output,
+                                               HTTPConnection connection) {
+                    System.out.println(response);
+                    System.out.println(response.getFields());
+                    int currentPhaseNumber = phaser.arrive();
+                    System.out.println("current phase number: " + currentPhaseNumber);
+                    return true;
+                }
+            });
+            phaser.arriveAndAwaitAdvance();
 
-			System.out.println("demo3 request finished");
-			http1ClientConnection.close();
-		}
-	}
+            System.out.println("demo3 request finished");
+            http1ClientConnection.close();
+        }
+    }
 
 }

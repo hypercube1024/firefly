@@ -21,32 +21,31 @@ package com.firefly.utils.concurrent;
  * {@link Callback#succeeded()} method called on the {@link Callback} instance
  * passed the the {@link #IteratingNestedCallback(Callback)} constructor.
  * </p>
- * 
  */
 public abstract class IteratingNestedCallback extends IteratingCallback {
-	final Callback _callback;
+    final Callback _callback;
 
-	public IteratingNestedCallback(Callback callback) {
-		_callback = callback;
-	}
+    public IteratingNestedCallback(Callback callback) {
+        _callback = callback;
+    }
 
-	@Override
-	public boolean isNonBlocking() {
-		return _callback.isNonBlocking();
-	}
+    @Override
+    public boolean isNonBlocking() {
+        return _callback.isNonBlocking();
+    }
 
-	@Override
-	protected void onCompleteSuccess() {
-		_callback.succeeded();
-	}
+    @Override
+    protected void onCompleteSuccess() {
+        _callback.succeeded();
+    }
 
-	@Override
-	protected void onCompleteFailure(Throwable x) {
-		_callback.failed(x);
-	}
+    @Override
+    protected void onCompleteFailure(Throwable x) {
+        _callback.failed(x);
+    }
 
-	@Override
-	public String toString() {
-		return String.format("%s@%x", getClass().getSimpleName(), hashCode());
-	}
+    @Override
+    public String toString() {
+        return String.format("%s@%x", getClass().getSimpleName(), hashCode());
+    }
 }

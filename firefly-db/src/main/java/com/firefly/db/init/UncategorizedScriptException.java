@@ -9,26 +9,23 @@ package com.firefly.db.init;
 @SuppressWarnings("serial")
 public class UncategorizedScriptException extends ScriptException {
 
-	/**
-	 * Construct a new {@code UncategorizedScriptException}.
-	 * 
-	 * @param message
-	 *            detailed message
-	 */
-	public UncategorizedScriptException(String message) {
-		super(message);
-	}
+    /**
+     * Construct a new {@code UncategorizedScriptException}.
+     *
+     * @param message detailed message
+     */
+    public UncategorizedScriptException(String message) {
+        super(message);
+    }
 
-	/**
-	 * Construct a new {@code UncategorizedScriptException}.
-	 * 
-	 * @param message
-	 *            detailed message
-	 * @param cause
-	 *            the root cause
-	 */
-	public UncategorizedScriptException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    /**
+     * Construct a new {@code UncategorizedScriptException}.
+     *
+     * @param message detailed message
+     * @param cause   the root cause
+     */
+    public UncategorizedScriptException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

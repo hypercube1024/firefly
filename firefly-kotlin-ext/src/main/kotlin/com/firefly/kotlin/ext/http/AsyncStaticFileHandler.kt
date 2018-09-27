@@ -21,9 +21,11 @@ import java.util.zip.GZIPOutputStream
 /**
  * @author Pengtao Qiu
  */
-class AsyncStaticFileHandler(val rootPath: String,
-                             val maxBufferSize: Int = 64 * 1024,
-                             val enableGzip: Boolean = false) : AsyncHandler {
+class AsyncStaticFileHandler(
+    val rootPath: String,
+    val maxBufferSize: Int = 64 * 1024,
+    val enableGzip: Boolean = false
+                            ) : AsyncHandler {
 
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
@@ -46,8 +48,8 @@ class AsyncStaticFileHandler(val rootPath: String,
                         ctx.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
                     }
                     Optional.ofNullable(MimeTypes.getDefaultMimeByExtension(file.name))
-                            .filter(StringUtils::hasText)
-                            .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
+                        .filter(StringUtils::hasText)
+                        .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
 
                     val bufSize = when {
                         contentLength > maxBufferSize -> maxBufferSize
@@ -80,8 +82,8 @@ class AsyncStaticFileHandler(val rootPath: String,
                     ctx.put(HttpHeader.CONTENT_LENGTH, singleLength.toString())
                     ctx.put(HttpHeader.CONTENT_RANGE, singleSatisfiableRange.toHeaderRangeString(contentLength))
                     Optional.ofNullable(MimeTypes.getDefaultMimeByExtension(file.name))
-                            .filter(StringUtils::hasText)
-                            .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
+                        .filter(StringUtils::hasText)
+                        .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
 
                     val bufSize = when {
                         singleLength > maxBufferSize -> maxBufferSize
@@ -108,7 +110,12 @@ class AsyncStaticFileHandler(val rootPath: String,
                                 break
                             }
 
-                            buf = ByteBuffer.allocate(Math.min(maxBufferSize.toLong(), singleLength - totalBytesRead).toInt())
+                            buf = ByteBuffer.allocate(
+                                Math.min(
+                                    maxBufferSize.toLong(),
+                                    singleLength - totalBytesRead
+                                        ).toInt()
+                                                     )
                         }
                     }
                     ctx.end()

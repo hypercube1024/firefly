@@ -52,7 +52,7 @@ public class TestMetaDataUtils {
                 "other_info VARCHAR(255))");
     }
 
-//    @Test
+    //    @Test
     public void testWrite() {
         metaDataUtils.generateJavaDataClass("test", "%", "hello_%",
                 "hello_", "com.hello.test",

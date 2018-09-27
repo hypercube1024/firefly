@@ -60,7 +60,7 @@ public class CORSHandler implements Handler {
                 }
             }
         }
-        
+
         ctx.next();
     }
 

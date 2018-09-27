@@ -98,6 +98,7 @@ package com.firefly.utils.collection;
  * unused elements in some array.  This is a total of O(k) = O(sqrt(n))
  * overhead, which is what we originally desired.
  */
+
 import java.util.*; // For AbstractList
 
 @SuppressWarnings("unchecked")
@@ -124,7 +125,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      *
      * @return The number of elements in the HashedArrayTree.
      */
-    @Override 
+    @Override
     public int size() {
         return mSize;
     }
@@ -135,7 +136,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      * @param elem The element to add.
      * @return true
      */
-    @Override 
+    @Override
     public boolean add(T elem) {
         /* First, check if we're completely out of space.  If so, do a resize
          * to ensure we do indeed have room.
@@ -148,7 +149,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
          * space exists from the previous call.
          */
         final int offset = computeOffset(size());
-        final int index  = computeIndex(size());
+        final int index = computeIndex(size());
 
         /* Check if an array exists here.  If not, make one up. */
         if (mArrays[offset] == null)
@@ -171,14 +172,14 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      * If the index is out of bounds, throws an IndexOutOfBounds exception.
      *
      * @param index The index at which to set the value.
-     * @param elem The element to store at that position.
+     * @param elem  The element to store at that position.
      * @return The value initially at that location.
      * @throws IndexOutOfBoundsException If index is invalid.
      */
-    @Override 
+    @Override
     public T set(int index, T elem) {
         /* Find out where to look. */
-        final int offset   = computeOffset(index);
+        final int offset = computeOffset(index);
         final int arrIndex = computeIndex(index);
 
         /* Cache the value there and write the new one. */
@@ -196,7 +197,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      * @return The value of the element at that position.
      * @throws IndexOutOfBoundsException If the index is invalid.
      */
-    @Override 
+    @Override
     public T get(int index) {
         /* Check that this is a valid index. */
         if (index < 0 || index >= size())
@@ -211,15 +212,15 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      * index.
      *
      * @param index The index just before which to insert.
-     * @param elem The value to insert
+     * @param elem  The value to insert
      * @throws IndexOutOfBoundsException if the index is invalid.
      */
-    @Override 
+    @Override
     public void add(int index, T elem) {
         /* Confirm the validity of the index. */
         if (index < 0 || index >= size())
             throw new IndexOutOfBoundsException("Index " + index + ", size " + size());
-        
+
         /* Add a dummy element to ensure that everything resizes correctly.
          * There's no reason to repeat the logic.
          */
@@ -242,7 +243,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      * @return The value of the element at that position.
      * @throws IndexOutOfBoundsException If the index is invalid.
      */
-    @Override 
+    @Override
     public T remove(int index) {
         /* Cache the value at the indicated position; this also does the bounds
          * check.
@@ -264,10 +265,10 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
         /* If we are now at 1/8 total capacity, shrink the structure. */
         if (size() * 8 <= mArrays.length * mArrays.length)
             shrink();
-        /* Otherwise, if the size is now an even multiple of the array size,
-         * we can drop the very last array.  This is the array whose offset
-         * is one after the end of the elements.
-         */
+            /* Otherwise, if the size is now an even multiple of the array size,
+             * we can drop the very last array.  This is the array whose offset
+             * is one after the end of the elements.
+             */
         else if (size() % mArrays.length == 0)
             mArrays[computeOffset(size())] = null;
 
@@ -279,7 +280,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      * element with that index can be found.
      *
      * @return The index into the topmost array where the given element can
-     *         be found.
+     * be found.
      */
     private int computeOffset(int index) {
         /* This can be computed by dividing the index by the index by the
@@ -295,7 +296,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
      * which the element with that index can be found.
      *
      * @return The index into the subarray array where the given element can
-     *         be found.
+     * be found.
      */
     private int computeIndex(int index) {
         /* This can be computed by modding the index by the index by the
@@ -334,7 +335,7 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
             System.arraycopy(mArrays[i], 0, newArrays[i / 2], 0, mArrays.length);
             System.arraycopy(mArrays[i + 1], 0, newArrays[i / 2], mArrays.length, mArrays.length);
 
-            /* Null out the old arrays to be nice to the GC during this 
+            /* Null out the old arrays to be nice to the GC during this
              * potentially stressful time.
              */
             mArrays[i] = mArrays[i + 1] = null;
@@ -368,12 +369,12 @@ public final class HashedArrayTree<T> extends AbstractList<T> {
             /* Create the arrays. */
             newArrays[i] = (T[]) new Object[newArrays.length];
 
-            /* Move everything into it.  If this is an odd array, it comes 
+            /* Move everything into it.  If this is an odd array, it comes
              * from the upper half of the old array; otherwise it comes from
              * the lower half.
              */
-            System.arraycopy(mArrays[i / 2], (i % 2 == 0)? 0 : newArrays.length,
-                             newArrays[i], 0, newArrays.length);
+            System.arraycopy(mArrays[i / 2], (i % 2 == 0) ? 0 : newArrays.length,
+                    newArrays[i], 0, newArrays.length);
 
             /* Play nice with the GC.  If this is an odd-numbered array, we
              * just copied over everything we needed and can clear out the

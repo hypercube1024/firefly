@@ -6,10 +6,10 @@ import com.firefly.utils.dom.Dom;
 
 public class ContructorParser extends AbstractXmlNodeParser implements XmlNodeParser {
 
-	@Override
-	public Object parse(Element ele, Dom dom) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Object parse(Element ele, Dom dom) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

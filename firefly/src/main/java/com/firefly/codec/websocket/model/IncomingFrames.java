@@ -6,7 +6,7 @@ import com.firefly.codec.websocket.frame.Frame;
  * Interface for dealing with Incoming Frames.
  */
 public interface IncomingFrames {
-    
+
     void incomingError(Throwable t);
 
     /**

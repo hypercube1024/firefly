@@ -26,11 +26,11 @@ import com.firefly.utils.collection.ArrayTrie;
 import com.firefly.utils.collection.Trie;
 
 /**
- * 
+ *
  */
 public enum HttpHeaderValue {
-	
-	CLOSE("close"),
+
+    CLOSE("close"),
     CHUNKED("chunked"),
     GZIP("gzip"),
     IDENTITY("identity"),
@@ -43,46 +43,47 @@ public enum HttpHeaderValue {
     UPGRADE("Upgrade"),
     UNKNOWN("::UNKNOWN::");
 
-	private static final EnumSet<HttpHeader> __known = EnumSet.of(
-			HttpHeader.CONNECTION, 
-			HttpHeader.TRANSFER_ENCODING,
-			HttpHeader.CONTENT_ENCODING);
-	
-	public final static Trie<HttpHeaderValue> CACHE = new ArrayTrie<HttpHeaderValue>();
-	static {
-		for (HttpHeaderValue value : HttpHeaderValue.values())
-			if (value != UNKNOWN)
-				CACHE.put(value.toString(), value);
-	}
+    private static final EnumSet<HttpHeader> __known = EnumSet.of(
+            HttpHeader.CONNECTION,
+            HttpHeader.TRANSFER_ENCODING,
+            HttpHeader.CONTENT_ENCODING);
 
-	private final String string;
-	private final ByteBuffer buffer;
-	
-	private HttpHeaderValue(String s) {
-		string = s;
-		buffer = ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8));
-	}
+    public final static Trie<HttpHeaderValue> CACHE = new ArrayTrie<HttpHeaderValue>();
 
-	public ByteBuffer toBuffer() {
-		return buffer.asReadOnlyBuffer();
-	}
+    static {
+        for (HttpHeaderValue value : HttpHeaderValue.values())
+            if (value != UNKNOWN)
+                CACHE.put(value.toString(), value);
+    }
 
-	public boolean is(String s) {
-		return string.equalsIgnoreCase(s);
-	}
+    private final String string;
+    private final ByteBuffer buffer;
 
-	public String asString() {
-		return string;
-	}
+    private HttpHeaderValue(String s) {
+        string = s;
+        buffer = ByteBuffer.wrap(s.getBytes(StandardCharsets.UTF_8));
+    }
 
-	@Override
-	public String toString() {
-		return string;
-	}
+    public ByteBuffer toBuffer() {
+        return buffer.asReadOnlyBuffer();
+    }
 
-	public static boolean hasKnownValues(HttpHeader header) {
-		if (header == null)
-			return false;
-		return __known.contains(header);
-	}
+    public boolean is(String s) {
+        return string.equalsIgnoreCase(s);
+    }
+
+    public String asString() {
+        return string;
+    }
+
+    @Override
+    public String toString() {
+        return string;
+    }
+
+    public static boolean hasKnownValues(HttpHeader header) {
+        if (header == null)
+            return false;
+        return __known.contains(header);
+    }
 }

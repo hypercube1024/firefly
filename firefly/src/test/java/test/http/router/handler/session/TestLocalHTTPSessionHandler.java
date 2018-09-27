@@ -35,12 +35,12 @@ public class TestLocalHTTPSessionHandler extends AbstractHTTPHandlerTest {
 
         s.router().path("*").handler(sessionHandler)
          .router().post("/createSession").handler(ctx -> {
-             try {
-                 HTTPSession session = ctx.createSession(20, ".fireflysource.com").get();
-                 ctx.updateSessionNow(session);
-                 ctx.end("ok");
-             } catch (Exception e) {
-                 e.printStackTrace();
+            try {
+                HTTPSession session = ctx.createSession(20, ".fireflysource.com").get();
+                ctx.updateSessionNow(session);
+                ctx.end("ok");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         })
          .router().post("/session/:name").handler(ctx -> {

@@ -13,7 +13,11 @@ interface AsyncTransactionalManager {
 
     suspend fun getCurrentConnection(time: Long = 10000L, unit: TimeUnit = TimeUnit.MILLISECONDS): SQLConnection?
 
-    suspend fun <T> execSQL(time: Long = 10000L, unit: TimeUnit = TimeUnit.MILLISECONDS, handler: suspend (conn: SQLConnection) -> T): T = getConnection().execSQL(time, unit, handler)
+    suspend fun <T> execSQL(
+        time: Long = 10000L,
+        unit: TimeUnit = TimeUnit.MILLISECONDS,
+        handler: suspend (conn: SQLConnection) -> T
+                           ): T = getConnection().execSQL(time, unit, handler)
 
     suspend fun beginTransaction(): Boolean = getConnection().beginTransaction().await()
 

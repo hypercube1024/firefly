@@ -8,16 +8,17 @@ import com.firefly.core.support.annotation.AnnotationBeanDefinition;
 
 /**
  * XML bean configuration
+ *
  * @author JJ Xu
  */
 public interface XmlBeanDefinition extends AnnotationBeanDefinition {
 
-	Map<String, XmlManagedNode> getProperties();
-	
-	void setProperties(Map<String, XmlManagedNode> properties);
-	
-	void setContructorParameters(List<XmlManagedNode> list);
-	
-	List<XmlManagedNode> getContructorParameters();
-	
+    Map<String, XmlManagedNode> getProperties();
+
+    void setProperties(Map<String, XmlManagedNode> properties);
+
+    void setContructorParameters(List<XmlManagedNode> list);
+
+    List<XmlManagedNode> getContructorParameters();
+
 }

@@ -8,9 +8,9 @@ import com.firefly.utils.json.Parser;
 
 public class TimestampParser implements Parser {
 
-	@Override
-	public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {
-		return new Date(reader.readLong());
-	}
+    @Override
+    public Object convertTo(JsonReader reader, Class<?> clazz) throws IOException {
+        return new Date(reader.readLong());
+    }
 
 }

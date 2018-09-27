@@ -10,13 +10,13 @@ import com.firefly.utils.dom.Dom;
 
 public class ArrayNodeParser extends AbstractXmlNodeParser implements XmlNodeParser {
 
-	@Override
-	public Object parse(Element ele, Dom dom) {
-		ManagedArray<XmlManagedNode> target = new ManagedArray<XmlManagedNode>();
-		List<Element> elements = dom.elements(ele);
-		for (Element e : elements) {
-			target.add((XmlManagedNode)XmlNodeStateMachine.stateProcessor(e, dom));
-		}
-		return target;
-	}
+    @Override
+    public Object parse(Element ele, Dom dom) {
+        ManagedArray<XmlManagedNode> target = new ManagedArray<XmlManagedNode>();
+        List<Element> elements = dom.elements(ele);
+        for (Element e : elements) {
+            target.add((XmlManagedNode) XmlNodeStateMachine.stateProcessor(e, dom));
+        }
+        return target;
+    }
 }

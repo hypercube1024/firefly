@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * the processing.
  * </p>
  * Typical usage:
- * 
+ *
  * <pre>
  * CompletableCallback callback = new CompletableCallback()
  * {
@@ -43,100 +43,99 @@ import java.util.concurrent.atomic.AtomicReference;
  * </pre>
  */
 public abstract class CompletableCallback implements Callback {
-	private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
+    private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
-	@Override
-	public void succeeded() {
-		while (true) {
-			State current = state.get();
-			switch (current) {
-			case IDLE: {
-				if (state.compareAndSet(current, State.SUCCEEDED))
-					return;
-				break;
-			}
-			case COMPLETED: {
-				if (state.compareAndSet(current, State.SUCCEEDED)) {
-					resume();
-					return;
-				}
-				break;
-			}
-			case FAILED: {
-				return;
-			}
-			default: {
-				throw new IllegalStateException(current.toString());
-			}
-			}
-		}
-	}
+    @Override
+    public void succeeded() {
+        while (true) {
+            State current = state.get();
+            switch (current) {
+                case IDLE: {
+                    if (state.compareAndSet(current, State.SUCCEEDED))
+                        return;
+                    break;
+                }
+                case COMPLETED: {
+                    if (state.compareAndSet(current, State.SUCCEEDED)) {
+                        resume();
+                        return;
+                    }
+                    break;
+                }
+                case FAILED: {
+                    return;
+                }
+                default: {
+                    throw new IllegalStateException(current.toString());
+                }
+            }
+        }
+    }
 
-	@Override
-	public void failed(Throwable x) {
-		while (true) {
-			State current = state.get();
-			switch (current) {
-			case IDLE:
-			case COMPLETED: {
-				if (state.compareAndSet(current, State.FAILED)) {
-					abort(x);
-					return;
-				}
-				break;
-			}
-			case FAILED: {
-				return;
-			}
-			default: {
-				throw new IllegalStateException(current.toString());
-			}
-			}
-		}
-	}
+    @Override
+    public void failed(Throwable x) {
+        while (true) {
+            State current = state.get();
+            switch (current) {
+                case IDLE:
+                case COMPLETED: {
+                    if (state.compareAndSet(current, State.FAILED)) {
+                        abort(x);
+                        return;
+                    }
+                    break;
+                }
+                case FAILED: {
+                    return;
+                }
+                default: {
+                    throw new IllegalStateException(current.toString());
+                }
+            }
+        }
+    }
 
-	/**
-	 * Callback method invoked when this callback is succeeded <em>after</em> a
-	 * first call to {@link #tryComplete()}.
-	 */
-	public abstract void resume();
+    /**
+     * Callback method invoked when this callback is succeeded <em>after</em> a
+     * first call to {@link #tryComplete()}.
+     */
+    public abstract void resume();
 
-	/**
-	 * Callback method invoked when this callback is failed.
-	 * 
-	 * @param failure
-	 *            the throwable reprsenting the callback failure
-	 */
-	public abstract void abort(Throwable failure);
+    /**
+     * Callback method invoked when this callback is failed.
+     *
+     * @param failure the throwable reprsenting the callback failure
+     */
+    public abstract void abort(Throwable failure);
 
-	/**
-	 * Tries to complete this callback; driver code should call this method once
-	 * <em>after</em> the asynchronous operation to detect whether the
-	 * asynchronous operation has already completed or not.
-	 *
-	 * @return whether the attempt to complete was successful.
-	 */
-	public boolean tryComplete() {
-		while (true) {
-			State current = state.get();
-			switch (current) {
-			case IDLE: {
-				if (state.compareAndSet(current, State.COMPLETED))
-					return true;
-				break;
-			}
-			case SUCCEEDED:
-			case FAILED: {
-				return false;
-			}
-			default: {
-				throw new IllegalStateException(current.toString());
-			}
-			}
-		}
-	}
+    /**
+     * Tries to complete this callback; driver code should call this method once
+     * <em>after</em> the asynchronous operation to detect whether the
+     * asynchronous operation has already completed or not.
+     *
+     * @return whether the attempt to complete was successful.
+     */
+    public boolean tryComplete() {
+        while (true) {
+            State current = state.get();
+            switch (current) {
+                case IDLE: {
+                    if (state.compareAndSet(current, State.COMPLETED))
+                        return true;
+                    break;
+                }
+                case SUCCEEDED:
+                case FAILED: {
+                    return false;
+                }
+                default: {
+                    throw new IllegalStateException(current.toString());
+                }
+            }
+        }
+    }
 
-	private enum State {
-		IDLE, SUCCEEDED, FAILED, COMPLETED
-	}
+    private enum State {
+        IDLE, SUCCEEDED, FAILED, COMPLETED
+    }
 }

@@ -1603,9 +1603,7 @@ public class HttpParser {
     }
 
     /* ------------------------------------------------------------------------------- */
-    public boolean isAtEOF()
-
-    {
+    public boolean isAtEOF() {
         return _eof;
     }
 

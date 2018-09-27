@@ -13,10 +13,11 @@ import kotlin.test.assertEquals
 private val log = KtLogger.getLogger { }
 
 private val dispatchExecutor: ExecutorService = ThreadPoolExecutor(
-        2, 2,
-        0L, TimeUnit.MILLISECONDS,
-        ArrayBlockingQueue(20),
-        Executors.defaultThreadFactory())
+    2, 2,
+    0L, TimeUnit.MILLISECONDS,
+    ArrayBlockingQueue(20),
+    Executors.defaultThreadFactory()
+                                                                  )
 
 // the thread local I want to maintain
 private val threadInt = ThreadLocal<Int>()

@@ -31,13 +31,13 @@ fun main(args: Array<String>): Unit = runBlocking {
     log.info { "duck -> $duck" }
 
     val postResponse = firefly.httpClient().post("$host/product")
-            .jsonBody(Request("mmp product", Product("Oooo", "mmp")))
-            .asyncSubmit().getJsonBody<Response<String>>()
+        .jsonBody(Request("mmp product", Product("Oooo", "mmp")))
+        .asyncSubmit().getJsonBody<Response<String>>()
     log.info { "mmp -> $postResponse" }
 
     val getResponse = firefly.httpClient().get("$host/product")
-            .jsonBody(Request("mmp get product", Product("Error", "mmp")))
-            .asyncSubmit().stringBody
+        .jsonBody(Request("mmp get product", Product("Error", "mmp")))
+        .asyncSubmit().stringBody
     log.info { "error -> $getResponse" }
 
 }

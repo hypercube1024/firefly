@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
  */
 public class HpackDecoder {
     public static final Logger LOG = LoggerFactory.getLogger("firefly-system");
-    
+
     public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 = new HttpField.LongValueHttpField(HttpHeader.CONTENT_LENGTH, 0L);
 
     private final HpackContext _context;

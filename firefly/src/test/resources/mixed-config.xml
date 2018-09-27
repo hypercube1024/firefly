@@ -1,34 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.fireflysource.com/beans"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-	<import resource="mixed-config2.xml"/>
-	<import resource="mixed-config3.xml"/>
-	<import resource="mixed-config4.xml"/>
-	<component-scan base-package="test.mixed"/>
+    <import resource="mixed-config2.xml"/>
+    <import resource="mixed-config3.xml"/>
+    <import resource="mixed-config4.xml"/>
+    <component-scan base-package="test.mixed"/>
 
-	<bean id="foodRepository" class="test.mixed.impl.FoodRepositoryImpl">
-		<property name="food">
-			<list>
-				<ref bean="apple"/>
-				<ref bean="orange"/>
-				<ref bean="strawberry"/>
-			</list>
-		</property>
-	</bean>
-	
-	<bean id="foodService2" class="test.mixed.impl.FoodService2Impl">
-		<property name="foodService">
-			<ref bean="foodService" />
-		</property>
-	</bean>
+    <bean id="foodRepository" class="test.mixed.impl.FoodRepositoryImpl">
+        <property name="food">
+            <list>
+                <ref bean="apple"/>
+                <ref bean="orange"/>
+                <ref bean="strawberry"/>
+            </list>
+        </property>
+    </bean>
 
-	<bean id="kebab" class="test.mixed.Snack">
-		<property name="productionPlace" value="China" />
-		<property name="relish" value="peppery" />
-		<property name="name" value="mmp" />
-		<property name="price" value="3.5" />
-	</bean>
+    <bean id="foodService2" class="test.mixed.impl.FoodService2Impl">
+        <property name="foodService">
+            <ref bean="foodService"/>
+        </property>
+    </bean>
+
+    <bean id="kebab" class="test.mixed.Snack">
+        <property name="productionPlace" value="China"/>
+        <property name="relish" value="peppery"/>
+        <property name="name" value="mmp"/>
+        <property name="price" value="3.5"/>
+    </bean>
 
 </beans>

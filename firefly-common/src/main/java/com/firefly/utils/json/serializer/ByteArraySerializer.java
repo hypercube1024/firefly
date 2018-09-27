@@ -8,10 +8,10 @@ import com.firefly.utils.json.Serializer;
 
 public class ByteArraySerializer implements Serializer {
 
-	@Override
-	public void convertTo(JsonWriter writer, Object obj)
-			throws IOException {
-		writer.writeStringWithQuote(Base64Utils.encodeToString((byte[])obj));
-	}
+    @Override
+    public void convertTo(JsonWriter writer, Object obj)
+            throws IOException {
+        writer.writeStringWithQuote(Base64Utils.encodeToString((byte[]) obj));
+    }
 
 }

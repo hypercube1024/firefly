@@ -4,5 +4,5 @@ import java.util.List;
 
 
 public interface FoodRepository {
-	List<Food> getFood();
+    List<Food> getFood();
 }

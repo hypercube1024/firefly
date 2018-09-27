@@ -5,9 +5,9 @@ import com.firefly.utils.json.Serializer;
 
 public class IntSerializer implements Serializer {
 
-	@Override
-	public void convertTo(JsonWriter writer, Object obj) {
-		writer.writeInt((Integer)obj);
-	}
+    @Override
+    public void convertTo(JsonWriter writer, Object obj) {
+        writer.writeInt((Integer) obj);
+    }
 
 }

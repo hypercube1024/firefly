@@ -74,7 +74,6 @@ public class IdleStreamDemo {
     }
 
 
-
     public static MultiplexingServer createServer(String host, int port) {
         MultiplexingServerConfiguration configuration = new MultiplexingServerConfiguration();
         configuration.setStreamMaxIdleTime(1000);

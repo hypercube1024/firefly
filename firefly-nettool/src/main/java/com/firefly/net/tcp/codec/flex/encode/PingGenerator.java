@@ -16,7 +16,7 @@ public class PingGenerator implements Generator {
     @Override
     public ByteBuffer generate(Object object) {
         PingFrame pingFrame = (PingFrame) object;
-        
+
         int length = Frame.FRAME_HEADER_LENGTH + 1;
         ByteBuffer buffer = ByteBuffer.allocate(length);
         buffer.put(headerGenerator.generate(pingFrame));

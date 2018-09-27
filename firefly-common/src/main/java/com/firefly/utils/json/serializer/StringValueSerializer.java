@@ -7,9 +7,9 @@ import com.firefly.utils.json.Serializer;
 
 public class StringValueSerializer implements Serializer {
 
-	@Override
-	public void convertTo(JsonWriter writer, Object obj) throws IOException {
-		writer.write(String.valueOf(obj));
-	}
+    @Override
+    public void convertTo(JsonWriter writer, Object obj) throws IOException {
+        writer.write(String.valueOf(obj));
+    }
 
 }

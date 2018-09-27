@@ -11,8 +11,7 @@ public enum ResponseStatus {
 
     OK(1, "ok"),
     ARGUMENT_ERROR(2, "argument error"),
-    SERVER_ERROR(3, "server error")
-    ;
+    SERVER_ERROR(3, "server error");
 
     private final int value;
     private final String description;
@@ -36,6 +35,6 @@ public enum ResponseStatus {
     }
 
     public static Optional<ResponseStatus> from(int value) {
-         return Optional.ofNullable(Holder.map.get(value));
+        return Optional.ofNullable(Holder.map.get(value));
     }
 }

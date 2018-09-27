@@ -10,9 +10,9 @@ import com.firefly.utils.concurrent.Callback;
 abstract public class DataFrameHandler {
 
     public static void handleDataFrame(DataFrame dataFrame, Callback callback,
-                                 MetaData.Request request, MetaData.Response response,
-                                 HTTPOutputStream output, HTTPConnection connection,
-                                 HTTPHandler httpHandler) {
+                                       MetaData.Request request, MetaData.Response response,
+                                       HTTPOutputStream output, HTTPConnection connection,
+                                       HTTPHandler httpHandler) {
         try {
             httpHandler.content(dataFrame.getData(), request, response, output, connection);
             if (dataFrame.isEndStream()) {

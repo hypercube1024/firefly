@@ -9,9 +9,9 @@ import com.firefly.utils.json.Serializer;
 
 public class CharacterSerializer implements Serializer {
 
-	@Override
-	public void convertTo(JsonWriter writer, Object obj) throws IOException {
-		writer.append(QUOTE).append((Character)obj).append(QUOTE);
-	}
+    @Override
+    public void convertTo(JsonWriter writer, Object obj) throws IOException {
+        writer.append(QUOTE).append((Character) obj).append(QUOTE);
+    }
 
 }

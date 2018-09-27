@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.fireflysource.com/beans"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-	<import resource="mixed-config2.xml"/>
-	<import resource="mixed-config3.xml"/>
-	<import resource="mixed-config4.xml"/>
-	<component-scan base-package="test.mixed"/>
+    <import resource="mixed-config2.xml"/>
+    <import resource="mixed-config3.xml"/>
+    <import resource="mixed-config4.xml"/>
+    <component-scan base-package="test.mixed"/>
 
-	<bean id="foodRepository" class="test.mixed.impl.FoodRepositoryImpl">
-		<constructor>
-			<argument type="java.util.List">
-				<list>
-					<ref bean="apple"/>
-					<ref bean="orange"/>
-					<ref bean="strawberry"/>
-				</list>
-			</argument>
-		</constructor>
-	</bean>
-	
-	<bean id="constructorTestBean" class="test.ioc.TestConstructorsIoc$BeanTest">
-		<constructor>
-			<argument type="java.lang.String" value="fffff"></argument>
-			<argument type="java.lang.Integer" value="4"></argument>
-		</constructor>
-	</bean>
-	
-	<bean id="foodService2" class="test.mixed.impl.FoodService2Impl">
-		
-		<property name="foodService">
-			<ref bean="foodService" />
-		</property>
-	</bean>
+    <bean id="foodRepository" class="test.mixed.impl.FoodRepositoryImpl">
+        <constructor>
+            <argument type="java.util.List">
+                <list>
+                    <ref bean="apple"/>
+                    <ref bean="orange"/>
+                    <ref bean="strawberry"/>
+                </list>
+            </argument>
+        </constructor>
+    </bean>
+
+    <bean id="constructorTestBean" class="test.ioc.TestConstructorsIoc$BeanTest">
+        <constructor>
+            <argument type="java.lang.String" value="fffff"></argument>
+            <argument type="java.lang.Integer" value="4"></argument>
+        </constructor>
+    </bean>
+
+    <bean id="foodService2" class="test.mixed.impl.FoodService2Impl">
+
+        <property name="foodService">
+            <ref bean="foodService"/>
+        </property>
+    </bean>
 
 </beans>

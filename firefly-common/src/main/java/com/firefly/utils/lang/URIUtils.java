@@ -11,7 +11,6 @@ import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
 /**
  * Parse an authority string into Host and Port
  * <p>Parse a string in the form "host:port", handling IPv4 an IPv6 hosts</p>
- *
  */
 public class URIUtils implements Cloneable {
 

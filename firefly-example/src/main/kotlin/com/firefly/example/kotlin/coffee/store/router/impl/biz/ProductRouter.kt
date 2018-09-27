@@ -45,7 +45,7 @@ class ProductRouter : RouterInstaller {
 
     private fun toProductBuyRequest(ctx: RoutingContext): ProductBuyRequest {
         val userInfo = ctx.getAttr<UserInfo>(config.loginUserKey)
-                ?: throw IllegalStateException("The user does not login")
+            ?: throw IllegalStateException("The user does not login")
         val request = ctx.getJsonBody<ProductBuyRequest>()
         request.userId = userInfo.id
         return request

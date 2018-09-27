@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Pengtao Qiu
  */
-abstract public class AbstractMessageHandler<R, T> implements MessageHandler<R, T>{
+abstract public class AbstractMessageHandler<R, T> implements MessageHandler<R, T> {
 
     private static Logger log = LoggerFactory.getLogger("firefly-system");
 

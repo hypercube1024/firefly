@@ -31,32 +31,37 @@ class TestHTTPContextTransactionalManager {
         val client = firefly.httpClient()
 
         val r0 = client.post("$url/user/create")
-                .jsonBody(Request("test", User(0, "testUser2")))
-                .asyncSubmit().getJsonBody<Response<Long>>()
+            .jsonBody(Request("test", User(0, "testUser2")))
+            .asyncSubmit().getJsonBody<Response<Long>>()
         assertEquals(2L, r0.data)
 
         val r1 = client.get("$url/user/${r0.data}")
-                .asyncSubmit().getJsonBody<Response<User>>()
+            .asyncSubmit().getJsonBody<Response<User>>()
         assertEquals("testUser2", r1.data?.name)
 
         val r2 = client.post("$url/user/createSimulateRollback")
-                .jsonBody(Request("test", User(0, "testUser3")))
-                .asyncSubmit()
+            .jsonBody(Request("test", User(0, "testUser3")))
+            .asyncSubmit()
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, r2.status)
 
         val r3 = client.get("$url/user/3")
-                .asyncSubmit().getJsonBody<Response<User>>()
+            .asyncSubmit().getJsonBody<Response<User>>()
         println(r3.data)
         assertEquals(true, r3.data == null)
 
         val r4 = client.post("$url/project/create")
-                .jsonBody(Request("test", ProjectEditor(
+            .jsonBody(
+                Request(
+                    "test", ProjectEditor(
                         Project(0, "project1", "project1 desc"),
-                        listOf(1, 2)))).asyncSubmit().getJsonBody<Response<Long>>()
+                        listOf(1, 2)
+                                         )
+                       )
+                     ).asyncSubmit().getJsonBody<Response<Long>>()
         assertEquals(1L, r4.data)
 
         val r5 = client.get("$url/project/${r4.data}")
-                .asyncSubmit().getJsonBody<Response<ProjectResult>>()
+            .asyncSubmit().getJsonBody<Response<ProjectResult>>()
         assertEquals(2, r5.data?.users?.size)
         assertEquals("project1", r5.data?.project?.name)
     }

@@ -14,8 +14,10 @@ import java.util.concurrent.TimeUnit
  *
  * @author Pengtao Qiu
  */
-class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<RoutingContext>,
-                                           val sqlClient: SQLClient) : AsyncTransactionalManager {
+class AsyncHttpContextTransactionalManager(
+    val requestCtx: CoroutineLocal<RoutingContext>,
+    val sqlClient: SQLClient
+                                          ) : AsyncTransactionalManager {
 
     val transactionKey = "_currentKotlinTransaction"
 
@@ -42,9 +44,10 @@ class AsyncHttpContextTransactionalManager(val requestCtx: CoroutineLocal<Routin
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun createConnectionIfEmpty(): CompletableFuture<SQLConnection> = requestCtx.get()?.attributes?.computeIfAbsent(transactionKey) {
-        sysLogger.debug("init new db connection")
-        sqlClient.connection
-    } as CompletableFuture<SQLConnection>
+    private fun createConnectionIfEmpty(): CompletableFuture<SQLConnection> =
+        requestCtx.get()?.attributes?.computeIfAbsent(transactionKey) {
+            sysLogger.debug("init new db connection")
+            sqlClient.connection
+        } as CompletableFuture<SQLConnection>
 
 }

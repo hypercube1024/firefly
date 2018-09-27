@@ -11,5 +11,5 @@ import reactor.core.publisher.Mono;
 public interface ProductService {
 
     Mono<Page<Product>> list(ProductQuery query);
-    
+
 }

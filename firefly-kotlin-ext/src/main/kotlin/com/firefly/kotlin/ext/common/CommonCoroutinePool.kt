@@ -14,7 +14,10 @@ import kotlin.coroutines.experimental.CoroutineContext
  */
 object CommonCoroutinePool : CoroutineDispatcher() {
 
-    val defaultPoolSize: Int = Integer.getInteger("com.firefly.kotlin.common.async.defaultPoolSize", Runtime.getRuntime().availableProcessors())
+    val defaultPoolSize: Int = Integer.getInteger(
+        "com.firefly.kotlin.common.async.defaultPoolSize",
+        Runtime.getRuntime().availableProcessors()
+                                                 )
 
     private val pool: ForkJoinPool = ForkJoinPool(defaultPoolSize, { pool ->
         val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
@@ -32,9 +35,15 @@ object CoroutineDispatchers {
     val computation: CommonCoroutinePool by lazy { CommonCoroutinePool }
     val ioBlocking: CoroutineDispatcher by lazy {
         val threadId = AtomicInteger()
-        ThreadPoolExecutor(16, 64,
-                30L, TimeUnit.SECONDS,
-                ArrayBlockingQueue<Runnable>(10000)
-        ) { r -> Thread(r, "firefly-kt-io-blocking-pool-" + threadId.getAndIncrement()) }.asCoroutineDispatcher()
+        ThreadPoolExecutor(
+            16, 64,
+            30L, TimeUnit.SECONDS,
+            ArrayBlockingQueue<Runnable>(10000)
+                          ) { r ->
+            Thread(
+                r,
+                "firefly-kt-io-blocking-pool-" + threadId.getAndIncrement()
+                  )
+        }.asCoroutineDispatcher()
     }
 }

@@ -15,16 +15,17 @@ import java.io.Serializable
  */
 @NoArg
 data class AppColumnVO(
-        var id: Long,
-        var name: String,
-        var englishName: String?,
-        var order: Int,
-        var cover: String,
-        var url: String,
-        var token: String?,
-        var duration: Long?,
-        var backgroundImage: String?,
-        var episodeNum: Int?) : Serializable {
+    var id: Long,
+    var name: String,
+    var englishName: String?,
+    var order: Int,
+    var cover: String,
+    var url: String,
+    var token: String?,
+    var duration: Long?,
+    var backgroundImage: String?,
+    var episodeNum: Int?
+                      ) : Serializable {
     companion object {
         private const val serialVersionUID: Long = 1
     }

@@ -9,4 +9,8 @@ import java.util.concurrent.TimeUnit
 /**
  * @author Pengtao Qiu
  */
-suspend fun SimpleWebSocketClient.HandshakeBuilder.asyncConnect(time: Long = 10 * 1000L, unit: TimeUnit = TimeUnit.MILLISECONDS): WebSocketConnection = withTimeout(time, unit) { connect().await() }
+suspend fun SimpleWebSocketClient.HandshakeBuilder.asyncConnect(
+    time: Long = 10 * 1000L,
+    unit: TimeUnit = TimeUnit.MILLISECONDS
+                                                               ): WebSocketConnection =
+    withTimeout(time, unit) { connect().await() }
