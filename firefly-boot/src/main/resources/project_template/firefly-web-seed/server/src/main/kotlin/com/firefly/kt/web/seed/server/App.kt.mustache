@@ -1,4 +1,4 @@
-package com.firefly.kt.web.seed.server
+package {{packageName}}.server
 
 import com.firefly.annotation.Inject
 import com.firefly.core.ApplicationContext
@@ -10,9 +10,9 @@ import com.firefly.kotlin.ext.db.asyncUpdate
 import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
-import com.firefly.kt.web.seed.server.config.ServerConfig
-import com.firefly.kt.web.seed.server.dao.db.DbClient
-import com.firefly.kt.web.seed.server.router.RouterInstaller
+import {{packageName}}.server.config.ServerConfig
+import {{packageName}}.server.dao.db.DbClient
+import {{packageName}}.server.router.RouterInstaller
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.lang.AbstractLifeCycle
 import kotlinx.coroutines.experimental.CoroutineScope

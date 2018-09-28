@@ -1,4 +1,4 @@
-package com.firefly.kt.web.seed.server.common;
+package {{packageName}}.server.common;
 
 import com.firefly.utils.log.LogFilter;
 import com.firefly.utils.log.LogItem;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ErrorLogFilter implements LogFilter {
 
-    private static Logger logger = LoggerFactory.getLogger("firefly-kt-web-seed-error");
+    private static Logger logger = LoggerFactory.getLogger("{{artifactId}}-error");
 
     @Override
     public void filter(LogItem logItem) {

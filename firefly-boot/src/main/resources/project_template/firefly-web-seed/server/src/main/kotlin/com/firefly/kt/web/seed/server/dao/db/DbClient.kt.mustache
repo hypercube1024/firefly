@@ -1,4 +1,4 @@
-package com.firefly.kt.web.seed.server.dao.db
+package {{packageName}}.server.dao.db
 
 import com.firefly.annotation.Component
 import com.firefly.annotation.InitialMethod
@@ -8,7 +8,7 @@ import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
 import com.firefly.kotlin.ext.db.AsyncTransactionalManager
 import com.firefly.kotlin.ext.log.KtLogger
-import com.firefly.kt.web.seed.server.config.ServerConfig
+import {{packageName}}.server.config.ServerConfig
 import com.firefly.server.http2.router.RoutingContext
 import com.zaxxer.hikari.HikariDataSource
 import javax.sql.DataSource

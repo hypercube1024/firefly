@@ -8,7 +8,9 @@ data class Project(
     var groupId: String,
     var artifactId: String,
     var packageName: String,
-    var uberJarName: String,
+    var domainName: String,
+    var uberJarName: String = domainName,
+    var fireflyVersion: String = "4.9.1-dev30",
     var buildTool: String = BuildTool.MAVEN.value
                   )
 

@@ -7,37 +7,37 @@
         <level>INFO</level>
         <path>${log.path}</path>
         <enable-console>${log.enableConsole}</enable-console>
-        <formatter>com.firefly.kt.web.seed.server.common.FireflyKtWebSeedLogFormatter</formatter>
-        <log-filter>com.firefly.kt.web.seed.server.common.ErrorLogFilter</log-filter>
+        <formatter>{{packageName}}.server.common.FireflyKtWebSeedLogFormatter</formatter>
+        <log-filter>{{packageName}}.server.common.ErrorLogFilter</log-filter>
     </logger>
 
     <logger>
         <name>firefly-monitor</name>
         <level>INFO</level>
         <path>${log.path}</path>
-        <formatter>com.firefly.kt.web.seed.server.common.FireflyKtWebSeedLogFormatter</formatter>
+        <formatter>{{packageName}}.server.common.FireflyKtWebSeedLogFormatter</formatter>
     </logger>
 
     <logger>
-        <name>firefly-kt-web-seed-monitor</name>
+        <name>{{artifactId}}-monitor</name>
         <level>INFO</level>
         <path>${log.path}</path>
-        <formatter>com.firefly.kt.web.seed.server.common.FireflyKtWebSeedLogFormatter</formatter>
+        <formatter>{{packageName}}.server.common.FireflyKtWebSeedLogFormatter</formatter>
     </logger>
 
     <logger>
-        <name>com.firefly.kt.web.seed</name>
+        <name>{{packageName}}</name>
         <level>${log.level}</level>
         <path>${log.path}</path>
         <enable-console>${log.enableConsole}</enable-console>
-        <formatter>com.firefly.kt.web.seed.server.common.FireflyKtWebSeedLogFormatter</formatter>
-        <log-filter>com.firefly.kt.web.seed.server.common.ErrorLogFilter</log-filter>
+        <formatter>{{packageName}}.server.common.FireflyKtWebSeedLogFormatter</formatter>
+        <log-filter>{{packageName}}.server.common.ErrorLogFilter</log-filter>
     </logger>
 
     <logger>
-        <name>firefly-kt-web-seed-error</name>
+        <name>{{artifactId}}-error</name>
         <level>ERROR</level>
         <path>${log.path}</path>
-        <formatter>com.firefly.kt.web.seed.server.common.FireflyKtWebSeedLogFormatter</formatter>
+        <formatter>{{packageName}}.server.common.FireflyKtWebSeedLogFormatter</formatter>
     </logger>
 </loggers>
