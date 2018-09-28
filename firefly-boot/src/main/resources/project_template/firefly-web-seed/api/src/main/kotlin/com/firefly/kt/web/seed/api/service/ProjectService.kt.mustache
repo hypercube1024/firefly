@@ -1,0 +1,15 @@
+package com.firefly.kt.web.seed.api.service
+
+import com.firefly.kt.web.seed.api.model.entity.Project
+import com.firefly.kt.web.seed.api.model.vo.ProjectVo
+
+/**
+ * @author Pengtao Qiu
+ */
+interface ProjectService {
+
+    suspend fun get(id: Long): ProjectVo
+
+    suspend fun insert(project: Project): Long
+
+}

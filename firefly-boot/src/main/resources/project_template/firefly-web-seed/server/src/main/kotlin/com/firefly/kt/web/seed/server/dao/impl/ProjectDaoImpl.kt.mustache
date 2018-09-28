@@ -1,0 +1,27 @@
+package com.firefly.kt.web.seed.server.dao.impl
+
+import com.firefly.annotation.Component
+import com.firefly.annotation.Inject
+import com.firefly.kotlin.ext.db.asyncInsertObject
+import com.firefly.kotlin.ext.db.asyncQueryById
+import com.firefly.kt.web.seed.api.dao.ProjectDao
+import com.firefly.kt.web.seed.api.model.entity.Project
+import com.firefly.kt.web.seed.server.dao.db.DbClient
+
+/**
+ * @author Pengtao Qiu
+ */
+@Component("projectDao")
+class ProjectDaoImpl : ProjectDao {
+
+    @Inject
+    private lateinit var dbClient: DbClient
+
+    override suspend fun get(id: Long): Project = dbClient.getDbClient().execSQL {
+        it.asyncQueryById<Project>(id)
+    }
+
+    override suspend fun insert(project: Project): Long = dbClient.getDbClient().execSQL {
+        it.asyncInsertObject<Project, Long>(project)
+    }
+}

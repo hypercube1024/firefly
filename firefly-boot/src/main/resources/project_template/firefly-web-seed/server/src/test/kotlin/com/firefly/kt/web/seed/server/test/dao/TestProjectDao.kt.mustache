@@ -1,0 +1,30 @@
+package com.firefly.kt.web.seed.server.test.dao
+
+import com.firefly.kotlin.ext.context.getBean
+import com.firefly.kt.web.seed.api.dao.ProjectDao
+import com.firefly.kt.web.seed.api.model.entity.Project
+import com.firefly.kt.web.seed.server.test.common.AbstractServerTest
+import com.firefly.kt.web.seed.server.test.common.Context.ctx
+import kotlinx.coroutines.experimental.runBlocking
+import org.junit.Test
+import java.util.*
+import kotlin.test.assertEquals
+
+/**
+ * @author Pengtao Qiu
+ */
+class TestProjectDao : AbstractServerTest() {
+
+    private val projectDao: ProjectDao = ctx.getBean()
+
+    @Test
+    fun test() = runBlocking {
+        val now = Date()
+        val id = projectDao.insert(Project(null, now, now, "firefly kt web seed project 1.0.0"))
+        assertEquals(1L, id)
+
+        val project = projectDao.get(id)
+        assertEquals("firefly kt web seed project 1.0.0", project.name)
+        println(project)
+    }
+}

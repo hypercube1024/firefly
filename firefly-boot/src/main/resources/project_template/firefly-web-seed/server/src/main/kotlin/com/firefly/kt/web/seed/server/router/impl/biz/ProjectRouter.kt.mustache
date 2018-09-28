@@ -1,0 +1,35 @@
+package com.firefly.kt.web.seed.server.router.impl.biz
+
+import com.firefly.annotation.Component
+import com.firefly.annotation.Inject
+import com.firefly.codec.http2.model.HttpMethod
+import com.firefly.kotlin.ext.http.HttpServer
+import com.firefly.kt.web.seed.api.model.vo.Response
+import com.firefly.kt.web.seed.api.service.ProjectService
+import com.firefly.kt.web.seed.server.router.RouterInstaller
+
+/**
+ * @author Pengtao Qiu
+ */
+@Component("projectRouter")
+class ProjectRouter : RouterInstaller {
+
+    @Inject
+    private lateinit var server: HttpServer
+
+    @Inject
+    private lateinit var projectService: ProjectService
+
+    override fun install() = server.addRouters {
+
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/project/:id"
+
+            asyncCompleteHandler {
+                val id = getPathParameter("id").toLong()
+                writeJson(Response(projectService.get(id)))
+            }
+        }
+    }
+}

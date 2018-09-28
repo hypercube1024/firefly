@@ -5,6 +5,9 @@ import com.firefly.boot.model.Project
 import com.firefly.boot.service.ScaffoldService
 import com.firefly.utils.Assert
 import com.firefly.utils.io.FileUtils
+import com.github.mustachejava.DefaultMustacheFactory
+import java.io.File
+import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -12,6 +15,8 @@ import java.nio.file.Paths
  * @author Pengtao Qiu
  */
 class KotlinWebScaffoldServiceImpl : ScaffoldService {
+
+    private val mustacheFactory = DefaultMustacheFactory()
 
     override fun generate(project: Project) {
         val projectDir = Paths.get(project.path)
@@ -23,31 +28,41 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
         // init project dir
         FileUtils.delete(projectDir)
         Files.createDirectories(projectDir)
-        listOf(
-            "${project.artifactId}-api",
-            "${project.artifactId}-common",
-            "${project.artifactId}-server"
-              )
-            .map { Paths.get(projectDir.toAbsolutePath().toString(), it) }
-            .forEach { moduleDir ->
-                Files.createDirectory(moduleDir)
-                println("create module directory -> $moduleDir")
+        val templatePath = "/project_template/firefly-web-seed"
+        val templateDir = toPath(templatePath)
+        val resourcesDir = toPath("/")
+        val templateSuffix = ".mustache"
+        FileUtils.filter(templateDir, "*$templateSuffix") { path ->
+            val templateName = path.toString().substring(resourcesDir.toString().length + 1)
+            val fileName = path.fileName.toString()
+            val newFileName = fileName.substring(0, fileName.length - templateSuffix.length)
 
-                val srcDir = Paths.get(moduleDir.toString(), "src")
-                Files.createDirectory(srcDir)
-                println("create src directory -> $srcDir")
+            when {
+                path.toString().endsWith(Paths.get("/firefly-web-seed/pom.xml.mustache").toString())
+                        || path.toString().endsWith(Paths.get("/firefly-web-seed/api/pom.xml.mustache").toString())
+                        || path.toString().endsWith(Paths.get("/firefly-web-seed/common/pom.xml.mustache").toString())
+                        || path.toString().endsWith(Paths.get("/firefly-web-seed/server/pom.xml.mustache").toString()) -> {
+                    println("[root]:$path")
 
-                listOf(
-                    Paths.get(srcDir.toString(), "main", "java"),
-                    Paths.get(srcDir.toString(), "main", "kotlin"),
-                    Paths.get(srcDir.toString(), "test", "java"),
-                    Paths.get(srcDir.toString(), "test", "kotlin")
-                      ).forEach { srcPath ->
-                    Files.createDirectories(srcPath)
-                    println("create src directory -> $srcPath")
-                    // TODO
+                    val dir = Paths.get(projectDir.toString(), templateName.substring(templatePath.length, templateName.length - fileName.length))
+                    val outputFile = File(dir.toString(), newFileName)
+                    createOutputFile(outputFile)
+                    println("[root:create]$outputFile")
+
+                    FileWriter(outputFile).use { mustacheFactory.compile(templateName).execute(it, project) }
+                    println("[root:generate]$outputFile")
+                }
+                path.toString().contains(Paths.get("/firefly-web-seed/server").toString()) -> {
+                    println("[server]:$path")
+                }
+                path.toString().contains(Paths.get("/firefly-web-seed/api").toString()) -> {
+                    println("[api]:$path")
+                }
+                path.toString().contains(Paths.get("/firefly-web-seed/common").toString()) -> {
+                    println("[common]:$path")
                 }
             }
+        }
 
         when (BuildTool.from(project.buildTool)) {
             BuildTool.MAVEN -> {
@@ -56,6 +71,17 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
             BuildTool.GRADLE -> {
 
             }
+        }
+    }
+
+    private fun toPath(path: String) = Paths.get(KotlinWebScaffoldServiceImpl::class.java.getResource(path).toURI())
+
+    private fun createOutputFile(outputFile: File) {
+        if (!outputFile.exists()) {
+            val parent = outputFile.parentFile
+            val success = parent.mkdirs()
+            if (success)
+                println("create dir " + parent.absolutePath + " success")
         }
     }
 }

@@ -1,0 +1,14 @@
+package com.firefly.kt.web.seed.api.dao
+
+import com.firefly.kt.web.seed.api.model.entity.Project
+
+/**
+ * @author Pengtao Qiu
+ */
+interface ProjectDao {
+
+    suspend fun get(id: Long): Project
+
+    suspend fun insert(project: Project): Long
+
+}

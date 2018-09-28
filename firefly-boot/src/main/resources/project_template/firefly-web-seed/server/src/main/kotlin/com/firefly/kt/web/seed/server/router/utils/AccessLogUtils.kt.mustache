@@ -1,0 +1,12 @@
+package com.firefly.kt.web.seed.server.router.utils
+
+import com.firefly.kotlin.ext.http.AccessLogService
+import com.firefly.server.http2.router.RoutingContext
+
+/**
+ * @author Pengtao Qiu
+ */
+private val accessLogService: AccessLogService by lazy { AccessLogService("firefly-kt-web-seed-monitor") }
+
+fun recordAccessLog(ctx: RoutingContext, startTime: Long, endTime: Long) =
+    accessLogService.recordAccessLog(ctx, startTime, endTime)

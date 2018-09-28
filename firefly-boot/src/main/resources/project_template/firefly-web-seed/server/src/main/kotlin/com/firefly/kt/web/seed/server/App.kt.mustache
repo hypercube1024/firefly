@@ -1,0 +1,96 @@
+package com.firefly.kt.web.seed.server
+
+import com.firefly.annotation.Inject
+import com.firefly.core.ApplicationContext
+import com.firefly.kotlin.ext.common.CoroutineLocal
+import com.firefly.kotlin.ext.common.getHost
+import com.firefly.kotlin.ext.context.Context
+import com.firefly.kotlin.ext.context.getBean
+import com.firefly.kotlin.ext.db.asyncUpdate
+import com.firefly.kotlin.ext.http.HttpServer
+import com.firefly.kotlin.ext.log.KtLogger
+import com.firefly.kotlin.ext.log.info
+import com.firefly.kt.web.seed.server.config.ServerConfig
+import com.firefly.kt.web.seed.server.dao.db.DbClient
+import com.firefly.kt.web.seed.server.router.RouterInstaller
+import com.firefly.server.http2.router.RoutingContext
+import com.firefly.utils.lang.AbstractLifeCycle
+import kotlinx.coroutines.experimental.CoroutineScope
+import kotlinx.coroutines.experimental.Deferred
+import kotlinx.coroutines.experimental.Dispatchers
+import kotlinx.coroutines.experimental.runBlocking
+import kotlin.coroutines.experimental.ContinuationInterceptor
+
+/**
+ * @author Pengtao Qiu
+ */
+val sysLog = KtLogger.getLogger("firefly-system")
+
+lateinit var appCtx: ApplicationContext
+
+class KtWebSeedAppMain : AbstractLifeCycle() {
+
+    private val log = KtLogger.getLogger { }
+
+    @Inject
+    private lateinit var server: HttpServer
+
+    @Inject
+    private lateinit var config: ServerConfig
+
+    override fun init() {
+        appCtx.getBeans(RouterInstaller::class.java).sorted().forEach {
+            log.info { "install routers [${it::class.qualifiedName}]" }
+            it.install()
+        }
+        when (config.host) {
+            "auto" -> {
+                config.host = getHost()
+                config.port = System.getProperty("server.port").toInt()
+            }
+        }
+        // init db data
+        if (config.env == "local") {
+            runBlocking {
+                val dbClient: DbClient = appCtx.getBean()
+                dbClient.getDbClient().execSQL {
+                    it.asyncUpdate("DROP SCHEMA IF EXISTS firefly_seed")
+                    it.asyncUpdate("CREATE SCHEMA IF NOT EXISTS firefly_seed")
+                    it.asyncUpdate("set mode MySQL")
+                    it.asyncUpdate(
+                        """
+                        CREATE TABLE IF NOT EXISTS `firefly_seed`.`firefly_kt_web_seed_project`(
+                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                            create_time DATETIME NOT NULL,
+                            update_time DATETIME NOT NULL,
+                            name VARCHAR(45) NOT NULL
+                        )
+                        """.trimIndent()
+                                  )
+                }
+            }
+
+        }
+        server.listen(config.host, config.port)
+    }
+
+    override fun destroy() {
+        server.stop()
+    }
+
+}
+
+fun getRequestCtx(): CoroutineLocal<RoutingContext> = appCtx.getBean()
+
+fun <T> asyncTraceable(
+    context: ContinuationInterceptor = Dispatchers.Unconfined,
+    block: suspend CoroutineScope.() -> T
+                      ): Deferred<T> = com.firefly.kotlin.ext.http.asyncTraceable(getRequestCtx(), context, block)
+
+fun main(args: Array<String>) {
+    val start = System.currentTimeMillis()
+    appCtx = Context.create()
+    appCtx.getBean<KtWebSeedAppMain>().start()
+    val end = System.currentTimeMillis()
+    sysLog.info("The website started success. Spends ${end - start}ms.")
+}

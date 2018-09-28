@@ -2,16 +2,35 @@ package com.firefly.utils.io;
 
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.pattern.Pattern;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.function.Consumer;
 
 abstract public class FileUtils {
 
     public static final long FILE_READER_BUFFER_SIZE = 8 * 1024;
+
+    public static void delete(Path dir, String fileNamePattern) throws IOException {
+        filter(dir, fileNamePattern, path -> {
+            try {
+                Files.deleteIfExists(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static void filter(Path dir, String fileNamePattern, Consumer<Path> consumer) throws IOException {
+        Pattern pattern = Pattern.compile(fileNamePattern, "*");
+        Files.walk(dir).filter(path -> !Files.isDirectory(path))
+             .filter(path -> pattern.match(path.getFileName().toString()) != null)
+             .forEach(consumer);
+    }
 
     public static void delete(Path dir) throws IOException {
         try {

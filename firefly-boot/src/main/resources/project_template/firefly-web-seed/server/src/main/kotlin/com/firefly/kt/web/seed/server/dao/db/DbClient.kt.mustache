@@ -1,0 +1,62 @@
+package com.firefly.kt.web.seed.server.dao.db
+
+import com.firefly.annotation.Component
+import com.firefly.annotation.InitialMethod
+import com.firefly.annotation.Inject
+import com.firefly.db.jdbc.JDBCClient
+import com.firefly.kotlin.ext.common.CoroutineLocal
+import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
+import com.firefly.kotlin.ext.db.AsyncTransactionalManager
+import com.firefly.kotlin.ext.log.KtLogger
+import com.firefly.kt.web.seed.server.config.ServerConfig
+import com.firefly.server.http2.router.RoutingContext
+import com.zaxxer.hikari.HikariDataSource
+import javax.sql.DataSource
+
+/**
+ * @author Pengtao Qiu
+ */
+@Component("dbClient")
+class DbClient {
+
+    private val log = KtLogger.getLogger { }
+
+    @Inject
+    private lateinit var config: ServerConfig
+
+    @Inject
+    private lateinit var coroutineLocal: CoroutineLocal<RoutingContext>
+
+    private lateinit var dbClient: AsyncTransactionalManager
+
+    private lateinit var dataSource: DataSource
+
+    fun getDbClient() = dbClient
+
+    fun getDataSource() = dataSource
+
+    @InitialMethod
+    fun init() {
+        val ds = HikariDataSource()
+        when (config.env) {
+            "local", "rd" -> {
+                ds.driverClassName = "org.h2.Driver"
+                ds.jdbcUrl = "jdbc:h2:mem:firefly_seed"
+                ds.isAutoCommit = false
+            }
+            "beta", "prod" -> {
+                ds.driverClassName = "com.mysql.jdbc.Driver"
+                ds.maximumPoolSize = 32
+                ds.leakDetectionThreshold = 10000
+                ds.dataSourceProperties["cachePrepStmts"] = "true"
+                ds.dataSourceProperties["prepStmtCacheSize"] = "256"
+                ds.dataSourceProperties["prepStmtCacheSqlLimit"] = "2048"
+                ds.dataSourceProperties["useServerPrepStmts"] = "true"
+
+                TODO("the beta and prod environment db configuration")
+            }
+        }
+        dbClient = AsyncHttpContextTransactionalManager(coroutineLocal, JDBCClient(ds))
+        dataSource = ds
+    }
+}

@@ -1,0 +1,29 @@
+package com.firefly.kt.web.seed.server.router.impl.biz
+
+import com.firefly.annotation.Component
+import com.firefly.annotation.Inject
+import com.firefly.codec.http2.model.HttpMethod
+import com.firefly.kotlin.ext.http.HttpServer
+import com.firefly.kt.web.seed.server.router.RouterInstaller
+
+/**
+ * @author Pengtao Qiu
+ */
+@Component("mainPageRouter")
+class MainPageRouter : RouterInstaller {
+
+    @Inject
+    private lateinit var server: HttpServer
+
+    override fun install() = server.addRouters {
+
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/"
+
+            asyncCompleteHandler {
+                write("hello firefly kt web seed project")
+            }
+        }
+    }
+}

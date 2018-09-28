@@ -1,0 +1,95 @@
+package com.firefly.kt.web.seed.server.router.impl.sys.handler
+
+import com.firefly.kt.web.seed.api.model.vo.Response
+import com.firefly.kt.web.seed.server.router.utils.recordAccessLog
+import com.firefly.annotation.Component
+import com.firefly.annotation.InitialMethod
+import com.firefly.annotation.Inject
+import com.firefly.codec.http2.model.HttpHeader
+import com.firefly.codec.http2.model.HttpStatus
+import com.firefly.kotlin.ext.common.CoroutineLocal
+import com.firefly.kotlin.ext.http.AsyncHandler
+import com.firefly.kotlin.ext.http.asyncNext
+import com.firefly.kotlin.ext.log.CoroutineMappedDiagnosticContext
+import com.firefly.kotlin.ext.log.KtLogger
+import com.firefly.server.http2.router.RoutingContext
+import com.firefly.utils.log.MappedDiagnosticContextFactory
+import kotlinx.coroutines.experimental.NonCancellable
+import kotlinx.coroutines.experimental.TimeoutCancellationException
+import kotlinx.coroutines.experimental.withContext
+import org.slf4j.MDC
+import java.lang.IllegalArgumentException
+import java.util.*
+import java.util.concurrent.TimeUnit
+
+/**
+ * @author Pengtao Qiu
+ */
+@Component("globalHandler")
+class GlobalHandler : AsyncHandler {
+
+    private val log = KtLogger.getLogger { }
+
+    @Inject
+    private lateinit var requestCtx: CoroutineLocal<RoutingContext>
+
+    private val serviceTimeout = 60L
+    private val retryAfter = 60L
+
+    @InitialMethod
+    fun init() {
+        val mdc = MappedDiagnosticContextFactory.getInstance()
+            .mappedDiagnosticContext as CoroutineMappedDiagnosticContext
+        mdc.setRequestCtx(requestCtx)
+    }
+
+    override suspend fun handle(ctx: RoutingContext) {
+        val startTime = System.currentTimeMillis()
+        val mdc = MDC.putCloseable("tracingId", UUID.randomUUID().toString().replace("-", ""))
+
+        try {
+            ctx.asyncNext<Unit>(serviceTimeout, TimeUnit.SECONDS)
+        } catch (e: TimeoutCancellationException) {
+            log.error("server timeout exception -> ${ctx.uri}", e)
+
+            ctx.setStatus(HttpStatus.SERVICE_UNAVAILABLE_503)
+            ctx.response.fields.put(HttpHeader.RETRY_AFTER, retryAfter.toString())
+
+            val response = Response<Any>()
+            response.code = Response.SERVER_ERROR
+            response.msg = "服务执行超时，请${retryAfter}秒后再试"
+            ctx.writeJson(response)
+        } catch (e: IllegalArgumentException) {
+            log.warn("server exception -> ${ctx.uri}", e)
+            ctx.setStatus(HttpStatus.OK_200)
+
+            val response = Response<Any>()
+            response.code = Response.CLIENT_ERROR
+            response.msg = e.message ?: "参数错误"
+            ctx.writeJson(response)
+        } catch (e: IllegalStateException) {
+            log.warn("server state exception -> ${ctx.uri}", e)
+            ctx.setStatus(HttpStatus.OK_200)
+
+            val response = Response<Any>()
+            response.code = Response.SERVER_ERROR
+            response.msg = e.message ?: "服务端错误"
+            ctx.writeJson(response)
+        } catch (e: Exception) {
+            log.error("server exception -> ${ctx.uri}", e)
+            ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+
+            val response = Response<Any>()
+            response.code = Response.SERVER_ERROR
+            response.msg = e.message ?: "服务端错误"
+            ctx.writeJson(response)
+        } finally {
+            withContext(NonCancellable) {
+                val endTime = System.currentTimeMillis()
+                recordAccessLog(ctx, startTime, endTime)
+                mdc.close()
+                ctx.end()
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+package com.firefly.kt.web.seed.server.service.impl
+
+import com.firefly.`$`
+import com.firefly.annotation.Component
+import com.firefly.annotation.Inject
+import com.firefly.kt.web.seed.api.dao.ProjectDao
+import com.firefly.kt.web.seed.api.model.entity.Project
+import com.firefly.kt.web.seed.api.model.vo.ProjectVo
+import com.firefly.kt.web.seed.api.service.ProjectService
+
+/**
+ * @author Pengtao Qiu
+ */
+@Component("projectService")
+class ProjectServiceImpl : ProjectService {
+
+    @Inject
+    private lateinit var projectDao: ProjectDao
+
+    override suspend fun get(id: Long): ProjectVo {
+        val project = projectDao.get(id)
+        val vo = ProjectVo()
+        `$`.javabean.copyBean(project, vo)
+        return vo
+    }
+
+    override suspend fun insert(project: Project): Long = projectDao.insert(project)
+
+}

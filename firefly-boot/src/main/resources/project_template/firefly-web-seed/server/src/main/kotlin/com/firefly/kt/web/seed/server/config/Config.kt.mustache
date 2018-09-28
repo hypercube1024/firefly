@@ -1,0 +1,15 @@
+package com.firefly.kt.web.seed.server.config
+
+import com.firefly.kotlin.ext.annotation.NoArg
+
+/**
+ * @author Pengtao Qiu
+ */
+@NoArg
+data class ServerConfig(
+    var port: Int,
+    var host: String,
+    var env: String,
+    var staticResourceRoot: String,
+    var cacheVersion: String
+                       )
