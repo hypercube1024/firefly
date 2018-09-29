@@ -217,8 +217,8 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>src/main/java</source>
-                                <source>src/main/kotlin</source>
+                                <source>${project.basedir}/src/main/java</source>
+                                <source>${project.basedir}/src/main/kotlin</source>
                             </sources>
                         </configuration>
                     </execution>
