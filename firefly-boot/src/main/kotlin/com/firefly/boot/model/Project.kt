@@ -4,11 +4,11 @@ package com.firefly.boot.model
  * @author Pengtao Qiu
  */
 data class Project(
-    var path: String,
     var groupId: String,
     var artifactId: String,
     var packageName: String,
     var domainName: String,
+    var outputPath: String,
     var uberJarName: String = domainName,
     var fireflyVersion: String = "4.9.1-dev30",
     var buildTool: String = BuildTool.MAVEN.value

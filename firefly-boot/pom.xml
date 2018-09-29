@@ -24,6 +24,11 @@
             <groupId>com.fireflysource</groupId>
             <artifactId>firefly-slf4j</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -196,8 +201,8 @@
                 </executions>
                 <configuration>
                     <sourceDirectories>
-                        <dir>src/main/java</dir>
-                        <dir>src/main/kotlin</dir>
+                        <dir>${project.basedir}/src/main/java</dir>
+                        <dir>${project.basedir}/src/main/kotlin</dir>
                     </sourceDirectories>
                     <sourceLinks>
                         <link>
@@ -205,6 +210,19 @@
                             <dir>${project.basedir}/src/main/kotlin</dir>
                         </link>
                     </sourceLinks>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>com.firefly.boot.cli.CliKt</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

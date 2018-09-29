@@ -253,8 +253,8 @@
                 </executions>
                 <configuration>
                     <sourceDirectories>
-                        <dir>src/main/java</dir>
-                        <dir>src/main/kotlin</dir>
+                        <dir>${project.basedir}/src/main/java</dir>
+                        <dir>${project.basedir}/src/main/kotlin</dir>
                     </sourceDirectories>
                     <sourceLinks>
                         <link>

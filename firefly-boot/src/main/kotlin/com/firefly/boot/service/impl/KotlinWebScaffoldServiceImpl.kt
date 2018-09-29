@@ -19,7 +19,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
     private val mustacheFactory = DefaultMustacheFactory()
 
     override fun generate(project: Project) {
-        val projectDir = Paths.get(project.path)
+        val projectDir = Paths.get(project.outputPath)
         println("generate project -> $project")
 
         Assert.isTrue(Files.exists(projectDir), "The directory does not exist")
