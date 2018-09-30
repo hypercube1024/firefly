@@ -1,7 +1,6 @@
 package com.firefly.utils.log;
 
 import com.firefly.utils.StringUtils;
-import com.firefly.utils.VerifyUtils;
 import com.firefly.utils.log.file.FileLog;
 
 import java.io.File;
@@ -19,7 +18,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
         fileLog.setCharset(Charset.forName(c.getCharset()));
 
         boolean success;
-        if (VerifyUtils.isNotEmpty(c.getPath())) {
+        if (StringUtils.hasText(c.getPath())) {
             File file = new File(c.getPath());
             success = createLogDirectory(file);
             if (success) {
