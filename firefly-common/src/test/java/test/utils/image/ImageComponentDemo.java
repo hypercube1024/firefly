@@ -11,6 +11,7 @@ import java.awt.*;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -108,7 +109,8 @@ public class ImageComponentDemo {
         });
         poster.addChild(layout);
 
-        try (OutputStream out = new FileOutputStream("/Users/bjhl/Downloads/test_component.png")) {
+        String userHome = System.getProperty("user.home");
+        try (OutputStream out = new FileOutputStream(Paths.get(userHome, "/Develop/test_resource/test_component.png").toFile())) {
             ImageIO.write(poster.draw(), "png", out);
         }
 

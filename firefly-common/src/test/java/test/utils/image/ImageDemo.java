@@ -5,9 +5,9 @@ import com.firefly.utils.image.ImageUtils;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -51,11 +51,12 @@ public class ImageDemo {
         Font scoreFont = new Font("微软雅黑", Font.BOLD, 140);
         BufferedImage score = ImageUtils.drawTextInRect("79", scoreFont, Color.WHITE, 20, 20, null, 0);
 
-        BufferedImage poster = ImageIO.read(new File("/Users/bjhl/Downloads/score_card.png"));
+        BufferedImage poster = ImageIO.read(ImageComponentDemo.class.getResource("/score_card.png"));
         ImageUtils.mergeImage(poster, wordCard, 100, 733);
         ImageUtils.mergeImage(poster, score, 269, 238);
 
-        try (OutputStream out = new FileOutputStream("/Users/bjhl/Downloads/test.png")) {
+        String userHome = System.getProperty("user.home");
+        try (OutputStream out = new FileOutputStream(Paths.get(userHome, "/Develop/test_resource/test_img.png").toFile())) {
             ImageIO.write(poster, "png", out);
         }
     }
