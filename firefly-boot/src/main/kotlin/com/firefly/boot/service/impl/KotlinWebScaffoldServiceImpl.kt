@@ -2,6 +2,7 @@ package com.firefly.boot.service.impl
 
 import com.firefly.boot.model.Project
 import com.firefly.boot.service.ScaffoldService
+import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.utils.Assert
 import com.firefly.utils.io.FileUtils
 import com.github.mustachejava.DefaultMustacheFactory
@@ -16,14 +17,22 @@ import java.nio.file.Paths
  */
 class KotlinWebScaffoldServiceImpl : ScaffoldService {
 
+    private val log = KtLogger.getLogger { }
+
     private val mustacheFactory = DefaultMustacheFactory()
+    private val fileSeparator = System.getProperty("file.separator")
+    private val osName = System.getProperty("os.name")
 
     override fun generate(project: Project) {
+        val startTime = System.currentTimeMillis()
         val projectDir = Paths.get(project.outputPath)
-        println("generate project -> $project")
+        log.info("generate project -> $project")
 
-        Assert.isTrue(Files.exists(projectDir), "The directory does not exist")
-        Assert.isTrue(Files.isDirectory(projectDir), "The path is not a directory")
+        if (!Files.exists(projectDir)) {
+            Files.createDirectories(projectDir)
+        } else {
+            Assert.isTrue(Files.isDirectory(projectDir), "The path is not a directory")
+        }
 
         // init project dir
         FileUtils.delete(projectDir)
@@ -44,7 +53,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
                 templateName.substring(templatePath.length, templateName.length - fileName.length)
                                      ).toString()
 
-            println(currentPath)
+            log.info(currentPath)
             val outputFile = when {
                 isRoot(currentPath) || isResource(currentPath) || isFilter(currentPath) -> {
                     val outputFile = File(outputDir, newFileName)
@@ -59,17 +68,25 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
                 else -> throw IllegalStateException("the project template error -> $currentPath")
             }
 
-            FileWriter(outputFile).use { mustacheFactory.compile(templateName).execute(it, project) }
-            println("generate -> $outputFile")
+            FileWriter(outputFile).use {
+                if (osName.toLowerCase().contains("windows")) {
+                    mustacheFactory.compile(templateName.replace(fileSeparator, "/")).execute(it, project)
+                } else {
+                    mustacheFactory.compile(templateName).execute(it, project)
+                }
+            }
+            log.info("generate -> $outputFile")
         }
+        val endTime = System.currentTimeMillis()
+        log.info("generate project successfully. ${endTime - startTime}ms. output path -> ${project.outputPath}")
     }
 
     private fun isFilter(currentPath: String): Boolean {
-        return currentPath.contains("/src/main/filters")
+        return currentPath.contains(Paths.get("/src/main/filters").toString())
     }
 
     private fun isResource(currentPath: String): Boolean {
-        return currentPath.contains("/src/main/resources") || currentPath.contains("/src/test/resources")
+        return currentPath.contains(Paths.get("/src/main/resources").toString()) || currentPath.contains(Paths.get("/src/test/resources").toString())
     }
 
     private fun isSource(currentPath: String): Boolean {
@@ -90,7 +107,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
             val parent = outputFile.parentFile
             val success = parent.mkdirs()
             if (success)
-                println("create dir " + parent.absolutePath + " success")
+                log.info("create dir " + parent.absolutePath + " success")
         }
     }
 }
