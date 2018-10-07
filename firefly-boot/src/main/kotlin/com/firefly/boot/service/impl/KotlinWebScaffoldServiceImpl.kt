@@ -8,7 +8,6 @@ import com.firefly.utils.io.FileUtils
 import com.github.mustachejava.DefaultMustacheFactory
 import java.io.File
 import java.io.FileWriter
-import java.lang.IllegalStateException
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -25,7 +24,8 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
 
     override fun generate(project: Project) {
         val startTime = System.currentTimeMillis()
-        val projectDir = Paths.get(project.outputPath)
+        val projectDir = Paths.get(project.outputPath, project.artifactId)
+        log.info("os -> $osName")
         log.info("generate project -> $project")
 
         if (!Files.exists(projectDir)) {
@@ -53,7 +53,6 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
                 templateName.substring(templatePath.length, templateName.length - fileName.length)
                                      ).toString()
 
-            log.info(currentPath)
             val outputFile = when {
                 isRoot(currentPath) || isResource(currentPath) || isFilter(currentPath) -> {
                     val outputFile = File(outputDir, newFileName)
@@ -78,7 +77,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
             log.info("generate -> $outputFile")
         }
         val endTime = System.currentTimeMillis()
-        log.info("generate project successfully. ${endTime - startTime}ms. output path -> ${project.outputPath}")
+        log.info("generate project successfully. -> total time: ${endTime - startTime}ms, output path: $projectDir")
     }
 
     private fun isFilter(currentPath: String): Boolean {
@@ -105,9 +104,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
     private fun createOutputDir(outputFile: File) {
         if (!outputFile.exists()) {
             val parent = outputFile.parentFile
-            val success = parent.mkdirs()
-            if (success)
-                log.info("create dir " + parent.absolutePath + " success")
+            parent.mkdirs()
         }
     }
 }
