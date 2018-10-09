@@ -4,7 +4,9 @@ import com.firefly.utils.StringUtils;
 
 public abstract class Pattern {
 
-    private static final AllMatch ALL_MATCH = new AllMatch();
+    private static class Holder {
+        private static final AllMatch ALL_MATCH = new AllMatch();
+    }
 
     /**
      * Matches a string according to the specified pattern
@@ -22,7 +24,7 @@ public abstract class Pattern {
 
         switch (array.length) {
             case 0:
-                return ALL_MATCH;
+                return Holder.ALL_MATCH;
             case 1:
                 if (startWith && endWith)
                     return new HeadAndTailMatch(array[0]);
@@ -114,8 +116,13 @@ public abstract class Pattern {
         @Override
         public String[] match(String str) {
             int currentIndex = str.indexOf(part);
-            if (currentIndex + part.length() == str.length()) {
-                return new String[]{str.substring(0, currentIndex)};
+            if (currentIndex != -1 && currentIndex + part.length() == str.length()) {
+                try {
+                    return new String[]{str.substring(0, currentIndex)};
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.out.println(str + ", " + currentIndex + ", " + part);
+                }
             }
             return null;
         }

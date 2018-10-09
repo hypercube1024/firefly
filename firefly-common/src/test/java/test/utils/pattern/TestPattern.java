@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 public class TestPattern {
+
     @Test
     public void testPattern() {
         Pattern p = Pattern.compile("?ddaaad?", "?");
@@ -75,6 +76,9 @@ public class TestPattern {
 
         p = Pattern.compile("aa*aa", "*");
         Assert.assertThat(p.match("aaaaa")[0], is(""));
+
+        p = Pattern.compile("*.mustache", "*");
+        Assert.assertNull(p.match("IO.class"));
     }
 
     public static void main(String[] args) {

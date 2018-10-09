@@ -10,6 +10,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.function.Consumer;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 abstract public class FileUtils {
 
@@ -27,9 +29,18 @@ abstract public class FileUtils {
 
     public static void filter(Path dir, String fileNamePattern, Consumer<Path> consumer) throws IOException {
         Pattern pattern = Pattern.compile(fileNamePattern, "*");
-        Files.walk(dir).filter(path -> !Files.isDirectory(path))
+        Files.walk(dir)
+             .filter(path -> !Files.isDirectory(path))
              .filter(path -> pattern.match(path.getFileName().toString()) != null)
              .forEach(consumer);
+    }
+
+    public static void filterInJar(JarFile jarFile, String fileNamePattern, Consumer<JarEntry> consumer) {
+        Pattern pattern = Pattern.compile(fileNamePattern, "*");
+        jarFile.stream()
+               .filter(entry -> !entry.isDirectory())
+               .filter(entry -> pattern.match(Paths.get(entry.getName()).getFileName().toString()) != null)
+               .forEach(consumer);
     }
 
     public static void delete(Path dir) throws IOException {

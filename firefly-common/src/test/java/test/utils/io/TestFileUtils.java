@@ -84,5 +84,4 @@ public class TestFileUtils {
         Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8").contains("the line 2"), is(true));
         Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8").contains("hello the end line"), is(true));
     }
-
 }

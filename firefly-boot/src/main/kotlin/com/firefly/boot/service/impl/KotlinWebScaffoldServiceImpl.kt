@@ -8,7 +8,9 @@ import com.firefly.utils.io.FileUtils
 import com.github.mustachejava.DefaultMustacheFactory
 import java.io.File
 import java.io.FileWriter
+import java.net.JarURLConnection
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
@@ -44,46 +46,71 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
         FileUtils.delete(projectDir)
         Files.createDirectories(projectDir)
         val templatePath = "/project_template/firefly-web-seed"
-        val templateDir = toPath(templatePath)
-        val resourcesDir = templateDir.parent.parent
         val templateSuffix = ".mustache"
-        FileUtils.filter(templateDir, "*$templateSuffix") { path ->
-            val currentPath = path.toString()
-            val templateName = currentPath.substring(resourcesDir.toString().length + 1)
-            val fileName = path.fileName.toString()
-            val newFileName = fileName.substring(0, fileName.length - templateSuffix.length)
-            val newPackagePath = Paths.get("/", project.packageName!!.replace('.', '/')).toString()
-            val templatePackagePath = Paths.get("/com/firefly/kt/web/seed").toString()
-            val outputDir = Paths.get(
-                projectDir.toString(),
-                templateName.substring(templatePath.length, templateName.length - fileName.length)
-                                     ).toString()
+        val fileNamePattern = "*$templateSuffix"
+        val url = KotlinWebScaffoldServiceImpl::class.java.getResource(templatePath)
 
-            val outputFile = when {
-                isRoot(currentPath) || isResource(currentPath) || isFilter(currentPath) -> {
-                    val outputFile = File(outputDir, newFileName)
-                    createOutputDir(outputFile)
-                    outputFile
-                }
-                isSource(currentPath) -> {
-                    val outputFile = File(outputDir.replace(templatePackagePath, newPackagePath), newFileName)
-                    createOutputDir(outputFile)
-                    outputFile
-                }
-                else -> throw IllegalStateException("the project template error -> $currentPath")
+        if (url.toString().startsWith("jar:")) {
+            val jarCon = url.openConnection() as JarURLConnection
+            val jarFile = jarCon.jarFile
+            FileUtils.filterInJar(jarFile, fileNamePattern) { entry ->
+                val templateName = entry.name
+                render(templateName, templateName, templateSuffix, templatePath, projectDir, project)
             }
+        } else {
+            val templateDir = toPath(templatePath)
+            val resourcesDir = templateDir.parent.parent
 
-            FileWriter(outputFile).use {
-                if (osName.toLowerCase().contains("windows")) {
-                    mustacheFactory.compile(templateName.replace(fileSeparator, "/")).execute(it, project)
-                } else {
-                    mustacheFactory.compile(templateName).execute(it, project)
-                }
+            FileUtils.filter(templateDir, fileNamePattern) { path ->
+                val currentPath = path.toString()
+                val templateName = currentPath.substring(resourcesDir.toString().length + 1)
+                render(templateName, currentPath, templateSuffix, templatePath, projectDir, project)
             }
-            log.info("generate -> $outputFile")
         }
+
         val endTime = System.currentTimeMillis()
         log.info("generate project successfully. -> total time: ${endTime - startTime}ms, output path: $projectDir")
+    }
+
+    private fun render(
+        templateName: String,
+        currentPath: String,
+        templateSuffix: String,
+        templatePath: String,
+        projectDir: Path,
+        project: Project
+                      ) {
+        val fileName = Paths.get(templateName).fileName.toString()
+        val newFileName = fileName.substring(0, fileName.length - templateSuffix.length)
+        val newPackagePath = Paths.get("/", project.packageName!!.replace('.', '/')).toString()
+        val templatePackagePath = Paths.get("/com/firefly/kt/web/seed").toString()
+        val outputDir = Paths.get(
+            projectDir.toString(),
+            templateName.substring(templatePath.length, templateName.length - fileName.length)
+                                 ).toString()
+
+        val outputFile = when {
+            isRoot(currentPath) || isResource(currentPath) || isFilter(currentPath) -> {
+                val outputFile = File(outputDir, newFileName)
+                createOutputDir(outputFile)
+                outputFile
+            }
+            isSource(currentPath) -> {
+                val outputFile = File(outputDir.replace(templatePackagePath, newPackagePath), newFileName)
+                createOutputDir(outputFile)
+                outputFile
+            }
+            else -> throw IllegalStateException("the project template error -> $currentPath")
+        }
+
+        FileWriter(outputFile).use {
+            if (osName.toLowerCase().contains("windows")) {
+                mustacheFactory.compile(templateName.replace(fileSeparator, "/")).execute(it, project)
+            } else {
+                mustacheFactory.compile(templateName).execute(it, project)
+            }
+        }
+        log.info("generate -> $outputFile")
     }
 
     private fun isFilter(currentPath: String): Boolean {
