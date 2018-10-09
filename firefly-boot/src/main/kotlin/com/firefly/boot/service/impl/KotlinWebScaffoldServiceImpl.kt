@@ -24,8 +24,14 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
 
     override fun generate(project: Project) {
         val startTime = System.currentTimeMillis()
-        val projectDir = Paths.get(project.outputPath, project.artifactId)
+        val projectDir = if (project.outputPath != ".") {
+            Paths.get(project.outputPath, project.artifactId)
+        } else {
+            val file = File("")
+            Paths.get(file.absolutePath, project.artifactId)
+        }
         log.info("os -> $osName")
+        log.info("project dir -> $projectDir")
         log.info("generate project -> $project")
 
         if (!Files.exists(projectDir)) {
@@ -46,7 +52,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
             val templateName = currentPath.substring(resourcesDir.toString().length + 1)
             val fileName = path.fileName.toString()
             val newFileName = fileName.substring(0, fileName.length - templateSuffix.length)
-            val newPackagePath = Paths.get("/", project.packageName.replace('.', '/')).toString()
+            val newPackagePath = Paths.get("/", project.packageName!!.replace('.', '/')).toString()
             val templatePackagePath = Paths.get("/com/firefly/kt/web/seed").toString()
             val outputDir = Paths.get(
                 projectDir.toString(),

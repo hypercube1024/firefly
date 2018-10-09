@@ -1,6 +1,7 @@
 package com.firefly.boot.test.cli
 
 import com.beust.jcommander.JCommander
+import com.beust.jcommander.ParameterException
 import com.firefly.boot.model.Project
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -29,4 +30,22 @@ class TestCli {
         assertEquals("www.abc.com", project.uberJarName)
         assertEquals(".", project.outputPath)
     }
+
+    @Test
+    fun testHelp() {
+        val args = listOf("-g")
+        val project = Project()
+        val commander = JCommander.newBuilder().addObject(project).build()
+        commander.programName = "fireflyCli"
+
+
+        try {
+            commander.parse(*args.toTypedArray())
+        } catch (e: ParameterException) {
+            e.usage()
+        }
+        println(project)
+    }
+
+
 }

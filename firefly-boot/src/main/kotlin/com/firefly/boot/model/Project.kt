@@ -8,32 +8,52 @@ import com.firefly.kotlin.ext.annotation.NoArg
  */
 @NoArg
 data class Project(
-    @Parameter(names = ["--groupId", "-g"], description = "The project group id.")
-    var groupId: String,
+    @Parameter(names = ["--groupId", "-g"], description = "The project group id.", required = true, order = 1)
+    var groupId: String?,
 
-    @Parameter(names = ["--artifactId", "-a"], description = "The project artifact id.")
-    var artifactId: String,
+    @Parameter(names = ["--artifactId", "-a"], description = "The project artifact id.", required = true, order = 2)
+    var artifactId: String?,
 
-    @Parameter(names = ["--packageName", "-p"], description = "The project package name, e.g., com.xxx.yyy .")
-    var packageName: String,
+    @Parameter(
+        names = ["--packageName", "-p"],
+        description = "The project package name, e.g., com.xxx.yyy .",
+        required = true,
+        order = 3
+              )
+    var packageName: String?,
 
-    @Parameter(names = ["--domainName", "-d"], description = "The project domain name, e.g., yyy.xxx.com .")
-    var domainName: String,
+    @Parameter(
+        names = ["--domainName", "-d"],
+        description = "The project domain name, e.g., yyy.xxx.com .",
+        required = true,
+        order = 4
+              )
+    var domainName: String?,
 
-    @Parameter(names = ["--jarName", "-j"], description = "The project jar name.")
-    var uberJarName: String = domainName,
+    @Parameter(names = ["--jarName", "-j"], description = "The project jar name.", required = true, order = 5)
+    var uberJarName: String?,
 
-    @Parameter(names = ["--outputPath", "-o"], description = "The project output path, current path is default.")
+    @Parameter(
+        names = ["--outputPath", "-o"],
+        description = "The project output path, current path is default.",
+        order = 6
+              )
     var outputPath: String = ".",
 
-    @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.")
+    @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 7)
     var fireflyVersion: String = "4.9.1-SNAPSHOT",
 
-    @Parameter(names = ["--buildTool", "-b"], description = "The build tool name, maven or gradle.")
-    var buildTool: String = BuildTool.MAVEN.value
+    @Parameter(names = ["--buildTool", "-b"], description = "The build tool name, maven or gradle.", order = 8)
+    var buildTool: String = BuildTool.MAVEN.value,
+
+    @Parameter(names = ["--help", "-h"], description = "Show the firefly cli usage.", help = true, order = 9)
+    var help: Boolean = false,
+
+    @Parameter(names = ["--version", "-v"], description = "Show the firefly cli version.", help = true, order = 10)
+    var version: Boolean = false
                   ) {
 
-    constructor() : this("", "", "", "")
+    constructor() : this(null, null, null, null, null)
 }
 
 enum class BuildTool(val value: String) {
