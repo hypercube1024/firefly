@@ -39,7 +39,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
         Files.createDirectories(projectDir)
         val templatePath = "/project_template/firefly-web-seed"
         val templateDir = toPath(templatePath)
-        val resourcesDir = toPath("/")
+        val resourcesDir = templateDir.parent.parent
         val templateSuffix = ".mustache"
         FileUtils.filter(templateDir, "*$templateSuffix") { path ->
             val currentPath = path.toString()
