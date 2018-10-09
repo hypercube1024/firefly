@@ -23,13 +23,17 @@ fun runCommand(args: Array<String>) {
             println("The ${commander.programName} version is 4.9.1")
             commander.usage()
         } else {
-            val service = KotlinWebScaffoldServiceImpl()
-            service.generate(project)
+            try {
+                val service = KotlinWebScaffoldServiceImpl()
+                service.generate(project)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                LogFactory.getInstance().stop()
+                Millisecond100Clock.stop()
+            }
         }
     } catch (e: ParameterException) {
         e.usage()
-    } finally {
-        LogFactory.getInstance().stop()
-        Millisecond100Clock.stop()
     }
 }
