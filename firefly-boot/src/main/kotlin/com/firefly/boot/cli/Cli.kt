@@ -5,7 +5,6 @@ import com.beust.jcommander.ParameterException
 import com.firefly.boot.model.Project
 import com.firefly.boot.service.impl.KotlinWebScaffoldServiceImpl
 import com.firefly.utils.log.LogFactory
-import com.firefly.utils.time.Millisecond100Clock
 
 /**
  * @author Pengtao Qiu
@@ -30,7 +29,6 @@ fun runCommand(args: Array<String>) {
                 e.printStackTrace()
             } finally {
                 LogFactory.getInstance().stop()
-                Millisecond100Clock.stop()
             }
         }
     } catch (e: ParameterException) {

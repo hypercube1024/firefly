@@ -64,6 +64,7 @@
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.2</kotlin.compiler.languageVersion>
         <kotlin.compiler.apiVersion>1.2</kotlin.compiler.apiVersion>
+        <kotlin.code.style>official</kotlin.code.style>
 
         <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
         <metrics.version>4.0.3</metrics.version>
