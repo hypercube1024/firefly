@@ -1,20 +1,22 @@
 package com.firefly.example.kotlin.test.coroutine
 
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.coroutineScope
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.runBlocking
 
 /**
  * @author Pengtao Qiu
  */
 fun main(args: Array<String>) = runBlocking {
-    launchDoWorld()
-    println("Hello,")
-}
-
-// this is your first suspending function
-suspend fun launchDoWorld() = withContext(Dispatchers.Default) {
-    launch {
-        println("World!")
+    coroutineScope {
+        launch {
+            // launch new coroutine in the scope of runBlocking
+            delay(1000L)
+            println("World!")
+        }
     }
+    println("Hello,")
 }
 
 fun hello2() = runBlocking {
