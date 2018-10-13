@@ -130,7 +130,7 @@ suspend fun <T> SQLConnection.execSQL(
                                      ): T {
     val isNew = beginTransaction().await()
     return try {
-        val ret = withTimeout(time, unit) { handler.invoke(this@execSQL) }
+        val ret = withTimeout(unit.toMillis(time)) { handler.invoke(this@execSQL) }
         if (isNew) {
             commitAndEndTransaction().await()
         }

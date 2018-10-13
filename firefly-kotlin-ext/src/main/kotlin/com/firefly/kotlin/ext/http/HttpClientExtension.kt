@@ -21,6 +21,6 @@ inline fun <reified T : Any> SimpleResponse.getJsonBody(): T = Json.parse(string
 suspend fun SimpleHTTPClient.RequestBuilder.asyncSubmit(
     time: Long = 60 * 1000L,
     unit: TimeUnit = TimeUnit.MILLISECONDS
-                                                       ): SimpleResponse = withTimeout(time, unit) { submit().await() }
+                                                       ): SimpleResponse = withTimeout(unit.toMillis(time)) { submit().await() }
 
 fun SimpleResponse.getTrailer(): HttpFields = trailerSupplier.get()

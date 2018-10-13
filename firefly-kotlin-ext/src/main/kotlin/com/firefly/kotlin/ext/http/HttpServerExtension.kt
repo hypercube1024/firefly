@@ -104,7 +104,7 @@ suspend fun <C> RoutingContext.asyncNext(): Pair<Boolean, C> {
 suspend fun <C> RoutingContext.asyncNext(time: Long, unit: TimeUnit): Pair<Boolean, C> {
     val future = CompletableFuture<C>()
     val hasNext = asyncNext<C>({ future.complete(it) }, { future.completeExceptionally(it) })
-    return withTimeout(time, unit) { hasNext to future.await() }
+    return withTimeout(unit.toMillis(time)) { hasNext to future.await() }
 }
 
 /**

@@ -115,7 +115,7 @@ class TestRouterChain {
                 path = "/testTimeout"
 
                 asyncCompleteHandler {
-                    delay(2, TimeUnit.SECONDS)
+                    delay(TimeUnit.SECONDS.toMillis(2))
                     write("ok!")
                 }
             }

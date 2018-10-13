@@ -13,4 +13,4 @@ suspend fun SimpleWebSocketClient.HandshakeBuilder.asyncConnect(
     time: Long = 10 * 1000L,
     unit: TimeUnit = TimeUnit.MILLISECONDS
                                                                ): WebSocketConnection =
-    withTimeout(time, unit) { connect().await() }
+    withTimeout(unit.toMillis(time)) { connect().await() }

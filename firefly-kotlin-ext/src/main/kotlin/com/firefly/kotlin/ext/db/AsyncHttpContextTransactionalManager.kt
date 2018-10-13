@@ -21,7 +21,7 @@ class AsyncHttpContextTransactionalManager(
 
     val transactionKey = "_currentKotlinTransaction"
 
-    override suspend fun getConnection(time: Long, unit: TimeUnit): SQLConnection = withTimeout(time, unit) {
+    override suspend fun getConnection(time: Long, unit: TimeUnit): SQLConnection = withTimeout(unit.toMillis(time)) {
         if (requestCtx.get() == null) {
             sysLogger.debug("get new db connection from pool")
             sqlClient.connection.await()
@@ -39,7 +39,7 @@ class AsyncHttpContextTransactionalManager(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun getCurrentConnection(time: Long, unit: TimeUnit): SQLConnection? = withTimeout(time, unit) {
+    override suspend fun getCurrentConnection(time: Long, unit: TimeUnit): SQLConnection? = withTimeout(unit.toMillis(time)) {
         (requestCtx.get()?.attributes?.get(transactionKey) as CompletableFuture<SQLConnection>?)?.await()
     }
 
