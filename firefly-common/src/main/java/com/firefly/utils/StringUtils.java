@@ -565,10 +565,10 @@ public class StringUtils {
         StringBuilder ret = new StringBuilder((int) (s.length() * 1.5));
         int cursor = 0;
         for (int start, end; (start = s.indexOf("${", cursor)) != -1 && (end = s.indexOf("}", start)) != -1; ) {
-            ret.append(s.substring(cursor, start)).append(map.get(s.substring(start + 2, end)));
+            ret.append(s, cursor, start).append(map.get(s.substring(start + 2, end)));
             cursor = end + 1;
         }
-        ret.append(s.substring(cursor, s.length()));
+        ret.append(s, cursor, s.length());
         return ret.toString();
     }
 
@@ -582,7 +582,7 @@ public class StringUtils {
         int cursor = 0;
         int index = 0;
         for (int start; (start = s.indexOf("{}", cursor)) != -1; ) {
-            ret.append(s.substring(cursor, start));
+            ret.append(s, cursor, start);
             if (index < objs.length) {
                 Object obj = objs[index];
                 try {
@@ -600,7 +600,7 @@ public class StringUtils {
             cursor = start + 2;
             index++;
         }
-        ret.append(s.substring(cursor, s.length()));
+        ret.append(s, cursor, s.length());
         return ret.toString();
     }
 
@@ -866,7 +866,7 @@ public class StringUtils {
 
         List<String> list = new ArrayList<>();
         csvSplit(list, s, off, len);
-        return list.toArray(new String[list.size()]);
+        return list.toArray(EMPTY_STRING_ARRAY);
     }
 
     enum CsvSplitState {
@@ -1163,7 +1163,7 @@ public class StringUtils {
         if (delimiter == null) {
             return new String[]{str};
         }
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if ("".equals(delimiter)) {
             for (int i = 0; i < str.length(); i++) {
                 result.add(deleteAny(str.substring(i, i + 1), charsToDelete));

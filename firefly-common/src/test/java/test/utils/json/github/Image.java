@@ -52,9 +52,9 @@ public class Image {
         this.size = Size;
     }
 
-	@Override
-	public String toString() {
-		return "Image [uri=" + uri + ", title=" + title + ", width=" + width
-				+ ", height=" + height + ", size=" + size + "]";
-	}
+    @Override
+    public String toString() {
+        return "Image [uri=" + uri + ", title=" + title + ", width=" + width
+                + ", height=" + height + ", size=" + size + "]";
+    }
 }

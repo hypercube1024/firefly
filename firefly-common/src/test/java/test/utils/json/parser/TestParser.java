@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -657,6 +656,20 @@ public class TestParser {
         User userBind = Json.toObject(json, new GenericTypeReference<User>() {
         });
         Assert.assertThat(userBind.getName(), is("Pengtao Qiu"));
+    }
+
+    @Test
+    public void testJsonProperty() {
+        Token token = new Token();
+        token.setAccessToken("haha!");
+        token.setExpiresIn(30L);
+        token.setScope("aa");
+        token.setClientId("asdfg");
+        String json = Json.toJson(token);
+        System.out.println(json);
+
+        Token t = Json.toObject(json, Token.class);
+        Assert.assertThat(t, is(token));
     }
 
 }

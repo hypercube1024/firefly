@@ -31,19 +31,18 @@ import java.util.List;
  */
 public class MultiPartFormInputStream {
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
-    private final int _bufferSize = 16 * 1024;
-    public static final MultipartConfigElement __DEFAULT_MULTIPART_CONFIG = new MultipartConfigElement(System.getProperty("java.io.tmpdir"));
-    public static final MultiMap<Part> EMPTY_MAP = new MultiMap<>(Collections.emptyMap());
-    protected InputStream _in;
-    protected MultipartConfigElement _config;
-    protected String _contentType;
-    protected MultiMap<Part> _parts;
-    protected Throwable _err;
-    protected File _tmpDir;
-    protected File _contextTmpDir;
-    protected boolean _deleteOnExit;
-    protected boolean _writeFilesWithFilenames;
-    protected boolean _parsed;
+    private static final MultiMap<Part> EMPTY_MAP = new MultiMap<>(Collections.emptyMap());
+    private InputStream _in;
+    private MultipartConfigElement _config;
+    private String _contentType;
+    private MultiMap<Part> _parts;
+    private Throwable _err;
+    private File _tmpDir;
+    private File _contextTmpDir;
+    private boolean _deleteOnExit;
+    private boolean _writeFilesWithFilenames;
+    private boolean _parsed;
+    private int _bufferSize = 16 * 1024;
 
     public class MultiPart implements Part {
         protected String _name;
@@ -56,7 +55,7 @@ public class MultiPartFormInputStream {
         protected long _size = 0;
         protected boolean _temporary = true;
 
-        public MultiPart(String name, String filename) throws IOException {
+        public MultiPart(String name, String filename) {
             _name = name;
             _filename = filename;
         }
@@ -141,17 +140,11 @@ public class MultiPartFormInputStream {
             _headers = headers;
         }
 
-        /**
-         * @see Part#getContentType()
-         */
         @Override
         public String getContentType() {
             return _contentType;
         }
 
-        /**
-         * @see Part#getHeader(String)
-         */
         @Override
         public String getHeader(String name) {
             if (name == null)
@@ -159,25 +152,16 @@ public class MultiPartFormInputStream {
             return _headers.getValue(StringUtils.asciiToLowerCase(name), 0);
         }
 
-        /**
-         * @see Part#getHeaderNames()
-         */
         @Override
         public Collection<String> getHeaderNames() {
             return _headers.keySet();
         }
 
-        /**
-         * @see Part#getHeaders(String)
-         */
         @Override
         public Collection<String> getHeaders(String name) {
             return _headers.getValues(name);
         }
 
-        /**
-         * @see Part#getInputStream()
-         */
         @Override
         public InputStream getInputStream() throws IOException {
             if (_file != null) {
@@ -189,9 +173,6 @@ public class MultiPartFormInputStream {
             }
         }
 
-        /**
-         * @see Part#getSubmittedFileName()
-         */
         @Override
         public String getSubmittedFileName() {
             return getContentDispositionFilename();
@@ -203,25 +184,16 @@ public class MultiPartFormInputStream {
             return null;
         }
 
-        /**
-         * @see Part#getName()
-         */
         @Override
         public String getName() {
             return _name;
         }
 
-        /**
-         * @see Part#getSize()
-         */
         @Override
         public long getSize() {
             return _size;
         }
 
-        /**
-         * @see Part#write(String)
-         */
         @Override
         public void write(String fileName) throws IOException {
             if (_file == null) {
@@ -230,14 +202,10 @@ public class MultiPartFormInputStream {
                 // part data is only in the ByteArrayOutputStream and never been written to disk
                 _file = new File(_tmpDir, fileName);
 
-                BufferedOutputStream bos = null;
-                try {
-                    bos = new BufferedOutputStream(new FileOutputStream(_file));
+                try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(_file))) {
                     _bout.writeTo(bos);
                     bos.flush();
                 } finally {
-                    if (bos != null)
-                        bos.close();
                     _bout = null;
                 }
             } else {
@@ -253,13 +221,12 @@ public class MultiPartFormInputStream {
 
         /**
          * Remove the file, whether or not Part.write() was called on it (ie no longer temporary)
-         *
-         * @see Part#delete()
          */
         @Override
         public void delete() throws IOException {
             if (_file != null && _file.exists())
-                _file.delete();
+                if (!_file.delete())
+                    throw new IOException("Could Not Delete File");
         }
 
         /**
@@ -269,7 +236,8 @@ public class MultiPartFormInputStream {
          */
         public void cleanUp() throws IOException {
             if (_temporary && _file != null && _file.exists())
-                _file.delete();
+                if (!_file.delete())
+                    throw new IOException("Could Not Delete File");
         }
 
         /**
@@ -365,18 +333,21 @@ public class MultiPartFormInputStream {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        MultiException err = new MultiException();
 
+        MultiException err = null;
         for (Part p : parts) {
             try {
                 ((MultiPart) p).cleanUp();
             } catch (Exception e) {
+                if (err == null)
+                    err = new MultiException();
                 err.add(e);
             }
         }
         _parts.clear();
 
-        err.ifExceptionThrowRuntime();
+        if (err != null)
+            err.ifExceptionThrowRuntime();
     }
 
     /**
@@ -439,7 +410,6 @@ public class MultiPartFormInputStream {
         _parsed = true;
 
         try {
-
             // initialize
             _parts = new MultiMap<>();
 
@@ -474,13 +444,8 @@ public class MultiPartFormInputStream {
             Handler handler = new Handler();
             MultiPartParser parser = new MultiPartParser(handler, contentTypeBoundary);
 
-            // Create a buffer to store data from stream //
             byte[] data = new byte[_bufferSize];
-            int len = 0;
-
-            /*
-             * keep running total of size of bytes read from input and throw an exception if exceeds MultipartConfigElement._maxRequestSize
-             */
+            int len;
             long total = 0;
 
             while (true) {
@@ -488,6 +453,7 @@ public class MultiPartFormInputStream {
                 len = _in.read(data);
 
                 if (len > 0) {
+                    // keep running total of size of bytes read from input and throw an exception if exceeds MultipartConfigElement._maxRequestSize
                     total += len;
                     if (_config.getMaxRequestSize() > 0 && total > _config.getMaxRequestSize()) {
                         _err = new IllegalStateException("Request exceeds maxRequestSize (" + _config.getMaxRequestSize() + ")");
@@ -528,9 +494,7 @@ public class MultiPartFormInputStream {
 
         } catch (Throwable e) {
             _err = e;
-            return;
         }
-
     }
 
     class Handler implements MultiPartParser.Handler {
@@ -680,14 +644,14 @@ public class MultiPartFormInputStream {
     }
 
     /* ------------------------------------------------------------ */
-    private String value(String nameEqualsValue) {
+    private static String value(String nameEqualsValue) {
         int idx = nameEqualsValue.indexOf('=');
         String value = nameEqualsValue.substring(idx + 1).trim();
         return QuotedStringTokenizer.unquoteOnly(value);
     }
 
     /* ------------------------------------------------------------ */
-    private String filenameValue(String nameEqualsValue) {
+    private static String filenameValue(String nameEqualsValue) {
         int idx = nameEqualsValue.indexOf('=');
         String value = nameEqualsValue.substring(idx + 1).trim();
 
@@ -710,4 +674,17 @@ public class MultiPartFormInputStream {
             return QuotedStringTokenizer.unquoteOnly(value, true);
     }
 
+    /**
+     * @return the size of buffer used to read data from the input stream
+     */
+    public int getBufferSize() {
+        return _bufferSize;
+    }
+
+    /**
+     * @param bufferSize the size of buffer used to read data from the input stream
+     */
+    public void setBufferSize(int bufferSize) {
+        _bufferSize = bufferSize;
+    }
 }

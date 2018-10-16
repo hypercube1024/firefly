@@ -7,7 +7,6 @@ import com.firefly.codec.websocket.model.CloseInfo;
 import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.StatusCode;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
-import test.codec.websocket.utils.Hex;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.BufferUtils;
 import org.junit.Assert;
@@ -17,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import test.codec.websocket.IncomingFramesCapture;
 import test.codec.websocket.UnitGenerator;
 import test.codec.websocket.UnitParser;
+import test.codec.websocket.utils.Hex;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

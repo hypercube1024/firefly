@@ -36,12 +36,14 @@ data class Product(var id: String, var type: String)
 
 fun initMDC() {
     val mdc = MappedDiagnosticContextFactory.getInstance()
-            .mappedDiagnosticContext as CoroutineMappedDiagnosticContext
+        .mappedDiagnosticContext as CoroutineMappedDiagnosticContext
     mdc.setRequestCtx(requestLocal)
 }
 
-fun <T> asyncTraceable(context: ContinuationInterceptor = Unconfined, block: suspend CoroutineScope.() -> T): Deferred<T>
-        = asyncTraceable(requestLocal, context, block)
+fun <T> asyncTraceable(
+    context: ContinuationInterceptor = Dispatchers.Unconfined,
+    block: suspend CoroutineScope.() -> T
+                      ): Deferred<T> = asyncTraceable(requestLocal, context, block)
 
 fun main(args: Array<String>) {
     initMDC()
@@ -119,7 +121,7 @@ fun main(args: Array<String>) {
                     log.info("${uri.path} -> var: ${threadLocal.get()}, job: ${it[Job]}")
                     testCoroutineCtx()
 
-                    delay(10, TimeUnit.SECONDS) // simulate I/O wait
+                    delay(TimeUnit.SECONDS.toMillis(10)) // simulate I/O wait
 
                     end("${uri.path} -> threadLocal:  ${threadLocal.get()}, job: ${it[Job]}, reqId: ${getAttribute("reqId")}")
                 } finally {
@@ -154,8 +156,8 @@ fun main(args: Array<String>) {
             asyncHandler {
                 setAttribute("reqId", 1000)
                 write("enter router 1\r\n").asyncNext<String>(
-                        { write("router 1 success\r\n").end(it) },
-                        { end("${it?.message}") })
+                    { write("router 1 success\r\n").end(it) },
+                    { end("${it?.message}") })
             }
         }
 

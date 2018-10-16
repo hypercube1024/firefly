@@ -8,7 +8,6 @@ import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncNext
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.RoutingContext
-import java.lang.IllegalArgumentException
 
 /**
  * @author Pengtao Qiu
@@ -28,22 +27,34 @@ class GlobalHandler : AsyncHandler {
             when (it) {
                 is IllegalArgumentException -> {
                     ctx.setStatus(HttpStatus.OK_200)
-                    ctx.writeJson(Response(ResponseStatus.ARGUMENT_ERROR.value,
-                                           it.message ?: ResponseStatus.ARGUMENT_ERROR.description,
-                                           false)).end()
+                    ctx.writeJson(
+                        Response(
+                            ResponseStatus.ARGUMENT_ERROR.value,
+                            it.message ?: ResponseStatus.ARGUMENT_ERROR.description,
+                            false
+                                )
+                                 ).end()
                 }
                 is IllegalStateException -> {
                     ctx.setStatus(HttpStatus.OK_200)
-                    ctx.writeJson(Response(ResponseStatus.SERVER_ERROR.value,
-                                           it.message ?: ResponseStatus.SERVER_ERROR.description,
-                                           false)).end()
+                    ctx.writeJson(
+                        Response(
+                            ResponseStatus.SERVER_ERROR.value,
+                            it.message ?: ResponseStatus.SERVER_ERROR.description,
+                            false
+                                )
+                                 ).end()
                 }
                 else -> {
                     log.error("server exception", it)
                     ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                    ctx.writeJson(Response(ResponseStatus.SERVER_ERROR.value,
-                                           it?.message ?: ResponseStatus.SERVER_ERROR.description,
-                                           false)).end()
+                    ctx.writeJson(
+                        Response(
+                            ResponseStatus.SERVER_ERROR.value,
+                            it?.message ?: ResponseStatus.SERVER_ERROR.description,
+                            false
+                                )
+                                 ).end()
                 }
             }
         })

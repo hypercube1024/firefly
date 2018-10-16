@@ -4,14 +4,13 @@ import com.firefly.codec.http2.model.HttpHeader
 import com.firefly.codec.http2.model.HttpStatus
 import com.firefly.codec.http2.model.InclusiveByteRange
 import com.firefly.codec.http2.model.MimeTypes
+import com.firefly.kotlin.ext.nio.aRead
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader
 import com.firefly.utils.CollectionUtils
 import com.firefly.utils.StringUtils
 import com.firefly.utils.io.BufferUtils
-import com.firefly.utils.lang.URIUtils
-import kotlinx.coroutines.experimental.nio.aRead
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.file.Paths
@@ -22,14 +21,16 @@ import java.util.zip.GZIPOutputStream
 /**
  * @author Pengtao Qiu
  */
-class AsyncStaticFileHandler(val rootPath: String,
-                             val maxBufferSize: Int = 64 * 1024,
-                             val enableGzip: Boolean = false) : AsyncHandler {
+class AsyncStaticFileHandler(
+    val rootPath: String,
+    val maxBufferSize: Int = 64 * 1024,
+    val enableGzip: Boolean = false
+                            ) : AsyncHandler {
 
     private val errorHandler: AbstractErrorResponseHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
 
     override suspend fun handle(ctx: RoutingContext) {
-        val path = URIUtils.canonicalPath(ctx.uri.path)
+        val path = ctx.uri.decodedPath
         val fullPath = Paths.get(rootPath, path)
         val file = fullPath.toFile()
         if (file.exists() && file.isFile) {
@@ -47,8 +48,8 @@ class AsyncStaticFileHandler(val rootPath: String,
                         ctx.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
                     }
                     Optional.ofNullable(MimeTypes.getDefaultMimeByExtension(file.name))
-                            .filter(StringUtils::hasText)
-                            .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
+                        .filter(StringUtils::hasText)
+                        .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
 
                     val bufSize = when {
                         contentLength > maxBufferSize -> maxBufferSize
@@ -81,8 +82,8 @@ class AsyncStaticFileHandler(val rootPath: String,
                     ctx.put(HttpHeader.CONTENT_LENGTH, singleLength.toString())
                     ctx.put(HttpHeader.CONTENT_RANGE, singleSatisfiableRange.toHeaderRangeString(contentLength))
                     Optional.ofNullable(MimeTypes.getDefaultMimeByExtension(file.name))
-                            .filter(StringUtils::hasText)
-                            .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
+                        .filter(StringUtils::hasText)
+                        .ifPresent { ctx.put(HttpHeader.CONTENT_TYPE, it) }
 
                     val bufSize = when {
                         singleLength > maxBufferSize -> maxBufferSize
@@ -109,7 +110,12 @@ class AsyncStaticFileHandler(val rootPath: String,
                                 break
                             }
 
-                            buf = ByteBuffer.allocate(Math.min(maxBufferSize.toLong(), singleLength - totalBytesRead).toInt())
+                            buf = ByteBuffer.allocate(
+                                Math.min(
+                                    maxBufferSize.toLong(),
+                                    singleLength - totalBytesRead
+                                        ).toInt()
+                                                     )
                         }
                     }
                     ctx.end()

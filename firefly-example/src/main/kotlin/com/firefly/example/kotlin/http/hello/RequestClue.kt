@@ -58,8 +58,8 @@ fun main(args: Array<String>) = runBlocking {
     }.listen(host, port2)
 
     val resp = firefly.httpClient()
-            .get("http://$host:$port1/product?name=Han")
-            .put("Request-ID", "333").asyncSubmit()
+        .get("http://$host:$port1/product?name=Han")
+        .put("Request-ID", "333").asyncSubmit()
     println(resp.status)
     println(resp.stringBody)
 }
@@ -68,7 +68,7 @@ suspend fun searchProduct(name: String): SimpleResponse {
     val ctx = coroutineLocal.get()
     val reqId = ctx?.fields?.get("Request-ID")
     return firefly.httpClient()
-            .get("http://$host:$port2/product?name=$name")
-            .put("Request-ID", reqId)
-            .asyncSubmit()
+        .get("http://$host:$port2/product?name=$name")
+        .put("Request-ID", reqId)
+        .asyncSubmit()
 }

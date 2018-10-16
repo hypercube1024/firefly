@@ -1,21 +1,17 @@
 package test.codec.http2.hpack;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.nio.ByteBuffer;
-
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.firefly.codec.http2.hpack.HpackContext;
 import com.firefly.codec.http2.hpack.HpackContext.Entry;
 import com.firefly.codec.http2.hpack.Huffman;
 import com.firefly.codec.http2.hpack.NBitInteger;
 import com.firefly.codec.http2.model.HttpField;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+
+import static org.junit.Assert.*;
 
 public class HpackContextTest {
 
@@ -105,6 +101,7 @@ public class HpackContextTest {
     }
 
     @Test
+    @SuppressWarnings("ReferenceEquality")
     public void testGetAddStatic() {
         HpackContext ctx = new HpackContext(4096);
 
@@ -369,7 +366,7 @@ public class HpackContextTest {
     }
 
     @Test
-    public void testStaticHuffmanValues() {
+    public void testStaticHuffmanValues() throws Exception {
         HpackContext ctx = new HpackContext(4096);
         for (int i = 2; i <= 14; i++) {
             Entry entry = ctx.get(i);
@@ -389,7 +386,6 @@ public class HpackContextTest {
         }
     }
 
-
     @Test
     public void testNameInsensitivity() {
         HpackContext ctx = new HpackContext(4096);
@@ -401,6 +397,5 @@ public class HpackContextTest {
         ctx.add(new HttpField("Wibble", "Wobble"));
         assertEquals("Wibble", ctx.get("wibble").getHttpField().getName());
         assertEquals("Wibble", ctx.get("Wibble").getHttpField().getName());
-
     }
 }

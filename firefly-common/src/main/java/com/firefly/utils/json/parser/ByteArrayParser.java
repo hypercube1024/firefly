@@ -6,9 +6,9 @@ import com.firefly.utils.json.Parser;
 
 public class ByteArrayParser implements Parser {
 
-	@Override
-	public Object convertTo(JsonReader reader, Class<?> clazz) {
-		return Base64Utils.decodeFromString(new String(reader.readChars()));
-	}
+    @Override
+    public Object convertTo(JsonReader reader, Class<?> clazz) {
+        return Base64Utils.decodeFromString(new String(reader.readChars()));
+    }
 
 }

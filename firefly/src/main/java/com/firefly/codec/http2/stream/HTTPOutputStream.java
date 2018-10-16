@@ -44,7 +44,10 @@ public abstract class HTTPOutputStream extends OutputStream {
     @Override
     public void write(byte[] array, int offset, int length) throws IOException {
         Assert.notNull(array, "The data must be not null");
-        write(ByteBuffer.wrap(array, offset, length));
+
+        byte[] tmpArr = new byte[length];
+        System.arraycopy(array, offset, tmpArr, 0, length);
+        write(ByteBuffer.wrap(tmpArr));
     }
 
     public synchronized void writeWithContentLength(Collection<ByteBuffer> data) throws IOException {

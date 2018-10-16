@@ -9,7 +9,7 @@ import java.lang.annotation.*;
  */
 @Proxy(proxyClass = LogProxy.class)
 @Proxy(proxyClass = AuthenticationProxy.class)
-@Target( { ElementType.TYPE })
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface ProxyChain {

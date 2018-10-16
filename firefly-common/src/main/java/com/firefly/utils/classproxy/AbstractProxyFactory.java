@@ -2,12 +2,10 @@ package com.firefly.utils.classproxy;
 
 import com.firefly.utils.ReflectUtils;
 import com.firefly.utils.ReflectUtils.ProxyFactory;
-import com.firefly.utils.collection.ConcurrentReferenceHashMap;
 import com.firefly.utils.collection.IdentityHashMap;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractProxyFactory implements ProxyFactory {

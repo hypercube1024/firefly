@@ -1,4 +1,8 @@
+package com.firefly.boot;
+
 /**
+ * Firefly boot
+ *
  * @author Pengtao Qiu
  */
 public class PackageInfo {

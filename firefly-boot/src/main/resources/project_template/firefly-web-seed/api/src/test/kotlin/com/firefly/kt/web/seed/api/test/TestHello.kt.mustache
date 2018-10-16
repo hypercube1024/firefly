@@ -1,0 +1,16 @@
+package {{packageName}}.api.test
+
+import {{packageName}}.api.Hello
+import org.junit.Test
+import kotlin.test.assertEquals
+
+/**
+ * @author Pengtao Qiu
+ */
+class TestHello {
+
+    @Test
+    fun test() {
+        assertEquals(true, Hello().say())
+    }
+}

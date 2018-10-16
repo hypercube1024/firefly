@@ -3,7 +3,6 @@ package com.firefly.net.tcp;
 import com.firefly.net.Decoder;
 import com.firefly.net.Handler;
 import com.firefly.net.Session;
-import com.firefly.utils.function.Action0;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

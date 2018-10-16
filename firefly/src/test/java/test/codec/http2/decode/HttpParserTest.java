@@ -186,6 +186,29 @@ public class HttpParserTest {
     }
 
     @Test
+    public void testAllowedLinePreamble() throws Exception {
+        ByteBuffer buffer = BufferUtils.toBuffer("\r\n\r\nGET / HTTP/1.0\r\n");
+
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        parseAll(parser, buffer);
+        Assert.assertEquals("GET", _methodOrVersion);
+        Assert.assertEquals("/", _uriOrStatus);
+        Assert.assertEquals("HTTP/1.0", _versionOrReason);
+        Assert.assertEquals(-1, _headers);
+    }
+
+    @Test
+    public void testDisallowedLinePreamble() throws Exception {
+        ByteBuffer buffer = BufferUtils.toBuffer("\r\n \r\nGET / HTTP/1.0\r\n");
+
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        parseAll(parser, buffer);
+        Assert.assertEquals("Illegal character SPACE=' '", _bad);
+    }
+
+    @Test
     public void testConnect() throws Exception {
         ByteBuffer buffer = BufferUtils.toBuffer("CONNECT 192.168.1.2:80 HTTP/1.1\r\n" + "\r\n");
         HttpParser.RequestHandler handler = new Handler();
@@ -298,6 +321,59 @@ public class HttpParserTest {
     }
 
     @Test
+    public void testWhiteSpaceBeforeRequest() {
+        HttpCompliance[] compliances = new HttpCompliance[]
+                {
+                        HttpCompliance.RFC7230, HttpCompliance.RFC2616
+                };
+
+        String whitespaces[][] = new String[][]
+                {
+                        {" ", "Illegal character SPACE"},
+                        {"\t", "Illegal character HTAB"},
+                        {"\n", null},
+                        {"\r", "Bad EOL"},
+                        {"\r\n", null},
+                        {"\r\n\r\n", null},
+                        {"\r\n \r\n", "Illegal character SPACE"},
+                        {"\r\n\t\r\n", "Illegal character HTAB"},
+                        {"\r\t\n", "Bad EOL"},
+                        {"\r\r\n", "Bad EOL"},
+                        {"\t\r\t\r\n", "Illegal character HTAB"},
+                        {" \t \r \t \n\n", "Illegal character SPACE"},
+                        {" \r \t \r\n\r\n\r\n", "Illegal character SPACE"}
+                };
+
+
+        for (int i = 0; i < compliances.length; i++) {
+            HttpCompliance compliance = compliances[i];
+
+            for (int j = 0; j < whitespaces.length; j++) {
+                String request =
+                        whitespaces[j][0] +
+                                "GET / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
+                                "Name: value" + j + "\r\n" +
+                                "Connection: close\r\n" +
+                                "\r\n";
+
+                ByteBuffer buffer = BufferUtils.toBuffer(request);
+                HttpParser.RequestHandler handler = new Handler();
+                HttpParser parser = new HttpParser(handler, 4096, compliance);
+                _bad = null;
+                parseAll(parser, buffer);
+
+                String test = "whitespace.[" + compliance + "].[" + j + "]";
+                String expected = whitespaces[j][1];
+                if (expected == null)
+                    Assert.assertNull(test, _bad);
+                else
+                    Assert.assertThat(test, _bad, Matchers.containsString(expected));
+            }
+        }
+    }
+
+    @Test
     public void testNoValue() throws Exception {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "GET / HTTP/1.0\r\n" +
@@ -404,7 +480,7 @@ public class HttpParserTest {
         Assert.assertEquals("HTTP/1.1", _methodOrVersion);
         Assert.assertEquals("204", _uriOrStatus);
         Assert.assertEquals("No Content", _versionOrReason);
-        Assert.assertThat(_bad, Matchers.containsString("Illegal character 0x20"));
+        Assert.assertThat(_bad, Matchers.containsString("Illegal character "));
     }
 
     @Test
@@ -669,6 +745,38 @@ public class HttpParserTest {
         HttpParser parser = new HttpParser(handler);
         parseAll(parser, buffer);
         Assert.assertThat(_bad, Matchers.notNullValue());
+    }
+
+    @Test
+    public void testBadHeaderNames() throws Exception {
+        String[] bad = new String[]
+                {
+                        "Foo\\Bar: value\r\n",
+                        "Foo@Bar: value\r\n",
+                        "Foo,Bar: value\r\n",
+                        "Foo}Bar: value\r\n",
+                        "Foo{Bar: value\r\n",
+                        "Foo=Bar: value\r\n",
+                        "Foo>Bar: value\r\n",
+                        "Foo<Bar: value\r\n",
+                        "Foo)Bar: value\r\n",
+                        "Foo(Bar: value\r\n",
+                        "Foo?Bar: value\r\n",
+                        "Foo\"Bar: value\r\n",
+                        "Foo/Bar: value\r\n",
+                        "Foo]Bar: value\r\n",
+                        "Foo[Bar: value\r\n",
+                };
+
+        for (int i = 0; i < bad.length; i++) {
+            ByteBuffer buffer = BufferUtils.toBuffer(
+                    "GET / HTTP/1.0\r\n" + bad[i] + "\r\n");
+
+            HttpParser.RequestHandler handler = new Handler();
+            HttpParser parser = new HttpParser(handler);
+            parseAll(parser, buffer);
+            Assert.assertThat(bad[i], _bad, Matchers.notNullValue());
+        }
     }
 
     @Test
@@ -1650,7 +1758,7 @@ public class HttpParserTest {
     }
 
     @Test
-    public void testDuplicateContentLengthWithLargerThenCorrectValue() {
+    public void testMultipleContentLengthWithLargerThenCorrectValue() {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "POST / HTTP/1.1\r\n"
                         + "Content-Length: 2\r\n"
@@ -1664,7 +1772,7 @@ public class HttpParserTest {
 
         parser.parseNext(buffer);
         Assert.assertEquals("POST", _methodOrVersion);
-        Assert.assertEquals("Duplicate Content-Length", _bad);
+        Assert.assertEquals("Multiple Content-Lengths", _bad);
         Assert.assertFalse(buffer.hasRemaining());
         Assert.assertEquals(HttpParser.State.CLOSE, parser.getState());
         parser.atEOF();
@@ -1673,7 +1781,7 @@ public class HttpParserTest {
     }
 
     @Test
-    public void testDuplicateContentLengthWithCorrectThenLargerValue() {
+    public void testMultipleContentLengthWithCorrectThenLargerValue() {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "POST / HTTP/1.1\r\n"
                         + "Content-Length: 1\r\n"
@@ -1687,7 +1795,7 @@ public class HttpParserTest {
 
         parser.parseNext(buffer);
         Assert.assertEquals("POST", _methodOrVersion);
-        Assert.assertEquals("Duplicate Content-Length", _bad);
+        Assert.assertEquals("Multiple Content-Lengths", _bad);
         Assert.assertFalse(buffer.hasRemaining());
         Assert.assertEquals(HttpParser.State.CLOSE, parser.getState());
         parser.atEOF();
@@ -1709,7 +1817,7 @@ public class HttpParserTest {
                         + "\r\n");
 
         HttpParser.RequestHandler handler = new Handler();
-        HttpParser parser = new HttpParser(handler);
+        HttpParser parser = new HttpParser(handler, HttpCompliance.RFC2616_LEGACY);
         parseAll(parser, buffer);
 
         Assert.assertEquals("POST", _methodOrVersion);
@@ -1719,6 +1827,8 @@ public class HttpParserTest {
 
         Assert.assertTrue(_headerCompleted);
         Assert.assertTrue(_messageCompleted);
+
+        Assert.assertThat(_complianceViolation, contains(HttpComplianceSection.TRANSFER_ENCODING_WITH_CONTENT_LENGTH));
     }
 
     @Test
@@ -1735,7 +1845,7 @@ public class HttpParserTest {
                         + "\r\n");
 
         HttpParser.RequestHandler handler = new Handler();
-        HttpParser parser = new HttpParser(handler);
+        HttpParser parser = new HttpParser(handler, HttpCompliance.RFC2616_LEGACY);
         parseAll(parser, buffer);
 
         Assert.assertEquals("POST", _methodOrVersion);
@@ -1745,6 +1855,8 @@ public class HttpParserTest {
 
         Assert.assertTrue(_headerCompleted);
         Assert.assertTrue(_messageCompleted);
+
+        Assert.assertThat(_complianceViolation, contains(HttpComplianceSection.TRANSFER_ENCODING_WITH_CONTENT_LENGTH));
     }
 
     @Test
@@ -2113,7 +2225,7 @@ public class HttpParserTest {
 
         @Override
         public int getHeaderCacheSize() {
-            return 512;
+            return 4096;
         }
 
         @Override

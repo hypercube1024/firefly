@@ -3,10 +3,10 @@ package test.utils.lang.pool;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.concurrent.ThreadUtils;
 import com.firefly.utils.exception.CommonRuntimeException;
+import com.firefly.utils.lang.LeakDetector;
 import com.firefly.utils.lang.pool.AsynchronousPool;
 import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
 import com.firefly.utils.lang.pool.PooledObject;
-import com.firefly.utils.lang.LeakDetector;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -9,12 +9,14 @@ import java.util.*
  * @author Pengtao Qiu
  */
 @Table(value = "user", catalog = "coffee_store")
-data class User(@Id("id") var id: Long?,
-                @Column("name") var name: String,
-                @Column("password") var password: String,
-                @Column("create_time") var createTime: Date?,
-                @Column("update_time") var updateTime: Date?) {
-    
+data class User(
+    @Id("id") var id: Long?,
+    @Column("name") var name: String,
+    @Column("password") var password: String,
+    @Column("create_time") var createTime: Date?,
+    @Column("update_time") var updateTime: Date?
+               ) {
+
     override fun equals(other: Any?): Boolean = if (other is User) Objects.equals(id, other.id) else false
 
     override fun hashCode(): Int = Objects.hashCode(id)

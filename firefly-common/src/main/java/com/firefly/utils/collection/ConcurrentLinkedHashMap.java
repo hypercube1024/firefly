@@ -63,7 +63,7 @@ public class ConcurrentLinkedHashMap<K, V> implements Map<K, V> {
     private final MapEventListener<K, V> mapEventListener;
 
     public ConcurrentLinkedHashMap(boolean accessOrder, int maxEntries) {
-        this(accessOrder, maxEntries, new MapEventListener<K, V>(){
+        this(accessOrder, maxEntries, new MapEventListener<K, V>() {
 
             @Override
             public boolean onEliminateEntry(K key, V value) {

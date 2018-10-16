@@ -31,8 +31,9 @@ fun main(args: Array<String>) {
         webSocket("/helloWebSocket") {
             onConnect {
                 val future = scheduler.scheduleAtFixedRate(
-                        { it.sendText("Current time: " + Date()) },
-                        0, 1, TimeUnit.SECONDS)
+                    { it.sendText("Current time: " + Date()) },
+                    0, 1, TimeUnit.SECONDS
+                                                          )
                 it.onClose { future.cancel() }
             }
 

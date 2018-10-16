@@ -58,11 +58,11 @@ fun main(args: Array<String>) = runBlocking {
     println(getResp.stringBody)
 
     val postResp = firefly.httpClient().post("http://$host:$port/product")
-            .body("Car 20. The color is red.").asyncSubmit()
+        .body("Car 20. The color is red.").asyncSubmit()
     println(postResp.stringBody)
 
     val putResp = firefly.httpClient().put("http://$host:$port/product/20")
-            .body("Change the color from red to black.").asyncSubmit()
+        .body("Change the color from red to black.").asyncSubmit()
     println(putResp.stringBody)
 
     val delResp = firefly.httpClient().delete("http://$host:$port/product/20").asyncSubmit()

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * Example:
  * </p>
- * 
+ *
  * <pre>
  * public void process(EndPoint endPoint, ByteBuffer buffer, Callback callback) {
  * 	ByteBuffer[] buffers = split(buffer);
@@ -27,50 +27,50 @@ import java.util.concurrent.atomic.AtomicInteger;
  * </pre>
  */
 public class CountingCallback extends Callback.Nested {
-	private final AtomicInteger count;
+    private final AtomicInteger count;
 
-	public CountingCallback(Callback callback, int count) {
-		super(callback);
-		this.count = new AtomicInteger(count);
-	}
+    public CountingCallback(Callback callback, int count) {
+        super(callback);
+        this.count = new AtomicInteger(count);
+    }
 
-	@Override
-	public void succeeded() {
-		// Forward success on the last success.
-		while (true) {
-			int current = count.get();
+    @Override
+    public void succeeded() {
+        // Forward success on the last success.
+        while (true) {
+            int current = count.get();
 
-			// Already completed ?
-			if (current == 0)
-				return;
+            // Already completed ?
+            if (current == 0)
+                return;
 
-			if (count.compareAndSet(current, current - 1)) {
-				if (current == 1)
-					super.succeeded();
-				return;
-			}
-		}
-	}
+            if (count.compareAndSet(current, current - 1)) {
+                if (current == 1)
+                    super.succeeded();
+                return;
+            }
+        }
+    }
 
-	@Override
-	public void failed(Throwable failure) {
-		// Forward failure on the first failure.
-		while (true) {
-			int current = count.get();
+    @Override
+    public void failed(Throwable failure) {
+        // Forward failure on the first failure.
+        while (true) {
+            int current = count.get();
 
-			// Already completed ?
-			if (current == 0)
-				return;
+            // Already completed ?
+            if (current == 0)
+                return;
 
-			if (count.compareAndSet(current, 0)) {
-				super.failed(failure);
-				return;
-			}
-		}
-	}
+            if (count.compareAndSet(current, 0)) {
+                super.failed(failure);
+                return;
+            }
+        }
+    }
 
-	@Override
-	public String toString() {
-		return String.format("%s@%x", getClass().getSimpleName(), hashCode());
-	}
+    @Override
+    public String toString() {
+        return String.format("%s@%x", getClass().getSimpleName(), hashCode());
+    }
 }

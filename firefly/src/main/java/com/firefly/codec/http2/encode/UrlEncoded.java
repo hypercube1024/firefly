@@ -47,7 +47,7 @@ import static com.firefly.utils.lang.TypeUtils.convertHexDigit;
  */
 @SuppressWarnings("serial")
 public class UrlEncoded extends MultiMap<String> implements Cloneable {
-    
+
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     public static final Charset ENCODING;

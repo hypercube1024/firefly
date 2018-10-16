@@ -8,6 +8,8 @@ import com.firefly.db.annotation.Table
  * @author Pengtao Qiu
  */
 @Table(value = "project_user", catalog = "test")
-data class ProjectUser(@Id("id") var id: Long?,
-                       @Column("user_id") var userId: Long,
-                       @Column("project_id") var projectId: Long)
+data class ProjectUser(
+    @Id("id") var id: Long?,
+    @Column("user_id") var userId: Long,
+    @Column("project_id") var projectId: Long
+                      )

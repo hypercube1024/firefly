@@ -192,6 +192,7 @@ public class SimpleResponse implements Closeable {
         getFields().add(name, value);
         return this;
     }
+
     public SimpleResponse addCookie(Cookie cookie) {
         response.getFields().add(HttpHeader.SET_COOKIE, CookieGenerator.generateSetCookie(cookie));
         return this;

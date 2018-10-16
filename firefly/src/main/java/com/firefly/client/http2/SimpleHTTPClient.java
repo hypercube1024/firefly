@@ -1,11 +1,13 @@
 package com.firefly.client.http2;
 
 import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.oauth2.model.*;
 import com.firefly.utils.CollectionUtils;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
@@ -33,10 +35,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -95,6 +94,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         Action1<HTTPOutputStream> output;
         MultiPartContentProvider multiPartProvider;
         UrlEncoded formUrlEncoded;
+        UrlEncoded queryUrlEncoded;
 
         SettingsFrame settingsFrame;
 
@@ -318,6 +318,13 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             return formUrlEncoded;
         }
 
+        UrlEncoded queryUrlEncoded() {
+            if (queryUrlEncoded == null) {
+                queryUrlEncoded = new UrlEncoded();
+            }
+            return queryUrlEncoded;
+        }
+
         /**
          * Add a value in an existed form parameter. The form content type is "application/x-www-form-urlencoded".
          *
@@ -374,6 +381,65 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
          */
         public RequestBuilder removeFormParam(String name) {
             formUrlEncoded().remove(name);
+            return this;
+        }
+
+        /**
+         * Add a value in an existed query parameter.
+         *
+         * @param name  The parameter name.
+         * @param value The parameter value.
+         * @return RequestBuilder
+         */
+        public RequestBuilder addQueryParam(String name, String value) {
+            queryUrlEncoded().add(name, value);
+            return this;
+        }
+
+        /**
+         * Add some values in an existed query parameter.
+         *
+         * @param name   The parameter name.
+         * @param values The parameter values.
+         * @return RequestBuilder
+         */
+        public RequestBuilder addQueryParam(String name, List<String> values) {
+            queryUrlEncoded().addValues(name, values);
+            return this;
+        }
+
+        /**
+         * Put a parameter in the query parameter.
+         *
+         * @param name  The parameter name.
+         * @param value The parameter value.
+         * @return RequestBuilder
+         */
+        public RequestBuilder putQueryParam(String name, String value) {
+            queryUrlEncoded().put(name, value);
+            return this;
+        }
+
+        /**
+         * Put a parameter in the query parameter.
+         *
+         * @param name   The parameter name.
+         * @param values The parameter values.
+         * @return RequestBuilder
+         */
+        public RequestBuilder putQueryParam(String name, List<String> values) {
+            queryUrlEncoded().putValues(name, values);
+            return this;
+        }
+
+        /**
+         * Remove a parameter in the query parameter.
+         *
+         * @param name The parameter name.
+         * @return RequestBuilder
+         */
+        public RequestBuilder removeQueryParam(String name) {
+            queryUrlEncoded().remove(name);
             return this;
         }
 
@@ -471,6 +537,85 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         public RequestBuilder settings(SettingsFrame settingsFrame) {
             this.settingsFrame = settingsFrame;
             return this;
+        }
+
+        /**
+         * Build a OAuth2 authorization request
+         *
+         * @param authRequest The OAuth2 authorization request
+         * @return RequestBuilder
+         */
+        public RequestBuilder authRequest(AuthorizationRequest.Builder authRequest) {
+            buildAccessTokenRequest(authRequest.toMap());
+            return this;
+        }
+
+        /**
+         * Build code access token request
+         *
+         * @param codeAccessTokenRequest The code access token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder codeAccessTokenRequest(AuthorizationCodeAccessTokenRequest.Builder codeAccessTokenRequest) {
+            buildAccessTokenRequest(codeAccessTokenRequest.toMap());
+            return this;
+        }
+
+        /**
+         * Build username and password access token request
+         *
+         * @param pwdAccessTokenRequest The username and password access token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder pwdAccessTokenRequest(PasswordAccessTokenRequest.Builder pwdAccessTokenRequest) {
+            buildAccessTokenRequest(pwdAccessTokenRequest.toMap());
+            return this;
+        }
+
+        /**
+         * Build credential access token request
+         *
+         * @param credAccessTokenRequest The credential access token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder credAccessTokenRequest(ClientCredentialAccessTokenRequest.Builder credAccessTokenRequest) {
+            buildAccessTokenRequest(credAccessTokenRequest.toMap());
+            return this;
+        }
+
+        /**
+         * Build refreshing token request
+         *
+         * @param refreshTokenRequest The refreshing token request
+         * @return RequestBuilder
+         */
+        public RequestBuilder refreshTokenRequest(RefreshingTokenRequest.Builder refreshTokenRequest) {
+            buildAccessTokenRequest(refreshTokenRequest.toMap());
+            return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        protected void buildAccessTokenRequest(Map<String, Object> paramMap) {
+            UrlEncoded p;
+            switch (HttpMethod.fromString(request.getMethod())) {
+                case GET:
+                    p = queryUrlEncoded();
+                    break;
+                case POST:
+                    p = formUrlEncoded();
+                    break;
+                default:
+                    p = null;
+            }
+            if (p != null) {
+                paramMap.forEach((key, value) -> {
+                    if (value instanceof Collection) {
+                        p.put(key, new ArrayList<>((Collection<String>) value));
+                    } else {
+                        p.put(key, value.toString());
+                    }
+                });
+            }
         }
 
         /**
@@ -800,6 +945,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     protected void send(RequestBuilder reqBuilder, Timer.Context resTimerCtx, HTTPClientConnection connection, ClientHTTPHandler handler) {
+        if (reqBuilder.queryUrlEncoded != null) {
+            String query = reqBuilder.request.getURI().getQuery();
+            if (StringUtils.hasText(query)) {
+                reqBuilder.request.getURI().setQuery(query + "&" + reqBuilder.queryUrlEncoded.encode(StandardCharsets.UTF_8, true));
+            } else {
+                reqBuilder.request.getURI().setQuery(reqBuilder.queryUrlEncoded.encode(StandardCharsets.UTF_8, true));
+            }
+        }
+
         if (!CollectionUtils.isEmpty(reqBuilder.requestBody)) {
             connection.send(reqBuilder.request, reqBuilder.requestBody.toArray(BufferUtils.EMPTY_BYTE_BUFFER_ARRAY), handler);
         } else if (reqBuilder.promise != null) {

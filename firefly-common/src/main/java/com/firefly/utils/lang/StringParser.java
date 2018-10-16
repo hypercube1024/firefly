@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -102,7 +102,7 @@ public final class StringParser {
     /**
      * Return the zero-relative index of our current parsing position
      * within the string being parsed.
-     * 
+     *
      * @return The current index
      */
     public int getIndex() {
@@ -114,6 +114,7 @@ public final class StringParser {
 
     /**
      * Return the length of the string we are parsing.
+     *
      * @return The length of this string
      */
     public int getLength() {
@@ -125,6 +126,7 @@ public final class StringParser {
 
     /**
      * Return the String we are currently parsing.
+     *
      * @return The current string
      */
     public String getString() {
@@ -194,7 +196,7 @@ public final class StringParser {
      * not possible, a zero-length string is returned.
      *
      * @param start Starting index, zero relative, inclusive
-     * @param end Ending index, zero relative, exclusive
+     * @param end   Ending index, zero relative, exclusive
      * @return The result string from start to end
      */
     public String extract(int start, int end) {
@@ -230,7 +232,8 @@ public final class StringParser {
      * or the index of the character after the last position of the string
      * if no more non-whitespace characters are found.  The current
      * parsing position is updated to the returned value.
-     * @return Return current index after skipping blank characters 
+     *
+     * @return Return current index after skipping blank characters
      */
     public int findText() {
 
@@ -246,7 +249,7 @@ public final class StringParser {
      * or the index of the character after the last position of the string
      * if no more whitespace characters are found.  The current parsing
      * position is updated to the returned value.
-     * 
+     *
      * @return The next index after skipping the text
      */
     public int findWhite() {
@@ -290,6 +293,7 @@ public final class StringParser {
      * Advance the current parsing position while it is pointing at a
      * non-whitespace character, or until it moves past the end of the string.
      * Return the final value.
+     *
      * @return The next index after skipping the text
      */
     public int skipText() {
@@ -305,7 +309,8 @@ public final class StringParser {
      * Advance the current parsing position while it is pointing at a
      * whitespace character, or until it moves past the end of the string.
      * Return the final value.
-     * @return Return current index after skipping blank characters 
+     *
+     * @return Return current index after skipping blank characters
      */
     public int skipWhite() {
 

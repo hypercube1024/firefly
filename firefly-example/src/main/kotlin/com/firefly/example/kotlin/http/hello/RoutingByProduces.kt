@@ -42,14 +42,14 @@ fun main(args: Array<String>) = runBlocking {
     }.listen(host, port)
 
     val text = firefly.httpClient().put("http://$host:$port/product/20")
-            .put(HttpHeader.ACCEPT, "text/plain, application/json;q=0.9, */*;q=0.8")
-            .jsonBody(Car(20, "My car", "black"))
-            .asyncSubmit()
+        .put(HttpHeader.ACCEPT, "text/plain, application/json;q=0.9, */*;q=0.8")
+        .jsonBody(Car(20, "My car", "black"))
+        .asyncSubmit()
     println(text.stringBody)
 
     val json = firefly.httpClient().put("http://$host:$port/product/20")
-            .put(HttpHeader.ACCEPT, "application/json, text/plain, */*;q=0.8")
-            .jsonBody(Car(20, "My car", "black"))
-            .asyncSubmit()
+        .put(HttpHeader.ACCEPT, "application/json, text/plain, */*;q=0.8")
+        .jsonBody(Car(20, "My car", "black"))
+        .asyncSubmit()
     println(json.stringBody)
 }

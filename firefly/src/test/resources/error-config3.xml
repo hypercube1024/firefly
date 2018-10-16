@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.fireflysource.com/beans"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.fireflysource.com/beans http://www.fireflysource.com/beans.xsd">
 
-	<component-scan base-package="test.mixed"/>
+    <component-scan base-package="test.mixed"/>
 
-	<bean id="apple" class="test.mixed.Food">
-		<property name="name" value="apple"></property>
-		<property name="price" value="5.3"></property>
-	</bean>
+    <bean id="apple" class="test.mixed.Food">
+        <property name="name" value="apple"></property>
+        <property name="price" value="5.3"></property>
+    </bean>
 
-	<bean id="orange" class="test.mixed.Food">
-		<property name="name" value="orange"></property>
-		<property name="price" value="3.52"></property>
-	</bean>
+    <bean id="orange" class="test.mixed.Food">
+        <property name="name" value="orange"></property>
+        <property name="price" value="3.52"></property>
+    </bean>
 
-	<bean id="strawberry" class="test.mixed.Food">
-		<property name="name" value="strawberry"></property>
-		<property name="price" value="10."></property>
-	</bean>
+    <bean id="strawberry" class="test.mixed.Food">
+        <property name="name" value="strawberry"></property>
+        <property name="price" value="10."></property>
+    </bean>
 
-	<bean id="foodService" class="test.mixed.impl.FoodRepositoryImpl">
-		<property name="food">
-			<list>
-				<ref bean="apple"/>
-				<ref bean="orange"/>
-				<ref bean="strawberry"/>
-			</list>
-		</property>
-	</bean>
+    <bean id="foodService" class="test.mixed.impl.FoodRepositoryImpl">
+        <property name="food">
+            <list>
+                <ref bean="apple"/>
+                <ref bean="orange"/>
+                <ref bean="strawberry"/>
+            </list>
+        </property>
+    </bean>
 
 </beans>

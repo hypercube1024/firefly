@@ -100,5 +100,6 @@ class UserRouter : RouterInstaller {
         }
     }
 
-    private fun getBackURL(ctx: RoutingContext) = ctx.getParamOpt("backURL").filter { `$`.string.hasText(it) }.orElse("/")
+    private fun getBackURL(ctx: RoutingContext) =
+        ctx.getParamOpt("backURL").filter { `$`.string.hasText(it) }.orElse("/")
 }

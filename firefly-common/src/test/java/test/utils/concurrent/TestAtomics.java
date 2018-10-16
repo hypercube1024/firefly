@@ -28,7 +28,7 @@ public class TestAtomics {
             }
         }
 
-        for (int j = max; j > -10 ; j--) {
+        for (int j = max; j > -10; j--) {
             int p = Atomics.getAndDecrement(i, min);
             if (j > min) {
                 Assert.assertThat(p, is(j));

@@ -30,7 +30,7 @@ abstract public class AesUtils {
         }
     }
 
-    public static AlgorithmParameters generateIV(byte[] iv) throws Exception{
+    public static AlgorithmParameters generateIV(byte[] iv) throws Exception {
         AlgorithmParameters params = AlgorithmParameters.getInstance("AES");
         params.init(new IvParameterSpec(iv));
         return params;

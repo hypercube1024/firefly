@@ -1,0 +1,14 @@
+package {{packageName}}.api.dao
+
+import {{packageName}}.api.model.entity.Project
+
+/**
+ * @author Pengtao Qiu
+ */
+interface ProjectDao {
+
+    suspend fun get(id: Long): Project
+
+    suspend fun insert(project: Project): Long
+
+}

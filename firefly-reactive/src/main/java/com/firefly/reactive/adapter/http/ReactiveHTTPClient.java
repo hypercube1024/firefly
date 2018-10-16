@@ -7,6 +7,7 @@ import com.firefly.client.http2.SimpleResponse;
 import com.firefly.codec.http2.frame.SettingsFrame;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.codec.oauth2.model.*;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
@@ -223,6 +224,31 @@ public class ReactiveHTTPClient extends SimpleHTTPClient {
         @Override
         public ReactiveRequestBuilder settings(SettingsFrame settingsFrame) {
             super.settings(settingsFrame);
+            return this;
+        }
+
+        public ReactiveRequestBuilder authRequest(AuthorizationRequest.Builder authRequest) {
+            buildAccessTokenRequest(authRequest.toMap());
+            return this;
+        }
+
+        public ReactiveRequestBuilder codeAccessTokenRequest(AuthorizationCodeAccessTokenRequest.Builder codeAccessTokenRequest) {
+            buildAccessTokenRequest(codeAccessTokenRequest.toMap());
+            return this;
+        }
+
+        public ReactiveRequestBuilder pwdAccessTokenRequest(PasswordAccessTokenRequest.Builder pwdAccessTokenRequest) {
+            buildAccessTokenRequest(pwdAccessTokenRequest.toMap());
+            return this;
+        }
+
+        public ReactiveRequestBuilder credAccessTokenRequest(ClientCredentialAccessTokenRequest.Builder credAccessTokenRequest) {
+            buildAccessTokenRequest(credAccessTokenRequest.toMap());
+            return this;
+        }
+
+        public ReactiveRequestBuilder refreshTokenRequest(RefreshingTokenRequest.Builder refreshTokenRequest) {
+            buildAccessTokenRequest(refreshTokenRequest.toMap());
             return this;
         }
     }

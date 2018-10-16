@@ -12,17 +12,17 @@ import java.io.EOFException;
  */
 public class EofException extends EOFException {
 
-	private static final long serialVersionUID = -3003752099703697703L;
+    private static final long serialVersionUID = -3003752099703697703L;
 
-	public EofException() {
-	}
+    public EofException() {
+    }
 
-	public EofException(String reason) {
-		super(reason);
-	}
+    public EofException(String reason) {
+        super(reason);
+    }
 
-	public EofException(Throwable th) {
-		if (th != null)
-			initCause(th);
-	}
+    public EofException(Throwable th) {
+        if (th != null)
+            initCause(th);
+    }
 }

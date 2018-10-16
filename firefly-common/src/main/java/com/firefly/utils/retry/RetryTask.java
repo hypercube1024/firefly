@@ -38,7 +38,7 @@ public class RetryTask<V> implements Callable<V> {
             }
             ctx.setExecutedCount(ctx.getExecutedCount() + 1);
             Optional.ofNullable(complete).ifPresent(c -> c.call(ctx));
-            
+
             boolean stop = stopStrategies.stream().anyMatch(p -> p.test(ctx));
             boolean retry = retryStrategies.stream().anyMatch(p -> p.test(ctx));
             if (stop || !retry) {

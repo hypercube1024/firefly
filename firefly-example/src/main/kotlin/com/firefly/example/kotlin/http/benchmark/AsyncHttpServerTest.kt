@@ -14,10 +14,12 @@ data class Item(val name: String, val price: Double)
 
 data class ItemRepository(val name: String) {
     fun repository(): List<Item> =
-            listOf(Item("foo", 33.2),
-                   Item("beer", 5.99),
-                   Item("cola", 2.5),
-                   Item("mineral water", 2.0))
+        listOf(
+            Item("foo", 33.2),
+            Item("beer", 5.99),
+            Item("cola", 2.5),
+            Item("mineral water", 2.0)
+              )
 }
 
 /**
@@ -44,6 +46,16 @@ data class ItemRepository(val name: String) {
  * 3834331 requests in 1.00m, 1.46GB read
  * Requests/sec:  63798.77
  * Transfer/sec:     24.82MB
+ *
+ * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items.json
+ * Running 1m test @ http://127.0.0.1:4455/items.json
+ * 8 threads and 32 connections
+ * Thread Stats   Avg      Stdev     Max   +/- Stdev
+ * Latency   484.98us  136.72us  11.30ms   92.50%
+ * Req/Sec     8.20k   502.31     9.09k    76.83%
+ * 3920603 requests in 1.00m, 1.03GB read
+ * Requests/sec:  65234.20
+ * Transfer/sec:     17.48MB
  */
 fun main(args: Array<String>) {
     HttpServer {
@@ -66,5 +78,14 @@ fun main(args: Array<String>) {
                 renderTemplate("template/benchmark/items.mustache", ItemRepository("drinks"))
             }
         }
-    }.listen("127.0.0.1", 4455)
+
+        router {
+            httpMethod = HttpMethod.GET
+            path = "/items.json"
+
+            asyncHandler {
+                writeJson(ItemRepository("drinks").repository()).end()
+            }
+        }
+    }.listen("localhost", 4455)
 }

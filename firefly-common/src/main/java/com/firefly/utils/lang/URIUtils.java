@@ -1,17 +1,16 @@
 package com.firefly.utils.lang;
 
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import com.firefly.utils.StringUtils;
-import com.firefly.utils.lang.Utf8Appendable.NotUtf8Exception;
-
 /**
  * Parse an authority string into Host and Port
  * <p>Parse a string in the form "host:port", handling IPv4 an IPv6 hosts</p>
- *
  */
 public class URIUtils implements Cloneable {
 

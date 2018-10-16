@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<loggers xmlns="http://www.fireflysource.com/loggers"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
+    <logger>
+        <name>firefly-system</name>
+        <level>INFO</level>
+        <enable-console>true</enable-console>
+        <formatter>com.firefly.boot.common.ExampleLogFormatter</formatter>
+    </logger>
+
+    <logger>
+        <name>com.firefly.boot</name>
+        <level>INFO</level>
+        <enable-console>true</enable-console>
+        <formatter>com.firefly.boot.common.ExampleLogFormatter</formatter>
+    </logger>
+
+</loggers>

@@ -1,0 +1,43 @@
+package {{packageName}}.server.service.external.redis
+
+import com.firefly.annotation.Component
+import com.firefly.annotation.DestroyedMethod
+import com.firefly.annotation.InitialMethod
+import com.firefly.annotation.Inject
+import {{packageName}}.server.config.ServerConfig
+import org.redisson.api.RedissonReactiveClient
+
+/**
+ * @author Pengtao Qiu
+ */
+//@Component("websiteRedisService")
+class WebsiteRedisService {
+
+    @Inject
+    private lateinit var config: ServerConfig
+
+    private lateinit var redisService: RedisService
+
+    fun getClient(): RedissonReactiveClient = redisService.getClient()
+
+    fun getKeyPrefix(): String = "www:fireflysource"
+
+    @InitialMethod
+    fun init() {
+        when (config.env) {
+            "local" -> {
+                redisService = RedisService("redis://127.0.0.1:6379", 1, null)
+            }
+            else -> {
+                TODO("the redis configuration")
+            }
+        }
+        redisService.start()
+    }
+
+    @DestroyedMethod
+    fun destroy() {
+        redisService.stop()
+    }
+
+}

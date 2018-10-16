@@ -214,18 +214,21 @@ public class JsonStringReader extends JsonReader {
 
         for (; ; ) {
             ch = (char) read();
-            if (VerifyUtils.isDigit(ch))
-                value = (value << 3) + (value << 1) + (ch - '0');
-            else {
-                if (isString) {
-                    if (ch == '"')
-                        break;
+            if (ch > ' ') {
+                if (VerifyUtils.isDigit(ch)) {
+                    value = (value << 3) + (value << 1) + (ch - '0');
                 } else {
-                    if (isEndFlag(ch)) {
-                        pos--;
-                        break;
-                    } else
-                        throw new JsonException("read int error, character \"" + ch + "\" is not integer, the position is " + pos);
+                    if (isString) {
+                        if (ch == '"')
+                            break;
+                    } else {
+                        if (isEndFlag(ch)) {
+                            pos--;
+                            break;
+                        } else {
+                            throw new JsonException("read int error, character \"" + ch + "\" is not integer, the position is " + pos);
+                        }
+                    }
                 }
             }
 

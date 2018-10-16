@@ -14,8 +14,7 @@ public enum OrderStatus {
     SHIPPED(3, "shipped"),
     FINISHED(4, "finished"),
     CANCELED(5, "canceled"),
-    REFUND(6, "refund")
-    ;
+    REFUND(6, "refund");
 
     private final int value;
     private final String description;
@@ -39,6 +38,6 @@ public enum OrderStatus {
     }
 
     public static Optional<OrderStatus> from(int value) {
-         return Optional.ofNullable(Holder.map.get(value));
+        return Optional.ofNullable(Holder.map.get(value));
     }
 }

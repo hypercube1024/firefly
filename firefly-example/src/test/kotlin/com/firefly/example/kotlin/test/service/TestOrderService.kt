@@ -26,9 +26,12 @@ class TestOrderService : TestBase() {
     @Test
     fun test() = runBlocking {
         val user = userService.getByName("John")
-        val req = ProductBuyRequest(user.id ?: 0L, listOf(
+        val req = ProductBuyRequest(
+            user.id ?: 0L, listOf(
                 InventoryUpdate(4L, 10L),
-                InventoryUpdate(5L, 20L)))
+                InventoryUpdate(5L, 20L)
+                                 )
+                                   )
         orderService.buy(req)
 
         val inventories = inventoryDAO.listByProductId(listOf(4L, 5L))
@@ -41,9 +44,12 @@ class TestOrderService : TestBase() {
     fun testError() = runBlocking {
         newTransaction {
             val user = userService.getByName("John")
-            val req = ProductBuyRequest(user.id ?: 0L, listOf(
+            val req = ProductBuyRequest(
+                user.id ?: 0L, listOf(
                     InventoryUpdate(4L, 90L),
-                    InventoryUpdate(5L, 20L)))
+                    InventoryUpdate(5L, 20L)
+                                     )
+                                       )
             orderService.buy(req)
         }.join()
 

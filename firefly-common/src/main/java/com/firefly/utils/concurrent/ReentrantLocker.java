@@ -23,7 +23,8 @@ public class ReentrantLocker {
     public void lock(Action0 action0) {
         lock();
         try {
-            action0.call();;
+            action0.call();
+            ;
         } finally {
             unlock();
         }

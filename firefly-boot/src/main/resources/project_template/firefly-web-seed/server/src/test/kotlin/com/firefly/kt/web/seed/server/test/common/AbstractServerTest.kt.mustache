@@ -1,0 +1,15 @@
+package {{packageName}}.server.test.common
+
+import org.junit.Before
+
+/**
+ * @author Pengtao Qiu
+ */
+abstract class AbstractServerTest {
+
+    @Before
+    fun init() {
+        Context.init()
+    }
+
+}

@@ -5,7 +5,6 @@ import com.firefly.utils.json.JsonReader;
 import com.firefly.utils.json.Parser;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 
 public class ParserMetaInfo extends MetaInfo {

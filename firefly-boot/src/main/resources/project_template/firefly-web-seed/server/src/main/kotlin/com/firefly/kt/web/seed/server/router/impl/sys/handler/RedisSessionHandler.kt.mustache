@@ -1,0 +1,58 @@
+package {{packageName}}.server.router.impl.sys.handler
+
+import com.firefly.annotation.Component
+import com.firefly.annotation.DestroyedMethod
+import com.firefly.annotation.InitialMethod
+import com.firefly.annotation.Inject
+import {{packageName}}.server.config.ServerConfig
+import {{packageName}}.server.service.external.redis.WebsiteRedisService
+import com.firefly.server.http2.router.Handler
+import com.firefly.server.http2.router.RoutingContext
+import com.firefly.server.http2.router.handler.session.HTTPSessionConfiguration
+import com.firefly.server.http2.router.handler.session.RedisHTTPSessionHandler
+import com.firefly.server.http2.router.handler.session.RedisSessionStore
+
+/**
+ * @author Pengtao Qiu
+ */
+//@Component("redisSessionHandler")
+class RedisSessionHandler : Handler {
+
+    @Inject
+    private lateinit var config: ServerConfig
+
+    @Inject
+    private lateinit var websiteRedisService: WebsiteRedisService
+
+    private lateinit var handler: RedisHTTPSessionHandler
+
+    override fun handle(ctx: RoutingContext) = handler.handle(ctx)
+
+    @InitialMethod
+    fun init() {
+        val store = RedisSessionStore()
+        store.ttl = 7 * 24 * 60 * 60 // 1 week
+        store.client = websiteRedisService.getClient()
+        store.keyPrefix = websiteRedisService.getKeyPrefix()
+
+        when (config.env) {
+            "local", "rd" -> {
+                store.sessionKey = "website_session_v1"
+            }
+            else -> {
+                store.sessionKey = "website_session_v1"
+            }
+        }
+
+        val sessionConfig = HTTPSessionConfiguration()
+        sessionConfig.defaultMaxInactiveInterval = 10 * 60
+
+        handler = RedisHTTPSessionHandler(sessionConfig, store)
+    }
+
+    @DestroyedMethod
+    fun destroy() {
+        handler.stop()
+    }
+
+}

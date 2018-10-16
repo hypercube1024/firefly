@@ -11,6 +11,7 @@ public interface AsynchronousPool<T> extends Pool<T> {
 
     /**
      * Take the object asynchronously
+     *
      * @return The asynchronous result of the pooled object
      */
     CompletableFuture<PooledObject<T>> take();

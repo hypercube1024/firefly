@@ -1,0 +1,21 @@
+package {{packageName}}.api.model.entity
+
+import com.firefly.db.annotation.Column
+import com.firefly.db.annotation.Id
+import com.firefly.db.annotation.Table
+import java.io.Serializable
+
+/**
+ * @author Pengtao Qiu
+ */
+@Table(value = "firefly_kt_web_seed_project", catalog = "firefly_seed")
+data class Project(
+    @Id("id") var id: Long?,
+    @Column("create_time") var createTime: java.util.Date?,
+    @Column("update_time") var updateTime: java.util.Date?,
+    @Column("name") var name: String
+                  ) : Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1
+    }
+}

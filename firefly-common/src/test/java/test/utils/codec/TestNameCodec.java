@@ -33,7 +33,7 @@ public class TestNameCodec {
         System.out.println(strSet);
         TreeSet<String> encodedStrSet = new TreeSet<>();
         numList.forEach(n -> encodedStrSet.add(NameCodec.encode(n)));
-        for(String s : encodedStrSet) {
+        for (String s : encodedStrSet) {
             encodedLength += s.length();
         }
 

@@ -5,9 +5,9 @@ import com.firefly.utils.json.Serializer;
 
 public class ByteSerializer implements Serializer {
 
-	@Override
-	public void convertTo(JsonWriter writer, Object obj) {
-		writer.writeByte((Byte)obj);
-	}
+    @Override
+    public void convertTo(JsonWriter writer, Object obj) {
+        writer.writeByte((Byte) obj);
+    }
 
 }

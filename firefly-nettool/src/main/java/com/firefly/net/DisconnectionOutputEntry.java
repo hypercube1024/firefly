@@ -4,18 +4,18 @@ import com.firefly.utils.concurrent.Callback;
 
 public class DisconnectionOutputEntry extends AbstractOutputEntry<Object> {
 
-	public DisconnectionOutputEntry(Callback callback, Object data) {
-		super(callback, data);
-	}
+    public DisconnectionOutputEntry(Callback callback, Object data) {
+        super(callback, data);
+    }
 
-	@Override
-	public OutputEntryType getOutputEntryType() {
-		return OutputEntryType.DISCONNECTION;
-	}
+    @Override
+    public OutputEntryType getOutputEntryType() {
+        return OutputEntryType.DISCONNECTION;
+    }
 
-	@Override
-	public long remaining() {
-		return 0;
-	}
+    @Override
+    public long remaining() {
+        return 0;
+    }
 
 }

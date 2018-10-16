@@ -9,7 +9,6 @@ import com.firefly.codec.websocket.model.OpCode;
 import com.firefly.codec.websocket.model.StatusCode;
 import com.firefly.codec.websocket.model.WebSocketBehavior;
 import com.firefly.codec.websocket.stream.WebSocketPolicy;
-import test.codec.websocket.utils.Hex;
 import com.firefly.utils.StringUtils;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -18,6 +17,7 @@ import org.junit.rules.ExpectedException;
 import test.codec.websocket.IncomingFramesCapture;
 import test.codec.websocket.UnitGenerator;
 import test.codec.websocket.UnitParser;
+import test.codec.websocket.utils.Hex;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

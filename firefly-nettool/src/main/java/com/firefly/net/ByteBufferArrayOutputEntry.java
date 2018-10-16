@@ -4,7 +4,6 @@ import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.io.BufferUtils;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class ByteBufferArrayOutputEntry extends AbstractByteBufferArrayOutputEntry {
 

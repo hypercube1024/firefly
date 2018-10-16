@@ -13,10 +13,11 @@ import kotlin.test.assertEquals
 private val log = KtLogger.getLogger { }
 
 private val dispatchExecutor: ExecutorService = ThreadPoolExecutor(
-        2, 2,
-        0L, TimeUnit.MILLISECONDS,
-        ArrayBlockingQueue(20),
-        Executors.defaultThreadFactory())
+    2, 2,
+    0L, TimeUnit.MILLISECONDS,
+    ArrayBlockingQueue(20),
+    Executors.defaultThreadFactory()
+                                                                  )
 
 // the thread local I want to maintain
 private val threadInt = ThreadLocal<Int>()
@@ -31,11 +32,13 @@ class TestCoroutineInterceptor {
                 val intContext = InterceptingContext(dispatcher, i, threadInt)
 
                 async(intContext) {
-                    log.info("beforeSuspend [local: $i, thread: ${threadInt.get()}]")
-                    assertEquals(i, threadInt.get())
-                    delay(1000)
-                    log.info("afterSuspend [local: $i, thread: ${threadInt.get()}]")
-                    assertEquals(i, threadInt.get())
+                    withTimeout(2000) {
+                        log.info("beforeSuspend [local: $i, thread: ${threadInt.get()}]")
+                        assertEquals(i, threadInt.get())
+                        delay(1000)
+                        log.info("afterSuspend [local: $i, thread: ${threadInt.get()}]")
+                        assertEquals(i, threadInt.get())
+                    }
                 }
             }
 
@@ -45,6 +48,22 @@ class TestCoroutineInterceptor {
 
             log.info("Done")
             delay(2000)
+        }
+    }
+
+    @Test
+    fun testTimeout() {
+        runBlocking {
+            val r = try {
+                withTimeout(1000) {
+                    delay(2000)
+                }
+                true
+            } catch (e: TimeoutCancellationException) {
+                println("timeout")
+                false
+            }
+            assertEquals(false, r)
         }
     }
 }

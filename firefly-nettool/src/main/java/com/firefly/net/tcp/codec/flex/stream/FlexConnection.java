@@ -33,7 +33,7 @@ public interface FlexConnection extends Connection {
         }
 
         default void close(Context context) {
-            
+
         }
     }
 

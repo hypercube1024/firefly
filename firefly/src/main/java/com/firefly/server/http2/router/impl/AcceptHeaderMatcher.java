@@ -30,7 +30,7 @@ public class AcceptHeaderMatcher extends AbstractPreciseMatcher {
         if (CollectionUtils.isEmpty(acceptMIMETypes)) {
             return null;
         }
-        
+
         for (AcceptMIMEType type : acceptMIMETypes) {
             Set<Router> set = map.entrySet().parallelStream().filter(e -> {
                 String[] t = StringUtils.split(e.getKey(), '/');

@@ -376,7 +376,7 @@ public class B64Code {
         decode(encoded, bout);
         return bout.toByteArray();
     }
-    
+
     /* ------------------------------------------------------------ */
 
     /**
@@ -441,7 +441,7 @@ public class B64Code {
         decodeRFC4648URL(encoded, bout);
         return bout.toByteArray();
     }
-    
+
     /* ------------------------------------------------------------ */
 
     /**

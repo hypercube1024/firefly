@@ -19,31 +19,27 @@ package com.firefly.db.init;
 /**
  * Root of the hierarchy of data access exceptions that are related to
  * processing of SQL scripts.
- *
  */
 @SuppressWarnings("serial")
 public abstract class ScriptException extends RuntimeException {
 
-	/**
-	 * Constructor for {@code ScriptException}.
-	 * 
-	 * @param message
-	 *            the detail message
-	 */
-	public ScriptException(String message) {
-		super(message);
-	}
+    /**
+     * Constructor for {@code ScriptException}.
+     *
+     * @param message the detail message
+     */
+    public ScriptException(String message) {
+        super(message);
+    }
 
-	/**
-	 * Constructor for {@code ScriptException}.
-	 * 
-	 * @param message
-	 *            the detail message
-	 * @param cause
-	 *            the root cause
-	 */
-	public ScriptException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    /**
+     * Constructor for {@code ScriptException}.
+     *
+     * @param message the detail message
+     * @param cause   the root cause
+     */
+    public ScriptException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

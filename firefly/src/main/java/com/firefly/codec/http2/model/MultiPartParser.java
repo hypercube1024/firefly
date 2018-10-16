@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.EnumSet;
 
 /* ------------------------------------------------------------ */
@@ -21,15 +20,6 @@ import java.util.EnumSet;
  */
 public class MultiPartParser {
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
-
-    static final byte COLON = (byte) ':';
-    static final byte TAB = 0x09;
-    static final byte LINE_FEED = 0x0A;
-    static final byte CARRIAGE_RETURN = 0x0D;
-    static final byte SPACE = 0x20;
-    static final byte[] CRLF =
-            {CARRIAGE_RETURN, LINE_FEED};
-    static final byte SEMI_COLON = (byte) ';';
 
     // States
     public enum FieldState {
@@ -54,6 +44,7 @@ public class MultiPartParser {
     }
 
     private final static EnumSet<State> __delimiterStates = EnumSet.of(State.DELIMITER, State.DELIMITER_CLOSE, State.DELIMITER_PADDING);
+    private final static int MAX_HEADER_LINE_LENGTH = 998;
 
     private final boolean DEBUG = LOG.isDebugEnabled();
     private final Handler _handler;
@@ -72,7 +63,6 @@ public class MultiPartParser {
     private int _length;
 
     private int _totalHeaderLineLength = -1;
-    private int _maxHeaderLineLength = 998;
 
     /* ------------------------------------------------------------------------------- */
     public MultiPartParser(Handler handler, String boundary) {
@@ -105,98 +95,51 @@ public class MultiPartParser {
     }
 
     /* ------------------------------------------------------------------------------- */
-    enum CharState {
-        ILLEGAL, CR, LF, LEGAL
-    }
-
-    private final static CharState[] __charState;
-
-    static {
-        // token = 1*tchar
-        // tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*"
-        // / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
-        // / DIGIT / ALPHA
-        // ; any VCHAR, except delimiters
-        // quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
-        // qdtext = HTAB / SP /%x21 / %x23-5B / %x5D-7E / obs-text
-        // obs-text = %x80-FF
-        // comment = "(" *( ctext / quoted-pair / comment ) ")"
-        // ctext = HTAB / SP / %x21-27 / %x2A-5B / %x5D-7E / obs-text
-        // quoted-pair = "\" ( HTAB / SP / VCHAR / obs-text )
-
-        __charState = new CharState[256];
-        Arrays.fill(__charState, CharState.ILLEGAL);
-        __charState[LINE_FEED] = CharState.LF;
-        __charState[CARRIAGE_RETURN] = CharState.CR;
-        __charState[TAB] = CharState.LEGAL;
-        __charState[SPACE] = CharState.LEGAL;
-
-        __charState['!'] = CharState.LEGAL;
-        __charState['#'] = CharState.LEGAL;
-        __charState['$'] = CharState.LEGAL;
-        __charState['%'] = CharState.LEGAL;
-        __charState['&'] = CharState.LEGAL;
-        __charState['\''] = CharState.LEGAL;
-        __charState['*'] = CharState.LEGAL;
-        __charState['+'] = CharState.LEGAL;
-        __charState['-'] = CharState.LEGAL;
-        __charState['.'] = CharState.LEGAL;
-        __charState['^'] = CharState.LEGAL;
-        __charState['_'] = CharState.LEGAL;
-        __charState['`'] = CharState.LEGAL;
-        __charState['|'] = CharState.LEGAL;
-        __charState['~'] = CharState.LEGAL;
-
-        __charState['"'] = CharState.LEGAL;
-
-        __charState['\\'] = CharState.LEGAL;
-        __charState['('] = CharState.LEGAL;
-        __charState[')'] = CharState.LEGAL;
-        Arrays.fill(__charState, 0x21, 0x27 + 1, CharState.LEGAL);
-        Arrays.fill(__charState, 0x2A, 0x5B + 1, CharState.LEGAL);
-        Arrays.fill(__charState, 0x5D, 0x7E + 1, CharState.LEGAL);
-        Arrays.fill(__charState, 0x80, 0xFF + 1, CharState.LEGAL);
-
-    }
-
-    /* ------------------------------------------------------------------------------- */
-    private boolean hasNextByte(ByteBuffer buffer) {
+    private static boolean hasNextByte(ByteBuffer buffer) {
         return BufferUtils.hasContent(buffer);
     }
 
     /* ------------------------------------------------------------------------------- */
-    private byte getNextByte(ByteBuffer buffer) {
-
+    private HttpTokens.Token next(ByteBuffer buffer) {
         byte ch = buffer.get();
 
-        CharState s = __charState[0xff & ch];
-        switch (s) {
+        HttpTokens.Token t = HttpTokens.TOKENS[0xff & ch];
+
+        if (DEBUG)
+            LOG.debug("token={}", t);
+
+        switch (t.getType()) {
+            case CNTL:
+                throw new IllegalCharacterException(_state, t, buffer);
+
             case LF:
                 _cr = false;
-                return ch;
+                break;
 
             case CR:
                 if (_cr)
                     throw new BadMessageException("Bad EOL");
 
                 _cr = true;
-                if (buffer.hasRemaining())
-                    return getNextByte(buffer);
+                return null;
 
-                // Can return 0 here to indicate the need for more characters,
-                // because a real 0 in the buffer would cause a BadMessage below
-                return 0;
-
-            case LEGAL:
+            case ALPHA:
+            case DIGIT:
+            case TCHAR:
+            case VCHAR:
+            case HTAB:
+            case SPACE:
+            case OTEXT:
+            case COLON:
                 if (_cr)
                     throw new BadMessageException("Bad EOL");
+                break;
 
-                return ch;
-
-            case ILLEGAL:
             default:
-                throw new IllegalCharacterException(_state, ch, buffer);
+                break;
         }
+
+        return t;
     }
 
     /* ------------------------------------------------------------------------------- */
@@ -227,11 +170,11 @@ public class MultiPartParser {
      *
      * @param buffer the buffer to parse
      * @param last   whether this buffer contains last bit of content
-     * @return True if an {@link com.firefly.codec.http2.decode.HttpParser.RequestHandler} method was called and it returned true;
+     * @return True if an RequestHandler method was called and it returned true;
      */
     public boolean parse(ByteBuffer buffer, boolean last) {
         boolean handle = false;
-        while (handle == false && BufferUtils.hasContent(buffer)) {
+        while (!handle && BufferUtils.hasContent(buffer)) {
             switch (_state) {
                 case PREAMBLE:
                     parsePreamble(buffer);
@@ -315,18 +258,16 @@ public class MultiPartParser {
 
         _partialBoundary = _delimiterSearch.endsWith(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
         BufferUtils.clear(buffer);
-
-        return;
     }
 
     /* ------------------------------------------------------------------------------- */
     private void parseDelimiter(ByteBuffer buffer) {
         while (__delimiterStates.contains(_state) && hasNextByte(buffer)) {
-            byte b = getNextByte(buffer);
-            if (b == 0)
+            HttpTokens.Token t = next(buffer);
+            if (t == null)
                 return;
 
-            if (b == '\n') {
+            if (t.getType() == HttpTokens.Type.LF) {
                 setState(State.BODY_PART);
 
                 if (LOG.isDebugEnabled())
@@ -338,14 +279,14 @@ public class MultiPartParser {
 
             switch (_state) {
                 case DELIMITER:
-                    if (b == '-')
+                    if (t.getChar() == '-')
                         setState(State.DELIMITER_CLOSE);
                     else
                         setState(State.DELIMITER_PADDING);
                     continue;
 
                 case DELIMITER_CLOSE:
-                    if (b == '-') {
+                    if (t.getChar() == '-') {
                         setState(State.EPILOGUE);
                         return;
                     }
@@ -354,7 +295,6 @@ public class MultiPartParser {
 
                 case DELIMITER_PADDING:
                 default:
-                    continue;
             }
         }
     }
@@ -367,21 +307,21 @@ public class MultiPartParser {
         // Process headers
         while (_state == State.BODY_PART && hasNextByte(buffer)) {
             // process each character
-            byte b = getNextByte(buffer);
-            if (b == 0)
+            HttpTokens.Token t = next(buffer);
+            if (t == null)
                 break;
 
-            if (b != LINE_FEED)
+            if (t.getType() != HttpTokens.Type.LF)
                 _totalHeaderLineLength++;
 
-            if (_totalHeaderLineLength > _maxHeaderLineLength)
+            if (_totalHeaderLineLength > MAX_HEADER_LINE_LENGTH)
                 throw new IllegalStateException("Header Line Exceeded Max Length");
 
             switch (_fieldState) {
                 case FIELD:
-                    switch (b) {
+                    switch (t.getType()) {
                         case SPACE:
-                        case TAB: {
+                        case HTAB: {
                             // Folded field value!
 
                             if (_fieldName == null)
@@ -400,7 +340,7 @@ public class MultiPartParser {
                             break;
                         }
 
-                        case LINE_FEED: {
+                        case LF:
                             handleField();
                             setState(State.FIRST_OCTETS);
                             _partialBoundary = 2; // CRLF is option for empty parts
@@ -411,23 +351,28 @@ public class MultiPartParser {
                             if (_handler.headerComplete())
                                 return true;
                             break;
-                        }
 
-                        default: {
+                        case ALPHA:
+                        case DIGIT:
+                        case TCHAR:
                             // process previous header
                             handleField();
 
                             // New header
                             setState(FieldState.IN_NAME);
                             _string.reset();
-                            _string.append(b);
+                            _string.append(t.getChar());
                             _length = 1;
-                        }
+
+                            break;
+
+                        default:
+                            throw new IllegalCharacterException(_state, t, buffer);
                     }
                     break;
 
                 case IN_NAME:
-                    switch (b) {
+                    switch (t.getType()) {
                         case COLON:
                             _fieldName = takeString();
                             _length = -1;
@@ -439,7 +384,7 @@ public class MultiPartParser {
                             setState(FieldState.AFTER_NAME);
                             break;
 
-                        case LINE_FEED: {
+                        case LF: {
                             if (LOG.isDebugEnabled())
                                 LOG.debug("Line Feed in Name {}", this);
 
@@ -448,22 +393,27 @@ public class MultiPartParser {
                             break;
                         }
 
-                        default:
-                            _string.append(b);
+                        case ALPHA:
+                        case DIGIT:
+                        case TCHAR:
+                            _string.append(t.getChar());
                             _length = _string.length();
                             break;
+
+                        default:
+                            throw new IllegalCharacterException(_state, t, buffer);
                     }
                     break;
 
                 case AFTER_NAME:
-                    switch (b) {
+                    switch (t.getType()) {
                         case COLON:
                             _fieldName = takeString();
                             _length = -1;
                             setState(FieldState.VALUE);
                             break;
 
-                        case LINE_FEED:
+                        case LF:
                             _fieldName = takeString();
                             _string.reset();
                             _fieldValue = "";
@@ -474,13 +424,13 @@ public class MultiPartParser {
                             break;
 
                         default:
-                            throw new IllegalCharacterException(_state, b, buffer);
+                            throw new IllegalCharacterException(_state, t, buffer);
                     }
                     break;
 
                 case VALUE:
-                    switch (b) {
-                        case LINE_FEED:
+                    switch (t.getType()) {
+                        case LF:
                             _string.reset();
                             _fieldValue = "";
                             _length = -1;
@@ -489,24 +439,33 @@ public class MultiPartParser {
                             break;
 
                         case SPACE:
-                        case TAB:
+                        case HTAB:
                             break;
 
-                        default:
-                            _string.append(b);
+                        case ALPHA:
+                        case DIGIT:
+                        case TCHAR:
+                        case VCHAR:
+                        case COLON:
+                        case OTEXT:
+                            _string.append(t.getByte());
                             _length = _string.length();
                             setState(FieldState.IN_VALUE);
                             break;
+
+                        default:
+                            throw new IllegalCharacterException(_state, t, buffer);
                     }
                     break;
 
                 case IN_VALUE:
-                    switch (b) {
+                    switch (t.getType()) {
                         case SPACE:
-                            _string.append(b);
+                        case HTAB:
+                            _string.append(' ');
                             break;
 
-                        case LINE_FEED:
+                        case LF:
                             if (_length > 0) {
                                 _fieldValue = takeString();
                                 _length = -1;
@@ -515,11 +474,18 @@ public class MultiPartParser {
                             setState(FieldState.FIELD);
                             break;
 
-                        default:
-                            _string.append(b);
-                            if (b > SPACE || b < 0)
-                                _length = _string.length();
+                        case ALPHA:
+                        case DIGIT:
+                        case TCHAR:
+                        case VCHAR:
+                        case COLON:
+                        case OTEXT:
+                            _string.append(t.getByte());
+                            _length = _string.length();
                             break;
+
+                        default:
+                            throw new IllegalCharacterException(_state, t, buffer);
                     }
                     break;
 
@@ -648,35 +614,37 @@ public class MultiPartParser {
      * sufficient for the caller to process the events only once.
      */
     public interface Handler {
-        public default void startPart() {
+        default void startPart() {
         }
 
-        public default void parsedField(String name, String value) {
+        @SuppressWarnings("unused")
+        default void parsedField(String name, String value) {
         }
 
-        public default boolean headerComplete() {
+        default boolean headerComplete() {
             return false;
         }
 
-        public default boolean content(ByteBuffer item, boolean last) {
+        @SuppressWarnings("unused")
+        default boolean content(ByteBuffer item, boolean last) {
             return false;
         }
 
-        public default boolean messageComplete() {
+        default boolean messageComplete() {
             return false;
         }
 
-        public default void earlyEOF() {
+        default void earlyEOF() {
         }
     }
 
     /* ------------------------------------------------------------------------------- */
     @SuppressWarnings("serial")
-    private static class IllegalCharacterException extends IllegalArgumentException {
-        private IllegalCharacterException(State state, byte ch, ByteBuffer buffer) {
-            super(String.format("Illegal character 0x%X", ch));
-            // Bug #460642 - don't reveal buffers to end user
-            LOG.warn(String.format("Illegal character 0x%X in state=%s for buffer %s", ch, state, BufferUtils.toDetailString(buffer)));
+    private static class IllegalCharacterException extends BadMessageException {
+        private IllegalCharacterException(State state, HttpTokens.Token token, ByteBuffer buffer) {
+            super(400, String.format("Illegal character %s", token));
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("Illegal character %s in state=%s for buffer %s", token, state, BufferUtils.toDetailString(buffer)));
         }
     }
 }

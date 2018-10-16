@@ -61,20 +61,22 @@ class OrderServiceImpl : OrderService {
             val amount = getAmount(request, product)
             val totalPrice = BigDecimal.valueOf(product.price).multiply(BigDecimal.valueOf(amount)).toDouble()
 
-            Order(null, OrderStatus.FINISHED.value,
-                    amount, product.price, totalPrice,
-                    product.id ?: 0,
-                    request.userId ?: 0L,
-                    product.description,
-                    null, null)
+            Order(
+                null, OrderStatus.FINISHED.value,
+                amount, product.price, totalPrice,
+                product.id ?: 0,
+                request.userId ?: 0L,
+                product.description,
+                null, null
+                 )
         }.collect(Collectors.toList<Order>())
     }
 
     private fun getAmount(request: ProductBuyRequest, product: Product): Long {
         return request.products.parallelStream()
-                .filter { i -> Objects.equals(i.productId, product.id) }
-                .map { it.amount }
-                .findFirst()
-                .orElseThrow({ IllegalStateException("The product amounts must be more than 0") })
+            .filter { i -> Objects.equals(i.productId, product.id) }
+            .map { it.amount }
+            .findFirst()
+            .orElseThrow { IllegalStateException("The product amounts must be more than 0") }
     }
 }

@@ -26,6 +26,7 @@ public interface WechatAuthService {
 
     /**
      * Get the wechat API access token
+     *
      * @param request The access token request
      * @return The wechat API access token
      */

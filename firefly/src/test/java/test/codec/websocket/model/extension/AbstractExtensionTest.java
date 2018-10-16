@@ -5,8 +5,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 
-public abstract class AbstractExtensionTest
-{
+public abstract class AbstractExtensionTest {
     @Rule
     public TestName testname = new TestName();
 
@@ -14,8 +13,7 @@ public abstract class AbstractExtensionTest
     protected ExtensionTool serverExtensions;
 
     @Before
-    public void init()
-    {
+    public void init() {
         clientExtensions = new ExtensionTool(WebSocketPolicy.newClientPolicy());
         serverExtensions = new ExtensionTool(WebSocketPolicy.newServerPolicy());
     }

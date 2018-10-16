@@ -46,7 +46,7 @@ $(document).ready(function () {
 
                 });
             }
-        }).fail(function(jqXHR, textStatus, errorThrown) {
+        }).fail(function (jqXHR, textStatus, errorThrown) {
             $("#buyFailureContent").html(jqXHR.responseJSON.message);
             $("#buyFailure").fadeIn("slow", function () {
                 $("#buyFailure").fadeOut(1000, function () {

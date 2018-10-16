@@ -97,7 +97,7 @@ public class Generator {
 
         /*
          * RFC 6455 Section 5.2
-         * 
+         *
          * MUST be 0 unless an extension is negotiated that defines meanings for non-zero values. If a nonzero value is received and none of the negotiated
          * extensions defines the meaning of such a nonzero value, the receiving endpoint MUST _Fail the WebSocket Connection_.
          */
@@ -116,7 +116,7 @@ public class Generator {
         if (OpCode.isControlFrame(frame.getOpCode())) {
             /*
              * RFC 6455 Section 5.5
-             * 
+             *
              * All control frames MUST have a payload length of 125 bytes or less and MUST NOT be fragmented.
              */
             if (frame.getPayloadLength() > 125) {
@@ -129,7 +129,7 @@ public class Generator {
 
             /*
              * RFC 6455 Section 5.5.1
-             * 
+             *
              * close frame payload is specially formatted which is checked in CloseInfo
              */
             if (frame.getOpCode() == OpCode.CLOSE) {

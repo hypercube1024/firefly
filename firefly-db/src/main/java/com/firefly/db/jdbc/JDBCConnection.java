@@ -312,7 +312,9 @@ public class JDBCConnection implements SQLConnection {
     public CompletableFuture<Void> rollback() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
-                connection.rollback();
+                if (!connection.getAutoCommit()) {
+                    connection.rollback();
+                }
             } catch (SQLException e) {
                 throw new DBException(e);
             }
@@ -324,7 +326,9 @@ public class JDBCConnection implements SQLConnection {
     public CompletableFuture<Void> commit() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try {
-                connection.commit();
+                if (!connection.getAutoCommit()) {
+                    connection.commit();
+                }
             } catch (SQLException e) {
                 throw new DBException(e);
             }
@@ -348,7 +352,9 @@ public class JDBCConnection implements SQLConnection {
     public CompletableFuture<Void> commitAndClose() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try (Connection c = connection) {
-                c.commit();
+                if (!c.getAutoCommit()) {
+                    c.commit();
+                }
                 log.debug("jdbc connection commit and close");
             } catch (SQLException e) {
                 throw new DBException(e);
@@ -361,7 +367,9 @@ public class JDBCConnection implements SQLConnection {
     public CompletableFuture<Void> rollbackAndClose() {
         return jdbcHelper.async(connection, (conn, helper) -> {
             try (Connection c = connection) {
-                c.rollback();
+                if (!c.getAutoCommit()) {
+                    c.rollback();
+                }
                 log.debug("jdbc connection rollback and close");
             } catch (SQLException e) {
                 throw new DBException(e);

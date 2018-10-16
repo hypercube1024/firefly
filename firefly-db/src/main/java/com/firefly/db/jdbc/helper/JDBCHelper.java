@@ -26,8 +26,8 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -84,9 +84,9 @@ public class JDBCHelper extends AbstractLifeCycle {
         if (executorService != null) {
             this.executorService = executorService;
         } else {
-            this.executorService = new ThreadPoolExecutor(16, 300,
+            this.executorService = new ThreadPoolExecutor(16, 64,
                     30L, TimeUnit.SECONDS,
-                    new LinkedTransferQueue<>(),
+                    new ArrayBlockingQueue<>(10000),
                     r -> new Thread(r, "firefly-JDBC-helper"));
         }
         start();

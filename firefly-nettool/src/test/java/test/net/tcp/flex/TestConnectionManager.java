@@ -32,7 +32,7 @@ public class TestConnectionManager {
 
     @Test
     public void test() throws InterruptedException {
-        int loop = 10;
+        int loop = 1000;
         CountDownLatch latch = new CountDownLatch(loop);
         List<HostPort> addresses = createAddresses(1);
         List<MultiplexingServer> servers = addresses.stream()

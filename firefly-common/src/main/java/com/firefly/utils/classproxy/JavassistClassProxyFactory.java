@@ -126,6 +126,6 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
         }
 
         // generate proxy instance
-        return (T)cc.toClass(classLoader, null).getConstructor(ClassProxy.class, clazz, MethodProxy[].class).newInstance(proxy, instance, methodProxies);
+        return (T) cc.toClass(classLoader, null).getConstructor(ClassProxy.class, clazz, MethodProxy[].class).newInstance(proxy, instance, methodProxies);
     }
 }

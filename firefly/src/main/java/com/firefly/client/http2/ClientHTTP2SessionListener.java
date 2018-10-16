@@ -2,7 +2,6 @@ package com.firefly.client.http2;
 
 import com.firefly.codec.http2.frame.GoAwayFrame;
 import com.firefly.codec.http2.frame.ResetFrame;
-import com.firefly.codec.http2.stream.HTTPConnection;
 import com.firefly.codec.http2.stream.Session;
 import com.firefly.utils.io.IO;
 import org.slf4j.Logger;

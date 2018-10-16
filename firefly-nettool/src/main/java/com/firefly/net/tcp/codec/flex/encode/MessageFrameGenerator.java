@@ -42,7 +42,7 @@ public class MessageFrameGenerator implements Generator {
         if (payloadLength > 0) {
             buffer.put(messageFrame.getData());
         }
-        
+
         buffer.flip();
         return buffer;
     }

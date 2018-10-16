@@ -28,7 +28,8 @@ class InventoryDAOImpl : InventoryDAO {
             throw IllegalArgumentException("The inventory update request must be not empty")
         }
 
-        var sql = "update `coffee_store`.`inventory` set `amount` = `amount` ${operator.value} ?  where `product_id` = ? "
+        var sql =
+            "update `coffee_store`.`inventory` set `amount` = `amount` ${operator.value} ?  where `product_id` = ? "
         if (operator == InventoryOperator.SUB) {
             sql += " and `amount` >= ? "
         }

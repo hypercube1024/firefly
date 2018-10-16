@@ -1,7 +1,12 @@
 package com.firefly.client.http2;
 
+import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.model.*;
 import com.firefly.codec.http2.model.MetaData.Response;
+import com.firefly.codec.oauth2.model.AccessTokenResponse;
+import com.firefly.codec.oauth2.model.AuthorizationCodeResponse;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.collection.MultiMap;
 import com.firefly.utils.io.BufferUtils;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
@@ -13,15 +18,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+
+import static com.firefly.codec.oauth2.model.OAuth.*;
 
 public class SimpleResponse {
 
@@ -86,10 +91,8 @@ public class SimpleResponse {
 
     public String getStringBody(String charset) {
         if (stringBody == null) {
-            String contentEncoding = getFields().get(HttpHeader.CONTENT_ENCODING);
-            if ("gzip".equalsIgnoreCase(contentEncoding)) {
-                byte[] bytes = BufferUtils.toArray(responseBody);
-                if (bytes != null) {
+            stringBody = Optional.ofNullable(BufferUtils.toArray(responseBody)).map(bytes -> {
+                if ("gzip".equalsIgnoreCase(getFields().get(HttpHeader.CONTENT_ENCODING))) {
                     try (GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
                         return IO.toString(gzipInputStream, charset);
                     } catch (IOException e) {
@@ -97,12 +100,15 @@ public class SimpleResponse {
                         return null;
                     }
                 } else {
-                    return null;
+                    try {
+                        return new String(bytes, charset);
+                    } catch (UnsupportedEncodingException e) {
+                        log.error("bytes to string exception", e);
+                        return null;
+                    }
                 }
-            } else {
-                stringBody = BufferUtils.toString(responseBody, charset);
-                return stringBody;
-            }
+            }).orElse(null);
+            return stringBody;
         } else {
             return stringBody;
         }
@@ -132,5 +138,38 @@ public class SimpleResponse {
         } else {
             return cookies;
         }
+    }
+
+    public AuthorizationCodeResponse getAuthorizationCodeResponse() {
+        return Optional.ofNullable(getFields().get(HttpHeader.LOCATION))
+                       .map(HttpURI::new)
+                       .map(uri -> {
+                           MultiMap<String> parameters = new MultiMap<>();
+                           uri.decodeQueryTo(parameters);
+                           AuthorizationCodeResponse r = new AuthorizationCodeResponse();
+                           r.setCode(parameters.getString(OAUTH_CODE));
+                           r.setState(parameters.getString(OAUTH_STATE));
+                           return r;
+                       }).orElse(null);
+    }
+
+    public AccessTokenResponse getAccessTokenResponseFromFragment() {
+        return Optional.ofNullable(getFields().get(HttpHeader.LOCATION))
+                       .map(HttpURI::new)
+                       .map(uri -> {
+                           String fragment = uri.getFragment();
+                           MultiMap<String> parameters = new MultiMap<>();
+                           UrlEncoded.decodeUtf8To(fragment, parameters);
+                           AccessTokenResponse r = new AccessTokenResponse();
+                           r.setState(parameters.getString(OAUTH_STATE));
+                           r.setScope(parameters.getString(OAUTH_SCOPE));
+                           r.setRefreshToken(parameters.getString(OAUTH_REFRESH_TOKEN));
+                           r.setAccessToken(parameters.getString(OAUTH_ACCESS_TOKEN));
+                           r.setTokenType(parameters.getString(OAUTH_TOKEN_TYPE));
+                           r.setExpiresIn(Optional.ofNullable(parameters.getString(OAUTH_EXPIRES_IN))
+                                                  .filter(StringUtils::hasText)
+                                                  .map(Long::parseLong).orElse(null));
+                           return r;
+                       }).orElse(null);
     }
 }

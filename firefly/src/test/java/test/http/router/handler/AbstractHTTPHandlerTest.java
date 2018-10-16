@@ -14,7 +14,7 @@ abstract public class AbstractHTTPHandlerTest {
 
     @Before
     public void init() {
-        port = (int)RandomUtils.random(3000, 65534);
+        port = (int) RandomUtils.random(3000, 65534);
         uri = $.uri.newURIBuilder("http", host, port).toString();
         System.out.println(uri);
     }

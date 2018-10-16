@@ -1,6 +1,12 @@
 package test.utils.io;
 
-import static org.hamcrest.Matchers.is;
+import com.firefly.utils.concurrent.Callback;
+import com.firefly.utils.concurrent.CountingCallback;
+import com.firefly.utils.io.BufferReaderHandler;
+import com.firefly.utils.io.FileUtils;
+import com.firefly.utils.io.LineReaderHandler;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,80 +16,72 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.firefly.utils.concurrent.Callback;
-import com.firefly.utils.concurrent.CountingCallback;
-import com.firefly.utils.io.BufferReaderHandler;
-import com.firefly.utils.io.FileUtils;
-import com.firefly.utils.io.LineReaderHandler;
+import static org.hamcrest.Matchers.is;
 
 public class TestFileUtils {
 
-	@Test
-	public void testReadingLine() throws URISyntaxException, IOException {
-		File file = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
-		FileUtils.read(file, new LineReaderHandler() {
+    @Test
+    public void testReadingLine() throws URISyntaxException, IOException {
+        File file = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
+        FileUtils.read(file, new LineReaderHandler() {
 
-			@Override
-			public void readline(String text, int num) {
-				if (num == 1) {
-					Assert.assertThat(text, is("the line 1"));
-				} else if (num == 2) {
-					Assert.assertThat(text, is("the line 2"));
-				} else if (num == 3) {
-					Assert.assertThat(text, is("hello the end line"));
-				}
+            @Override
+            public void readline(String text, int num) {
+                if (num == 1) {
+                    Assert.assertThat(text, is("the line 1"));
+                } else if (num == 2) {
+                    Assert.assertThat(text, is("the line 2"));
+                } else if (num == 3) {
+                    Assert.assertThat(text, is("hello the end line"));
+                }
 
-			}
-		}, "UTF-8");
-	}
+            }
+        }, "UTF-8");
+    }
 
-	@Test
-	public void testCopy() throws URISyntaxException, IOException {
-		File src = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
-		File dest = new File(src.getParent(), "testFile2");
-		FileUtils.copy(src, dest);
-		Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8"), is(FileUtils.readFileToString(src, "UTF-8")));
-	}
+    @Test
+    public void testCopy() throws URISyntaxException, IOException {
+        File src = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
+        File dest = new File(src.getParent(), "testFile2");
+        FileUtils.copy(src, dest);
+        Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8"), is(FileUtils.readFileToString(src, "UTF-8")));
+    }
 
-	@Test
-	public void testTransferTo() throws URISyntaxException, IOException {
-		File src = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
-		File dest = new File(src.getParent(), "testFile3");
-		try (FileChannel fc = FileChannel.open(Paths.get(dest.toURI()), StandardOpenOption.WRITE,
-				StandardOpenOption.CREATE)) {
-			FileUtils.transferTo(src, Callback.NOOP, new BufferReaderHandler() {
+    @Test
+    public void testTransferTo() throws URISyntaxException, IOException {
+        File src = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
+        File dest = new File(src.getParent(), "testFile3");
+        try (FileChannel fc = FileChannel.open(Paths.get(dest.toURI()), StandardOpenOption.WRITE,
+                StandardOpenOption.CREATE)) {
+            FileUtils.transferTo(src, Callback.NOOP, new BufferReaderHandler() {
 
-				@Override
-				public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count)
-						throws IOException {
-					fc.write(buf);
-				}
-			});
-		}
-		Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8"), is(FileUtils.readFileToString(src, "UTF-8")));
-	}
+                @Override
+                public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count)
+                        throws IOException {
+                    fc.write(buf);
+                }
+            });
+        }
+        Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8"), is(FileUtils.readFileToString(src, "UTF-8")));
+    }
 
-	@Test
-	public void testTransferTo2() throws URISyntaxException, IOException {
-		File src = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
-		File dest = new File(src.getParent(), "testFile4");
-		try (FileChannel fc = FileChannel.open(Paths.get(dest.toURI()), StandardOpenOption.WRITE,
-				StandardOpenOption.CREATE)) {
-			FileUtils.transferTo(src, 10, src.length() - 10, Callback.NOOP, new BufferReaderHandler() {
+    @Test
+    public void testTransferTo2() throws URISyntaxException, IOException {
+        File src = new File(TestFileUtils.class.getClassLoader().getResource("testFile1").toURI());
+        File dest = new File(src.getParent(), "testFile4");
+        try (FileChannel fc = FileChannel.open(Paths.get(dest.toURI()), StandardOpenOption.WRITE,
+                StandardOpenOption.CREATE)) {
+            FileUtils.transferTo(src, 10, src.length() - 10, Callback.NOOP, new BufferReaderHandler() {
 
-				@Override
-				public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count)
-						throws IOException {
-					fc.write(buf);
-				}
-			});
-		}
+                @Override
+                public void readBuffer(ByteBuffer buf, CountingCallback countingCallback, long count)
+                        throws IOException {
+                    fc.write(buf);
+                }
+            });
+        }
 //		System.out.println(FileUtils.readFileToString(dest, "UTF-8"));
-		Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8").contains("the line 2"), is(true));
-		Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8").contains("hello the end line"), is(true));
-	}
-
+        Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8").contains("the line 2"), is(true));
+        Assert.assertThat(FileUtils.readFileToString(dest, "UTF-8").contains("hello the end line"), is(true));
+    }
 }

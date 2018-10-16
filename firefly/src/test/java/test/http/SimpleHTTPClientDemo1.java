@@ -1,19 +1,18 @@
 package test.http;
 
+import com.firefly.client.http2.SimpleHTTPClient;
+import com.firefly.client.http2.SimpleResponse;
+import com.firefly.codec.http2.model.HttpHeader;
+import com.firefly.codec.http2.model.MimeTypes;
+import com.firefly.codec.http2.stream.HTTPOutputStream;
+import com.firefly.utils.io.BufferUtils;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
-
-import com.firefly.client.http2.SimpleHTTPClient;
-import com.firefly.client.http2.SimpleResponse;
-import com.firefly.codec.http2.model.HttpHeader;
-import com.firefly.codec.http2.model.MimeTypes;
-import com.firefly.codec.http2.stream.HTTP2Configuration;
-import com.firefly.codec.http2.stream.HTTPOutputStream;
-import com.firefly.utils.io.BufferUtils;
 
 public class SimpleHTTPClientDemo1 {
 

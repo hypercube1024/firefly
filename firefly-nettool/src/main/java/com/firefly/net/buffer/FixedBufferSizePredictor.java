@@ -4,26 +4,26 @@ import com.firefly.net.BufferSizePredictor;
 
 
 public class FixedBufferSizePredictor implements
-		BufferSizePredictor {
+        BufferSizePredictor {
 
-	private final int bufferSize;
+    private final int bufferSize;
 
-	public FixedBufferSizePredictor(int bufferSize) {
-		if (bufferSize <= 0) {
-			throw new IllegalArgumentException(
-					"bufferSize must greater than 0: " + bufferSize);
-		}
-		this.bufferSize = bufferSize;
-	}
+    public FixedBufferSizePredictor(int bufferSize) {
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException(
+                    "bufferSize must greater than 0: " + bufferSize);
+        }
+        this.bufferSize = bufferSize;
+    }
 
-	@Override
-	public int nextBufferSize() {
-		return bufferSize;
-	}
+    @Override
+    public int nextBufferSize() {
+        return bufferSize;
+    }
 
-	@Override
-	public void previousReceivedBufferSize(int previousReceivedBufferSize) {
-		// Ignore
-	}
+    @Override
+    public void previousReceivedBufferSize(int previousReceivedBufferSize) {
+        // Ignore
+    }
 
 }

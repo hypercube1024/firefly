@@ -73,10 +73,11 @@ class MainPageRouter : RouterInstaller {
     }
 
     private fun toProductQuery(ctx: RoutingContext): ProductQuery = ProductQuery(
-            ctx.getParameter("searchKey"),
-            ProductStatus.ENABLE.value,
-            ctx.getParamOpt("type").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(0),
-            ctx.getParamOpt("pageNumber").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(1),
-            ctx.getParamOpt("pageSize").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(5))
+        ctx.getParameter("searchKey"),
+        ProductStatus.ENABLE.value,
+        ctx.getParamOpt("type").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(0),
+        ctx.getParamOpt("pageNumber").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(1),
+        ctx.getParamOpt("pageSize").filter { `$`.string.hasText(it) }.map { Integer.parseInt(it) }.orElse(5)
+                                                                                )
 
 }

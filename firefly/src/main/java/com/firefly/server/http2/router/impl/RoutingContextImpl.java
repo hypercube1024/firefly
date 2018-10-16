@@ -1,5 +1,8 @@
 package com.firefly.server.http2.router.impl;
 
+import com.firefly.codec.oauth2.model.*;
+import com.firefly.codec.oauth2.model.message.types.GrantType;
+import com.firefly.codec.oauth2.model.message.types.ResponseType;
 import com.firefly.server.http2.SimpleRequest;
 import com.firefly.server.http2.SimpleResponse;
 import com.firefly.server.http2.router.HTTPSession;
@@ -9,6 +12,7 @@ import com.firefly.server.http2.router.handler.template.TemplateHandlerSPILoader
 import com.firefly.server.http2.router.spi.HTTPBodyHandlerSPI;
 import com.firefly.server.http2.router.spi.HTTPSessionHandlerSPI;
 import com.firefly.server.http2.router.spi.TemplateHandlerSPI;
+import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Promise;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.json.JsonArray;
@@ -25,6 +29,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import static com.firefly.codec.oauth2.model.OAuth.*;
+
 /**
  * @author Pengtao Qiu
  */
@@ -38,6 +44,11 @@ public class RoutingContextImpl implements RoutingContext {
     private final TemplateHandlerSPI templateHandlerSPI = TemplateHandlerSPILoader.getInstance().getTemplateHandlerSPI();
     private volatile boolean asynchronousRead;
     private volatile ConcurrentLinkedDeque<Promise<?>> handlerPromiseQueue;
+    private AuthorizationRequest authorizationRequest;
+    private AuthorizationCodeAccessTokenRequest authorizationCodeAccessTokenRequest;
+    private PasswordAccessTokenRequest passwordAccessTokenRequest;
+    private ClientCredentialAccessTokenRequest clientCredentialAccessTokenRequest;
+    private RefreshingTokenRequest refreshingTokenRequest;
 
     public RoutingContextImpl(SimpleRequest request, NavigableSet<RouterManager.RouterMatchResult> routers) {
         this.request = request;
@@ -261,7 +272,7 @@ public class RoutingContextImpl implements RoutingContext {
                        .map(HTTPBodyHandlerSPI::getJsonArrayBody)
                        .orElseGet(request::getJsonArrayBody);
     }
-    
+
     public void setHTTPBodyHandlerSPI(HTTPBodyHandlerSPI httpBodyHandlerSPI) {
         this.httpBodyHandlerSPI = httpBodyHandlerSPI;
     }
@@ -284,6 +295,21 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge) {
         return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.getAndCreateSession(maxAge)).orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge, String domain) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.getAndCreateSession(maxAge, domain)).orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> createSession(int maxAge) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.createSession(maxAge)).orElse(null);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> createSession(int maxAge, String domain) {
+        return Optional.ofNullable(httpSessionHandlerSPI).map(s -> s.createSession(maxAge, domain)).orElse(null);
     }
 
     @Override
@@ -355,5 +381,134 @@ public class RoutingContextImpl implements RoutingContext {
     @Override
     public void renderTemplate(String resourceName, List<Object> scopes) {
         templateHandlerSPI.renderTemplate(this, resourceName, scopes);
+    }
+
+    @Override
+    public AuthorizationRequest getAuthorizationRequest() {
+        if (authorizationRequest == null) {
+            AuthorizationRequest req = new AuthorizationRequest();
+            req.setResponseType(getParameter(OAUTH_RESPONSE_TYPE));
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setRedirectUri(getParameter(OAUTH_REDIRECT_URI));
+            req.setScope(getParameter(OAUTH_SCOPE));
+            req.setState(getParameter(OAUTH_STATE));
+
+            if (!StringUtils.hasText(req.getResponseType())) {
+                throw OAuth.oauthProblem(OAuthError.CodeResponse.INVALID_REQUEST)
+                           .description("The response type must be not null.")
+                           .state(req.getState());
+            }
+
+            if (ResponseType.from(req.getResponseType()) == null) {
+                throw OAuth.oauthProblem(OAuthError.CodeResponse.UNSUPPORTED_RESPONSE_TYPE)
+                           .description("The response type '" + req.getResponseType() + "' is not supported.")
+                           .state(req.getState());
+            }
+            authorizationRequest = req;
+        }
+        return authorizationRequest;
+    }
+
+    @Override
+    public AuthorizationCodeAccessTokenRequest getAuthorizationCodeAccessTokenRequest() {
+        if (authorizationCodeAccessTokenRequest == null) {
+            AuthorizationCodeAccessTokenRequest req = new AuthorizationCodeAccessTokenRequest();
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setCode(getParameter(OAUTH_CODE));
+            req.setRedirectUri(getParameter(OAUTH_REDIRECT_URI));
+
+            if (!StringUtils.hasText(req.getCode())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The code must be not null.");
+            }
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.AUTHORIZATION_CODE.toString())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'authorization_code'.");
+            }
+            authorizationCodeAccessTokenRequest = req;
+        }
+        return authorizationCodeAccessTokenRequest;
+    }
+
+    @Override
+    public PasswordAccessTokenRequest getPasswordAccessTokenRequest() {
+        if (passwordAccessTokenRequest == null) {
+            PasswordAccessTokenRequest req = new PasswordAccessTokenRequest();
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+            req.setUsername(getParameter(OAUTH_USERNAME));
+            req.setPassword(getParameter(OAUTH_PASSWORD));
+            req.setScope(getParameter(OAUTH_SCOPE));
+
+            if (!StringUtils.hasText(req.getUsername())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The username must be not null.");
+            }
+            if (!StringUtils.hasText(req.getPassword())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The password must be not null.");
+            }
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.PASSWORD.toString())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'password'.");
+            }
+            passwordAccessTokenRequest = req;
+        }
+        return passwordAccessTokenRequest;
+    }
+
+    @Override
+    public ClientCredentialAccessTokenRequest getClientCredentialAccessTokenRequest() {
+        if (clientCredentialAccessTokenRequest == null) {
+            ClientCredentialAccessTokenRequest req = new ClientCredentialAccessTokenRequest();
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setClientSecret(getParameter(OAUTH_CLIENT_SECRET));
+
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.CLIENT_CREDENTIALS.toString())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'client_credentials'.");
+            }
+            clientCredentialAccessTokenRequest = req;
+        }
+        return clientCredentialAccessTokenRequest;
+    }
+
+    @Override
+    public RefreshingTokenRequest getRefreshingTokenRequest() {
+        if (refreshingTokenRequest == null) {
+            RefreshingTokenRequest req = new RefreshingTokenRequest();
+            req.setClientId(getParameter(OAUTH_CLIENT_ID));
+            req.setRefreshToken(getParameter(OAUTH_REFRESH_TOKEN));
+            req.setScope(getParameter(OAUTH_SCOPE));
+            req.setGrantType(getParameter(OAUTH_GRANT_TYPE));
+
+            if (!StringUtils.hasText(req.getRefreshToken())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The refresh token must be not null.");
+            }
+            if (!StringUtils.hasText(req.getGrantType())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_REQUEST)
+                           .description("The grant type must be not null.");
+            }
+            if (!req.getGrantType().equals(GrantType.REFRESH_TOKEN.toString())) {
+                throw OAuth.oauthProblem(OAuthError.TokenResponse.INVALID_GRANT)
+                           .description("The grant type must be 'refresh_token'.");
+            }
+            refreshingTokenRequest = req;
+        }
+        return refreshingTokenRequest;
     }
 }

@@ -2,7 +2,6 @@ package com.firefly.codec.websocket.model;
 
 import com.firefly.codec.http2.model.Cookie;
 import com.firefly.codec.http2.model.HttpURI;
-import com.firefly.codec.websocket.utils.QuoteUtil;
 
 import java.security.Principal;
 import java.util.*;

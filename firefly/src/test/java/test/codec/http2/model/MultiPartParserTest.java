@@ -16,7 +16,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class MultiPartParserTest {
-
     @Test
     public void testEmptyPreamble() {
         MultiPartParser parser = new MultiPartParser(new MultiPartParser.Handler() {
@@ -31,9 +30,8 @@ public class MultiPartParserTest {
     public void testNoPreamble() {
         MultiPartParser parser = new MultiPartParser(new MultiPartParser.Handler() {
         }, "BOUNDARY");
-        ByteBuffer data = BufferUtils.toBuffer("");
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY   \r\n");
 
-        data = BufferUtils.toBuffer("--BOUNDARY   \r\n");
         parser.parse(data, false);
         assertTrue(parser.isState(State.BODY_PART));
         assertThat(data.remaining(), is(0));
@@ -75,9 +73,8 @@ public class MultiPartParserTest {
     public void testPreambleCompleteBoundary() {
         MultiPartParser parser = new MultiPartParser(new MultiPartParser.Handler() {
         }, "BOUNDARY");
-        ByteBuffer data;
+        ByteBuffer data = BufferUtils.toBuffer("This is not part of a part\r\n--BOUNDARY  \r\n");
 
-        data = BufferUtils.toBuffer("This is not part of a part\r\n--BOUNDARY  \r\n");
         parser.parse(data, false);
         assertThat(parser.getState(), is(State.BODY_PART));
         assertThat(data.remaining(), is(0));
@@ -87,9 +84,8 @@ public class MultiPartParserTest {
     public void testPreambleSplitBoundary() {
         MultiPartParser parser = new MultiPartParser(new MultiPartParser.Handler() {
         }, "BOUNDARY");
-        ByteBuffer data;
+        ByteBuffer data = BufferUtils.toBuffer("This is not part of a part\r\n");
 
-        data = BufferUtils.toBuffer("This is not part of a part\r\n");
         parser.parse(data, false);
         assertThat(parser.getState(), is(State.PREAMBLE));
         assertThat(data.remaining(), is(0));
@@ -123,9 +119,8 @@ public class MultiPartParserTest {
     public void testFirstPartNoFields() {
         MultiPartParser parser = new MultiPartParser(new MultiPartParser.Handler() {
         }, "BOUNDARY");
-        ByteBuffer data = BufferUtils.toBuffer("");
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n\r\n");
 
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n\r\n");
         parser.parse(data, false);
         assertThat(parser.getState(), is(State.FIRST_OCTETS));
         assertThat(data.remaining(), is(0));
@@ -142,15 +137,14 @@ public class MultiPartParserTest {
         };
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n"
                 + "name0: value0\r\n"
                 + "name1 :value1 \r\n"
                 + "name2:value\r\n"
                 + " 2\r\n"
                 + "\r\n"
                 + "Content");
+
         parser.parse(data, false);
         assertThat(parser.getState(), is(State.FIRST_OCTETS));
         assertThat(data.remaining(), is(7));
@@ -162,9 +156,7 @@ public class MultiPartParserTest {
         TestHandler handler = new TestHandler();
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n"
                 + "name: value\r\n"
                 + "\r\n"
                 + "\r\n"
@@ -181,9 +173,7 @@ public class MultiPartParserTest {
         TestHandler handler = new TestHandler();
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n"
                 + "name: value\r\n"
                 + "\r\n"
                 + "--BOUNDARY");
@@ -200,9 +190,7 @@ public class MultiPartParserTest {
         TestHandler handler = new TestHandler();
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n"
                 + "name: value\r\n"
                 + "\r\n"
                 + "-");
@@ -222,9 +210,7 @@ public class MultiPartParserTest {
         TestHandler handler = new TestHandler();
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n"
                 + "name: value\n"
                 + "\r\n"
                 + "Hello\r\n");
@@ -254,9 +240,7 @@ public class MultiPartParserTest {
         TestHandler handler = new TestHandler();
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n"
                 + "name: value\n"
                 + "\r\n"
                 + "Hello\r\n"
@@ -274,9 +258,7 @@ public class MultiPartParserTest {
         TestHandler handler = new TestHandler();
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
-        data = BufferUtils.toBuffer("--BOUNDARY\r\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\r\n"
                 + "name: value\n"
                 + "\r\n"
                 + "Now is the time for all good ment to come to the aid of the party.\r\n"
@@ -298,10 +280,8 @@ public class MultiPartParserTest {
         TestHandler handler = new TestHandler();
         MultiPartParser parser = new MultiPartParser(handler, "BOUNDARY");
 
-        ByteBuffer data = BufferUtils.toBuffer("");
-
         //boundary still requires carriage return
-        data = BufferUtils.toBuffer("--BOUNDARY\n"
+        ByteBuffer data = BufferUtils.toBuffer("--BOUNDARY\n"
                 + "name: value\n"
                 + "\n"
                 + "Now is the time for all good men to come to the aid of the party.\n"
@@ -439,12 +419,49 @@ public class MultiPartParserTest {
                         "Joe Blow\r\n" +
                         "--AaB03x--\r\n");
 
-
         try {
             parser.parse(data, true);
             fail("Invalid End of Line");
         } catch (BadMessageException e) {
             assertTrue(e.getMessage().contains("Bad EOL"));
+        }
+    }
+
+
+    @Test
+    public void testBadHeaderNames() throws Exception {
+        String[] bad = new String[]
+                {
+                        "Foo\\Bar: value\r\n",
+                        "Foo@Bar: value\r\n",
+                        "Foo,Bar: value\r\n",
+                        "Foo}Bar: value\r\n",
+                        "Foo{Bar: value\r\n",
+                        "Foo=Bar: value\r\n",
+                        "Foo>Bar: value\r\n",
+                        "Foo<Bar: value\r\n",
+                        "Foo)Bar: value\r\n",
+                        "Foo(Bar: value\r\n",
+                        "Foo?Bar: value\r\n",
+                        "Foo\"Bar: value\r\n",
+                        "Foo/Bar: value\r\n",
+                        "Foo]Bar: value\r\n",
+                        "Foo[Bar: value\r\n",
+                        "\u0192\u00f8\u00f8\u00df\u00e5\u00ae: value\r\n"
+                };
+
+        for (int i = 0; i < bad.length; i++) {
+            ByteBuffer buffer = BufferUtils.toBuffer(
+                    "--AaB03x\r\n" + bad[i] + "\r\n--AaB03x--\r\n");
+
+            MultiPartParser.Handler handler = new TestHandler();
+            MultiPartParser parser = new MultiPartParser(handler, "AaB03x");
+
+            try {
+                parser.parse(buffer, true);
+            } catch (BadMessageException e) {
+                assertTrue(e.getMessage().contains("Illegal character"));
+            }
         }
     }
 
@@ -556,7 +573,7 @@ public class MultiPartParserTest {
                     , "Field1: value1", "<<COMPLETE>>"));
 
 
-            assertThat(handler.contentString(), is(new String("text default" + "<<LAST>>"
+            assertThat(handler.contentString(), is("text default" + "<<LAST>>"
                     + "Content of a.txt.\n" + "<<LAST>>"
                     + "<!DOCTYPE html><title>Content of a.html.</title>\n" + "<<LAST>>"
                     + "<<LAST>>"
@@ -571,7 +588,7 @@ public class MultiPartParserTest {
                     "in height; for the gentle slope of the lava-streams,\n" +
                     "due to their formerly liquid state, showed at a glance\n" +
                     "how far the hard, rocky beds had once extended into\n" +
-                    "the open ocean.\n" + "<<LAST>>")));
+                    "the open ocean.\n" + "<<LAST>>"));
 
             handler.clear();
             parser.reset();
@@ -631,7 +648,8 @@ public class MultiPartParserTest {
 
         public String contentString() {
             StringBuilder sb = new StringBuilder();
-            for (String s : content) sb.append(s);
+            for (String s : content)
+                sb.append(s);
             return sb.toString();
         }
 
@@ -654,7 +672,5 @@ public class MultiPartParserTest {
             fields.clear();
             content.clear();
         }
-
     }
-
 }

@@ -597,7 +597,7 @@ public class BufferUtils {
             return minus ? (-val) : val;
         throw new NumberFormatException(toString(buffer));
     }
-    
+
     /* ------------------------------------------------------------ */
 
     /**
@@ -874,7 +874,7 @@ public class BufferUtils {
     }
 
 
-    
+
     /* ------------------------------------------------------------ */
 
     /**
@@ -893,7 +893,7 @@ public class BufferUtils {
         } else
             out.append(Integer.toHexString(System.identityHashCode(buffer)));
     }
-    
+
     /* ------------------------------------------------------------ */
 
     /**
@@ -907,8 +907,8 @@ public class BufferUtils {
         idString(buffer, buf);
         return buf.toString();
     }
-    
-    
+
+
     /* ------------------------------------------------------------ */
 
     /**
@@ -987,7 +987,7 @@ public class BufferUtils {
         else
             buf.append("\\x").append(TypeUtils.toHexString(b));
     }
-    
+
     /* ------------------------------------------------------------ */
 
     /**

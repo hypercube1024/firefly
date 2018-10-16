@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
 
 public class TestPath {
     public static void main(String[] args) throws IOException {
-        String logPath = "/Users/bjhl/Develop/logs";
+        String userHome = System.getProperty("user.home");
+        String logPath = Paths.get(userHome,"/Develop/logs").toString();
         String name = "firefly-system";
         List<Path> list = Files.list(Paths.get(logPath)).filter(path ->
                 Files.exists(path) && Files.isReadable(path) && !Files.isDirectory(path) && path.toFile().getName().startsWith(name)

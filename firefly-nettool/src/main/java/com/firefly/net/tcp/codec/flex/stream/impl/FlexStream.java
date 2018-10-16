@@ -11,7 +11,6 @@ import com.firefly.utils.StringUtils;
 import com.firefly.utils.concurrent.Callback;
 import com.firefly.utils.concurrent.IdleTimeout;
 import com.firefly.utils.concurrent.Scheduler;
-import com.firefly.utils.time.Millisecond100Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -14,7 +14,7 @@ import java.util.Map;
  * <p>
  * Currently the set of modes is an enum and cannot be dynamically extended, but future major releases may convert this
  * to a class. To modify modes there are four custom modes that can be modified by setting the property
- * <code>org.eclipse.jetty.http.HttpCompliance.CUSTOMn</code> (where 'n' is '0', '1', '2' or '3'), to a comma separated
+ * <code>HttpCompliance.CUSTOMn</code> (where 'n' is '0', '1', '2' or '3'), to a comma separated
  * list of sections.  The list should start with one of the following strings:<dl>
  * <dt>0</dt><dd>No {@link HttpComplianceSection}s</dd>
  * <dt>*</dt><dd>All {@link HttpComplianceSection}s</dd>
@@ -33,16 +33,18 @@ import java.util.Map;
 public enum HttpCompliance // TODO in Jetty-10 convert this enum to a class so that extra custom modes can be defined dynamically
 {
     /**
-     * A Legacy compliance mode to match jetty's behavior prior to RFC2616 and RFC7230. It only
-     * contains {@link HttpComplianceSection#METHOD_CASE_SENSITIVE}
+     * A Legacy compliance mode to match firefly's behavior prior to RFC2616 and RFC7230.
      */
     LEGACY(sectionsBySpec("0,METHOD_CASE_SENSITIVE")),
 
     /**
      * The legacy RFC2616 support, which incorrectly excludes
-     * {@link HttpComplianceSection#METHOD_CASE_SENSITIVE}, {@link HttpComplianceSection#FIELD_COLON}
+     * {@link HttpComplianceSection#METHOD_CASE_SENSITIVE},
+     * {@link HttpComplianceSection#FIELD_COLON},
+     * {@link HttpComplianceSection#TRANSFER_ENCODING_WITH_CONTENT_LENGTH},
+     * {@link HttpComplianceSection#MULTIPLE_CONTENT_LENGTHS},
      */
-    RFC2616_LEGACY(sectionsBySpec("RFC2616,-FIELD_COLON,-METHOD_CASE_SENSITIVE")),
+    RFC2616_LEGACY(sectionsBySpec("RFC2616,-FIELD_COLON,-METHOD_CASE_SENSITIVE,-TRANSFER_ENCODING_WITH_CONTENT_LENGTH,-MULTIPLE_CONTENT_LENGTHS")),
 
     /**
      * The strict RFC2616 support mode
@@ -60,29 +62,27 @@ public enum HttpCompliance // TODO in Jetty-10 convert this enum to a class so t
     RFC7230(sectionsBySpec("RFC7230")),
 
     /**
-     * Custom compliance mode that can be defined with System property <code>org.eclipse.jetty.http.HttpCompliance.CUSTOM0</code>
+     * Custom compliance mode that can be defined with System property <code>HttpCompliance.CUSTOM0</code>
      */
     @Deprecated
     CUSTOM0(sectionsByProperty("CUSTOM0")),
     /**
-     * Custom compliance mode that can be defined with System property <code>org.eclipse.jetty.http.HttpCompliance.CUSTOM1</code>
+     * Custom compliance mode that can be defined with System property <code>HttpCompliance.CUSTOM1</code>
      */
     @Deprecated
     CUSTOM1(sectionsByProperty("CUSTOM1")),
     /**
-     * Custom compliance mode that can be defined with System property <code>org.eclipse.jetty.http.HttpCompliance.CUSTOM2</code>
+     * Custom compliance mode that can be defined with System property <code>HttpCompliance.CUSTOM2</code>
      */
     @Deprecated
     CUSTOM2(sectionsByProperty("CUSTOM2")),
     /**
-     * Custom compliance mode that can be defined with System property <code>org.eclipse.jetty.http.HttpCompliance.CUSTOM3</code>
+     * Custom compliance mode that can be defined with System property <code>HttpCompliance.CUSTOM3</code>
      */
     @Deprecated
     CUSTOM3(sectionsByProperty("CUSTOM3"));
 
-    public static final String VIOLATIONS_ATTR = "org.eclipse.jetty.http.compliance.violations";
-
-    private static Logger LOG = LoggerFactory.getLogger("firefly-system");
+    private static final Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     private static EnumSet<HttpComplianceSection> sectionsByProperty(String property) {
         String s = System.getProperty(HttpCompliance.class.getName() + property);

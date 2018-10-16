@@ -23,15 +23,17 @@ public class Parser {
     private final Listener listener;
     private final HeaderParser headerParser;
     private final BodyParser[] bodyParsers;
+    private final UnknownBodyParser unknownBodyParser;
     private boolean continuation;
     private State state = State.HEADER;
 
     public Parser(Listener listener, int maxDynamicTableSize, int maxHeaderSize) {
         this.listener = listener;
         this.headerParser = new HeaderParser();
+        this.unknownBodyParser = new UnknownBodyParser(headerParser, listener);
         this.bodyParsers = new BodyParser[FrameType.values().length];
 
-        HeaderBlockParser headerBlockParser = new HeaderBlockParser(new HpackDecoder(maxDynamicTableSize, maxHeaderSize));
+        HeaderBlockParser headerBlockParser = new HeaderBlockParser(headerParser, new HpackDecoder(maxDynamicTableSize, maxHeaderSize), unknownBodyParser);
         HeaderBlockFragments headerBlockFragments = new HeaderBlockFragments();
 
         bodyParsers[FrameType.DATA.getType()] = new DataBodyParser(headerParser, listener);
@@ -195,6 +197,8 @@ public class Parser {
 
         public void onWindowUpdate(WindowUpdateFrame frame);
 
+        public void onStreamFailure(int streamId, int error, String reason);
+
         public void onConnectionFailure(int error, String reason);
 
         public static class Adapter implements Listener {
@@ -232,6 +236,10 @@ public class Parser {
 
             @Override
             public void onWindowUpdate(WindowUpdateFrame frame) {
+            }
+
+            @Override
+            public void onStreamFailure(int streamId, int error, String reason) {
             }
 
             @Override

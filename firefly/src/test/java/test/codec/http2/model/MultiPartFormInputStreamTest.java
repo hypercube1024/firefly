@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ReadListener;
-import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.Part;
 import java.io.*;
@@ -32,8 +31,7 @@ public class MultiPartFormInputStreamTest {
     }
 
     @Test
-    public void testBadMultiPartRequest()
-            throws Exception {
+    public void testBadMultiPartRequest() throws Exception {
         String boundary = "X0Y0";
         String str = "--" + boundary + "\r\n" +
                 "Content-Disposition: form-data; name=\"fileup\"; filename=\"test.upload\"\r\n" +
@@ -79,7 +77,6 @@ public class MultiPartFormInputStreamTest {
                 config,
                 _tmpDir);
         mpis.setDeleteOnExit(true);
-        Collection<Part> parts = mpis.getParts();
         assertTrue(mpis.getParts().isEmpty());
     }
 
@@ -176,8 +173,7 @@ public class MultiPartFormInputStreamTest {
     }
 
     @Test
-    public void testNoBody()
-            throws Exception {
+    public void testNoBody() {
         String body = "";
 
         MultipartConfigElement config = new MultipartConfigElement(_dirname, 1024, 3072, 50);
@@ -215,7 +211,7 @@ public class MultiPartFormInputStreamTest {
             }
 
             @Override
-            public int read() throws IOException {
+            public int read() {
                 return 0;
             }
 
@@ -233,10 +229,8 @@ public class MultiPartFormInputStreamTest {
 
 
     @Test
-    public void testWhitespaceBodyWithCRLF()
-            throws Exception {
+    public void testWhitespaceBodyWithCRLF() {
         String whitespace = "              \n\n\n\r\n\r\n\r\n\r\n";
-
 
         MultipartConfigElement config = new MultipartConfigElement(_dirname, 1024, 3072, 50);
         MultiPartFormInputStream mpis = new MultiPartFormInputStream(new ByteArrayInputStream(whitespace.getBytes()),
@@ -253,8 +247,7 @@ public class MultiPartFormInputStreamTest {
     }
 
     @Test
-    public void testWhitespaceBody()
-            throws Exception {
+    public void testWhitespaceBody() {
         String whitespace = " ";
 
         MultipartConfigElement config = new MultipartConfigElement(_dirname, 1024, 3072, 50);
@@ -340,7 +333,6 @@ public class MultiPartFormInputStreamTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Part stuff = mpis.getPart("stuff");
         assertThat(stuff, notNullValue());
-        baos = new ByteArrayOutputStream();
         IO.copy(stuff.getInputStream(), baos);
         assertTrue(baos.toString("US-ASCII").contains("bbbbb"));
     }
@@ -387,11 +379,10 @@ public class MultiPartFormInputStreamTest {
                 config,
                 _tmpDir);
         mpis.setDeleteOnExit(true);
-        Collection<Part> parts = null;
 
         //cause parsing
         try {
-            parts = mpis.getParts();
+            mpis.getParts();
             fail("Request should have exceeded maxRequestSize");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().startsWith("Request exceeds maxRequestSize"));
@@ -399,7 +390,7 @@ public class MultiPartFormInputStreamTest {
 
         //try again
         try {
-            parts = mpis.getParts();
+            mpis.getParts();
             fail("Request should have exceeded maxRequestSize");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().startsWith("Request exceeds maxRequestSize"));
@@ -415,9 +406,8 @@ public class MultiPartFormInputStreamTest {
                 config,
                 _tmpDir);
         mpis.setDeleteOnExit(true);
-        Collection<Part> parts = null;
         try {
-            parts = mpis.getParts();
+            mpis.getParts();
             fail("stuff.txt should have been larger than maxFileSize");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().startsWith("Multipart Mime part"));
@@ -433,9 +423,8 @@ public class MultiPartFormInputStreamTest {
                 config,
                 _tmpDir);
         mpis.setDeleteOnExit(true);
-        Collection<Part> parts = null;
         try {
-            parts = mpis.getParts(); //caused parsing
+            mpis.getParts(); //caused parsing
             fail("stuff.txt should have been larger than maxFileSize");
         } catch (Throwable e) {
             assertTrue(e.getMessage().startsWith("Multipart Mime part"));
@@ -443,7 +432,7 @@ public class MultiPartFormInputStreamTest {
 
         //test again after the parsing
         try {
-            parts = mpis.getParts(); //caused parsing
+            mpis.getParts(); //caused parsing
             fail("stuff.txt should have been larger than maxFileSize");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().startsWith("Multipart Mime part"));
@@ -459,10 +448,10 @@ public class MultiPartFormInputStreamTest {
                 config,
                 _tmpDir);
         mpis.setDeleteOnExit(true);
-        Collection<Part> parts = mpis.getParts();
+        mpis.getParts();
 
         MultiPartFormInputStream.MultiPart part = (MultiPartFormInputStream.MultiPart) mpis.getPart("stuff");
-        File stuff = ((MultiPartFormInputStream.MultiPart) part).getFile();
+        File stuff = part.getFile();
         assertThat(stuff, notNullValue()); // longer than 100 bytes, should already be a tmp file
         part.write("tptfd.txt");
         File tptfd = new File(_dirname + File.separator + "tptfd.txt");
@@ -481,10 +470,10 @@ public class MultiPartFormInputStreamTest {
                 config,
                 _tmpDir);
         mpis.setDeleteOnExit(true);
-        Collection<Part> parts = mpis.getParts();
+        mpis.getParts();
 
         MultiPartFormInputStream.MultiPart part = (MultiPartFormInputStream.MultiPart) mpis.getPart("stuff");
-        File stuff = ((MultiPartFormInputStream.MultiPart) part).getFile();
+        File stuff = part.getFile();
         assertThat(stuff, notNullValue()); // longer than 100 bytes, should already be a tmp file
         assertThat(stuff.exists(), is(true));
         part.cleanUp();
@@ -528,8 +517,7 @@ public class MultiPartFormInputStreamTest {
     }
 
     @Test
-    public void testCROnlyRequest()
-            throws Exception {
+    public void testCROnlyRequest() {
         String str = "--AaB03x\r" +
                 "content-disposition: form-data; name=\"field1\"\r" +
                 "\r" +
@@ -570,8 +558,7 @@ public class MultiPartFormInputStreamTest {
     }
 
     @Test
-    public void testCRandLFMixRequest()
-            throws Exception {
+    public void testCRandLFMixRequest() {
         String str = "--AaB03x\r" +
                 "content-disposition: form-data; name=\"field1\"\r" +
                 "\r" +
@@ -674,7 +661,7 @@ public class MultiPartFormInputStreamTest {
         mpis.setDeleteOnExit(true);
         Collection<Part> parts = mpis.getParts();
         assertThat(parts.size(), is(1));
-        assertThat(((MultiPartFormInputStream.MultiPart) parts.iterator().next()).getSubmittedFileName(), is("Taken on Aug 22 \\ 2012.jpg"));
+        assertThat(parts.iterator().next().getSubmittedFileName(), is("Taken on Aug 22 \\ 2012.jpg"));
     }
 
     @Test
@@ -695,7 +682,7 @@ public class MultiPartFormInputStreamTest {
         mpis.setDeleteOnExit(true);
         Collection<Part> parts = mpis.getParts();
         assertThat(parts.size(), is(1));
-        assertThat(((MultiPartFormInputStream.MultiPart) parts.iterator().next()).getSubmittedFileName(), is("c:\\this\\really\\is\\some\\path\\to\\a\\file.txt"));
+        assertThat(parts.iterator().next().getSubmittedFileName(), is("c:\\this\\really\\is\\some\\path\\to\\a\\file.txt"));
     }
 
     @Test
@@ -715,12 +702,7 @@ public class MultiPartFormInputStreamTest {
         mpis.setDeleteOnExit(true);
         Collection<Part> parts = mpis.getParts();
         assertThat(parts.size(), is(1));
-        assertThat(((MultiPartFormInputStream.MultiPart) parts.iterator().next()).getSubmittedFileName(), is("c:\\this\\really\\is\\some\\path\\to\\a\\file.txt"));
-    }
-
-    public void testMulti()
-            throws Exception {
-        testMulti(FILENAME);
+        assertThat(parts.iterator().next().getSubmittedFileName(), is("c:\\this\\really\\is\\some\\path\\to\\a\\file.txt"));
     }
 
     @Test
@@ -762,7 +744,7 @@ public class MultiPartFormInputStreamTest {
     }
 
 
-    private void testMulti(String filename) throws IOException, ServletException, InterruptedException {
+    private void testMulti(String filename) throws IOException {
         MultipartConfigElement config = new MultipartConfigElement(_dirname, 1024, 3072, 50);
         MultiPartFormInputStream mpis = new MultiPartFormInputStream(new ByteArrayInputStream(createMultipartRequestString(filename).getBytes()),
                 _contentType,
@@ -774,9 +756,11 @@ public class MultiPartFormInputStreamTest {
         Part field1 = mpis.getPart("field1");  //field 1 too small to go into tmp file, should be in internal buffer
         assertThat(field1, notNullValue());
         assertThat(field1.getName(), is("field1"));
-        InputStream is = field1.getInputStream();
+
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        IO.copy(is, os);
+        try (InputStream is = field1.getInputStream()) {
+            IO.copy(is, os);
+        }
         assertEquals("Joe Blow", new String(os.toByteArray()));
         assertEquals(8, field1.getSize());
 
@@ -802,7 +786,7 @@ public class MultiPartFormInputStreamTest {
         assertThat(stuff.getHeaderNames().size(), is(2));
         assertThat(stuff.getSize(), is(51L));
 
-        File tmpfile = ((MultiPartFormInputStream.MultiPart) stuff).getFile();
+        File tmpfile = stuff.getFile();
         assertThat(tmpfile, notNullValue()); // longer than 50 bytes, should already be a tmp file
         assertThat(stuff.getBytes(), nullValue()); //not in an internal buffer
         assertThat(tmpfile.exists(), is(true));
@@ -814,7 +798,7 @@ public class MultiPartFormInputStreamTest {
         try {
             stuff.getInputStream();
         } catch (Exception e) {
-            fail("Part.getInputStream() after file rename operation");
+            fail("Part.getInputStream() after file rename operation: " + e.getMessage());
         }
         f.deleteOnExit(); //clean up after test
     }
@@ -973,12 +957,12 @@ public class MultiPartFormInputStreamTest {
     }
 
 
-    private String createMultipartRequestString(String filename) {
+    private static String createMultipartRequestString(String filename) {
         int length = filename.length();
         String name = filename;
         if (length > 10)
             name = filename.substring(0, 10);
-        StringBuffer filler = new StringBuffer();
+        StringBuilder filler = new StringBuilder();
         int i = name.length();
         while (i < 51) {
             filler.append("0");

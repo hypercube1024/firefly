@@ -24,12 +24,12 @@ public class MediaContent {
         this.media = media;
     }
 
-	@Override
-	public String toString() {
-		return "MediaContent [images=" + images + ", media=" + media + "]";
-	}
-	
-	public static MediaContent createRecord() {
+    @Override
+    public String toString() {
+        return "MediaContent [images=" + images + ", media=" + media + "]";
+    }
+
+    public static MediaContent createRecord() {
         MediaContent record = new MediaContent();
         Media media = new Media();
         media.setUri("http://javaone.com/keynote.mpg");

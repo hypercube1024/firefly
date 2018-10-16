@@ -12,10 +12,11 @@ import com.firefly.kotlin.ext.http.header
 class ItemRepository(var name: String) {
 
     fun repository(): List<Item> = listOf(
-            Item("foo", 33.2),
-            Item("beer", 5.99),
-            Item("cola", 2.5),
-            Item("mineral water", 2.0))
+        Item("foo", 33.2),
+        Item("beer", 5.99),
+        Item("cola", 2.5),
+        Item("mineral water", 2.0)
+                                         )
 
     data class Item(var name: String, var price: Double)
 }

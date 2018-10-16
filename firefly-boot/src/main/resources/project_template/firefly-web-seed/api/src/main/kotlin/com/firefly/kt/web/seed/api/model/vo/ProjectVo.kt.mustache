@@ -1,0 +1,13 @@
+package {{packageName}}.api.model.vo
+
+import com.firefly.kotlin.ext.annotation.NoArg
+import java.util.*
+
+/**
+ * @author Pengtao Qiu
+ */
+@NoArg
+data class ProjectVo(var id: Long, var createTime: Date, var updateTime: Date, var name: String) {
+    constructor(time: Date) : this(0L, time, time, "")
+    constructor() : this(Date())
+}

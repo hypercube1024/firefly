@@ -15,10 +15,12 @@
     var ws = new WebSocket('ws://localhost:8080/helloWebSocket');
     var f;
     ws.onopen = function () {
-        f = setInterval(function() {ws.send('Hello Server!')}, 5000)
+        f = setInterval(function () {
+            ws.send('Hello Server!')
+        }, 5000)
     };
 
-    ws.onclose = function() {
+    ws.onclose = function () {
         clearInterval(f);
     };
 

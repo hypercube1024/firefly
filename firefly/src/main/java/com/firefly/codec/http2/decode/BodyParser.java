@@ -8,18 +8,14 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 
 /**
- * <p>
- * The base parser for the frame body of HTTP/2 frames.
- * </p>
- * <p>
- * Subclasses implement {@link #parse(ByteBuffer)} to parse the frame specific
- * body.
- * </p>
+ * <p>The base parser for the frame body of HTTP/2 frames.</p>
+ * <p>Subclasses implement {@link #parse(ByteBuffer)} to parse
+ * the frame specific body.</p>
  *
  * @see Parser
  */
 public abstract class BodyParser {
-    private static Logger log = LoggerFactory.getLogger("firefly-system");
+    protected static Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     private final HeaderParser headerParser;
     private final Parser.Listener listener;
@@ -30,11 +26,9 @@ public abstract class BodyParser {
     }
 
     /**
-     * <p>
-     * Parses the body bytes in the given {@code buffer}; only the body bytes
-     * are consumed, therefore when this method returns, the buffer may contain
-     * unconsumed bytes.
-     * </p>
+     * <p>Parses the body bytes in the given {@code buffer}; only the body
+     * bytes are consumed, therefore when this method returns, the buffer
+     * may contain unconsumed bytes.</p>
      *
      * @param buffer the buffer to parse
      * @return true if the whole body bytes were parsed, false if not enough
@@ -70,7 +64,7 @@ public abstract class BodyParser {
         try {
             listener.onData(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -78,7 +72,7 @@ public abstract class BodyParser {
         try {
             listener.onHeaders(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -86,7 +80,7 @@ public abstract class BodyParser {
         try {
             listener.onPriority(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -94,7 +88,7 @@ public abstract class BodyParser {
         try {
             listener.onReset(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -102,7 +96,7 @@ public abstract class BodyParser {
         try {
             listener.onSettings(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -110,7 +104,7 @@ public abstract class BodyParser {
         try {
             listener.onPushPromise(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -118,7 +112,7 @@ public abstract class BodyParser {
         try {
             listener.onPing(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -126,7 +120,7 @@ public abstract class BodyParser {
         try {
             listener.onGoAway(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -134,7 +128,7 @@ public abstract class BodyParser {
         try {
             listener.onWindowUpdate(frame);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 
@@ -148,7 +142,19 @@ public abstract class BodyParser {
         try {
             listener.onConnectionFailure(error, reason);
         } catch (Throwable x) {
-            log.error("Failure while notifying listener {}", x, listener);
+            LOG.info("Failure while notifying listener " + listener, x);
+        }
+    }
+
+    protected void streamFailure(int streamId, int error, String reason) {
+        notifyStreamFailure(streamId, error, reason);
+    }
+
+    private void notifyStreamFailure(int streamId, int error, String reason) {
+        try {
+            listener.onStreamFailure(streamId, error, reason);
+        } catch (Throwable x) {
+            LOG.info("Failure while notifying listener " + listener, x);
         }
     }
 }

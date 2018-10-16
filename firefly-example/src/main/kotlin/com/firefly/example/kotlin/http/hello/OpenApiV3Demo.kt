@@ -41,88 +41,124 @@ fun main(args: Array<String>) {
 
 fun openApi(): OpenAPI {
     val oai = OpenAPI()
-            .info(Info().contact(Contact()
+        .info(
+            Info().contact(
+                Contact()
                     .email("tony@eatbacon.org")
                     .name("Tony the Tam")
-                    .url("https://foo.bar")))
-            .servers(listOf(Server().url("https://hello/v1").description("address server")))
-            .externalDocs(ExternalDocumentation()
-                    .description("read more here")
-                    .url("http://swagger.io"))
-            .addTagsItem(Tag()
-                    .name("funky dunky")
-                    .description("all about neat things"))
-            .extensions(object : HashMap<String, Any>() {
-                init {
-                    put("x-fancy-extension", "something")
-                }
-            })
+                    .url("https://foo.bar")
+                          )
+             )
+        .servers(listOf(Server().url("https://hello/v1").description("address server")))
+        .externalDocs(
+            ExternalDocumentation()
+                .description("read more here")
+                .url("http://swagger.io")
+                     )
+        .addTagsItem(
+            Tag()
+                .name("funky dunky")
+                .description("all about neat things")
+                    )
+        .extensions(object : HashMap<String, Any>() {
+            init {
+                put("x-fancy-extension", "something")
+            }
+        })
 
     val schemas = HashMap<String, Schema<*>>()
 
     schemas["StringSchema"] = StringSchema()
-            .description("simple string schema")
-            .minLength(3)
-            .maxLength(100)
-            .example("it works")
+        .description("simple string schema")
+        .minLength(3)
+        .maxLength(100)
+        .example("it works")
 
     schemas["IntegerSchema"] = IntegerSchema()
-            .description("simple integer schema")
-            .multipleOf(BigDecimal(3))
-            .minimum(BigDecimal(6))
+        .description("simple integer schema")
+        .multipleOf(BigDecimal(3))
+        .minimum(BigDecimal(6))
 
     oai.components(Components().schemas(schemas))
 
     schemas["Address"] = Schema<Address>()
-            .description("address object")
-            .addProperties("street", StringSchema()
-                    .example("Jie dao kou")
-                    .description("the street number"))
-            .addProperties("city", StringSchema()
-                    .example("Wuhan")
-                    .description("city"))
-            .addProperties("state", StringSchema()
-                    .description("state")
-                    .example("Hubei")
-                    .minLength(2)
-                    .maxLength(30))
-            .addProperties("zip", StringSchema()
-                    .description("zip code")
-                    .pattern("^\\d{5}(?:[-\\s]\\d{4})?$")
-                    .example("33")
-                    .minLength(2)
-                    .maxLength(2))
-            .addProperties("country", StringSchema()
-                    ._enum(listOf("US"))
-                    .description("2-digit country code")
-                    .example("US")
-                    .minLength(2)
-                    .maxLength(2))
-            .example(Address("test street",
-                    "test city",
-                    "xx",
-                    "333",
-                    "US"))
+        .description("address object")
+        .addProperties(
+            "street", StringSchema()
+                .example("Jie dao kou")
+                .description("the street number")
+                      )
+        .addProperties(
+            "city", StringSchema()
+                .example("Wuhan")
+                .description("city")
+                      )
+        .addProperties(
+            "state", StringSchema()
+                .description("state")
+                .example("Hubei")
+                .minLength(2)
+                .maxLength(30)
+                      )
+        .addProperties(
+            "zip", StringSchema()
+                .description("zip code")
+                .pattern("^\\d{5}(?:[-\\s]\\d{4})?$")
+                .example("33")
+                .minLength(2)
+                .maxLength(2)
+                      )
+        .addProperties(
+            "country", StringSchema()
+                ._enum(listOf("US"))
+                .description("2-digit country code")
+                .example("US")
+                .minLength(2)
+                .maxLength(2)
+                      )
+        .example(
+            Address(
+                "test street",
+                "test city",
+                "xx",
+                "333",
+                "US"
+                   )
+                )
 
-    oai.paths(Paths()
-            .addPathItem("/foo", PathItem()
+    oai.paths(
+        Paths()
+            .addPathItem(
+                "/foo", PathItem()
                     .description("the foo path")
-                    .get(Operation()
-                            .addParametersItem(QueryParameter()
+                    .get(
+                        Operation()
+                            .addParametersItem(
+                                QueryParameter()
                                     .name("id")
                                     .description("address id")
                                     .required(false)
                                     .schema(IntegerSchema())
-                                    .example(1))
-                            .responses(ApiResponses()
-                                    .addApiResponse("200", ApiResponse()
+                                    .example(1)
+                                              )
+                            .responses(
+                                ApiResponses()
+                                    .addApiResponse(
+                                        "200", ApiResponse()
                                             .description("it worked")
-                                            .content(Content().addMediaType("application/json", MediaType().schema(Schema<Address>()
-                                                    .`$ref`("#/components/schemas/Address")))))
-                            )
-                    )
-            )
-    )
+                                            .content(
+                                                Content().addMediaType(
+                                                    "application/json", MediaType().schema(
+                                                        Schema<Address>()
+                                                            .`$ref`("#/components/schemas/Address")
+                                                                                          )
+                                                                      )
+                                                    )
+                                                   )
+                                      )
+                        )
+                        )
+             )
     return oai
 }
 

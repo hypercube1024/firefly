@@ -59,7 +59,11 @@
                 <thead>
                 <tr class="table-primary">
                     {{#userInfo}}
-                        <th><div><label class="form-check-label"><input class="form-check-input" type="checkbox" id="allProductBox" value="allProductBox" aria-label="..."></label></div></th>
+                        <th>
+                            <div><label class="form-check-label"><input class="form-check-input" type="checkbox"
+                                                                        id="allProductBox" value="allProductBox"
+                                                                        aria-label="..."></label></div>
+                        </th>
                         <th>Num</th>
                     {{/userInfo}}
                     <th>#</th>
@@ -75,8 +79,14 @@
                     {{#products}}
                         {{#record}}
                             <tr>
-                                <td><div><label class="form-check-label"><input class="form-check-input" name="productSubBox" type="checkbox" value="{{id}}" aria-label="..."></label></div></td>
-                                <td><input title="Buy number" id="buyAmount_{{id}}" name="buyNumber" type="number" min="1" max="100" maxlength="3" value="1"></td>
+                                <td>
+                                    <div><label class="form-check-label"><input class="form-check-input"
+                                                                                name="productSubBox" type="checkbox"
+                                                                                value="{{id}}" aria-label="..."></label>
+                                    </div>
+                                </td>
+                                <td><input title="Buy number" id="buyAmount_{{id}}" name="buyNumber" type="number"
+                                           min="1" max="100" maxlength="3" value="1"></td>
                                 <td>{{id}}</td>
                                 <td>{{name}}</td>
                                 <td>{{price}}</td>
@@ -118,13 +128,13 @@
                 <div class="d-flex justify-content-end">
                     <div class="p-1">
                         <a href="/?pageNumber={{lastNumber}}&type={{type}}&searchKey={{searchKey}}"
-                           {{^last}}aria-disabled="true"{{/last}} role="button"
-                           class="btn btn-outline-primary btn-sm {{^last}}disabled{{/last}}">Previous</a>
+                        {{^last}}aria-disabled="true"{{/last}} role="button"
+                        class="btn btn-outline-primary btn-sm {{^last}}disabled{{/last}}">Previous</a>
                     </div>
                     <div class="py-1">
                         <a href="/?pageNumber={{nextNumber}}&type={{type}}&searchKey={{searchKey}}"
-                           {{^next}}aria-disabled="true"{{/next}} role="button"
-                           class="btn btn-outline-primary btn-sm {{^next}}disabled{{/next}}">Next</a>
+                        {{^next}}aria-disabled="true"{{/next}} role="button"
+                        class="btn btn-outline-primary btn-sm {{^next}}disabled{{/next}}">Next</a>
                     </div>
                 </div>
             {{/products}}

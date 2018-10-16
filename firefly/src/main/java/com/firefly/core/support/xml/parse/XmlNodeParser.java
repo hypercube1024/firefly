@@ -1,9 +1,8 @@
 package com.firefly.core.support.xml.parse;
 
+import com.firefly.utils.dom.Dom;
 import org.w3c.dom.Element;
 
-import com.firefly.utils.dom.Dom;
-
 public interface XmlNodeParser {
-	Object parse(Element ele, Dom dom);
+    Object parse(Element ele, Dom dom);
 }

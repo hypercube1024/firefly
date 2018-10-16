@@ -1,0 +1,26 @@
+package {{packageName}}.api.model.vo
+
+import com.firefly.kotlin.ext.annotation.NoArg
+
+/**
+ * @author Pengtao Qiu
+ */
+@NoArg
+data class Request<T>(
+    var data: T?, var ts: Long?, var signature: String?,
+    var os: String?,
+    var deviceNumber: String?,
+    var version: String?
+                     ) {
+    constructor() : this(null, null, null, null, null, null)
+}
+
+@NoArg
+data class Response<T>(var data: T? = null, var code: Int = SUCCESS, var msg: String? = null) {
+    companion object {
+        const val CLIENT_ERROR = 400
+        const val NO_AUTH = 401
+        const val SERVER_ERROR = 500
+        const val SUCCESS = 200
+    }
+}

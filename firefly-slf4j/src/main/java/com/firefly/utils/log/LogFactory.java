@@ -5,11 +5,9 @@ import com.firefly.utils.collection.Trie;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.log.file.FileLog;
 import com.firefly.utils.log.file.FileLogTask;
-import com.firefly.utils.time.SafeSimpleDateFormat;
+import com.firefly.utils.time.Millisecond100Clock;
 
 public class LogFactory extends AbstractLifeCycle {
-
-    public static final SafeSimpleDateFormat DAY_DATE_FORMAT = new SafeSimpleDateFormat("yyyy-MM-dd");
 
     private final Trie<Log> logTree = new TreeTrie<>();
     private final LogTask logTask;
@@ -64,6 +62,7 @@ public class LogFactory extends AbstractLifeCycle {
     @Override
     protected void destroy() {
         logTask.stop();
+        Millisecond100Clock.stop();
     }
 
 }

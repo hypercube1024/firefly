@@ -26,7 +26,8 @@ fun main(args: Array<String>) {
                     val sign = StringBuilder()
                     paramArray.forEach { sign.append(it) }
 
-                    val hexSign = HexUtils.bytesToHex(MessageDigest.getInstance("SHA-1").digest(sign.toString().toByteArray()))
+                    val hexSign =
+                        HexUtils.bytesToHex(MessageDigest.getInstance("SHA-1").digest(sign.toString().toByteArray()))
                     println("verify wechat token $sign | $hexSign | $signature")
                     if (hexSign == signature) {
                         end(echoStr)

@@ -1,9 +1,11 @@
 package com.firefly.kotlin.ext.http
 
+import com.firefly.`$`
 import com.firefly.codec.http2.model.*
 import com.firefly.codec.websocket.frame.Frame
 import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder
 import com.firefly.codec.websocket.stream.WebSocketConnection
+import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.KtLogger
@@ -11,18 +13,19 @@ import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
 import com.firefly.server.http2.WebSocketHandler
-import com.firefly.server.http2.router.Handler
-import com.firefly.server.http2.router.Router
-import com.firefly.server.http2.router.RouterManager
-import com.firefly.server.http2.router.RoutingContext
+import com.firefly.server.http2.router.*
 import com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration
 import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandlerLoader
 import com.firefly.server.http2.router.impl.RoutingContextImpl
 import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.future.await
 import java.io.Closeable
 import java.net.InetAddress
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 import kotlin.coroutines.experimental.ContinuationInterceptor
 import kotlin.coroutines.experimental.CoroutineContext
@@ -54,17 +57,21 @@ inline fun <reified T : Any> SimpleRequest.getJsonBody(): T = Json.parse(stringB
 
 data class AsyncPromise<in C>(val succeeded: suspend (C) -> Unit, val failed: suspend (Throwable?) -> Unit)
 
-val promiseQueueKey = "_promiseQueue"
+const val promiseQueueKey = "_promiseQueue"
 
 fun <C> RoutingContext.getPromiseQueue(): Deque<AsyncPromise<C>>? = getAttr(promiseQueueKey)
 
 @Suppress("UNCHECKED_CAST")
-fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> = attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
+fun <C> RoutingContext.createPromiseQueueIfAbsent(): Deque<AsyncPromise<C>> =
+    attributes.computeIfAbsent(promiseQueueKey) { ConcurrentLinkedDeque<AsyncPromise<C>>() } as Deque<AsyncPromise<C>>
 
 /**
  * Set the callback that is called when the asynchronous handler finishes.
  */
-fun <C> RoutingContext.asyncComplete(succeeded: suspend (C) -> Unit, failed: suspend (Throwable?) -> Unit): RoutingContext {
+fun <C> RoutingContext.asyncComplete(
+    succeeded: suspend (C) -> Unit,
+    failed: suspend (Throwable?) -> Unit
+                                    ): RoutingContext {
     val queue = createPromiseQueueIfAbsent<C>()
     queue.push(AsyncPromise(succeeded, failed))
     return this
@@ -88,6 +95,18 @@ fun <C> RoutingContext.asyncNext(succeeded: suspend (C) -> Unit): Boolean {
     return next()
 }
 
+suspend fun <C> RoutingContext.asyncNext(): Pair<Boolean, C> {
+    val future = CompletableFuture<C>()
+    val hasNext = asyncNext<C>({ future.complete(it) }, { future.completeExceptionally(it) })
+    return hasNext to future.await()
+}
+
+suspend fun <C> RoutingContext.asyncNext(time: Long, unit: TimeUnit): Pair<Boolean, C> {
+    val future = CompletableFuture<C>()
+    val hasNext = asyncNext<C>({ future.complete(it) }, { future.completeExceptionally(it) })
+    return withTimeout(unit.toMillis(time)) { hasNext to future.await() }
+}
+
 /**
  * Execute asynchronous succeeded callback.
  */
@@ -96,12 +115,43 @@ suspend fun <C> RoutingContext.asyncSucceed(result: C) {
 }
 
 /**
- * Execute asynchronous failed callback
+ * Execute asynchronous failed callback.
  */
 suspend fun <C> RoutingContext.asyncFail(x: Throwable? = null) {
     getPromiseQueue<C>()?.pop()?.failed?.invoke(x)
 }
 
+/**
+ * Get the real client ip.
+ */
+fun RoutingContext.getRealClientIp(): String = Optional
+    .ofNullable(fields["X-Forwarded-For"])
+    .map { `$`.string.split(it, ",") }
+    .filter { it.isNotEmpty() }
+    .map { it[0].trim() }
+    .orElseGet { request.connection.remoteAddress.toString() }
+
+/**
+ * Get current HTTPSession. This function does not throw any exception.
+ */
+suspend fun RoutingContext.getCurrentSessionQuietly(sessionKey: String = "_sessionKey"): HTTPSession? = try {
+    val ret = attributes[sessionKey]
+    if (ret != null) {
+        ret as HTTPSession
+    } else {
+        val session = getSession(false).await()
+        attributes[sessionKey] = session
+        session
+    }
+} catch (e: SessionNotFound) {
+    null
+} catch (e: CompletionException) {
+    sysLogger.info("get session failure. ${e.cause}")
+    null
+} catch (e: Exception) {
+    sysLogger.error("get session exception", e)
+    null
+}
 
 // HTTP server DSL
 
@@ -207,9 +257,11 @@ interface AsyncHandler {
 }
 
 @HttpServerMarker
-class RouterBlock(private val router: Router,
-                  private val requestCtx: CoroutineLocal<RoutingContext>?,
-                  private val coroutineDispatcher: CoroutineDispatcher) {
+class RouterBlock(
+    private val router: Router,
+    private val requestCtx: CoroutineLocal<RoutingContext>?,
+    private val coroutineDispatcher: CoroutineDispatcher
+                 ) {
 
     var method: String = HttpMethod.GET.asString()
         set(value) {
@@ -274,7 +326,7 @@ class RouterBlock(private val router: Router,
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
-            launch(requestCtx?.createContext(it, coroutineDispatcher) ?: coroutineDispatcher) {
+            GlobalScope.launch(requestCtx?.createContext(it, coroutineDispatcher) ?: coroutineDispatcher) {
                 handler.invoke(it, coroutineContext)
             }
         }
@@ -330,7 +382,7 @@ class RouterBlock(private val router: Router,
             try {
                 withContext(NonCancellable) {
                     closed = true
-                    this?.close()
+                    this@safeUse?.close()
                 }
             } catch (closeException: Exception) {
             }
@@ -338,7 +390,7 @@ class RouterBlock(private val router: Router,
         } finally {
             if (!closed) {
                 withContext(NonCancellable) {
-                    this?.close()
+                    this@safeUse?.close()
                 }
             }
         }
@@ -349,9 +401,11 @@ class RouterBlock(private val router: Router,
 }
 
 @HttpServerMarker
-class WebSocketBlock(server: SimpleHTTPServer,
-                     router: Router,
-                     private val path: String) : AbstractWebSocketBuilder() {
+class WebSocketBlock(
+    server: SimpleHTTPServer,
+    router: Router,
+    private val path: String
+                    ) : AbstractWebSocketBuilder() {
 
     var onConnect: ((WebSocketConnection) -> Unit)? = null
 
@@ -420,15 +474,17 @@ annotation class HttpServerMarker
  * @param block The HTTP server DSL block. You can register routers in this block.
  */
 @HttpServerMarker
-class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
-                 serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
-                 httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
-                 block: HttpServer.() -> Unit) : HttpServerLifecycle {
+class HttpServer(
+    val requestCtx: CoroutineLocal<RoutingContext>? = null,
+    serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
+    httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
+    block: HttpServer.() -> Unit
+                ) : HttpServerLifecycle {
 
     val server = SimpleHTTPServer(serverConfiguration)
-    val routerManager = RouterManager.create(httpBodyConfiguration)
-    val coroutineDispatcher = Unconfined // server.handlerExecutorService.asCoroutineDispatcher()
-    val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler
+    val routerManager = RouterManager.create(httpBodyConfiguration)!!
+    val coroutineDispatcher = Dispatchers.Unconfined // server.handlerExecutorService.asCoroutineDispatcher()
+    val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler!!
 
     init {
         server.badMessage { status, reason, request ->
@@ -444,9 +500,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
             : this(coroutineLocal, SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
 
-    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?,
-                serverConfiguration: SimpleHTTPServerConfiguration,
-                httpBodyConfiguration: HTTPBodyConfiguration)
+    constructor(
+        coroutineLocal: CoroutineLocal<RoutingContext>?,
+        serverConfiguration: SimpleHTTPServerConfiguration,
+        httpBodyConfiguration: HTTPBodyConfiguration
+               )
             : this(coroutineLocal, serverConfiguration, httpBodyConfiguration, {})
 
     constructor(block: HttpServer.() -> Unit) : this(null, block)
@@ -460,6 +518,11 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     override fun listen(port: Int) = listen(InetAddress.getLocalHost().hostAddress, port)
 
     override fun listen() = server.headerComplete(routerManager::accept).listen()
+
+    fun enableSecureConnection(): HttpServer {
+        this.server.configuration.isSecureConnectionEnabled = true
+        return this
+    }
 
     /**
      * Register a router using the DSL with a autoincrement ID.
@@ -498,11 +561,61 @@ class HttpServer(val requestCtx: CoroutineLocal<RoutingContext>? = null,
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
 }
 
-fun <T> asyncTraceable(requestCtx: CoroutineLocal<RoutingContext>, context: ContinuationInterceptor = Unconfined, block: suspend CoroutineScope.() -> T): Deferred<T> {
+fun <T> asyncTraceable(
+    requestCtx: CoroutineLocal<RoutingContext>,
+    context: ContinuationInterceptor = Dispatchers.Unconfined,
+    block: suspend CoroutineScope.() -> T
+                      ): Deferred<T> {
     val ctx = requestCtx.get()
     return if (ctx != null) {
-        async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
+        GlobalScope.async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
     } else {
-        async(context) { block.invoke(this) }
+        GlobalScope.async(context) { block.invoke(this) }
     }
 }
+
+class AccessLogService(
+    logName: String = "firefly-access",
+    val userTracingId: String = "_const_firefly_user_id_"
+                      ) {
+
+    private val log = KtLogger.getLogger(logName)
+
+    fun recordAccessLog(ctx: RoutingContext, startTime: Long, endTime: Long) {
+        val accessLog = toAccessLog(ctx, endTime - startTime)
+        log.info(`$`.json.toJson(accessLog))
+    }
+
+    fun toAccessLog(ctx: RoutingContext, time: Long): AccessLog {
+        val requestBody = if (ctx.method == HttpMethod.POST.asString() || ctx.method == HttpMethod.PUT.asString()) {
+            val contentType = ctx.fields[HttpHeader.CONTENT_TYPE.asString()]
+            if (`$`.string.hasText(contentType)) {
+                if (contentType.startsWith("application/json") || contentType.startsWith("application/x-www-form-urlencoded")) {
+                    ctx.stringBody
+                } else ""
+            } else ""
+        } else ""
+        val tid = ctx.getAttr<String>(userTracingId)
+        return AccessLog(
+            ctx.getRealClientIp(),
+            ctx.method,
+            ctx.uri.toString(),
+            requestBody,
+            time,
+            ctx.response.status,
+            tid
+                        )
+    }
+
+}
+
+@NoArg
+data class AccessLog(
+    var ip: String,
+    var method: String,
+    var uri: String,
+    var requestBody: String?,
+    var time: Long,
+    var responseStatus: Int,
+    var tid: String?
+                    )

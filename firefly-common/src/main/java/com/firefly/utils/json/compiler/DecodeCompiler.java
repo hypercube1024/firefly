@@ -1,6 +1,8 @@
 package com.firefly.utils.json.compiler;
 
 import com.firefly.utils.BeanUtils;
+import com.firefly.utils.StringUtils;
+import com.firefly.utils.json.annotation.JsonProperty;
 import com.firefly.utils.json.exception.JsonException;
 import com.firefly.utils.json.parser.ComplexTypeParser;
 import com.firefly.utils.json.parser.ParserStateMachine;
@@ -9,13 +11,9 @@ import com.firefly.utils.lang.bean.PropertyAccess;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
-import static com.firefly.utils.json.support.PropertyUtils.getDateFormat;
-import static com.firefly.utils.json.support.PropertyUtils.isTransientField;
+import static com.firefly.utils.json.support.PropertyUtils.*;
 
 public class DecodeCompiler {
     private static final ParserMetaInfo[] EMPTY_ARRAY = new ParserMetaInfo[0];
@@ -31,7 +29,11 @@ public class DecodeCompiler {
             if (isTransientField(propertyName, clazz, setter, getter)) continue;
 
             ParserMetaInfo parserMetaInfo = new ParserMetaInfo();
-            parserMetaInfo.setPropertyNameString(propertyName);
+            String jsonPropertyName = Optional.ofNullable(getJsonProperty(propertyName, clazz, setter, getter))
+                                              .map(JsonProperty::value)
+                                              .filter(StringUtils::hasText)
+                                              .orElse(propertyName);
+            parserMetaInfo.setPropertyNameString(jsonPropertyName);
             parserMetaInfo.setPropertyAccess(propertyAccess);
 
             Class<?> extractedType = propertyAccess.extractClass();

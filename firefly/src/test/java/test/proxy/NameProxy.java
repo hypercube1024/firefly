@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 /**
  * @author Pengtao Qiu
  */
-@Target( { ElementType.TYPE })
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Proxy(proxyClass = NameServiceProxy4.class)

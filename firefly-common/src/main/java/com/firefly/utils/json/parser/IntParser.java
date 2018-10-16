@@ -5,9 +5,9 @@ import com.firefly.utils.json.Parser;
 
 public class IntParser implements Parser {
 
-	@Override
-	public Object convertTo(JsonReader reader, Class<?> clazz) {
-		return reader.readInt();
-	}
+    @Override
+    public Object convertTo(JsonReader reader, Class<?> clazz) {
+        return reader.readInt();
+    }
 
 }

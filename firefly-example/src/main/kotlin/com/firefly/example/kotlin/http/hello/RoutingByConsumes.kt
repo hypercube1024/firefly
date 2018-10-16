@@ -3,7 +3,9 @@ package com.firefly.example.kotlin.http.hello
 import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.firefly
-import com.firefly.kotlin.ext.http.*
+import com.firefly.kotlin.ext.http.HttpServer
+import com.firefly.kotlin.ext.http.asyncSubmit
+import com.firefly.kotlin.ext.http.getJsonBody
 import kotlinx.coroutines.experimental.runBlocking
 
 /**
@@ -29,11 +31,13 @@ fun main(args: Array<String>) = runBlocking {
     }.listen(host, port)
 
     val resp = firefly.httpClient().put("http://$host:$port/product/20")
-            .jsonBody(Car(20, "My car", "black")).asyncSubmit()
+        .jsonBody(Car(20, "My car", "black")).asyncSubmit()
     println(resp.stringBody)
 }
 
 @NoArg
-data class Car(var id: Long,
-               var name: String,
-               var color: String)
+data class Car(
+    var id: Long,
+    var name: String,
+    var color: String
+              )

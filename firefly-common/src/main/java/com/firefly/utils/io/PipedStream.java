@@ -7,7 +7,7 @@ import java.io.OutputStream;
 
 public interface PipedStream extends Closeable {
 
-	InputStream getInputStream() throws IOException;
-	
-	OutputStream getOutputStream() throws IOException;
+    InputStream getInputStream() throws IOException;
+
+    OutputStream getOutputStream() throws IOException;
 }

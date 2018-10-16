@@ -43,15 +43,32 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
 
     @Override
     public CompletableFuture<HTTPSession> getSession(boolean create) {
-        return _getSession(create, -1);
+        return _getSession(create, -1, null);
     }
 
     @Override
     public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge) {
-        return _getSession(true, maxAge);
+        return _getSession(true, maxAge, null);
     }
 
-    private CompletableFuture<HTTPSession> _getSession(boolean create, int maxAge) {
+    @Override
+    public CompletableFuture<HTTPSession> getAndCreateSession(int maxAge, String domain) {
+        return _getSession(true, maxAge, domain);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> createSession(int maxAge) {
+        return createSession(maxAge, null);
+    }
+
+    @Override
+    public CompletableFuture<HTTPSession> createSession(int maxAge, String domain) {
+        CompletableFuture<HTTPSession> ret = new CompletableFuture<>();
+        createSession(ret, getSessionId(true), maxAge, domain);
+        return ret;
+    }
+
+    private CompletableFuture<HTTPSession> _getSession(boolean create, int maxAge, String domain) {
         CompletableFuture<HTTPSession> ret = new CompletableFuture<>();
 
         HTTPSession currentSession = (HTTPSession) routingContext.getAttribute(contextSessionKey);
@@ -66,7 +83,7 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
                                       .map(Throwable::getCause)
                                       .filter(e -> e instanceof SessionNotFound || e instanceof SessionInvalidException)
                                       .isPresent()) {
-                    createSession(ret, maxAge);
+                    createSession(ret, maxAge, domain);
                 } else {
                     Optional.ofNullable(ex)
                             .map(Throwable::getCause)
@@ -124,10 +141,14 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         return requestedSessionId;
     }
 
-    protected void createSession(CompletableFuture<HTTPSession> ret, int maxAge) {
-        HTTPSession newSession = HTTPSession.create(requestedSessionId, defaultMaxInactiveInterval);
+    protected void createSession(CompletableFuture<HTTPSession> ret, int maxAge, String domain) {
+        createSession(ret, requestedSessionId, maxAge, domain);
+    }
+
+    protected void createSession(CompletableFuture<HTTPSession> ret, String sessionId, int maxAge, String domain) {
+        HTTPSession newSession = HTTPSession.create(sessionId, maxAge > 0 ? maxAge : defaultMaxInactiveInterval);
         sessionStore.put(newSession.getId(), newSession).thenAccept(r -> {
-            createCookie(maxAge);
+            createCookie(maxAge, domain);
             routingContext.setAttribute(contextSessionKey, newSession);
             ret.complete(newSession);
         }).exceptionally(ex -> {
@@ -136,10 +157,13 @@ public class HTTPSessionHandlerSPIImpl extends AbstractHTTPSessionHandlerSPI {
         });
     }
 
-    private void createCookie(int maxAge) {
+    private void createCookie(int maxAge, String domain) {
         Cookie cookie = new Cookie(sessionIdParameterName, requestedSessionId);
         if (maxAge > 0) {
             cookie.setMaxAge(maxAge);
+        }
+        if (StringUtils.hasText(domain)) {
+            cookie.setDomain(domain);
         }
         routingContext.addCookie(cookie);
     }

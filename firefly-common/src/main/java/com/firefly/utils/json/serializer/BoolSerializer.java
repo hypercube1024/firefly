@@ -5,9 +5,9 @@ import com.firefly.utils.json.Serializer;
 
 public class BoolSerializer implements Serializer {
 
-	@Override
-	public void convertTo(JsonWriter writer, Object obj) {
-		writer.writeBoolean((Boolean)obj);
-	}
+    @Override
+    public void convertTo(JsonWriter writer, Object obj) {
+        writer.writeBoolean((Boolean) obj);
+    }
 
 }

@@ -1,6 +1,5 @@
 package com.firefly.example.kotlin.coffee.store.router.impl.sys
 
-import com.firefly.annotation.Component
 import com.firefly.server.http2.router.Handler
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.server.http2.router.handler.session.RedisHTTPSessionHandler

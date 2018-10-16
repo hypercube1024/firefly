@@ -32,12 +32,20 @@ public class MetaDataUtils {
 
     static {
         defaultJavaTypeMap.put("bigint", "Long");
+        defaultJavaTypeMap.put("bigint unsigned", "Long");
+
         defaultJavaTypeMap.put("int", "Integer");
+        defaultJavaTypeMap.put("int unsigned", "Integer");
         defaultJavaTypeMap.put("integer", "Integer");
+        defaultJavaTypeMap.put("integer unsigned", "Integer");
+        defaultJavaTypeMap.put("tinyint", "Integer");
+        defaultJavaTypeMap.put("tinyint unsigned", "Integer");
+
         defaultJavaTypeMap.put("float", "Double");
         defaultJavaTypeMap.put("double", "Double");
         defaultJavaTypeMap.put("decimal", "Double");
         defaultJavaTypeMap.put("real", "Double");
+
         defaultJavaTypeMap.put("datetime", "java.util.Date");
         defaultJavaTypeMap.put("timestamp", "java.util.Date");
         defaultJavaTypeMap.put("date", "java.util.Date");
@@ -45,7 +53,11 @@ public class MetaDataUtils {
 
         defaultKotlinTypeMap.putAll(defaultJavaTypeMap);
         defaultKotlinTypeMap.put("integer", "Int");
+        defaultKotlinTypeMap.put("integer unsigned", "Int");
         defaultKotlinTypeMap.put("int", "Int");
+        defaultKotlinTypeMap.put("int unsigned", "Int");
+        defaultKotlinTypeMap.put("tinyint", "Int");
+        defaultKotlinTypeMap.put("tinyint unsigned", "Int");
     }
 
     protected DataSource dataSource;
@@ -223,7 +235,7 @@ public class MetaDataUtils {
         Assert.isTrue(Files.isDirectory(path), "The path must be a directory");
         sourceCodes.forEach(s -> {
             Path sourcePath = Paths.get(path.toAbsolutePath().toString(), s.getName() + "." + fileSuffix);
-            try(FileChannel channel = FileChannel.open(sourcePath, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE)) {
+            try (FileChannel channel = FileChannel.open(sourcePath, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE)) {
                 channel.write(BufferUtils.toBuffer(s.getCodes()));
             } catch (IOException e) {
                 e.printStackTrace();

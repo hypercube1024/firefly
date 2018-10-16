@@ -34,29 +34,34 @@ fun main(args: Array<String>) = runBlocking {
                 }
 
                 val trailer = request.trailerSupplier.get()
-                end("The server received:\r\n" +
-                        "$stringBody\r\n" +
-                        "Sender: ${trailer["Sender"]}\r\n" +
-                        "${trailer["Signature"]}\r\n")
+                end(
+                    "The server received:\r\n" +
+                            "$stringBody\r\n" +
+                            "Sender: ${trailer["Sender"]}\r\n" +
+                            "${trailer["Signature"]}\r\n"
+                   )
             }
         }
     }.listen(host, port)
 
     val resp = firefly.httpClient()
-            .post("http://$host:$port/product")
-            .output {
-                it.use {
-                    it.write(BufferUtils.toBuffer(
-                            "IKBC C87\r\n" +
-                            "Cherry G80-3000\r\n"))
-                }
+        .post("http://$host:$port/product")
+        .output {
+            it.use {
+                it.write(
+                    BufferUtils.toBuffer(
+                        "IKBC C87\r\n" +
+                                "Cherry G80-3000\r\n"
+                                        )
+                        )
             }
-            .setTrailerSupplier {
-                val fields = HttpFields()
-                fields.put("Sender", "Firefly Kotlin Client")
-                fields.put("Signature", "It does not do to dwell on dreams and forget to live.")
-                fields
-            }.asyncSubmit()
+        }
+        .setTrailerSupplier {
+            val fields = HttpFields()
+            fields.put("Sender", "Firefly Kotlin Client")
+            fields.put("Signature", "It does not do to dwell on dreams and forget to live.")
+            fields
+        }.asyncSubmit()
 
     println(resp.status)
     println(resp.fields)

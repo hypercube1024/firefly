@@ -114,12 +114,12 @@ public class Media {
         this.copyright = copyright;
     }
 
-	@Override
-	public String toString() {
-		return "Media [uri=" + uri + ", title=" + title + ", width=" + width
-				+ ", height=" + height + ", format=" + format + ", duration="
-				+ duration + ", size=" + size + ", bitrate=" + bitrate
-				+ ", persons=" + persons + ", player=" + player
-				+ ", copyright=" + copyright + "]";
-	}
+    @Override
+    public String toString() {
+        return "Media [uri=" + uri + ", title=" + title + ", width=" + width
+                + ", height=" + height + ", format=" + format + ", duration="
+                + duration + ", size=" + size + ", bitrate=" + bitrate
+                + ", persons=" + persons + ", player=" + player
+                + ", copyright=" + copyright + "]";
+    }
 }
