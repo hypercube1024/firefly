@@ -66,7 +66,7 @@ Run command:
 fireflyCli -g com.test.abc -a abc-haha -p com.test.abc -d www.abc.com -j www.abc.com
 ```
 
-This command will create a Kotlin web project in the current path. Import abc-haha project in your IDE.
+This command creates a Kotlin web project in the current path. Import abc-haha project in your IDE.
 
 # Create a simple Kotlin project
 Add parameter `-t firefly-simple-seed`, it specifies a simple Kotlin project template, run command:
