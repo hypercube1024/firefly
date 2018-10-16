@@ -12,7 +12,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.9.1</version>
+        <version>4.9.2-SNAPSHOT</version>
     </parent>
 
     <dependencies>
