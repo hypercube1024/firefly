@@ -40,16 +40,27 @@ data class Project(
               )
     var outputPath: String = ".",
 
-    @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 7)
+    @Parameter(
+        names = ["--template", "-t"],
+        description = "The scaffold template name, the value is firefly-web-seed or firefly-simple-seed ",
+        order = 7
+              )
+    var template: String = "firefly-web-seed",
+
+    @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 8)
     var fireflyVersion: String = "4.9.1-SNAPSHOT",
 
-    @Parameter(names = ["--buildTool", "-b"], description = "The build tool name, maven or gradle.", order = 8)
+    @Parameter(
+        names = ["--buildTool", "-b"],
+        description = "The build tool name, the value is maven or gradle.",
+        order = 100
+              )
     var buildTool: String = BuildTool.MAVEN.value,
 
-    @Parameter(names = ["--help", "-h"], description = "Show the firefly cli usage.", help = true, order = 9)
+    @Parameter(names = ["--help", "-h"], description = "Show the firefly cli usage.", help = true, order = 101)
     var help: Boolean = false,
 
-    @Parameter(names = ["--version", "-v"], description = "Show the firefly cli version.", help = true, order = 10)
+    @Parameter(names = ["--version", "-v"], description = "Show the firefly cli version.", help = true, order = 102)
     var version: Boolean = false
                   ) {
 

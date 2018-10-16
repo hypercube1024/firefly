@@ -3,7 +3,7 @@ package com.firefly.boot.cli
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
 import com.firefly.boot.model.Project
-import com.firefly.boot.service.impl.KotlinWebScaffoldServiceImpl
+import com.firefly.boot.service.impl.KotlinMavenScaffoldServiceImpl
 import com.firefly.utils.log.LogFactory
 
 /**
@@ -23,7 +23,7 @@ fun runCommand(args: Array<String>) {
             commander.usage()
         } else {
             try {
-                val service = KotlinWebScaffoldServiceImpl()
+                val service = KotlinMavenScaffoldServiceImpl(project.template)
                 service.generate(project)
             } catch (e: Exception) {
                 e.printStackTrace()

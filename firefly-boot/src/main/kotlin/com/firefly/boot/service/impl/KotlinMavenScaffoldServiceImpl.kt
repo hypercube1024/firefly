@@ -16,13 +16,17 @@ import java.nio.file.Paths
 /**
  * @author Pengtao Qiu
  */
-class KotlinWebScaffoldServiceImpl : ScaffoldService {
+class KotlinMavenScaffoldServiceImpl(private val template: String = "firefly-web-seed") : ScaffoldService {
 
     private val log = KtLogger.getLogger { }
 
     private val mustacheFactory = DefaultMustacheFactory()
     private val fileSeparator = System.getProperty("file.separator")
     private val osName = System.getProperty("os.name")
+    private val templatePackage = mapOf(
+        "firefly-web-seed" to "/com/firefly/kt/web/seed",
+        "firefly-simple-seed" to "/com/firefly/kt/simple/seed"
+                                       )
 
     override fun generate(project: Project) {
         val startTime = System.currentTimeMillis()
@@ -45,10 +49,10 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
         // init project dir
         FileUtils.delete(projectDir)
         Files.createDirectories(projectDir)
-        val templatePath = "/project_template/firefly-web-seed"
+        val templatePath = "/project_template/$template"
         val templateSuffix = ".mustache"
         val fileNamePattern = "*$templateSuffix"
-        val url = KotlinWebScaffoldServiceImpl::class.java.getResource(templatePath)
+        val url = KotlinMavenScaffoldServiceImpl::class.java.getResource(templatePath)
 
         if (url.toString().startsWith("jar:")) {
             val jarCon = url.openConnection() as JarURLConnection
@@ -83,7 +87,7 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
         val fileName = Paths.get(templateName).fileName.toString()
         val newFileName = fileName.substring(0, fileName.length - templateSuffix.length)
         val newPackagePath = Paths.get("/", project.packageName!!.replace('.', '/')).toString()
-        val templatePackagePath = Paths.get("/com/firefly/kt/web/seed").toString()
+        val templatePackagePath = Paths.get(templatePackage[template]).toString()
         val outputDir = Paths.get(
             projectDir.toString(),
             templateName.substring(templatePath.length, templateName.length - fileName.length)
@@ -126,13 +130,13 @@ class KotlinWebScaffoldServiceImpl : ScaffoldService {
     }
 
     private fun isRoot(currentPath: String): Boolean {
-        return currentPath.endsWith(Paths.get("/firefly-web-seed/pom.xml.mustache").toString())
-                || currentPath.endsWith(Paths.get("/firefly-web-seed/api/pom.xml.mustache").toString())
-                || currentPath.endsWith(Paths.get("/firefly-web-seed/common/pom.xml.mustache").toString())
-                || currentPath.endsWith(Paths.get("/firefly-web-seed/server/pom.xml.mustache").toString())
+        return currentPath.endsWith(Paths.get("/$template/pom.xml.mustache").toString())
+                || currentPath.endsWith(Paths.get("/$template/api/pom.xml.mustache").toString())
+                || currentPath.endsWith(Paths.get("/$template/common/pom.xml.mustache").toString())
+                || currentPath.endsWith(Paths.get("/$template/server/pom.xml.mustache").toString())
     }
 
-    private fun toPath(path: String) = Paths.get(KotlinWebScaffoldServiceImpl::class.java.getResource(path).toURI())
+    private fun toPath(path: String) = Paths.get(KotlinMavenScaffoldServiceImpl::class.java.getResource(path).toURI())
 
     private fun createOutputDir(outputFile: File) {
         if (!outputFile.exists()) {
