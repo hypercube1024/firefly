@@ -185,6 +185,3 @@ More detailed information, please refer to the
 # Contact information
 E-mail: qptkk@163.com  
 QQ Group: 126079579  
-
-Treat author to a cup of coffee:  
-<img src="http://www.fireflysource.com/author-ali-pay.jpg" width="260" />
