@@ -59,7 +59,9 @@ class KotlinMavenScaffoldServiceImpl(private val template: String = "firefly-web
             val jarFile = jarCon.jarFile
             FileUtils.filterInJar(jarFile, fileNamePattern) { entry ->
                 val templateName = entry.name
-                render(templateName, templateName, templateSuffix, templatePath, projectDir, project)
+                if (templateName.contains(template)) {
+                    render(templateName, templateName, templateSuffix, templatePath, projectDir, project)
+                }
             }
         } else {
             val templateDir = toPath(templatePath)
