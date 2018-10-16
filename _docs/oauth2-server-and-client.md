@@ -118,7 +118,7 @@ Assert.assertThat(resp.getStringBody(), is("Hello"));
 ```
 
 # Implicit Grant
-The implicit grant is also a redirection-based flow. It skips to get a authorization code and uses client id to  exchange the access token directly.  
+The implicit grant is also a redirection-based flow. It skips to get an authorization code and uses client id to exchange the access token directly.  
 
 The authorization server example:
 ```java
