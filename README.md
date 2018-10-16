@@ -177,6 +177,8 @@ More detailed information, please refer to the
 * [Inversion of control document](http://www.fireflysource.com/docs/ioc-framework.html)
 * [Database access document](http://www.fireflysource.com/docs/database-access.html)
 * [Log document](http://www.fireflysource.com/docs/log.html)
+* [OAuth2 server/client document](http://www.fireflysource.com/docs/oauth2-server-and-client.html)
+* [CLI generator document](http://www.fireflysource.com/docs/cli-generator.html)
 * [HTTP server/client document (Kotlin version)](http://www.fireflysource.com/docs/http-server-and-client-kotlin-ext.html)
 * [Database access document (Kotlin version)](http://www.fireflysource.com/docs/database-access-kotlin.html)
 * [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example/src/main/java/com/firefly/example)
@@ -185,3 +187,10 @@ More detailed information, please refer to the
 # Contact information
 E-mail: qptkk@163.com  
 QQ Group: 126079579  
+
+Treat author to a cup of coffee:  
+<img src="http://www.fireflysource.com/images/author-ali-pay.jpg" width="260" />
+<img src="http://www.fireflysource.com/images/author-wechat-pay.jpg" width="260" />
+
+Get the red envelope:  
+<img src="http://www.fireflysource.com/images/author-red-envelope.png" width="260" />
