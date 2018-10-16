@@ -258,6 +258,7 @@
                             <dir>${project.basedir}/src/main/kotlin</dir>
                         </link>
                     </sourceLinks>
+                    <noStdlibLink>${dokka.config.noStdlibLink}</noStdlibLink>
                 </configuration>
             </plugin>
         </plugins>

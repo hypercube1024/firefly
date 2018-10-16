@@ -48,7 +48,7 @@ data class Project(
     var template: String = "firefly-web-seed",
 
     @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 8)
-    var fireflyVersion: String = "4.9.1",
+    var fireflyVersion: String = "4.9.2-SNAPSHOT",
 
     @Parameter(
         names = ["--buildTool", "-b"],
