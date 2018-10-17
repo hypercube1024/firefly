@@ -131,6 +131,35 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- javadoc -->
+            <plugin>
+                <groupId>org.jetbrains.dokka</groupId>
+                <artifactId>dokka-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>dokka</goal>
+                            <goal>javadoc</goal>
+                            <goal>javadocJar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <sourceDirectories>
+                        <dir>${project.basedir}/src/main/java</dir>
+                        <dir>${project.basedir}/src/main/kotlin</dir>
+                    </sourceDirectories>
+                    <sourceLinks>
+                        <link>
+                        <dir>${project.basedir}/src/main/java</dir>
+                        <dir>${project.basedir}/src/main/kotlin</dir>
+                        </link>
+                    </sourceLinks>
+                    <noStdlibLink>${dokka.config.noStdlibLink}</noStdlibLink>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
