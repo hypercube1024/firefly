@@ -3,6 +3,7 @@ package com.firefly.boot.cli
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.ParameterException
 import com.firefly.boot.model.Project
+import com.firefly.boot.model.cliVersion
 import com.firefly.boot.service.impl.KotlinMavenScaffoldServiceImpl
 import com.firefly.utils.log.LogFactory
 
@@ -19,7 +20,7 @@ fun runCommand(args: Array<String>) {
         commander.parse(*args)
 
         if (project.help || project.version) {
-            println("The ${commander.programName} version is 4.9.2")
+            println("The ${commander.programName} version is $cliVersion")
             commander.usage()
         } else {
             try {

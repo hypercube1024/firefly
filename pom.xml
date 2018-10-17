@@ -6,7 +6,7 @@
 
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-framework</artifactId>
-    <version>4.9.2</version>
+    <version>4.9.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
 

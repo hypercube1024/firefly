@@ -6,6 +6,8 @@ import com.firefly.kotlin.ext.annotation.NoArg
 /**
  * @author Pengtao Qiu
  */
+const val cliVersion = "4.9.3"
+
 @NoArg
 data class Project(
     @Parameter(names = ["--groupId", "-g"], description = "The project group id.", required = true, order = 1)
@@ -48,7 +50,7 @@ data class Project(
     var outputPath: String = ".",
 
     @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 8)
-    var fireflyVersion: String = "4.9.2",
+    var fireflyVersion: String = "$cliVersion-SNAPSHOT",
 
     @Parameter(
         names = ["--buildTool", "-b"],
