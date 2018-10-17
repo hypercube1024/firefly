@@ -19,7 +19,7 @@ fun runCommand(args: Array<String>) {
         commander.parse(*args)
 
         if (project.help || project.version) {
-            println("The ${commander.programName} version is 4.9.1")
+            println("The ${commander.programName} version is 4.9.2")
             commander.usage()
         } else {
             try {

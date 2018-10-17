@@ -6,7 +6,7 @@
 
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-framework</artifactId>
-    <version>4.9.1</version>
+    <version>4.9.2</version>
     <packaging>pom</packaging>
 
 
@@ -65,6 +65,9 @@
         <kotlin.compiler.languageVersion>1.2</kotlin.compiler.languageVersion>
         <kotlin.compiler.apiVersion>1.2</kotlin.compiler.apiVersion>
         <kotlin.code.style>official</kotlin.code.style>
+
+        <dokka.version>0.9.17</dokka.version>
+        <dokka.config.noStdlibLink>false</dokka.config.noStdlibLink>
 
         <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
         <metrics.version>4.0.3</metrics.version>
@@ -428,7 +431,7 @@
                 <plugin>
                     <groupId>org.jetbrains.dokka</groupId>
                     <artifactId>dokka-maven-plugin</artifactId>
-                    <version>0.9.17</version>
+                    <version>${dokka.version}</version>
                 </plugin>
 
                 <plugin>

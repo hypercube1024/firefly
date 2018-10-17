@@ -12,7 +12,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.9.1</version>
+        <version>4.9.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -258,6 +258,7 @@
                             <dir>${project.basedir}/src/main/kotlin</dir>
                         </link>
                     </sourceLinks>
+                    <noStdlibLink>${dokka.config.noStdlibLink}</noStdlibLink>
                 </configuration>
             </plugin>
         </plugins>

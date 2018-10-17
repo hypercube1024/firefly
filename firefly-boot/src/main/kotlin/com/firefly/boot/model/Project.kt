@@ -34,21 +34,21 @@ data class Project(
     var uberJarName: String?,
 
     @Parameter(
-        names = ["--outputPath", "-o"],
-        description = "The project output path, current path is default.",
-        order = 6
-              )
-    var outputPath: String = ".",
-
-    @Parameter(
         names = ["--template", "-t"],
         description = "The scaffold template name, the value is firefly-web-seed or firefly-simple-seed ",
-        order = 7
+        order = 6
               )
     var template: String = "firefly-web-seed",
 
+    @Parameter(
+        names = ["--outputPath", "-o"],
+        description = "The project output path, current path is default.",
+        order = 7
+              )
+    var outputPath: String = ".",
+
     @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 8)
-    var fireflyVersion: String = "4.9.1",
+    var fireflyVersion: String = "4.9.2",
 
     @Parameter(
         names = ["--buildTool", "-b"],
