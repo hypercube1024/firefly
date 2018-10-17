@@ -28,7 +28,7 @@ fireflyCli --version
 
 The terminal print:
 ```
-The fireflyCli version is 4.9.1
+The fireflyCli version is {{ site.data.global.releaseVersion }}
 Usage: fireflyCli [options]
   Options:
   * --groupId, -g
@@ -41,16 +41,16 @@ Usage: fireflyCli [options]
       The project domain name, e.g., yyy.xxx.com .
   * --jarName, -j
       The project jar name.
-    --outputPath, -o
-      The project output path, current path is default.
-      Default: .
     --template, -t
       The scaffold template name, the value is firefly-web-seed or
       firefly-simple-seed
       Default: firefly-web-seed
+    --outputPath, -o
+      The project output path, current path is default.
+      Default: .
     --fireflyVersion, -f
       The firefly version.
-      Default: 4.9.1
+      Default: {{ site.data.global.releaseVersion }}
     --buildTool, -b
       The build tool name, the value is maven or gradle.
       Default: maven
