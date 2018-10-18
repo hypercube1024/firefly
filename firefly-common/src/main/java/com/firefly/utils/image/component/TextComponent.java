@@ -80,7 +80,9 @@ public class TextComponent extends AbstractGraphicsComponent {
         Assert.hasText(text, "The text must be not empty");
         Assert.notNull(font, "The text font must be not null");
         Assert.notNull(color, "The text color must be not null");
-        bufferedImage = ImageUtils.drawTextInRect(text, font, color, paddingWidth, paddingHeight, backgroundColor, arc);
+        bufferedImage = ImageUtils.drawTextInRect(text, font, color,
+                Math.max(10, paddingWidth), Math.max(10, paddingHeight),
+                backgroundColor, arc);
         width = bufferedImage.getWidth();
         height = bufferedImage.getHeight();
         drawChildren();
