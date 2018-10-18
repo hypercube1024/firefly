@@ -1,6 +1,6 @@
 package com.firefly.net.tcp.codec.flex.decode;
 
-import com.firefly.net.tcp.codec.common.msgpack.MessagePackMapper;
+import com.firefly.net.dataformats.Mapper;
 import com.firefly.net.tcp.codec.flex.model.MetaInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,7 @@ public class DefaultMetaInfoParser implements MetaInfoParser {
     @Override
     public <T extends MetaInfo> T parse(byte[] data, Class<T> clazz) {
         try {
-            return MessagePackMapper.getMapper().readValue(data, clazz);
+            return Mapper.getMessagePackMapper().readValue(data, clazz);
         } catch (IOException e) {
             log.error("parse msg pack error", e);
             return null;

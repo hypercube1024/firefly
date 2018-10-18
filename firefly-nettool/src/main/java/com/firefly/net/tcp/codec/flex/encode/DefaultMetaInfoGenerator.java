@@ -1,7 +1,7 @@
 package com.firefly.net.tcp.codec.flex.encode;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.firefly.net.tcp.codec.common.msgpack.MessagePackMapper;
+import com.firefly.net.dataformats.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +15,7 @@ public class DefaultMetaInfoGenerator implements MetaInfoGenerator {
     @Override
     public byte[] generate(Object object) {
         try {
-            return MessagePackMapper.getMapper().writeValueAsBytes(object);
+            return Mapper.getMessagePackMapper().writeValueAsBytes(object);
         } catch (JsonProcessingException e) {
             log.error("generate msg pack error", e);
             return null;
