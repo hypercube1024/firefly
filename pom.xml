@@ -67,11 +67,12 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <dokka.version>0.9.17</dokka.version>
-        <dokka.config.noStdlibLink>false</dokka.config.noStdlibLink>
+        <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
 
         <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
         <metrics.version>4.0.3</metrics.version>
         <jackson.version>2.9.7</jackson.version>
+        <msgpack.version>0.8.16</msgpack.version>
         <redisson.version>3.8.2</redisson.version>
         <conscrypt.version>1.4.0</conscrypt.version>
         <hikariCP.version>3.2.0</hikariCP.version>
@@ -329,6 +330,11 @@
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>woodstox-core-asl</artifactId>
                 <version>4.4.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.msgpack</groupId>
+                <artifactId>jackson-dataformat-msgpack</artifactId>
+                <version>${msgpack.version}</version>
             </dependency>
 
             <dependency>

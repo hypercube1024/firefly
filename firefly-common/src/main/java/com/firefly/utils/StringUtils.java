@@ -586,13 +586,16 @@ public class StringUtils {
             if (index < objs.length) {
                 Object obj = objs[index];
                 try {
-                    if (obj instanceof AbstractCollection) {
-                        ret.append(Arrays.toString(((AbstractCollection<?>) obj).toArray()));
+                    if (obj != null) {
+                        if (obj instanceof AbstractCollection) {
+                            ret.append(Arrays.toString(((AbstractCollection<?>) obj).toArray()));
+                        } else {
+                            ret.append(obj);
+                        }
                     } else {
-                        ret.append(obj);
+                        ret.append("null");
                     }
-                } catch (Throwable t) {
-                    System.err.println("replace string exception, the parameter type is " + obj.getClass() + ", " + t.getMessage());
+                } catch (Throwable ignored) {
                 }
             } else {
                 ret.append("{}");

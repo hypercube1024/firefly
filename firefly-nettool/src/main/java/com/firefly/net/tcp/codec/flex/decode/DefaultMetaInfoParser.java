@@ -1,33 +1,26 @@
 package com.firefly.net.tcp.codec.flex.decode;
 
+import com.firefly.net.tcp.codec.common.msgpack.MessagePackMapper;
 import com.firefly.net.tcp.codec.flex.model.MetaInfo;
-import com.firefly.net.tcp.codec.flex.model.Request;
-import com.firefly.net.tcp.codec.flex.model.Response;
-import io.protostuff.ProtostuffIOUtil;
-import io.protostuff.Schema;
-import io.protostuff.runtime.RuntimeSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * @author Pengtao Qiu
  */
 public class DefaultMetaInfoParser implements MetaInfoParser {
 
-    public static final Schema<Request> requestSchema = RuntimeSchema.getSchema(Request.class);
-    public static final Schema<Response> responseSchema = RuntimeSchema.getSchema(Response.class);
+    private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends MetaInfo> T parse(byte[] data, Class<T> clazz) {
-        if (clazz == Request.class) {
-            Request req = requestSchema.newMessage();
-            ProtostuffIOUtil.mergeFrom(data, req, requestSchema);
-            return (T) req;
-        } else if (clazz == Response.class) {
-            Response resp = responseSchema.newMessage();
-            ProtostuffIOUtil.mergeFrom(data, resp, responseSchema);
-            return (T) resp;
-        } else {
-            throw new IllegalArgumentException("The meta info type must be Request or Response");
+        try {
+            return MessagePackMapper.getMapper().readValue(data, clazz);
+        } catch (IOException e) {
+            log.error("parse msg pack error", e);
+            return null;
         }
     }
 }

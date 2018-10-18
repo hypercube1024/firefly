@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 
 /**
  * @author Pengtao Qiu
@@ -48,7 +49,7 @@ public class TestConnectionManager {
 
         for (int i = 0; i < loop; i++) {
             Request request = new Request();
-            request.setPath("/connectionManager");
+            request.setPath("/connectionManager" + i);
             request.setFields(new HashMap<>());
             request.getFields().put("taskNo", "req" + i);
             FlexConnection connection = client.getConnection();
@@ -92,7 +93,7 @@ public class TestConnectionManager {
                 public void messageComplete(Context context) {
                     ByteArrayOutputStream out = (ByteArrayOutputStream) context.getAttribute("data");
                     String data = new String(out.toByteArray(), StandardCharsets.UTF_8);
-                    System.out.println("Client message complete: " + data);
+                    System.out.println("Client message complete: " + data + ", " + context.getResponse());
                     Assert.assertThat(context.getResponse().getMessage(), is("OK"));
                     Assert.assertThat(data, is("Server received message"));
                     Assert.assertThat(context.getResponse().getFields().get("taskNo"), is(context.getRequest().getFields().get("taskNo")));
@@ -131,7 +132,7 @@ public class TestConnectionManager {
             public void newRequest(Context context) {
                 System.out.println("Server received the new request: " + context.getRequest());
                 context.setAttribute("data", new ByteArrayOutputStream());
-                Assert.assertThat(context.getRequest().getPath(), is("/connectionManager"));
+                Assert.assertThat(context.getRequest().getPath(), startsWith("/connectionManager"));
             }
 
             @Override

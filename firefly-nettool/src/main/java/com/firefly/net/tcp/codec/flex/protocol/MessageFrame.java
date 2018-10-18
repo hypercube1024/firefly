@@ -1,6 +1,7 @@
 package com.firefly.net.tcp.codec.flex.protocol;
 
 import com.firefly.utils.Assert;
+import com.firefly.utils.codec.HexUtils;
 
 import java.util.Optional;
 
@@ -62,7 +63,8 @@ public class MessageFrame extends Frame {
                 ", endFrame=" + endFrame +
                 ", type=" + type +
                 ", version=" + version +
-                ", dataLength=" + Optional.ofNullable(data).map(d -> d.length).orElse(0) +
+                ", data=" + Optional.ofNullable(data).map(d -> d.length).orElse(0) + ", "
+                + Optional.ofNullable(data).map(HexUtils::bytesToHex).orElse("") +
                 '}';
     }
 }

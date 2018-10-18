@@ -33,6 +33,7 @@ public class FlexConnectionImpl implements FlexConnection {
 
     public static final String CONTEXT_KEY = "_context";
     public static final String CTX_LISTENER_KEY = "_contextListener";
+    public static final String METAINFO_BYTES_KEY = "_receivedRequestMetaInfoBytesKey";
 
     protected final TcpConnection tcpConnection;
     protected final Session session;
@@ -199,31 +200,39 @@ public class FlexConnectionImpl implements FlexConnection {
     protected class ReceivedRequestSessionListener implements Session.Listener {
 
         protected final Listener listener;
-        protected ByteArrayOutputStream metaInfoByteArrayOutputStream = new ByteArrayOutputStream();
 
         public ReceivedRequestSessionListener(Listener listener) {
             this.listener = listener;
         }
 
         protected FlexContext createContext(Stream stream) {
-            IO.close(metaInfoByteArrayOutputStream);
+            ByteArrayOutputStream outputStream = getMetaInfoByteArrayOutputStream(stream);
             Request request = Optional.ofNullable(configuration.getMetaInfoParser()).orElse(MetaInfoParser.DEFAULT)
-                                      .parse(metaInfoByteArrayOutputStream.toByteArray(), Request.class);
+                                      .parse(outputStream.toByteArray(), Request.class);
+            stream.getAttributes().remove(METAINFO_BYTES_KEY);
             Assert.state(request != null, "Parse request meta info failure");
 
             return new FlexContext(request, stream, FlexConnectionImpl.this);
         }
 
-        protected void saveData(byte[] data) {
+        protected ByteArrayOutputStream getMetaInfoByteArrayOutputStream(Stream stream) {
+            return (ByteArrayOutputStream) stream.getAttribute(METAINFO_BYTES_KEY);
+        }
+
+        protected void saveData(Stream stream, byte[] data) {
             try {
-                metaInfoByteArrayOutputStream.write(data);
+                getMetaInfoByteArrayOutputStream(stream).write(data);
             } catch (IOException ignored) {
             }
         }
 
+        protected void init(Stream stream) {
+            stream.setAttribute(METAINFO_BYTES_KEY, new ByteArrayOutputStream());
+        }
+
         protected void onControlFrame(Stream stream, ControlFrame controlFrame) {
             if (controlFrame.isEndFrame()) {
-                saveData(controlFrame.getData());
+                saveData(stream, controlFrame.getData());
                 FlexContext context = createContext(stream);
                 stream.setAttribute(CONTEXT_KEY, context);
                 stream.setAttribute(CTX_LISTENER_KEY, listener);
@@ -237,12 +246,13 @@ public class FlexConnectionImpl implements FlexConnection {
                     listener.exception(context, e);
                 }
             } else {
-                saveData(controlFrame.getData());
+                saveData(stream, controlFrame.getData());
             }
         }
 
         @Override
         public Stream.Listener onNewStream(Stream stream, ControlFrame newControlFrame) {
+            init(stream);
             onControlFrame(stream, newControlFrame);
 
             return new Stream.Listener() {
