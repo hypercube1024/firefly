@@ -58,6 +58,7 @@
         <log.level>INFO</log.level>
         <log.path>../logs</log.path>
 
+        <!-- Kotlin compiler configuration -->
         <kotlin.version>1.2.71</kotlin.version>
         <kotlin.coroutine.version>0.30.2</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
@@ -66,10 +67,11 @@
         <kotlin.compiler.apiVersion>1.2</kotlin.compiler.apiVersion>
         <kotlin.code.style>official</kotlin.code.style>
 
+        <!-- Kotlin doc configuration -->
         <dokka.version>0.9.17</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
 
-        <alpn-boot.version>8.1.11.v20170118</alpn-boot.version>
+        <!-- The third party lib -->
         <metrics.version>4.0.3</metrics.version>
         <jackson.version>2.9.7</jackson.version>
         <msgpack.version>0.8.16</msgpack.version>
@@ -280,7 +282,7 @@
             <dependency>
                 <groupId>org.mortbay.jetty.alpn</groupId>
                 <artifactId>alpn-boot</artifactId>
-                <version>${alpn-boot.version}</version>
+                <version>8.1.11.v20170118</version>
             </dependency>
 
             <dependency>
@@ -543,6 +545,28 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>mac_os_jdk_11</id>
+            <properties>
+                <jdk.home>/Library/Java/JavaVirtualMachines/jdk-11.0.1.jdk/Contents/Home</jdk.home>
+                <kotlin.compiler.jdkHome>${jdk.home}</kotlin.compiler.jdkHome>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgument>-parameters</compilerArgument>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                            <encoding>UTF-8</encoding>
+                            <executable>${jdk.home}/bin/javac</executable>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>release</id>
             <build>
