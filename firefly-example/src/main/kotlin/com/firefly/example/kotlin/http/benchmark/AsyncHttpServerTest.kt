@@ -27,35 +27,50 @@ data class ItemRepository(val name: String) {
  * log level: INFO
  * JVM arguments: -XX:+UseG1GC -Xmx1024m -Xms1024m
  *
- * wrk -t8 -c32 -d60s http://127.0.0.1:4455/
+ * wrk -t8 -c32 -d60s --latency http://127.0.0.1:4455/
  * Running 1m test @ http://127.0.0.1:4455/
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   473.34us  114.16us   5.82ms   90.43%
- * Req/Sec     8.43k   433.16     9.56k    76.87%
- * 4033097 requests in 1.00m, 473.09MB read
- * Requests/sec:  67105.43
- * Transfer/sec:      7.87MB
+ * Latency   462.09us  120.44us   6.44ms   89.37%
+ * Req/Sec     8.60k   347.22     9.36k    71.38%
+ * Latency Distribution
+ * 50%  458.00us
+ * 75%  506.00us
+ * 90%  545.00us
+ * 99%  718.00us
+ * 4116689 requests in 1.00m, 482.90MB read
+ * Requests/sec:  68496.13
+ * Transfer/sec:      8.03MB
  *
- * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items
+ * wrk -t8 -c32 -d60s --latency http://127.0.0.1:4455/items
  * Running 1m test @ http://127.0.0.1:4455/items
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   502.37us  258.08us  32.52ms   98.91%
- * Req/Sec     8.01k   323.65     8.98k    73.92%
- * 3834331 requests in 1.00m, 1.46GB read
- * Requests/sec:  63798.77
- * Transfer/sec:     24.82MB
+ * Latency   482.95us  121.53us   5.29ms   88.01%
+ * Req/Sec     8.24k   308.00     9.01k    69.16%
+ * Latency Distribution
+ * 50%  484.00us
+ * 75%  524.00us
+ * 90%  561.00us
+ * 99%  782.00us
+ * 3940530 requests in 1.00m, 1.50GB read
+ * Requests/sec:  65566.46
+ * Transfer/sec:     25.51MB
  *
- * wrk -t8 -c32 -d60s http://127.0.0.1:4455/items.json
+ * wrk -t8 -c32 -d60s --latency http://127.0.0.1:4455/items.json
  * Running 1m test @ http://127.0.0.1:4455/items.json
  * 8 threads and 32 connections
  * Thread Stats   Avg      Stdev     Max   +/- Stdev
- * Latency   484.98us  136.72us  11.30ms   92.50%
- * Req/Sec     8.20k   502.31     9.09k    76.83%
- * 3920603 requests in 1.00m, 1.03GB read
- * Requests/sec:  65234.20
- * Transfer/sec:     17.48MB
+ * Latency   475.15us  122.48us   6.39ms   88.77%
+ * Req/Sec     8.38k   295.65     9.01k    77.58%
+ * Latency Distribution
+ * 50%  470.00us
+ * 75%  517.00us
+ * 90%  557.00us
+ * 99%  785.00us
+ * 4008998 requests in 1.00m, 1.05GB read
+ * Requests/sec:  66704.40
+ * Transfer/sec:     17.88MB
  */
 fun main(args: Array<String>) {
     HttpServer {
