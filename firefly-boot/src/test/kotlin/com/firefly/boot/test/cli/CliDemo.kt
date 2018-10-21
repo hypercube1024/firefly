@@ -9,7 +9,7 @@ import java.nio.file.Paths
 fun main(args: Array<String>) {
     val userHome = System.getProperty("user.home")
     val outputPath = Paths.get(userHome, "/Develop/test_project").toString()
-    generateSimple(outputPath)
+    generateWeb(outputPath)
 }
 
 fun generateWeb(outputPath: String) {
