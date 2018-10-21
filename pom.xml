@@ -530,7 +530,7 @@
         <profile>
             <id>jdk_8</id>
             <activation>
-                <jdk>1.8</jdk>
+                <jdk>[1.8, 10)</jdk>
             </activation>
             <build>
                 <plugins>
@@ -630,11 +630,11 @@
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
                             <compilerArgument>-parameters</compilerArgument>
+                            <source>1.8</source>
+                            <target>1.8</target>
                             <release>8</release>
                             <compilerVersion>8</compilerVersion>
                             <encoding>UTF-8</encoding>
-                            <verbose>true</verbose>
-                            <fork>true</fork>
                         </configuration>
                     </plugin>
                     <plugin>
