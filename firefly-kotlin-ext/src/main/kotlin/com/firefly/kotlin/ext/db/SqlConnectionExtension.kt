@@ -5,9 +5,9 @@ import com.firefly.db.SQLConnection
 import com.firefly.db.SQLResultSet
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.utils.function.Func1
-import kotlinx.coroutines.experimental.TimeoutCancellationException
-import kotlinx.coroutines.experimental.future.await
-import kotlinx.coroutines.experimental.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.TimeUnit
 
 /**

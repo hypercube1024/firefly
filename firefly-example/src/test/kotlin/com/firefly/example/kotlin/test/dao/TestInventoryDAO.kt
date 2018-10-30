@@ -7,7 +7,7 @@ import com.firefly.example.kotlin.coffee.store.vo.InventoryOperator
 import com.firefly.example.kotlin.coffee.store.vo.InventoryUpdate
 import com.firefly.example.kotlin.test.TestBase
 import com.firefly.kotlin.ext.context.getBean
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.util.stream.Collectors
 import kotlin.test.assertEquals
@@ -32,7 +32,7 @@ class TestInventoryDAO : TestBase() {
         ret.forEach { assertEquals(it, 1) }
 
         val map = inventoryDAO.listByProductId(listOf(4L, 5L))
-            .parallelStream().collect(Collectors.toMap(Inventory::productId, { v -> v }))
+            .parallelStream().collect(Collectors.toMap(Inventory::productId) { v -> v })
         assertEquals(67L, map[4L]?.amount)
         assertEquals(80L, map[5L]?.amount)
 
@@ -48,7 +48,7 @@ class TestInventoryDAO : TestBase() {
         assertEquals(1, ret2[1])
 
         val map2 = inventoryDAO.listByProductId(listOf(4L, 5L))
-            .parallelStream().collect(Collectors.toMap(Inventory::productId, { v -> v }))
+            .parallelStream().collect(Collectors.toMap(Inventory::productId) { v -> v })
         assertEquals(67L, map2[4L]?.amount)
         assertEquals(60L, map2[5L]?.amount)
     }

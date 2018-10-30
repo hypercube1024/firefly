@@ -4,7 +4,7 @@ import com.firefly.example.kotlin.coffee.store.dao.UserDAO
 import com.firefly.example.kotlin.coffee.store.ktCtx
 import com.firefly.example.kotlin.test.TestBase
 import com.firefly.kotlin.ext.context.getBean
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import kotlin.test.assertEquals
 

@@ -4,7 +4,7 @@ import com.firefly.codec.http2.model.HttpHeader
 import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.utils.RandomUtils
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.util.*
 import kotlin.test.assertEquals

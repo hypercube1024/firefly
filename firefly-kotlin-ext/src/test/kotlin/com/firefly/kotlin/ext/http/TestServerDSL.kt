@@ -11,8 +11,8 @@ import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.example.Response
 import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.RandomUtils
-import kotlinx.coroutines.experimental.runBlocking
-import kotlinx.coroutines.experimental.withTimeout
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Test
 import java.nio.charset.StandardCharsets
 import java.util.zip.GZIPOutputStream

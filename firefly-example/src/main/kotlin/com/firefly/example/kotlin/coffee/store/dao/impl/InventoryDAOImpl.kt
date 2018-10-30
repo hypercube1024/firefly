@@ -10,7 +10,7 @@ import com.firefly.example.kotlin.coffee.store.vo.InventoryUpdate
 import com.firefly.kotlin.ext.db.AsyncTransactionalManager
 import com.firefly.kotlin.ext.db.asyncQueryForList
 import com.firefly.utils.CollectionUtils
-import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.future.await
 import java.util.*
 import java.util.stream.Collectors
 

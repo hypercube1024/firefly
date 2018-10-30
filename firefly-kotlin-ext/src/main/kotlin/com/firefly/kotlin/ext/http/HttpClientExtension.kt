@@ -4,8 +4,8 @@ import com.firefly.client.http2.SimpleHTTPClient
 import com.firefly.client.http2.SimpleResponse
 import com.firefly.codec.http2.model.HttpFields
 import com.firefly.kotlin.ext.common.Json
-import kotlinx.coroutines.experimental.future.await
-import kotlinx.coroutines.experimental.withTimeout
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.TimeUnit
 
 /**

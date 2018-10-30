@@ -4,7 +4,7 @@ import com.firefly.codec.http2.model.*
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.http.*
 import com.firefly.utils.io.BufferUtils
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 
 /**
  * @author Pengtao Qiu

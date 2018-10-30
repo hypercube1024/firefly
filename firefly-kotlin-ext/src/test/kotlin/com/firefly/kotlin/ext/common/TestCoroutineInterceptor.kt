@@ -1,7 +1,7 @@
 package com.firefly.kotlin.ext.common
 
 import com.firefly.kotlin.ext.log.KtLogger
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import org.junit.Test
 import java.util.concurrent.*
 import kotlin.test.assertEquals

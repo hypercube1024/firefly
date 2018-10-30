@@ -1,9 +1,9 @@
 package com.firefly.kotlin.ext.nio
 
-import kotlinx.coroutines.experimental.CancellableContinuation
-import kotlinx.coroutines.experimental.CancellationException
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.suspendCancellableCoroutine
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.*
@@ -136,24 +136,28 @@ private fun <T> asyncIOHandler(): CompletionHandler<T, CancellableContinuation<T
 
 private object AsyncIOHandlerAny : CompletionHandler<Any, CancellableContinuation<Any>> {
     override fun completed(result: Any, cont: CancellableContinuation<Any>) {
-        cont.resume(result)
+        cont.resumeWith(Result.success(result))
     }
 
     override fun failed(ex: Throwable, cont: CancellableContinuation<Any>) {
         // just return if already cancelled and got an expected exception for that case
-        if (ex is AsynchronousCloseException && cont.isCancelled) return
-        cont.resumeWithException(ex)
+        if (ex is AsynchronousCloseException && cont.isCancelled) {
+            return
+        }
+        cont.resumeWith(Result.failure(ex))
     }
 }
 
 private object AsyncVoidIOHandler : CompletionHandler<Void?, CancellableContinuation<Unit>> {
     override fun completed(result: Void?, cont: CancellableContinuation<Unit>) {
-        cont.resume(Unit)
+        cont.resumeWith(Result.success(Unit))
     }
 
     override fun failed(ex: Throwable, cont: CancellableContinuation<Unit>) {
         // just return if already cancelled and got an expected exception for that case
-        if (ex is AsynchronousCloseException && cont.isCancelled) return
-        cont.resumeWithException(ex)
+        if (ex is AsynchronousCloseException && cont.isCancelled) {
+            return
+        }
+        cont.resumeWith(Result.failure(ex))
     }
 }
