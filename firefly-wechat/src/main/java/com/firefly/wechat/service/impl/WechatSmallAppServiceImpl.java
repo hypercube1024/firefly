@@ -5,7 +5,9 @@ import com.firefly.client.http2.SimpleHTTPClient;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.utils.codec.Base64;
 import com.firefly.wechat.model.app.*;
-import com.firefly.wechat.service.WechatAppService;
+import com.firefly.wechat.model.template.SmappTemplateMessageRequest;
+import com.firefly.wechat.model.template.TemplateMessageResponse;
+import com.firefly.wechat.service.WechatSmallAppService;
 import com.firefly.wechat.utils.AesUtils;
 import com.firefly.wechat.utils.SHA1;
 
@@ -17,12 +19,12 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author Pengtao Qiu
  */
-public class WechatAppServiceImpl extends AbstractWechatService implements WechatAppService {
+public class WechatSmallAppServiceImpl extends AbstractWechatService implements WechatSmallAppService {
 
-    public WechatAppServiceImpl() {
+    public WechatSmallAppServiceImpl() {
     }
 
-    public WechatAppServiceImpl(SimpleHTTPClient client) {
+    public WechatSmallAppServiceImpl(SimpleHTTPClient client) {
         super(client);
     }
 
@@ -81,10 +83,18 @@ public class WechatAppServiceImpl extends AbstractWechatService implements Wecha
     }
 
     @Override
-    public CompletableFuture<CommonMessageResponse> sendMessage(CommonMessageRequest request, String accessToken) {
+    public CompletableFuture<CommonMessageResponse> sendCustomerServiceMessage(CommonMessageRequest request, String accessToken) {
         UrlEncoded encoded = new UrlEncoded();
         encoded.put("access_token", accessToken);
         String param = encoded.encode(StandardCharsets.UTF_8, true);
         return postWechatService("https://api.weixin.qq.com/cgi-bin/message/custom/send", param, request, CommonMessageResponse.class);
+    }
+
+    @Override
+    public CompletableFuture<TemplateMessageResponse> sendTemplateMessage(SmappTemplateMessageRequest request, String accessToken) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("access_token", accessToken);
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return postWechatService("https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send", param, request, TemplateMessageResponse.class);
     }
 }

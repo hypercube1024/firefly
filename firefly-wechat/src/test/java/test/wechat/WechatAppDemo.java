@@ -5,15 +5,15 @@ import com.firefly.wechat.model.app.DecryptedUserInfoRequest;
 import com.firefly.wechat.model.app.DecryptedUserInfoResponse;
 import com.firefly.wechat.model.app.SessionKeyRequest;
 import com.firefly.wechat.model.app.SessionKeyResponse;
-import com.firefly.wechat.service.WechatAppService;
-import com.firefly.wechat.service.impl.WechatAppServiceImpl;
+import com.firefly.wechat.service.WechatSmallAppService;
+import com.firefly.wechat.service.impl.WechatSmallAppServiceImpl;
 
 /**
  * @author Pengtao Qiu
  */
 public class WechatAppDemo {
     public static void main(String[] args) throws Exception {
-        WechatAppService wechatAppService = new WechatAppServiceImpl($.httpsClient());
+        WechatSmallAppService wechatAppService = new WechatSmallAppServiceImpl($.httpsClient());
 
         SessionKeyRequest request = new SessionKeyRequest();
         request.setAppid("");

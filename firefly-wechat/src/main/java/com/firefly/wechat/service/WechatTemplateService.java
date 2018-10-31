@@ -1,6 +1,5 @@
 package com.firefly.wechat.service;
 
-import com.firefly.wechat.model.template.SmappTemplateMessageRequest;
 import com.firefly.wechat.model.template.TemplateListResponse;
 import com.firefly.wechat.model.template.TemplateMessageRequest;
 import com.firefly.wechat.model.template.TemplateMessageResponse;
@@ -15,7 +14,5 @@ public interface WechatTemplateService {
     CompletableFuture<TemplateListResponse> listTemplates(String accessToken);
 
     CompletableFuture<TemplateMessageResponse> sendMessage(TemplateMessageRequest request, String accessToken);
-
-    CompletableFuture<TemplateMessageResponse> sendMessage(SmappTemplateMessageRequest request, String accessToken);
 
 }
