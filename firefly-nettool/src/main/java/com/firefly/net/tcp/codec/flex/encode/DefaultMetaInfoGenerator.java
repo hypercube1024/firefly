@@ -1,40 +1,24 @@
 package com.firefly.net.tcp.codec.flex.encode;
 
-import com.firefly.net.tcp.codec.flex.model.Request;
-import com.firefly.net.tcp.codec.flex.model.Response;
-import io.protostuff.LinkedBuffer;
-import io.protostuff.ProtostuffIOUtil;
-import io.protostuff.Schema;
-import io.protostuff.runtime.RuntimeSchema;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.firefly.net.dataformats.Mapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Pengtao Qiu
  */
 public class DefaultMetaInfoGenerator implements MetaInfoGenerator {
 
-    public static final Schema<Request> requestSchema = RuntimeSchema.getSchema(Request.class);
-    public static final Schema<Response> responseSchema = RuntimeSchema.getSchema(Response.class);
+    private static final Logger log = LoggerFactory.getLogger("firefly-system");
 
     @Override
     public byte[] generate(Object object) {
-        byte[] data;
-        if (object instanceof Request) {
-            LinkedBuffer buffer = LinkedBuffer.allocate();
-            try {
-                data = ProtostuffIOUtil.toByteArray((Request) object, requestSchema, buffer);
-            } finally {
-                buffer.clear();
-            }
-        } else if (object instanceof Response) {
-            LinkedBuffer buffer = LinkedBuffer.allocate();
-            try {
-                data = ProtostuffIOUtil.toByteArray((Response) object, responseSchema, buffer);
-            } finally {
-                buffer.clear();
-            }
-        } else {
-            throw new IllegalArgumentException("The meta info type must be Request or Response");
+        try {
+            return Mapper.getMessagePackMapper().writeValueAsBytes(object);
+        } catch (JsonProcessingException e) {
+            log.error("generate msg pack error", e);
+            return null;
         }
-        return data;
     }
 }

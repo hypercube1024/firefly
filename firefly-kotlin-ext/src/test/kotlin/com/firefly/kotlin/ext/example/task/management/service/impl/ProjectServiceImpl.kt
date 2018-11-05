@@ -10,8 +10,8 @@ import com.firefly.kotlin.ext.example.task.management.vo.ProjectResult
 import com.firefly.kotlin.ext.example.task.management.vo.Request
 import com.firefly.kotlin.ext.example.task.management.vo.Response
 import com.firefly.kotlin.ext.log.KtLogger
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 
 /**
  * @author Pengtao Qiu

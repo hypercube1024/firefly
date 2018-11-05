@@ -1091,7 +1091,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                                 conn.getSessionId(), host, port);
                         PooledObject<HTTPClientConnection> pooledObject = new PooledObject<>(conn, pool, () -> { // connection leak callback
                             leakedConnectionCounter.inc();
-                            log.error(leakMessage);
+                            log.warn(leakMessage);
                         });
                         conn.onClose(c -> pooledObject.release())
                             .onException((c, exception) -> pooledObject.release());

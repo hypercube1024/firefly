@@ -5,7 +5,7 @@ import com.firefly.kotlin.ext.http.asyncSubmit
 import com.firefly.kotlin.ext.http.getJsonBody
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 
 /**
  * HTTP client asynchronous wait example

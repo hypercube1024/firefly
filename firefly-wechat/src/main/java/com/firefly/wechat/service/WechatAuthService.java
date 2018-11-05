@@ -31,4 +31,6 @@ public interface WechatAuthService {
      * @return The wechat API access token
      */
     CompletableFuture<ApiAccessTokenResponse> getApiAccessToken(ApiAccessTokenRequest request);
+
+    String buildAuthorizedUrl(AuthorizedUrlRequest request);
 }

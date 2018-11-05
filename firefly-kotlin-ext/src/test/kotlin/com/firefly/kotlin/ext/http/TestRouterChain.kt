@@ -4,9 +4,9 @@ import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.HttpStatus
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.utils.RandomUtils
-import kotlinx.coroutines.experimental.TimeoutCancellationException
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals

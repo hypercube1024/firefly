@@ -5,10 +5,7 @@
 
     <import resource="datasource.xml"/>
 
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.utils"/>
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.dao"/>
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.service"/>
-    <component-scan base-package="com.firefly.example.reactive.coffee.store.router"/>
+    <component-scan base-package="com.firefly.example.reactive.coffee"/>
 
     <bean id="localSessionHandler" class="com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler"
           destroy-method="stop"/>

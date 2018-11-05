@@ -10,8 +10,8 @@ import com.firefly.db.jdbc.JDBCClient
 import com.firefly.utils.function.Func1
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import kotlinx.coroutines.experimental.future.await
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

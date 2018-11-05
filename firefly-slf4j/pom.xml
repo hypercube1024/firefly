@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-framework</artifactId>
-        <version>4.9.2</version>
+        <version>4.9.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -31,42 +31,6 @@
                 <directory>src/test/resources</directory>
             </testResource>
         </testResources>
-
-        <plugins>
-            <!-- source -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- javadoc -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <additionalJOption>-Xdoclint:none</additionalJOption>
-                    <failOnError>true</failOnError>
-                    <charset>UTF-8</charset>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
 
     <dependencies>

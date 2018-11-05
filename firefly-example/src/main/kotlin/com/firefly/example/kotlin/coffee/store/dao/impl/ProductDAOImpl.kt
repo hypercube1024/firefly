@@ -30,7 +30,7 @@ class ProductDAOImpl : ProductDAO {
             .filter(StringUtils::hasText)
             .ifPresent { key ->
                 sql.append(" and p.`name` like ?")
-                params.add(key + "%")
+                params.add("$key%")
             }
 
         Optional.ofNullable(query.status)

@@ -6,7 +6,7 @@ import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.http.asyncNext
 import com.firefly.kotlin.ext.http.asyncSubmit
 import com.firefly.kotlin.ext.http.asyncSucceed
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 
 /**
  * @author Pengtao Qiu

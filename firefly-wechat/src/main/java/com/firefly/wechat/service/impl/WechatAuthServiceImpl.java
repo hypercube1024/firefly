@@ -126,4 +126,16 @@ public class WechatAuthServiceImpl extends AbstractWechatService implements Wech
         String param = encoded.encode(StandardCharsets.UTF_8, true);
         return callWechatService("https://api.weixin.qq.com/cgi-bin/token", param, ApiAccessTokenResponse.class);
     }
+
+    @Override
+    public String buildAuthorizedUrl(AuthorizedUrlRequest request) {
+        UrlEncoded encoded = new UrlEncoded();
+        encoded.put("appid", request.getAppid());
+        encoded.put("redirect_uri", request.getRedirectUri());
+        encoded.put("response_type", "code");
+        encoded.put("scope", request.getScope());
+        encoded.put("state", request.getState());
+        String param = encoded.encode(StandardCharsets.UTF_8, true);
+        return "https://open.weixin.qq.com/connect/oauth2/authorize?" + param + "#wechat_redirect";
+    }
 }

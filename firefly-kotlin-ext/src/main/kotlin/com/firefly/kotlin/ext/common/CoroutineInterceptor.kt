@@ -2,10 +2,10 @@ package com.firefly.kotlin.ext.common
 
 import com.firefly.kotlin.ext.common.CoroutineDispatchers.computation
 import com.firefly.kotlin.ext.log.KtLogger
-import kotlin.coroutines.experimental.AbstractCoroutineContextElement
-import kotlin.coroutines.experimental.Continuation
-import kotlin.coroutines.experimental.ContinuationInterceptor
-import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Maintain data in the coroutine lifecycle.
@@ -48,21 +48,11 @@ class WrappedContinuation<in T>(
     override val context: CoroutineContext
         get() = continuation.context
 
-    override fun resume(value: T) {
-        log.debug("thread resume")
+    override fun resumeWith(result: Result<T>) {
         preBlock()
         try {
-            continuation.resume(value)
-        } finally {
-            postBlock()
-        }
-    }
-
-    override fun resumeWithException(exception: Throwable) {
-        log.debug("thread resume with exception")
-        preBlock()
-        try {
-            continuation.resumeWithException(exception)
+            log.debug("thread resume")
+            continuation.resumeWith(result)
         } finally {
             postBlock()
         }

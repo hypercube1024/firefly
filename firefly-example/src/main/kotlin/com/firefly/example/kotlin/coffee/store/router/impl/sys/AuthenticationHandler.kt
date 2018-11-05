@@ -8,7 +8,7 @@ import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncSucceed
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.RoutingContext
-import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.future.await
 import java.nio.charset.StandardCharsets
 
 /**

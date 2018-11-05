@@ -8,7 +8,7 @@ import com.firefly.example.kotlin.coffee.store.vo.ProductStatus
 import com.firefly.example.kotlin.coffee.store.vo.ProductType
 import com.firefly.example.kotlin.test.TestBase
 import com.firefly.kotlin.ext.context.getBean
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

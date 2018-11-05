@@ -2,8 +2,8 @@ package com.firefly.kotlin.ext.websocket
 
 import com.firefly.client.websocket.SimpleWebSocketClient
 import com.firefly.codec.websocket.stream.WebSocketConnection
-import kotlinx.coroutines.experimental.future.await
-import kotlinx.coroutines.experimental.withTimeout
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.TimeUnit
 
 /**

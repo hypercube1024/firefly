@@ -4,13 +4,14 @@ import com.firefly.annotation.Component;
 import com.firefly.core.support.AbstractBeanReader;
 import com.firefly.core.support.BeanDefinition;
 import com.firefly.utils.ReflectUtils;
+import com.firefly.utils.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
@@ -23,7 +24,10 @@ import static com.firefly.core.support.annotation.AnnotationBeanUtils.*;
  * @author AlvinQiu
  */
 public class AnnotationBeanReader extends AbstractBeanReader {
+
     private static Logger log = LoggerFactory.getLogger("firefly-system");
+
+    private String fileSeparator = System.getProperty("file.separator");
 
     public AnnotationBeanReader() {
         this(null);
@@ -57,19 +61,14 @@ public class AnnotationBeanReader extends AbstractBeanReader {
 
     private void parseFile(URL url, final String packageDirName) {
         try {
-            File path = new File(url.toURI());
-            path.listFiles(file -> {
-                String name = file.getName();
-                if (name.endsWith(".class") && !name.contains("$")) {
-                    parseClass(packageDirName.replace('/', '.') + "." + name.substring(0, file.getName().length() - 6));
-                } else if (file.isDirectory()) {
-                    try {
-                        parseFile(file.toURI().toURL(), packageDirName + "/" + name);
-                    } catch (Throwable t) {
-                        log.error("parse file error", t);
-                    }
+            FileUtils.filter(Paths.get(url.toURI()), "*.class", p -> {
+                String pathName = p.toString();
+                if (!pathName.contains("$")) {
+                    String name = pathName.replace(fileSeparator, ".");
+                    String packageName = packageDirName.replace('/', '.');
+                    name = name.substring(name.indexOf(packageName), name.length() - 6);
+                    parseClass(name);
                 }
-                return false;
             });
         } catch (Throwable t) {
             log.error("parse file error", t);

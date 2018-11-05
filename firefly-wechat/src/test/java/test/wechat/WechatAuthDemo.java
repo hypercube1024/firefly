@@ -3,6 +3,7 @@ package test.wechat;
 import com.firefly.$;
 import com.firefly.wechat.model.auth.ApiAccessTokenRequest;
 import com.firefly.wechat.model.auth.ApiAccessTokenResponse;
+import com.firefly.wechat.model.auth.AuthorizedUrlRequest;
 import com.firefly.wechat.model.template.TemplateData;
 import com.firefly.wechat.model.template.TemplateListResponse;
 import com.firefly.wechat.model.template.TemplateMessageRequest;
@@ -17,6 +18,8 @@ import com.firefly.wechat.service.impl.WechatUserServiceImpl;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.firefly.wechat.model.auth.AuthorizedUrlRequest.SCOPE_BASE;
 
 /**
  * @author Pengtao Qiu
@@ -59,6 +62,14 @@ public class WechatAuthDemo {
             templateService.sendMessage(templateMessageRequest, tokenResponse.getAccess_token())
                            .thenAccept(System.out::println);
         });
+
+        AuthorizedUrlRequest authorizedUrlRequest = new AuthorizedUrlRequest();
+        authorizedUrlRequest.setAppid("");
+        authorizedUrlRequest.setRedirectUri("");
+        authorizedUrlRequest.setScope(SCOPE_BASE);
+        authorizedUrlRequest.setState("123");
+        String url = authService.buildAuthorizedUrl(authorizedUrlRequest);
+        System.out.println(url);
 
     }
 }

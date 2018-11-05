@@ -9,14 +9,14 @@ import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.http.asyncSubmit
 import com.firefly.server.http2.router.RoutingContext
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 
 /**
  * @author Pengtao Qiu
  */
-val host = "localhost"
-val port1 = 8081
-val port2 = 8082
+const val host = "localhost"
+const val port1 = 8081
+const val port2 = 8082
 val coroutineLocal = CoroutineLocal<RoutingContext>()
 
 fun main(args: Array<String>) = runBlocking {

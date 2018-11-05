@@ -49,8 +49,6 @@ public class ImageComponentDemo {
         title.setColor(Color.WHITE);
         title.setX(157);
         title.setY(42);
-        title.setPaddingWidth(10);
-        title.setPaddingHeight(5);
         poster.addChild(title);
 
         TextComponent lesson = new TextComponent();
@@ -59,8 +57,6 @@ public class ImageComponentDemo {
         lesson.setColor(new Color(207, 140, 12));
         lesson.setX(157);
         lesson.setY(88);
-        lesson.setPaddingWidth(10);
-        lesson.setPaddingHeight(10);
         poster.addChild(lesson);
 
         TextComponent date = new TextComponent();
@@ -69,7 +65,6 @@ public class ImageComponentDemo {
         date.setColor(Color.WHITE);
         date.setX(555);
         date.setY(42);
-        date.setPaddingHeight(5);
         poster.addChild(date);
 
         TextComponent score = new TextComponent();
@@ -110,7 +105,7 @@ public class ImageComponentDemo {
         poster.addChild(layout);
 
         String userHome = System.getProperty("user.home");
-        try (OutputStream out = new FileOutputStream(Paths.get(userHome, "/Develop/test_resource/test_component.png").toFile())) {
+        try (OutputStream out = new FileOutputStream(Paths.get(userHome, "/Develop/test_resources/test_component.png").toFile())) {
             ImageIO.write(poster.draw(), "png", out);
         }
 

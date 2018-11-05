@@ -1,7 +1,7 @@
 package com.firefly.kotlin.ext.db
 
 import com.firefly.db.SQLConnection
-import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.future.await
 import java.util.concurrent.TimeUnit
 
 /**
