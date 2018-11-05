@@ -11,7 +11,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.9.3-SNAPSHOT</version>
+        <version>4.9.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

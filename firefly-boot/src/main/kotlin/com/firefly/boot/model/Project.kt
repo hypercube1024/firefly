@@ -50,7 +50,7 @@ data class Project(
     var outputPath: String = ".",
 
     @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 8)
-    var fireflyVersion: String = "$cliVersion-SNAPSHOT",
+    var fireflyVersion: String = cliVersion,
 
     @Parameter(
         names = ["--buildTool", "-b"],
