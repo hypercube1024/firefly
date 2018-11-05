@@ -2,12 +2,11 @@ package com.firefly.boot.model
 
 import com.beust.jcommander.Parameter
 import com.firefly.kotlin.ext.annotation.NoArg
+import com.firefly.utils.ProjectVersion
 
 /**
  * @author Pengtao Qiu
  */
-const val cliVersion = "4.9.3"
-
 @NoArg
 data class Project(
     @Parameter(names = ["--groupId", "-g"], description = "The project group id.", required = true, order = 1)
@@ -50,7 +49,7 @@ data class Project(
     var outputPath: String = ".",
 
     @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 8)
-    var fireflyVersion: String = cliVersion,
+    var fireflyVersion: String = ProjectVersion.getValue(),
 
     @Parameter(
         names = ["--buildTool", "-b"],

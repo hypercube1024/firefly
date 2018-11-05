@@ -1,8 +1,10 @@
 package com.firefly;
 
+import com.firefly.utils.ProjectVersion;
+
 /**
  * @author Pengtao Qiu
  */
 public interface Version {
-    String value = "4.9.3";
+    String value = ProjectVersion.getValue();
 }
