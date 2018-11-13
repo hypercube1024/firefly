@@ -6,7 +6,7 @@
 
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-framework</artifactId>
-    <version>4.9.3</version>
+    <version>4.9.4</version>
     <packaging>pom</packaging>
 
 
@@ -58,9 +58,11 @@
         <log.level>INFO</log.level>
         <log.path>../logs</log.path>
 
+        <firefly.version>${project.version}</firefly.version>
+
         <!-- Kotlin compiler configuration -->
         <kotlin.version>1.3.0</kotlin.version>
-        <kotlin.coroutine.version>1.0.0</kotlin.coroutine.version>
+        <kotlin.coroutine.version>1.0.1</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.3</kotlin.compiler.languageVersion>
@@ -76,8 +78,8 @@
         <metrics.version>4.0.3</metrics.version>
         <jackson.version>2.9.7</jackson.version>
         <msgpack.version>0.8.16</msgpack.version>
-        <redisson.version>3.8.2</redisson.version>
-        <conscrypt.version>1.4.0</conscrypt.version>
+        <redisson.version>3.9.0</redisson.version>
+        <conscrypt.version>1.4.1</conscrypt.version>
         <hikariCP.version>3.2.0</hikariCP.version>
         <spring.reactor.version>Californium-RELEASE</spring.reactor.version>
     </properties>
