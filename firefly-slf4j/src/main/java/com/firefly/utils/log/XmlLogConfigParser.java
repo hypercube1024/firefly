@@ -38,6 +38,7 @@ public class XmlLogConfigParser extends AbstractLogConfigParser {
                 c.setFormatter(dom.getTextValueByTagName(e, "formatter", DEFAULT_LOG_FORMATTER));
                 c.setLogNameFormatter(dom.getTextValueByTagName(e, "log-name-formatter", DEFAULT_LOG_NAME_FORMATTER));
                 c.setLogFilter(dom.getTextValueByTagName(e, "log-filter", DEFAULT_LOG_FILTER));
+                c.setMaxSplitTime(dom.getTextValueByTagName(e, "max-split-time", DEFAULT_MAX_SPLIT_TIME.getValue()));
                 action.call(createLog(c));
             }
         }

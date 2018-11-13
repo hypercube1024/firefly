@@ -67,6 +67,21 @@ abstract public class TimeUtils {
             .appendLiteral('Z')
             .toFormatter();
 
+    public static final DateTimeFormatter FILE_NAME_LOCAL_DATE_TIME = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .append(ISO_LOCAL_DATE)
+            .appendLiteral('T')
+            .append(new DateTimeFormatterBuilder()
+                    .appendValue(HOUR_OF_DAY, 2)
+                    .appendLiteral('-')
+                    .appendValue(MINUTE_OF_HOUR, 2)
+                    .optionalStart()
+                    .appendLiteral('-')
+                    .appendValue(SECOND_OF_MINUTE, 2)
+                    .toFormatter())
+            .appendLiteral('Z')
+            .toFormatter();
+
     public static Date toDate(LocalDate localDate) {
         return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }

@@ -98,4 +98,11 @@
         <enable-console>true</enable-console>
         <formatter>org.firefly.slf4j.CustomLogFormatter</formatter>
     </logger>
+
+    <logger>
+        <name>time-split-minute</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <max-split-time>minute</max-split-time>
+    </logger>
 </loggers>

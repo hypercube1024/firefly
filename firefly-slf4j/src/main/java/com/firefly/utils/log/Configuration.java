@@ -15,6 +15,7 @@ public class Configuration {
     private long maxLogFlushInterval = Long.getLong("com.firefly.utils.log.file.maxLogFlushInterval", 1000L);
     private String logNameFormatter;
     private String logFilter;
+    private String maxSplitTime;
 
     public String getName() {
         return name;
@@ -94,5 +95,13 @@ public class Configuration {
 
     public void setLogFilter(String logFilter) {
         this.logFilter = logFilter;
+    }
+
+    public String getMaxSplitTime() {
+        return maxSplitTime;
+    }
+
+    public void setMaxSplitTime(String maxSplitTime) {
+        this.maxSplitTime = maxSplitTime;
     }
 }

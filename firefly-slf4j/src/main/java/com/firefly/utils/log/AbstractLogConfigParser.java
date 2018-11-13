@@ -5,7 +5,7 @@ import com.firefly.utils.log.file.FileLog;
 
 import java.io.File;
 import java.nio.charset.Charset;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public abstract class AbstractLogConfigParser implements LogConfigParser {
 
@@ -62,12 +62,14 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                 }
 
                 private void init() {
-                    try {
-                        Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getFormatter());
-                        formatter = (LogFormatter) clazz.newInstance();
-                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-                        e.printStackTrace();
-                        formatter = new DefaultLogFormatter();
+                    if (formatter == null) {
+                        try {
+                            Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getFormatter());
+                            formatter = (LogFormatter) clazz.newInstance();
+                        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                            e.printStackTrace();
+                            formatter = new DefaultLogFormatter();
+                        }
                     }
                 }
             });
@@ -79,27 +81,28 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                 private LogNameFormatter formatter;
 
                 @Override
-                public String format(String name, LocalDate localDate) {
+                public String format(String name, LocalDateTime localDateTime) {
                     init();
-                    return formatter.format(name, localDate);
+                    return formatter.format(name, localDateTime);
                 }
 
                 @Override
-                public String formatBak(String name, LocalDate localDate, int index) {
+                public String formatBak(String name, LocalDateTime localDateTime, int index) {
                     init();
-                    return formatter.formatBak(name, localDate, index);
+                    return formatter.formatBak(name, localDateTime, index);
                 }
 
                 private void init() {
-                    try {
-                        Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogNameFormatter());
-                        formatter = (LogNameFormatter) clazz.newInstance();
-                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-                        e.printStackTrace();
-                        formatter = new DefaultLogNameFormatter();
+                    if (formatter == null) {
+                        try {
+                            Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogNameFormatter());
+                            formatter = (LogNameFormatter) clazz.newInstance();
+                        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                            e.printStackTrace();
+                            formatter = new DefaultLogNameFormatter();
+                        }
                     }
                 }
-
             });
         }
 
@@ -128,6 +131,12 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
             });
         }
 
+        if (StringUtils.hasText(c.getMaxSplitTime())) {
+            fileLog.setMaxSplitTime(MaxSplitTimeEnum.from(c.getMaxSplitTime()).orElse(DEFAULT_MAX_SPLIT_TIME));
+        } else {
+            fileLog.setMaxSplitTime(DEFAULT_MAX_SPLIT_TIME);
+        }
+
         System.out.println("initialize log " + fileLog.toString());
         return fileLog;
     }
@@ -146,6 +155,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
         c.setMaxFileSize(DEFAULT_MAX_FILE_SIZE);
         c.setCharset(DEFAULT_CHARSET.name());
         c.setFormatter(DEFAULT_LOG_FORMATTER);
+        c.setMaxSplitTime(DEFAULT_MAX_SPLIT_TIME.getValue());
         return createLog(c);
     }
 
