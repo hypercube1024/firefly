@@ -28,4 +28,16 @@ public class ProjectVersion {
     public static String getValue() {
         return Holder.instance.value;
     }
+
+    public static String getAsciiArt() {
+        return "\033[31;0m\n" +
+                "______ _           __ _       \n" +
+                "|  ___(_)         / _| |      \n" +
+                "| |_   _ _ __ ___| |_| |_   _ \n" +
+                "|  _| | | '__/ _ \\  _| | | | |\n" +
+                "| |   | | | |  __/ | | | |_| |\n" +
+                "\\_|   |_|_|  \\___|_| |_|\\__, |\n" +
+                "                         __/ |\n" +
+                "                        |___/ \n\033[0m";
+    }
 }

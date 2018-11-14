@@ -8,5 +8,6 @@ import com.firefly.utils.ProjectVersion;
 public class VersionDemo {
     public static void main(String[] args) {
         System.out.println(ProjectVersion.getValue());
+        System.out.println(ProjectVersion.getAsciiArt());
     }
 }
