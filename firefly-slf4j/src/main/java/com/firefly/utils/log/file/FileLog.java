@@ -154,7 +154,7 @@ public class FileLog implements Log, Closeable {
                 writeSize += text.length;
                 lastWriteTime = TimeUtils.toLocalDateTime(date);
             } catch (IOException e) {
-                System.err.println("writer log exception, " + e.getMessage());
+                System.err.println("write log exception, " + e.getMessage());
             }
         }
 
