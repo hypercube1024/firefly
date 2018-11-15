@@ -42,8 +42,16 @@
         <defaultGoal>install</defaultGoal>
         <resources>
             <resource>
-                <directory>src/main/resources</directory>
+                <directory>src/main/resources/template</directory>
                 <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
             </resource>
         </resources>
         <testResources>

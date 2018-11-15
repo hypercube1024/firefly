@@ -1,8 +1,10 @@
 package com.firefly.boot.model
 
 import com.beust.jcommander.Parameter
+import com.firefly.boot.model.PropertiesLoader.properties
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.utils.ProjectVersion
+import java.util.*
 
 /**
  * @author Pengtao Qiu
@@ -48,9 +50,6 @@ data class Project(
               )
     var outputPath: String = ".",
 
-    @Parameter(names = ["--fireflyVersion", "-f"], description = "The firefly version.", order = 8)
-    var fireflyVersion: String = ProjectVersion.getValue(),
-
     @Parameter(
         names = ["--buildTool", "-b"],
         description = "The build tool name, the value is maven or gradle.",
@@ -62,7 +61,14 @@ data class Project(
     var help: Boolean = false,
 
     @Parameter(names = ["--version", "-v"], description = "Show the firefly cli version.", help = true, order = 102)
-    var version: Boolean = false
+    var version: Boolean = false,
+
+    val kotlinVersion: String = properties.getProperty("kotlin.version"),
+    val kotlinCoroutineVersion: String = properties.getProperty("kotlin.coroutine.version"),
+    val dokkaVersion: String = properties.getProperty("dokka.version"),
+    val jacksonVersion: String = properties.getProperty("jackson.version"),
+    val redissonVersion: String = properties.getProperty("redisson.version"),
+    val fireflyVersion: String = ProjectVersion.getValue()
                   ) {
 
     constructor() : this(null, null, null, null, null)
@@ -79,3 +85,18 @@ enum class BuildTool(val value: String) {
     }
 
 }
+
+object PropertiesLoader {
+    val properties: Properties by lazy {
+        loadProperties("/dependency.properties")
+    }
+
+    private fun loadProperties(path: String): Properties {
+        return Project::class.java.getResourceAsStream(path).use {
+            val properties = Properties()
+            properties.load(it)
+            properties
+        }
+    }
+}
+
