@@ -12,7 +12,7 @@
     <parent>
         <artifactId>firefly-framework</artifactId>
         <groupId>com.fireflysource</groupId>
-        <version>4.9.5-dev3</version>
+        <version>4.9.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
