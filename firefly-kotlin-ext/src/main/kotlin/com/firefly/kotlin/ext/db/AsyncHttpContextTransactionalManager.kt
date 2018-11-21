@@ -43,7 +43,6 @@ class AsyncHttpContextTransactionalManager(
                 ret
             } catch (e: RecordNotFound) {
                 sysLogger.warn("execute SQL exception. record not found", e)
-                requestCtx.get()?.attributes?.put(rollbackOnlyKey, false)
                 throw e
             } catch (e: TimeoutCancellationException) {
                 sysLogger.error("execute SQL exception. timeout", e)
