@@ -5,8 +5,10 @@ import com.firefly.db.SQLClient
 import com.firefly.db.SQLConnection
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.server.http2.router.RoutingContext
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -58,7 +60,9 @@ class AsyncHttpContextTransactionalManager(
             return try {
                 withTimeout(unit.toMillis(time)) { handler.invoke(conn) }
             } finally {
-                conn.close().await()
+                withContext(NonCancellable) {
+                    conn.close().await()
+                }
             }
         }
     }
