@@ -1,22 +1,19 @@
 package com.firefly.example.kotlin.test.coroutine
 
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 
 /**
  * @author Pengtao Qiu
  */
-fun main(args: Array<String>) = runBlocking {
+fun main(args: Array<String>) = runBlocking(CoroutineName("main")) {
     coroutineScope {
-        launch {
+        launch(CoroutineName("nested launch")) {
             // launch new coroutine in the scope of runBlocking
             delay(1000L)
-            println("World!")
+            println("${coroutineContext[CoroutineName]} -> World")
         }
     }
-    println("Hello,")
+    println("${coroutineContext[CoroutineName]} -> Hello ")
 }
 
 fun hello2() = runBlocking {
