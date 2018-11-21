@@ -56,14 +56,14 @@ val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
                 } finally {
                     end()
                 }
-            }, failed = {
+            }, failed = { ex ->
                 try {
                     statusLine {
                         status = HttpStatus.INTERNAL_SERVER_ERROR_500
                     }
                     transactionalManager.rollbackAndEndTransaction()
-                    log.error("transactional request exception", it)
-                    writeJson(Response(500, "server exception", it?.message))
+                    log.error("transactional request exception", ex)
+                    writeJson(Response(500, "server exception", ex?.message))
                 } catch (e: Exception) {
                     log.error("rollback and end transaction exception", e)
                 } finally {

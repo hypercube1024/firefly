@@ -448,5 +448,15 @@ public interface SQLConnection {
      */
     CompletableFuture<Void> commitAndEndTransaction();
 
+    /**
+     * The transaction is begun.
+     * @return If return true, the transaction is begun.
+     */
+    boolean isBegunTransaction();
+
+    /**
+     * Get the raw JDBC connection.
+     * @return The raw JDBC connection.
+     */
     Connection getConnection();
 }

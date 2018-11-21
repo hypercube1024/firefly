@@ -436,6 +436,11 @@ public class JDBCConnection implements SQLConnection {
         return ret;
     }
 
+    @Override
+    public boolean isBegunTransaction() {
+        return inTransaction.get();
+    }
+
     private <T> void executeFuncAndCommit(Func1<SQLConnection, CompletableFuture<T>> func1, Completable<T> ret, boolean commit) {
         if (commit) {
             try {
