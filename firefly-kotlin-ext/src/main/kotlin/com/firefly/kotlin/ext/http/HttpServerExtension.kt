@@ -6,6 +6,7 @@ import com.firefly.codec.websocket.frame.Frame
 import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder
 import com.firefly.codec.websocket.stream.WebSocketConnection
 import com.firefly.kotlin.ext.annotation.NoArg
+import com.firefly.kotlin.ext.common.CoroutineDispatchers.computation
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.KtLogger
@@ -483,7 +484,7 @@ class HttpServer(
 
     val server = SimpleHTTPServer(serverConfiguration)
     val routerManager = RouterManager.create(httpBodyConfiguration)!!
-    val coroutineDispatcher = Dispatchers.Unconfined // server.handlerExecutorService.asCoroutineDispatcher()
+    val coroutineDispatcher = server.handlerExecutorService.asCoroutineDispatcher()
     val defaultErrorHandler = DefaultErrorResponseHandlerLoader.getInstance().handler!!
 
     init {
@@ -563,7 +564,7 @@ class HttpServer(
 
 fun <T> asyncTraceable(
     requestCtx: CoroutineLocal<RoutingContext>,
-    context: ContinuationInterceptor = Dispatchers.Unconfined,
+    context: ContinuationInterceptor = computation,
     block: suspend CoroutineScope.() -> T
                       ): Deferred<T> {
     val ctx = requestCtx.get()
