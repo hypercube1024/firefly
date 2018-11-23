@@ -21,7 +21,7 @@ import static com.firefly.codec.http2.model.HttpStatus.INTERNAL_SERVER_ERROR_500
 /**
  * HttpGenerator. Builds HTTP Messages.
  * <p>
- * If the system property "org.fireflysource.http.HttpGenerator.STRICT" is set
+ * If the system property "com.firefly.codec.http2.encode.HttpGenerator.STRICT" is set
  * to true, then the generator will strictly pass on the exact strings received
  * from methods and header fields. Otherwise a fast case insensitive string
  * lookup is used that may alter the case and white space of some
@@ -35,15 +35,18 @@ public class HttpGenerator {
     private final static byte[] __colon_space = new byte[]{':', ' '};
     public static final MetaData.Response CONTINUE_100_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 100, null, null, -1);
     public static final MetaData.Response PROGRESS_102_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 102, null, null, -1);
-    public static final MetaData.Response RESPONSE_500_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, INTERNAL_SERVER_ERROR_500, null,
-            new HttpFields() {{
+    public final static MetaData.Response RESPONSE_500_INFO =
+            new MetaData.Response(HttpVersion.HTTP_1_1, INTERNAL_SERVER_ERROR_500, null, new HttpFields() {{
                 put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE);
             }}, 0);
 
-
     // states
     public enum State {
-        START, COMMITTED, COMPLETING, COMPLETING_1XX, END
+        START,
+        COMMITTED,
+        COMPLETING,
+        COMPLETING_1XX,
+        END
     }
 
     public enum Result {
@@ -79,7 +82,7 @@ public class HttpGenerator {
     }
 
     /* ------------------------------------------------------------------------------- */
-    public static void setFireflyVersion(String serverVersion) {
+    public static void setJettyVersion(String serverVersion) {
         SEND[SEND_SERVER] = StringUtils.getBytes("Server: " + serverVersion + "\015\012");
         SEND[SEND_XPOWEREDBY] = StringUtils.getBytes("X-Powered-By: " + serverVersion + "\015\012");
         SEND[SEND_SERVER | SEND_XPOWEREDBY] = StringUtils.getBytes("Server: " + serverVersion + "\015\012X-Powered-By: " +
@@ -199,13 +202,6 @@ public class HttpGenerator {
                 if (header == null)
                     return Result.NEED_HEADER;
 
-                // If we have not been told our persistence, set the default
-                if (_persistent == null) {
-                    _persistent = info.getHttpVersion().ordinal() > HttpVersion.HTTP_1_0.ordinal();
-                    if (!_persistent && HttpMethod.CONNECT.is(info.getMethod()))
-                        _persistent = true;
-                }
-
                 // prepare the header
                 int pos = BufferUtils.flipToFill(header);
                 try {
@@ -254,9 +250,8 @@ public class HttpGenerator {
 
             case END:
                 if (BufferUtils.hasContent(content)) {
-                    if (LOG.isDebugEnabled()) {
+                    if (LOG.isDebugEnabled())
                         LOG.debug("discarding content in COMPLETING");
-                    }
                     BufferUtils.clear(content);
                 }
                 return Result.DONE;
@@ -346,24 +341,14 @@ public class HttpGenerator {
                 HttpVersion version = info.getHttpVersion();
                 if (version == null)
                     throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "No version");
-                switch (version) {
-                    case HTTP_1_0:
-                        if (_persistent == null)
-                            _persistent = Boolean.FALSE;
-                        break;
 
-                    case HTTP_1_1:
-                        if (_persistent == null)
-                            _persistent = Boolean.TRUE;
-                        break;
-
-                    default:
-                        _persistent = false;
-                        _endOfContent = EndOfContent.EOF_CONTENT;
-                        if (BufferUtils.hasContent(content))
-                            _contentPrepared += content.remaining();
-                        _state = last ? State.COMPLETING : State.COMMITTED;
-                        return Result.FLUSH;
+                if (version == HttpVersion.HTTP_0_9) {
+                    _persistent = false;
+                    _endOfContent = EndOfContent.EOF_CONTENT;
+                    if (BufferUtils.hasContent(content))
+                        _contentPrepared += content.remaining();
+                    _state = last ? State.COMPLETING : State.COMMITTED;
+                    return Result.FLUSH;
                 }
 
                 // Do we need a response header
@@ -403,7 +388,7 @@ public class HttpGenerator {
                 } catch (BadMessageException e) {
                     throw e;
                 } catch (BufferOverflowException e) {
-                    throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Request header too large", e);
+                    throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Response header too large", e);
                 } catch (Exception e) {
                     throw new BadMessageException(INTERNAL_SERVER_ERROR_500, e.getMessage(), e);
                 } finally {
@@ -428,9 +413,8 @@ public class HttpGenerator {
 
             case END:
                 if (BufferUtils.hasContent(content)) {
-                    if (LOG.isDebugEnabled()) {
+                    if (LOG.isDebugEnabled())
                         LOG.debug("discarding content in COMPLETING");
-                    }
                     BufferUtils.clear(content);
                 }
                 return Result.DONE;
@@ -469,10 +453,6 @@ public class HttpGenerator {
         int n = trailer.size();
         for (int f = 0; f < n; f++) {
             HttpField field = trailer.getField(f);
-            String v = field.getValue();
-            if (v == null || v.length() == 0)
-                continue; // rfc7230 does not allow no value
-
             putTo(field, buffer);
         }
 
@@ -538,7 +518,7 @@ public class HttpGenerator {
         final MetaData.Response response = (info instanceof MetaData.Response) ? (MetaData.Response) info : null;
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("generateHeaders {} last={} content={}", info.toString(), last, BufferUtils.toDetailString(content));
+            LOG.debug("generateHeaders {} last={} content={}", info, last, BufferUtils.toDetailString(content));
             LOG.debug(info.getFields().toString());
         }
 
@@ -559,10 +539,6 @@ public class HttpGenerator {
             int n = fields.size();
             for (int f = 0; f < n; f++) {
                 HttpField field = fields.getField(f);
-                String v = field.getValue();
-                if (v == null || v.length() == 0)
-                    continue; // rfc7230 does not allow no value
-
                 HttpHeader h = field.getHeader();
                 if (h == null)
                     putTo(field, header);
@@ -600,7 +576,7 @@ public class HttpGenerator {
                                 _persistent = false;
                             }
 
-                            if (!http11 && field.contains(HttpHeaderValue.KEEP_ALIVE.asString())) {
+                            if (info.getHttpVersion() == HttpVersion.HTTP_1_0 && _persistent == null && field.contains(HttpHeaderValue.KEEP_ALIVE.asString())) {
                                 _persistent = true;
                             }
                             break;
@@ -630,6 +606,9 @@ public class HttpGenerator {
         boolean assumed_content = assumed_content_request || content_type || chunked_hint;
         boolean nocontent_request = request != null && content_length <= 0 && !assumed_content;
 
+        if (_persistent == null)
+            _persistent = http11 || (request != null && HttpMethod.CONNECT.is(request.getMethod()));
+
         // If the message is known not to have content
         if (_noContentResponse || nocontent_request) {
             // We don't need to indicate a body length
@@ -648,7 +627,7 @@ public class HttpGenerator {
         }
         // Else if we are HTTP/1.1 and the content length is unknown and we are either persistent
         // or it is a request with content (which cannot EOF) or the app has requested chunking
-        else if (http11 && content_length < 0 && (_persistent || assumed_content_request || chunked_hint)) {
+        else if (http11 && (chunked_hint || content_length < 0 && (_persistent || assumed_content_request))) {
             // we use chunking
             _endOfContent = EndOfContent.CHUNKED_CONTENT;
 
@@ -664,9 +643,9 @@ public class HttpGenerator {
             } else
                 throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Bad Transfer-Encoding");
         }
-        // Else if we known the content length and are a request or a persistent response, 
+        // Else if we known the content length and are a request or a persistent response,
         else if (content_length >= 0 && (request != null || _persistent)) {
-            // Use the content length 
+            // Use the content length
             _endOfContent = EndOfContent.CONTENT_LENGTH;
             putContentLength(header, content_length);
         }
@@ -687,9 +666,9 @@ public class HttpGenerator {
             throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Unknown content length for request");
         }
 
-        if (LOG.isDebugEnabled()) {
+        if (LOG.isDebugEnabled())
             LOG.debug(_endOfContent.toString());
-        }
+
         // Add transfer encoding if it is not chunking
         if (transfer_encoding != null) {
             if (chunked_hint) {

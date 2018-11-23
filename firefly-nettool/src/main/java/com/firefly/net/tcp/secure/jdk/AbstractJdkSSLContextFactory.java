@@ -69,14 +69,14 @@ abstract public class AbstractJdkSSLContextFactory implements SSLContextFactory 
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine();
         sslEngine.setUseClientMode(clientMode);
-        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine, supportedProtocols));
+        return new Pair<>(sslEngine, new EmptyALPNSelector(sslEngine, supportedProtocols));
     }
 
     @Override
     public Pair<SSLEngine, ApplicationProtocolSelector> createSSLEngine(boolean clientMode, String peerHost, int peerPort) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
         sslEngine.setUseClientMode(clientMode);
-        return new Pair<>(sslEngine, new JettyALPNSelector(sslEngine, supportedProtocols));
+        return new Pair<>(sslEngine, new EmptyALPNSelector(sslEngine, supportedProtocols));
     }
 
     @Override

@@ -120,21 +120,21 @@ public class LogItem {
     @Override
     public String toString() {
         if (logStr == null) {
-            logStr = level + ", " + SafeSimpleDateFormat.defaultDateFormat.format(date);
+            logStr = level + " " + SafeSimpleDateFormat.defaultDateFormat.format(date);
 
             if (mdcData != null && !mdcData.isEmpty()) {
-                logStr += ", " + mdcData;
+                logStr += " " + mdcData;
             }
 
             if (StringUtils.hasText(className)) {
-                logStr += ", " + className;
+                logStr += " " + className;
             }
 
             if (stackTraceElement != null) {
-                logStr += ", " + stackTraceElement;
+                logStr += " " + stackTraceElement;
             }
 
-            logStr += ",\t" + renderContentTemplate();
+            logStr += "\t" + renderContentTemplate();
         }
         return logStr;
     }

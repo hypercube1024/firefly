@@ -2,6 +2,7 @@ package {{packageName}}.server
 
 import com.firefly.annotation.Inject
 import com.firefly.core.ApplicationContext
+import com.firefly.kotlin.ext.common.CoroutineDispatchers.computation
 import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.getHost
 import com.firefly.kotlin.ext.context.Context
@@ -17,7 +18,6 @@ import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.lang.AbstractLifeCycle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.ContinuationInterceptor
 
@@ -83,7 +83,7 @@ class KtWebSeedAppMain : AbstractLifeCycle() {
 fun getRequestCtx(): CoroutineLocal<RoutingContext> = appCtx.getBean()
 
 fun <T> asyncTraceable(
-    context: ContinuationInterceptor = Dispatchers.Unconfined,
+    context: ContinuationInterceptor = computation,
     block: suspend CoroutineScope.() -> T
                       ): Deferred<T> = com.firefly.kotlin.ext.http.asyncTraceable(getRequestCtx(), context, block)
 

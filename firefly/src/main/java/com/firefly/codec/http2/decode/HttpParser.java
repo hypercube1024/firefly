@@ -68,7 +68,7 @@ public class HttpParser {
     private static Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     @Deprecated
-    public final static String __STRICT = "org.eclipse.jetty.http.HttpParser.STRICT";
+    public final static String __STRICT = "com.firefly.codec.http2.decode.HttpParser.STRICT";
     public final static int INITIAL_URI_LENGTH = 256;
     private final static int MAX_CHUNK_LENGTH = Integer.MAX_VALUE / 16 - 16;
 
@@ -974,7 +974,7 @@ public class HttpParser {
         try {
             return Long.parseLong(valueString);
         } catch (NumberFormatException e) {
-            throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Invalid Content-Length Value");
+            throw new BadMessageException(HttpStatus.BAD_REQUEST_400, "Invalid Content-Length Value", e);
         }
     }
 

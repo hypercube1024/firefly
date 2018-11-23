@@ -5,8 +5,10 @@ import com.firefly.db.SQLConnection
 import com.firefly.db.SQLResultSet
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.utils.function.Func1
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.TimeUnit
 
@@ -128,26 +130,32 @@ suspend fun <T> SQLConnection.execSQL(
     time: Long = 10000L, unit: TimeUnit = TimeUnit.MILLISECONDS,
     handler: suspend (conn: SQLConnection) -> T
                                      ): T {
-    val isNew = beginTransaction().await()
+    beginTransaction().await()
     return try {
         val ret = withTimeout(unit.toMillis(time)) { handler.invoke(this@execSQL) }
-        if (isNew) {
-            commitAndEndTransaction().await()
-        }
+        commitAndEndTransaction().await()
         ret
     } catch (e: RecordNotFound) {
         sysLogger.warn("execute SQL exception. record not found", e)
-        if (isNew) {
-            commitAndEndTransaction().await()
-        }
+        commitAndEndTransaction().await()
         throw e
     } catch (e: TimeoutCancellationException) {
         sysLogger.error("execute SQL exception. timeout", e)
-        (if (isNew) rollbackAndEndTransaction() else rollback()).await()
+        rollbackAndEndTransaction().await()
         throw e
     } catch (e: Exception) {
         sysLogger.error("execute SQL exception", e)
-        (if (isNew) rollbackAndEndTransaction() else rollback()).await()
+        rollbackAndEndTransaction().await()
         throw e
+    }
+}
+
+suspend fun <T : SQLConnection, R> T.safeUse(block: suspend (T) -> R): R {
+    try {
+        return block(this)
+    } finally {
+        withContext(NonCancellable) {
+            close().await()
+        }
     }
 }

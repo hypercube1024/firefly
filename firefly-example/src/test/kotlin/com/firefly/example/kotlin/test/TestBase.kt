@@ -34,7 +34,7 @@ open class TestBase {
     protected suspend fun newTransaction(action: suspend () -> Unit): Job {
         val map = ConcurrentHashMap<String, Any>()
         val ctx = mock(RoutingContext::class.java)
-        `when`(ctx.getAttribute(db.transactionKey)).thenReturn(db.sqlClient.connection.await())
+        `when`(ctx.getAttribute(db.currentConnKey)).thenReturn(db.sqlClient.connection.await())
         `when`(ctx.attributes).thenReturn(map)
         return GlobalScope.launch(coroutineLocal.createContext(ctx)) {
             db.beginTransaction()

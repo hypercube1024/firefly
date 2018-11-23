@@ -10,7 +10,7 @@ import com.firefly.utils.time.SafeSimpleDateFormat;
 /**
  * @author Pengtao Qiu
  */
-public class ExampleLogFormatter implements LogFormatter {
+public class BootLogFormatter implements LogFormatter {
 
     @Override
     public String format(LogItem logItem) {

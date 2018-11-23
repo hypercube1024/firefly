@@ -54,7 +54,7 @@ public class InventoryDAOImpl implements InventoryDAO {
                     p.add(u.getAmount());
                 }
                 return p.toArray();
-            }).collect(Collectors.toList()).toArray(new Object[0][]);
+            }).toArray(Object[][]::new);
             return c.executeBatch(sql, params);
         });
     }

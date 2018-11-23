@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
@@ -34,6 +34,7 @@ public class FileLog implements Log, Closeable {
     private LogFilter logFilter;
     private MappedDiagnosticContext mdc;
     private LogOutputStream output = new LogOutputStream();
+    private MaxSplitTimeEnum maxSplitTime;
 
     public FileLog() {
         mdc = MappedDiagnosticContextFactory.getInstance().getMappedDiagnosticContext();
@@ -57,43 +58,70 @@ public class FileLog implements Log, Closeable {
         private static final int bufferSize = 4 * 1024;
         private BufferedOutputStream bufferedOutputStream;
         private long writeSize;
+        private LocalDateTime lastWriteTime;
 
-        private String getLogName(LocalDate localDate) {
-            return logNameFormatter.format(name, localDate);
+        private String getLogName(LocalDateTime localDateTime) {
+            return logNameFormatter.format(name, localDateTime);
         }
 
-        private String getLogBakName(LocalDate localDate, int index) {
-            return logNameFormatter.formatBak(name, localDate, index);
+        private String getLogBakName(LocalDateTime localDateTime, int index) {
+            return logNameFormatter.formatBak(name, localDateTime, index);
         }
 
-        private String getLogBakName(LocalDate localDate) {
+        private String getLogBakName(LocalDateTime localDateTime) {
             int index = 0;
-            String bakName = getLogBakName(localDate, index);
+            String bakName = getLogBakName(localDateTime, index);
             while (Files.exists(Paths.get(path, bakName))) {
                 index++;
-                bakName = getLogBakName(localDate, index);
+                bakName = getLogBakName(localDateTime, index);
             }
             return bakName;
         }
 
+        private boolean isNotOverTimeLimit(LocalDateTime newLocalDateTime) {
+            switch (maxSplitTime) {
+                case DAY: {
+                    return lastWriteTime.getYear() == newLocalDateTime.getYear()
+                            && lastWriteTime.getMonth() == newLocalDateTime.getMonth()
+                            && lastWriteTime.getDayOfMonth() == newLocalDateTime.getDayOfMonth();
+                }
+                case HOUR: {
+                    return lastWriteTime.getYear() == newLocalDateTime.getYear()
+                            && lastWriteTime.getMonth() == newLocalDateTime.getMonth()
+                            && lastWriteTime.getDayOfMonth() == newLocalDateTime.getDayOfMonth()
+                            && lastWriteTime.getHour() == newLocalDateTime.getHour();
+                }
+                case MINUTE: {
+                    return lastWriteTime.getYear() == newLocalDateTime.getYear()
+                            && lastWriteTime.getMonth() == newLocalDateTime.getMonth()
+                            && lastWriteTime.getDayOfMonth() == newLocalDateTime.getDayOfMonth()
+                            && lastWriteTime.getHour() == newLocalDateTime.getHour()
+                            && lastWriteTime.getMinute() == newLocalDateTime.getMinute();
+                }
+            }
+            return true;
+        }
+
         private void initializeBufferedWriter(Date newDate, long currentWriteSize) throws IOException {
-            LocalDate newLocalDate = TimeUtils.toLocalDate(newDate);
-            String logName = getLogName(newLocalDate);
+            LocalDateTime newLocalDateTime = TimeUtils.toLocalDateTime(newDate);
+            String logName = getLogName(newLocalDateTime);
             Path logPath = Paths.get(path, logName);
-            LocalDate now = LocalDate.now();
 
             if (Files.exists(logPath)) {
-                FileTime fileTime = Files.getLastModifiedTime(logPath);
-                LocalDate fileLastModifiedDate = LocalDate.from(fileTime.toInstant().atZone(ZoneId.systemDefault()));
-                if (fileLastModifiedDate.isBefore(now) || newLocalDate.isBefore(now)) {
-                    initOutputStreamAndNewFile(logName, logPath, fileLastModifiedDate);
+                if (lastWriteTime == null) {
+                    FileTime fileTime = Files.getLastModifiedTime(logPath);
+                    lastWriteTime = LocalDateTime.from(fileTime.toInstant().atZone(ZoneId.systemDefault()));
+                }
+
+                if (!isNotOverTimeLimit(newLocalDateTime)) {
+                    initOutputStreamAndNewFile(logName, logPath, lastWriteTime);
                 } else {
                     if (maxFileSize > 0) {
                         if (writeSize == 0) {
                             writeSize = Files.size(logPath);
                         }
                         if ((currentWriteSize + writeSize) > maxFileSize) {
-                            initOutputStreamAndNewFile(logName, logPath, fileLastModifiedDate);
+                            initOutputStreamAndNewFile(logName, logPath, lastWriteTime);
                         } else {
                             initOutputStream(logName);
                         }
@@ -106,9 +134,9 @@ public class FileLog implements Log, Closeable {
             }
         }
 
-        private void initOutputStreamAndNewFile(String logName, Path logPath, LocalDate fileLastModifiedDate) throws IOException {
+        private void initOutputStreamAndNewFile(String logName, Path logPath, LocalDateTime fileLastModifiedDateTime) throws IOException {
             close();
-            Files.move(logPath, Paths.get(path, getLogBakName(fileLastModifiedDate)));
+            Files.move(logPath, Paths.get(path, getLogBakName(fileLastModifiedDateTime)));
             bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(new File(path, logName), true), bufferSize);
         }
 
@@ -124,8 +152,9 @@ public class FileLog implements Log, Closeable {
                 initializeBufferedWriter(date, text.length);
                 bufferedOutputStream.write(text);
                 writeSize += text.length;
+                lastWriteTime = TimeUtils.toLocalDateTime(date);
             } catch (IOException e) {
-                System.err.println("writer log exception, " + e.getMessage());
+                System.err.println("write log exception, " + e.getMessage());
             }
         }
 
@@ -256,6 +285,14 @@ public class FileLog implements Log, Closeable {
 
     public void setLogFilter(LogFilter logFilter) {
         this.logFilter = logFilter;
+    }
+
+    public MaxSplitTimeEnum getMaxSplitTime() {
+        return maxSplitTime;
+    }
+
+    public void setMaxSplitTime(MaxSplitTimeEnum maxSplitTime) {
+        this.maxSplitTime = maxSplitTime;
     }
 
     private void add(String str, String level, Throwable throwable, Object... objs) {
@@ -417,6 +454,7 @@ public class FileLog implements Log, Closeable {
                 ", charset=" + charset +
                 ", logFormatter=" + logFormatter.getClass().getName() +
                 ", maxLogFlushInterval=" + maxLogFlushInterval +
+                ", maxSplitTime=" + maxSplitTime.getValue() +
                 '}';
     }
 

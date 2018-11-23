@@ -19,6 +19,7 @@ public interface LogConfigParser {
     String DEFAULT_LOG_FORMATTER = "com.firefly.utils.log.DefaultLogFormatter";
     String DEFAULT_LOG_NAME_FORMATTER = "com.firefly.utils.log.DefaultLogNameFormatter";
     String DEFAULT_LOG_FILTER = "com.firefly.utils.log.DefaultLogFilter";
+    MaxSplitTimeEnum DEFAULT_MAX_SPLIT_TIME = MaxSplitTimeEnum.DAY;
 
     boolean parse(Action1<FileLog> action);
 

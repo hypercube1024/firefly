@@ -12,10 +12,10 @@ public class AuthorizedUrlRequest implements Serializable {
     public static final String SCOPE_BASE = "snsapi_base";
     public static final String SCOPE_USERINFO = "snsapi_userinfo";
 
-    private String appid;
-    private String redirectUri;
-    private String scope; // snsapi_base or snsapi_userinfo
-    private String state;
+    protected String appid;
+    protected String redirectUri;
+    protected String scope; // snsapi_base or snsapi_userinfo
+    protected String state;
 
     public String getAppid() {
         return appid;

@@ -1,6 +1,7 @@
 package com.firefly.net.tcp.aio;
 
 import com.firefly.net.*;
+import com.firefly.utils.ProjectVersion;
 
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
@@ -43,6 +44,7 @@ public class AsynchronousTcpServer extends AbstractTcpLifeCycle implements Serve
     public void listen(String host, int port) {
         start();
         listen(bind(host, port));
+        System.out.println(ProjectVersion.getAsciiArt());
         log.info("start server. host: {}, port: {}", host, port);
     }
 

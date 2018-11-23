@@ -1,7 +1,6 @@
 package com.firefly.kotlin.ext.db
 
 import com.firefly.db.SQLConnection
-import kotlinx.coroutines.future.await
 import java.util.concurrent.TimeUnit
 
 /**
@@ -17,16 +16,12 @@ interface AsyncTransactionalManager {
         time: Long = 10000L,
         unit: TimeUnit = TimeUnit.MILLISECONDS,
         handler: suspend (conn: SQLConnection) -> T
-                           ): T = getConnection().execSQL(time, unit, handler)
+                           ): T
 
-    suspend fun beginTransaction(): Boolean = getConnection().beginTransaction().await()
+    suspend fun beginTransaction(): Boolean
 
-    suspend fun rollbackAndEndTransaction() {
-        getConnection().rollbackAndEndTransaction().await()
-    }
+    suspend fun rollbackAndEndTransaction()
 
-    suspend fun commitAndEndTransaction() {
-        getConnection().commitAndEndTransaction().await()
-    }
+    suspend fun commitAndEndTransaction()
 
 }

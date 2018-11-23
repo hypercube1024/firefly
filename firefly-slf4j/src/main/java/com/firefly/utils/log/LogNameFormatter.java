@@ -1,14 +1,14 @@
 package com.firefly.utils.log;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * @author Pengtao Qiu
  */
 public interface LogNameFormatter {
 
-    String format(String name, LocalDate localDate);
+    String format(String name, LocalDateTime localDateTime);
 
-    String formatBak(String name, LocalDate localDate, int index);
+    String formatBak(String name, LocalDateTime localDateTime, int index);
 
 }
