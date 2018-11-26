@@ -7,20 +7,20 @@ title: Log configuration
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Overview](#overview)
-- [Configuration](#configuration)
-- [Log formatter](#log-formatter)
-- [Log filter](#log-filter)
-- [Lazy logger](#lazy-logger)
+-   [Overview](#overview)
+-   [Configuration](#configuration)
+-   [Log formatter](#log-formatter)
+-   [Log filter](#log-filter)
+-   [Lazy logger](#lazy-logger)
 
 <!-- /TOC -->
 
 # Overview
 Firefly log implements slf4j APIs. The features:
-* Asynchronous writing
-* Timeout or max buffer size flush disk strategy
-* Lazy logger
-* MDC & custom formatter
+*   Asynchronous writing
+*   Timeout or max buffer size flush disk strategy
+*   Lazy logger
+*   MDC & custom formatter
 
 # Configuration
 Add maven dependency
@@ -75,6 +75,21 @@ Add `firefly-log.xml` to classpath
         <path>${log.path}</path>
         <formatter>com.firefly.example.common.ExampleLogFormatter</formatter>
     </logger>
+
+    <logger>
+        <name>test.max.size</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <max-file-size>300</max-file-size>
+        <charset>UTF-8</charset>
+    </logger>
+
+    <logger>
+        <name>time-split-minute</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+        <max-split-time>minute</max-split-time>
+    </logger>
 </loggers>
 ```
 The `firefly-system` is the default logger. It records firefly framework and any other not specified log. The `firefly-monitor` records the firefly framework runtime performance metric.
@@ -87,9 +102,44 @@ public void print() {
   logger.info("print foo")
 }
 ```
-The Foo class name is `com.firefly.example.reactive.Foo`, it matches the logger instance `com.firefly.example.reactive`. The logger will print records to `${log.path}/com.firefly.example.reactive.2017-10-04.txt`. The logger splits files daily. But you can also use `<max-file-size>` to set the max log file size. When the log file size exceeds the max size, Firefly logger will create a new file to save log records automatically.  
 
-If `<enable-console>` node is true, the logger will print records to console.
+The settings description:  
+
+`<name>`:  
+The Foo class name is com.firefly.example.reactive.Foo, it matches the logger instance com.firefly.example.reactive. The logger will print records to ${log.path}/com.firefly.example.reactive.2017-10-04.txt.   
+
+
+`<level>`:  
+The log output level value contains TRACE, DEBUG, INFO, WARN, and the ERROR.  
+
+
+`<path>`:  
+The log file output path.  
+
+
+`<max-file-size>`:  
+You can use it to set the max log file size, and the unit is the byte. When the log file size exceeds the max size, Firefly logger creates a new file to save log records automatically.  
+
+
+`<formatter>`:  
+The log entry formatter class, it implements the LogFormatter interface. You can use it to format the log entry content.  
+
+
+`<log-name-formatter>`:  
+The log file name formatter class, it implements the LogNameFormatter interface. You can use it to format the log file name.  
+
+
+`<log-filter>`:  
+The log filter class, it implements the LogFilter interface. It intercepts the specified log output.  
+
+
+`<max-split-time>`:  
+The logger splits the log files daily. You can also use this parameter to set the log file max split time, and the value is minute, hour or day.  
+
+
+`<enable-console>`:  
+If this parameter is true, the logger prints record to console.  
+
 
 # Log formatter
 The `<formatter>` specifies a class that implements `LogFormatter`. For example:
