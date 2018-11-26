@@ -25,22 +25,10 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                 fileLog.setPath(c.getPath());
                 fileLog.setFileOutput(true);
             } else {
-                success = createLogDirectory(DEFAULT_LOG_DIRECTORY);
-                if (success) {
-                    fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
-                    fileLog.setFileOutput(true);
-                } else {
-                    fileLog.setFileOutput(false);
-                }
+                success = createDefaultLogDir(fileLog);
             }
         } else {
-            success = createLogDirectory(DEFAULT_LOG_DIRECTORY);
-            if (success) {
-                fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
-                fileLog.setFileOutput(true);
-            } else {
-                fileLog.setFileOutput(false);
-            }
+            success = createDefaultLogDir(fileLog);
         }
 
         if (success) {
@@ -143,6 +131,17 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
 
     private boolean createLogDirectory(File file) {
         return file.exists() && file.isDirectory() || file.mkdirs();
+    }
+
+    private boolean createDefaultLogDir(FileLog fileLog) {
+        boolean success = createLogDirectory(DEFAULT_LOG_DIRECTORY);
+        if (success) {
+            fileLog.setPath(DEFAULT_LOG_DIRECTORY.getAbsolutePath());
+            fileLog.setFileOutput(true);
+        } else {
+            fileLog.setFileOutput(false);
+        }
+        return success;
     }
 
     @Override
