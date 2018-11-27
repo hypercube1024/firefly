@@ -4,11 +4,10 @@ import com.firefly.client.http2.SimpleResponse
 import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.HttpStatus.NOT_FOUND_404
 import com.firefly.codec.http2.model.HttpStatus.OK_200
-import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.firefly
 import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.http.asyncSubmit
-import com.firefly.server.http2.router.RoutingContext
+import com.firefly.kotlin.ext.http.getRequestContext
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -17,7 +16,6 @@ import kotlinx.coroutines.runBlocking
 const val host = "localhost"
 const val port1 = 8081
 const val port2 = 8082
-val coroutineLocal = CoroutineLocal<RoutingContext>()
 
 fun main(args: Array<String>) = runBlocking {
     HttpServer {
@@ -65,7 +63,7 @@ fun main(args: Array<String>) = runBlocking {
 }
 
 suspend fun searchProduct(name: String): SimpleResponse {
-    val ctx = coroutineLocal.get()
+    val ctx = getRequestContext()
     val reqId = ctx?.fields?.get("Request-ID")
     return firefly.httpClient()
         .get("http://$host:$port2/product?name=$name")

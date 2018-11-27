@@ -4,12 +4,10 @@ import com.firefly.annotation.Component
 import com.firefly.annotation.InitialMethod
 import com.firefly.annotation.Inject
 import com.firefly.db.jdbc.JDBCClient
-import com.firefly.kotlin.ext.common.CoroutineLocal
-import com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager
+import com.firefly.kotlin.ext.db.AsyncCoroutineContextTransactionalManager
 import com.firefly.kotlin.ext.db.AsyncTransactionalManager
 import com.firefly.kotlin.ext.log.KtLogger
 import {{packageName}}.server.config.ServerConfig
-import com.firefly.server.http2.router.RoutingContext
 import com.zaxxer.hikari.HikariDataSource
 import javax.sql.DataSource
 
@@ -23,9 +21,6 @@ class DbClient {
 
     @Inject
     private lateinit var config: ServerConfig
-
-    @Inject
-    private lateinit var coroutineLocal: CoroutineLocal<RoutingContext>
 
     private lateinit var dbClient: AsyncTransactionalManager
 
@@ -56,7 +51,7 @@ class DbClient {
                 TODO("the beta and prod environment db configuration")
             }
         }
-        dbClient = AsyncHttpContextTransactionalManager(coroutineLocal, JDBCClient(ds))
+        dbClient = AsyncCoroutineContextTransactionalManager(JDBCClient(ds))
         dataSource = ds
     }
 }

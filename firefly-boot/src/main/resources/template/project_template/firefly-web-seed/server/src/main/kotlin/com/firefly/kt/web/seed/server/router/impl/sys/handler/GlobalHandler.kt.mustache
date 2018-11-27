@@ -1,24 +1,18 @@
 package {{packageName}}.server.router.impl.sys.handler
 
-import {{packageName}}.api.model.vo.Response
-import {{packageName}}.server.router.utils.recordAccessLog
 import com.firefly.annotation.Component
-import com.firefly.annotation.InitialMethod
-import com.firefly.annotation.Inject
 import com.firefly.codec.http2.model.HttpHeader
 import com.firefly.codec.http2.model.HttpStatus
-import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.http.AsyncHandler
 import com.firefly.kotlin.ext.http.asyncNext
-import com.firefly.kotlin.ext.log.CoroutineMappedDiagnosticContext
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.router.RoutingContext
-import com.firefly.utils.log.MappedDiagnosticContextFactory
+import {{packageName}}.api.model.vo.Response
+import {{packageName}}.server.router.utils.recordAccessLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import org.slf4j.MDC
-import java.lang.IllegalArgumentException
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -30,18 +24,8 @@ class GlobalHandler : AsyncHandler {
 
     private val log = KtLogger.getLogger { }
 
-    @Inject
-    private lateinit var requestCtx: CoroutineLocal<RoutingContext>
-
     private val serviceTimeout = 60L
     private val retryAfter = 60L
-
-    @InitialMethod
-    fun init() {
-        val mdc = MappedDiagnosticContextFactory.getInstance()
-            .mappedDiagnosticContext as CoroutineMappedDiagnosticContext
-        mdc.setRequestCtx(requestCtx)
-    }
 
     override suspend fun handle(ctx: RoutingContext) {
         val startTime = System.currentTimeMillis()

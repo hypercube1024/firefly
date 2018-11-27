@@ -7,8 +7,6 @@
     <component-scan base-package="{{packageName}}.server.service"/>
     <component-scan base-package="{{packageName}}.server.router"/>
 
-    <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
-
     <bean id="tcpConfig" class="com.firefly.net.Config">
         <property name="timeout" value="120000"/>
     </bean>
@@ -22,7 +20,6 @@
 
     <bean id="ktHttpServer" class="com.firefly.kotlin.ext.http.HttpServer">
         <constructor>
-            <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
             <argument type="com.firefly.server.http2.SimpleHTTPServerConfiguration" ref="ktHttpServerConfig"/>
             <argument type="com.firefly.server.http2.router.handler.body.HTTPBodyConfiguration"
                       ref="ktHttpServerBodyConfig"/>

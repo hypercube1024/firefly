@@ -259,6 +259,11 @@ interface AsyncHandler {
 
 const val httpCtxKey = "_httpCtxKey"
 
+/**
+ * Get the routing context in the current coroutine scope.
+ *
+ * @return The routing context in the current coroutine scope.
+ */
 fun getRequestContext(): RoutingContext? = CoroutineLocalContext.getAttr(httpCtxKey)
 
 @HttpServerMarker

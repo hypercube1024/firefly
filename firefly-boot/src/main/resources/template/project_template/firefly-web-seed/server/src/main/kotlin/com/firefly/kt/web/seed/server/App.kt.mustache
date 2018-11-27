@@ -2,8 +2,6 @@ package {{packageName}}.server
 
 import com.firefly.annotation.Inject
 import com.firefly.core.ApplicationContext
-import com.firefly.kotlin.ext.common.CoroutineDispatchers.computation
-import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.getHost
 import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.context.getBean
@@ -11,15 +9,11 @@ import com.firefly.kotlin.ext.db.asyncUpdate
 import com.firefly.kotlin.ext.http.HttpServer
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
+import com.firefly.utils.lang.AbstractLifeCycle
 import {{packageName}}.server.config.ServerConfig
 import {{packageName}}.server.dao.db.DbClient
 import {{packageName}}.server.router.RouterInstaller
-import com.firefly.server.http2.router.RoutingContext
-import com.firefly.utils.lang.AbstractLifeCycle
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.runBlocking
-import kotlin.coroutines.ContinuationInterceptor
 
 /**
  * @author Pengtao Qiu
@@ -79,13 +73,6 @@ class KtWebSeedAppMain : AbstractLifeCycle() {
     }
 
 }
-
-fun getRequestCtx(): CoroutineLocal<RoutingContext> = appCtx.getBean()
-
-fun <T> asyncTraceable(
-    context: ContinuationInterceptor = computation,
-    block: suspend CoroutineScope.() -> T
-                      ): Deferred<T> = com.firefly.kotlin.ext.http.asyncTraceable(getRequestCtx(), context, block)
 
 fun main(args: Array<String>) {
     val start = System.currentTimeMillis()
