@@ -78,7 +78,7 @@
         <metrics.version>4.0.3</metrics.version>
         <jackson.version>2.9.7</jackson.version>
         <msgpack.version>0.8.16</msgpack.version>
-        <redisson.version>3.9.0</redisson.version>
+        <redisson.version>3.9.1</redisson.version>
         <conscrypt.version>1.4.1</conscrypt.version>
         <hikariCP.version>3.2.0</hikariCP.version>
         <spring.reactor.version>Californium-RELEASE</spring.reactor.version>
