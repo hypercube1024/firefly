@@ -139,9 +139,44 @@ object CoroutineLocalContext {
     }
 }
 
+/**
+ * Starts a asynchronous task and inherits parent coroutine local attributes.
+ *
+ * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
+ * @param block The coroutine code.
+ * @return The deferred task result.
+ */
 fun <T> asyncTraceable(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> T
                       ): Deferred<T> {
     return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement()) { block.invoke(this) }
+}
+
+/**
+ * Starts a asynchronous task without the return value and inherits parent coroutine local attributes.
+ *
+ * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
+ * @param block The coroutine code.
+ * @return The current job.
+ */
+fun launchTraceable(
+    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    block: suspend CoroutineScope.() -> Unit
+                   ): Job {
+    return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement()) { block.invoke(this) }
+}
+
+/**
+ * Starts a asynchronous task waiting the result and inherits parent coroutine local attributes.
+ *
+ * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
+ * @param block The coroutine code.
+ * @return The task result.
+ */
+suspend fun <T> withContextTraceable(
+    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    block: suspend CoroutineScope.() -> T
+                                    ): T {
+    return withContext(context + CoroutineLocalContext.inheritParentElement()) { block.invoke(this) }
 }

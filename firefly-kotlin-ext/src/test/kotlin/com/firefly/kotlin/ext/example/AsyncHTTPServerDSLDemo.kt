@@ -29,9 +29,6 @@ private val threadLocal = ThreadLocal<String>()
 @NoArg
 data class Product(var id: String, var type: String)
 
-fun <T> asyncTraceable(block: suspend CoroutineScope.() -> T): Deferred<T> =
-    asyncTraceable(Dispatchers.Unconfined, block)
-
 fun main(args: Array<String>) {
     val tracingId = AtomicLong()
     val server = HttpServer {

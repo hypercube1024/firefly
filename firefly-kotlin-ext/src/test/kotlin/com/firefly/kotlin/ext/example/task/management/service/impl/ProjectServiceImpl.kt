@@ -2,6 +2,7 @@ package com.firefly.kotlin.ext.example.task.management.service.impl
 
 import com.firefly.annotation.Component
 import com.firefly.annotation.Inject
+import com.firefly.kotlin.ext.common.asyncTraceable
 import com.firefly.kotlin.ext.example.task.management.dao.ProjectDao
 import com.firefly.kotlin.ext.example.task.management.dao.UserDao
 import com.firefly.kotlin.ext.example.task.management.service.ProjectService
@@ -10,8 +11,6 @@ import com.firefly.kotlin.ext.example.task.management.vo.ProjectResult
 import com.firefly.kotlin.ext.example.task.management.vo.Request
 import com.firefly.kotlin.ext.example.task.management.vo.Response
 import com.firefly.kotlin.ext.log.KtLogger
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 
 /**
  * @author Pengtao Qiu
@@ -36,8 +35,8 @@ class ProjectServiceImpl : ProjectService {
     }
 
     override suspend fun getProject(request: Request<Long>): Response<ProjectResult> {
-        val projectDeferred = GlobalScope.async { projectDao.queryById(request.data) }
-        val userListDeferred = GlobalScope.async {
+        val projectDeferred = asyncTraceable { projectDao.queryById(request.data) }
+        val userListDeferred = asyncTraceable {
             val users = projectDao.listProjectMembers(request.data)
             log.info("get project id ${request.data}, users -> $users")
             if (users.isEmpty()) listOf() else userDao.listUsers(users)

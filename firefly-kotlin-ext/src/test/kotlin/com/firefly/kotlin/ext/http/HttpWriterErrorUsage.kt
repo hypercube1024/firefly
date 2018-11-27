@@ -5,8 +5,7 @@ import com.firefly.codec.http2.model.HttpMethod
 import com.firefly.codec.http2.model.MimeTypes
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.Json
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import com.firefly.kotlin.ext.common.withContextTraceable
 import kotlinx.coroutines.delay
 import java.io.Serializable
 
@@ -843,13 +842,13 @@ fun main(args: Array<String>) {
                 header {
                     HttpHeader.CONTENT_TYPE to MimeTypes.Type.APPLICATION_JSON_UTF_8.asString()
                 }
-                GlobalScope.async {
+                withContextTraceable {
                     delay(50)
                     val ret = Json.toJson(resp)
                     println(ret)
                     println(ret.length)
                     write(ret)
-                }.await().end()
+                }.end()
             }
         }
     }.enableSecureConnection().listen("localhost", 7080)
