@@ -70,7 +70,7 @@ object CoroutineLocalContext {
     fun inheritParentElement(attributes: MutableMap<String, Any>? = null): ThreadContextElement<MutableMap<String, Any>> {
         val parentAttributes = getAttributes()
         val attrs = if (parentAttributes.isNullOrEmpty()) {
-            attributes ?: mutableMapOf()
+            attributes ?: ConcurrentHashMap()
         } else {
             if (!attributes.isNullOrEmpty()) {
                 parentAttributes.putAll(attributes)
@@ -143,40 +143,46 @@ object CoroutineLocalContext {
  * Starts a asynchronous task and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
+ * @param attributes The attributes are merged into the parent coroutine context element.
  * @param block The coroutine code.
  * @return The deferred task result.
  */
 fun <T> asyncTraceable(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
                       ): Deferred<T> {
-    return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement()) { block.invoke(this) }
+    return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
 /**
  * Starts a asynchronous task without the return value and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
+ * @param attributes The attributes are merged into the parent coroutine context element.
  * @param block The coroutine code.
  * @return The current job.
  */
 fun launchTraceable(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> Unit
                    ): Job {
-    return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement()) { block.invoke(this) }
+    return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
 /**
  * Starts a asynchronous task waiting the result and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
+ * @param attributes The attributes are merged into the parent coroutine context element.
  * @param block The coroutine code.
  * @return The task result.
  */
 suspend fun <T> withContextTraceable(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
                                     ): T {
-    return withContext(context + CoroutineLocalContext.inheritParentElement()) { block.invoke(this) }
+    return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }

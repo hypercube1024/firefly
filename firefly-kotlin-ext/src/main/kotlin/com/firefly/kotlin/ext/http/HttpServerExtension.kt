@@ -6,9 +6,9 @@ import com.firefly.codec.websocket.frame.Frame
 import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder
 import com.firefly.codec.websocket.stream.WebSocketConnection
 import com.firefly.kotlin.ext.annotation.NoArg
-import com.firefly.kotlin.ext.common.CoroutineDispatchers.computation
 import com.firefly.kotlin.ext.common.CoroutineLocalContext
 import com.firefly.kotlin.ext.common.Json
+import com.firefly.kotlin.ext.common.launchTraceable
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
@@ -28,7 +28,6 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
-import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -335,8 +334,7 @@ class RouterBlock(
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
-            val element = CoroutineLocalContext.inheritParentElement(mutableMapOf(httpCtxKey to it))
-            GlobalScope.launch(coroutineDispatcher + element) {
+            launchTraceable(coroutineDispatcher, mutableMapOf(httpCtxKey to it)) {
                 handler.invoke(it, coroutineContext)
             }
         }
