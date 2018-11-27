@@ -3,8 +3,7 @@ package com.firefly.kotlin.ext.db
 import com.firefly.db.RecordNotFound
 import com.firefly.db.SQLClient
 import com.firefly.db.SQLConnection
-import com.firefly.kotlin.ext.common.CoroutineLocal
-import com.firefly.server.http2.router.RoutingContext
+import com.firefly.kotlin.ext.common.CoroutineLocalContext
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withTimeout
@@ -17,10 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @author Pengtao Qiu
  */
-class AsyncHttpContextTransactionalManager(
-    val requestCtx: CoroutineLocal<RoutingContext>,
-    val sqlClient: SQLClient
-                                          ) : AsyncTransactionalManager {
+class AsyncCoroutineContextTransactionalManager(val sqlClient: SQLClient) : AsyncTransactionalManager {
 
     val currentConnKey = "_currentConnKeyKt"
     val rollbackOnlyKey = "_rollbackOnlyKeyKt"
@@ -30,10 +26,9 @@ class AsyncHttpContextTransactionalManager(
         sqlClient.connection.await()
     }
 
-    @Suppress("UNCHECKED_CAST")
     override suspend fun getCurrentConnection(time: Long, unit: TimeUnit): SQLConnection? =
         withTimeout(unit.toMillis(time)) {
-            (requestCtx.get()?.attributes?.get(currentConnKey) as CompletableFuture<SQLConnection>?)?.await()
+            CoroutineLocalContext.getAttr<CompletableFuture<SQLConnection>>(currentConnKey)?.await()
         }
 
     override suspend fun <T> execSQL(time: Long, unit: TimeUnit, handler: suspend (conn: SQLConnection) -> T): T {
@@ -90,12 +85,10 @@ class AsyncHttpContextTransactionalManager(
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun createConnectionIfEmpty(): CompletableFuture<SQLConnection> =
-        requestCtx.get()?.attributes?.computeIfAbsent(currentConnKey) {
-            sysLogger.debug("init new db connection")
-            sqlClient.connection
-        } as CompletableFuture<SQLConnection>
+    private fun createConnectionIfEmpty(): CompletableFuture<SQLConnection> {
+        return CoroutineLocalContext.computeIfAbsent(currentConnKey) { sqlClient.connection }
+            ?: throw IllegalStateException("Not in coroutine context")
+    }
 
     private fun isInTransaction(): Boolean {
         val count = getTransactionCount()
@@ -103,28 +96,27 @@ class AsyncHttpContextTransactionalManager(
     }
 
     private fun isRollback(): Boolean {
-        val isRollback = requestCtx.get()?.attributes?.get(rollbackOnlyKey)
-        return isRollback == null || (isRollback as Boolean)
+        val isRollback = CoroutineLocalContext.getAttr<Boolean>(rollbackOnlyKey)
+        return isRollback == null || isRollback
     }
 
     private fun setRollback(rollback: Boolean) {
-        requestCtx.get()?.attributes?.put(rollbackOnlyKey, rollback)
+        CoroutineLocalContext.setAttr(rollbackOnlyKey, rollback)
     }
 
-    private fun increaseTransactionCount(): Int {
-        val count =
-            requestCtx.get()?.attributes?.computeIfAbsent(transactionCountKey) { AtomicInteger() } as AtomicInteger
+    private fun increaseTransactionCount(): Int? {
+        val count = CoroutineLocalContext.computeIfAbsent(transactionCountKey) { AtomicInteger() }
+            ?: throw IllegalStateException("Not in coroutine context")
         return count.incrementAndGet()
     }
 
     private fun decreaseTransactionCount(): Int {
-        val count = (requestCtx.get()?.attributes?.get(transactionCountKey)
-            ?: throw IllegalStateException("The transaction is not begun")) as AtomicInteger
-        return count.decrementAndGet();
+        val count = CoroutineLocalContext.getAttr<AtomicInteger>(transactionCountKey)
+            ?: throw IllegalStateException("The transaction is not begun")
+        return count.decrementAndGet()
     }
 
     private fun getTransactionCount(): Int? {
-        val count = requestCtx.get()?.attributes?.get(transactionCountKey)
-        return if (count != null) (count as AtomicInteger).get() else null
+        return CoroutineLocalContext.getAttr<AtomicInteger>(transactionCountKey)?.get()
     }
 }

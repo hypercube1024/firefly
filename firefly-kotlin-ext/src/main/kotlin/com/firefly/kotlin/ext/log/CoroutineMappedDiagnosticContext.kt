@@ -1,11 +1,8 @@
 package com.firefly.kotlin.ext.log
 
-import com.firefly.kotlin.ext.common.CoroutineLocal
-import com.firefly.kotlin.ext.http.getAttr
-import com.firefly.server.http2.router.RoutingContext
-import com.firefly.utils.Assert
+import com.firefly.kotlin.ext.common.CoroutineLocalContext
 import com.firefly.utils.log.MappedDiagnosticContext
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * @author Pengtao Qiu
@@ -14,22 +11,12 @@ class CoroutineMappedDiagnosticContext : MappedDiagnosticContext {
 
     val tracingIdKey = "_coroutineMDCKey"
 
-    private var requestCtx: CoroutineLocal<RoutingContext>? = null
-    private var initialized = AtomicBoolean(false)
-
     init {
         println("new CoroutineMappedDiagnosticContext")
     }
 
-    fun setRequestCtx(reqCtx: CoroutineLocal<RoutingContext>) {
-        Assert.notNull(reqCtx, "the request ctx must be not null")
-        if (initialized.compareAndSet(false, true)) {
-            requestCtx = reqCtx
-        }
-    }
-
-    fun getContextMap(): MutableMap<String, String>? {
-        return requestCtx?.get()?.getAttr(tracingIdKey)
+    private fun getContextMap(): MutableMap<String, String>? {
+        return CoroutineLocalContext.computeIfAbsent(tracingIdKey) { ConcurrentHashMap<String, String>() }
     }
 
     override fun clear() {
@@ -51,7 +38,11 @@ class CoroutineMappedDiagnosticContext : MappedDiagnosticContext {
     }
 
     override fun setContextMap(contextMap: MutableMap<String, String>) {
-        requestCtx?.get()?.setAttribute(tracingIdKey, contextMap)
+        if (contextMap is ConcurrentHashMap) {
+            CoroutineLocalContext.getAttributes()?.put(tracingIdKey, contextMap)
+        } else {
+            CoroutineLocalContext.getAttributes()?.put(tracingIdKey, ConcurrentHashMap(contextMap))
+        }
     }
 
     override fun remove(key: String) {

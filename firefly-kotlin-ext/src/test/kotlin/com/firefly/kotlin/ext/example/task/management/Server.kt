@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
     server.listen("localhost", 8080)
 }
 
-val server = HttpServer(Context.getBean<CoroutineLocal<RoutingContext>>()) {
+val server = HttpServer {
 
     val transactionalManager = Context.getBean<AsyncTransactionalManager>()
     val projectService = Context.getBean<ProjectService>()

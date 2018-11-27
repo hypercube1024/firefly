@@ -20,7 +20,7 @@ const val port2 = 8082
 val coroutineLocal = CoroutineLocal<RoutingContext>()
 
 fun main(args: Array<String>) = runBlocking {
-    HttpServer(coroutineLocal) {
+    HttpServer {
         router {
             httpMethod = HttpMethod.GET
             path = "/product"
@@ -42,7 +42,7 @@ fun main(args: Array<String>) = runBlocking {
         }
     }.listen(host, port1)
 
-    HttpServer(coroutineLocal) {
+    HttpServer {
         router {
             httpMethod = HttpMethod.GET
             path = "/product"

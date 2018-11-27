@@ -5,11 +5,8 @@ import com.firefly.codec.http2.model.HttpHeader.*
 import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpStatus.Code.UNAUTHORIZED
 import com.firefly.codec.http2.model.MimeTypes
-import com.firefly.kotlin.ext.common.CoroutineLocal
 import com.firefly.kotlin.ext.common.firefly
-import com.firefly.kotlin.ext.context.Context
 import com.firefly.kotlin.ext.example.Response
-import com.firefly.server.http2.router.RoutingContext
 import com.firefly.utils.RandomUtils
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -73,8 +70,8 @@ class TestServerDSL {
                         CONTENT_ENCODING to "gzip"
                     }
 
-                    GZIPOutputStream(response.outputStream).safeUse {
-                        it.write("gzip msg".toByteArray(StandardCharsets.UTF_8))
+                    GZIPOutputStream(response.outputStream).safeUse { gzipOut ->
+                        gzipOut.write("gzip msg".toByteArray(StandardCharsets.UTF_8))
                     }
                 }
             }
@@ -103,11 +100,14 @@ class TestServerDSL {
     fun testRequestCtx(): Unit = runBlocking {
         val host = "localhost"
         val port = RandomUtils.random(3000, 65534).toInt()
-        val reqCtx = Context.getBean<CoroutineLocal<RoutingContext>>()
 
-        fun testReqId() = assertEquals(20, reqCtx.get()?.getAttr("reqId") ?: 0)
+        fun testReqId() {
+            val reqId = getRequestContext()?.getAttr("reqId") ?: 0
+            println("request id -> $reqId")
+            assertEquals(20, reqId)
+        }
 
-        HttpServer(reqCtx) {
+        HttpServer {
             router {
                 httpMethod = GET
                 path = "/test/*"
@@ -150,10 +150,10 @@ class TestServerDSL {
 
                 asyncHandler {
                     setAttribute("userId", 33)
-                    asyncNext<String>({
-                        write("router 1 success\r\n").end(it)
-                    }, {
-                        write("${it?.message}").end()
+                    asyncNext<String>({ v ->
+                        write("router 1 success\r\n").end(v)
+                    }, { e ->
+                        write("${e?.message}").end()
                     })
                 }
             }
@@ -163,11 +163,8 @@ class TestServerDSL {
                 path = "/test/chain/task/:id"
 
                 asyncHandler {
-                    write("enter router 2\r\n").asyncSucceed(
-                        "User ${getAttr<Int>("userId")} gets task ${getRouterParameter(
-                            "id"
-                                                                                      )}\r\n"
-                                                            )
+                    val successText = "User ${getAttr<Int>("userId")} gets task ${getRouterParameter("id")}\r\n"
+                    write("enter router 2\r\n").asyncSucceed(successText)
                 }
             }
         }.listen(host, port)

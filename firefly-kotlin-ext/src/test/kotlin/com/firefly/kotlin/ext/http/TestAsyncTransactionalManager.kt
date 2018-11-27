@@ -18,7 +18,7 @@ import kotlin.test.assertEquals
 /**
  * @author Pengtao Qiu
  */
-class TestHTTPContextTransactionalManager {
+class TestAsyncTransactionalManager {
 
     @Test
     fun test(): Unit = runBlocking {

@@ -7,7 +7,7 @@ import com.firefly.codec.websocket.stream.AbstractWebSocketBuilder
 import com.firefly.codec.websocket.stream.WebSocketConnection
 import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.CoroutineDispatchers.computation
-import com.firefly.kotlin.ext.common.CoroutineLocal
+import com.firefly.kotlin.ext.common.CoroutineLocalContext
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.SimpleHTTPServer
@@ -257,10 +257,13 @@ interface AsyncHandler {
     suspend fun handle(ctx: RoutingContext)
 }
 
+const val httpCtxKey = "_httpCtxKey"
+
+fun getRequestContext(): RoutingContext? = CoroutineLocalContext.getAttr(httpCtxKey)
+
 @HttpServerMarker
 class RouterBlock(
     private val router: Router,
-    private val requestCtx: CoroutineLocal<RoutingContext>?,
     private val coroutineDispatcher: CoroutineDispatcher
                  ) {
 
@@ -327,7 +330,8 @@ class RouterBlock(
     fun asyncHandler(handler: suspend RoutingContext.(context: CoroutineContext) -> Unit) {
         router.handler {
             it.response.isAsynchronous = true
-            GlobalScope.launch(requestCtx?.createContext(it, coroutineDispatcher) ?: coroutineDispatcher) {
+            val element = CoroutineLocalContext.inheritParentElement(mutableMapOf(httpCtxKey to it))
+            GlobalScope.launch(coroutineDispatcher + element) {
                 handler.invoke(it, coroutineContext)
             }
         }
@@ -468,15 +472,12 @@ annotation class HttpServerMarker
 /**
  * HTTP server DSL. It helps you write HTTP server elegantly.
  *
- * @param requestCtx Maintain the routing context in the HTTP request lifecycle when you use the asynchronous handlers which run in the coroutine.
- * It visits RoutingContext in the external function conveniently. Usually, you can use it to trace HTTP request crossing all registered routers.
  * @param serverConfiguration HTTP server configuration.
  * @param httpBodyConfiguration HTTP body configuration.
  * @param block The HTTP server DSL block. You can register routers in this block.
  */
 @HttpServerMarker
 class HttpServer(
-    val requestCtx: CoroutineLocal<RoutingContext>? = null,
     serverConfiguration: SimpleHTTPServerConfiguration = SimpleHTTPServerConfiguration(),
     httpBodyConfiguration: HTTPBodyConfiguration = HTTPBodyConfiguration(),
     block: HttpServer.() -> Unit
@@ -495,22 +496,16 @@ class HttpServer(
         block.invoke(this)
     }
 
-    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?)
-            : this(coroutineLocal, SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), {})
+    constructor() : this(SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), {})
 
-    constructor(coroutineLocal: CoroutineLocal<RoutingContext>?, block: HttpServer.() -> Unit)
-            : this(coroutineLocal, SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
+    constructor(block: HttpServer.() -> Unit)
+            : this(SimpleHTTPServerConfiguration(), HTTPBodyConfiguration(), block)
 
     constructor(
-        coroutineLocal: CoroutineLocal<RoutingContext>?,
         serverConfiguration: SimpleHTTPServerConfiguration,
         httpBodyConfiguration: HTTPBodyConfiguration
                )
-            : this(coroutineLocal, serverConfiguration, httpBodyConfiguration, {})
-
-    constructor(block: HttpServer.() -> Unit) : this(null, block)
-
-    constructor() : this({})
+            : this(serverConfiguration, httpBodyConfiguration, {})
 
     override fun stop() = server.stop()
 
@@ -531,7 +526,7 @@ class HttpServer(
      * @param block The router builder.
      */
     inline fun router(block: RouterBlock.() -> Unit) {
-        val r = RouterBlock(routerManager.register(), requestCtx, coroutineDispatcher)
+        val r = RouterBlock(routerManager.register(), coroutineDispatcher)
         block.invoke(r)
         sysLogger.info("register $r")
     }
@@ -543,7 +538,7 @@ class HttpServer(
      * @param block The router builder.
      */
     inline fun router(id: Int, block: RouterBlock.() -> Unit) {
-        val r = RouterBlock(routerManager.register(id), requestCtx, coroutineDispatcher)
+        val r = RouterBlock(routerManager.register(id), coroutineDispatcher)
         block.invoke(r)
         sysLogger.info("register $r")
     }
@@ -560,19 +555,6 @@ class HttpServer(
      * @param block Register routers in this block.
      */
     inline fun addRouters(block: HttpServer.() -> Unit) = block.invoke(this)
-}
-
-fun <T> asyncTraceable(
-    requestCtx: CoroutineLocal<RoutingContext>,
-    context: ContinuationInterceptor = computation,
-    block: suspend CoroutineScope.() -> T
-                      ): Deferred<T> {
-    val ctx = requestCtx.get()
-    return if (ctx != null) {
-        GlobalScope.async(requestCtx.createContext(ctx, context)) { block.invoke(this) }
-    } else {
-        GlobalScope.async(context) { block.invoke(this) }
-    }
 }
 
 class AccessLogService(

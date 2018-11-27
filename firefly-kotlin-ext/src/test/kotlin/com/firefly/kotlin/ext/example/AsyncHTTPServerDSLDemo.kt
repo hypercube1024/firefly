@@ -7,18 +7,14 @@ import com.firefly.codec.http2.model.HttpMethod.GET
 import com.firefly.codec.http2.model.HttpMethod.POST
 import com.firefly.codec.http2.model.HttpStatus.Code.OK
 import com.firefly.kotlin.ext.annotation.NoArg
-import com.firefly.kotlin.ext.common.CoroutineLocal
+import com.firefly.kotlin.ext.common.asyncTraceable
 import com.firefly.kotlin.ext.http.*
-import com.firefly.kotlin.ext.log.CoroutineMappedDiagnosticContext
 import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.kotlin.ext.log.info
-import com.firefly.server.http2.router.RoutingContext
-import com.firefly.utils.log.MappedDiagnosticContextFactory
 import kotlinx.coroutines.*
 import org.slf4j.MDC
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.coroutines.ContinuationInterceptor
 
 /**
  * Asynchronous HTTP server DSL examples
@@ -29,26 +25,16 @@ import kotlin.coroutines.ContinuationInterceptor
 private val log = KtLogger.getLogger { }
 
 private val threadLocal = ThreadLocal<String>()
-private val requestLocal = CoroutineLocal<RoutingContext>()
 
 @NoArg
 data class Product(var id: String, var type: String)
 
-fun initMDC() {
-    val mdc = MappedDiagnosticContextFactory.getInstance()
-        .mappedDiagnosticContext as CoroutineMappedDiagnosticContext
-    mdc.setRequestCtx(requestLocal)
-}
-
-fun <T> asyncTraceable(
-    context: ContinuationInterceptor = Dispatchers.Unconfined,
-    block: suspend CoroutineScope.() -> T
-                      ): Deferred<T> = asyncTraceable(requestLocal, context, block)
+fun <T> asyncTraceable(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    asyncTraceable(Dispatchers.Unconfined, block)
 
 fun main(args: Array<String>) {
-    initMDC()
     val tracingId = AtomicLong()
-    val server = HttpServer(requestLocal) {
+    val server = HttpServer {
         router {
             path = "*"
 
@@ -217,5 +203,5 @@ fun main(args: Array<String>) {
 }
 
 fun testCoroutineCtx() {
-    log.info("coroutine local ${requestLocal.get()?.uri?.path} -> ${requestLocal.get()?.getAttribute("reqId")}")
+    log.info("coroutine local ${getRequestContext()?.uri?.path} -> ${getRequestContext()?.getAttribute("reqId")}")
 }

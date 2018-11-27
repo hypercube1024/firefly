@@ -10,21 +10,14 @@
     <bean id="localSessionHandler" class="com.firefly.server.http2.router.handler.session.LocalHTTPSessionHandler"
           destroy-method="stop"/>
 
-    <bean id="httpCoroutineLocal" class="com.firefly.kotlin.ext.common.CoroutineLocal"/>
-
     <bean id="asyncHttpContextTransactionalManager"
-          class="com.firefly.kotlin.ext.db.AsyncHttpContextTransactionalManager">
+          class="com.firefly.kotlin.ext.db.AsyncCoroutineContextTransactionalManager">
         <constructor>
-            <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
             <argument type="com.firefly.db.SQLClient" ref="jdbcClient"/>
         </constructor>
     </bean>
 
-    <bean id="ktHttpServer" class="com.firefly.kotlin.ext.http.HttpServer">
-        <constructor>
-            <argument type="com.firefly.kotlin.ext.common.CoroutineLocal" ref="httpCoroutineLocal"/>
-        </constructor>
-    </bean>
+    <bean id="ktHttpServer" class="com.firefly.kotlin.ext.http.HttpServer"/>
 
     <bean id="ktProjectConfig" class="com.firefly.example.kotlin.coffee.store.ProjectConfig">
         <property name="templateRoot" value="template/coffeeStore"/>
