@@ -155,7 +155,7 @@ suspend fun <T : SQLConnection, R> T.safeUse(block: suspend (T) -> R): R {
         return block(this)
     } finally {
         withContext(NonCancellable) {
-            close().await()
+            commitAndClose().await()
         }
     }
 }
