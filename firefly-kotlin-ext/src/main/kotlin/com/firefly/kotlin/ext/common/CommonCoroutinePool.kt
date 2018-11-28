@@ -40,10 +40,7 @@ object CoroutineDispatchers {
             30L, TimeUnit.SECONDS,
             ArrayBlockingQueue<Runnable>(10000)
                           ) { r ->
-            Thread(
-                r,
-                "firefly-kt-io-blocking-pool-" + threadId.getAndIncrement()
-                  )
+            Thread(r, "firefly-kt-io-blocking-pool-" + threadId.getAndIncrement())
         }.asCoroutineDispatcher()
     }
 }
