@@ -107,11 +107,11 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
     @Override
     public void release(PooledObject<T> pooledObject) {
         if (pooledObject.getReleased().compareAndSet(false, true)) {
-            releaseService.submit(() -> _release(pooledObject));
+            releaseService.submit(() -> releaseSync(pooledObject));
         }
     }
 
-    private synchronized void _release(PooledObject<T> pooledObject) {
+    private synchronized void releaseSync(PooledObject<T> pooledObject) {
         try {
             if (isValid(pooledObject)) {
                 boolean success = queue.offer(pooledObject, timeout, timeUnit);

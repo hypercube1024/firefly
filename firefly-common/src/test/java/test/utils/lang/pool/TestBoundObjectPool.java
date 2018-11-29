@@ -5,7 +5,11 @@ import org.junit.Test;
 /**
  * @author Pengtao Qiu
  */
-public class TestUnboundPool {
+public class TestBoundObjectPool {
+
+    public static class TestObject {
+
+    }
 
     @Test
     public void test() {
