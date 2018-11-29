@@ -134,6 +134,7 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
                         conn.getSessionId(), host, port);
                 PooledObject<HTTPClientConnection> pooledObject = new PooledObject<>(conn, pool, pooledObj -> { // connection leak callback
                     log.warn(leakMessage);
+                    pool.getCreatedCount().decrementAndGet();
                     IO.close(pooledObj.getObject());
                 });
                 conn.onClose(c -> pooledObject.release())

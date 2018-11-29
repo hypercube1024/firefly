@@ -144,17 +144,14 @@ public class TestSimpleTcpServerAndClient {
             parser.complete(message -> {
                 String s = message.trim();
                 System.out.println("server receives message -> " + s);
-                switch (s) {
-                    case "quit":
-                        connection.write("bye!\r\n");
-                        IO.close(connection);
-                        Assert.assertThat(msgCount.get(), is(maxMsg));
-                        phaser.arrive();
-                        break;
-                    default:
-                        msgCount.incrementAndGet();
-                        connection.write("response message [" + s + "]\r\n");
-                        break;
+                if ("quit".equals(s)) {
+                    connection.write("bye!\r\n");
+                    IO.close(connection);
+                    Assert.assertThat(msgCount.get(), is(maxMsg));
+                    phaser.arrive();
+                } else {
+                    msgCount.incrementAndGet();
+                    connection.write("response message [" + s + "]\r\n");
                 }
             });
             connection.receive(parser::receive);
@@ -167,14 +164,11 @@ public class TestSimpleTcpServerAndClient {
                   parser.complete(message -> {
                       String s = message.trim();
                       System.out.println("client receives message -> " + s);
-                      switch (s) {
-                          case "bye!":
-                              Assert.assertThat(msgCount.get(), is(maxMsg));
-                              phaser.arrive();
-                              break;
-                          default:
-                              msgCount.incrementAndGet();
-                              break;
+                      if ("bye!".equals(s)) {
+                          Assert.assertThat(msgCount.get(), is(maxMsg));
+                          phaser.arrive();
+                      } else {
+                          msgCount.incrementAndGet();
                       }
                   });
                   c.receive(parser::receive);

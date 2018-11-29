@@ -3,12 +3,14 @@ package com.firefly.utils.lang.pool;
 import com.firefly.utils.function.Action1;
 import com.firefly.utils.time.Millisecond100Clock;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Pengtao Qiu
  */
-public class PooledObject<T> {
+public class PooledObject<T> implements Closeable {
 
     protected final Pool<T> pool;
     protected final T object;
@@ -20,10 +22,7 @@ public class PooledObject<T> {
     public PooledObject(T object, Pool<T> pool, Action1<PooledObject<T>> leakCallback) {
         this.object = object;
         this.pool = pool;
-        this.leakCallback = p -> {
-            pool.getCreatedCount().decrementAndGet();
-            leakCallback.call(p);
-        };
+        this.leakCallback = leakCallback;
         createTime = Millisecond100Clock.currentTimeMillis();
         activeTime = createTime;
     }
@@ -88,5 +87,10 @@ public class PooledObject<T> {
                 ", createTime=" + createTime +
                 ", activeTime=" + activeTime +
                 '}';
+    }
+
+    @Override
+    public void close() {
+        release();
     }
 }

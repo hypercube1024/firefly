@@ -75,7 +75,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
     public abstract class AbstractHandler extends AbstractSimpleHandler {
 
         @Override
-        public void failedOpeningSession(Integer sessionId, Throwable t) throws Throwable {
+        public void failedOpeningSession(Integer sessionId, Throwable t) {
             try {
                 Promise<TcpConnection> promise = context.get(sessionId);
                 if (promise != null) {
@@ -112,7 +112,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
             config.setHandler(new AbstractHandler() {
 
                 @Override
-                public void sessionOpened(Session session) throws Throwable {
+                public void sessionOpened(Session session) {
                     TcpConnectionImpl c = new TcpConnectionImpl(session);
                     session.attachObject(c);
                     sessionOpen(session, c);
@@ -128,7 +128,7 @@ public class SimpleTcpClient extends AbstractLifeCycle {
                     SecureSessionFactory factory = config.getSecureSessionFactory();
                     session.attachObject(new SecureTcpConnectionImpl(session, factory.create(session, true, ssl -> {
                         Object o = session.getAttachment();
-                        if (o != null && o instanceof SecureTcpConnectionImpl) {
+                        if (o instanceof SecureTcpConnectionImpl) {
                             SecureTcpConnectionImpl c = (SecureTcpConnectionImpl) o;
                             sessionOpen(session, c);
                         }
