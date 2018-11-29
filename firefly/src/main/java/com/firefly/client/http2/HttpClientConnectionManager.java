@@ -1,16 +1,17 @@
 package com.firefly.client.http2;
 
 import com.firefly.codec.http2.model.HttpVersion;
+import com.firefly.utils.Assert;
 import com.firefly.utils.StringUtils;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.lang.AbstractLifeCycle;
 import com.firefly.utils.lang.pool.Pool;
 import com.firefly.utils.lang.pool.PooledObject;
-import com.firefly.utils.lang.pool.UnboundPool;
+import com.firefly.utils.lang.pool.BoundObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 /**
  * @author Pengtao Qiu
@@ -27,8 +28,10 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
     private final long leakDetectorInterval; // unit second
     private final int maxGettingThreadNum;
     private final int maxReleaseThreadNum;
-    private UnboundPool<HTTPClientConnection> pool;
-    private HttpVersion httpVersion;
+    private volatile CompletableFuture<PooledObject<HTTPClientConnection>> currentConnReq;
+    private volatile HTTPClientConnection connection;
+    private BoundObjectPool<HTTPClientConnection> pool;
+    private final ExecutorService gettingService;
 
     public HttpClientConnectionManager(HTTP2Client client,
                                        String host, int port,
@@ -43,19 +46,76 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
         this.leakDetectorInterval = leakDetectorInterval;
         this.maxGettingThreadNum = maxGettingThreadNum;
         this.maxReleaseThreadNum = maxReleaseThreadNum;
-        start();
+        this.currentConnReq = client.connect(host, port).thenApply(FakePooledObject::new);
+        this.gettingService = Executors.newSingleThreadExecutor(r -> new Thread(r, "firefly-http-connection-manager-thread"));
     }
 
-    public HttpVersion getHttpVersion() {
-        return httpVersion;
+    private class FakePooledObject extends PooledObject<HTTPClientConnection> {
+
+        FakePooledObject(HTTPClientConnection connection) {
+            super(connection, null, null);
+        }
+
+        public void release() {
+            if (object.getHttpVersion() != HttpVersion.HTTP_2) {
+                IO.close(object);
+            }
+        }
+
+        public void clear() {
+        }
+
+        public void register() {
+        }
     }
 
     public CompletableFuture<PooledObject<HTTPClientConnection>> asyncGet() {
+        if (currentConnReq.isDone()) {
+            return _asyncGet();
+        } else {
+            CompletableFuture<PooledObject<HTTPClientConnection>> future = new CompletableFuture<>();
+            gettingService.submit(() -> {
+                try {
+                    future.complete(_asyncGet().get());
+                } catch (InterruptedException | ExecutionException e) {
+                    future.completeExceptionally(e);
+                }
+            });
+            return future;
+        }
+    }
+
+    public CompletableFuture<PooledObject<HTTPClientConnection>> _asyncGet() {
+        if (connection == null) {
+            try {
+                connection = currentConnReq.get(timeout, TimeUnit.SECONDS).getObject();
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                IO.close(connection);
+            }
+        }
+        Assert.state(connection != null, "Get the HTTP connection exception");
+
+        if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
+            return asyncGetHTTP2Conn();
+        } else {
+            return asyncGetHTTP1Conn();
+        }
+    }
+
+    private CompletableFuture<PooledObject<HTTPClientConnection>> asyncGetHTTP1Conn() {
+        start();
         return pool.asyncGet();
     }
 
-    public void release(PooledObject<HTTPClientConnection> pooledObject) {
-        pool.release(pooledObject);
+    private CompletableFuture<PooledObject<HTTPClientConnection>> asyncGetHTTP2Conn() {
+        if (connection.isOpen()) {
+            CompletableFuture<PooledObject<HTTPClientConnection>> ret = new CompletableFuture<>();
+            ret.complete(new FakePooledObject(connection));
+            return ret;
+        } else {
+            currentConnReq = client.connect(host, port).thenApply(FakePooledObject::new);
+            return currentConnReq;
+        }
     }
 
     public int size() {
@@ -76,23 +136,27 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
                     log.warn(leakMessage);
                     IO.close(pooledObj.getObject());
                 });
-                httpVersion = conn.getHttpVersion();
                 conn.onClose(c -> pooledObject.release())
                     .onException((c, exception) -> pooledObject.release());
+                future.complete(pooledObject);
             }).exceptionally(ex -> {
                 future.completeExceptionally(ex);
                 return null;
             });
             return future;
         };
-        pool = new UnboundPool<>(maxSize, timeout, leakDetectorInterval,
+
+        pool = new BoundObjectPool<>(maxSize, timeout, leakDetectorInterval,
                 maxGettingThreadNum, maxReleaseThreadNum,
                 factory, validator, dispose,
-                p -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port));
+                () -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port));
     }
 
     @Override
     protected void destroy() {
-        pool.stop();
+        if (pool != null) {
+            pool.stop();
+        }
+        gettingService.shutdown();
     }
 }

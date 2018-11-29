@@ -10,46 +10,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PooledObject<T> {
 
-    private final Pool<T> pool;
-    private final T object;
-    private final long createTime;
-    private long activeTime;
-    private AtomicBoolean released = new AtomicBoolean(false);
-    private final Action1<PooledObject<T>> leakCallback;
+    protected final Pool<T> pool;
+    protected final T object;
+    protected final long createTime;
+    protected long activeTime;
+    protected final Action1<PooledObject<T>> leakCallback;
+    protected final AtomicBoolean released = new AtomicBoolean(false);
 
     public PooledObject(T object, Pool<T> pool, Action1<PooledObject<T>> leakCallback) {
         this.object = object;
         this.pool = pool;
-        this.leakCallback = leakCallback;
+        this.leakCallback = p -> {
+            pool.getCreatedCount().decrementAndGet();
+            leakCallback.call(p);
+        };
         createTime = Millisecond100Clock.currentTimeMillis();
         activeTime = createTime;
-    }
-
-    /**
-     * Check the pooled object has been taken.
-     *
-     * @return If return true, the pooled object has not been taken, or else The other thread has taken the pooled object.
-     */
-    boolean prepareTake() {
-        return released.compareAndSet(true, false);
-    }
-
-    /**
-     * Check the pooled object has been released.
-     *
-     * @return If return true, the pooled object has not been released, or else The other thread has released the pooled object.
-     */
-    boolean prepareRelease() {
-        return released.compareAndSet(false, true);
-    }
-
-    /**
-     * If return true the pooled object is released.
-     *
-     * @return If return true the pooled object is released.
-     */
-    public boolean isReleased() {
-        return released.get();
     }
 
     /**
@@ -99,5 +75,18 @@ public class PooledObject<T> {
      */
     public void register() {
         pool.getLeakDetector().register(this, leakCallback);
+    }
+
+    public AtomicBoolean getReleased() {
+        return released;
+    }
+
+    @Override
+    public String toString() {
+        return "PooledObject{" +
+                "object=" + object +
+                ", createTime=" + createTime +
+                ", activeTime=" + activeTime +
+                '}';
     }
 }

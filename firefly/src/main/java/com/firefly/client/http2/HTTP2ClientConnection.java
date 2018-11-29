@@ -209,4 +209,8 @@ public class HTTP2ClientConnection extends AbstractHTTP2Connection implements HT
         throw new CommonRuntimeException("The current connection version is http2, it can not upgrade WebSocket.");
     }
 
+    @Override
+    public String toString() {
+        return "HTTP2 connection " + getSessionId();
+    }
 }

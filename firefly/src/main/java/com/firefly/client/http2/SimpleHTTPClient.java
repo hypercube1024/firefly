@@ -900,7 +900,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     protected void send(RequestBuilder reqBuilder) {
         Timer.Context resTimerCtx = responseTimer.time();
-        getPool(reqBuilder).asyncGet().thenAccept(pooledConn -> {
+        getConnectionManager(reqBuilder).asyncGet().thenAccept(pooledConn -> {
             HTTPClientConnection connection = pooledConn.getObject();
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
@@ -908,10 +908,9 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                     HTTP2ClientConnection http2ClientConnection = (HTTP2ClientConnection) connection;
                     http2ClientConnection.getHttp2Session().settings(reqBuilder.settingsFrame, Callback.NOOP);
                 }
-                pooledConn.release();
             }
             if (log.isDebugEnabled()) {
-                log.debug("take the connection {} from pool, released: {}, {}", connection.getSessionId(), pooledConn.isReleased(), connection.getHttpVersion());
+                log.debug("take the connection {} from pool, {}", connection.getSessionId(), connection.getHttpVersion());
             }
 
             if (reqBuilder.connect != null) {
@@ -1023,7 +1022,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 IO.close(pooledConn.getObject());
                 pooledConn.release();
                 if (log.isDebugEnabled()) {
-                    log.debug("bad message of the connection {}, released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
+                    log.debug("bad message of the connection {}", pooledConn.getObject().getSessionId());
                 }
             }
         }).earlyEOF((req, resp, outputStream, conn) -> {
@@ -1041,7 +1040,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
                 IO.close(pooledConn.getObject());
                 pooledConn.release();
                 if (log.isDebugEnabled()) {
-                    log.debug("early EOF of the connection {}, released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
+                    log.debug("early EOF of the connection {}", pooledConn.getObject().getSessionId());
                 }
             }
         }).messageComplete((req, resp, outputStream, conn) -> messageComplete(reqBuilder, resTimerCtx, pooledConn, resp));
@@ -1059,12 +1058,12 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
             resTimerCtx.stop();
             pooledConn.release();
             if (log.isDebugEnabled()) {
-                log.debug("complete request of the connection {} , released: {}", pooledConn.getObject().getSessionId(), pooledConn.isReleased());
+                log.debug("complete request of the connection {}", pooledConn.getObject().getSessionId());
             }
         }
     }
 
-    protected HttpClientConnectionManager getPool(RequestBuilder request) {
+    protected HttpClientConnectionManager getConnectionManager(RequestBuilder request) {
         return poolMap.computeIfAbsent(request, this::createConnectionManager);
     }
 

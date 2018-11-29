@@ -6,6 +6,7 @@ import com.firefly.utils.lang.track.FixedTimeLeakDetector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents a cached pool of objects.
@@ -78,6 +79,8 @@ public interface Pool<T> extends LifeCycle {
      * @return the leak detector
      */
     FixedTimeLeakDetector<PooledObject<T>> getLeakDetector();
+
+    AtomicInteger getCreatedCount();
 
     /**
      * Represents the functionality to validate an object of the pool

@@ -438,4 +438,9 @@ public class HTTP1ClientConnection extends AbstractHTTP1Connection implements HT
     public boolean getUpgradeWebSocketComplete() {
         return upgradeWebSocketComplete.get();
     }
+
+    @Override
+    public String toString() {
+        return "HTTP1 connection " + getSessionId();
+    }
 }
