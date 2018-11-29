@@ -1,6 +1,8 @@
 package com.firefly.client.http2;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.RatioGauge;
 import com.codahale.metrics.Timer;
 import com.firefly.codec.http2.encode.UrlEncoded;
 import com.firefly.codec.http2.frame.SettingsFrame;
@@ -22,8 +24,6 @@ import com.firefly.utils.io.EofException;
 import com.firefly.utils.io.IO;
 import com.firefly.utils.json.Json;
 import com.firefly.utils.lang.AbstractLifeCycle;
-import com.firefly.utils.lang.pool.AsynchronousPool;
-import com.firefly.utils.lang.pool.BoundedAsynchronousPool;
 import com.firefly.utils.lang.pool.PooledObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,11 +45,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     protected static Logger log = LoggerFactory.getLogger("firefly-system");
 
     private final HTTP2Client http2Client;
-    private final ConcurrentHashMap<RequestBuilder, AsynchronousPool<HTTPClientConnection>> poolMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<RequestBuilder, HttpClientConnectionManager> poolMap = new ConcurrentHashMap<>();
     private final SimpleHTTPClientConfiguration config;
     private final Timer responseTimer;
     private final Meter errorMeter;
-    private final Counter leakedConnectionCounter;
 
     public SimpleHTTPClient() {
         this(new SimpleHTTPClientConfiguration());
@@ -61,7 +60,6 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         MetricRegistry metrics = http2Configuration.getTcpConfiguration().getMetricReporterFactory().getMetricRegistry();
         responseTimer = metrics.timer("http2.SimpleHTTPClient.response.time");
         errorMeter = metrics.meter("http2.SimpleHTTPClient.error.count");
-        leakedConnectionCounter = metrics.counter("http2.SimpleHTTPClient.leak.count");
         metrics.register("http2.SimpleHTTPClient.error.ratio.1m", new RatioGauge() {
             @Override
             protected Ratio getRatio() {
@@ -730,8 +728,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     private void removePool(RequestBuilder req) {
-        AsynchronousPool<HTTPClientConnection> pool = poolMap.remove(req);
-        pool.stop();
+        Optional.ofNullable(poolMap.remove(req)).ifPresent(HttpClientConnectionManager::stop);
     }
 
     /**
@@ -777,12 +774,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     private int _getPoolSize(RequestBuilder req) {
-        AsynchronousPool<HTTPClientConnection> pool = poolMap.get(req);
-        if (pool != null) {
-            return pool.size();
-        } else {
-            return 0;
-        }
+        return Optional.ofNullable(poolMap.get(req)).map(HttpClientConnectionManager::size).orElse(0);
     }
 
     /**
@@ -908,7 +900,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
 
     protected void send(RequestBuilder reqBuilder) {
         Timer.Context resTimerCtx = responseTimer.time();
-        getPool(reqBuilder).take().thenAccept(pooledConn -> {
+        getPool(reqBuilder).asyncGet().thenAccept(pooledConn -> {
             HTTPClientConnection connection = pooledConn.getObject();
 
             if (connection.getHttpVersion() == HttpVersion.HTTP_2) {
@@ -1072,45 +1064,15 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }
     }
 
-    protected AsynchronousPool<HTTPClientConnection> getPool(RequestBuilder request) {
-        return poolMap.computeIfAbsent(request, this::createConnectionPool);
+    protected HttpClientConnectionManager getPool(RequestBuilder request) {
+        return poolMap.computeIfAbsent(request, this::createConnectionManager);
     }
 
-    protected AsynchronousPool<HTTPClientConnection> createConnectionPool(RequestBuilder request) {
-        String host = request.host;
-        int port = request.port;
-        return new BoundedAsynchronousPool<>(
-                config.getPoolSize(),
-                config.getConnectTimeout(),
-                pool -> { // The pooled object factory
-                    Promise.Completable<PooledObject<HTTPClientConnection>> pooledConn = new Promise.Completable<>();
-                    Promise.Completable<HTTPClientConnection> connFuture = http2Client.connect(host, port);
-                    connFuture.thenAccept(conn -> {
-                        String leakMessage = StringUtils.replace(
-                                "The Firefly HTTP client connection leaked. id -> {}, host -> {}:{}",
-                                conn.getSessionId(), host, port);
-                        PooledObject<HTTPClientConnection> pooledObject = new PooledObject<>(conn, pool, () -> { // connection leak callback
-                            leakedConnectionCounter.inc();
-                            log.warn(leakMessage);
-                        });
-                        conn.onClose(c -> pooledObject.release())
-                            .onException((c, exception) -> pooledObject.release());
-                        pooledConn.succeeded(pooledObject);
-                    }).exceptionally(e -> {
-                        pooledConn.failed(e);
-                        return null;
-                    });
-                    return pooledConn;
-                },
-                pooledObject -> pooledObject.getObject().isOpen(), // The connection validator
-                pooledObject -> { // Destroyed connection
-                    try {
-                        pooledObject.getObject().close();
-                    } catch (IOException e) {
-                        log.warn("close http connection exception", e);
-                    }
-                },
-                () -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port));
+    protected HttpClientConnectionManager createConnectionManager(RequestBuilder request) {
+        return new HttpClientConnectionManager(http2Client, request.host, request.port,
+                config.getPoolSize(), config.getConnectTimeout(),
+                config.getLeakDetectorInterval(),
+                config.getMaxGettingThreadNum(), config.getMaxReleaseThreadNum());
     }
 
     @Override

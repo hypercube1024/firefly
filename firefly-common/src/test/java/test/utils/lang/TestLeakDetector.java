@@ -1,10 +1,11 @@
 package test.utils.lang;
 
-import com.firefly.utils.lang.LeakDetector;
+import com.firefly.utils.lang.track.PhantomReferenceLeakDetector;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.concurrent.Phaser;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -39,10 +40,10 @@ public class TestLeakDetector {
     }
 
     @Test
-    public void testLeak() {
-        Phaser phaser = new Phaser(2);
+    public void testLeak() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean leaked = new AtomicBoolean(false);
-        LeakDetector<TrackedObject> leakDetector = new LeakDetector<>(0L, 1L,
+        PhantomReferenceLeakDetector<TrackedObject> leakDetector = new PhantomReferenceLeakDetector<>(0L, 1L,
                 () -> System.out.println("not any leaked object"));
 
         TrackedObject trackedObject = new TrackedObject();
@@ -52,14 +53,14 @@ public class TestLeakDetector {
         leakDetector.register(trackedObject, () -> {
             System.out.println(name + " leaked.");
             leaked.set(true);
-            phaser.arrive();
+            latch.countDown();
         });
         Assert.assertFalse(leaked.get());
 
         // Simulate the TrackedObject leaked. When the garbage collector cleans up the object, it is not released.
         trackedObject = null;
         System.gc();
-        phaser.arriveAndAwaitAdvance();
+        latch.await(10, TimeUnit.SECONDS);
         Assert.assertTrue(leaked.get());
     }
 }

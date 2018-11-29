@@ -1,10 +1,8 @@
 package com.firefly.utils.lang.pool;
 
-import com.firefly.utils.function.Action0;
+import com.firefly.utils.function.Action1;
 import com.firefly.utils.time.Millisecond100Clock;
 
-import java.lang.ref.PhantomReference;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -17,19 +15,14 @@ public class PooledObject<T> {
     private final long createTime;
     private long activeTime;
     private AtomicBoolean released = new AtomicBoolean(false);
-    private final Action0 leakCallback;
-    private volatile PhantomReference<PooledObject<T>> phantomReference;
+    private final Action1<PooledObject<T>> leakCallback;
 
-    public PooledObject(T object, Pool<T> pool, Action0 leakCallback) {
+    public PooledObject(T object, Pool<T> pool, Action1<PooledObject<T>> leakCallback) {
         this.object = object;
         this.pool = pool;
         this.leakCallback = leakCallback;
         createTime = Millisecond100Clock.currentTimeMillis();
         activeTime = createTime;
-        phantomReference = pool.getLeakDetector().register(this, () -> {
-            pool.decreaseCreatedObjectSize();
-            leakCallback.call();
-        });
     }
 
     /**
@@ -98,33 +91,13 @@ public class PooledObject<T> {
      * Clear leak track
      */
     public void clear() {
-        Optional.ofNullable(phantomReference).ifPresent(ref -> pool.getLeakDetector().clear(ref));
+        pool.getLeakDetector().clear(this);
     }
 
     /**
-     * Get the leak callback. It is invoked when the pooled object leaks.
-     *
-     * @return The leak callback.
+     * Register leak track
      */
-    public Action0 getLeakCallback() {
-        return leakCallback;
-    }
-
-    /**
-     * Get the phantom reference which is used to track leak.
-     *
-     * @return The phantom reference which is used to track leak.
-     */
-    public PhantomReference<PooledObject<T>> getPhantomReference() {
-        return phantomReference;
-    }
-
-    /**
-     * Set the phantom reference which is used to track leak.
-     *
-     * @param phantomReference The phantom reference which is used to track leak.
-     */
-    public void setPhantomReference(PhantomReference<PooledObject<T>> phantomReference) {
-        this.phantomReference = phantomReference;
+    public void register() {
+        pool.getLeakDetector().register(this, leakCallback);
     }
 }

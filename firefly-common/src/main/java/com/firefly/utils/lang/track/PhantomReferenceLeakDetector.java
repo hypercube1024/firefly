@@ -1,8 +1,9 @@
-package com.firefly.utils.lang;
+package com.firefly.utils.lang.track;
 
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action0;
+import com.firefly.utils.lang.AbstractLifeCycle;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Pengtao Qiu
  */
-public class LeakDetector<T> extends AbstractLifeCycle {
+public class PhantomReferenceLeakDetector<T> extends AbstractLifeCycle {
 
     private final Scheduler scheduler;
     private final long initialDelay;
@@ -31,7 +32,7 @@ public class LeakDetector<T> extends AbstractLifeCycle {
     /**
      * Construct a leak detector. It helps you to track the resource leak.
      */
-    public LeakDetector() {
+    public PhantomReferenceLeakDetector() {
         this(() -> {
         });
     }
@@ -41,7 +42,7 @@ public class LeakDetector<T> extends AbstractLifeCycle {
      *
      * @param noLeakCallback If not any resources leak, the detector will execute this action.
      */
-    public LeakDetector(Action0 noLeakCallback) {
+    public PhantomReferenceLeakDetector(Action0 noLeakCallback) {
         this(0L, 15L, noLeakCallback);
     }
 
@@ -53,7 +54,7 @@ public class LeakDetector<T> extends AbstractLifeCycle {
      *                       execution and the commencement of the next The time unit is second.
      * @param noLeakCallback If not any resources leak, the detector will execute this action.
      */
-    public LeakDetector(long initialDelay, long delay, Action0 noLeakCallback) {
+    public PhantomReferenceLeakDetector(long initialDelay, long delay, Action0 noLeakCallback) {
         this(initialDelay, delay, TimeUnit.SECONDS, noLeakCallback);
     }
 
@@ -66,7 +67,7 @@ public class LeakDetector<T> extends AbstractLifeCycle {
      * @param unit           The time unit of the initialDelay and delay parameters
      * @param noLeakCallback If not any resources leak, the detector will execute this action.
      */
-    public LeakDetector(long initialDelay, long delay, TimeUnit unit, Action0 noLeakCallback) {
+    public PhantomReferenceLeakDetector(long initialDelay, long delay, TimeUnit unit, Action0 noLeakCallback) {
         this(Schedulers.computation(), initialDelay, delay, unit, noLeakCallback);
     }
 
@@ -80,7 +81,7 @@ public class LeakDetector<T> extends AbstractLifeCycle {
      * @param unit           The time unit of the initialDelay and delay parameters
      * @param noLeakCallback If not any resources leak, the detector will execute this action.
      */
-    public LeakDetector(Scheduler scheduler, long initialDelay, long delay, TimeUnit unit, Action0 noLeakCallback) {
+    public PhantomReferenceLeakDetector(Scheduler scheduler, long initialDelay, long delay, TimeUnit unit, Action0 noLeakCallback) {
         this.scheduler = scheduler;
         this.initialDelay = initialDelay;
         this.delay = delay;

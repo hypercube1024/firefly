@@ -1,14 +1,23 @@
 package com.firefly.utils.lang.pool;
 
-import com.firefly.utils.lang.LeakDetector;
 import com.firefly.utils.lang.LifeCycle;
+import com.firefly.utils.lang.track.FixedTimeLeakDetector;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Represents a cached pool of objects.
  */
 public interface Pool<T> extends LifeCycle {
+
+    /**
+     * Get the object asynchronously
+     *
+     * @return The asynchronous result of the pooled object
+     */
+    CompletableFuture<PooledObject<T>> asyncGet();
 
     /**
      * Returns an instance from the pool. The call may be a blocking one or a
@@ -29,7 +38,7 @@ public interface Pool<T> extends LifeCycle {
      *
      * @return T one of the pooled objects.
      */
-    PooledObject<T> get();
+    PooledObject<T> get() throws InterruptedException;
 
     /**
      * Releases the object and puts it back to the pool.
@@ -64,31 +73,11 @@ public interface Pool<T> extends LifeCycle {
     boolean isEmpty();
 
     /**
-     * When the object factory create a new object, the created object size increase.
-     * When the object is destroy, the created object size decrease.
-     * If the created object size less then pool size, the pool will create a new object,
-     * or else the pool will wait the object return
-     *
-     * @return created object size
-     */
-    int getCreatedObjectSize();
-
-    /**
      * Get the leak detector
      *
      * @return the leak detector
      */
-    LeakDetector<PooledObject<T>> getLeakDetector();
-
-    /**
-     * Created object number adds one.
-     */
-    void increaseCreatedObjectSize();
-
-    /**
-     * Created object number subtracts one.
-     */
-    void decreaseCreatedObjectSize();
+    FixedTimeLeakDetector<PooledObject<T>> getLeakDetector();
 
     /**
      * Represents the functionality to validate an object of the pool
