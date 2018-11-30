@@ -87,21 +87,26 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
 
     @Override
     public PooledObject<T> get() throws InterruptedException {
-        PooledObject<T> pooledObject;
-        while ((pooledObject = queue.poll(timeout, timeUnit)) != null) {
-            if (isValid(pooledObject)) {
-                pooledObject.register();
-                pooledObject.getReleased().set(false);
-                return pooledObject;
-            } else {
-                destroy(pooledObject);
-            }
-        }
-
-        pooledObject = createNew();
+        PooledObject<T> pooledObject = createNewIfLessThanMaxSize();
         if (pooledObject != null) {
             pooledObject.register();
             return pooledObject;
+        } else {
+            pooledObject = queue.poll(timeout, timeUnit);
+            if (pooledObject != null) {
+                if (isValid(pooledObject)) {
+                    pooledObject.register();
+                    pooledObject.getReleased().set(false);
+                    return pooledObject;
+                } else {
+                    destroy(pooledObject);
+                    pooledObject = createNewIfLessThanMaxSize();
+                    if (pooledObject != null) {
+                        pooledObject.register();
+                        return pooledObject;
+                    }
+                }
+            }
         }
         throw new IllegalStateException("Can not get the PooledObject");
     }
@@ -115,12 +120,8 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
 
     private synchronized void releaseSync(PooledObject<T> pooledObject) {
         try {
-            if (isValid(pooledObject)) {
-                boolean success = queue.offer(pooledObject, timeout, timeUnit);
-                if (!success) {
-                    destroy(pooledObject);
-                }
-            } else {
+            boolean success = queue.offer(pooledObject, timeout, timeUnit);
+            if (!success) {
                 destroy(pooledObject);
             }
         } catch (InterruptedException e) {
@@ -135,7 +136,7 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
         createdCount.decrementAndGet();
     }
 
-    private synchronized PooledObject<T> createNew() {
+    private synchronized PooledObject<T> createNewIfLessThanMaxSize() {
         if (createdCount.get() < maxSize) {
             try {
                 PooledObject<T> pooledObject = objectFactory.createNew(this).get(timeout, timeUnit);
@@ -179,7 +180,7 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
     protected void init() {
         creatingScheduler.scheduleWithFixedDelay(() -> {
             for (int i = 0; i < maxSize; i++) {
-                PooledObject<T> pooledObject = createNew();
+                PooledObject<T> pooledObject = createNewIfLessThanMaxSize();
                 if (pooledObject != null) {
                     boolean success = queue.offer(pooledObject);
                     if (!success) {

@@ -2,38 +2,25 @@ package com.firefly.kotlin.ext.common
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.ForkJoinPool
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.CoroutineContext
 
 /**
  * @author Pengtao Qiu
  */
-object CommonCoroutinePool : CoroutineDispatcher() {
-
+object CoroutineDispatchers {
     val defaultPoolSize: Int = Integer.getInteger(
         "com.firefly.kotlin.common.async.defaultPoolSize",
         Runtime.getRuntime().availableProcessors()
                                                  )
-
-    private val pool: ForkJoinPool = ForkJoinPool(defaultPoolSize, { pool ->
-        val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
-        worker.name = "firefly-kt-async-pool-" + worker.poolIndex
-        worker
-    }, null, true)
-
-    override fun dispatch(context: CoroutineContext, block: Runnable) {
-        pool.execute(block)
+    val computationThreadPool: ForkJoinPool by lazy {
+        ForkJoinPool(defaultPoolSize, { pool ->
+            val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
+            worker.name = "firefly-kt-async-pool-" + worker.poolIndex
+            worker
+        }, null, true)
     }
-
-}
-
-object CoroutineDispatchers {
-    val computation: CommonCoroutinePool by lazy { CommonCoroutinePool }
-    val ioBlocking: CoroutineDispatcher by lazy {
+    val ioBlockingThreadPool: ExecutorService by lazy {
         val threadId = AtomicInteger()
         ThreadPoolExecutor(
             16, 64,
@@ -41,6 +28,8 @@ object CoroutineDispatchers {
             ArrayBlockingQueue<Runnable>(10000)
                           ) { r ->
             Thread(r, "firefly-kt-io-blocking-pool-" + threadId.getAndIncrement())
-        }.asCoroutineDispatcher()
+        }
     }
+    val computation: CoroutineDispatcher by lazy { computationThreadPool.asCoroutineDispatcher() }
+    val ioBlocking: CoroutineDispatcher by lazy { ioBlockingThreadPool.asCoroutineDispatcher() }
 }
