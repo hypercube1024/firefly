@@ -9,7 +9,6 @@ import com.firefly.kotlin.ext.annotation.NoArg
 import com.firefly.kotlin.ext.common.CoroutineLocalContext
 import com.firefly.kotlin.ext.common.Json
 import com.firefly.kotlin.ext.common.launchTraceable
-import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.server.http2.SimpleHTTPServer
 import com.firefly.server.http2.SimpleHTTPServerConfiguration
 import com.firefly.server.http2.SimpleRequest
@@ -20,6 +19,7 @@ import com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler
 import com.firefly.server.http2.router.impl.RoutingContextImpl
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
+import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.net.InetAddress
 import java.util.*
@@ -35,7 +35,7 @@ import kotlin.coroutines.CoroutineContext
  *
  * @author Pengtao Qiu
  */
-val sysLogger = KtLogger.getLogger("firefly-system")
+val sysLogger = LoggerFactory.getLogger("firefly-system")
 
 // HTTP server API extensions
 inline fun <reified T : Any> RoutingContext.getJsonBody(charset: String): T = Json.parse(getStringBody(charset))
@@ -565,7 +565,7 @@ class AccessLogService(
     val userTracingId: String = "_const_firefly_user_id_"
                       ) {
 
-    private val log = KtLogger.getLogger(logName)
+    private val log = LoggerFactory.getLogger(logName)
 
     fun recordAccessLog(ctx: RoutingContext, startTime: Long, endTime: Long) {
         val accessLog = toAccessLog(ctx, endTime - startTime)

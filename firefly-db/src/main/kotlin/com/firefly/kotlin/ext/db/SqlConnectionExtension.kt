@@ -3,20 +3,21 @@ package com.firefly.kotlin.ext.db
 import com.firefly.db.RecordNotFound
 import com.firefly.db.SQLConnection
 import com.firefly.db.SQLResultSet
-import com.firefly.kotlin.ext.log.KtLogger
 import com.firefly.utils.function.Func1
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 /**
  * @author Pengtao Qiu
  */
 
-val sysLogger = KtLogger.getLogger("firefly-system")
+val sysLogger: Logger = LoggerFactory.getLogger("firefly-system")
 
 
 // query for single column
