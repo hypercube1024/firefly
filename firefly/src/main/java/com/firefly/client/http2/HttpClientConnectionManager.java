@@ -23,11 +23,7 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
     private final HTTP2Client client;
     private final String host;
     private final int port;
-    private final int maxSize;
-    private final long timeout; // unit second
-    private final long leakDetectorInterval; // unit second
-    private final int maxGettingThreadNum;
-    private final int maxReleaseThreadNum;
+    private final SimpleHTTPClientConfiguration configuration;
     private volatile CompletableFuture<PooledObject<HTTPClientConnection>> currentConnReq;
     private volatile HTTPClientConnection connection;
     private BoundObjectPool<HTTPClientConnection> pool;
@@ -35,17 +31,11 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
 
     public HttpClientConnectionManager(HTTP2Client client,
                                        String host, int port,
-                                       int maxSize, long timeout,
-                                       long leakDetectorInterval,
-                                       int maxGettingThreadNum, int maxReleaseThreadNum) {
+                                       SimpleHTTPClientConfiguration configuration) {
         this.client = client;
         this.host = host;
         this.port = port;
-        this.maxSize = maxSize;
-        this.timeout = timeout;
-        this.leakDetectorInterval = leakDetectorInterval;
-        this.maxGettingThreadNum = maxGettingThreadNum;
-        this.maxReleaseThreadNum = maxReleaseThreadNum;
+        this.configuration = configuration;
         this.currentConnReq = client.connect(host, port).thenApply(FakePooledObject::new);
         this.gettingService = Executors.newSingleThreadExecutor(r -> new Thread(r, "firefly-http-connection-manager-thread"));
     }
@@ -88,7 +78,7 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
     private CompletableFuture<PooledObject<HTTPClientConnection>> asyncGetFromPool() {
         if (connection == null) {
             try {
-                connection = currentConnReq.get(timeout, TimeUnit.SECONDS).getObject();
+                connection = currentConnReq.get(configuration.getConnectTimeout(), TimeUnit.SECONDS).getObject();
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 IO.close(connection);
             }
@@ -147,8 +137,9 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
             return future;
         };
 
-        pool = new BoundObjectPool<>(maxSize, timeout, leakDetectorInterval,
-                maxGettingThreadNum, maxReleaseThreadNum,
+        pool = new BoundObjectPool<>(
+                configuration.getPoolSize(), configuration.getConnectTimeout(), configuration.getLeakDetectorInterval(), configuration.getReleaseTimeout(),
+                configuration.getMaxGettingThreadNum(), configuration.getMaxReleaseThreadNum(),
                 factory, validator, dispose,
                 () -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port));
     }

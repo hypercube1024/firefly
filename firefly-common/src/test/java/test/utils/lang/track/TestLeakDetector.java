@@ -69,7 +69,7 @@ public class TestLeakDetector {
     public void testFixedTimeLeakDetector() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean leaked = new AtomicBoolean(false);
-        FixedTimeLeakDetector<TrackedObject> detector = new FixedTimeLeakDetector<>(1, () -> System.out.println("not any leaked object"));
+        FixedTimeLeakDetector<TrackedObject> detector = new FixedTimeLeakDetector<>(1, 1, () -> System.out.println("not any leaked object"));
 
         TrackedObject trackedObject = new TrackedObject();
         String name = "My tracked object 1";

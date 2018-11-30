@@ -1046,10 +1046,10 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
         }).messageComplete((req, resp, outputStream, conn) -> messageComplete(reqBuilder, resTimerCtx, pooledConn, resp));
     }
 
-    private boolean messageComplete(RequestBuilder reqBuilder,
-                                    Timer.Context resTimerCtx,
-                                    PooledObject<HTTPClientConnection> pooledConn,
-                                    Response resp) {
+    protected boolean messageComplete(RequestBuilder reqBuilder,
+                                      Timer.Context resTimerCtx,
+                                      PooledObject<HTTPClientConnection> pooledConn,
+                                      Response resp) {
         try {
             Optional.ofNullable(reqBuilder.messageComplete).ifPresent(msg -> msg.call(resp));
             Optional.ofNullable(reqBuilder.future).ifPresent(f -> f.succeeded(reqBuilder.simpleResponse));
@@ -1068,10 +1068,7 @@ public class SimpleHTTPClient extends AbstractLifeCycle {
     }
 
     protected HttpClientConnectionManager createConnectionManager(RequestBuilder request) {
-        return new HttpClientConnectionManager(http2Client, request.host, request.port,
-                config.getPoolSize(), config.getConnectTimeout(),
-                config.getLeakDetectorInterval(),
-                config.getMaxGettingThreadNum(), config.getMaxReleaseThreadNum());
+        return new HttpClientConnectionManager(http2Client, request.host, request.port, config);
     }
 
     @Override

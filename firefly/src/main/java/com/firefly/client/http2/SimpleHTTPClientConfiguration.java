@@ -14,7 +14,8 @@ public class SimpleHTTPClientConfiguration extends HTTP2Configuration {
 
     private int poolSize = defaultPoolSize;
     private long connectTimeout = defaultConnectTimeout;
-    private long leakDetectorInterval = 5; // unit second
+    private long leakDetectorInterval = 60; // unit second
+    private long releaseTimeout = 30 * 60; // unit second
     private int maxGettingThreadNum = 4;
     private int maxReleaseThreadNum = 4;
     private HealthCheck healthCheck = ServiceUtils.loadService(HealthCheck.class, new HealthCheck());
@@ -95,5 +96,13 @@ public class SimpleHTTPClientConfiguration extends HTTP2Configuration {
 
     public void setMaxReleaseThreadNum(int maxReleaseThreadNum) {
         this.maxReleaseThreadNum = maxReleaseThreadNum;
+    }
+
+    public long getReleaseTimeout() {
+        return releaseTimeout;
+    }
+
+    public void setReleaseTimeout(long releaseTimeout) {
+        this.releaseTimeout = releaseTimeout;
     }
 }

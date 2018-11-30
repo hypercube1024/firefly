@@ -16,7 +16,6 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
 
     protected final int maxSize;
     protected final long timeout; // unit second
-    protected final long leakDetectorInterval; // unit second
     protected final TimeUnit timeUnit = TimeUnit.SECONDS;
     protected final BlockingQueue<PooledObject<T>> queue;
     protected final ExecutorService gettingService;
@@ -28,18 +27,20 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
     protected final FixedTimeLeakDetector<PooledObject<T>> leakDetector;
     protected final AtomicInteger createdCount = new AtomicInteger(0);
 
-    public BoundObjectPool(int maxSize, long timeout, long leakDetectorInterval,
+    public BoundObjectPool(int maxSize, long timeout, long leakDetectorInterval, long releaseTimeout,
                            ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
                            Action0 noLeakCallback) {
-        this(maxSize, timeout, leakDetectorInterval, 4, 4,
-                objectFactory, validator, dispose, noLeakCallback);
+        this(maxSize, timeout, leakDetectorInterval, releaseTimeout,
+                4, 4,
+                objectFactory, validator, dispose,
+                noLeakCallback);
     }
 
-    public BoundObjectPool(int maxSize, long timeout, long leakDetectorInterval,
+    public BoundObjectPool(int maxSize, long timeout, long leakDetectorInterval, long releaseTimeout,
                            int maxGettingThreadNum, int maxReleaseThreadNum,
                            ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
                            Action0 noLeakCallback) {
-        this(maxSize, timeout, leakDetectorInterval,
+        this(maxSize, timeout,
                 new ArrayBlockingQueue<>(maxSize),
                 new ThreadPoolExecutor(1, maxGettingThreadNum,
                         30L, TimeUnit.SECONDS,
@@ -49,17 +50,16 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
                         30L, TimeUnit.SECONDS,
                         new ArrayBlockingQueue<>(10000),
                         r -> new Thread(r, "firefly-asynchronous-pool-release-thread")),
-                objectFactory, validator, dispose, new FixedTimeLeakDetector<>(leakDetectorInterval, noLeakCallback));
+                objectFactory, validator, dispose, new FixedTimeLeakDetector<>(leakDetectorInterval, releaseTimeout, noLeakCallback));
     }
 
-    public BoundObjectPool(int maxSize, long timeout, long leakDetectorInterval,
+    public BoundObjectPool(int maxSize, long timeout,
                            BlockingQueue<PooledObject<T>> queue,
                            ExecutorService gettingService, ExecutorService releaseService,
                            ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
                            FixedTimeLeakDetector<PooledObject<T>> leakDetector) {
         this.maxSize = maxSize;
         this.timeout = timeout;
-        this.leakDetectorInterval = leakDetectorInterval;
         this.queue = queue;
         this.gettingService = gettingService;
         this.releaseService = releaseService;

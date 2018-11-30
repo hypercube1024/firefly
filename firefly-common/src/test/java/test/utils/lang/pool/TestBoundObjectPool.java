@@ -49,7 +49,7 @@ public class TestBoundObjectPool {
 
 
         int maxSize = 4;
-        BoundObjectPool<TestObject> pool = new BoundObjectPool<>(maxSize, 4, 4,
+        BoundObjectPool<TestObject> pool = new BoundObjectPool<>(maxSize, 4, 4, 4,
                 factory, validator, dispose,
                 () -> System.out.println("no leak"));
 
