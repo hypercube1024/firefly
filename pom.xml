@@ -527,19 +527,6 @@
                 </dependencies>
             </plugin>
 
-            <!-- compiler plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgument>-parameters</compilerArgument>
-                    <release>${java.release.version}</release>
-                    <source>${java.release.version}</source>
-                    <target>${java.release.version}</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-
             <!-- source -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -586,10 +573,111 @@
         <profile>
             <id>jdk_8</id>
             <activation>
-                <jdk>[1.8, 10)</jdk>
+                <jdk>1.8</jdk>
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-plugin</artifactId>
+                        <configuration>
+                            <compilerPlugins>
+                                <!-- Or "jpa" for JPA support -->
+                                <plugin>no-arg</plugin>
+                                <plugin>all-open</plugin>
+                            </compilerPlugins>
+
+                            <pluginOptions>
+                                <option>no-arg:annotation=com.firefly.kotlin.ext.annotation.NoArg</option>
+                                <option>no-arg:annotation=com.firefly.annotation.Component</option>
+                                <option>no-arg:annotation=com.firefly.annotation.Proxies</option>
+                                <option>no-arg:annotation=com.firefly.annotation.Proxy</option>
+                                <option>no-arg:annotation=com.firefly.db.annotation.Table</option>
+
+                                <option>all-open:annotation=com.firefly.annotation.Component</option>
+                                <option>all-open:annotation=com.firefly.annotation.Proxies</option>
+                                <option>all-open:annotation=com.firefly.annotation.Proxy</option>
+                                <option>all-open:annotation=com.firefly.db.annotation.Table</option>
+                            </pluginOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>compile</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>test-compile</id>
+                                <goals>
+                                    <goal>test-compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-noarg</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-allopen</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgument>-parameters</compilerArgument>
+                            <source>${java.release.version}</source>
+                            <target>${java.release.version}</target>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                        <executions>
+                            <!-- Replacing default-compile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-compile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- Replacing default-testCompile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-testCompile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>java-compile</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>java-test-compile</id>
+                                <phase>test-compile</phase>
+                                <goals>
+                                    <goal>testCompile</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
                     <!-- javadoc -->
                     <plugin>
                         <groupId>org.jetbrains.dokka</groupId>
@@ -629,6 +717,108 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-plugin</artifactId>
+                        <configuration>
+                            <compilerPlugins>
+                                <!-- Or "jpa" for JPA support -->
+                                <plugin>no-arg</plugin>
+                                <plugin>all-open</plugin>
+                            </compilerPlugins>
+
+                            <pluginOptions>
+                                <option>no-arg:annotation=com.firefly.kotlin.ext.annotation.NoArg</option>
+                                <option>no-arg:annotation=com.firefly.annotation.Component</option>
+                                <option>no-arg:annotation=com.firefly.annotation.Proxies</option>
+                                <option>no-arg:annotation=com.firefly.annotation.Proxy</option>
+                                <option>no-arg:annotation=com.firefly.db.annotation.Table</option>
+
+                                <option>all-open:annotation=com.firefly.annotation.Component</option>
+                                <option>all-open:annotation=com.firefly.annotation.Proxies</option>
+                                <option>all-open:annotation=com.firefly.annotation.Proxy</option>
+                                <option>all-open:annotation=com.firefly.db.annotation.Table</option>
+                            </pluginOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>compile</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>test-compile</id>
+                                <goals>
+                                    <goal>test-compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-noarg</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-allopen</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgument>-parameters</compilerArgument>
+                            <release>${java.release.version}</release>
+                            <source>${java.release.version}</source>
+                            <target>${java.release.version}</target>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                        <executions>
+                            <!-- Replacing default-compile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-compile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- Replacing default-testCompile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-testCompile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>java-compile</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>java-test-compile</id>
+                                <phase>test-compile</phase>
+                                <goals>
+                                    <goal>testCompile</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
                     <!-- javadoc -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
