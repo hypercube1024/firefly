@@ -19,6 +19,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+        <java.release.version>8</java.release.version>
+
         <kotlin.version>{{kotlinVersion}}</kotlin.version>
         <kotlin.coroutine.version>{{kotlinCoroutineVersion}}</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
@@ -378,8 +380,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgument>-parameters</compilerArgument>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <release>${java.release.version}</release>
+                    <source>${java.release.version}</source>
+                    <target>${java.release.version}</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>

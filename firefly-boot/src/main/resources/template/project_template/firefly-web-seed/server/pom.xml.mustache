@@ -211,8 +211,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgument>-parameters</compilerArgument>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <release>${java.release.version}</release>
+                    <source>${java.release.version}</source>
+                    <target>${java.release.version}</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
                 <executions>

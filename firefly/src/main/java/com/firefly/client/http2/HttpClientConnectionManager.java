@@ -71,12 +71,12 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
 
     public CompletableFuture<PooledObject<HTTPClientConnection>> asyncGet() {
         if (currentConnReq.isDone()) {
-            return _asyncGet();
+            return asyncGetFromPool();
         } else {
             CompletableFuture<PooledObject<HTTPClientConnection>> future = new CompletableFuture<>();
             gettingService.submit(() -> {
                 try {
-                    future.complete(_asyncGet().get());
+                    future.complete(asyncGetFromPool().get());
                 } catch (InterruptedException | ExecutionException e) {
                     future.completeExceptionally(e);
                 }
@@ -85,7 +85,7 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
         }
     }
 
-    public CompletableFuture<PooledObject<HTTPClientConnection>> _asyncGet() {
+    private CompletableFuture<PooledObject<HTTPClientConnection>> asyncGetFromPool() {
         if (connection == null) {
             try {
                 connection = currentConnReq.get(timeout, TimeUnit.SECONDS).getObject();
