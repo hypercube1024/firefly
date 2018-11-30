@@ -70,9 +70,9 @@ class GlobalHandler : AsyncHandler {
         } finally {
             withContext(NonCancellable) {
                 val endTime = System.currentTimeMillis()
-                recordAccessLog(ctx, startTime, endTime)
                 mdc.close()
                 ctx.end()
+                recordAccessLog(ctx, startTime, endTime)
             }
         }
     }
