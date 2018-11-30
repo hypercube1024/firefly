@@ -93,6 +93,8 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
                 pooledObject.register();
                 pooledObject.getReleased().set(false);
                 return pooledObject;
+            } else {
+                destroy(pooledObject);
             }
         }
 

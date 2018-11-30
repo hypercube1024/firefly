@@ -4,7 +4,6 @@ import com.firefly.utils.function.Action1;
 import com.firefly.utils.time.Millisecond100Clock;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
