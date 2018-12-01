@@ -1,5 +1,6 @@
 package com.firefly.utils.lang.pool;
 
+import com.firefly.utils.concurrent.Atomics;
 import com.firefly.utils.concurrent.Scheduler;
 import com.firefly.utils.concurrent.Schedulers;
 import com.firefly.utils.function.Action0;
@@ -132,7 +133,7 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
 
     private synchronized void destroy(PooledObject<T> pooledObject) {
         dispose.destroy(pooledObject);
-        createdCount.decrementAndGet();
+        Atomics.getAndDecrement(createdCount, 0);
     }
 
     private synchronized PooledObject<T> createNewIfLessThanMaxSize() {
@@ -194,15 +195,6 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
     @Override
     protected void init() {
         creatingScheduler.scheduleWithFixedDelay(() -> {
-            if (!queue.isEmpty()) {
-                queue.removeIf(pooledObject -> {
-                    boolean invalid = !isValid(pooledObject);
-                    if (invalid) {
-                        destroy(pooledObject);
-                    }
-                    return invalid;
-                });
-            }
             for (int i = 0; i < maxSize; i++) {
                 PooledObject<T> pooledObject = createNewIfLessThanMaxSize();
                 if (pooledObject != null) {
