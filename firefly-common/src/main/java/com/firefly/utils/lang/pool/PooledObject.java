@@ -16,7 +16,7 @@ public class PooledObject<T> implements Closeable {
     protected final long createTime;
     protected long activeTime;
     protected final Action1<PooledObject<T>> leakCallback;
-    protected final AtomicBoolean released = new AtomicBoolean(false);
+    final AtomicBoolean released = new AtomicBoolean(false);
 
     public PooledObject(T object, Pool<T> pool, Action1<PooledObject<T>> leakCallback) {
         this.object = object;
@@ -61,22 +61,8 @@ public class PooledObject<T> implements Closeable {
         pool.release(this);
     }
 
-    /**
-     * Clear leak track
-     */
-    public void clear() {
-        pool.getLeakDetector().clear(this);
-    }
-
-    /**
-     * Register leak track
-     */
-    public void register() {
-        pool.getLeakDetector().register(this, leakCallback);
-    }
-
-    public AtomicBoolean getReleased() {
-        return released;
+    public boolean isReleased() {
+        return released.get();
     }
 
     @Override

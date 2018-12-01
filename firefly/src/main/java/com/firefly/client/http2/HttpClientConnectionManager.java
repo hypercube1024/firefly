@@ -122,11 +122,8 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
                 String leakMessage = StringUtils.replace(
                         "The Firefly HTTP client connection leaked. id -> {}, host -> {}:{}",
                         conn.getSessionId(), host, port);
-                PooledObject<HTTPClientConnection> pooledObject = new PooledObject<>(conn, pool, pooledObj -> { // connection leak callback
-                    log.warn(leakMessage);
-                    pool.getCreatedCount().decrementAndGet();
-                    IO.close(pooledObj.getObject());
-                });
+                PooledObject<HTTPClientConnection> pooledObject = new PooledObject<>(conn, pool,
+                        pooledObj -> log.warn(leakMessage));
                 conn.onClose(c -> pooledObject.release())
                     .onException((c, exception) -> pooledObject.release());
                 future.complete(pooledObject);
@@ -138,7 +135,8 @@ public class HttpClientConnectionManager extends AbstractLifeCycle {
         };
 
         pool = new BoundObjectPool<>(
-                configuration.getPoolSize(), configuration.getConnectTimeout(), configuration.getLeakDetectorInterval(), configuration.getReleaseTimeout(),
+                configuration.getPoolSize(), configuration.getConnectTimeout(), configuration.getLeakDetectorInterval(),
+                configuration.getReleaseTimeout(),
                 configuration.getMaxGettingThreadNum(), configuration.getMaxReleaseThreadNum(),
                 factory, validator, dispose,
                 () -> log.info("The Firefly HTTP client has not any connections leaked. host -> {}:{}", host, port));

@@ -31,7 +31,7 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
                            ObjectFactory<T> objectFactory, Validator<T> validator, Dispose<T> dispose,
                            Action0 noLeakCallback) {
         this(maxSize, timeout, leakDetectorInterval, releaseTimeout,
-                4, 4,
+                4, 2,
                 objectFactory, validator, dispose,
                 noLeakCallback);
     }
@@ -89,20 +89,19 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
     public PooledObject<T> get() throws InterruptedException {
         PooledObject<T> pooledObject = createNewIfLessThanMaxSize();
         if (pooledObject != null) {
-            pooledObject.register();
+            initGettingFromThePool(pooledObject);
             return pooledObject;
         } else {
             pooledObject = queue.poll(timeout, timeUnit);
             if (pooledObject != null) {
                 if (isValid(pooledObject)) {
-                    pooledObject.register();
-                    pooledObject.getReleased().set(false);
+                    initGettingFromThePool(pooledObject);
                     return pooledObject;
                 } else {
                     destroy(pooledObject);
                     pooledObject = createNewIfLessThanMaxSize();
                     if (pooledObject != null) {
-                        pooledObject.register();
+                        initGettingFromThePool(pooledObject);
                         return pooledObject;
                     }
                 }
@@ -113,7 +112,7 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
 
     @Override
     public void release(PooledObject<T> pooledObject) {
-        if (pooledObject.getReleased().compareAndSet(false, true)) {
+        if (pooledObject.released.compareAndSet(false, true)) {
             releaseService.submit(() -> releaseSync(pooledObject));
         }
     }
@@ -127,7 +126,7 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
         } catch (InterruptedException e) {
             destroy(pooledObject);
         } finally {
-            pooledObject.clear();
+            clearLeakTrack(pooledObject);
         }
     }
 
@@ -151,6 +150,22 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
         }
     }
 
+    private void initGettingFromThePool(PooledObject<T> pooledObject) {
+        registerLeakTrack(pooledObject);
+        pooledObject.released.set(false);
+    }
+
+    private void registerLeakTrack(PooledObject<T> pooledObject) {
+        leakDetector.register(pooledObject, p -> {
+            createdCount.decrementAndGet();
+            pooledObject.leakCallback.call(pooledObject);
+        });
+    }
+
+    private void clearLeakTrack(PooledObject<T> pooledObject) {
+        leakDetector.clear(pooledObject);
+    }
+
     @Override
     public boolean isValid(PooledObject<T> pooledObject) {
         return validator.isValid(pooledObject);
@@ -172,13 +187,22 @@ public class BoundObjectPool<T> extends AbstractLifeCycle implements Pool<T> {
     }
 
     @Override
-    public AtomicInteger getCreatedCount() {
-        return createdCount;
+    public int getCreatedObjectCount() {
+        return createdCount.get();
     }
 
     @Override
     protected void init() {
         creatingScheduler.scheduleWithFixedDelay(() -> {
+            if (!queue.isEmpty()) {
+                queue.removeIf(pooledObject -> {
+                    boolean invalid = !isValid(pooledObject);
+                    if (invalid) {
+                        destroy(pooledObject);
+                    }
+                    return invalid;
+                });
+            }
             for (int i = 0; i < maxSize; i++) {
                 PooledObject<T> pooledObject = createNewIfLessThanMaxSize();
                 if (pooledObject != null) {

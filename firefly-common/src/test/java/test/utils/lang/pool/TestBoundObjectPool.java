@@ -62,7 +62,7 @@ public class TestBoundObjectPool {
             try (PooledObject<TestObject> pooledObject = future.get()) {
                 System.out.println(pooledObject);
                 Assert.assertThat(pooledObject.getObject().closed, is(false));
-                Assert.assertThat(pooledObject.getReleased().get(), is(false));
+                Assert.assertThat(pooledObject.isReleased(), is(false));
                 Assert.assertTrue(pooledObject.getObject().id >= 0
                         && pooledObject.getObject().id < maxSize);
 
@@ -71,7 +71,7 @@ public class TestBoundObjectPool {
             }
         });
 
-        Assert.assertThat(pool.getCreatedCount().get(), is(maxSize));
+        Assert.assertThat(pool.getCreatedObjectCount(), is(maxSize));
 
         pool.stop();
     }

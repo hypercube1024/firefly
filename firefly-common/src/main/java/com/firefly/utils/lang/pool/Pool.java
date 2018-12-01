@@ -78,7 +78,12 @@ public interface Pool<T> extends LifeCycle {
      */
     FixedTimeLeakDetector<PooledObject<T>> getLeakDetector();
 
-    AtomicInteger getCreatedCount();
+    /**
+     * Get the created object count.
+     *
+     * @return The created object count
+     */
+    int getCreatedObjectCount();
 
     /**
      * Represents the functionality to validate an object of the pool
