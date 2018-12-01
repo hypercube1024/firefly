@@ -1,11 +1,12 @@
 package com.fireflysource.common.track;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Pengtao Qiu
@@ -53,9 +54,9 @@ public class TestFixedTimeLeakDetector {
             leaked.set(true);
             latch.countDown();
         });
-        Assert.assertFalse(leaked.get());
+        assertFalse(leaked.get());
 
         latch.await(10, TimeUnit.SECONDS);
-        Assert.assertTrue(leaked.get());
+        assertTrue(leaked.get());
     }
 }
