@@ -95,19 +95,17 @@ class AsyncBoundObjectPool<T>(
         dispose.destroy(pooledObject)
     }
 
-    private suspend fun asyncRelease(pooledObject: PooledObject<T>) {
-        if (pooledObject.released.compareAndSet(false, true)) {
-            debug(clazz) { "release the object. $pooledObject" }
-            leakDetector.clear(pooledObject)
-            channel.send(pooledObject)
-        }
-    }
-
 
     override fun get(): PooledObject<T> = asyncGet().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
-        launchWithAttr(singleThread) { asyncRelease(pooledObject) }
+        launchWithAttr(singleThread) {
+            if (pooledObject.released.compareAndSet(false, true)) {
+                debug(clazz) { "release the object. $pooledObject" }
+                leakDetector.clear(pooledObject)
+                channel.send(pooledObject)
+            }
+        }
     }
 
     override fun isValid(pooledObject: PooledObject<T>): Boolean {

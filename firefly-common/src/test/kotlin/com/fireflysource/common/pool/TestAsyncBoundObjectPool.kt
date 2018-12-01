@@ -1,10 +1,13 @@
 package com.fireflysource.common.pool
 
+import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwaitTermination
 import com.fireflysource.common.func.Callback
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -18,6 +21,7 @@ class TestAsyncBoundObjectPool {
     @Test
     fun test() = runBlocking {
         val idGenerator = AtomicInteger()
+        val threadPool = Executors.newCachedThreadPool()
 
         val factory = Pool.ObjectFactory<TestObject> { pool ->
             val future = CompletableFuture<PooledObject<TestObject>>()
@@ -25,7 +29,10 @@ class TestAsyncBoundObjectPool {
             val pooledObject = PooledObject(testObj, pool) { obj ->
                 println("leaked: " + obj.getObject())
             }
-            future.complete(pooledObject)
+            threadPool.submit {
+                Thread.sleep(100) // mock the object creating consumption.
+                future.complete(pooledObject)
+            }
             future
         }
         val validator = Pool.Validator<TestObject> { pooledObject ->
@@ -49,7 +56,7 @@ class TestAsyncBoundObjectPool {
         }
 
         list.forEachIndexed { i, future ->
-            println("The future is done. $i, ${future.isDone}")
+            println("The future is done. $i, ${future.isDone}, ${future.get()}")
             future.get().use { pooledObject ->
                 assertFalse(pooledObject.getObject().closed)
                 assertFalse(pooledObject.isReleased)
@@ -66,6 +73,7 @@ class TestAsyncBoundObjectPool {
         }
 
         pool.stop()
+        shutdownAndAwaitTermination(threadPool, 5, TimeUnit.SECONDS)
         Unit
     }
 }

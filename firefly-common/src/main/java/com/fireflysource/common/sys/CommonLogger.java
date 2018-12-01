@@ -15,6 +15,7 @@ abstract public class CommonLogger {
         if (system.isDebugEnabled()) {
             system.debug("[" + clazz.getName() + "] " + supplier.get());
         }
+//        System.out.println("[" + clazz.getName() + "] " + supplier.get());
     }
 
     public static void debug(Class<?> clazz, Throwable t, Supplier<String> supplier) {
