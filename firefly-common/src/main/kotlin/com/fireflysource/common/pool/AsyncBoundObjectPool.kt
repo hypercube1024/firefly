@@ -1,8 +1,9 @@
 package com.fireflysource.common.pool
 
-import com.firefly.kotlin.ext.common.asyncTraceable
-import com.firefly.kotlin.ext.common.launchTraceable
 import com.fireflysource.common.concurrent.Atomics
+import com.fireflysource.common.coroutine.async
+import com.fireflysource.common.coroutine.launch
+import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.track.FixedTimeLeakDetector
@@ -42,7 +43,7 @@ class AsyncBoundObjectPool<T>(
 
     private class ArrivedMaxPoolSize(msg: String) : RuntimeException(msg)
 
-    override fun asyncGet(): CompletableFuture<PooledObject<T>> = asyncTraceable {
+    override fun asyncGet(): CompletableFuture<PooledObject<T>> = async {
         try {
             createNewIfLessThanMaxSize()
         } catch (e: ArrivedMaxPoolSize) {
@@ -104,7 +105,7 @@ class AsyncBoundObjectPool<T>(
     override fun get(): PooledObject<T> = asyncGet().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
-        launchTraceable { asyncRelease(pooledObject) }
+        launch { asyncRelease(pooledObject) }
     }
 
     override fun isValid(pooledObject: PooledObject<T>): Boolean {
@@ -112,20 +113,23 @@ class AsyncBoundObjectPool<T>(
     }
 
     override fun size(): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw UnsupportedOperationException("Can not get the channel size")
     }
 
-    override fun isEmpty(): Boolean = channel.isEmpty
+    override fun isEmpty(): Boolean {
+        throw UnsupportedOperationException("Can not get the channel size")
+    }
 
     override fun getLeakDetector(): FixedTimeLeakDetector<PooledObject<T>> = leakDetector
 
     override fun getCreatedObjectCount(): Int = createdCount.get()
 
     override fun init() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
     }
 
     override fun destroy() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        leakDetector.stop()
+        channel.close()
     }
 }

@@ -27,7 +27,7 @@ public class FixedTimeLeakDetector<T> extends AbstractLifeCycle {
     private final Map<T, TrackedObject> registeredMap = Collections.synchronizedMap(new IdentityHashMap<>());
 
     public FixedTimeLeakDetector(long interval, long releaseTimeout, Callback noLeakCallback) {
-        this(Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "firefly-fixed-time-leak-detector-thread")),
+        this(Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "firefly-fixed-time-leak-detector")),
                 interval, interval, releaseTimeout, TimeUnit.SECONDS, noLeakCallback);
     }
 
