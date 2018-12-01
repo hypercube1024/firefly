@@ -69,6 +69,7 @@ public class PooledObject<T> implements Closeable {
                 "object=" + object +
                 ", createTime=" + createTime +
                 ", activeTime=" + activeTime +
+                ", released=" + released.get() +
                 '}';
     }
 

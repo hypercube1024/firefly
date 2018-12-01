@@ -13,14 +13,15 @@ object CoroutineDispatchers {
         "com.fireflysource.common.coroutine.defaultPoolSize",
         Runtime.getRuntime().availableProcessors()
                                                  )
-    val computationThreadPool: ForkJoinPool by lazy {
+
+    val computation: CoroutineDispatcher by lazy {
         ForkJoinPool(defaultPoolSize, { pool ->
             val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
             worker.name = "firefly-computation-pool-" + worker.poolIndex
             worker
-        }, null, true)
+        }, null, true).asCoroutineDispatcher()
     }
-    val ioBlockingThreadPool: ExecutorService by lazy {
+    val ioBlocking: CoroutineDispatcher by lazy {
         val threadId = AtomicInteger()
         ThreadPoolExecutor(
             defaultPoolSize, 64,
@@ -28,8 +29,14 @@ object CoroutineDispatchers {
             ArrayBlockingQueue<Runnable>(20000)
                           ) { r ->
             Thread(r, "firefly-io-blocking-pool-" + threadId.getAndIncrement())
-        }
+        }.asCoroutineDispatcher()
     }
-    val computation: CoroutineDispatcher by lazy { computationThreadPool.asCoroutineDispatcher() }
-    val ioBlocking: CoroutineDispatcher by lazy { ioBlockingThreadPool.asCoroutineDispatcher() }
+    val singleThread: CoroutineDispatcher by lazy {
+        Executors.newSingleThreadExecutor { r ->
+            Thread(
+                r,
+                "firefly-single-thread-pool"
+                  )
+        }.asCoroutineDispatcher()
+    }
 }

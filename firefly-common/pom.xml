@@ -14,6 +14,13 @@
     <name>firefly-common</name>
     <url>http://www.fireflysource.com</url>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <finalName>firefly-common</finalName>
         <defaultGoal>install</defaultGoal>

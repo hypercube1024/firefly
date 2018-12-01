@@ -90,6 +90,7 @@ public interface Pool<T> extends LifeCycle {
      *
      * @param <T> The pooled object
      */
+    @FunctionalInterface
     interface Validator<T> {
 
         /**
@@ -106,6 +107,7 @@ public interface Pool<T> extends LifeCycle {
      *
      * @param <T> The pooled object
      */
+    @FunctionalInterface
     interface Dispose<T> {
 
         /**
@@ -123,6 +125,7 @@ public interface Pool<T> extends LifeCycle {
      *
      * @param <T> The pooled object
      */
+    @FunctionalInterface
     interface ObjectFactory<T> {
 
         /**

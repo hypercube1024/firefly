@@ -1,13 +1,14 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
+import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.asyncWithAttr
 import com.fireflysource.common.coroutine.launchWithAttr
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.sys.CommonLogger.debug
 import com.fireflysource.common.track.FixedTimeLeakDetector
-
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
@@ -31,6 +32,10 @@ class AsyncBoundObjectPool<T>(
     noLeakCallback: Callback
                              ) : AbstractLifeCycle(), Pool<T> {
 
+    companion object {
+        private val clazz = AsyncBoundObjectPool::class.java
+    }
+
     init {
         start()
     }
@@ -43,11 +48,11 @@ class AsyncBoundObjectPool<T>(
 
     private class ArrivedMaxPoolSize(msg: String) : RuntimeException(msg)
 
-    override fun asyncGet(): CompletableFuture<PooledObject<T>> = asyncWithAttr {
+    override fun asyncGet(): CompletableFuture<PooledObject<T>> = asyncWithAttr(singleThread) {
         try {
             createNewIfLessThanMaxSize()
         } catch (e: ArrivedMaxPoolSize) {
-            getPooledObject()
+            getFromPool()
         }
     }.asCompletableFuture()
 
@@ -55,49 +60,46 @@ class AsyncBoundObjectPool<T>(
         if (createdCount.get() < maxSize) {
             val obj = objectFactory.createNew(this).await()
             createdCount.incrementAndGet()
+            debug(clazz) { "create a new object. $obj" }
             obj
         } else {
             throw ArrivedMaxPoolSize("Arrived the max pool size")
         }
     }
 
-    private suspend fun getPooledObject(): PooledObject<T> {
-        val pooledObject = channel.receive()
-        return if (isValid(pooledObject)) {
-            initGettingFromThePool(pooledObject)
-            pooledObject
+    private suspend fun getFromPool(): PooledObject<T> {
+        val oldPooledObject = channel.receive()
+        return if (isValid(oldPooledObject)) {
+            initPooledObject(oldPooledObject)
+            debug(clazz) { "get an old object. $oldPooledObject" }
+            oldPooledObject
         } else {
-            destroy(pooledObject)
+            destroy(oldPooledObject)
             val newPooledObject = createNewIfLessThanMaxSize()
-            initGettingFromThePool(pooledObject)
+            initPooledObject(oldPooledObject)
             newPooledObject
         }
     }
 
-    private fun initGettingFromThePool(pooledObject: PooledObject<T>) {
-        registerLeakTrack(pooledObject)
-        pooledObject.released.set(false)
-    }
-
-    private fun registerLeakTrack(pooledObject: PooledObject<T>) {
+    private fun initPooledObject(pooledObject: PooledObject<T>) {
         leakDetector.register(pooledObject) {
             createdCount.decrementAndGet()
             pooledObject.leakCallback.accept(pooledObject)
         }
+        pooledObject.released.set(false)
     }
 
     private suspend fun destroy(pooledObject: PooledObject<T>) = mutex.withLock {
+        debug(clazz) { "destroy the object. $pooledObject" }
         Atomics.getAndDecrement(createdCount, 0)
         dispose.destroy(pooledObject)
     }
 
     private suspend fun asyncRelease(pooledObject: PooledObject<T>) {
         if (pooledObject.released.compareAndSet(false, true)) {
+            debug(clazz) { "release the object. $pooledObject" }
             leakDetector.clear(pooledObject)
-            val success = channel.offer(pooledObject)
-            if (!success) {
-                destroy(pooledObject)
-            }
+            channel.send(pooledObject)
         }
     }
 
@@ -105,7 +107,7 @@ class AsyncBoundObjectPool<T>(
     override fun get(): PooledObject<T> = asyncGet().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
-        launchWithAttr { asyncRelease(pooledObject) }
+        launchWithAttr(singleThread) { asyncRelease(pooledObject) }
     }
 
     override fun isValid(pooledObject: PooledObject<T>): Boolean {
