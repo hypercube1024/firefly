@@ -4,10 +4,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * The executor service common utilities.
+ *
  * @author Pengtao Qiu
  */
 abstract public class ExecutorServiceUtils {
 
+    /**
+     * Blocks until all tasks have completed execution after a shutdown
+     * request, or the timeout occurs, or the current thread is
+     * interrupted, whichever happens first.
+     *
+     * @param pool    The thread pool that will shutdown.
+     * @param timeout The maximum time to wait.
+     * @param unit    The time unit of the timeout argument.
+     */
     public static void shutdownAndAwaitTermination(ExecutorService pool, long timeout, TimeUnit unit) {
         pool.shutdown(); // Disable new tasks from being submitted
         try {

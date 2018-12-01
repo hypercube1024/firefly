@@ -6,41 +6,42 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Pengtao Qiu
  */
-public class TestFixedTimeLeakDetector {
+class TestFixedTimeLeakDetector {
 
-    public static class TrackedObject {
+    static class TrackedObject {
         private boolean released;
         private String name;
 
-        public void release() {
+        void release() {
             released = true;
         }
 
-        public boolean isReleased() {
+        boolean isReleased() {
             return released;
         }
 
-        public void setReleased(boolean released) {
+        void setReleased(boolean released) {
             this.released = released;
         }
 
-        public String getName() {
+        String getName() {
             return name;
         }
 
-        public void setName(String name) {
+        void setName(String name) {
             this.name = name;
         }
 
     }
 
     @Test
-    public void testFixedTimeLeakDetector() throws InterruptedException {
+    void testFixedTimeLeakDetector() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean leaked = new AtomicBoolean(false);
         FixedTimeLeakDetector<TrackedObject> detector = new FixedTimeLeakDetector<>(1, 1,

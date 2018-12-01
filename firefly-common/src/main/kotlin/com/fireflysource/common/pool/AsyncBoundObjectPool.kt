@@ -1,8 +1,8 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
-import com.fireflysource.common.coroutine.async
-import com.fireflysource.common.coroutine.launch
+import com.fireflysource.common.coroutine.asyncWithAttr
+import com.fireflysource.common.coroutine.launchWithAttr
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
@@ -43,7 +43,7 @@ class AsyncBoundObjectPool<T>(
 
     private class ArrivedMaxPoolSize(msg: String) : RuntimeException(msg)
 
-    override fun asyncGet(): CompletableFuture<PooledObject<T>> = async {
+    override fun asyncGet(): CompletableFuture<PooledObject<T>> = asyncWithAttr {
         try {
             createNewIfLessThanMaxSize()
         } catch (e: ArrivedMaxPoolSize) {
@@ -105,7 +105,7 @@ class AsyncBoundObjectPool<T>(
     override fun get(): PooledObject<T> = asyncGet().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
-        launch { asyncRelease(pooledObject) }
+        launchWithAttr { asyncRelease(pooledObject) }
     }
 
     override fun isValid(pooledObject: PooledObject<T>): Boolean {

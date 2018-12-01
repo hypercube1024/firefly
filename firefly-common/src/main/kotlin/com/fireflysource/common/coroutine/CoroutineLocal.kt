@@ -147,11 +147,11 @@ object CoroutineLocalContext {
  * @param block The coroutine code.
  * @return The deferred task result.
  */
-fun <T> async(
+fun <T> asyncWithAttr(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
-             ): Deferred<T> {
+                     ): Deferred<T> {
     return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
@@ -163,11 +163,11 @@ fun <T> async(
  * @param block The coroutine code.
  * @return The current job.
  */
-fun launch(
+fun launchWithAttr(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> Unit
-          ): Job {
+                  ): Job {
     return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
@@ -179,10 +179,10 @@ fun launch(
  * @param block The coroutine code.
  * @return The task result.
  */
-suspend fun <T> withContext(
+suspend fun <T> withAttr(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
-                           ): T {
+                        ): T {
     return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
