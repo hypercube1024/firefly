@@ -51,24 +51,22 @@ class FileLog : Log, Closeable {
             20000
                                                               )
         private val producerThread: CoroutineDispatcher by lazy {
-            val threadId = AtomicInteger()
             ThreadPoolExecutor(
                 1, 1,
                 0, TimeUnit.MILLISECONDS,
                 ArrayBlockingQueue<Runnable>(singleThreadQueueSize)
                               ) { r ->
-                Thread(r, "firefly-file-log-producer-thread-pool-" + threadId.getAndIncrement())
+                Thread(r, "firefly-file-log-producer-thread-pool")
             }.asCoroutineDispatcher()
         }
 
         private val consumerThread: CoroutineDispatcher by lazy {
-            val threadId = AtomicInteger()
             ThreadPoolExecutor(
                 1, 1,
                 0, TimeUnit.MILLISECONDS,
                 ArrayBlockingQueue<Runnable>(singleThreadQueueSize)
                               ) { r ->
-                Thread(r, "firefly-file-log-consumer-thread-pool-" + threadId.getAndIncrement())
+                Thread(r, "firefly-file-log-consumer-thread-pool")
             }.asCoroutineDispatcher()
         }
 

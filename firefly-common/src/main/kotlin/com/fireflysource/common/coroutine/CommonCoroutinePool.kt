@@ -43,13 +43,12 @@ object CoroutineDispatchers {
         }.asCoroutineDispatcher()
     }
     val singleThread: CoroutineDispatcher by lazy {
-        val threadId = AtomicInteger()
         ThreadPoolExecutor(
             1, 1,
             0, TimeUnit.MILLISECONDS,
             ArrayBlockingQueue<Runnable>(singleThreadQueueSize)
                           ) { r ->
-            Thread(r, "firefly-single-thread-pool-" + threadId.getAndIncrement())
+            Thread(r, "firefly-single-thread-pool")
         }.asCoroutineDispatcher()
     }
 }
