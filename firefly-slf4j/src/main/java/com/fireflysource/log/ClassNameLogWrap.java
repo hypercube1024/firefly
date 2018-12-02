@@ -1,5 +1,7 @@
 package com.fireflysource.log;
 
+import java.io.IOException;
+
 /**
  * @author Pengtao Qiu
  */
@@ -120,5 +122,10 @@ public class ClassNameLogWrap implements Log {
 
     public String getClassName() {
         return className;
+    }
+
+    @Override
+    public void close() throws IOException {
+        log.close();
     }
 }

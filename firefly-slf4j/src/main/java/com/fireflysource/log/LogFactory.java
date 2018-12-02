@@ -3,7 +3,10 @@ package com.fireflysource.log;
 import com.fireflysource.log.internal.utils.collection.TreeTrie;
 import com.fireflysource.log.internal.utils.collection.Trie;
 
-public class LogFactory {
+import java.io.Closeable;
+import java.io.IOException;
+
+public class LogFactory implements Closeable {
 
     private final Trie<Log> logTree = new TreeTrie<>();
 
@@ -39,6 +42,18 @@ public class LogFactory {
             log = logTree.get(LogConfigParser.DEFAULT_LOG_NAME);
         }
         return new ClassNameLogWrap(log, name);
+    }
+
+    @Override
+    public void close() {
+        logTree.keySet().forEach(k -> {
+            Log log = logTree.get(k);
+            try {
+                log.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
 }

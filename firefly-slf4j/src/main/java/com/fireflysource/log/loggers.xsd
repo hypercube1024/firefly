@@ -13,11 +13,11 @@
                 <element name="max-file-size" type="string" minOccurs="0" maxOccurs="1" default="209715200"/>
                 <element name="charset" type="string" minOccurs="0" maxOccurs="1" default="UTF-8"/>
                 <element name="formatter" type="string" minOccurs="0" maxOccurs="1"
-                         default="com.firefly.utils.log.DefaultLogFormatter"/>
+                         default="com.fireflysource.log.DefaultLogFormatter"/>
                 <element name="log-name-formatter" type="string" minOccurs="0" maxOccurs="1"
-                         default="com.firefly.utils.log.DefaultLogNameFormatter"/>
+                         default="com.fireflysource.log.DefaultLogNameFormatter"/>
                 <element name="log-filter" type="string" minOccurs="0" maxOccurs="1"
-                         default="com.firefly.utils.log.DefaultLogFilter"/>
+                         default="com.fireflysource.log.DefaultLogFilter"/>
                 <element name="max-split-time" type="string" minOccurs="0" maxOccurs="1"
                          default="day"/>
             </sequence>

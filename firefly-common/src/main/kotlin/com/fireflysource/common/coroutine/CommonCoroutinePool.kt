@@ -2,10 +2,7 @@ package com.fireflysource.common.coroutine
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.ForkJoinPool
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -20,10 +17,6 @@ object CoroutineDispatchers {
         "com.fireflysource.common.coroutine.ioBlockingQueueSize",
         20000
                                                 )
-    val singleThreadQueueSize = Integer.getInteger(
-        "com.fireflysource.common.coroutine.singleThreadQueueSize",
-        20000
-                                                  )
 
     val computation: CoroutineDispatcher by lazy {
         ForkJoinPool(defaultPoolSize, { pool ->
@@ -43,12 +36,6 @@ object CoroutineDispatchers {
         }.asCoroutineDispatcher()
     }
     val singleThread: CoroutineDispatcher by lazy {
-        ThreadPoolExecutor(
-            1, 1,
-            0, TimeUnit.MILLISECONDS,
-            ArrayBlockingQueue<Runnable>(singleThreadQueueSize)
-                          ) { r ->
-            Thread(r, "firefly-single-thread-pool")
-        }.asCoroutineDispatcher()
+        Executors.newSingleThreadExecutor { Thread(it, "firefly-single-thread-pool") }.asCoroutineDispatcher()
     }
 }

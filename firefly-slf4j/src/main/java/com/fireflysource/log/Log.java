@@ -1,6 +1,8 @@
 package com.fireflysource.log;
 
-public interface Log {
+import java.io.Closeable;
+
+public interface Log extends Closeable {
 
     String CL = "\r\n";
 

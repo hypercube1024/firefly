@@ -125,7 +125,6 @@ class AsyncBoundObjectPool<T>(
     override fun getCreatedObjectCount(): Int = createdCount.get()
 
     override fun init() {
-
     }
 
     override fun destroy() {

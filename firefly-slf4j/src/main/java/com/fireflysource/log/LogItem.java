@@ -136,7 +136,7 @@ public class LogItem {
                 logStr += " " + stackTraceElement;
             }
 
-            logStr += " -> " + renderContentTemplate();
+            logStr += "\t" + renderContentTemplate();
         }
         return logStr;
     }

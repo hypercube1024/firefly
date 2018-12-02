@@ -4,7 +4,7 @@ import com.fireflysource.log.LogConfigParser.*
 import com.fireflysource.log.internal.utils.TimeUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import java.io.Closeable
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -15,16 +15,14 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 
 /**
  * @author Pengtao Qiu
  */
-class FileLog : Log, Closeable {
+class FileLog : Log {
 
     var level: LogLevel = LogLevel.fromName(DEFAULT_LOG_LEVEL)
     var path: String = DEFAULT_LOG_DIRECTORY.absolutePath
@@ -41,51 +39,34 @@ class FileLog : Log, Closeable {
     private val mdc: MappedDiagnosticContext = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
     private val closed = AtomicBoolean(false)
     private val output = LogOutputStream()
-
-    private val consumerJob = GlobalScope.launch(consumerThread) {
+    private val channel = Channel<LogItem>()
+    private val consumerJob = GlobalScope.launch(logThread) {
         while (!closed.get()) {
-            val logItem = channel.receive()
+            try {
+                val logItem = channel.receive()
 
-            logFilter.filter(logItem)
-            if (consoleOutput) {
-                println(logFormatter.format(logItem))
-            }
+                logFilter.filter(logItem)
+                if (consoleOutput) {
+                    println(logFormatter.format(logItem))
+                }
 
-            if (fileOutput) {
-                output.write(logFormatter.format(logItem), logItem.date)
+                if (fileOutput) {
+                    output.write(logFormatter.format(logItem), logItem.date)
+                }
+            } catch (e: ClosedReceiveChannelException) {
+                println("File log $logName ${e.message}")
             }
         }
+        println("File log $logName was closed.")
     }
 
     companion object {
         private val stackTrace =
             java.lang.Boolean.getBoolean("com.fireflysource.log.com.fireflysource.log.FileLog.debugMode")
 
-        private val singleThreadQueueSize = Integer.getInteger(
-            "com.fireflysource.log.com.fireflysource.log.FileLog.singleThreadQueueSize",
-            20000
-                                                              )
-        private val producerThread: CoroutineDispatcher by lazy {
-            ThreadPoolExecutor(
-                1, 1,
-                0, TimeUnit.MILLISECONDS,
-                ArrayBlockingQueue<Runnable>(singleThreadQueueSize)
-                              ) { r ->
-                Thread(r, "firefly-file-log-producer-thread-pool")
-            }.asCoroutineDispatcher()
+        private val logThread: CoroutineDispatcher by lazy {
+            Executors.newSingleThreadExecutor { Thread(it, "firefly-file-log-thread") }.asCoroutineDispatcher()
         }
-
-        private val consumerThread: CoroutineDispatcher by lazy {
-            ThreadPoolExecutor(
-                1, 1,
-                0, TimeUnit.MILLISECONDS,
-                ArrayBlockingQueue<Runnable>(singleThreadQueueSize)
-                              ) { r ->
-                Thread(r, "firefly-file-log-consumer-thread-pool")
-            }.asCoroutineDispatcher()
-        }
-
-        private val channel = Channel<LogItem>()
     }
 
     private inner class LogOutputStream {
@@ -311,11 +292,14 @@ class FileLog : Log, Closeable {
     }
 
     override fun close() = runBlocking {
-        if (closed.compareAndSet(false, true)) {
-            channel.close()
-            consumerJob.join()
+        try {
+            if (closed.compareAndSet(false, true)) {
+                channel.close()
+                consumerJob.join()
+            }
+        } finally {
+            output.close()
         }
-        output.close()
     }
 
     private fun write(content: String?, level: String, throwable: Throwable?, vararg objects: Any) {
@@ -350,8 +334,37 @@ class FileLog : Log, Closeable {
     }
 
     private fun write(logItem: LogItem) {
-        GlobalScope.launch(producerThread) {
+        GlobalScope.launch(logThread) {
             channel.send(logItem)
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FileLog
+
+        if (logName != other.logName) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return logName.hashCode()
+    }
+
+    override fun toString(): String {
+        return "FileLog{" +
+                "level=" + level +
+                ", path='" + path + '\''.toString() +
+                ", name='" + name + '\''.toString() +
+                ", consoleOutput=" + consoleOutput +
+                ", fileOutput=" + fileOutput +
+                ", maxFileSize=" + maxFileSize +
+                ", charset=" + charset +
+                ", maxSplitTime=" + maxSplitTime.value +
+                '}'.toString()
+    }
+
 }
