@@ -1,15 +1,24 @@
 package com.fireflysource.log
 
 import com.fireflysource.log.LogConfigParser.*
+import com.fireflysource.log.internal.utils.TimeUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import java.io.Closeable
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.nio.charset.Charset
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 /**
@@ -30,16 +39,22 @@ class FileLog : Log, Closeable {
     var charset: Charset = DEFAULT_CHARSET
 
     private val mdc: MappedDiagnosticContext = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
+    private val closed = AtomicBoolean(false)
+    private val output = LogOutputStream()
+
     private val consumerJob = GlobalScope.launch(consumerThread) {
-        fun initFileOutputStream() {
-
-        }
-
-        while (!channel.isClosedForReceive) {
+        while (!closed.get()) {
             val logItem = channel.receive()
-            // TODO
-        }
 
+            logFilter.filter(logItem)
+            if (consoleOutput) {
+                println(logFormatter.format(logItem))
+            }
+
+            if (fileOutput) {
+                output.write(logFormatter.format(logItem), logItem.date)
+            }
+        }
     }
 
     companion object {
@@ -71,6 +86,126 @@ class FileLog : Log, Closeable {
         }
 
         private val channel = Channel<LogItem>()
+    }
+
+    private inner class LogOutputStream {
+        private var fileOutputStream: FileOutputStream? = null
+        private var writeSize: Long = 0
+        private var lastWriteTime: LocalDateTime? = null
+
+        private fun getLogName(localDateTime: LocalDateTime): String {
+            return logNameFormatter.format(name, localDateTime)
+        }
+
+        private fun getLogBakName(localDateTime: LocalDateTime, index: Int): String {
+            return logNameFormatter.formatBak(name, localDateTime, index)
+        }
+
+        private fun getLogBakName(localDateTime: LocalDateTime): String {
+            var index = 0
+            var bakName = getLogBakName(localDateTime, index)
+            while (Files.exists(Paths.get(path, bakName))) {
+                index++
+                bakName = getLogBakName(localDateTime, index)
+            }
+            return bakName
+        }
+
+        private fun isNotOverTimeLimit(newLocalDateTime: LocalDateTime): Boolean {
+            when (maxSplitTime) {
+                MaxSplitTimeEnum.DAY -> {
+                    return (lastWriteTime!!.year == newLocalDateTime.year
+                            && lastWriteTime!!.month == newLocalDateTime.month
+                            && lastWriteTime!!.dayOfMonth == newLocalDateTime.dayOfMonth)
+                }
+                MaxSplitTimeEnum.HOUR -> {
+                    return (lastWriteTime!!.year == newLocalDateTime.year
+                            && lastWriteTime!!.month == newLocalDateTime.month
+                            && lastWriteTime!!.dayOfMonth == newLocalDateTime.dayOfMonth
+                            && lastWriteTime!!.hour == newLocalDateTime.hour)
+                }
+                MaxSplitTimeEnum.MINUTE -> {
+                    return (lastWriteTime!!.year == newLocalDateTime.year
+                            && lastWriteTime!!.month == newLocalDateTime.month
+                            && lastWriteTime!!.dayOfMonth == newLocalDateTime.dayOfMonth
+                            && lastWriteTime!!.hour == newLocalDateTime.hour
+                            && lastWriteTime!!.minute == newLocalDateTime.minute)
+                }
+            }
+        }
+
+        private fun initializeBufferedWriter(newDate: Date, currentWriteSize: Long) {
+            val newLocalDateTime = TimeUtils.toLocalDateTime(newDate)
+            val logName = getLogName(newLocalDateTime)
+            val logPath = Paths.get(path, logName)
+
+            if (Files.exists(logPath)) {
+                if (lastWriteTime == null) {
+                    val fileTime = Files.getLastModifiedTime(logPath)
+                    lastWriteTime = LocalDateTime.from(fileTime.toInstant().atZone(ZoneId.systemDefault()))
+                }
+
+                if (!isNotOverTimeLimit(newLocalDateTime)) {
+                    initOutputStreamAndNewFile(logName, logPath, lastWriteTime!!)
+                } else {
+                    if (maxFileSize > 0) {
+                        if (writeSize == 0L) {
+                            writeSize = Files.size(logPath)
+                        }
+                        if (currentWriteSize + writeSize > maxFileSize) {
+                            initOutputStreamAndNewFile(logName, logPath, lastWriteTime!!)
+                        } else {
+                            initOutputStream(logName)
+                        }
+                    } else {
+                        initOutputStream(logName)
+                    }
+                }
+            } else {
+                initOutputStream(logName)
+            }
+        }
+
+        private fun initOutputStreamAndNewFile(
+            logName: String,
+            logPath: Path,
+            fileLastModifiedDateTime: LocalDateTime
+                                              ) {
+            close()
+            Files.move(logPath, Paths.get(path, getLogBakName(fileLastModifiedDateTime)))
+            fileOutputStream = FileOutputStream(File(path, logName), true)
+        }
+
+        private fun initOutputStream(logName: String) {
+            if (fileOutputStream == null) {
+                fileOutputStream = FileOutputStream(File(path, logName), true)
+            }
+        }
+
+        fun write(str: String, date: Date) {
+            val text = (str + Log.CL).toByteArray(charset)
+            try {
+                initializeBufferedWriter(date, text.size.toLong())
+                fileOutputStream!!.write(text)
+                writeSize += text.size
+                lastWriteTime = TimeUtils.toLocalDateTime(date)
+            } catch (e: IOException) {
+                System.err.println("write log exception, " + e.message)
+            }
+
+        }
+
+        fun close() {
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream!!.close()
+                    writeSize = 0
+                } catch (e: IOException) {
+                    System.err.println("close log writer exception, " + e.message)
+                }
+            }
+        }
+
     }
 
     override fun getName(): String = logName
@@ -176,8 +311,11 @@ class FileLog : Log, Closeable {
     }
 
     override fun close() = runBlocking {
-        channel.close()
-        consumerJob.join()
+        if (closed.compareAndSet(false, true)) {
+            channel.close()
+            consumerJob.join()
+        }
+        output.close()
     }
 
     private fun write(content: String?, level: String, throwable: Throwable?, vararg objects: Any) {
