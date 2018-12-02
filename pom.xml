@@ -40,6 +40,7 @@
 
     <modules>
         <module>firefly-common</module>
+        <module>firefly-slf4j</module>
     </modules>
 
     <properties>
@@ -85,6 +86,11 @@
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-slf4j</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
