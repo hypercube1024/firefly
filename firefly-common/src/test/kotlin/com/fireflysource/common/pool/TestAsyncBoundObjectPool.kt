@@ -43,12 +43,15 @@ class TestAsyncBoundObjectPool {
         }
 
         val maxSize = 4
-        val pool = AsyncBoundObjectPool(
+        val pool = PoolFactory.newPool(
             maxSize, 60,
-            factory, validator, dispose, 60, 60,
+            factory, validator, dispose, 10, 60,
             Callback {
                 println("no leak")
             })
+        assertNotNull(pool.leakDetector)
+        assertEquals(0, pool.size())
+        assertTrue(pool.isEmpty)
 
         // get 20 test objects
         val list = List(20) {
@@ -56,20 +59,26 @@ class TestAsyncBoundObjectPool {
         }
 
         list.forEachIndexed { i, future ->
-            println("The future is done. $i, ${future.isDone}, ${future.get()}")
+            //            println("The future is done. $i, ${future.isDone}, ${future.get()}")
             future.get().use { pooledObject ->
                 assertFalse(pooledObject.getObject().closed)
                 assertFalse(pooledObject.isReleased)
                 assertTrue(pooledObject.getObject().id in 0..(maxSize - 1))
                 println("test success. $i, $pooledObject")
             }
-
         }
         assertEquals(maxSize, pool.createdObjectCount)
 
         list.forEachIndexed { i, future ->
             println("complete test obj. $i, ${future.get()}")
             assertTrue(future.isDone)
+        }
+
+        pool.get().use { pooledObject ->
+            assertFalse(pooledObject.getObject().closed)
+            assertFalse(pooledObject.isReleased)
+            assertTrue(pooledObject.getObject().id in 0..(maxSize - 1))
+            println("test sync success. $pooledObject")
         }
 
         pool.stop()

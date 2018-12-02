@@ -4,7 +4,6 @@ import com.fireflysource.common.concurrent.Atomics
 import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.asyncWithAttr
 import com.fireflysource.common.coroutine.launchWithAttr
-import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.CommonLogger.debug
@@ -41,6 +40,7 @@ class AsyncBoundObjectPool<T>(
     }
 
     private val createdCount = AtomicInteger(0)
+    private val size = AtomicInteger(0)
     private val mutex = Mutex()
     private val channel = Channel<PooledObject<T>>(maxSize)
     private val leakDetector =
@@ -69,6 +69,7 @@ class AsyncBoundObjectPool<T>(
 
     private suspend fun getFromPool(): PooledObject<T> {
         val oldPooledObject = channel.receive()
+        size.decrementAndGet()
         return if (isValid(oldPooledObject)) {
             initPooledObject(oldPooledObject)
             debug(clazz) { "get an old object. $oldPooledObject" }
@@ -101,9 +102,10 @@ class AsyncBoundObjectPool<T>(
     override fun release(pooledObject: PooledObject<T>) {
         launchWithAttr(singleThread) {
             if (pooledObject.released.compareAndSet(false, true)) {
-                debug(clazz) { "release the object. $pooledObject" }
                 leakDetector.clear(pooledObject)
                 channel.send(pooledObject)
+                size.incrementAndGet()
+                debug(clazz) { "release the object. $pooledObject, ${size()}" }
             }
         }
     }
@@ -112,12 +114,10 @@ class AsyncBoundObjectPool<T>(
         return validator.isValid(pooledObject)
     }
 
-    override fun size(): Int {
-        throw UnsupportedOperationException("Can not get the channel size")
-    }
+    override fun size(): Int = size.get()
 
     override fun isEmpty(): Boolean {
-        throw UnsupportedOperationException("Can not get the channel size")
+        return size() == 0
     }
 
     override fun getLeakDetector(): FixedTimeLeakDetector<PooledObject<T>> = leakDetector
