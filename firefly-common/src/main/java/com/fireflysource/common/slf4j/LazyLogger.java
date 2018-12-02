@@ -1,4 +1,4 @@
-package com.fireflysource.log.slf4j;
+package com.fireflysource.common.slf4j;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

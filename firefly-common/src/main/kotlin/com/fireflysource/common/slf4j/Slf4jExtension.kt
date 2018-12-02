@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 /**
  * @author Pengtao Qiu
  */
-object KtLogger {
+object LazyLoggerKt {
     fun getLogger(func: () -> Unit): Logger = LoggerFactory.getLogger(KotlinNameResolver.name(func))
 
     fun getLogger(name: String): Logger = LoggerFactory.getLogger(name)
