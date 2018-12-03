@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  */
 public interface TcpServer extends LifeCycle {
 
-    TcpServer accept(Consumer<TcpConnection> consumer);
+    TcpServer onAccept(Consumer<TcpConnection> consumer);
 
     void bind(SocketAddress address);
 

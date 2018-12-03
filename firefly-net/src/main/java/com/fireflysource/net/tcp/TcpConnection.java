@@ -18,7 +18,7 @@ public interface TcpConnection extends Connection {
     ByteBuffer[] EMPTY = new ByteBuffer[0];
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    TcpConnection receive(Consumer<ByteBuffer> data);
+    TcpConnection onReceive(Consumer<ByteBuffer> data);
 
     TcpConnection onClose(Callback callback);
 
