@@ -4,6 +4,7 @@ import com.fireflysource.log.LogConfigParser.*
 import com.fireflysource.log.internal.utils.TimeUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import java.io.File
 import java.io.FileOutputStream
@@ -39,7 +40,7 @@ class FileLog : Log {
     private val mdc: MappedDiagnosticContext = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
     private val closed = AtomicBoolean(false)
     private val output = LogOutputStream()
-    private val channel = Channel<LogItem>()
+    private val channel = Channel<LogItem>(UNLIMITED)
     private val consumerJob = GlobalScope.launch(logThread) {
         while (!closed.get()) {
             try {
