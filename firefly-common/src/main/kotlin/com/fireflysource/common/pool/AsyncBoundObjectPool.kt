@@ -6,7 +6,7 @@ import com.fireflysource.common.coroutine.asyncWithAttr
 import com.fireflysource.common.coroutine.launchWithAttr
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
-import com.fireflysource.common.sys.CommonLogger.debug
+import com.fireflysource.common.sys.CommonLogger
 import com.fireflysource.common.track.FixedTimeLeakDetector
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.channels.Channel
@@ -33,7 +33,7 @@ class AsyncBoundObjectPool<T>(
                              ) : AbstractLifeCycle(), AsyncPool<T> {
 
     companion object {
-        private val clazz = AsyncBoundObjectPool::class.java
+        private val log = CommonLogger.create(AsyncBoundObjectPool::class.java)
     }
 
     init {
@@ -65,7 +65,7 @@ class AsyncBoundObjectPool<T>(
         if (createdCount.get() < maxSize) {
             val obj = objectFactory.createNew(this).await()
             createdCount.incrementAndGet()
-            debug(clazz) { "create a new object. $obj" }
+            log.debug { "create a new object. $obj" }
             obj
         } else {
             throw ArrivedMaxPoolSize("Arrived the max pool size")
@@ -77,7 +77,7 @@ class AsyncBoundObjectPool<T>(
         size.decrementAndGet()
         return if (isValid(oldPooledObject)) {
             initPooledObject(oldPooledObject)
-            debug(clazz) { "get an old object. $oldPooledObject" }
+            log.debug { "get an old object. $oldPooledObject" }
             oldPooledObject
         } else {
             destroy(oldPooledObject)
@@ -96,7 +96,7 @@ class AsyncBoundObjectPool<T>(
     }
 
     private suspend fun destroy(pooledObject: PooledObject<T>) = mutex.withLock {
-        debug(clazz) { "destroy the object. $pooledObject" }
+        log.debug { "destroy the object. $pooledObject" }
         Atomics.getAndDecrement(createdCount, 0)
         dispose.destroy(pooledObject)
     }
@@ -110,7 +110,7 @@ class AsyncBoundObjectPool<T>(
                 leakDetector.clear(pooledObject)
                 channel.send(pooledObject)
                 size.incrementAndGet()
-                debug(clazz) { "release the object. $pooledObject, ${size()}" }
+                log.debug { "release the object. $pooledObject, ${size()}" }
             }
         }
     }

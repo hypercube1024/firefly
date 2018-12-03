@@ -1,62 +1,54 @@
 package com.fireflysource.common.sys;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fireflysource.common.slf4j.LazyLogger;
 
 import java.util.function.Supplier;
 
 /**
  * @author Pengtao Qiu
  */
-abstract public class CommonLogger {
-    public static final Logger system = LoggerFactory.getLogger("firefly-system");
+public class CommonLogger {
+    private static final LazyLogger system = LazyLogger.create("firefly-system");
 
-    public static void debug(Class<?> clazz, Supplier<String> supplier) {
-        if (system.isDebugEnabled()) {
-            system.debug("[" + clazz.getName() + "] " + supplier.get());
-        }
-//        System.out.println("[" + clazz.getName() + "] " + supplier.get());
+    private final Class<?> clazz;
+
+    private CommonLogger(Class<?> clazz) {
+        this.clazz = clazz;
     }
 
-    public static void debug(Class<?> clazz, Throwable t, Supplier<String> supplier) {
-        if (system.isDebugEnabled()) {
-            system.debug("[" + clazz.getName() + "] " + supplier.get(), t);
-        }
+    public static CommonLogger create(Class<?> clazz) {
+        return new CommonLogger(clazz);
     }
 
-    public static void info(Class<?> clazz, Supplier<String> supplier) {
-        if (system.isInfoEnabled()) {
-            system.info("[" + clazz.getName() + "] " + supplier.get());
-        }
+    public void debug(Supplier<String> supplier) {
+        system.debug(() -> "[" + clazz.getName() + "] " + supplier.get());
     }
 
-    public static void info(Class<?> clazz, Throwable t, Supplier<String> supplier) {
-        if (system.isInfoEnabled()) {
-            system.info("[" + clazz.getName() + "] " + supplier.get(), t);
-        }
+    public void debug(Throwable t, Supplier<String> supplier) {
+        system.debug(() -> "[" + clazz.getName() + "] " + supplier.get(), t);
     }
 
-    public static void warn(Class<?> clazz, Supplier<String> supplier) {
-        if (system.isWarnEnabled()) {
-            system.warn("[" + clazz.getName() + "] " + supplier.get());
-        }
+    public void info(Supplier<String> supplier) {
+        system.info(() -> "[" + clazz.getName() + "] " + supplier.get());
     }
 
-    public static void warn(Class<?> clazz, Throwable t, Supplier<String> supplier) {
-        if (system.isWarnEnabled()) {
-            system.warn("[" + clazz.getName() + "] " + supplier.get(), t);
-        }
+    public void info(Throwable t, Supplier<String> supplier) {
+        system.info(() -> "[" + clazz.getName() + "] " + supplier.get(), t);
     }
 
-    public static void error(Class<?> clazz, Supplier<String> supplier) {
-        if (system.isErrorEnabled()) {
-            system.error("[" + clazz.getName() + "] " + supplier.get());
-        }
+    public void warn(Supplier<String> supplier) {
+        system.warn(() -> "[" + clazz.getName() + "] " + supplier.get());
     }
 
-    public static void error(Class<?> clazz, Throwable t, Supplier<String> supplier) {
-        if (system.isErrorEnabled()) {
-            system.error("[" + clazz.getName() + "] " + supplier.get(), t);
-        }
+    public void warn(Throwable t, Supplier<String> supplier) {
+        system.warn(() -> "[" + clazz.getName() + "] " + supplier.get(), t);
+    }
+
+    public void error(Supplier<String> supplier) {
+        system.error(() -> "[" + clazz.getName() + "] " + supplier.get());
+    }
+
+    public void error(Throwable t, Supplier<String> supplier) {
+        system.error(() -> "[" + clazz.getName() + "] " + supplier.get(), t);
     }
 }
