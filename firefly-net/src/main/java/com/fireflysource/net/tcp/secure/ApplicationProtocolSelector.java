@@ -1,4 +1,4 @@
-package com.fireflysource.net.tcp.tls;
+package com.fireflysource.net.tcp.secure;
 
 import java.util.List;
 

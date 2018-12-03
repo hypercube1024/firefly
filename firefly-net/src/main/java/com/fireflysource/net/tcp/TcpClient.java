@@ -11,6 +11,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface TcpClient extends LifeCycle {
 
+    TcpClient enableSecureConnection();
+
     CompletableFuture<TcpConnection> connect(SocketAddress address);
 
     default CompletableFuture<TcpConnection> connect(String host, int port) {

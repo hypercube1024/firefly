@@ -11,12 +11,14 @@ import java.util.function.Consumer;
  */
 public interface TcpServer extends LifeCycle {
 
+    TcpServer enableSecureConnection();
+
     TcpServer onAccept(Consumer<TcpConnection> consumer);
 
-    void bind(SocketAddress address);
+    void listen(SocketAddress address);
 
-    default void bind(String host, int port) {
-        bind(new InetSocketAddress(host, port));
+    default void listen(String host, int port) {
+        listen(new InetSocketAddress(host, port));
     }
 
 }
