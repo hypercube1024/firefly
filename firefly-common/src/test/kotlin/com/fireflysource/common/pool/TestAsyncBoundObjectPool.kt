@@ -55,7 +55,7 @@ class TestAsyncBoundObjectPool {
 
         // get 20 test objects
         val list = List(20) {
-            pool.asyncGet()
+            pool.get()
         }
 
         list.forEachIndexed { i, future ->
@@ -74,7 +74,7 @@ class TestAsyncBoundObjectPool {
             assertTrue(future.isDone)
         }
 
-        pool.get().use { pooledObject ->
+        pool.take().use { pooledObject ->
             assertFalse(pooledObject.getObject().closed)
             assertFalse(pooledObject.isReleased)
             assertTrue(pooledObject.getObject().id in 0..(maxSize - 1))

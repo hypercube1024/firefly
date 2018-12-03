@@ -8,6 +8,7 @@ import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.CommonLogger.debug
 import com.fireflysource.common.track.FixedTimeLeakDetector
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
@@ -29,7 +30,7 @@ class AsyncBoundObjectPool<T>(
     leakDetectorInterval: Long,
     releaseTimeout: Long,
     noLeakCallback: Callback
-                             ) : AbstractLifeCycle(), Pool<T> {
+                             ) : AbstractLifeCycle(), AsyncPool<T> {
 
     companion object {
         private val clazz = AsyncBoundObjectPool::class.java
@@ -48,13 +49,17 @@ class AsyncBoundObjectPool<T>(
 
     private class ArrivedMaxPoolSize(msg: String) : RuntimeException(msg)
 
-    override fun asyncGet(): CompletableFuture<PooledObject<T>> = asyncWithAttr(singleThread) {
+    override suspend fun asyncGet(): PooledObject<T> = getObjectDeferred().await()
+
+    override fun get(): CompletableFuture<PooledObject<T>> = getObjectDeferred().asCompletableFuture()
+
+    private fun getObjectDeferred(): Deferred<PooledObject<T>> = asyncWithAttr(singleThread) {
         try {
             createNewIfLessThanMaxSize()
         } catch (e: ArrivedMaxPoolSize) {
             getFromPool()
         }
-    }.asCompletableFuture()
+    }
 
     private suspend fun createNewIfLessThanMaxSize(): PooledObject<T> = mutex.withLock {
         if (createdCount.get() < maxSize) {
@@ -97,7 +102,7 @@ class AsyncBoundObjectPool<T>(
     }
 
 
-    override fun get(): PooledObject<T> = asyncGet().get(timeout, TimeUnit.SECONDS)
+    override fun take(): PooledObject<T> = get().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
         launchWithAttr(singleThread) {

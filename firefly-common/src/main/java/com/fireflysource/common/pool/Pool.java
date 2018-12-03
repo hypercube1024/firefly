@@ -12,11 +12,11 @@ import java.util.concurrent.CompletableFuture;
 public interface Pool<T> extends LifeCycle {
 
     /**
-     * Get the object asynchronously
+     * Get the object asynchronously.
      *
-     * @return The asynchronous result of the pooled object
+     * @return The pooled object.
      */
-    CompletableFuture<PooledObject<T>> asyncGet();
+    CompletableFuture<PooledObject<T>> get();
 
     /**
      * Returns an instance from the pool. The call may be a blocking one or a
@@ -35,15 +35,15 @@ public interface Pool<T> extends LifeCycle {
      * The validity of the objects are determined using the Validator interface,
      * such that an object o is valid if Validator.isValid(o) == true
      *
-     * @return T one of the pooled objects.
+     * @return T The pooled object.
      */
-    PooledObject<T> get() throws InterruptedException;
+    PooledObject<T> take() throws InterruptedException;
 
     /**
      * Releases the object and puts it back to the pool.
      * <p>
      * The mechanism of putting the object back to the pool is generally
-     * asynchronous, however future implementations might differ.
+     * asynchronous.
      *
      * @param pooledObject the object to return to the pool
      */
