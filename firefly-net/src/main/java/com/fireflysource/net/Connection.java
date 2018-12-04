@@ -30,9 +30,9 @@ public interface Connection extends Closeable {
 
     long getWrittenBytes();
 
-    long getIdleTimeout();
+    long getIdleTime();
 
-    long getMaxIdleTimeout();
+    long getMaxIdleTime();
 
     boolean isClosed();
 

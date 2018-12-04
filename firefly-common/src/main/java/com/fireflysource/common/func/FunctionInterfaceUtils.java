@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 /**
  * @author Pengtao Qiu
  */
-public class Noop {
+public class FunctionInterfaceUtils {
 
     public static final Callback NOOP_CALLBACK = () -> {
     };

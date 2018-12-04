@@ -7,9 +7,11 @@ import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+
+import static com.fireflysource.net.tcp.Result.futureToConsumer;
 
 /**
  * @author Pengtao Qiu
@@ -19,44 +21,65 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     ByteBuffer[] BYTE_BUFFERS = new ByteBuffer[0];
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    TcpConnection onRead(Consumer<ByteBuffer> data);
+    /**
+     * If you enable the automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
+     *
+     * @param messageConsumer Received message.
+     * @return The current tcp connection.
+     */
+    TcpConnection onRead(Consumer<ByteBuffer> messageConsumer);
 
-    TcpConnection readAutomatically();
+    /**
+     * Enable automatic message reading.
+     *
+     * @return The current tcp connection.
+     */
+    TcpConnection startAutomaticReading();
+
+    boolean isAutomaticReading();
 
     TcpConnection onClose(Callback callback);
 
     TcpConnection onException(Consumer<Throwable> exception);
 
-    TcpConnection write(ByteBuffer byteBuffer, Consumer<Result<Void>> result);
+    TcpConnection close(Consumer<Result<Void>> result);
 
-    TcpConnection write(ByteBuffer[] byteBuffers, Consumer<Result<Void>> result);
+    TcpConnection closeNow();
 
-    default TcpConnection write(Collection<ByteBuffer> byteBuffers, Consumer<Result<Void>> result) {
-        return write(byteBuffers.toArray(BYTE_BUFFERS), result);
+    boolean isShutdownInput();
+
+    boolean isShutdownOutput();
+
+    TcpConnection write(ByteBuffer byteBuffer, Consumer<Result<Integer>> result);
+
+    TcpConnection write(ByteBuffer[] byteBuffers, int offset, int length, Consumer<Result<Long>> result);
+
+    TcpConnection write(List<ByteBuffer> byteBufferList, int offset, int length, Consumer<Result<Long>> result);
+
+    default CompletableFuture<Integer> write(ByteBuffer byteBuffer) {
+        CompletableFuture<Integer> future = new CompletableFuture<>();
+        write(byteBuffer, futureToConsumer(future));
+        return future;
     }
 
-    default TcpConnection write(byte[] data, Consumer<Result<Void>> result) {
+    default CompletableFuture<Long> write(ByteBuffer[] byteBuffers, int offset, int length) {
+        CompletableFuture<Long> future = new CompletableFuture<>();
+        write(byteBuffers, offset, length, futureToConsumer(future));
+        return future;
+    }
+
+    default CompletableFuture<Long> write(List<ByteBuffer> byteBufferList, int offset, int length) {
+        CompletableFuture<Long> future = new CompletableFuture<>();
+        write(byteBufferList, offset, length, futureToConsumer(future));
+        return future;
+    }
+
+    default TcpConnection write(byte[] data, Consumer<Result<Integer>> result) {
         return write(ByteBuffer.wrap(data), result);
     }
 
-    default TcpConnection write(String data, Consumer<Result<Void>> result) {
+    default TcpConnection write(String data, Consumer<Result<Integer>> result) {
         return write(ByteBuffer.wrap(data.getBytes(DEFAULT_CHARSET)), result);
-    }
-
-    CompletableFuture<Void> write(ByteBuffer byteBuffer);
-
-    CompletableFuture<Void> write(ByteBuffer[] byteBuffers);
-
-    default CompletableFuture<Void> write(Collection<ByteBuffer> byteBuffers) {
-        return write(byteBuffers.toArray(BYTE_BUFFERS));
-    }
-
-    default CompletableFuture<Void> write(byte[] data) {
-        return write(ByteBuffer.wrap(data));
-    }
-
-    default CompletableFuture<Void> write(String data) {
-        return write(ByteBuffer.wrap(data.getBytes(DEFAULT_CHARSET)));
     }
 
     boolean isSecureConnection();

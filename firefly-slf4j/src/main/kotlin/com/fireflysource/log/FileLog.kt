@@ -335,9 +335,7 @@ class FileLog : Log {
     }
 
     private fun write(logItem: LogItem) {
-        GlobalScope.launch(logThread) {
-            channel.send(logItem)
-        }
+        channel.offer(logItem)
     }
 
     override fun equals(other: Any?): Boolean {

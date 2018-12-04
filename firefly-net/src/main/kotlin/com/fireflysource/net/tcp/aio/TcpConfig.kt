@@ -7,9 +7,10 @@ import com.fireflysource.common.annotation.NoArg
  */
 @NoArg
 data class TcpConfig(
-    val timeout: Long = 30,
-    val backlog: Int = 16 * 1024,
-    val reuseAddr: Boolean = true,
-    val keepAlive: Boolean = true,
-    val tcpNoDelay: Boolean = false
+    var timeout: Long = 30,
+    var enableSecureConnection: Boolean = false,
+    var backlog: Int = 16 * 1024,
+    var reuseAddr: Boolean = true,
+    var keepAlive: Boolean = true,
+    var tcpNoDelay: Boolean = false
                     )

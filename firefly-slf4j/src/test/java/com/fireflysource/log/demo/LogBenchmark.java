@@ -10,7 +10,7 @@ public class LogBenchmark {
     private static final Logger log = LoggerFactory.getLogger("test-INFO");
 
     public static void main(String[] args) throws InterruptedException {
-        test(4, 5_000_000, 20);
+        test(4, 10_000_000, 20);
     }
 
     public static void test(int threadNum, int messageNum, int messageSize) throws InterruptedException {
@@ -24,7 +24,7 @@ public class LogBenchmark {
 
         Thread[] threads = new Thread[threadNum];
         int size = messageNum / threadNum;
-        System.out.println("size: " + size);
+        System.out.println("size per thread: " + size);
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < size; j++) {

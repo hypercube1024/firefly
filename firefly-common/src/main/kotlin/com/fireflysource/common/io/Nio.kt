@@ -102,6 +102,18 @@ suspend fun AsynchronousSocketChannel.aRead(
     closeOnCancel(cont)
 }
 
+suspend fun AsynchronousSocketChannel.aRead(
+    buffers: Array<ByteBuffer>,
+    offset: Int,
+    length: Int,
+    timeout: Long = 0L,
+    timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+                                           ) = suspendCancellableCoroutine<Long> { cont ->
+
+    read(buffers, offset, length, timeout, timeUnit, cont, asyncIOHandler())
+    closeOnCancel(cont)
+}
+
 /**
  * Performs [AsynchronousSocketChannel.write] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
@@ -114,6 +126,17 @@ suspend fun AsynchronousSocketChannel.aWrite(
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
                                             ) = suspendCancellableCoroutine<Int> { cont ->
     write(buf, timeout, timeUnit, cont, asyncIOHandler())
+    closeOnCancel(cont)
+}
+
+suspend fun AsynchronousSocketChannel.aWrite(
+    buffers: Array<ByteBuffer>,
+    offset: Int,
+    length: Int,
+    timeout: Long = 0L,
+    timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+                                            ) = suspendCancellableCoroutine<Long> { cont ->
+    write(buffers, offset, length, timeout, timeUnit, cont, asyncIOHandler())
     closeOnCancel(cont)
 }
 
