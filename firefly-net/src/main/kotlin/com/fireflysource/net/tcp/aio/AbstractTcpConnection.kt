@@ -279,7 +279,7 @@ abstract class AbstractTcpConnection(
             } catch (e: ClosedChannelException) {
                 log.warn { "The channel is closed. $id" }
             } catch (e: IOException) {
-                log.error { "Shutdown input exception. $id" }
+                log.warn { "Shutdown input exception. $id" }
             }
         } else {
             log.info { "The tcp connection has shutdown input. $id" }
@@ -290,7 +290,7 @@ abstract class AbstractTcpConnection(
             } catch (e: ClosedChannelException) {
                 log.warn { "The channel is closed. $id" }
             } catch (e: IOException) {
-                log.error { "Shutdown output exception. $id" }
+                log.warn { "Shutdown output exception. $id" }
             }
         } else {
             log.info { "The tcp connection has shutdown output. $id" }
@@ -310,7 +310,7 @@ abstract class AbstractTcpConnection(
                 log.info { "tcp connection close success. $id" }
                 closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
-                log.error(e) { "close socket channel exception. $id" }
+                log.warn(e) { "close socket channel exception. $id" }
             } finally {
                 closeConsumer.accept(Result.SUCCESS)
             }
