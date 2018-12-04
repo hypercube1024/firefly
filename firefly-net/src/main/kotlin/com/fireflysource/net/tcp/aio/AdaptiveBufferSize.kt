@@ -20,7 +20,7 @@ class AdaptiveBufferSize {
 
     fun getBufferSize() = sizeArray[index]
 
-    fun setCurrentDataSize(size: Int) {
+    fun update(size: Int) {
         index = if (size >= getBufferSize()) {
             Math.min(index + 1, sizeArray.lastIndex)
         } else {

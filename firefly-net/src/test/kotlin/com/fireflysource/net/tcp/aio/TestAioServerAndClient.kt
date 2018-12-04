@@ -19,7 +19,7 @@ class TestAioServerAndClient {
     fun test() = runBlocking {
         val host = "localhost"
         val port = 4001
-        val maxMsgCount = 100_000
+        val maxMsgCount = 200
         val msgCount = AtomicInteger()
 
         val server = AioTcpServer().listen(host, port)
@@ -85,8 +85,9 @@ class TestAioServerAndClient {
             assertEquals(maxMsgCount * 4L, conn.writtenBytes)
             assertEquals(maxMsgCount * 2, msgCount.get())
         }
-        val throughput = maxMsgCount / (time / 1000)
-        println("success. $time, $throughput")
+//        val throughput = maxMsgCount / (time / 1000)
+//        println("success. $time, $throughput")
+        println("success. $time")
 
 
         val stopTime = measureTimeMillis {

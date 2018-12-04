@@ -17,7 +17,6 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.ClosedChannelException
-import java.nio.channels.InterruptedByTimeoutException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -143,13 +142,8 @@ abstract class AbstractTcpConnection(
                         } else {
                             writtenByteCount += count
                         }
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
-                        shutdown()
-                        msg.result.accept(Result(false, -1, e))
-                        break
                     } catch (e: Exception) {
-                        log.error(e) { "Tcp connection output exception. $id" }
+                        log.warn(e) { "Tcp connection output exception. $id" }
                         shutdown()
                         msg.result.accept(Result(false, -1, e))
                         break
@@ -161,6 +155,7 @@ abstract class AbstractTcpConnection(
                     try {
                         val offset = msg.getCurrentOffset()
                         val length = msg.getCurrentLength()
+
                         val count = socketChannel.aWrite(msg.buffers, offset, length, timeout, timeUnit)
                         msg.result.accept(Result(true, count, null))
                         if (count < 0) {
@@ -169,13 +164,8 @@ abstract class AbstractTcpConnection(
                         } else {
                             writtenByteCount += count
                         }
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
-                        shutdown()
-                        msg.result.accept(Result(false, -1, e))
-                        break
                     } catch (e: Exception) {
-                        log.error(e) { "Tcp connection output exception. $id" }
+                        log.warn(e) { "Tcp connection output exception. $id" }
                         shutdown()
                         msg.result.accept(Result(false, -1, e))
                         break
@@ -187,6 +177,7 @@ abstract class AbstractTcpConnection(
                     try {
                         val offset = msg.getCurrentOffset()
                         val length = msg.getCurrentLength()
+
                         val count = socketChannel.aWrite(
                             msg.bufferList.toTypedArray(),
                             offset,
@@ -201,13 +192,8 @@ abstract class AbstractTcpConnection(
                         } else {
                             writtenByteCount += count
                         }
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
-                        shutdown()
-                        msg.result.accept(Result(false, -1, e))
-                        break
                     } catch (e: Exception) {
-                        log.error(e) { "Tcp connection output exception. $id" }
+                        log.warn(e) { "Tcp connection output exception. $id" }
                         shutdown()
                         msg.result.accept(Result(false, -1, e))
                         break
@@ -227,19 +213,15 @@ abstract class AbstractTcpConnection(
 
                 while (true) {
                     val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
-                    log.debug { "current buffer size ${buf.remaining()}" }
-
                     try {
                         lastReadTimestamp = System.currentTimeMillis()
                         val count = socketChannel.aRead(buf, timeout, timeUnit)
                         if (count < 0) {
                             log.debug { "input channel remote close. $id, $count " }
-                            writeRemainingMsgInChannel().join()
-                            closeNow()
+                            cleanupAndCloseNow()
                             break
                         } else {
-                            log.debug { "read buf size. ${buf.remaining()}" }
-                            adaptiveBufferSize.setCurrentDataSize(count)
+                            adaptiveBufferSize.update(count)
                             readByteCount += count
                             buf.flip()
                             try {
@@ -248,21 +230,20 @@ abstract class AbstractTcpConnection(
                                 exceptionConsumers.forEach { it.accept(e) }
                             }
                         }
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
-                        writeRemainingMsgInChannel().join()
-                        closeNow()
-                        break
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection input exception. $id" }
-                        writeRemainingMsgInChannel().join()
-                        closeNow()
+                        cleanupAndCloseNow()
                         break
                     }
                 }
             }
         }
         return this
+    }
+
+    private suspend fun cleanupAndCloseNow() {
+        writeRemainingMsgInChannel().join()
+        closeNow()
     }
 
     override fun isAutomaticReading(): Boolean = autoReadState.get()
@@ -348,8 +329,7 @@ abstract class AbstractTcpConnection(
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
         if (checkWriteState(result)) {
-            val success = outChannel.offer(Buffer(byteBuffer, result))
-            log.debug { "write buf $success" }
+            outChannel.offer(Buffer(byteBuffer, result))
         }
         return this
     }
