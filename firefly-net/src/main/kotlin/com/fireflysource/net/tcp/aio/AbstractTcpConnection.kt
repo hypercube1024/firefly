@@ -349,4 +349,5 @@ abstract class AbstractTcpConnection(
         return write(byteBufferList, offset, length).await()
     }
 
+    override fun getInputChannel(): Channel<ByteBuffer> = inChannel
 }
