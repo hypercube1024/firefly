@@ -130,6 +130,7 @@ abstract class AbstractTcpConnection(
     }
 
     private suspend fun writeMsg(msg: Message) {
+        lastWrittenTimestamp = System.currentTimeMillis()
         when (msg) {
             is Buffer -> {
                 while (msg.buffer.hasRemaining()) {
@@ -139,6 +140,8 @@ abstract class AbstractTcpConnection(
                         if (count < 0) {
                             shutdown()
                             break
+                        } else {
+                            writtenByteCount += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection idle timeout. $id, $idleTime" }
@@ -163,6 +166,8 @@ abstract class AbstractTcpConnection(
                         if (count < 0) {
                             shutdown()
                             break
+                        } else {
+                            writtenByteCount += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection idle timeout. $id, $idleTime" }
@@ -193,6 +198,8 @@ abstract class AbstractTcpConnection(
                         if (count < 0) {
                             shutdown()
                             break
+                        } else {
+                            writtenByteCount += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection idle timeout. $id, $idleTime" }
@@ -213,7 +220,7 @@ abstract class AbstractTcpConnection(
         }
     }
 
-    override fun startAutomaticReading(): TcpConnection {
+    override fun startReading(): TcpConnection {
         if (autoReadState.compareAndSet(false, true)) {
             launchWithAttr(dataTransThread) {
                 log.debug { "start automatic reading" }
@@ -223,6 +230,7 @@ abstract class AbstractTcpConnection(
                     log.debug { "current buffer size ${buf.remaining()}" }
 
                     try {
+                        lastReadTimestamp = System.currentTimeMillis()
                         val count = socketChannel.aRead(buf, timeout, timeUnit)
                         if (count < 0) {
                             log.debug { "input channel remote close. $id, $count " }
@@ -315,13 +323,15 @@ abstract class AbstractTcpConnection(
     override fun closeNow(): TcpConnection {
         if (socketChannelClosed.compareAndSet(false, true)) {
             try {
+                closeTimestamp = System.currentTimeMillis()
                 closeChannel()
                 socketChannel.close()
                 log.info { "tcp connection close success. $id" }
-                closeConsumer.accept(Result.SUCCESS)
                 closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
                 log.error(e) { "close socket channel exception. $id" }
+            } finally {
+                closeConsumer.accept(Result.SUCCESS)
             }
         }
         return this

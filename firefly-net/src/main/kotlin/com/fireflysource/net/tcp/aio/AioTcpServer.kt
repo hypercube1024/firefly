@@ -36,8 +36,8 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         return this
     }
 
-    override fun listen(address: SocketAddress) {
-        if (isStarted) return
+    override fun listen(address: SocketAddress): TcpServer {
+        if (isStarted) return this
 
         start()
 
@@ -49,6 +49,7 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         } catch (e: Exception) {
             log.error(e) { "bind server address exception" }
         }
+        return this
     }
 
     private fun accept(serverSocketChannel: AsynchronousServerSocketChannel) {

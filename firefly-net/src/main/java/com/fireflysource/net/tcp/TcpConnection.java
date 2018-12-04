@@ -22,7 +22,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     /**
-     * If you enable the automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
+     * If you start automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
      *
      * @param messageConsumer Received message.
      * @return The current tcp connection.
@@ -30,11 +30,19 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     TcpConnection onRead(Consumer<ByteBuffer> messageConsumer);
 
     /**
-     * Enable automatic message reading.
+     * If you start automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
+     * The default message consumer will send data to the channel.
+     *
+     * @return The receiving data channel
+     */
+    Channel<ByteBuffer> getInputChannel();
+
+    /**
+     * Start automatic message reading.
      *
      * @return The current tcp connection.
      */
-    TcpConnection startAutomaticReading();
+    TcpConnection startReading();
 
     boolean isAutomaticReading();
 
@@ -87,6 +95,4 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     boolean isClientMode();
 
     boolean isHandshakeFinished();
-
-    Channel<ByteBuffer> getInputChannel();
 }

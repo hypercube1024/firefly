@@ -18,10 +18,10 @@ public interface TcpServer extends LifeCycle {
 
     Channel<TcpConnection> getTcpConnectionChannel();
 
-    void listen(SocketAddress address);
+    TcpServer listen(SocketAddress address);
 
-    default void listen(String host, int port) {
-        listen(new InetSocketAddress(host, port));
+    default TcpServer listen(String host, int port) {
+        return listen(new InetSocketAddress(host, port));
     }
 
 }
