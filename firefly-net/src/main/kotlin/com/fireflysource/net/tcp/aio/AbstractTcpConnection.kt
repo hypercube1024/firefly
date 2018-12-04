@@ -28,7 +28,7 @@ import java.util.function.Consumer
  */
 abstract class AbstractTcpConnection(
     private val connectionId: Int,
-    protected val socketChannel: AsynchronousSocketChannel,
+    private val socketChannel: AsynchronousSocketChannel,
     private val timeout: Long
                                     ) : TcpConnection {
 
@@ -39,6 +39,7 @@ abstract class AbstractTcpConnection(
         }
         private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
         private val channelClosedException = ChannelClosedException()
+        private val timeUnit = TimeUnit.SECONDS
     }
 
     private val openTimestamp: Long = System.currentTimeMillis()
@@ -112,87 +113,102 @@ abstract class AbstractTcpConnection(
     }
 
     private fun launchWritingJob() = launchWithAttr(dataTransThread) {
-        while (!outputShutdownState.get()) {
-            when (val msg = outChannel.receive()) {
-                is Buffer -> {
-                    while (msg.buffer.hasRemaining()) {
-                        try {
-                            val count = socketChannel.aWrite(msg.buffer, timeout, TimeUnit.SECONDS)
-                            msg.result.accept(Result(true, count, null))
-                            if (count < 0) {
-                                shutdown()
-                                break
-                            }
-                        } catch (e: InterruptedByTimeoutException) {
-                            log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+        while (!isShutdownOutput) {
+            writeMsg(outChannel.receive())
+        }
+    }
+
+    private fun writeRemainingMsgInChannel() = launchWithAttr(dataTransThread) {
+        if (!isShutdownOutput) {
+            writingJob.cancel()
+            while (true) {
+                val msg = outChannel.poll() ?: break
+                log.debug { "The channel will close. Writes the remaining data in the out channel." }
+                writeMsg(msg)
+            }
+        }
+    }
+
+    private suspend fun writeMsg(msg: Message) {
+        when (msg) {
+            is Buffer -> {
+                while (msg.buffer.hasRemaining()) {
+                    try {
+                        val count = socketChannel.aWrite(msg.buffer, timeout, timeUnit)
+                        msg.result.accept(Result(true, count, null))
+                        if (count < 0) {
                             shutdown()
-                            msg.result.accept(Result(false, -1, e))
-                            break
-                        } catch (e: Exception) {
-                            log.error(e) { "Tcp connection output exception. $id" }
-                            shutdown()
-                            msg.result.accept(Result(false, -1, e))
-                            break
-                        }
-                    }
-                }
-                is Buffers -> {
-                    while (msg.hasRemaining()) {
-                        try {
-                            val offset = msg.getCurrentOffset()
-                            val length = msg.getCurrentLength()
-                            val count = socketChannel.aWrite(msg.buffers, offset, length, timeout, TimeUnit.SECONDS)
-                            msg.result.accept(Result(true, count, null))
-                            if (count < 0) {
-                                shutdown()
-                                break
-                            }
-                        } catch (e: InterruptedByTimeoutException) {
-                            log.warn { "Tcp connection idle timeout. $id, $idleTime" }
-                            shutdown()
-                            msg.result.accept(Result(false, -1, e))
-                            break
-                        } catch (e: Exception) {
-                            log.error(e) { "Tcp connection output exception. $id" }
-                            shutdown()
-                            msg.result.accept(Result(false, -1, e))
                             break
                         }
+                    } catch (e: InterruptedByTimeoutException) {
+                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+                        shutdown()
+                        msg.result.accept(Result(false, -1, e))
+                        break
+                    } catch (e: Exception) {
+                        log.error(e) { "Tcp connection output exception. $id" }
+                        shutdown()
+                        msg.result.accept(Result(false, -1, e))
+                        break
                     }
                 }
-                is BufferList -> {
-                    while (msg.hasRemaining()) {
-                        try {
-                            val offset = msg.getCurrentOffset()
-                            val length = msg.getCurrentLength()
-                            val count = socketChannel.aWrite(
-                                msg.bufferList.toTypedArray(),
-                                offset,
-                                length,
-                                timeout,
-                                TimeUnit.SECONDS
-                                                            )
-                            msg.result.accept(Result(true, count, null))
-                            if (count < 0) {
-                                shutdown()
-                                break
-                            }
-                        } catch (e: InterruptedByTimeoutException) {
-                            log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+            }
+            is Buffers -> {
+                while (msg.hasRemaining()) {
+                    try {
+                        val offset = msg.getCurrentOffset()
+                        val length = msg.getCurrentLength()
+                        val count = socketChannel.aWrite(msg.buffers, offset, length, timeout, timeUnit)
+                        msg.result.accept(Result(true, count, null))
+                        if (count < 0) {
                             shutdown()
-                            msg.result.accept(Result(false, -1, e))
-                            break
-                        } catch (e: Exception) {
-                            log.error(e) { "Tcp connection output exception. $id" }
-                            shutdown()
-                            msg.result.accept(Result(false, -1, e))
                             break
                         }
+                    } catch (e: InterruptedByTimeoutException) {
+                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+                        shutdown()
+                        msg.result.accept(Result(false, -1, e))
+                        break
+                    } catch (e: Exception) {
+                        log.error(e) { "Tcp connection output exception. $id" }
+                        shutdown()
+                        msg.result.accept(Result(false, -1, e))
+                        break
                     }
                 }
-                is Shutdown -> {
-                    shutdown()
+            }
+            is BufferList -> {
+                while (msg.hasRemaining()) {
+                    try {
+                        val offset = msg.getCurrentOffset()
+                        val length = msg.getCurrentLength()
+                        val count = socketChannel.aWrite(
+                            msg.bufferList.toTypedArray(),
+                            offset,
+                            length,
+                            timeout,
+                            timeUnit
+                                                        )
+                        msg.result.accept(Result(true, count, null))
+                        if (count < 0) {
+                            shutdown()
+                            break
+                        }
+                    } catch (e: InterruptedByTimeoutException) {
+                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+                        shutdown()
+                        msg.result.accept(Result(false, -1, e))
+                        break
+                    } catch (e: Exception) {
+                        log.error(e) { "Tcp connection output exception. $id" }
+                        shutdown()
+                        msg.result.accept(Result(false, -1, e))
+                        break
+                    }
                 }
+            }
+            is Shutdown -> {
+                shutdown()
             }
         }
     }
@@ -207,16 +223,14 @@ abstract class AbstractTcpConnection(
                     log.debug { "current buffer size ${buf.remaining()}" }
 
                     try {
-                        val count = socketChannel.aRead(buf, timeout, TimeUnit.SECONDS)
+                        val count = socketChannel.aRead(buf, timeout, timeUnit)
                         if (count < 0) {
                             log.debug { "input channel remote close. $id, $count " }
-                            if (isShutdownInput && isShutdownOutput) {
-                                closeNow()
-                                break
-                            } else {
-                                shutdown()
-                            }
+                            writeRemainingMsgInChannel().join()
+                            closeNow()
+                            break
                         } else {
+                            log.debug { "read buf size. ${buf.remaining()}" }
                             adaptiveBufferSize.setCurrentDataSize(count)
                             readByteCount += count
                             buf.flip()
@@ -228,11 +242,13 @@ abstract class AbstractTcpConnection(
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection idle timeout. $id, $idleTime" }
-                        shutdown()
+                        writeRemainingMsgInChannel().join()
+                        closeNow()
                         break
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection input exception. $id" }
-                        shutdown()
+                        writeRemainingMsgInChannel().join()
+                        closeNow()
                         break
                     }
                 }
@@ -322,7 +338,8 @@ abstract class AbstractTcpConnection(
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
         if (checkWriteState(result)) {
-            outChannel.offer(Buffer(byteBuffer, result))
+            val success = outChannel.offer(Buffer(byteBuffer, result))
+            log.debug { "write buf $success" }
         }
         return this
     }

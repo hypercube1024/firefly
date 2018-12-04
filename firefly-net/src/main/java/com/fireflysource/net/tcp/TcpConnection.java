@@ -19,7 +19,6 @@ import static com.fireflysource.net.tcp.Result.futureToConsumer;
  */
 public interface TcpConnection extends Connection, ApplicationProtocolSelector {
 
-    ByteBuffer[] BYTE_BUFFERS = new ByteBuffer[0];
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     /**
