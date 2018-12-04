@@ -81,7 +81,8 @@ abstract class AbstractTcpConnection(
                                 break
                             }
                         } catch (e: InterruptedByTimeoutException) {
-                            // TODO
+                            log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+                            shutdown()
                             break
                         } catch (e: Exception) {
                             log.error(e) { "Tcp connection output exception. $id" }
@@ -101,7 +102,8 @@ abstract class AbstractTcpConnection(
                                 break
                             }
                         } catch (e: InterruptedByTimeoutException) {
-                            // TODO
+                            log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+                            shutdown()
                             break
                         } catch (e: Exception) {
                             log.error(e) { "Tcp connection output exception. $id" }
@@ -127,7 +129,8 @@ abstract class AbstractTcpConnection(
                                 break
                             }
                         } catch (e: InterruptedByTimeoutException) {
-                            // TODO
+                            log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+                            shutdown()
                             break
                         } catch (e: Exception) {
                             log.error(e) { "Tcp connection output exception. $id" }
@@ -213,7 +216,8 @@ abstract class AbstractTcpConnection(
                             }
                         }
                     } catch (e: InterruptedByTimeoutException) {
-                        // TODO
+                        log.warn { "Tcp connection idle timeout. $id, $idleTime" }
+                        shutdown()
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection input exception. $id" }
                         shutdown()
