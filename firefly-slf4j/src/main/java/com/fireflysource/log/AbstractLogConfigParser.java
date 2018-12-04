@@ -54,7 +54,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                             formatter = (LogFormatter) clazz.newInstance();
                         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                             e.printStackTrace();
-                            formatter = new DefaultLogFormatter();
+                            formatter = DEFAULT_LOG_FORMATTER;
                         }
                     }
                 }
@@ -85,7 +85,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                             formatter = (LogNameFormatter) clazz.newInstance();
                         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                             e.printStackTrace();
-                            formatter = new DefaultLogNameFormatter();
+                            formatter = DEFAULT_LOG_NAME_FORMATTER;
                         }
                     }
                 }
@@ -110,7 +110,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                             filter = (LogFilter) clazz.newInstance();
                         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                             e.printStackTrace();
-                            filter = new DefaultLogFilter();
+                            filter = DEFAULT_LOG_FILTER;
                         }
                     }
                 }
@@ -151,8 +151,10 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
         c.setConsole(false);
         c.setMaxFileSize(DEFAULT_MAX_FILE_SIZE);
         c.setCharset(DEFAULT_CHARSET.name());
-        c.setFormatter(DEFAULT_LOG_FORMATTER);
         c.setMaxSplitTime(DEFAULT_MAX_SPLIT_TIME.getValue());
+        c.setFormatter(DEFAULT_LOG_FORMATTER.getClass().getName());
+        c.setLogNameFormatter(DEFAULT_LOG_NAME_FORMATTER.getClass().getName());
+        c.setLogFilter(DEFAULT_LOG_FILTER.getClass().getName());
         return createLog(c);
     }
 

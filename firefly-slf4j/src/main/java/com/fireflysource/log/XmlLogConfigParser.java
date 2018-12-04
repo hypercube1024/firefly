@@ -41,9 +41,9 @@ public class XmlLogConfigParser extends AbstractLogConfigParser {
                     System.err.println("the max log file less than 10MB, please set a larger file size");
                 }
                 c.setCharset(dom.getTextValueByTagName(e, "charset", DEFAULT_CHARSET.name()));
-                c.setFormatter(dom.getTextValueByTagName(e, "formatter", DEFAULT_LOG_FORMATTER));
-                c.setLogNameFormatter(dom.getTextValueByTagName(e, "log-name-formatter", DEFAULT_LOG_NAME_FORMATTER));
-                c.setLogFilter(dom.getTextValueByTagName(e, "log-filter", DEFAULT_LOG_FILTER));
+                c.setFormatter(dom.getTextValueByTagName(e, "formatter", DEFAULT_LOG_FORMATTER.getClass().getName()));
+                c.setLogNameFormatter(dom.getTextValueByTagName(e, "log-name-formatter", DEFAULT_LOG_NAME_FORMATTER.getClass().getName()));
+                c.setLogFilter(dom.getTextValueByTagName(e, "log-filter", DEFAULT_LOG_FILTER.getClass().getName()));
                 c.setMaxSplitTime(dom.getTextValueByTagName(e, "max-split-time", DEFAULT_MAX_SPLIT_TIME.getValue()));
                 consumer.accept(createLog(c));
             }

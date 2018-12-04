@@ -31,9 +31,9 @@ class FileLog : Log {
     var consoleOutput: Boolean = false
     var fileOutput: Boolean = true
     var maxFileSize: Long = DEFAULT_MAX_FILE_SIZE
-    var logFormatter: LogFormatter = DefaultLogFormatter()
-    var logNameFormatter: LogNameFormatter = DefaultLogNameFormatter()
-    var logFilter: LogFilter = DefaultLogFilter()
+    var logFormatter: LogFormatter = DEFAULT_LOG_FORMATTER
+    var logNameFormatter: LogNameFormatter = DEFAULT_LOG_NAME_FORMATTER
+    var logFilter: LogFilter = DEFAULT_LOG_FILTER
     var maxSplitTime: MaxSplitTimeEnum = MaxSplitTimeEnum.DAY
     var charset: Charset = DEFAULT_CHARSET
 

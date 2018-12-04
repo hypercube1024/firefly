@@ -19,7 +19,9 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     ByteBuffer[] BYTE_BUFFERS = new ByteBuffer[0];
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    TcpConnection onReceive(Consumer<ByteBuffer> data);
+    TcpConnection onRead(Consumer<ByteBuffer> data);
+
+    TcpConnection readAutomatically();
 
     TcpConnection onClose(Callback callback);
 

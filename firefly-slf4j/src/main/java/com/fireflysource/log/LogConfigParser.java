@@ -14,10 +14,10 @@ public interface LogConfigParser {
     File DEFAULT_LOG_DIRECTORY = new File(System.getProperty("user.dir"), "logs");
     boolean DEFAULT_CONSOLE_ENABLED = false;
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-    String DEFAULT_LOG_FORMATTER = "com.fireflysource.log.DefaultLogFormatter";
-    String DEFAULT_LOG_NAME_FORMATTER = "com.fireflysource.log.DefaultLogNameFormatter";
-    String DEFAULT_LOG_FILTER = "com.fireflysource.log.DefaultLogFilter";
     MaxSplitTimeEnum DEFAULT_MAX_SPLIT_TIME = MaxSplitTimeEnum.DAY;
+    LogFormatter DEFAULT_LOG_FORMATTER = new DefaultLogFormatter();
+    LogNameFormatter DEFAULT_LOG_NAME_FORMATTER = new DefaultLogNameFormatter();
+    LogFilter DEFAULT_LOG_FILTER = new DefaultLogFilter();
 
     boolean parse(Consumer<FileLog> consumer);
 
