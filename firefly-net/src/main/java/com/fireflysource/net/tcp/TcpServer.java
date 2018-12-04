@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp;
 
 import com.fireflysource.common.lifecycle.LifeCycle;
+import kotlinx.coroutines.channels.Channel;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -14,6 +15,8 @@ public interface TcpServer extends LifeCycle {
     TcpServer enableSecureConnection();
 
     TcpServer onAccept(Consumer<TcpConnection> consumer);
+
+    Channel<TcpConnection> getTcpConnectionChannel();
 
     void listen(SocketAddress address);
 

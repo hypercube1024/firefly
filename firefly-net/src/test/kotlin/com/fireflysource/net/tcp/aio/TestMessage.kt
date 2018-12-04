@@ -1,7 +1,5 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.net.tcp.BufferList
-import com.fireflysource.net.tcp.Buffers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest

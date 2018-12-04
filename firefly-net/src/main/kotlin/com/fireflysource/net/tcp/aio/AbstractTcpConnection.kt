@@ -5,13 +5,13 @@ import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.aRead
 import com.fireflysource.common.io.aWrite
 import com.fireflysource.common.sys.CommonLogger
-import com.fireflysource.net.tcp.*
+import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.Result.EMPTY_CONSUMER_RESULT
+import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.future.await
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -30,7 +30,7 @@ abstract class AbstractTcpConnection(
     private val connectionId: Int,
     protected val socketChannel: AsynchronousSocketChannel,
     private val timeout: Long
-                                    ) : AsyncTcpConnection {
+                                    ) : TcpConnection {
 
     companion object {
         private val log = CommonLogger.create(AbstractTcpConnection::class.java)
@@ -118,6 +118,7 @@ abstract class AbstractTcpConnection(
                     while (msg.buffer.hasRemaining()) {
                         try {
                             val count = socketChannel.aWrite(msg.buffer, timeout, TimeUnit.SECONDS)
+                            msg.result.accept(Result(true, count, null))
                             if (count < 0) {
                                 shutdown()
                                 break
@@ -125,10 +126,12 @@ abstract class AbstractTcpConnection(
                         } catch (e: InterruptedByTimeoutException) {
                             log.warn { "Tcp connection idle timeout. $id, $idleTime" }
                             shutdown()
+                            msg.result.accept(Result(false, -1, e))
                             break
                         } catch (e: Exception) {
                             log.error(e) { "Tcp connection output exception. $id" }
                             shutdown()
+                            msg.result.accept(Result(false, -1, e))
                             break
                         }
                     }
@@ -139,6 +142,7 @@ abstract class AbstractTcpConnection(
                             val offset = msg.getCurrentOffset()
                             val length = msg.getCurrentLength()
                             val count = socketChannel.aWrite(msg.buffers, offset, length, timeout, TimeUnit.SECONDS)
+                            msg.result.accept(Result(true, count, null))
                             if (count < 0) {
                                 shutdown()
                                 break
@@ -146,10 +150,12 @@ abstract class AbstractTcpConnection(
                         } catch (e: InterruptedByTimeoutException) {
                             log.warn { "Tcp connection idle timeout. $id, $idleTime" }
                             shutdown()
+                            msg.result.accept(Result(false, -1, e))
                             break
                         } catch (e: Exception) {
                             log.error(e) { "Tcp connection output exception. $id" }
                             shutdown()
+                            msg.result.accept(Result(false, -1, e))
                             break
                         }
                     }
@@ -166,6 +172,7 @@ abstract class AbstractTcpConnection(
                                 timeout,
                                 TimeUnit.SECONDS
                                                             )
+                            msg.result.accept(Result(true, count, null))
                             if (count < 0) {
                                 shutdown()
                                 break
@@ -173,10 +180,12 @@ abstract class AbstractTcpConnection(
                         } catch (e: InterruptedByTimeoutException) {
                             log.warn { "Tcp connection idle timeout. $id, $idleTime" }
                             shutdown()
+                            msg.result.accept(Result(false, -1, e))
                             break
                         } catch (e: Exception) {
                             log.error(e) { "Tcp connection output exception. $id" }
                             shutdown()
+                            msg.result.accept(Result(false, -1, e))
                             break
                         }
                     }
@@ -200,12 +209,12 @@ abstract class AbstractTcpConnection(
                     try {
                         val count = socketChannel.aRead(buf, timeout, TimeUnit.SECONDS)
                         if (count < 0) {
-                            log.debug { "input " }
-                            if (isShutdownOutput && isShutdownInput) {
+                            log.debug { "input channel remote close. $id, $count " }
+                            if (isShutdownInput && isShutdownOutput) {
                                 closeNow()
                                 break
                             } else {
-                                close()
+                                shutdown()
                             }
                         } else {
                             adaptiveBufferSize.setCurrentDataSize(count)
@@ -220,9 +229,11 @@ abstract class AbstractTcpConnection(
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection idle timeout. $id, $idleTime" }
                         shutdown()
+                        break
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection input exception. $id" }
                         shutdown()
+                        break
                     }
                 }
             }
@@ -349,17 +360,69 @@ abstract class AbstractTcpConnection(
         }
     }
 
-    override suspend fun asyncWrite(byteBuffer: ByteBuffer): Int {
-        return write(byteBuffer).await()
-    }
-
-    override suspend fun asyncWrite(byteBuffers: Array<ByteBuffer>, offset: Int, length: Int): Long {
-        return write(byteBuffers, offset, length).await()
-    }
-
-    override suspend fun asyncWrite(byteBufferList: List<ByteBuffer>, offset: Int, length: Int): Long {
-        return write(byteBufferList, offset, length).await()
-    }
-
     override fun getInputChannel(): Channel<ByteBuffer> = inChannel
 }
+
+class CloseRequestException : IllegalStateException("The close request has been sent")
+
+class ChannelClosedException : IllegalStateException("The socket channel is closed")
+
+sealed class Message
+class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : Message()
+class Buffers(
+    val buffers: Array<ByteBuffer>,
+    val offset: Int,
+    val length: Int,
+    val result: Consumer<Result<Long>>
+             ) : Message() {
+
+    init {
+        require(offset >= 0) { "The offset must be greater than or equal the 0" }
+        require(length > 0) { "The length must be greater than 0" }
+        require(offset < buffers.size) { "The offset must be less than the buffer array size" }
+        require((offset + length) <= buffers.size) { "The length must be less than or equal the buffer array size" }
+    }
+
+    fun getCurrentOffset(): Int {
+        buffers.forEachIndexed { index, byteBuffer ->
+            if (index >= offset && byteBuffer.hasRemaining()) {
+                return index
+            }
+        }
+        return buffers.size
+    }
+
+    fun getCurrentLength(): Int = buffers.size - getCurrentOffset()
+
+    fun hasRemaining(): Boolean = getCurrentOffset() < buffers.size
+}
+
+class BufferList(
+    val bufferList: List<ByteBuffer>,
+    val offset: Int,
+    val length: Int,
+    val result: Consumer<Result<Long>>
+                ) : Message() {
+
+    init {
+        require(offset >= 0) { "The offset must be greater than or equal the 0" }
+        require(length > 0) { "The length must be greater than 0" }
+        require(offset < bufferList.size) { "The offset must be less than the buffer list size" }
+        require((offset + length) <= bufferList.size) { "The length must be less than or equal the buffer list size" }
+    }
+
+    fun getCurrentOffset(): Int {
+        bufferList.forEachIndexed { index, byteBuffer ->
+            if (index >= offset && byteBuffer.hasRemaining()) {
+                return index
+            }
+        }
+        return bufferList.size
+    }
+
+    fun getCurrentLength(): Int = bufferList.size - getCurrentOffset()
+
+    fun hasRemaining(): Boolean = getCurrentOffset() < bufferList.size
+}
+
+object Shutdown : Message()

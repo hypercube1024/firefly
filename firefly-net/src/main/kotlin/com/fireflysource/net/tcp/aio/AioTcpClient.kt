@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * @author Pengtao Qiu
  */
-class AioTcpClient(val config: TcpConfig) : AbstractAioTcpChannelGroup(), TcpClient {
+class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelGroup(), TcpClient {
 
     init {
         start()

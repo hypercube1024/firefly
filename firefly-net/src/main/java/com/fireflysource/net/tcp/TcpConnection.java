@@ -3,6 +3,7 @@ package com.fireflysource.net.tcp;
 import com.fireflysource.common.func.Callback;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
+import kotlinx.coroutines.channels.Channel;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -87,4 +88,6 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     boolean isClientMode();
 
     boolean isHandshakeFinished();
+
+    Channel<ByteBuffer> getInputChannel();
 }
