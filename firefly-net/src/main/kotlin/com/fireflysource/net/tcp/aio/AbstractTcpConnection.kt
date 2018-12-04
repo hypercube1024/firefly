@@ -69,7 +69,49 @@ abstract class AbstractTcpConnection(
         inChannel.offer(buf)
     }
 
-    private val writeJob = launchWithAttr(tcpConnectionThread) {
+    private val writingJob = launchWritingJob()
+
+    override fun getAttachment(): Any? = attachmentObj
+
+    override fun setAttachment(obj: Any?) {
+        attachmentObj = obj
+    }
+
+    override fun getId(): Int = connectionId
+
+    override fun getOpenTime(): Long = openTimestamp
+
+    override fun getCloseTime(): Long = closeTimestamp
+
+    override fun getDuration(): Long = System.currentTimeMillis() - openTimestamp
+
+    override fun getLastReadTime(): Long = lastReadTimestamp
+
+    override fun getLastWrittenTime(): Long = lastWrittenTimestamp
+
+    override fun getLastActiveTime(): Long =
+        System.currentTimeMillis() - Math.max(lastReadTimestamp, lastWrittenTimestamp)
+
+    override fun getReadBytes(): Long = readByteCount
+
+    override fun getWrittenBytes(): Long = writtenByteCount
+
+    override fun getIdleTime(): Long = System.currentTimeMillis() - lastActiveTime
+
+    override fun getMaxIdleTime(): Long = timeout
+
+    override fun isClosed(): Boolean = socketChannelClosed.get()
+
+    override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
+
+    override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
+
+    override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
+        receivedMessageConsumer = messageConsumer
+        return this
+    }
+
+    private fun launchWritingJob() = launchWithAttr(tcpConnectionThread) {
         while (!outputShutdownState.get()) {
             when (val msg = outChannel.receive()) {
                 is Buffer -> {
@@ -144,46 +186,6 @@ abstract class AbstractTcpConnection(
                 }
             }
         }
-    }
-
-    override fun getAttachment(): Any? = attachmentObj
-
-    override fun setAttachment(obj: Any?) {
-        attachmentObj = obj
-    }
-
-    override fun getId(): Int = connectionId
-
-    override fun getOpenTime(): Long = openTimestamp
-
-    override fun getCloseTime(): Long = closeTimestamp
-
-    override fun getDuration(): Long = System.currentTimeMillis() - openTimestamp
-
-    override fun getLastReadTime(): Long = lastReadTimestamp
-
-    override fun getLastWrittenTime(): Long = lastWrittenTimestamp
-
-    override fun getLastActiveTime(): Long =
-        System.currentTimeMillis() - Math.max(lastReadTimestamp, lastWrittenTimestamp)
-
-    override fun getReadBytes(): Long = readByteCount
-
-    override fun getWrittenBytes(): Long = writtenByteCount
-
-    override fun getIdleTime(): Long = System.currentTimeMillis() - lastActiveTime
-
-    override fun getMaxIdleTime(): Long = timeout
-
-    override fun isClosed(): Boolean = socketChannelClosed.get()
-
-    override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
-
-    override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
-
-    override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        receivedMessageConsumer = messageConsumer
-        return this
     }
 
     override fun startAutomaticReading(): TcpConnection {
@@ -286,15 +288,25 @@ abstract class AbstractTcpConnection(
     override fun closeNow(): TcpConnection {
         if (socketChannelClosed.compareAndSet(false, true)) {
             try {
+                closeChannel()
                 socketChannel.close()
                 log.info { "tcp connection close success. $id" }
                 closeConsumer.accept(Result.SUCCESS)
                 closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
-                log.error(e) { "close socket channel exception" }
+                log.error(e) { "close socket channel exception. $id" }
             }
         }
         return this
+    }
+
+    private fun closeChannel() {
+        try {
+            inChannel.close()
+            outChannel.close()
+        } catch (e: Exception) {
+            log.warn(e) { "close coroutine channel exception. $id" }
+        }
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
