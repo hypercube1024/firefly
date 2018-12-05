@@ -17,6 +17,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.ClosedChannelException
+import java.nio.channels.InterruptedByTimeoutException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -83,14 +84,17 @@ abstract class AbstractTcpConnection(
 
     override fun getCloseTime(): Long = closeTimestamp
 
-    override fun getDuration(): Long = System.currentTimeMillis() - openTimestamp
+    override fun getDuration(): Long = if (isClosed) {
+        closeTime - openTime
+    } else {
+        System.currentTimeMillis() - openTimestamp
+    }
 
     override fun getLastReadTime(): Long = lastReadTimestamp
 
     override fun getLastWrittenTime(): Long = lastWrittenTimestamp
 
-    override fun getLastActiveTime(): Long =
-        System.currentTimeMillis() - Math.max(lastReadTimestamp, lastWrittenTimestamp)
+    override fun getLastActiveTime(): Long = Math.max(lastReadTime, lastWrittenTime)
 
     override fun getReadBytes(): Long = readByteCount
 
@@ -131,8 +135,13 @@ abstract class AbstractTcpConnection(
                         } else {
                             writtenByteCount += count
                         }
+                    } catch (e: InterruptedByTimeoutException) {
+                        log.warn { "Tcp connection writing timeout. $id" }
+                        shutdownInputAndOutput()
+                        message.result.accept(Result(false, -1, e))
+                        break
                     } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection output exception. $id" }
+                        log.warn(e) { "Tcp connection writing exception. $id" }
                         shutdownInputAndOutput()
                         message.result.accept(Result(false, -1, e))
                         break
@@ -153,8 +162,13 @@ abstract class AbstractTcpConnection(
                         } else {
                             writtenByteCount += count
                         }
+                    } catch (e: InterruptedByTimeoutException) {
+                        log.warn { "Tcp connection writing timeout. $id" }
+                        shutdownInputAndOutput()
+                        message.result.accept(Result(false, -1, e))
+                        break
                     } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection output exception. $id" }
+                        log.warn(e) { "Tcp connection writing exception. $id" }
                         shutdownInputAndOutput()
                         message.result.accept(Result(false, -1, e))
                         break
@@ -181,8 +195,13 @@ abstract class AbstractTcpConnection(
                         } else {
                             writtenByteCount += count
                         }
+                    } catch (e: InterruptedByTimeoutException) {
+                        log.warn { "Tcp connection writing timeout. $id" }
+                        shutdownInputAndOutput()
+                        message.result.accept(Result(false, -1, e))
+                        break
                     } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection output exception. $id" }
+                        log.warn(e) { "Tcp connection writing exception. $id" }
                         shutdownInputAndOutput()
                         message.result.accept(Result(false, -1, e))
                         break
@@ -206,7 +225,6 @@ abstract class AbstractTcpConnection(
                         lastReadTimestamp = System.currentTimeMillis()
                         val count = socketChannel.aRead(buf, timeout, timeUnit)
                         if (count < 0) {
-                            log.debug { "input channel remote close. $id, $count " }
                             shutdownAndClose()
                             break
                         } else {
@@ -219,8 +237,12 @@ abstract class AbstractTcpConnection(
                                 exceptionConsumers.forEach { it.accept(e) }
                             }
                         }
+                    } catch (e: InterruptedByTimeoutException) {
+                        log.warn { "Tcp connection reading timeout. $id" }
+                        shutdownAndClose()
+                        break
                     } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection input exception. $id" }
+                        log.warn(e) { "Tcp connection reading exception. $id" }
                         shutdownAndClose()
                         break
                     }
