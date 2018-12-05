@@ -21,8 +21,16 @@ public interface SecureEngine extends Cloneable, ApplicationProtocolSelector {
         return future;
     }
 
-    ByteBuffer decode(ByteBuffer byteBuffer);
+    void readHandshakeMessage(ByteBuffer byteBuffer, Consumer<Result<Boolean>> result);
 
-    ByteBuffer encode(ByteBuffer byteBuffer);
+    default CompletableFuture<Boolean> readHandshakeMessage(ByteBuffer byteBuffer) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        readHandshakeMessage(byteBuffer, futureToConsumer(future));
+        return future;
+    }
+
+    CodecResult decode(ByteBuffer byteBuffer);
+
+    CodecResult encode(ByteBuffer byteBuffer);
 
 }
