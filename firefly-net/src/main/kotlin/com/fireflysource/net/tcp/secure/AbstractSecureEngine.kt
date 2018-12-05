@@ -1,21 +1,18 @@
 package com.fireflysource.net.tcp.secure
 
-import com.fireflysource.common.coroutine.launchWithAttr
 import com.fireflysource.common.sys.CommonLogger
 import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.secure.exception.SecureNetException
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.future.await
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.util.concurrent.Executors
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLEngineResult
 import javax.net.ssl.SSLEngineResult.HandshakeStatus.*
+import javax.net.ssl.SSLEngineResult.Status.*
 import javax.net.ssl.SSLException
 
 
@@ -31,9 +28,7 @@ abstract class AbstractSecureEngine(
         private val log = CommonLogger.create(AbstractSecureEngine::class.java)
         private val hsBuffer = ByteBuffer.allocateDirect(0)
         private val emptyBuf = ByteBuffer.allocate(0)
-        private val codecThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-tls-codec-thread") }.asCoroutineDispatcher()
-        }
+        private val emptyHsRet: Consumer<Result<SecureEngine>> = Consumer {}
     }
 
     protected val closed = AtomicBoolean(false)
@@ -41,15 +36,128 @@ abstract class AbstractSecureEngine(
     protected lateinit var initialHSStatus: SSLEngineResult.HandshakeStatus
     protected var receivedPacketBuf: ByteBuffer = emptyBuf
     protected var receivedAppBuf: ByteBuffer = emptyBuf
-    protected var handshakeResult: Consumer<Result<SecureEngine>> = Consumer {}
+    protected var handshakeResult: Consumer<Result<SecureEngine>> = emptyHsRet
 
     override fun beginHandshake(result: Consumer<Result<SecureEngine>>) {
         handshakeResult = result
-        this.sslEngine.beginHandshake();
+        this.sslEngine.beginHandshake()
         initialHSStatus = sslEngine.handshakeStatus
         if (sslEngine.useClientMode) {
-            launchWithAttr(codecThread) { doHandshakeResponse() }
+            doHandshakeResponse()
         }
+    }
+
+    override fun decode(byteBuffer: ByteBuffer): ByteBuffer {
+        if (!doHandshake(byteBuffer)) {
+            return emptyBuf
+        }
+
+        if (!initialHSComplete.get()) {
+            throw SecureNetException("The handshake is not complete")
+        }
+
+        merge(byteBuffer)
+        if (!receivedPacketBuf.hasRemaining()) {
+            return emptyBuf
+        }
+
+        needIO@ while (true) {
+            val result = unwrap()
+            log.debug {
+                "read data result. id: ${tcpConnection.id}" +
+                        "ret: $result receivedPacketBuf: ${receivedPacketBuf.remaining()}, " +
+                        "appBufSize: ${receivedAppBuf.remaining()}"
+            }
+
+            when (result.status) {
+                BUFFER_OVERFLOW -> {
+                    resizeAppBuffer()
+                    // retry the operation.
+                }
+                BUFFER_UNDERFLOW -> {
+                    if (receivedPacketBuf.remaining() < sslEngine.session.packetBufferSize) {
+                        break@needIO
+                    }
+                }
+                OK -> {
+                    if (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+                        doTasks()
+                    }
+                    if (!receivedPacketBuf.hasRemaining()) {
+                        break@needIO
+                    }
+                }
+                CLOSED -> {
+                    log.info { "read data failure. SSLEngine will close inbound. id: ${tcpConnection.id}" }
+                    closeInbound()
+                    break@needIO
+                }
+
+                else -> throw SecureNetException("read data exception. id: ${tcpConnection.id}, status: ${result.status}")
+            }
+        }
+
+        return getCurrentReceivedAppBuf()
+    }
+
+    override fun encode(byteBuffer: ByteBuffer): List<ByteBuffer> {
+        if (!byteBuffer.hasRemaining()) {
+            return emptyList()
+        }
+
+        val remain = byteBuffer.remaining()
+        var packetBufferSize = sslEngine.session.packetBufferSize
+        val pocketBuffers = ArrayList<ByteBuffer>()
+        var bytesConsumed = 0
+
+        outer@ while (bytesConsumed < remain) {
+            var packetBuffer = newBuffer(packetBufferSize)
+
+            wrap@ while (true) {
+                val result = wrap(byteBuffer, packetBuffer)
+                bytesConsumed += result.bytesConsumed()
+
+                when (result.status) {
+                    OK -> {
+                        if (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+                            doTasks()
+                        }
+
+                        packetBuffer.flip()
+                        if (packetBuffer.hasRemaining()) {
+                            pocketBuffers.add(packetBuffer)
+                        }
+                        break@wrap
+                    }
+
+                    BUFFER_OVERFLOW -> {
+                        packetBufferSize = sslEngine.session.packetBufferSize
+                        val b = newBuffer(packetBuffer.position() + packetBufferSize)
+                        packetBuffer.flip()
+                        b.put(packetBuffer)
+                        packetBuffer = b
+                    }
+
+                    CLOSED -> {
+                        log.info { "SSLEngine will close. id: ${tcpConnection.id}" }
+                        packetBuffer.flip()
+                        if (packetBuffer.hasRemaining()) {
+                            pocketBuffers.add(packetBuffer)
+                        }
+                        break@outer
+                    }
+
+                    else -> {
+                        throw SecureNetException(
+                            "SSLEngine writes data exception. " +
+                                    "id: ${tcpConnection.id}," +
+                                    " status: ${result.status}"
+                                                )
+                    }
+                }// retry the operation.
+            }
+        }
+        return pocketBuffers
     }
 
     /**
@@ -61,7 +169,7 @@ abstract class AbstractSecureEngine(
      * @return True means handshake success
      * @throws IOException The I/O exception
      */
-    protected suspend fun doHandshake(receiveBuffer: ByteBuffer): Boolean {
+    protected fun doHandshake(receiveBuffer: ByteBuffer): Boolean {
         try {
             if (tcpConnection.isClosed) {
                 close()
@@ -170,7 +278,7 @@ abstract class AbstractSecureEngine(
         }
     }
 
-    protected suspend fun doHandshakeResponse() = try {
+    protected fun doHandshakeResponse() = try {
         outer@ while (initialHSStatus === SSLEngineResult.HandshakeStatus.NEED_WRAP) {
             var result: SSLEngineResult
             var packetBuffer = newBuffer(sslEngine.session.packetBufferSize)
@@ -195,13 +303,9 @@ abstract class AbstractSecureEngine(
                             }
                             FINISHED -> {
                                 if (packetBuffer.hasRemaining()) {
-                                    try {
-                                        tcpConnection.write(packetBuffer).await()
-                                        completeHandshake(Result(true, this, null))
-                                    } catch (e: Exception) {
-                                        completeHandshake(Result(false, this, e))
+                                    tcpConnection.write(packetBuffer) {
+                                        completeHandshake(Result(it.isSuccess, this@AbstractSecureEngine, it.throwable))
                                     }
-
                                 } else {
                                     completeHandshake(Result(true, this, null))
                                 }
@@ -276,7 +380,7 @@ abstract class AbstractSecureEngine(
         }
     }
 
-    protected fun getCurrentReceivedAppBuf(): ByteBuffer? {
+    protected fun getCurrentReceivedAppBuf(): ByteBuffer {
         receivedAppBuf.flip()
         log.debug {
             "read data. get app buf. id: ${tcpConnection.id}, " +
@@ -292,7 +396,7 @@ abstract class AbstractSecureEngine(
             }
             buf
         } else {
-            null
+            emptyBuf
         }
     }
 

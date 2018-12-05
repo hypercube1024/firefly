@@ -3,6 +3,7 @@ package com.fireflysource.net.tcp.secure;
 import com.fireflysource.net.tcp.Result;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -11,7 +12,7 @@ import static com.fireflysource.net.tcp.Result.futureToConsumer;
 /**
  * @author Pengtao Qiu
  */
-public interface SecureEngine extends Cloneable, ApplicationProtocolSelector {
+public interface SecureEngine extends Cloneable {
 
     void beginHandshake(Consumer<Result<SecureEngine>> result);
 
@@ -21,16 +22,8 @@ public interface SecureEngine extends Cloneable, ApplicationProtocolSelector {
         return future;
     }
 
-    void readHandshakeMessage(ByteBuffer byteBuffer, Consumer<Result<Boolean>> result);
+    ByteBuffer decode(ByteBuffer byteBuffer);
 
-    default CompletableFuture<Boolean> readHandshakeMessage(ByteBuffer byteBuffer) {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-        readHandshakeMessage(byteBuffer, futureToConsumer(future));
-        return future;
-    }
-
-    CodecResult decode(ByteBuffer byteBuffer);
-
-    CodecResult encode(ByteBuffer byteBuffer);
+    List<ByteBuffer> encode(ByteBuffer byteBuffer);
 
 }
