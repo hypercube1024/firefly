@@ -146,6 +146,7 @@ class TestAioServerAndClient {
         val client = AioTcpClient(TcpConfig(1))
         val conn = client.connect(host, port).await()
         conn.startReading()
+        assertEquals(port, conn.remoteAddress.port)
         delay(Duration.ofSeconds(2))
         assertTrue(conn.isClosed)
         assertTrue(conn.duration > 0)
