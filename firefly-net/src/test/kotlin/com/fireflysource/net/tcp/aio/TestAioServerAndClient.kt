@@ -9,30 +9,52 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.ValueSource
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
+import java.util.Arrays
+import org.junit.jupiter.params.provider.Arguments.arguments
+import org.junit.jupiter.params.provider.MethodSource
+import java.util.stream.Stream
+
 
 /**
  * @author Pengtao Qiu
  */
 class TestAioServerAndClient {
 
-    @ParameterizedTest
-    @ValueSource(strings = ["single", "array", "list"])
-    fun test(bufType: String) = runBlocking {
-        val host = "localhost"
-        val port = 4001
-        val maxMsgCount = 200
-        val msgCount = AtomicInteger()
+    companion object {
+        @JvmStatic
+        fun testParametersProvider(): Stream<Arguments> {
+            return Stream.of(
+                arguments("single", false),
+                arguments("array", false),
+                arguments("list", false),
+                arguments("single", true),
+                arguments("array", true),
+                arguments("list", true)
+                            )
+        }
+    }
 
-        val server = AioTcpServer().listen(host, port)
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    fun test(bufType: String, enableSecure: Boolean) = runBlocking {
+        val host = "localhost"
+        val port = 4004
+        val maxMsgCount = 10
+        val msgCount = AtomicInteger()
+        val tcpConfig = TcpConfig(30, enableSecure)
+
+        val server = AioTcpServer(tcpConfig).listen(host, port)
         val serverAcceptsConnJob = launchWithAttr(singleThread) {
             val tcpConnChannel = server.tcpConnectionChannel
             acceptLoop@ while (true) {
                 val conn = tcpConnChannel.receive()
+                val hs = conn.beginHandshake()
                 conn.startReading()
 
                 launchWithAttr(singleThread) {
@@ -44,9 +66,13 @@ class TestAioServerAndClient {
                         readBufLoop@ while (buf.hasRemaining()) {
                             val num = buf.int
                             msgCount.incrementAndGet()
+                            println("server =======> $num")
 
                             val newBuf = ByteBuffer.allocate(4)
                             newBuf.putInt(num).flip()
+                            if (conn.isSecureConnection) {
+                                hs.await()
+                            }
                             conn.write(newBuf)
                             if (num == maxMsgCount) {
                                 break@recvLoop
@@ -58,11 +84,32 @@ class TestAioServerAndClient {
         }
 
 
-        val client = AioTcpClient()
+        val client = AioTcpClient(tcpConfig)
         val time = measureTimeMillis {
             val conn = client.connect(host, port).await()
+            val hs = conn.beginHandshake()
             conn.startReading()
 
+            val readingJob = launchWithAttr(singleThread) {
+                val inputChannel = conn.inputChannel
+                recvLoop@ while (true) {
+                    val buf = inputChannel.receive()
+
+                    readBufLoop@ while (buf.hasRemaining()) {
+                        val num = buf.int
+                        msgCount.incrementAndGet()
+                        println("client -------> $num")
+                        if (num == maxMsgCount) {
+                            conn.close()
+                            break@recvLoop
+                        }
+                    }
+                }
+            }
+
+            if (conn.isSecureConnection) {
+                hs.await()
+            }
             when (bufType) {
                 "single" -> {
                     (1..maxMsgCount).forEach { i ->
@@ -89,27 +136,13 @@ class TestAioServerAndClient {
                 }
             }
 
-            val readingJob = launchWithAttr(singleThread) {
-                val inputChannel = conn.inputChannel
-                recvLoop@ while (true) {
-                    val buf = inputChannel.receive()
 
-                    readBufLoop@ while (buf.hasRemaining()) {
-                        val num = buf.int
-                        msgCount.incrementAndGet()
-                        if (num == maxMsgCount) {
-                            conn.close()
-                            break@recvLoop
-                        }
-                    }
-                }
-            }
 
             readingJob.join()
-            assertEquals(maxMsgCount * 4L, conn.readBytes)
-            assertEquals(maxMsgCount * 4L, conn.writtenBytes)
             assertEquals(maxMsgCount * 2, msgCount.get())
             println("conn info: ${conn.lastActiveTime}, ${conn.lastReadTime}, ${conn.lastWrittenTime}")
+            assertTrue(conn.readBytes > 0)
+            assertTrue(conn.writtenBytes > 0)
             assertTrue(conn.lastActiveTime > 0L)
             assertTrue(conn.lastReadTime > 0L)
             assertTrue(conn.lastWrittenTime > 0L)

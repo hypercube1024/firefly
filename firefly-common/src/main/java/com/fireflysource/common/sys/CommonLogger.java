@@ -1,6 +1,8 @@
 package com.fireflysource.common.sys;
 
 import com.fireflysource.common.slf4j.LazyLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Supplier;
 
@@ -8,6 +10,9 @@ import java.util.function.Supplier;
  * @author Pengtao Qiu
  */
 public class CommonLogger {
+
+    public static final Logger systemLog = LoggerFactory.getLogger("firefly-system");
+
     private static final LazyLogger system = LazyLogger.create("firefly-system");
 
     private final Class<?> clazz;

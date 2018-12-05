@@ -10,9 +10,9 @@ import java.util.List;
  */
 public interface SecureEngineFactory {
 
-    SecureEngine create(TcpConnection connection, boolean clientMode, List<String> supportedProtocols) throws IOException;
+    SecureEngine create(TcpConnection connection, boolean clientMode, List<String> supportedProtocols);
 
     SecureEngine create(TcpConnection connection, boolean clientMode, String peerHost, int peerPort,
-                        List<String> supportedProtocols) throws IOException;
+                        List<String> supportedProtocols);
 
 }

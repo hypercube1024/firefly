@@ -4,6 +4,8 @@ import com.fireflysource.common.coroutine.asyncWithAttr
 import com.fireflysource.common.io.aConnect
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
+import com.fireflysource.net.tcp.secure.SecureEngineFactory
+import com.fireflysource.net.tcp.secure.conscrypt.NoCheckConscryptSSLContextFactory
 import kotlinx.coroutines.future.asCompletableFuture
 import java.net.SocketAddress
 import java.net.StandardSocketOptions
@@ -15,8 +17,16 @@ import java.util.concurrent.CompletableFuture
  */
 class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelGroup(), TcpClient {
 
+    private var secureEngineFactory: SecureEngineFactory = NoCheckConscryptSSLContextFactory()
+    private var supportedProtocols: List<String> = emptyList()
+
     init {
         start()
+    }
+
+    override fun secureEngineFactory(secureEngineFactory: SecureEngineFactory): TcpClient {
+        this.secureEngineFactory = secureEngineFactory
+        return this
     }
 
     override fun enableSecureConnection(): TcpClient {
@@ -31,7 +41,13 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
             socketChannel.aConnect(address)
-            AioTcpConnection(id.incrementAndGet(), socketChannel, config.timeout)
+            val tcpConnection = AioTcpConnection(id.incrementAndGet(), socketChannel, config.timeout)
+            if (config.enableSecureConnection) {
+                AioSecureTcpConnection(
+                    tcpConnection,
+                    secureEngineFactory.create(tcpConnection, true, supportedProtocols)
+                                      )
+            } else tcpConnection
         }.asCompletableFuture()
 
     override fun getThreadName() = "aio-tcp-client"

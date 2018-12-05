@@ -344,12 +344,13 @@ abstract class AbstractTcpConnection(
     }
 
     private fun closeChannel() {
-        try {
-            inChannel.close()
-            outChannel.close()
-        } catch (e: Exception) {
-            log.warn(e) { "close coroutine channel exception. $id" }
-        }
+//        try {
+//            inChannel.close()
+//            outChannel.close()
+//        } catch (e: Exception) {
+//            log.warn(e) { "close coroutine channel exception. $id" }
+//        }
+        // TODO
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {

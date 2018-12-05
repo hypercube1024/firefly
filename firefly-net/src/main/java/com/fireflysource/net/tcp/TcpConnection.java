@@ -3,6 +3,7 @@ package com.fireflysource.net.tcp;
 import com.fireflysource.common.func.Callback;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
+import com.fireflysource.net.tcp.secure.SecureEngine;
 import kotlinx.coroutines.channels.Channel;
 
 import java.nio.ByteBuffer;
@@ -100,4 +101,12 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     boolean isClientMode();
 
     boolean isHandshakeFinished();
+
+    void beginHandshake(Consumer<Result<Void>> result);
+
+    default CompletableFuture<Void> beginHandshake() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        beginHandshake(futureToConsumer(future));
+        return future;
+    }
 }

@@ -1,6 +1,8 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
 import com.fireflysource.common.sys.CommonLogger;
+import com.fireflysource.net.tcp.TcpConnection;
+import com.fireflysource.net.tcp.secure.SecureEngine;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 import org.conscrypt.Conscrypt;
 
@@ -9,13 +11,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.List;
 
 /**
  * @author Pengtao Qiu
  */
 abstract public class AbstractConscryptSecureEngineFactory implements SecureEngineFactory {
 
-    private static final CommonLogger log = CommonLogger.create(AbstractConscryptSecureEngineFactory.class);
+    protected static final CommonLogger log = CommonLogger.create(AbstractConscryptSecureEngineFactory.class);
 
     private static String provideName;
 
@@ -70,6 +73,22 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         long end = System.currentTimeMillis();
         log.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");
         return sslContext;
+    }
+
+    @Override
+    public SecureEngine create(TcpConnection connection, boolean clientMode, List<String> supportedProtocols) {
+        SSLEngine sslEngine = getSSLContext().createSSLEngine();
+        sslEngine.setUseClientMode(clientMode);
+        ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
+        return new ConscryptSecureEngine(connection, sslEngine, selector);
+    }
+
+    public SecureEngine create(TcpConnection connection, boolean clientMode, String peerHost, int peerPort,
+                               List<String> supportedProtocols) {
+        SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
+        sslEngine.setUseClientMode(clientMode);
+        ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
+        return new ConscryptSecureEngine(connection, sslEngine, selector);
     }
 
     abstract public SSLContext getSSLContext();

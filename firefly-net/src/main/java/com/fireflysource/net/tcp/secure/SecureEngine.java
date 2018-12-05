@@ -2,6 +2,8 @@ package com.fireflysource.net.tcp.secure;
 
 import com.fireflysource.net.tcp.Result;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -12,18 +14,22 @@ import static com.fireflysource.net.tcp.Result.futureToConsumer;
 /**
  * @author Pengtao Qiu
  */
-public interface SecureEngine extends Cloneable {
+public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
 
-    void beginHandshake(Consumer<Result<SecureEngine>> result);
+    boolean isClientMode();
 
-    default CompletableFuture<SecureEngine> beginHandshake() {
-        CompletableFuture<SecureEngine> future = new CompletableFuture<>();
+    boolean isHandshakeFinished();
+
+    void beginHandshake(Consumer<Result<Void>> result);
+
+    default CompletableFuture<Void> beginHandshake() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
         beginHandshake(futureToConsumer(future));
         return future;
     }
 
-    ByteBuffer decode(ByteBuffer byteBuffer);
+    ByteBuffer decode(ByteBuffer byteBuffer) throws IOException;
 
-    List<ByteBuffer> encode(ByteBuffer byteBuffer);
+    List<ByteBuffer> encode(ByteBuffer byteBuffer) throws IOException;
 
 }
