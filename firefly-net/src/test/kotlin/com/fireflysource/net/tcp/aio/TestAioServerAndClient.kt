@@ -5,7 +5,8 @@ import com.fireflysource.common.coroutine.launchWithAttr
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
@@ -15,8 +16,9 @@ import kotlin.system.measureTimeMillis
  */
 class TestAioServerAndClient {
 
-    @Test
-    fun test() = runBlocking {
+    @ParameterizedTest
+    @ValueSource(strings = ["single", "array", "list"])
+    fun test(bufType: String) = runBlocking {
         val host = "localhost"
         val port = 4001
         val maxMsgCount = 200
@@ -37,7 +39,6 @@ class TestAioServerAndClient {
 
                         readBufLoop@ while (buf.hasRemaining()) {
                             val num = buf.int
-//                            println("server receive ---> $num")
                             msgCount.incrementAndGet()
 
                             val newBuf = ByteBuffer.allocate(4)
@@ -50,19 +51,40 @@ class TestAioServerAndClient {
                     }
                 }
             }
-
         }
 
 
         val client = AioTcpClient()
         val time = measureTimeMillis {
             val conn = client.connect(host, port).await()
-            (1..maxMsgCount).forEach { i ->
-                val buf = ByteBuffer.allocate(4)
-                buf.putInt(i).flip()
-                conn.write(buf)
-            }
             conn.startReading()
+
+            when (bufType) {
+                "single" -> {
+                    (1..maxMsgCount).forEach { i ->
+                        val buf = ByteBuffer.allocate(4)
+                        buf.putInt(i).flip()
+                        conn.write(buf)
+                    }
+                }
+                "array" -> {
+                    val bufArray = Array<ByteBuffer>(maxMsgCount) { index ->
+                        val buf = ByteBuffer.allocate(4)
+                        buf.putInt(index + 1).flip()
+                        buf
+                    }
+                    conn.write(bufArray, 0, bufArray.size)
+                }
+                "list" -> {
+                    val bufList = List<ByteBuffer>(maxMsgCount) { index ->
+                        val buf = ByteBuffer.allocate(4)
+                        buf.putInt(index + 1).flip()
+                        buf
+                    }
+                    conn.write(bufList, 0, bufList.size)
+                }
+            }
+
             val readingJob = launchWithAttr(singleThread) {
                 val inputChannel = conn.inputChannel
                 recvLoop@ while (true) {
@@ -70,7 +92,6 @@ class TestAioServerAndClient {
 
                     readBufLoop@ while (buf.hasRemaining()) {
                         val num = buf.int
-//                        println("client receive ***> $num")
                         msgCount.incrementAndGet()
                         if (num == maxMsgCount) {
                             conn.close()

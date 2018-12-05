@@ -113,95 +113,84 @@ abstract class AbstractTcpConnection(
 
     private fun launchWritingJob() = launchWithAttr(dataTransThread) {
         while (!isShutdownOutput) {
-            writeMsg(outChannel.receive())
+            writeMessage(outChannel.receive())
         }
     }
 
-    private fun writeRemainingMsgInChannel() = launchWithAttr(dataTransThread) {
-        if (!isShutdownOutput) {
-            writingJob.cancel()
-            while (true) {
-                val msg = outChannel.poll() ?: break
-                log.debug { "The channel will close. Writes the remaining data in the out channel." }
-                writeMsg(msg)
-            }
-        }
-    }
-
-    private suspend fun writeMsg(msg: Message) {
+    private suspend fun writeMessage(message: Message) {
         lastWrittenTimestamp = System.currentTimeMillis()
-        when (msg) {
+        when (message) {
             is Buffer -> {
-                while (msg.buffer.hasRemaining()) {
+                while (message.buffer.hasRemaining()) {
                     try {
-                        val count = socketChannel.aWrite(msg.buffer, timeout, timeUnit)
-                        msg.result.accept(Result(true, count, null))
+                        val count = socketChannel.aWrite(message.buffer, timeout, timeUnit)
+                        message.result.accept(Result(true, count, null))
                         if (count < 0) {
-                            shutdown()
+                            shutdownInputAndOutput()
                             break
                         } else {
                             writtenByteCount += count
                         }
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection output exception. $id" }
-                        shutdown()
-                        msg.result.accept(Result(false, -1, e))
+                        shutdownInputAndOutput()
+                        message.result.accept(Result(false, -1, e))
                         break
                     }
                 }
             }
             is Buffers -> {
-                while (msg.hasRemaining()) {
+                while (message.hasRemaining()) {
                     try {
-                        val offset = msg.getCurrentOffset()
-                        val length = msg.getCurrentLength()
+                        val offset = message.getCurrentOffset()
+                        val length = message.getCurrentLength()
 
-                        val count = socketChannel.aWrite(msg.buffers, offset, length, timeout, timeUnit)
-                        msg.result.accept(Result(true, count, null))
+                        val count = socketChannel.aWrite(message.buffers, offset, length, timeout, timeUnit)
+                        message.result.accept(Result(true, count, null))
                         if (count < 0) {
-                            shutdown()
+                            shutdownInputAndOutput()
                             break
                         } else {
                             writtenByteCount += count
                         }
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection output exception. $id" }
-                        shutdown()
-                        msg.result.accept(Result(false, -1, e))
+                        shutdownInputAndOutput()
+                        message.result.accept(Result(false, -1, e))
                         break
                     }
                 }
             }
             is BufferList -> {
-                while (msg.hasRemaining()) {
+                while (message.hasRemaining()) {
                     try {
-                        val offset = msg.getCurrentOffset()
-                        val length = msg.getCurrentLength()
+                        val offset = message.getCurrentOffset()
+                        val length = message.getCurrentLength()
 
                         val count = socketChannel.aWrite(
-                            msg.bufferList.toTypedArray(),
+                            message.bufferList.toTypedArray(),
                             offset,
                             length,
                             timeout,
                             timeUnit
                                                         )
-                        msg.result.accept(Result(true, count, null))
+                        message.result.accept(Result(true, count, null))
                         if (count < 0) {
-                            shutdown()
+                            shutdownInputAndOutput()
                             break
                         } else {
                             writtenByteCount += count
                         }
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection output exception. $id" }
-                        shutdown()
-                        msg.result.accept(Result(false, -1, e))
+                        shutdownInputAndOutput()
+                        message.result.accept(Result(false, -1, e))
                         break
                     }
                 }
             }
             is Shutdown -> {
-                shutdown()
+                shutdownInputAndOutput()
             }
         }
     }
@@ -218,7 +207,7 @@ abstract class AbstractTcpConnection(
                         val count = socketChannel.aRead(buf, timeout, timeUnit)
                         if (count < 0) {
                             log.debug { "input channel remote close. $id, $count " }
-                            cleanupAndCloseNow()
+                            shutdownAndClose()
                             break
                         } else {
                             adaptiveBufferSize.update(count)
@@ -232,7 +221,7 @@ abstract class AbstractTcpConnection(
                         }
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection input exception. $id" }
-                        cleanupAndCloseNow()
+                        shutdownAndClose()
                         break
                     }
                 }
@@ -241,12 +230,7 @@ abstract class AbstractTcpConnection(
         return this
     }
 
-    private suspend fun cleanupAndCloseNow() {
-        writeRemainingMsgInChannel().join()
-        closeNow()
-    }
-
-    override fun isAutomaticReading(): Boolean = autoReadState.get()
+    override fun isStartReading(): Boolean = autoReadState.get()
 
     override fun onClose(callback: Callback): TcpConnection {
         closeCallbacks.add(callback)
@@ -272,7 +256,7 @@ abstract class AbstractTcpConnection(
         close(EMPTY_CONSUMER_RESULT)
     }
 
-    private fun shutdown() {
+    private fun shutdownInput() {
         if (inputShutdownState.compareAndSet(false, true)) {
             try {
                 socketChannel.shutdownInput()
@@ -281,20 +265,39 @@ abstract class AbstractTcpConnection(
             } catch (e: IOException) {
                 log.warn { "Shutdown input exception. $id" }
             }
-        } else {
-            log.info { "The tcp connection has shutdown input. $id" }
         }
+    }
+
+    private suspend fun shutdownOutput() {
         if (outputShutdownState.compareAndSet(false, true)) {
             try {
+                writeRemainingMessage()
                 socketChannel.shutdownOutput()
             } catch (e: ClosedChannelException) {
                 log.warn { "The channel is closed. $id" }
             } catch (e: IOException) {
                 log.warn { "Shutdown output exception. $id" }
             }
-        } else {
-            log.info { "The tcp connection has shutdown output. $id" }
+            writingJob.cancel()
         }
+    }
+
+    private suspend fun writeRemainingMessage() {
+        while (true) {
+            val msg = outChannel.poll() ?: break
+            log.debug { "The channel will close. Writes the remaining data in the out channel." }
+            writeMessage(msg)
+        }
+    }
+
+    private suspend fun shutdownAndClose() {
+        shutdownInputAndOutput()
+        closeNow()
+    }
+
+    private suspend fun shutdownInputAndOutput() {
+        shutdownOutput()
+        shutdownInput()
     }
 
     override fun isShutdownInput(): Boolean = inputShutdownState.get()

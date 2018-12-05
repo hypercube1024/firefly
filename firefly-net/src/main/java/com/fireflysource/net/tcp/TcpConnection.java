@@ -44,7 +44,12 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
      */
     TcpConnection startReading();
 
-    boolean isAutomaticReading();
+    /**
+     * If return true, the tcp connection has started automatic message reading.
+     *
+     * @return If return true, the tcp connection has started automatic message reading.
+     */
+    boolean isStartReading();
 
     TcpConnection onClose(Callback callback);
 
