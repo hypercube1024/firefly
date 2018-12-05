@@ -196,17 +196,17 @@ class FileLog : Log {
 
     override fun trace(str: String?) {
         if (isTraceEnabled) {
-            write(str, LogLevel.TRACE.getName(), null)
+            write(str, LogLevel.TRACE.getName(), null, null)
         }
     }
 
-    override fun trace(str: String?, vararg objs: Any?) {
+    override fun trace(str: String?, objs: Array<Any>?) {
         if (isTraceEnabled) {
             write(str, LogLevel.TRACE.getName(), null, objs)
         }
     }
 
-    override fun trace(str: String?, throwable: Throwable?, vararg objs: Any?) {
+    override fun trace(str: String?, throwable: Throwable?, objs: Array<Any>?) {
         if (isTraceEnabled) {
             write(str, LogLevel.TRACE.getName(), throwable, objs)
         }
@@ -216,17 +216,17 @@ class FileLog : Log {
 
     override fun debug(str: String?) {
         if (isDebugEnabled) {
-            write(str, LogLevel.DEBUG.getName(), null)
+            write(str, LogLevel.DEBUG.getName(), null, null)
         }
     }
 
-    override fun debug(str: String?, vararg objs: Any?) {
+    override fun debug(str: String?, objs: Array<Any>?) {
         if (isDebugEnabled) {
             write(str, LogLevel.DEBUG.getName(), null, objs)
         }
     }
 
-    override fun debug(str: String?, throwable: Throwable?, vararg objs: Any?) {
+    override fun debug(str: String?, throwable: Throwable?, objs: Array<Any>?) {
         if (isDebugEnabled) {
             write(str, LogLevel.DEBUG.getName(), throwable, objs)
         }
@@ -236,17 +236,17 @@ class FileLog : Log {
 
     override fun info(str: String?) {
         if (isInfoEnabled) {
-            write(str, LogLevel.INFO.getName(), null)
+            write(str, LogLevel.INFO.getName(), null, null)
         }
     }
 
-    override fun info(str: String?, vararg objs: Any?) {
+    override fun info(str: String?, objs: Array<Any>?) {
         if (isInfoEnabled) {
             write(str, LogLevel.INFO.getName(), null, objs)
         }
     }
 
-    override fun info(str: String?, throwable: Throwable?, vararg objs: Any?) {
+    override fun info(str: String?, throwable: Throwable?, objs: Array<Any>?) {
         if (isInfoEnabled) {
             write(str, LogLevel.INFO.getName(), throwable, objs)
         }
@@ -256,17 +256,17 @@ class FileLog : Log {
 
     override fun warn(str: String?) {
         if (isWarnEnabled) {
-            write(str, LogLevel.WARN.getName(), null)
+            write(str, LogLevel.WARN.getName(), null, null)
         }
     }
 
-    override fun warn(str: String?, vararg objs: Any?) {
+    override fun warn(str: String?, objs: Array<Any>?) {
         if (isWarnEnabled) {
             write(str, LogLevel.WARN.getName(), null, objs)
         }
     }
 
-    override fun warn(str: String?, throwable: Throwable?, vararg objs: Any?) {
+    override fun warn(str: String?, throwable: Throwable?, objs: Array<Any>?) {
         if (isWarnEnabled) {
             write(str, LogLevel.WARN.getName(), throwable, objs)
         }
@@ -276,17 +276,17 @@ class FileLog : Log {
 
     override fun error(str: String?) {
         if (isErrorEnabled) {
-            write(str, LogLevel.ERROR.getName(), null)
+            write(str, LogLevel.ERROR.getName(), null, null)
         }
     }
 
-    override fun error(str: String?, vararg objs: Any?) {
+    override fun error(str: String?, objs: Array<Any>?) {
         if (isErrorEnabled) {
             write(str, LogLevel.ERROR.getName(), null, objs)
         }
     }
 
-    override fun error(str: String?, throwable: Throwable?, vararg objs: Any?) {
+    override fun error(str: String?, throwable: Throwable?, objs: Array<Any>?) {
         if (isErrorEnabled) {
             write(str, LogLevel.ERROR.getName(), throwable, objs)
         }
@@ -303,12 +303,12 @@ class FileLog : Log {
         }
     }
 
-    private fun write(content: String?, level: String, throwable: Throwable?, vararg objects: Any) {
+    private fun write(content: String?, level: String, throwable: Throwable?, objs: Array<Any>?) {
         val item = LogItem()
         item.level = level
         item.name = name
         item.content = content
-        item.objs = objects
+        item.objs = objs
         item.throwable = throwable
         item.date = Date()
         item.mdcData = mdc.copyOfContextMap

@@ -13,8 +13,9 @@ public class TimeSplitDemo {
     public static final Logger log = LoggerFactory.getLogger("time-split-minute");
 
     public static void main(String[] args) throws Exception {
+        int i = 0;
         while (true) {
-            log.info("test1");
+            log.info("test1 {}, {}", i++, System.currentTimeMillis());
             Thread.sleep(TimeUnit.SECONDS.toMillis(5));
         }
     }
