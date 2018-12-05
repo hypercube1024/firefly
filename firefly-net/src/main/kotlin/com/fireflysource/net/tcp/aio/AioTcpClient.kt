@@ -25,7 +25,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     }
 
     override fun connect(address: SocketAddress): CompletableFuture<TcpConnection> =
-        asyncWithAttr(tcpConnThread) {
+        asyncWithAttr(connectingThread) {
             val socketChannel = AsynchronousSocketChannel.open(group)
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
             socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
@@ -34,5 +34,5 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             AioTcpConnection(id.incrementAndGet(), socketChannel, config.timeout)
         }.asCompletableFuture()
 
-    override fun getThreadName() = "firefly-aio-tcp-client"
+    override fun getThreadName() = "aio-tcp-client"
 }

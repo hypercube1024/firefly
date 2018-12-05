@@ -34,8 +34,8 @@ abstract class AbstractTcpConnection(
 
     companion object {
         private val log = CommonLogger.create(AbstractTcpConnection::class.java)
-        val dataTransThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-data-transfer-thread") }.asCoroutineDispatcher()
+        private val messageThread: CoroutineDispatcher by lazy {
+            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-message-transfer-thread") }.asCoroutineDispatcher()
         }
         private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
         private val channelClosedException = ChannelClosedException()
@@ -115,7 +115,7 @@ abstract class AbstractTcpConnection(
         return this
     }
 
-    private fun launchWritingJob() = launchWithAttr(dataTransThread) {
+    private fun launchWritingJob() = launchWithAttr(messageThread) {
         while (!isShutdownOutput) {
             writeMessage(outChannel.receive())
         }
@@ -216,7 +216,7 @@ abstract class AbstractTcpConnection(
 
     override fun startReading(): TcpConnection {
         if (autoReadState.compareAndSet(false, true)) {
-            launchWithAttr(dataTransThread) {
+            launchWithAttr(messageThread) {
                 log.debug { "start automatic reading" }
 
                 while (true) {

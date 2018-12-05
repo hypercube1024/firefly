@@ -59,19 +59,18 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     connectionConsumer.accept(AioTcpConnection(connId, socketChannel, config.timeout))
                 } catch (e: Exception) {
                     accept(serverSocketChannel)
-                    log.error(e) { "accept tcp connection exception. $connId" }
-
+                    log.warn(e) { "accept tcp connection exception. $connId" }
                 }
             }
 
             override fun failed(e: Throwable, connId: Int) {
                 accept(serverSocketChannel)
-                log.error(e) { "accept tcp connection exception. $connId" }
+                log.warn(e) { "accept tcp connection exception. $connId" }
             }
         })
     }
 
-    override fun getThreadName() = "firefly-aio-tcp-server"
+    override fun getThreadName() = "aio-tcp-server"
 
     override fun destroy() {
         connChannel.close()

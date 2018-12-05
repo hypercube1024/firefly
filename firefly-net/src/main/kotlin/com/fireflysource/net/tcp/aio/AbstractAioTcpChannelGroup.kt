@@ -16,18 +16,22 @@ import java.util.concurrent.atomic.AtomicInteger
 abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
 
     protected val id: AtomicInteger = AtomicInteger(0)
-    protected val tcpConnThread: CoroutineDispatcher by lazy {
-        Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-connecting-thread") }.asCoroutineDispatcher()
-    }
     protected val group: AsynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(
         ForkJoinPool(
             CoroutineDispatchers.defaultPoolSize, { pool ->
                 val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
-                worker.name = "${getThreadName()}-" + worker.poolIndex
+                worker.name = "firefly-${getThreadName()}-" + worker.poolIndex
                 worker
             }, null, true
                     )
-                                                                                         )
+                                                                                           )
+
+    companion object {
+        val connectingThread: CoroutineDispatcher by lazy {
+            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-connecting-thread") }
+                .asCoroutineDispatcher()
+        }
+    }
 
     abstract fun getThreadName(): String
 
