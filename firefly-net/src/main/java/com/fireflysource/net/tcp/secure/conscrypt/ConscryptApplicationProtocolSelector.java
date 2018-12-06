@@ -1,8 +1,9 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
 import com.fireflysource.common.collection.CollectionUtils;
+import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
-import com.fireflysource.common.sys.CommonLogger;
+import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
 import org.conscrypt.Conscrypt;
 
@@ -17,7 +18,7 @@ import java.util.List;
  */
 public class ConscryptApplicationProtocolSelector implements ApplicationProtocolSelector {
 
-    private static final CommonLogger log = CommonLogger.create(ConscryptApplicationProtocolSelector.class);
+    private static final LazyLogger log = SystemLogger.create(ConscryptApplicationProtocolSelector.class);
 
     private final String[] supportedProtocols;
     private final List<String> supportedProtocolList;

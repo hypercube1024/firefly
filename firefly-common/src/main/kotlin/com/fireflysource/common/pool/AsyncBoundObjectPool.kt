@@ -5,7 +5,7 @@ import com.fireflysource.common.coroutine.asyncWithAttr
 import com.fireflysource.common.coroutine.launchWithAttr
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
-import com.fireflysource.common.sys.CommonLogger
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.common.track.FixedTimeLeakDetector
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
@@ -35,7 +35,7 @@ class AsyncBoundObjectPool<T>(
                              ) : AbstractLifeCycle(), AsyncPool<T> {
 
     companion object {
-        private val log = CommonLogger.create(AsyncBoundObjectPool::class.java)
+        private val log = SystemLogger.create(AsyncBoundObjectPool::class.java)
         private val objectPoolThread: CoroutineDispatcher by lazy {
             Executors.newSingleThreadExecutor { Thread(it, "firefly-object-pool-thread") }.asCoroutineDispatcher()
         }

@@ -132,6 +132,10 @@ public class LogItem {
                 logStr += " " + className;
             }
 
+            if (StringUtils.hasText(threadName)) {
+                logStr += " " + threadName;
+            }
+
             if (stackTraceElement != null) {
                 logStr += " " + stackTraceElement;
             }

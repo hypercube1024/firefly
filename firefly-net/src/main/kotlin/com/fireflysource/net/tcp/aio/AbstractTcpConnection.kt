@@ -4,7 +4,7 @@ import com.fireflysource.common.coroutine.launchWithAttr
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.aRead
 import com.fireflysource.common.io.aWrite
-import com.fireflysource.common.sys.CommonLogger
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.Result.EMPTY_CONSUMER_RESULT
 import com.fireflysource.net.tcp.TcpConnection
@@ -33,7 +33,7 @@ abstract class AbstractTcpConnection(
                                     ) : TcpConnection {
 
     companion object {
-        private val log = CommonLogger.create(AbstractTcpConnection::class.java)
+        private val log = SystemLogger.create(AbstractTcpConnection::class.java)
         private val messageThread: CoroutineDispatcher by lazy {
             Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-message-transfer-thread") }.asCoroutineDispatcher()
         }

@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
-import com.fireflysource.common.sys.CommonLogger;
+import com.fireflysource.common.slf4j.LazyLogger;
+import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.tcp.TcpConnection;
 import com.fireflysource.net.tcp.secure.SecureEngine;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
@@ -18,7 +19,7 @@ import java.util.List;
  */
 abstract public class AbstractConscryptSecureEngineFactory implements SecureEngineFactory {
 
-    protected static final CommonLogger log = CommonLogger.create(AbstractConscryptSecureEngineFactory.class);
+    protected static final LazyLogger log = SystemLogger.create(AbstractConscryptSecureEngineFactory.class);
 
     private static String provideName;
 

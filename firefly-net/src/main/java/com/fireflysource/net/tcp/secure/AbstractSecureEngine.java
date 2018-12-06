@@ -1,11 +1,11 @@
 package com.fireflysource.net.tcp.secure;
 
+import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
-import com.fireflysource.common.sys.CommonLogger;
+import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.tcp.Result;
 import com.fireflysource.net.tcp.TcpConnection;
 import com.fireflysource.net.tcp.secure.exception.SecureNetException;
-import org.slf4j.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  */
 abstract public class AbstractSecureEngine implements SecureEngine {
 
-    protected static final Logger log = CommonLogger.systemLog;
+    protected static final LazyLogger log = SystemLogger.create(AbstractSecureEngine.class);
 
     protected static final ByteBuffer hsBuffer = ByteBuffer.allocateDirect(0);
     protected static final ByteBuffer emptyBuf = ByteBuffer.allocate(0);

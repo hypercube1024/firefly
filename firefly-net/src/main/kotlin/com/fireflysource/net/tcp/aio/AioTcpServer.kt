@@ -1,6 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.sys.CommonLogger
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
@@ -20,7 +20,7 @@ import java.util.function.Consumer
 class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelGroup(), TcpServer {
 
     companion object {
-        private val log = CommonLogger.create(AioTcpServer::class.java)
+        private val log = SystemLogger.create(AioTcpServer::class.java)
     }
 
     private val connChannel = Channel<TcpConnection>(UNLIMITED)
