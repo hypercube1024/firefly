@@ -330,7 +330,6 @@ abstract class AbstractTcpConnection(
         if (socketChannelClosed.compareAndSet(false, true)) {
             try {
                 closeTimestamp = System.currentTimeMillis()
-                closeChannel()
                 socketChannel.close()
                 log.info { "tcp connection close success. $id" }
                 closeCallbacks.forEach { it.call() }
@@ -341,16 +340,6 @@ abstract class AbstractTcpConnection(
             }
         }
         return this
-    }
-
-    private fun closeChannel() {
-//        try {
-//            inChannel.close()
-//            outChannel.close()
-//        } catch (e: Exception) {
-//            log.warn(e) { "close coroutine channel exception. $id" }
-//        }
-        // TODO
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {

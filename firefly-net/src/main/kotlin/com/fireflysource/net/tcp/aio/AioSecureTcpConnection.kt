@@ -25,9 +25,11 @@ class AioSecureTcpConnection(
         private val secureCodecThread: CoroutineDispatcher by lazy {
             Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-secure-codec-thread") }.asCoroutineDispatcher()
         }
-        private val handshakeHasBegunException = HandshakeException("handshake has begun exception")
-        private val handshakeHasNotBegunException = HandshakeException("handshake has not begun exception")
-        private val handshakeHasNotFinishedException = HandshakeException("handshake has not finished")
+        private val handshakeHasBegunException = HandshakeException("Handshake has begun exception")
+        private val handshakeHasNotBegunException =
+            HandshakeException("Handshake has not begun exception. Please invoke the beginHandshake function.")
+        private val handshakeHasNotFinishedException =
+            HandshakeException("Handshake has not finished. Please wait hte handshake finish.")
     }
 
     private val decryptedInputChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
@@ -54,7 +56,7 @@ class AioSecureTcpConnection(
 
                     readBufLoop@ while (buf.hasRemaining()) {
                         val decryptedBuf = secureEngine.decode(buf)
-                        if (decryptedBuf != null && decryptedBuf.hasRemaining()) {
+                        if (decryptedBuf.hasRemaining()) {
                             receivedMessageConsumer.accept(decryptedBuf)
                         }
                     }
