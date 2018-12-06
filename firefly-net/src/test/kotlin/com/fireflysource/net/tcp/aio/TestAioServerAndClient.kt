@@ -30,12 +30,12 @@ class TestAioServerAndClient {
         @JvmStatic
         fun testParametersProvider(): Stream<Arguments> {
             return Stream.of(
-                arguments("single", false),
-                arguments("array", false),
-                arguments("list", false),
                 arguments("single", true),
                 arguments("array", true),
-                arguments("list", true)
+                arguments("list", true),
+                arguments("single", false),
+                arguments("array", false),
+                arguments("list", false)
                             )
         }
     }
@@ -44,8 +44,8 @@ class TestAioServerAndClient {
     @MethodSource("testParametersProvider")
     fun test(bufType: String, enableSecure: Boolean) = runBlocking {
         val host = "localhost"
-        val port = 4004
-        val maxMsgCount = 10
+        val port = 4001
+        val maxMsgCount = 10_000
         val msgCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)
 

@@ -36,7 +36,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
     protected ByteBuffer receivedAppBuf;
 
     protected AtomicBoolean closed = new AtomicBoolean(false);
-    protected SSLEngineResult.HandshakeStatus initialHSStatus;
+    protected volatile SSLEngineResult.HandshakeStatus initialHSStatus;
     protected AtomicBoolean initialHSComplete = new AtomicBoolean(false);
     protected Consumer<Result<Void>> handshakeResult;
 
@@ -295,7 +295,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
             }
             return buf;
         } else {
-            return null;
+            return emptyBuf;
         }
     }
 

@@ -62,7 +62,7 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     }
 
     private fun accept(serverSocketChannel: AsynchronousServerSocketChannel) {
-        serverSocketChannel.accept(id.incrementAndGet(), object : CompletionHandler<AsynchronousSocketChannel, Int> {
+        serverSocketChannel.accept(id.getAndAdd(2), object : CompletionHandler<AsynchronousSocketChannel, Int> {
             override fun completed(socketChannel: AsynchronousSocketChannel, connId: Int) {
                 try {
                     val tcpConnection = AioTcpConnection(connId, socketChannel, config.timeout)

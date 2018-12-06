@@ -21,6 +21,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     private var supportedProtocols: List<String> = emptyList()
 
     init {
+        id.set(1)
         start()
     }
 
@@ -41,7 +42,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
             socketChannel.aConnect(address)
-            val tcpConnection = AioTcpConnection(id.incrementAndGet(), socketChannel, config.timeout)
+            val tcpConnection = AioTcpConnection(id.getAndAdd(2), socketChannel, config.timeout)
             if (config.enableSecureConnection) {
                 AioSecureTcpConnection(
                     tcpConnection,

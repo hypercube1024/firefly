@@ -22,7 +22,7 @@ public class ConscryptSecureEngine extends AbstractSecureEngine {
     @Override
     protected SSLEngineResult unwrap(ByteBuffer input) throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug("Session {} read data, src -> {}, dst -> {}",
+            log.debug("Connection {} read data, src -> {}, dst -> {}",
                     tcpConnection.getId(), input.isDirect(), receivedAppBuf.isDirect());
         }
         SSLEngineResult result = sslEngine.unwrap(input, receivedAppBuf);
