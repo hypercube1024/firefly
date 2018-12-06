@@ -14,42 +14,6 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class TestClassProxy {
 
-    public static class Fee {
-        protected void testProtected() {
-        }
-
-        public void testVoid(String str, Long l) {
-        }
-
-        public int testInt(int i) {
-            return i;
-        }
-
-        public Void testParameters(String str, int i, Long l) {
-            return null;
-        }
-
-        public String hello() {
-            return "hello fee";
-        }
-    }
-
-    public static class NonJavaBean {
-        String hello;
-
-        public NonJavaBean(String hello) {
-            this.hello = hello;
-        }
-
-        public String getHello() {
-            return hello;
-        }
-
-        public void setHello(String hello) {
-            this.hello = hello;
-        }
-    }
-
     static Stream<Arguments> parametersProvider() {
         return Stream.of(arguments(JavassistClassProxyFactory.INSTANCE));
     }
@@ -128,6 +92,42 @@ class TestClassProxy {
                     method -> method.getName().equals("getHello"));
             System.out.println(y.getHello());
         });
+    }
+
+    public static class Fee {
+        protected void testProtected() {
+        }
+
+        public void testVoid(String str, Long l) {
+        }
+
+        public int testInt(int i) {
+            return i;
+        }
+
+        public Void testParameters(String str, int i, Long l) {
+            return null;
+        }
+
+        public String hello() {
+            return "hello fee";
+        }
+    }
+
+    public static class NonJavaBean {
+        String hello;
+
+        public NonJavaBean(String hello) {
+            this.hello = hello;
+        }
+
+        public String getHello() {
+            return hello;
+        }
+
+        public void setHello(String hello) {
+            this.hello = hello;
+        }
     }
 
 }

@@ -8,15 +8,14 @@ import com.fireflysource.log.internal.utils.ServiceUtils;
 public class MappedDiagnosticContextFactory {
 
     private static MappedDiagnosticContextFactory ourInstance = new MappedDiagnosticContextFactory();
-
-    public static MappedDiagnosticContextFactory getInstance() {
-        return ourInstance;
-    }
-
     private MappedDiagnosticContext mappedDiagnosticContext;
 
     private MappedDiagnosticContextFactory() {
         mappedDiagnosticContext = ServiceUtils.loadService(MappedDiagnosticContext.class, new ThreadLocalMappedDiagnosticContext());
+    }
+
+    public static MappedDiagnosticContextFactory getInstance() {
+        return ourInstance;
     }
 
     public MappedDiagnosticContext getMappedDiagnosticContext() {

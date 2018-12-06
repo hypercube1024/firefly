@@ -75,6 +75,42 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         this._c = c;
     }
 
+    private static <V> void toString(Appendable out, TreeTrie<V> t) {
+        if (t != null) {
+            if (t._value != null) {
+                try {
+                    out.append(',');
+                    out.append(t._key);
+                    out.append('=');
+                    out.append(t._value.toString());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            for (int i = 0; i < INDEX; i++) {
+                if (t._nextIndex[i] != null)
+                    toString(out, t._nextIndex[i]);
+            }
+            for (int i = t._nextOther.size(); i-- > 0; )
+                toString(out, t._nextOther.get(i));
+        }
+    }
+
+    private static <V> void keySet(Set<String> set, TreeTrie<V> t) {
+        if (t != null) {
+            if (t._key != null)
+                set.add(t._key);
+
+            for (int i = 0; i < INDEX; i++) {
+                if (t._nextIndex[i] != null)
+                    keySet(set, t._nextIndex[i]);
+            }
+            for (int i = t._nextOther.size(); i-- > 0; )
+                keySet(set, t._nextOther.get(i));
+        }
+    }
+
     @Override
     public void clear() {
         Arrays.fill(_nextIndex, null);
@@ -279,7 +315,6 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         return t._value;
     }
 
-
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
@@ -293,47 +328,11 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         return buf.toString();
     }
 
-    private static <V> void toString(Appendable out, TreeTrie<V> t) {
-        if (t != null) {
-            if (t._value != null) {
-                try {
-                    out.append(',');
-                    out.append(t._key);
-                    out.append('=');
-                    out.append(t._value.toString());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            for (int i = 0; i < INDEX; i++) {
-                if (t._nextIndex[i] != null)
-                    toString(out, t._nextIndex[i]);
-            }
-            for (int i = t._nextOther.size(); i-- > 0; )
-                toString(out, t._nextOther.get(i));
-        }
-    }
-
     @Override
     public Set<String> keySet() {
         Set<String> keys = new HashSet<>();
         keySet(keys, this);
         return keys;
-    }
-
-    private static <V> void keySet(Set<String> set, TreeTrie<V> t) {
-        if (t != null) {
-            if (t._key != null)
-                set.add(t._key);
-
-            for (int i = 0; i < INDEX; i++) {
-                if (t._nextIndex[i] != null)
-                    keySet(set, t._nextIndex[i]);
-            }
-            for (int i = t._nextOther.size(); i-- > 0; )
-                keySet(set, t._nextOther.get(i));
-        }
     }
 
     @Override

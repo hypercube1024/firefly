@@ -18,73 +18,6 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  */
 public class TestProxyFactory {
 
-    public static class Foo {
-        private boolean failure;
-        public String name;
-        private int number;
-        private double price;
-
-        public int num2;
-        public String info;
-
-        private String iPhone;
-        private boolean iPad;
-
-        public String getiPhone() {
-            return iPhone;
-        }
-
-        public void setiPhone(String iPhone) {
-            this.iPhone = iPhone;
-        }
-
-        public boolean isiPad() {
-            return iPad;
-        }
-
-        public void setiPad(boolean iPad) {
-            this.iPad = iPad;
-        }
-
-        public int getNumber() {
-            return number;
-        }
-
-        public void setNumber(int number) {
-            this.number = number;
-        }
-
-        public double getPrice() {
-            return price;
-        }
-
-        public void setPrice(double price) {
-            this.price = price;
-        }
-
-        public boolean isFailure() {
-            return failure;
-        }
-
-        public void setFailure(boolean failure) {
-            this.failure = failure;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public void setProperty(String name, boolean failure) {
-            this.name = name;
-            this.failure = failure;
-        }
-
-    }
-
     static Stream<Arguments> parametersProvider() {
         return Stream.of(
                 arguments(JavaReflectionProxyFactory.INSTANCE),
@@ -165,5 +98,70 @@ public class TestProxyFactory {
         proxyInfo = proxyFactory.getFieldProxy(info);
         proxyInfo.set(foo2, "test info 03");
         assertEquals("test info 03", proxyInfo.get(foo2));
+    }
+
+    public static class Foo {
+        public String name;
+        public int num2;
+        public String info;
+        private boolean failure;
+        private int number;
+        private double price;
+        private String iPhone;
+        private boolean iPad;
+
+        public String getiPhone() {
+            return iPhone;
+        }
+
+        public void setiPhone(String iPhone) {
+            this.iPhone = iPhone;
+        }
+
+        public boolean isiPad() {
+            return iPad;
+        }
+
+        public void setiPad(boolean iPad) {
+            this.iPad = iPad;
+        }
+
+        public int getNumber() {
+            return number;
+        }
+
+        public void setNumber(int number) {
+            this.number = number;
+        }
+
+        public double getPrice() {
+            return price;
+        }
+
+        public void setPrice(double price) {
+            this.price = price;
+        }
+
+        public boolean isFailure() {
+            return failure;
+        }
+
+        public void setFailure(boolean failure) {
+            this.failure = failure;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public void setProperty(String name, boolean failure) {
+            this.name = name;
+            this.failure = failure;
+        }
+
     }
 }

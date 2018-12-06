@@ -8,10 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractProxyFactory implements ProxyFactory {
 
-    protected final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<>();
-    protected final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<>();
-    protected final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<>();
-
     static final IdentityHashMap<Class<?>, String> primitiveWrapMap = new IdentityHashMap<>();
     public static ClassLoader classLoader;
 
@@ -27,6 +23,10 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
 
         classLoader = Thread.currentThread().getContextClassLoader();
     }
+
+    protected final Map<Method, MethodProxy> methodCache = new ConcurrentHashMap<>();
+    protected final Map<Field, FieldProxy> fieldCache = new ConcurrentHashMap<>();
+    protected final Map<Class<?>, ArrayProxy> arrayCache = new ConcurrentHashMap<>();
 
     @Override
     public MethodProxy getMethodProxy(Method method) {

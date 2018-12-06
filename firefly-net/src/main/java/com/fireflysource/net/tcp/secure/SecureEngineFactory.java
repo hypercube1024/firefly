@@ -2,7 +2,6 @@ package com.fireflysource.net.tcp.secure;
 
 import com.fireflysource.net.tcp.TcpConnection;
 
-import java.io.IOException;
 import java.util.List;
 
 /**

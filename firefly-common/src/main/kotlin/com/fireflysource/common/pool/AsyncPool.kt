@@ -6,5 +6,5 @@ package com.fireflysource.common.pool
 interface AsyncPool<T> : Pool<T> {
 
     suspend fun asyncGet(): PooledObject<T>
-    
+
 }

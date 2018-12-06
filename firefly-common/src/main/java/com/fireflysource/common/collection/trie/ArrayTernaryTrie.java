@@ -38,16 +38,14 @@ import java.util.*;
  * @param <V> the Entry type
  */
 public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
-    private static int LO = 1;
-    private static int EQ = 2;
-    private static int HI = 3;
-
     /**
      * The Size of a Trie row is the char, and the low, equal and high
      * child pointers
      */
     private static final int ROW_SIZE = 4;
-
+    private static int LO = 1;
+    private static int EQ = 2;
+    private static int HI = 3;
     /**
      * The Trie rows in a single array which allows a lookup of row,character
      * to the next row in the Trie.  This is actually a 2 dimensional
@@ -145,6 +143,12 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         _key = Arrays.copyOf(trie._key, capacity);
     }
 
+    public static int hilo(int diff) {
+        // branchless equivalent to return ((diff<0)?LO:HI);
+        // return 3+2*((diff&Integer.MIN_VALUE)>>Integer.SIZE-1);
+        return 1 + (diff | Integer.MAX_VALUE) / (Integer.MAX_VALUE / 2);
+    }
+
     /* ------------------------------------------------------------ */
     @Override
     public void clear() {
@@ -214,7 +218,6 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         return true;
     }
 
-
     /* ------------------------------------------------------------ */
     @Override
     public V get(String s, int offset, int len) {
@@ -244,7 +247,6 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
 
         return _value[t];
     }
-
 
     @Override
     public V get(ByteBuffer b, int offset, int len) {
@@ -327,7 +329,6 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         }
         return (V) _value[node];
     }
-
 
     /* ------------------------------------------------------------ */
     @Override
@@ -434,7 +435,6 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         return buf.toString();
     }
 
-
     @Override
     public Set<String> keySet() {
         Set<String> keys = new HashSet<>();
@@ -463,7 +463,6 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         return true;
     }
 
-
     public Set<Map.Entry<String, V>> entrySet() {
         Set<Map.Entry<String, V>> entries = new HashSet<>();
         for (int r = 0; r <= _rows; r++) {
@@ -476,12 +475,6 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
     @Override
     public boolean isFull() {
         return _rows + 1 == _key.length;
-    }
-
-    public static int hilo(int diff) {
-        // branchless equivalent to return ((diff<0)?LO:HI);
-        // return 3+2*((diff&Integer.MIN_VALUE)>>Integer.SIZE-1);
-        return 1 + (diff | Integer.MAX_VALUE) / (Integer.MAX_VALUE / 2);
     }
 
     public void dump() {

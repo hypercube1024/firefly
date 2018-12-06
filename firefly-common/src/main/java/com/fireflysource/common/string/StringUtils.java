@@ -10,16 +10,8 @@ import java.util.*;
 
 public class StringUtils {
 
-    private static final String FOLDER_SEPARATOR = "/";
-    private static final String WINDOWS_FOLDER_SEPARATOR = "\\";
-    private static final String TOP_PATH = "..";
-    private static final String CURRENT_PATH = ".";
-    private static final char EXTENSION_SEPARATOR = '.';
-
-    private final static Trie<String> CHARSETS = new ArrayTrie<>(256);
     public static final String EMPTY = "";
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
-
     public static final char[] lowercases = {'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007', '\010',
             '\011', '\012', '\013', '\014', '\015', '\016', '\017', '\020', '\021', '\022', '\023', '\024', '\025',
             '\026', '\027', '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037', '\040', '\041', '\042',
@@ -31,10 +23,15 @@ public class StringUtils {
             '\144', '\145', '\146', '\147', '\150', '\151', '\152', '\153', '\154', '\155', '\156', '\157', '\160',
             '\161', '\162', '\163', '\164', '\165', '\166', '\167', '\170', '\171', '\172', '\173', '\174', '\175',
             '\176', '\177'};
-
     public static final String __ISO_8859_1 = "iso-8859-1";
     public final static String __UTF8 = "utf-8";
     public final static String __UTF16 = "utf-16";
+    private static final String FOLDER_SEPARATOR = "/";
+    private static final String WINDOWS_FOLDER_SEPARATOR = "\\";
+    private static final String TOP_PATH = "..";
+    private static final String CURRENT_PATH = ".";
+    private static final char EXTENSION_SEPARATOR = '.';
+    private final static Trie<String> CHARSETS = new ArrayTrie<>(256);
 
     static {
         CHARSETS.put("utf-8", __UTF8);
@@ -874,12 +871,6 @@ public class StringUtils {
         return list.toArray(EMPTY_STRING_ARRAY);
     }
 
-    enum CsvSplitState {
-        PRE_DATA, QUOTE, SLOSH, DATA, WHITE, POST_DATA
-    }
-
-    ;
-
     /**
      * Split a quoted comma separated string to a list
      * <p>
@@ -1009,7 +1000,7 @@ public class StringUtils {
 
         return list;
     }
-
+    
     public static boolean isAlpha(String value) {
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
@@ -1312,5 +1303,9 @@ public class StringUtils {
         }
 
         return str.substring(0, maxSize);
+    }
+
+    enum CsvSplitState {
+        PRE_DATA, QUOTE, SLOSH, DATA, WHITE, POST_DATA
     }
 }

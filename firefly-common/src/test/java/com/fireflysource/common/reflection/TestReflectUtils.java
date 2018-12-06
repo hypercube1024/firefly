@@ -74,14 +74,12 @@ class TestReflectUtils {
     }
 
     public static class Foo {
-        private boolean failure;
         public String name;
-        private int number;
-        private double price;
-
         public int num2;
         public String info;
-
+        private boolean failure;
+        private int number;
+        private double price;
         private String iPhone;
         private boolean iPad;
 

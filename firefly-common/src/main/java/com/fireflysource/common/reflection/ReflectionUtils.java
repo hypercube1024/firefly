@@ -16,20 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Pengtao Qiu
  */
 public class ReflectionUtils {
+    public static final ProxyFactory DEFAULT_PROXY_FACTORY = ServiceUtils.loadService(ProxyFactory.class, JavassistReflectionProxyFactory.INSTANCE);
     private static final Map<Class<?>, Map<String, Method>> getterCache = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Map<String, Method>> setterCache = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Map<String, Field>> propertyCache = new ConcurrentHashMap<>();
-    public static final ProxyFactory DEFAULT_PROXY_FACTORY = ServiceUtils.loadService(ProxyFactory.class, JavassistReflectionProxyFactory.INSTANCE);
-
-    @FunctionalInterface
-    public interface BeanMethodFilter {
-        boolean accept(String propertyName, Method method);
-    }
-
-    @FunctionalInterface
-    public interface BeanFieldFilter {
-        boolean accept(String propertyName, Field field);
-    }
 
     public static void setProperty(Object obj, String property, Object value) throws Throwable {
         getFields(obj.getClass()).get(property).set(obj, value);
@@ -211,5 +201,15 @@ public class ReflectionUtils {
                 System.err.println("copy object exception, " + t.getMessage());
             }
         }
+    }
+
+    @FunctionalInterface
+    public interface BeanMethodFilter {
+        boolean accept(String propertyName, Method method);
+    }
+
+    @FunctionalInterface
+    public interface BeanFieldFilter {
+        boolean accept(String propertyName, Field field);
     }
 }

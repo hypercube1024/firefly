@@ -15,8 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TestLog {
 
-    private static MappedDiagnosticContext mdc;
-
     private static final Log log = LogFactory.getInstance().getLog("firefly-common");
     private static final Log log2 = LogFactory.getInstance().getLog("test-TRACE");
     private static final Log log3 = LogFactory.getInstance().getLog("test-DEBUG");
@@ -26,11 +24,10 @@ class TestLog {
     private static final Log logConsole = LogFactory.getInstance().getLog("test-console");
     private static final Log defaultLog = LogFactory.getInstance().getLog("firefly-system");
     private static final Log illegalLog = LogFactory.getInstance().getLog("test-illegal");
-
     private static final Log logFoo = LogFactory.getInstance().getLog(Foo.class);
     private static final Log logBar = LogFactory.getInstance().getLog(Bar.class);
-
     private static final Log testRequestId = LogFactory.getInstance().getLog("test-request-id");
+    private static MappedDiagnosticContext mdc;
 
     @BeforeAll
     static void init() {
@@ -73,6 +70,66 @@ class TestLog {
     @AfterAll
     static void destroy() {
         LogFactory.getInstance().close();
+    }
+
+    public static void test1() {
+        throw new RuntimeException();
+    }
+
+    public static void test2() {
+        test1();
+    }
+
+//    public static void main(String[] args) {
+//        try {
+//            log.info("test {} aa {}", "log1", 2);
+//            log.info("test {} bb {}", "log1", 2);
+//            log.info("test {} cc {}", "log1", 2);
+//            log.debug("cccc");
+//            log.warn("warn hello");
+//
+//            log2.trace("test trace");
+//            log2.trace("log2 {} dfdfdf", 3, 5);
+//            log2.debug("cccc");
+//
+//            log3.debug("log3", "dfd");
+//            log3.info("ccccddd");
+//
+//            log4.error("log4");
+//            log4.warn("ccc");
+//
+//            log5.warn("log5 {} {}", "warn");
+//            log5.error("log5 {}", "error");
+//            log5.trace("ccsc");
+//
+//            logConsole.info("test {} console", "hello");
+//            logConsole.debug("ccc");
+//            logConsole.warn("dsfsf {} cccc", 33);
+//
+//            defaultLog.debug("default log debug");
+//            defaultLog.info("default log info");
+//            defaultLog.warn("default log warn");
+//            defaultLog.error("default log error");
+//
+//            illegalLog.trace("test log trace");
+//            illegalLog.debug("test log debug");
+//            illegalLog.info("test log info");
+//            illegalLog.warn("test log warn");
+//            illegalLog.error("test log error");
+//
+//            try {
+//                test3();
+//            } catch (Throwable t) {
+//                log4.error("test exception", t);
+//            }
+////            Thread.sleep(3000L);
+//        } finally {
+//            LogFactory.getInstance().close();
+//        }
+//    }
+
+    public static void test3() {
+        test2();
     }
 
     @Test
@@ -247,66 +304,6 @@ class TestLog {
             e.printStackTrace();
         }
 
-    }
-
-//    public static void main(String[] args) {
-//        try {
-//            log.info("test {} aa {}", "log1", 2);
-//            log.info("test {} bb {}", "log1", 2);
-//            log.info("test {} cc {}", "log1", 2);
-//            log.debug("cccc");
-//            log.warn("warn hello");
-//
-//            log2.trace("test trace");
-//            log2.trace("log2 {} dfdfdf", 3, 5);
-//            log2.debug("cccc");
-//
-//            log3.debug("log3", "dfd");
-//            log3.info("ccccddd");
-//
-//            log4.error("log4");
-//            log4.warn("ccc");
-//
-//            log5.warn("log5 {} {}", "warn");
-//            log5.error("log5 {}", "error");
-//            log5.trace("ccsc");
-//
-//            logConsole.info("test {} console", "hello");
-//            logConsole.debug("ccc");
-//            logConsole.warn("dsfsf {} cccc", 33);
-//
-//            defaultLog.debug("default log debug");
-//            defaultLog.info("default log info");
-//            defaultLog.warn("default log warn");
-//            defaultLog.error("default log error");
-//
-//            illegalLog.trace("test log trace");
-//            illegalLog.debug("test log debug");
-//            illegalLog.info("test log info");
-//            illegalLog.warn("test log warn");
-//            illegalLog.error("test log error");
-//
-//            try {
-//                test3();
-//            } catch (Throwable t) {
-//                log4.error("test exception", t);
-//            }
-////            Thread.sleep(3000L);
-//        } finally {
-//            LogFactory.getInstance().close();
-//        }
-//    }
-
-    public static void test1() {
-        throw new RuntimeException();
-    }
-
-    public static void test2() {
-        test1();
-    }
-
-    public static void test3() {
-        test2();
     }
 
 }

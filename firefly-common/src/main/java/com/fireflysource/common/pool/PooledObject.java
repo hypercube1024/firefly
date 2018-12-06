@@ -12,9 +12,9 @@ public class PooledObject<T> implements Closeable {
     protected final Pool<T> pool;
     protected final T object;
     protected final long createTime;
-    protected long activeTime;
     protected final Consumer<PooledObject<T>> leakCallback;
     final AtomicBoolean released = new AtomicBoolean(false);
+    protected long activeTime;
 
     public PooledObject(T object, Pool<T> pool, Consumer<PooledObject<T>> leakCallback) {
         this.object = object;

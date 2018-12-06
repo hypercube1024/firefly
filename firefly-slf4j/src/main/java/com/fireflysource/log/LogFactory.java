@@ -10,14 +10,6 @@ public class LogFactory implements Closeable {
 
     private final Trie<Log> logTree = new TreeTrie<>();
 
-    private static class Holder {
-        private static LogFactory instance = new LogFactory();
-    }
-
-    public static LogFactory getInstance() {
-        return Holder.instance;
-    }
-
     private LogFactory() {
         LogConfigParser parser = new XmlLogConfigParser();
         boolean success = parser.parse((fileLog) -> logTree.put(fileLog.getName(), fileLog));
@@ -30,6 +22,10 @@ public class LogFactory implements Closeable {
             FileLog fileLog = parser.createDefaultLog();
             logTree.put(fileLog.getName(), fileLog);
         }
+    }
+
+    public static LogFactory getInstance() {
+        return Holder.instance;
     }
 
     public Log getLog(Class<?> clazz) {
@@ -54,6 +50,10 @@ public class LogFactory implements Closeable {
                 e.printStackTrace();
             }
         });
+    }
+
+    private static class Holder {
+        private static LogFactory instance = new LogFactory();
     }
 
 }

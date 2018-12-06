@@ -42,11 +42,6 @@ public class FixedTimeLeakDetector<T> extends AbstractLifeCycle {
         start();
     }
 
-    private class TrackedObject {
-        long registeredTime;
-        Consumer<T> leakCallback;
-    }
-
     public void register(T object, Consumer<T> leakCallback) {
         TrackedObject trackedObject = new TrackedObject();
         trackedObject.leakCallback = leakCallback;
@@ -81,5 +76,10 @@ public class FixedTimeLeakDetector<T> extends AbstractLifeCycle {
     @Override
     protected void destroy() {
         shutdownAndAwaitTermination(scheduler, 10, TimeUnit.SECONDS);
+    }
+
+    private class TrackedObject {
+        long registeredTime;
+        Consumer<T> leakCallback;
     }
 }

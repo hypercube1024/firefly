@@ -1,10 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.exception.UnsupportedOperationException
-import com.fireflysource.net.tcp.Result
-import com.fireflysource.net.tcp.secure.SecureEngine
 import java.nio.channels.AsynchronousSocketChannel
-import java.util.function.Consumer
 
 /**
  * @author Pengtao Qiu

@@ -39,6 +39,16 @@ public class ConscryptApplicationProtocolSelector implements ApplicationProtocol
         }
     }
 
+    @Override
+    public String getApplicationProtocol() {
+        return Conscrypt.getApplicationProtocol(sslEngine);
+    }
+
+    @Override
+    public List<String> getSupportedApplicationProtocols() {
+        return supportedProtocolList;
+    }
+
     private final class Selector extends org.conscrypt.ApplicationProtocolSelector {
 
         @Override
@@ -62,15 +72,5 @@ public class ConscryptApplicationProtocolSelector implements ApplicationProtocol
             }
             return null;
         }
-    }
-
-    @Override
-    public String getApplicationProtocol() {
-        return Conscrypt.getApplicationProtocol(sslEngine);
-    }
-
-    @Override
-    public List<String> getSupportedApplicationProtocols() {
-        return supportedProtocolList;
     }
 }

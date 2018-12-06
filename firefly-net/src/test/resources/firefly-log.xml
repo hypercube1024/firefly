@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<loggers xmlns="http://www.fireflysource.com/loggers" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<loggers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.fireflysource.com/loggers"
          xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
 
     <logger>

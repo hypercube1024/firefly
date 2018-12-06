@@ -3,7 +3,6 @@ package com.fireflysource.net.tcp;
 import com.fireflysource.common.func.Callback;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
-import com.fireflysource.net.tcp.secure.SecureEngine;
 import kotlinx.coroutines.channels.Channel;
 
 import java.nio.ByteBuffer;

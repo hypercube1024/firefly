@@ -14,10 +14,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CompilerUtils {
 
-    private static final Map<String, JavaFileObject> output = new ConcurrentHashMap<>();
-    private static ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
-    private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<>();
     public static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    private static final Map<String, JavaFileObject> output = new ConcurrentHashMap<>();
+    private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<>();
+    private static ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
 
     public static Class<?> compileSource(String completeClassName, String source) throws IOException {
         boolean result;
@@ -54,6 +54,14 @@ public class CompilerUtils {
                 return jfo;
             }
         };
+    }
+
+    private static URI toURI(String name) {
+        try {
+            return new URI(name);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public static class JavaSourceFromString extends SimpleJavaFileObject {
@@ -120,14 +128,6 @@ public class CompilerUtils {
                 return defineClass(name, bytes, 0, bytes.length);
             }
             return super.findClass(name);
-        }
-    }
-
-    private static URI toURI(String name) {
-        try {
-            return new URI(name);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
         }
     }
 

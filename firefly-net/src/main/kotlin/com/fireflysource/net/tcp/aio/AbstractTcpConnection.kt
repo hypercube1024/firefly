@@ -35,7 +35,8 @@ abstract class AbstractTcpConnection(
     companion object {
         private val log = SystemLogger.create(AbstractTcpConnection::class.java)
         private val messageThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-message-transfer-thread") }.asCoroutineDispatcher()
+            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-message-transfer-thread") }
+                .asCoroutineDispatcher()
         }
         private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
         private val channelClosedException = ChannelClosedException()

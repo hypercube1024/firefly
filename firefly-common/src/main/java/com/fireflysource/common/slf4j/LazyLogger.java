@@ -13,6 +13,13 @@ public class LazyLogger extends MarkerIgnoringBase {
 
     private Logger logger;
 
+    public LazyLogger() {
+    }
+
+    public LazyLogger(Logger logger) {
+        this.logger = logger;
+    }
+
     public static LazyLogger create() {
         StackTraceElement[] arr = Thread.currentThread().getStackTrace();
         return new LazyLogger(LoggerFactory.getLogger(arr[2].getClassName()));
@@ -24,13 +31,6 @@ public class LazyLogger extends MarkerIgnoringBase {
 
     public static LazyLogger create(Class<?> clazz) {
         return new LazyLogger(LoggerFactory.getLogger(clazz));
-    }
-
-    public LazyLogger() {
-    }
-
-    public LazyLogger(Logger logger) {
-        this.logger = logger;
     }
 
     public Logger getLogger() {

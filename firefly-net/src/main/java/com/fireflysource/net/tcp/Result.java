@@ -24,6 +24,16 @@ public class Result<T> {
         this.throwable = throwable;
     }
 
+    public static <T> Consumer<Result<T>> futureToConsumer(CompletableFuture<T> future) {
+        return result -> {
+            if (result.isSuccess()) {
+                future.complete(result.getValue());
+            } else {
+                future.completeExceptionally(result.getThrowable());
+            }
+        };
+    }
+
     public boolean isSuccess() {
         return success;
     }
@@ -34,16 +44,6 @@ public class Result<T> {
 
     public Throwable getThrowable() {
         return throwable;
-    }
-
-    public static <T> Consumer<Result<T>> futureToConsumer(CompletableFuture<T> future) {
-        return result -> {
-            if (result.isSuccess()) {
-                future.complete(result.getValue());
-            } else {
-                future.completeExceptionally(result.getThrowable());
-            }
-        };
     }
 
     @Override

@@ -11,8 +11,6 @@ public enum LogLevel {
     WARN(3, "WARN"),
     ERROR(4, "ERROR");
 
-    private final int level;
-    private final String name;
     private static final LogLevel[] levels = new LogLevel[5];
     private static final Map<String, LogLevel> levelNameMap = new HashMap<>();
 
@@ -23,21 +21,12 @@ public enum LogLevel {
         }
     }
 
+    private final int level;
+    private final String name;
+
     LogLevel(int level, String name) {
         this.level = level;
         this.name = name;
-    }
-
-    public int getLevel() {
-        return level;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public boolean isEnabled(LogLevel logLevel) {
-        return this.level <= logLevel.level;
     }
 
     public static LogLevel fromLevel(int level) {
@@ -58,6 +47,18 @@ public enum LogLevel {
         } else {
             return levelNameMap.get(name);
         }
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isEnabled(LogLevel logLevel) {
+        return this.level <= logLevel.level;
     }
 
 }
