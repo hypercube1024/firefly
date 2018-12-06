@@ -414,9 +414,9 @@ class Buffers(
     }
 
     fun getCurrentOffset(): Int {
-        buffers.forEachIndexed { index, byteBuffer ->
-            if (index >= offset && byteBuffer.hasRemaining()) {
-                return index
+        for (i in offset..buffers.lastIndex) {
+            if (buffers[i].hasRemaining()) {
+                return i
             }
         }
         return buffers.size
@@ -442,9 +442,9 @@ class BufferList(
     }
 
     fun getCurrentOffset(): Int {
-        bufferList.forEachIndexed { index, byteBuffer ->
-            if (index >= offset && byteBuffer.hasRemaining()) {
-                return index
+        for (i in offset..bufferList.lastIndex) {
+            if (bufferList[i].hasRemaining()) {
+                return i
             }
         }
         return bufferList.size
