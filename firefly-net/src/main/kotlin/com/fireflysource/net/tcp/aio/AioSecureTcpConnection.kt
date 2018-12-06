@@ -3,13 +3,14 @@ package com.fireflysource.net.tcp.aio
 import com.fireflysource.common.coroutine.launchWithAttr
 import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.TcpConnection
+import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
 /**
@@ -20,34 +21,58 @@ class AioSecureTcpConnection(
     private val secureEngine: SecureEngine
                             ) : TcpConnection by tcpConnection {
 
-
     companion object {
         private val secureCodecThread: CoroutineDispatcher by lazy {
             Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-secure-codec-thread") }.asCoroutineDispatcher()
         }
-        private val handshakeHasBegunException = HandshakeException("Handshake has begun exception")
-        private val handshakeHasNotBegunException =
-            HandshakeException("Handshake has not begun exception. Please invoke the beginHandshake function.")
-        private val handshakeHasNotFinishedException =
-            HandshakeException("Handshake has not finished. Please wait hte handshake finish.")
     }
 
-    private val decryptedInputChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
-    private val isBeganHandshake = AtomicBoolean(false)
+    private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
+    private val encryptedOutChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+
     private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
-        decryptedInputChannel.offer(buf)
+        decryptedInChannel.offer(buf)
     }
 
-    override fun beginHandshake(result: Consumer<Result<Void>>) {
-        if (isBeganHandshake.compareAndSet(false, true)) {
-            secureEngine.beginHandshake(result)
-        } else {
-            result.accept(Result<Void>(false, null, handshakeHasBegunException))
+    init {
+        launchWritingEncryptedMessageJob()
+    }
+
+    private fun launchWritingEncryptedMessageJob() = launchWithAttr(secureCodecThread) {
+        secureEngine.beginHandshake().await()
+        while (!isShutdownOutput) {
+            writeEncryptedMessage(encryptedOutChannel.receive())
+        }
+    }
+
+    private fun writeEncryptedMessage(message: Message) {
+        when (message) {
+            is Buffer -> {
+                val encryptedBuffers = secureEngine.encode(message.buffer)
+                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
+                    message.result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
+                }
+            }
+            is Buffers -> {
+                val lastIndex = message.offset + message.length - 1
+                val encryptedBuffers =
+                    (message.offset..lastIndex).map { i -> secureEngine.encode(message.buffers[i]) }.flatten()
+                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, message.result)
+            }
+            is BufferList -> {
+                val lastIndex = message.offset + message.length - 1
+                val encryptedBuffers =
+                    (message.offset..lastIndex).map { i -> secureEngine.encode(message.bufferList[i]) }.flatten()
+                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, message.result)
+            }
+            is Shutdown -> {
+                tcpConnection.close(message.result)
+            }
         }
     }
 
     override fun startReading(): TcpConnection {
-        if (isBeganHandshake.get()) {
+        if (!tcpConnection.isStartReading) {
             tcpConnection.startReading()
             launchWithAttr(secureCodecThread) {
                 val input = tcpConnection.inputChannel
@@ -62,30 +87,25 @@ class AioSecureTcpConnection(
                     }
                 }
             }
-        } else {
-            throw handshakeHasNotBegunException
         }
         return this
     }
 
     override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        receivedMessageConsumer = messageConsumer
+        if (!tcpConnection.isStartReading) {
+            receivedMessageConsumer = messageConsumer
+        } else {
+            throw startReadingException
+        }
         return this
     }
 
     override fun getInputChannel(): Channel<ByteBuffer> {
-        return decryptedInputChannel
+        return decryptedInChannel
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        if (isHandshakeFinished) {
-            val buf = secureEngine.encode(byteBuffer)
-            tcpConnection.write(buf, 0, buf.size) {
-                result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
-            }
-        } else {
-            result.accept(Result(false, -1, handshakeHasNotFinishedException))
-        }
+        encryptedOutChannel.offer(Buffer(byteBuffer, result))
         return this
     }
 
@@ -95,13 +115,7 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
                       ): TcpConnection {
-        if (isHandshakeFinished) {
-            val lastIndex = offset + length - 1
-            val encryptedBuffers = (offset..lastIndex).map { i -> secureEngine.encode(byteBuffers[i]) }.flatten()
-            tcpConnection.write(encryptedBuffers, offset, length, result)
-        } else {
-            result.accept(Result(false, -1, handshakeHasNotFinishedException))
-        }
+        encryptedOutChannel.offer(Buffers(byteBuffers, offset, length, result))
         return this
     }
 
@@ -111,16 +125,14 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
                       ): TcpConnection {
-        if (isHandshakeFinished) {
-            val lastIndex = offset + length - 1
-            val encryptedBuffers = (offset..lastIndex).map { i -> secureEngine.encode(byteBufferList[i]) }.flatten()
-            tcpConnection.write(encryptedBuffers, offset, length, result)
-        } else {
-            result.accept(Result(false, -1, handshakeHasNotFinishedException))
-        }
+        encryptedOutChannel.offer(BufferList(byteBufferList, offset, length, result))
         return this
     }
 
+    override fun close(result: Consumer<Result<Void>>): TcpConnection {
+        encryptedOutChannel.offer(Shutdown(result))
+        return this
+    }
 
     override fun isSecureConnection(): Boolean = true
 
@@ -138,5 +150,3 @@ class AioSecureTcpConnection(
         return secureEngine.applicationProtocol
     }
 }
-
-class HandshakeException(msg: String) : IllegalStateException(msg)

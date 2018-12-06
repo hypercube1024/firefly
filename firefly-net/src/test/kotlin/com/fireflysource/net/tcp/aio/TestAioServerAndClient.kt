@@ -54,7 +54,6 @@ class TestAioServerAndClient {
             val tcpConnChannel = server.tcpConnectionChannel
             acceptLoop@ while (true) {
                 val conn = tcpConnChannel.receive()
-                val hs = conn.beginHandshake()
                 conn.startReading()
 
                 launchWithAttr(singleThread) {
@@ -70,9 +69,6 @@ class TestAioServerAndClient {
 
                             val newBuf = ByteBuffer.allocate(4)
                             newBuf.putInt(num).flip()
-                            if (conn.isSecureConnection) {
-                                hs.await()
-                            }
                             conn.write(newBuf)
                             if (num == maxMsgCount) {
                                 break@recvLoop
@@ -87,7 +83,6 @@ class TestAioServerAndClient {
         val client = AioTcpClient(tcpConfig)
         val time = measureTimeMillis {
             val conn = client.connect(host, port).await()
-            val hs = conn.beginHandshake()
             conn.startReading()
 
             val readingJob = launchWithAttr(singleThread) {
@@ -107,9 +102,6 @@ class TestAioServerAndClient {
                 }
             }
 
-            if (conn.isSecureConnection) {
-                hs.await()
-            }
             when (bufType) {
                 "single" -> {
                     (1..maxMsgCount).forEach { i ->

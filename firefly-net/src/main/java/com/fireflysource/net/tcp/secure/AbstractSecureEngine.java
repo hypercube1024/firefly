@@ -59,7 +59,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
             if (sslEngine.getUseClientMode()) {
                 doHandshakeResponse();
             }
-        } catch (IOException e) {
+        } catch (IOException | SecureNetException e) {
             result.accept(new Result<>(false, null, e));
         }
     }
@@ -99,8 +99,13 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                 doHandshakeResponse();
                 break;
 
-            default: // NEED_TASK
-                throw new SecureNetException("Invalid Handshaking State" + initialHSStatus);
+            default: { // NEED_TASK
+                SecureNetException e = new SecureNetException("Invalid Handshaking State" + initialHSStatus);
+                if (handshakeResult != null) {
+                    handshakeResult.accept(new Result<>(false, null, e));
+                }
+                throw e;
+            }
         }
         return initialHSComplete.get();
     }

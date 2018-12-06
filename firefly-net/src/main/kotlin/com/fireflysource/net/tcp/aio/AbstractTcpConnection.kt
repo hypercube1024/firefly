@@ -40,6 +40,7 @@ abstract class AbstractTcpConnection(
         private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
         private val channelClosedException = ChannelClosedException()
         private val timeUnit = TimeUnit.SECONDS
+        val startReadingException = StartReadingException()
     }
 
     private val openTimestamp: Long = System.currentTimeMillis()
@@ -111,7 +112,11 @@ abstract class AbstractTcpConnection(
     override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
 
     override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        receivedMessageConsumer = messageConsumer
+        if (!isStartReading) {
+            receivedMessageConsumer = messageConsumer
+        } else {
+            throw startReadingException
+        }
         return this
     }
 
@@ -267,7 +272,7 @@ abstract class AbstractTcpConnection(
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
         if (closeRequest.compareAndSet(false, true)) {
             closeConsumer = result
-            outChannel.offer(Shutdown)
+            outChannel.offer(Shutdown(result))
         } else {
             result.accept(closeFailureResult)
         }
@@ -389,6 +394,8 @@ class CloseRequestException : IllegalStateException("The close request has been 
 
 class ChannelClosedException : IllegalStateException("The socket channel is closed")
 
+class StartReadingException : IllegalStateException("The connection has started reading.")
+
 sealed class Message
 class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : Message()
 class Buffers(
@@ -447,4 +454,4 @@ class BufferList(
     fun hasRemaining(): Boolean = getCurrentOffset() < bufferList.size
 }
 
-object Shutdown : Message()
+class Shutdown(val result: Consumer<Result<Void>>) : Message()

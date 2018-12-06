@@ -28,8 +28,4 @@ class AioTcpConnection(
     override fun getSupportedApplicationProtocols(): List<String> {
         throw UnsupportedOperationException()
     }
-
-    override fun beginHandshake(result: Consumer<Result<Void>>) {
-        result.accept(Result<Void>(true, null, null))
-    }
 }

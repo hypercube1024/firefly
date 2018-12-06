@@ -102,11 +102,4 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
 
     boolean isHandshakeFinished();
 
-    void beginHandshake(Consumer<Result<Void>> result);
-
-    default CompletableFuture<Void> beginHandshake() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        beginHandshake(futureToConsumer(future));
-        return future;
-    }
 }
