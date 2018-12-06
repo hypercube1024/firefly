@@ -63,7 +63,7 @@ class TestAioServerAndClient {
                         readBufLoop@ while (buf.hasRemaining()) {
                             val num = buf.int
                             msgCount.incrementAndGet()
-                            println("server =======> $num")
+//                            println("server =======> $num")
 
                             val newBuf = ByteBuffer.allocate(4)
                             newBuf.putInt(num).flip()
@@ -91,7 +91,7 @@ class TestAioServerAndClient {
                     readBufLoop@ while (buf.hasRemaining()) {
                         val num = buf.int
                         msgCount.incrementAndGet()
-                        println("client -------> $num")
+//                        println("client -------> $num")
                         if (num == maxMsgCount) {
                             conn.close()
                             break@recvLoop
@@ -137,9 +137,9 @@ class TestAioServerAndClient {
             assertTrue(conn.lastReadTime > 0L)
             assertTrue(conn.lastWrittenTime > 0L)
         }
-//        val throughput = maxMsgCount / (time / 1000)
-//        println("success. $time, $throughput")
-        println("success. $time")
+        val throughput = maxMsgCount / (time / 1000.00)
+        println("success. $time, $throughput")
+//        println("success. $time")
 
 
         val stopTime = measureTimeMillis {
