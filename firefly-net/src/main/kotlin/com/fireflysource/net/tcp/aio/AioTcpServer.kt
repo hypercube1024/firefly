@@ -65,11 +65,12 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         serverSocketChannel.accept(id.getAndAdd(2), object : CompletionHandler<AsynchronousSocketChannel, Int> {
             override fun completed(socketChannel: AsynchronousSocketChannel, connId: Int) {
                 try {
-                    val tcpConnection = AioTcpConnection(connId, socketChannel, config.timeout)
+                    val tcpConnection = AioTcpConnection(connId, socketChannel, config.timeout, messageThread)
                     if (config.enableSecureConnection) {
                         val secureConnection = AioSecureTcpConnection(
                             tcpConnection,
-                            secureEngineFactory.create(tcpConnection, false, supportedProtocols)
+                            secureEngineFactory.create(tcpConnection, false, supportedProtocols),
+                            messageThread
                                                                      )
                         connectionConsumer.accept(secureConnection)
                     } else {

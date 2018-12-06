@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.exception.UnsupportedOperationException
+import kotlinx.coroutines.CoroutineDispatcher
 import java.nio.channels.AsynchronousSocketChannel
 
 /**
@@ -9,8 +10,9 @@ import java.nio.channels.AsynchronousSocketChannel
 class AioTcpConnection(
     id: Int,
     socketChannel: AsynchronousSocketChannel,
-    timeout: Long
-                      ) : AbstractTcpConnection(id, socketChannel, timeout) {
+    timeout: Long,
+    messageThread: CoroutineDispatcher
+                      ) : AbstractTcpConnection(id, socketChannel, timeout, messageThread) {
 
     override fun isSecureConnection(): Boolean = false
 

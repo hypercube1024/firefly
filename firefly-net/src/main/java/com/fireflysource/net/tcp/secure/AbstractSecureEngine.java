@@ -36,7 +36,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
     protected ByteBuffer receivedAppBuf;
 
     protected AtomicBoolean closed = new AtomicBoolean(false);
-    protected volatile SSLEngineResult.HandshakeStatus initialHSStatus;
+    protected SSLEngineResult.HandshakeStatus initialHSStatus;
     protected AtomicBoolean initialHSComplete = new AtomicBoolean(false);
     protected Consumer<Result<Void>> handshakeResult;
 
@@ -196,7 +196,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                 initialHSStatus = result.getHandshakeStatus();
                 if (log.isDebugEnabled()) {
                     log.debug("Connection {} handshake response, init: {} | ret: {} | complete: {} ",
-                            tcpConnection.getId(), initialHSStatus, result.getStatus(), initialHSComplete);
+                            tcpConnection.getId(), initialHSStatus, result.getStatus(), initialHSComplete.get());
                 }
                 switch (result.getStatus()) {
                     case OK: {
@@ -408,7 +408,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
 
         if (log.isDebugEnabled()) {
             log.debug("Connection {} read data status -> {}, initialHSComplete -> {}",
-                    tcpConnection.getId(), !tcpConnection.isClosed(), initialHSComplete);
+                    tcpConnection.getId(), !tcpConnection.isClosed(), initialHSComplete.get());
         }
 
         merge(receiveBuffer);

@@ -155,6 +155,13 @@ fun <T> asyncWithAttr(
     return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
+fun <T> asyncGlobal(
+    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    block: suspend CoroutineScope.() -> T
+                   ): Deferred<T> {
+    return GlobalScope.async(context) { block.invoke(this) }
+}
+
 /**
  * Starts a asynchronous task without the return value and inherits parent coroutine local attributes.
  *
@@ -169,6 +176,13 @@ fun launchWithAttr(
     block: suspend CoroutineScope.() -> Unit
                   ): Job {
     return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
+}
+
+fun launchGlobal(
+    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    block: suspend CoroutineScope.() -> Unit
+                ): Job {
+    return GlobalScope.launch(context) { block.invoke(this) }
 }
 
 /**

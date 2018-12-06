@@ -50,10 +50,14 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
 
             override fun completed(result: Void?, connId: Int) {
                 val tcpConnection = if (config.enableSecureConnection) {
-                    val conn = AioTcpConnection(connId, socketChannel, config.timeout)
-                    AioSecureTcpConnection(conn, secureEngineFactory.create(conn, true, supportedProtocols))
+                    val conn = AioTcpConnection(connId, socketChannel, config.timeout, messageThread)
+                    AioSecureTcpConnection(
+                        conn,
+                        secureEngineFactory.create(conn, true, supportedProtocols),
+                        messageThread
+                                          )
                 } else {
-                    AioTcpConnection(connId, socketChannel, config.timeout)
+                    AioTcpConnection(connId, socketChannel, config.timeout, messageThread)
                 }
                 future.complete(tcpConnection)
             }

@@ -1,6 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.coroutine.launchWithAttr
+import com.fireflysource.common.coroutine.launchGlobal
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.aRead
 import com.fireflysource.common.io.aWrite
@@ -9,7 +9,6 @@ import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.Result.EMPTY_CONSUMER_RESULT
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import java.io.IOException
@@ -18,7 +17,6 @@ import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.InterruptedByTimeoutException
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
@@ -29,15 +27,12 @@ import java.util.function.Consumer
 abstract class AbstractTcpConnection(
     private val connectionId: Int,
     private val socketChannel: AsynchronousSocketChannel,
-    private val timeout: Long
+    private val timeout: Long,
+    private val messageThread: CoroutineDispatcher
                                     ) : TcpConnection {
 
     companion object {
         private val log = SystemLogger.create(AbstractTcpConnection::class.java)
-        private val messageThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-message-transfer-thread") }
-                .asCoroutineDispatcher()
-        }
         private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
         private val channelClosedException = ChannelClosedException()
         private val timeUnit = TimeUnit.SECONDS
@@ -121,7 +116,7 @@ abstract class AbstractTcpConnection(
         return this
     }
 
-    private fun launchWritingJob() = launchWithAttr(messageThread) {
+    private fun launchWritingJob() = launchGlobal(messageThread) {
         while (!isShutdownOutput) {
             writeMessage(outChannel.receive())
         }
@@ -222,7 +217,7 @@ abstract class AbstractTcpConnection(
 
     override fun startReading(): TcpConnection {
         if (autoReadState.compareAndSet(false, true)) {
-            launchWithAttr(messageThread) {
+            launchGlobal(messageThread) {
                 log.debug { "start automatic reading" }
 
                 while (true) {

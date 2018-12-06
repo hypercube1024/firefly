@@ -1,7 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
-import com.fireflysource.common.coroutine.launchWithAttr
+import com.fireflysource.common.coroutine.launchGlobal
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
@@ -48,13 +48,13 @@ class TestAioServerAndClient {
         val tcpConfig = TcpConfig(30, enableSecure)
 
         val server = AioTcpServer(tcpConfig).listen(host, port)
-        val serverAcceptsConnJob = launchWithAttr(singleThread) {
+        val serverAcceptsConnJob = launchGlobal(singleThread) {
             val tcpConnChannel = server.tcpConnectionChannel
             acceptLoop@ while (true) {
                 val conn = tcpConnChannel.receive()
                 conn.startReading()
 
-                launchWithAttr(singleThread) {
+                launchGlobal(singleThread) {
                     val inputChannel = conn.inputChannel
 
                     recvLoop@ while (true) {
@@ -83,7 +83,7 @@ class TestAioServerAndClient {
             val conn = client.connect(host, port).await()
             conn.startReading()
 
-            val readingJob = launchWithAttr(singleThread) {
+            val readingJob = launchGlobal(singleThread) {
                 val inputChannel = conn.inputChannel
                 recvLoop@ while (true) {
                     val buf = inputChannel.receive()
@@ -155,7 +155,7 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = 4001
         val server = AioTcpServer(TcpConfig(1)).listen(host, port)
-        val serverAcceptsConnJob = launchWithAttr(singleThread) {
+        val serverAcceptsConnJob = launchGlobal(singleThread) {
             val tcpConnChannel = server.tcpConnectionChannel
             acceptLoop@ while (true) {
                 val conn = tcpConnChannel.receive()

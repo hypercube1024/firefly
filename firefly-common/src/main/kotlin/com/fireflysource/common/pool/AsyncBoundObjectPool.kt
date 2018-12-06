@@ -1,8 +1,8 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
-import com.fireflysource.common.coroutine.asyncWithAttr
-import com.fireflysource.common.coroutine.launchWithAttr
+import com.fireflysource.common.coroutine.asyncGlobal
+import com.fireflysource.common.coroutine.launchGlobal
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
@@ -58,7 +58,7 @@ class AsyncBoundObjectPool<T>(
 
     override fun get(): CompletableFuture<PooledObject<T>> = getObjectDeferred().asCompletableFuture()
 
-    private fun getObjectDeferred(): Deferred<PooledObject<T>> = asyncWithAttr(objectPoolThread) {
+    private fun getObjectDeferred(): Deferred<PooledObject<T>> = asyncGlobal(objectPoolThread) {
         try {
             createNewIfLessThanMaxSize()
         } catch (e: ArrivedMaxPoolSize) {
@@ -110,7 +110,7 @@ class AsyncBoundObjectPool<T>(
     override fun take(): PooledObject<T> = get().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
-        launchWithAttr(objectPoolThread) {
+        launchGlobal(objectPoolThread) {
             if (pooledObject.released.compareAndSet(false, true)) {
                 leakDetector.clear(pooledObject)
                 channel.send(pooledObject)

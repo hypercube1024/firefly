@@ -1,16 +1,14 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.coroutine.launchWithAttr
+import com.fireflysource.common.coroutine.launchGlobal
 import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
-import java.util.concurrent.Executors
 import java.util.function.Consumer
 
 /**
@@ -18,14 +16,9 @@ import java.util.function.Consumer
  */
 class AioSecureTcpConnection(
     private val tcpConnection: TcpConnection,
-    private val secureEngine: SecureEngine
+    private val secureEngine: SecureEngine,
+    private val messageThread: CoroutineDispatcher
                             ) : TcpConnection by tcpConnection {
-
-    companion object {
-        private val secureCodecThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-secure-codec-thread") }.asCoroutineDispatcher()
-        }
-    }
 
     private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
     private val encryptedOutChannel: Channel<Message> = Channel(Channel.UNLIMITED)
@@ -38,7 +31,7 @@ class AioSecureTcpConnection(
         launchWritingEncryptedMessageJob()
     }
 
-    private fun launchWritingEncryptedMessageJob() = launchWithAttr(secureCodecThread) {
+    private fun launchWritingEncryptedMessageJob() = launchGlobal(messageThread) {
         secureEngine.beginHandshake().await()
         while (!isShutdownOutput) {
             writeEncryptedMessage(encryptedOutChannel.receive())
@@ -74,7 +67,7 @@ class AioSecureTcpConnection(
     override fun startReading(): TcpConnection {
         if (!tcpConnection.isStartReading) {
             tcpConnection.startReading()
-            launchWithAttr(secureCodecThread) {
+            launchGlobal(messageThread) {
                 val input = tcpConnection.inputChannel
                 recvLoop@ while (true) {
                     val buf = input.receive()
