@@ -25,7 +25,6 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     private var supportedProtocols: List<String> = emptyList()
 
     init {
-        id.set(1)
         start()
     }
 
@@ -46,24 +45,28 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true)
         socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true)
         socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, false)
-        socketChannel.connect(address, id.getAndAdd(2), object : CompletionHandler<Void?, Int> {
+        socketChannel.connect(address, id.getAndIncrement(), object : CompletionHandler<Void?, Int> {
 
-            override fun completed(result: Void?, connId: Int) {
+            override fun completed(result: Void?, connectionId: Int) {
                 val tcpConnection = if (config.enableSecureConnection) {
-                    val conn = AioTcpConnection(connId, socketChannel, config.timeout, messageThread)
+                    val tcpConnection = AioTcpConnection(
+                        connectionId, socketChannel,
+                        config.timeout,
+                        getMessageThread(connectionId)
+                                                        )
                     AioSecureTcpConnection(
-                        conn,
-                        secureEngineFactory.create(conn, true, supportedProtocols),
-                        messageThread
+                        tcpConnection,
+                        secureEngineFactory.create(tcpConnection, true, supportedProtocols),
+                        getMessageThread(connectionId)
                                           )
                 } else {
-                    AioTcpConnection(connId, socketChannel, config.timeout, messageThread)
+                    AioTcpConnection(connectionId, socketChannel, config.timeout, getMessageThread(connectionId))
                 }
                 future.complete(tcpConnection)
             }
 
-            override fun failed(t: Throwable?, connId: Int) {
-                log.warn(t) { "connect exception. $connId" }
+            override fun failed(t: Throwable?, connectionId: Int) {
+                log.warn(t) { "connect exception. $connectionId" }
                 future.completeExceptionally(t)
             }
         })

@@ -69,6 +69,8 @@ abstract class AbstractTcpConnection(
 
     private val writingJob = launchWritingJob()
 
+    override fun getCoroutineDispatcher(): CoroutineDispatcher = messageThread
+
     override fun getAttachment(): Any? = attachmentObj
 
     override fun setAttachment(obj: Any?) {

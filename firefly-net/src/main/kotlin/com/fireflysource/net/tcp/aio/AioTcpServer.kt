@@ -62,15 +62,16 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     }
 
     private fun accept(serverSocketChannel: AsynchronousServerSocketChannel) {
-        serverSocketChannel.accept(id.getAndAdd(2), object : CompletionHandler<AsynchronousSocketChannel, Int> {
-            override fun completed(socketChannel: AsynchronousSocketChannel, connId: Int) {
+        serverSocketChannel.accept(id.getAndIncrement(), object : CompletionHandler<AsynchronousSocketChannel, Int> {
+            override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
                 try {
-                    val tcpConnection = AioTcpConnection(connId, socketChannel, config.timeout, messageThread)
+                    val tcpConnection =
+                        AioTcpConnection(connectionId, socketChannel, config.timeout, getMessageThread(connectionId))
                     if (config.enableSecureConnection) {
                         val secureConnection = AioSecureTcpConnection(
                             tcpConnection,
                             secureEngineFactory.create(tcpConnection, false, supportedProtocols),
-                            messageThread
+                            getMessageThread(connectionId)
                                                                      )
                         connectionConsumer.accept(secureConnection)
                     } else {
@@ -78,12 +79,12 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     }
                 } catch (e: Exception) {
                     accept(serverSocketChannel)
-                    log.warn(e) { "accept tcp connection exception. $connId" }
+                    log.warn(e) { "accept tcp connection exception. $connectionId" }
                 }
             }
 
-            override fun failed(e: Throwable, connId: Int) {
-                log.warn(e) { "accept tcp connection exception. $connId" }
+            override fun failed(e: Throwable, connectionId: Int) {
+                log.warn(e) { "accept tcp connection exception. $connectionId" }
                 accept(serverSocketChannel)
             }
         })
