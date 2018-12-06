@@ -82,8 +82,8 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             }
 
             override fun failed(e: Throwable, connId: Int) {
-                accept(serverSocketChannel)
                 log.warn(e) { "accept tcp connection exception. $connId" }
+                accept(serverSocketChannel)
             }
         })
     }

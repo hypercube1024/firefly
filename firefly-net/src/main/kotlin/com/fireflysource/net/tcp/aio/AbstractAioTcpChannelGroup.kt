@@ -2,10 +2,7 @@ package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
 import java.nio.channels.AsynchronousChannelGroup
-import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,13 +22,6 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
             }, null, true
                     )
                                                                                            )
-
-    companion object {
-        val connectingThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-tcp-connecting-thread") }
-                .asCoroutineDispatcher()
-        }
-    }
 
     abstract fun getThreadName(): String
 
