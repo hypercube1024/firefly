@@ -7,6 +7,7 @@ import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import kotlinx.coroutines.CoroutineDispatcher
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -15,11 +16,13 @@ import java.util.concurrent.atomic.AtomicInteger
 abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
 
     protected val id: AtomicInteger = AtomicInteger(0)
+    protected var closed = AtomicBoolean(false)
     protected val group: AsynchronousChannelGroup =
         AsynchronousChannelGroup.withThreadPool(newSingleThreadExecutor("firefly-aio-channel-group-thread"))
     private val messageThreadGroup: Array<CoroutineDispatcher> = Array(defaultPoolSize) { i ->
         newSingleThreadDispatcher("firefly-${getThreadName()}-message-thread-$i")
     }
+
 
     protected fun getMessageThread(connectionId: Int): CoroutineDispatcher {
         return messageThreadGroup[connectionId % defaultPoolSize]
@@ -31,6 +34,7 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
     }
 
     override fun destroy() {
+        closed.set(true)
         group.shutdown()
         try {
             // Wait a while for existing tasks to terminate

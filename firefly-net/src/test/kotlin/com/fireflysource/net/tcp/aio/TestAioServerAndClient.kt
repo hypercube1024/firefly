@@ -43,6 +43,7 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = 4001
         val maxMsgCount = 10_000
+        val connectionNum = 4
         val msgCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)
 
@@ -50,11 +51,12 @@ class TestAioServerAndClient {
         val serverAcceptsConnJob = launchGlobal {
             val tcpConnChannel = server.tcpConnectionChannel
             acceptLoop@ while (true) {
-                val conn = tcpConnChannel.receive()
-                conn.startReading()
+                val connection = tcpConnChannel.receive()
+                println("accept connection. ${connection.id}")
+                connection.startReading()
 
                 launchGlobal {
-                    val inputChannel = conn.inputChannel
+                    val inputChannel = connection.inputChannel
 
                     recvLoop@ while (true) {
                         val buf = inputChannel.receive()
@@ -66,75 +68,79 @@ class TestAioServerAndClient {
 
                             val newBuf = ByteBuffer.allocate(4)
                             newBuf.putInt(num).flip()
-                            conn.write(newBuf)
-                            if (num == maxMsgCount) {
-                                break@recvLoop
-                            }
+                            connection.write(newBuf)
                         }
                     }
                 }
             }
         }
 
-
         val client = AioTcpClient(tcpConfig)
         val time = measureTimeMillis {
-            val conn = client.connect(host, port).await()
-            conn.startReading()
+            val maxCount = maxMsgCount / connectionNum
+            val jobs = (1..connectionNum).map {
+                launchGlobal {
+                    val connection = client.connect(host, port).await()
+                    println("create connection. ${connection.id}")
+                    connection.startReading()
 
-            val readingJob = launchGlobal {
-                val inputChannel = conn.inputChannel
-                recvLoop@ while (true) {
-                    val buf = inputChannel.receive()
+                    val readingJob = launchGlobal {
+                        val inputChannel = connection.inputChannel
+                        recvLoop@ while (true) {
+                            val buf = inputChannel.receive()
 
-                    readBufLoop@ while (buf.hasRemaining()) {
-                        val num = buf.int
-                        msgCount.incrementAndGet()
-//                        println("client -------> $num")
-                        if (num == maxMsgCount) {
-                            conn.close()
-                            break@recvLoop
+                            readBufLoop@ while (buf.hasRemaining()) {
+                                val num = buf.int
+                                msgCount.incrementAndGet()
+//                                println("client ------> $num")
+
+                                if (num == maxCount) {
+                                    connection.close()
+                                    break@recvLoop
+                                }
+                            }
                         }
                     }
+
+                    when (bufType) {
+                        "single" -> {
+                            (1..maxCount).forEach { i ->
+                                val buf = ByteBuffer.allocate(4)
+                                buf.putInt(i).flip()
+                                connection.write(buf)
+                            }
+                        }
+                        "array" -> {
+                            val bufArray = Array<ByteBuffer>(maxCount) { index ->
+                                val buf = ByteBuffer.allocate(4)
+                                buf.putInt(index + 1).flip()
+                                buf
+                            }
+                            connection.write(bufArray, 0, bufArray.size)
+                        }
+                        "list" -> {
+                            val bufList = List<ByteBuffer>(maxCount) { index ->
+                                val buf = ByteBuffer.allocate(4)
+                                buf.putInt(index + 1).flip()
+                                buf
+                            }
+                            connection.write(bufList, 0, bufList.size)
+                        }
+                    }
+
+                    readingJob.join()
+
+                    assertTrue(connection.readBytes > 0)
+                    assertTrue(connection.writtenBytes > 0)
+                    assertTrue(connection.lastActiveTime > 0L)
+                    assertTrue(connection.lastReadTime > 0L)
+                    assertTrue(connection.lastWrittenTime > 0L)
                 }
             }
 
-            when (bufType) {
-                "single" -> {
-                    (1..maxMsgCount).forEach { i ->
-                        val buf = ByteBuffer.allocate(4)
-                        buf.putInt(i).flip()
-                        conn.write(buf)
-                    }
-                }
-                "array" -> {
-                    val bufArray = Array<ByteBuffer>(maxMsgCount) { index ->
-                        val buf = ByteBuffer.allocate(4)
-                        buf.putInt(index + 1).flip()
-                        buf
-                    }
-                    conn.write(bufArray, 0, bufArray.size)
-                }
-                "list" -> {
-                    val bufList = List<ByteBuffer>(maxMsgCount) { index ->
-                        val buf = ByteBuffer.allocate(4)
-                        buf.putInt(index + 1).flip()
-                        buf
-                    }
-                    conn.write(bufList, 0, bufList.size)
-                }
-            }
+            jobs.forEach { it.join() }
 
-
-
-            readingJob.join()
             assertEquals(maxMsgCount * 2, msgCount.get())
-            println("conn info: ${conn.lastActiveTime}, ${conn.lastReadTime}, ${conn.lastWrittenTime}")
-            assertTrue(conn.readBytes > 0)
-            assertTrue(conn.writtenBytes > 0)
-            assertTrue(conn.lastActiveTime > 0L)
-            assertTrue(conn.lastReadTime > 0L)
-            assertTrue(conn.lastWrittenTime > 0L)
         }
         val throughput = maxMsgCount / (time / 1000.00)
         println("success. $time, $throughput")

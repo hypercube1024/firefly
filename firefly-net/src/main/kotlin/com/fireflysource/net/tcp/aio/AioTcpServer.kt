@@ -77,15 +77,21 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     } else {
                         connectionConsumer.accept(tcpConnection)
                     }
+                    log.debug { "accept the client connection. $connectionId" }
                 } catch (e: Exception) {
-                    accept(serverSocketChannel)
-                    log.warn(e) { "accept tcp connection exception. $connectionId" }
+                    log.warn(e) { "accept connection exception. $connectionId" }
+                } finally {
+                    if (!closed.get()) {
+                        accept(serverSocketChannel)
+                    }
                 }
             }
 
             override fun failed(e: Throwable, connectionId: Int) {
-                log.warn(e) { "accept tcp connection exception. $connectionId" }
-                accept(serverSocketChannel)
+                log.warn(e) { "accept connection failure. $connectionId" }
+                if (!closed.get()) {
+                    accept(serverSocketChannel)
+                }
             }
         })
     }

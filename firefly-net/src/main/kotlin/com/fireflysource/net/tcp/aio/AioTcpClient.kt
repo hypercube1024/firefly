@@ -48,25 +48,29 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         socketChannel.connect(address, id.getAndIncrement(), object : CompletionHandler<Void?, Int> {
 
             override fun completed(result: Void?, connectionId: Int) {
-                val tcpConnection = if (config.enableSecureConnection) {
-                    val tcpConnection = AioTcpConnection(
-                        connectionId, socketChannel,
-                        config.timeout,
-                        getMessageThread(connectionId)
-                                                        )
-                    AioSecureTcpConnection(
-                        tcpConnection,
-                        secureEngineFactory.create(tcpConnection, true, supportedProtocols),
-                        getMessageThread(connectionId)
-                                          )
-                } else {
-                    AioTcpConnection(connectionId, socketChannel, config.timeout, getMessageThread(connectionId))
+                try {
+                    val tcpConnection = if (config.enableSecureConnection) {
+                        val tcpConnection = AioTcpConnection(
+                            connectionId, socketChannel,
+                            config.timeout,
+                            getMessageThread(connectionId)
+                                                            )
+                        AioSecureTcpConnection(
+                            tcpConnection,
+                            secureEngineFactory.create(tcpConnection, true, supportedProtocols),
+                            getMessageThread(connectionId)
+                                              )
+                    } else {
+                        AioTcpConnection(connectionId, socketChannel, config.timeout, getMessageThread(connectionId))
+                    }
+                    future.complete(tcpConnection)
+                } catch (e: Exception) {
+                    log.warn(e) {"connecting exception. $connectionId"}
                 }
-                future.complete(tcpConnection)
             }
 
             override fun failed(t: Throwable?, connectionId: Int) {
-                log.warn(t) { "connect exception. $connectionId" }
+                log.warn(t) { "connecting exception. $connectionId" }
                 future.completeExceptionally(t)
             }
         })
