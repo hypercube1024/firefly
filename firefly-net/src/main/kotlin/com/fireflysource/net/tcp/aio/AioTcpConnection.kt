@@ -1,8 +1,11 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.exception.UnsupportedOperationException
+import com.fireflysource.net.tcp.Result
+import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.CoroutineDispatcher
 import java.nio.channels.AsynchronousSocketChannel
+import java.util.function.Consumer
 
 /**
  * @author Pengtao Qiu
@@ -25,6 +28,10 @@ class AioTcpConnection(
     }
 
     override fun getSupportedApplicationProtocols(): List<String> {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onHandshakeFinished(result: Consumer<Result<String>>): TcpConnection {
         throw UnsupportedOperationException()
     }
 }

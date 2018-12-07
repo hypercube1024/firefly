@@ -22,7 +22,7 @@ class AioSecureTcpConnection(
 
     private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
     private val encryptedOutChannel: Channel<Message> = Channel(Channel.UNLIMITED)
-
+    private var handshakeFinishedResult: Consumer<Result<String>> = Consumer {}
     private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
         decryptedInChannel.offer(buf)
     }
@@ -32,7 +32,12 @@ class AioSecureTcpConnection(
     }
 
     private fun launchWritingEncryptedMessageJob() = launchGlobally(messageThread) {
-        secureEngine.beginHandshake().await()
+        try {
+            secureEngine.beginHandshake().await()
+            handshakeFinishedResult.accept(Result(true, applicationProtocol, null))
+        } catch (e: Exception) {
+            handshakeFinishedResult.accept(Result(false, "", e))
+        }
         while (!isShutdownOutput) {
             writeEncryptedMessage(encryptedOutChannel.receive())
         }
@@ -134,6 +139,11 @@ class AioSecureTcpConnection(
     }
 
     override fun isHandshakeFinished(): Boolean = secureEngine.isHandshakeFinished
+
+    override fun onHandshakeFinished(result: Consumer<Result<String>>): TcpConnection {
+        handshakeFinishedResult = result
+        return this
+    }
 
     override fun getSupportedApplicationProtocols(): List<String> {
         return secureEngine.supportedApplicationProtocols

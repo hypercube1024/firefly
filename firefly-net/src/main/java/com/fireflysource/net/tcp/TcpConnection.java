@@ -226,6 +226,25 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     boolean isHandshakeFinished();
 
     /**
+     * Listen the TLS handshake finished event. If the TLS handshake has finished, the framework will invoke the callback function.
+     *
+     * @param result The value is the negotiated application layer protocol.
+     * @return The current connection.
+     */
+    TcpConnection onHandshakeFinished(Consumer<Result<String>> result);
+
+    /**
+     * Listen the TLS handshake finished event.
+     *
+     * @return The value is the negotiated application layer protocol.
+     */
+    default CompletableFuture<String> onHandshakeFinished() {
+        CompletableFuture<String> future = new CompletableFuture<>();
+        onHandshakeFinished(futureToConsumer(future));
+        return future;
+    }
+
+    /**
      * Get the coroutine dispatcher of this connection. One TCP connection is always in the same coroutine context.
      *
      * @return The coroutine dispatcher of this connection.

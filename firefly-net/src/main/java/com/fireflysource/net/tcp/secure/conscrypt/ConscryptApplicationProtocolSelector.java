@@ -11,6 +11,7 @@ import javax.net.ssl.SSLSocket;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
@@ -40,7 +41,7 @@ public class ConscryptApplicationProtocolSelector implements ApplicationProtocol
 
     @Override
     public String getApplicationProtocol() {
-        return Conscrypt.getApplicationProtocol(sslEngine);
+        return Optional.ofNullable(Conscrypt.getApplicationProtocol(sslEngine)).orElse("");
     }
 
     @Override

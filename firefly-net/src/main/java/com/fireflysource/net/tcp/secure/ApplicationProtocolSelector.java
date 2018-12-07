@@ -15,7 +15,7 @@ public interface ApplicationProtocolSelector {
      * @return The protocol negotiation result.
      */
     default String getApplicationProtocol() {
-        return null;
+        return "";
     }
 
     /**

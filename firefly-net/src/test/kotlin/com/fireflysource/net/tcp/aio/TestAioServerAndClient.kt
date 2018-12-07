@@ -55,6 +55,10 @@ class TestAioServerAndClient {
                 println("accept connection. ${connection.id}")
                 connection.startReading()
 
+                if (connection.isSecureConnection) {
+                    println("server TLS handshake success. ${connection.onHandshakeFinished().await()}")
+                }
+
                 launchGlobally {
                     val inputChannel = connection.inputChannel
 
@@ -83,6 +87,10 @@ class TestAioServerAndClient {
                     val connection = client.connect(host, port).await()
                     println("create connection. ${connection.id}")
                     connection.startReading()
+
+                    if (connection.isSecureConnection) {
+                        println("client TLS handshake success. ${connection.onHandshakeFinished().await()}")
+                    }
 
                     val readingJob = launchGlobally {
                         val inputChannel = connection.inputChannel
