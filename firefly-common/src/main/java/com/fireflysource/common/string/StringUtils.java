@@ -1000,7 +1000,7 @@ public class StringUtils {
 
         return list;
     }
-    
+
     public static boolean isAlpha(String value) {
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
