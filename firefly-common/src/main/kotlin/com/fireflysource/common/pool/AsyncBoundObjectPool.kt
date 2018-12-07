@@ -1,6 +1,7 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
+import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
 import com.fireflysource.common.coroutine.asyncGlobal
 import com.fireflysource.common.coroutine.launchGlobal
 import com.fireflysource.common.func.Callback
@@ -9,14 +10,12 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.common.track.FixedTimeLeakDetector
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -36,9 +35,7 @@ class AsyncBoundObjectPool<T>(
 
     companion object {
         private val log = SystemLogger.create(AsyncBoundObjectPool::class.java)
-        private val objectPoolThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-object-pool-thread") }.asCoroutineDispatcher()
-        }
+        private val objectPoolThread: CoroutineDispatcher = newSingleThreadDispatcher("firefly-object-pool-thread")
     }
 
     init {

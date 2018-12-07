@@ -36,6 +36,44 @@ object CoroutineDispatchers {
         }.asCoroutineDispatcher()
     }
     val singleThread: CoroutineDispatcher by lazy {
-        Executors.newSingleThreadExecutor { Thread(it, "firefly-single-thread-pool") }.asCoroutineDispatcher()
+        ThreadPoolExecutor(
+            1, 1, 0, TimeUnit.MILLISECONDS,
+            LinkedTransferQueue<Runnable>()
+                          ) { r ->
+            Thread(r, "firefly-single-thread-pool")
+        }.asCoroutineDispatcher()
+    }
+
+    fun newSingleThreadExecutor(name: String): ExecutorService {
+        val executor = ThreadPoolExecutor(
+            1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue<Runnable>()
+                                         ) { r ->
+            Thread(r, name)
+        }
+        return FinalizableExecutorService(executor)
+    }
+
+    fun newFixedThreadExecutor(name: String, poolSize: Int): ExecutorService {
+        require(poolSize > 0)
+        val executor = ThreadPoolExecutor(
+            Math.min(defaultPoolSize, poolSize), poolSize, 30, TimeUnit.SECONDS, LinkedTransferQueue<Runnable>()
+                                         ) { r ->
+            Thread(r, name)
+        }
+        return FinalizableExecutorService(executor)
+    }
+
+    fun newSingleThreadDispatcher(name: String): CoroutineDispatcher {
+        return newSingleThreadExecutor(name).asCoroutineDispatcher()
+    }
+
+    fun newFixedThreadDispatcher(name: String, poolSize: Int): CoroutineDispatcher {
+        return newFixedThreadExecutor(name, poolSize).asCoroutineDispatcher()
+    }
+}
+
+class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
+    protected fun finalize() {
+        executor.shutdown()
     }
 }

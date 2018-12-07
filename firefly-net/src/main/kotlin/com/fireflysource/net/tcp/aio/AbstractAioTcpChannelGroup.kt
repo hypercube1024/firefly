@@ -1,11 +1,11 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.defaultPoolSize
+import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
+import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadExecutor
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
 import java.nio.channels.AsynchronousChannelGroup
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -16,13 +16,9 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
 
     protected val id: AtomicInteger = AtomicInteger(0)
     protected val group: AsynchronousChannelGroup =
-        AsynchronousChannelGroup.withThreadPool(Executors.newSingleThreadExecutor {
-            Thread(it, "firefly-${getThreadName()}")
-        })
+        AsynchronousChannelGroup.withThreadPool(newSingleThreadExecutor("firefly-aio-channel-group-thread"))
     private val messageThreadGroup: Array<CoroutineDispatcher> = Array(defaultPoolSize) { i ->
-        Executors.newSingleThreadExecutor {
-            Thread(it, "firefly-${getThreadName()}-message-thread-$i")
-        }.asCoroutineDispatcher()
+        newSingleThreadDispatcher("firefly-${getThreadName()}-message-thread-$i")
     }
 
     protected fun getMessageThread(connectionId: Int): CoroutineDispatcher {
