@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
@@ -20,6 +21,10 @@ class AioSecureTcpConnection(
     private val messageThread: CoroutineDispatcher
                             ) : TcpConnection by tcpConnection {
 
+    companion object {
+        private val log = SystemLogger.create(AioSecureTcpConnection::class.java)
+    }
+
     private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
     private val encryptedOutChannel: Channel<Message> = Channel(Channel.UNLIMITED)
     private var handshakeFinishedResult: Consumer<Result<String>> = Consumer {}
@@ -36,8 +41,13 @@ class AioSecureTcpConnection(
             secureEngine.beginHandshake().await()
             handshakeFinishedResult.accept(Result(true, applicationProtocol, null))
         } catch (e: Exception) {
+            log.error(e) { "The TLS handshake failure." }
+            tcpConnection.close()
+            secureEngine.close()
             handshakeFinishedResult.accept(Result(false, "", e))
+            throw e
         }
+
         while (!isShutdownOutput) {
             writeEncryptedMessage(encryptedOutChannel.receive())
         }
