@@ -65,7 +65,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     }
                     future.complete(tcpConnection)
                 } catch (e: Exception) {
-                    log.warn(e) {"connecting exception. $connectionId"}
+                    log.warn(e) { "connecting exception. $connectionId" }
                 }
             }
 
