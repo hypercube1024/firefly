@@ -16,7 +16,10 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
-import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.LinkedTransferQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 
@@ -63,10 +66,24 @@ class FileLog : Log {
 
     companion object {
         private val stackTrace =
-            java.lang.Boolean.getBoolean("com.fireflysource.log.com.fireflysource.log.FileLog.debugMode")
+            java.lang.Boolean.getBoolean("com.fireflysource.log.FileLog.debugMode")
 
-        private val logThread: CoroutineDispatcher by lazy {
-            Executors.newSingleThreadExecutor { Thread(it, "firefly-file-log-thread") }.asCoroutineDispatcher()
+        private val logThread: CoroutineDispatcher =
+            newSingleThreadExecutor("firefly-log-thread").asCoroutineDispatcher()
+
+        class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
+            protected fun finalize() {
+                executor.shutdown()
+            }
+        }
+
+        fun newSingleThreadExecutor(name: String): ExecutorService {
+            val executor = ThreadPoolExecutor(
+                1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue<Runnable>()
+                                             ) { r ->
+                Thread(r, name)
+            }
+            return FinalizableExecutorService(executor)
         }
     }
 
