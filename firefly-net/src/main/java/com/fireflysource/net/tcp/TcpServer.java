@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -22,6 +23,34 @@ public interface TcpServer extends LifeCycle {
      * @return The TCP server.
      */
     TcpServer secureEngineFactory(SecureEngineFactory secureEngineFactory);
+
+    /**
+     * The supported application layer protocols.
+     *
+     * @param supportedProtocols The supported application layer protocols.
+     * @return The TCP server.
+     */
+    TcpServer supportedProtocols(List<String> supportedProtocols);
+
+    /**
+     * Create a TLS engine using advisory peer information.
+     * Applications using this factory method are providing hints for an internal session reuse strategy.
+     * Some cipher suites (such as Kerberos) require remote hostname information, in which case peerHost needs to be specified.
+     *
+     * @param peerHost the non-authoritative name of the host.
+     * @return The TCP server.
+     */
+    TcpServer peerHost(String peerHost);
+
+    /**
+     * Create a TLS engine using advisory peer information.
+     * Applications using this factory method are providing hints for an internal session reuse strategy.
+     * Some cipher suites (such as Kerberos) require remote hostname information, in which case peerHost needs to be specified.
+     *
+     * @param peerPort the non-authoritative port.
+     * @return The TCP server.
+     */
+    TcpServer peerPort(int peerPort);
 
     /**
      * Enable the TLS protocol over the TCP connection.

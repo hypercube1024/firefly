@@ -33,6 +33,22 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         return this
     }
 
+    override fun connect(
+        address: SocketAddress,
+        supportedProtocols: List<String>
+                        ): CompletableFuture<TcpConnection> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun connect(
+        address: SocketAddress,
+        peerHost: String,
+        peerPort: Int,
+        supportedProtocols: List<String>
+                        ): CompletableFuture<TcpConnection> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun enableSecureConnection(): TcpClient {
         config.enableSecureConnection = true
         return this

@@ -35,6 +35,18 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         return this
     }
 
+    override fun supportedProtocols(supportedProtocols: MutableList<String>?): TcpServer {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun peerHost(peerHost: String?): TcpServer {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun peerPort(peerPort: Int): TcpServer {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun enableSecureConnection(): TcpServer {
         config.enableSecureConnection = true
         return this
