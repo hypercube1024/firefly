@@ -26,7 +26,9 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     private val connChannel = Channel<TcpConnection>(UNLIMITED)
     private var connectionConsumer: Consumer<TcpConnection> = Consumer { connChannel.offer(it) }
     private var secureEngineFactory: SecureEngineFactory = DefaultCredentialConscryptSSLContextFactory()
-    private var supportedProtocols: List<String> = emptyList()
+    private var supportedProtocols: List<String> = listOf("h2", "http/1.1")
+    private var peerHost: String = ""
+    private var peerPort: Int = 0
 
     override fun getTcpConnectionChannel(): Channel<TcpConnection> = connChannel
 
@@ -35,16 +37,19 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         return this
     }
 
-    override fun supportedProtocols(supportedProtocols: MutableList<String>?): TcpServer {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun supportedProtocols(supportedProtocols: List<String>): TcpServer {
+        this.supportedProtocols = supportedProtocols
+        return this
     }
 
-    override fun peerHost(peerHost: String?): TcpServer {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun peerHost(peerHost: String): TcpServer {
+        this.peerHost = peerHost
+        return this
     }
 
     override fun peerPort(peerPort: Int): TcpServer {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        this.peerPort = peerPort
+        return this
     }
 
     override fun enableSecureConnection(): TcpServer {
@@ -80,11 +85,13 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     val tcpConnection =
                         AioTcpConnection(connectionId, socketChannel, config.timeout, getMessageThread(connectionId))
                     if (config.enableSecureConnection) {
-                        val secureConnection = AioSecureTcpConnection(
-                            tcpConnection,
-                            secureEngineFactory.create(tcpConnection, false, supportedProtocols),
-                            getMessageThread(connectionId)
-                                                                     )
+                        val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
+                            secureEngineFactory.create(tcpConnection, false, peerHost, peerPort, supportedProtocols)
+                        } else {
+                            secureEngineFactory.create(tcpConnection, false, supportedProtocols)
+                        }
+                        val secureConnection =
+                            AioSecureTcpConnection(tcpConnection, secureEngine, getMessageThread(connectionId))
                         connectionConsumer.accept(secureConnection)
                     } else {
                         connectionConsumer.accept(tcpConnection)

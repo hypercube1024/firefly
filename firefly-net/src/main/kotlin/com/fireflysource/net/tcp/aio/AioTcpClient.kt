@@ -22,7 +22,6 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     }
 
     private var secureEngineFactory: SecureEngineFactory = NoCheckConscryptSSLContextFactory()
-    private var supportedProtocols: List<String> = emptyList()
 
     init {
         start()
@@ -33,12 +32,16 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         return this
     }
 
-    override fun connect(
-        address: SocketAddress,
-        supportedProtocols: List<String>
-                        ): CompletableFuture<TcpConnection> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun enableSecureConnection(): TcpClient {
+        config.enableSecureConnection = true
+        return this
     }
+
+    override fun connect(address: SocketAddress): CompletableFuture<TcpConnection> =
+        connect(address, listOf("h2", "http/1.1"))
+
+    override fun connect(address: SocketAddress, supportedProtocols: List<String>): CompletableFuture<TcpConnection> =
+        connect(address, "", 0, supportedProtocols)
 
     override fun connect(
         address: SocketAddress,
@@ -46,15 +49,6 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         peerPort: Int,
         supportedProtocols: List<String>
                         ): CompletableFuture<TcpConnection> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun enableSecureConnection(): TcpClient {
-        config.enableSecureConnection = true
-        return this
-    }
-
-    override fun connect(address: SocketAddress): CompletableFuture<TcpConnection> {
         val future = CompletableFuture<TcpConnection>()
 
         val socketChannel = AsynchronousSocketChannel.open(group)
@@ -67,15 +61,17 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                 try {
                     val tcpConnection = if (config.enableSecureConnection) {
                         val tcpConnection = AioTcpConnection(
-                            connectionId, socketChannel,
+                            connectionId,
+                            socketChannel,
                             config.timeout,
                             getMessageThread(connectionId)
                                                             )
-                        AioSecureTcpConnection(
-                            tcpConnection,
-                            secureEngineFactory.create(tcpConnection, true, supportedProtocols),
-                            getMessageThread(connectionId)
-                                              )
+                        val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
+                            secureEngineFactory.create(tcpConnection, true, peerHost, peerPort, supportedProtocols)
+                        } else {
+                            secureEngineFactory.create(tcpConnection, true, supportedProtocols)
+                        }
+                        AioSecureTcpConnection(tcpConnection, secureEngine, getMessageThread(connectionId))
                     } else {
                         AioTcpConnection(connectionId, socketChannel, config.timeout, getMessageThread(connectionId))
                     }

@@ -50,7 +50,7 @@ public interface TcpClient extends LifeCycle {
     }
 
     /**
-     * Create a TLS connection to the server.
+     * If you enable TLS connection, tt creates a TLS connection and set the supported application layer protocols.
      *
      * @param address            The server address.
      * @param supportedProtocols The supported application layer protocols.
@@ -59,7 +59,9 @@ public interface TcpClient extends LifeCycle {
     CompletableFuture<TcpConnection> connect(SocketAddress address, List<String> supportedProtocols);
 
     /**
-     * Create a TLS connection to the server.
+     * If you enable TLS connection, tt creates a TLS connection using advisory peer information.
+     * Applications using this factory method are providing hints for an internal session reuse strategy.
+     * Some cipher suites (such as Kerberos) require remote hostname information, in which case peerHost needs to be specified.
      *
      * @param address            The server address.
      * @param peerHost           the non-authoritative name of the host.
