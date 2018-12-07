@@ -1,6 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.coroutine.launchGlobal
+import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.net.tcp.Result
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
@@ -31,7 +31,7 @@ class AioSecureTcpConnection(
         launchWritingEncryptedMessageJob()
     }
 
-    private fun launchWritingEncryptedMessageJob() = launchGlobal(messageThread) {
+    private fun launchWritingEncryptedMessageJob() = launchGlobally(messageThread) {
         secureEngine.beginHandshake().await()
         while (!isShutdownOutput) {
             writeEncryptedMessage(encryptedOutChannel.receive())
@@ -67,7 +67,7 @@ class AioSecureTcpConnection(
     override fun startReading(): TcpConnection {
         if (!tcpConnection.isStartReading) {
             tcpConnection.startReading()
-            launchGlobal(messageThread) {
+            launchGlobally(messageThread) {
                 val input = tcpConnection.inputChannel
                 recvLoop@ while (true) {
                     val buf = input.receive()

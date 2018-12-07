@@ -8,16 +8,42 @@ import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * The TCP net client.
+ *
  * @author Pengtao Qiu
  */
 public interface TcpClient extends LifeCycle {
 
+    /**
+     * Set the TLS engine factory.
+     *
+     * @param secureEngineFactory The TLS engine factory.
+     * @return The TCP client.
+     */
     TcpClient secureEngineFactory(SecureEngineFactory secureEngineFactory);
 
+    /**
+     * Enable the TLS protocol over the TCP connection.
+     *
+     * @return The TCP client.
+     */
     TcpClient enableSecureConnection();
 
+    /**
+     * Create a TCP connection to the server.
+     *
+     * @param address The server address.
+     * @return The TCP connection.
+     */
     CompletableFuture<TcpConnection> connect(SocketAddress address);
 
+    /**
+     * Create a TCP connection to the server.
+     *
+     * @param host The server host.
+     * @param port The server port.
+     * @return The TCP connection.
+     */
     default CompletableFuture<TcpConnection> connect(String host, int port) {
         return connect(new InetSocketAddress(host, port));
     }

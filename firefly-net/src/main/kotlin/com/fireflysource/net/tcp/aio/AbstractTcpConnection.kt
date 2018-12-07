@@ -1,6 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.coroutine.launchGlobal
+import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.aRead
 import com.fireflysource.common.io.aWrite
@@ -118,7 +118,7 @@ abstract class AbstractTcpConnection(
         return this
     }
 
-    private fun launchWritingJob() = launchGlobal(messageThread) {
+    private fun launchWritingJob() = launchGlobally(messageThread) {
         while (!isShutdownOutput) {
             writeMessage(outChannel.receive())
         }
@@ -219,7 +219,7 @@ abstract class AbstractTcpConnection(
 
     override fun startReading(): TcpConnection {
         if (autoReadState.compareAndSet(false, true)) {
-            launchGlobal(messageThread) {
+            launchGlobally(messageThread) {
                 log.debug { "start automatic reading" }
 
                 while (true) {
