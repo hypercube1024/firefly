@@ -1,7 +1,5 @@
 package com.fireflysource.common.collection.trie;
 
-import com.fireflysource.common.string.StringUtils;
-
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -38,6 +36,18 @@ import java.util.*;
  * @param <V> the Entry type
  */
 public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
+
+    public static final char[] lowercases = {'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007', '\010',
+            '\011', '\012', '\013', '\014', '\015', '\016', '\017', '\020', '\021', '\022', '\023', '\024', '\025',
+            '\026', '\027', '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037', '\040', '\041', '\042',
+            '\043', '\044', '\045', '\046', '\047', '\050', '\051', '\052', '\053', '\054', '\055', '\056', '\057',
+            '\060', '\061', '\062', '\063', '\064', '\065', '\066', '\067', '\070', '\071', '\072', '\073', '\074',
+            '\075', '\076', '\077', '\100', '\141', '\142', '\143', '\144', '\145', '\146', '\147', '\150', '\151',
+            '\152', '\153', '\154', '\155', '\156', '\157', '\160', '\161', '\162', '\163', '\164', '\165', '\166',
+            '\167', '\170', '\171', '\172', '\133', '\134', '\135', '\136', '\137', '\140', '\141', '\142', '\143',
+            '\144', '\145', '\146', '\147', '\150', '\151', '\152', '\153', '\154', '\155', '\156', '\157', '\160',
+            '\161', '\162', '\163', '\164', '\165', '\166', '\167', '\170', '\171', '\172', '\173', '\174', '\175',
+            '\176', '\177'};
     /**
      * The Size of a Trie row is the char, and the low, equal and high
      * child pointers
@@ -167,7 +177,7 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         for (int k = 0; k < limit; k++) {
             char c = s.charAt(k);
             if (isCaseInsensitive() && c < 128)
-                c = StringUtils.lowercases[c];
+                c = lowercases[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
@@ -225,7 +235,7 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         for (int i = 0; i < len; ) {
             char c = s.charAt(offset + i++);
             if (isCaseInsensitive() && c < 128)
-                c = StringUtils.lowercases[c];
+                c = lowercases[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
@@ -256,7 +266,7 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         for (int i = 0; i < len; ) {
             byte c = (byte) (b.get(offset + i++) & 0x7f);
             if (isCaseInsensitive())
-                c = (byte) StringUtils.lowercases[c];
+                c = (byte) lowercases[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
@@ -300,7 +310,7 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
             char c = s.charAt(offset++);
             len--;
             if (isCaseInsensitive() && c < 128)
-                c = StringUtils.lowercases[c];
+                c = lowercases[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
@@ -347,7 +357,7 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
             byte c = (byte) (b[offset++] & 0x7f);
             len--;
             if (isCaseInsensitive())
-                c = (byte) StringUtils.lowercases[c];
+                c = (byte) lowercases[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
@@ -386,7 +396,7 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         for (int i = 0; i < len; i++) {
             byte c = (byte) (b.get(o + i) & 0x7f);
             if (isCaseInsensitive())
-                c = (byte) StringUtils.lowercases[c];
+                c = (byte) lowercases[c];
 
             while (true) {
                 int row = ROW_SIZE * t;

@@ -1,6 +1,5 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
-import com.fireflysource.common.collection.CollectionUtils;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.SystemLogger;
@@ -25,7 +24,7 @@ public class ConscryptApplicationProtocolSelector implements ApplicationProtocol
     private final SSLEngine sslEngine;
 
     public ConscryptApplicationProtocolSelector(SSLEngine sslEngine, List<String> supportedProtocolList) {
-        if (CollectionUtils.isEmpty(supportedProtocolList)) {
+        if (supportedProtocolList == null || supportedProtocolList.isEmpty()) {
             this.supportedProtocolList = Collections.unmodifiableList(Arrays.asList("h2", "http/1.1"));
         } else {
             this.supportedProtocolList = supportedProtocolList;
@@ -62,7 +61,7 @@ public class ConscryptApplicationProtocolSelector implements ApplicationProtocol
         }
 
         String select(List<String> clientProtocols) {
-            if (!CollectionUtils.isEmpty(clientProtocols)) {
+            if (clientProtocols != null) {
                 for (String p : supportedProtocols) {
                     if (clientProtocols.contains(p)) {
                         log.debug(() -> "ALPN local server selected protocol -> " + p);

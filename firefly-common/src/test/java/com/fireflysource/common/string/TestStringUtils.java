@@ -42,25 +42,6 @@ class TestStringUtils {
         NON_TRIMMABLE = ntr;
     }
 
-    @Test
-    void testAsciiToLowerCase() {
-        String lc = "\u0690bc def 1\u06903";
-        assertEquals(StringUtils.asciiToLowerCase("\u0690Bc DeF 1\u06903"), lc);
-        assertEquals(StringUtils.asciiToLowerCase(lc), lc);
-    }
-
-    @Test
-    void testAppend() {
-        StringBuilder buf = new StringBuilder();
-        buf.append('a');
-        StringUtils.append(buf, "abc", 1, 1);
-        StringUtils.append(buf, (byte) 12, 16);
-        StringUtils.append(buf, (byte) 16, 16);
-        StringUtils.append(buf, (byte) -1, 16);
-        StringUtils.append(buf, (byte) -16, 16);
-        assertEquals("ab0c10fff0", buf.toString());
-    }
-
 
     @Test
     void testSplit() {

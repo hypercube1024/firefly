@@ -1,15 +1,30 @@
 package com.fireflysource.common.collection.trie;
 
-
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TestTrie {
 
-    @Test
-    void test() {
-        Trie<String> trie = new TreeTrie<>();
+    @ParameterizedTest
+    @ValueSource(strings = {"TreeTrie", "ArrayTernaryTrie", "ArrayTrie"})
+    void test(String type) {
+        Trie<String> trie;
+        switch (type) {
+            case "TreeTrie":
+                trie = new TreeTrie<>();
+                break;
+            case "ArrayTernaryTrie":
+                trie = new ArrayTernaryTrie<>(500);
+                break;
+            case "ArrayTrie":
+                trie = new ArrayTrie<>(500);
+                break;
+            default:
+                trie = new TreeTrie<>();
+        }
+
         trie.put("com.firefly.foo.bar");
         trie.put("com.firefly.foo");
 
