@@ -1,4 +1,4 @@
-package com.fireflysource.net.http.model;
+package com.fireflysource.net.http.common.codec;
 
 import com.fireflysource.net.http.common.codec.URIUtils;
 import org.junit.jupiter.params.ParameterizedTest;
