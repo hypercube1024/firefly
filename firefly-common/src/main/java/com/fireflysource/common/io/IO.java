@@ -5,10 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.charset.Charset;
 
-/**
- * IO Utilities. Provides stream handling utilities in singleton Threadpool
- * implementation accessed by static members.
- */
 public class IO {
 
     public final static String CRLF = "\015\012";
@@ -16,10 +12,10 @@ public class IO {
     public final static byte[] CRLF_BYTES = {(byte) '\015', (byte) '\012'};
 
     public static final int bufferSize = 64 * 1024;
-    private static NullOS __nullStream = new NullOS();
-    private static ClosedIS __closedStream = new ClosedIS();
-    private static NullWrite __nullWriter = new NullWrite();
-    private static PrintWriter __nullPrintWriter = new PrintWriter(__nullWriter);
+    private static NullOS NULL_STREAM = new NullOS();
+    private static ClosedIS CLOSED_STREAM = new ClosedIS();
+    private static NullWrite NULL_WRITER = new NullWrite();
+    private static PrintWriter NULL_PRINT_WRITER = new PrintWriter(NULL_WRITER);
 
     /**
      * Copy Stream in to Stream out until EOF or exception.
@@ -52,8 +48,8 @@ public class IO {
      * @throws IOException if unable to copy the streams
      */
     public static void copy(InputStream in, OutputStream out, long byteCount) throws IOException {
-        byte buffer[] = new byte[bufferSize];
-        int len = bufferSize;
+        byte[] buffer = new byte[bufferSize];
+        int len;
 
         if (byteCount >= 0) {
             while (byteCount > 0) {
@@ -85,8 +81,8 @@ public class IO {
      * @throws IOException if unable to copy streams
      */
     public static void copy(Reader in, Writer out, long byteCount) throws IOException {
-        char buffer[] = new char[bufferSize];
-        int len = bufferSize;
+        char[] buffer = new char[bufferSize];
+        int len;
 
         if (byteCount >= 0) {
             while (byteCount > 0) {
@@ -142,11 +138,11 @@ public class IO {
 
         File[] files = from.listFiles();
         if (files != null) {
-            for (int i = 0; i < files.length; i++) {
-                String name = files[i].getName();
+            for (File file : files) {
+                String name = file.getName();
                 if (".".equals(name) || "..".equals(name))
                     continue;
-                copy(files[i], new File(to, name));
+                copy(file, new File(to, name));
             }
         }
     }
@@ -332,70 +328,28 @@ public class IO {
      * @return An outputstream to nowhere
      */
     public static OutputStream getNullStream() {
-        return __nullStream;
+        return NULL_STREAM;
     }
 
     /**
      * @return An outputstream to nowhere
      */
     public static InputStream getClosedStream() {
-        return __closedStream;
+        return CLOSED_STREAM;
     }
 
     /**
      * @return An writer to nowhere
      */
     public static Writer getNullWriter() {
-        return __nullWriter;
+        return NULL_WRITER;
     }
 
     /**
      * @return An writer to nowhere
      */
     public static PrintWriter getNullPrintWriter() {
-        return __nullPrintWriter;
-    }
-
-    static class Job implements Runnable {
-        InputStream in;
-        OutputStream out;
-        Reader read;
-        Writer write;
-
-        Job(InputStream in, OutputStream out) {
-            this.in = in;
-            this.out = out;
-            this.read = null;
-            this.write = null;
-        }
-
-        Job(Reader read, Writer write) {
-            this.in = null;
-            this.out = null;
-            this.read = read;
-            this.write = write;
-        }
-
-        /*
-         * @see java.lang.Runnable#run()
-         */
-        public void run() {
-            try {
-                if (in != null)
-                    copy(in, out, -1);
-                else
-                    copy(read, write, -1);
-            } catch (IOException e) {
-                try {
-                    if (out != null)
-                        out.close();
-                    if (write != null)
-                        write.close();
-                } catch (IOException e2) {
-
-                }
-            }
-        }
+        return NULL_PRINT_WRITER;
     }
 
     private static class NullOS extends OutputStream {
