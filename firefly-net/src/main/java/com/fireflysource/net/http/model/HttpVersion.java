@@ -24,12 +24,21 @@ public enum HttpVersion {
         return Holder.cache.get(value);
     }
 
+    public boolean is(String value) {
+        return this.value.equalsIgnoreCase(value);
+    }
+
     public String getValue() {
         return value;
     }
 
     public byte[] getBytes() {
         return bytes;
+    }
+
+    @Override
+    public String toString() {
+        return value;
     }
 
     private static class Holder {

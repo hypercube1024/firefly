@@ -35,7 +35,7 @@ public enum HttpMethod {
     }
 
     public boolean is(String value) {
-        return value != null && value.equalsIgnoreCase(this.value);
+        return this.value.equalsIgnoreCase(value);
     }
 
     public String getValue() {
@@ -44,6 +44,11 @@ public enum HttpMethod {
 
     public byte[] getBytes() {
         return bytes;
+    }
+
+    @Override
+    public String toString() {
+        return value;
     }
 
     private static class Holder {

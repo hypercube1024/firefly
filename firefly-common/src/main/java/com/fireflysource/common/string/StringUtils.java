@@ -10,6 +10,17 @@ public class StringUtils {
 
     private static final String FOLDER_SEPARATOR = "/";
     private static final char EXTENSION_SEPARATOR = '.';
+    private static final char[] LOWER_CASE = {'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007', '\010',
+            '\011', '\012', '\013', '\014', '\015', '\016', '\017', '\020', '\021', '\022', '\023', '\024', '\025',
+            '\026', '\027', '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037', '\040', '\041', '\042',
+            '\043', '\044', '\045', '\046', '\047', '\050', '\051', '\052', '\053', '\054', '\055', '\056', '\057',
+            '\060', '\061', '\062', '\063', '\064', '\065', '\066', '\067', '\070', '\071', '\072', '\073', '\074',
+            '\075', '\076', '\077', '\100', '\141', '\142', '\143', '\144', '\145', '\146', '\147', '\150', '\151',
+            '\152', '\153', '\154', '\155', '\156', '\157', '\160', '\161', '\162', '\163', '\164', '\165', '\166',
+            '\167', '\170', '\171', '\172', '\133', '\134', '\135', '\136', '\137', '\140', '\141', '\142', '\143',
+            '\144', '\145', '\146', '\147', '\150', '\151', '\152', '\153', '\154', '\155', '\156', '\157', '\160',
+            '\161', '\162', '\163', '\164', '\165', '\166', '\167', '\170', '\171', '\172', '\173', '\174', '\175',
+            '\176', '\177'};
 
     /**
      * <p>
@@ -684,25 +695,6 @@ public class StringUtils {
     }
 
     /**
-     * Append substring to StringBuilder
-     *
-     * @param buf    StringBuilder to append to
-     * @param s      String to append from
-     * @param offset The offset of the substring
-     * @param length The length of the substring
-     */
-    public static void append(StringBuilder buf, String s, int offset, int length) {
-        synchronized (buf) {
-            int end = offset + length;
-            for (int i = offset; i < end; i++) {
-                if (i >= s.length())
-                    break;
-                buf.append(s.charAt(i));
-            }
-        }
-    }
-
-    /**
      * append hex digit
      *
      * @param buf  the buffer to append to
@@ -719,5 +711,48 @@ public class StringUtils {
         if (c > '9')
             c = 'a' + (c - '0' - 10);
         buf.append((char) c);
+    }
+
+    /**
+     * Append 2 digits (zero padded) to the StringBuilder
+     *
+     * @param buf the buffer to append to
+     * @param i   the value to append
+     */
+    public static void append2digits(StringBuilder buf, int i) {
+        if (i < 100) {
+            buf.append((char) (i / 10 + '0'));
+            buf.append((char) (i % 10 + '0'));
+        }
+    }
+
+    /**
+     * fast lower case conversion. Only works on ascii (not unicode)
+     *
+     * @param s the string to convert
+     * @return a lower case version of s
+     */
+    public static String asciiToLowerCase(String s) {
+        char[] c = null;
+        int i = s.length();
+
+        // look for first conversion
+        while (i-- > 0) {
+            char c1 = s.charAt(i);
+            if (c1 <= 127) {
+                char c2 = LOWER_CASE[c1];
+                if (c1 != c2) {
+                    c = s.toCharArray();
+                    c[i] = c2;
+                    break;
+                }
+            }
+        }
+
+        while (i-- > 0) {
+            if (c != null && c[i] <= 127)
+                c[i] = LOWER_CASE[c[i]];
+        }
+        return c == null ? s : new String(c);
     }
 }
