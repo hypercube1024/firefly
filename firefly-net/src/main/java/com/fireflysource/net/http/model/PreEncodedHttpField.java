@@ -1,5 +1,7 @@
 package com.fireflysource.net.http.model;
 
+import com.fireflysource.net.http.v2.hpack.HpackFieldPreEncoder;
+
 import java.nio.ByteBuffer;
 import java.util.ServiceLoader;
 
@@ -14,7 +16,7 @@ import java.util.ServiceLoader;
  */
 public class PreEncodedHttpField extends HttpField {
     private final static HttpFieldPreEncoder[] ENCODERS = new HttpFieldPreEncoder[]{
-//            new HpackFieldPreEncoder(), // TODO
+            new HpackFieldPreEncoder(),
             new Http1FieldPreEncoder()};
 
     private final byte[][] encodedField = new byte[2][];
