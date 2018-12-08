@@ -20,6 +20,9 @@ public class TypeUtils {
     public static final int LF = '\012';
 
     private static final HashMap<String, Class<?>> name2Class = new HashMap<>();
+    /* ------------------------------------------------------------ */
+    private static final HashMap<Class<?>, String> class2Name = new HashMap<>();
+    private static final HashMap<Class<?>, Method> class2Value = new HashMap<>();
 
     static {
         name2Class.put("boolean", Boolean.TYPE);
@@ -66,9 +69,6 @@ public class TypeUtils {
         name2Class.put("java.lang.String", String.class);
     }
 
-    /* ------------------------------------------------------------ */
-    private static final HashMap<Class<?>, String> class2Name = new HashMap<>();
-
     static {
         class2Name.put(Boolean.TYPE, "boolean");
         class2Name.put(Byte.TYPE, "byte");
@@ -92,8 +92,6 @@ public class TypeUtils {
         class2Name.put(null, "void");
         class2Name.put(String.class, "java.lang.String");
     }
-
-    private static final HashMap<Class<?>, Method> class2Value = new HashMap<>();
 
     static {
         try {

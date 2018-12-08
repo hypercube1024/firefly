@@ -10,19 +10,19 @@ import java.util.TimeZone;
  * ThreadLocal Date formatters for HTTP style dates.
  */
 public class DateGenerator {
+    static final String[] DAYS = {"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    static final String[] MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+            "Jan"};
     private static final TimeZone GMT_TIME_ZONE = TimeZone.getTimeZone("GMT");
+    private static final ThreadLocal<DateGenerator> DATE_GENERATOR = ThreadLocal.withInitial(DateGenerator::new);
+    public final static String JAN_01_1970 = DateGenerator.formatDate(0);
 
     static {
         GMT_TIME_ZONE.setID("GMT");
     }
 
-    static final String[] DAYS = {"Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-    static final String[] MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-            "Jan"};
-
-    private static final ThreadLocal<DateGenerator> DATE_GENERATOR = ThreadLocal.withInitial(DateGenerator::new);
-
-    public final static String JAN_01_1970 = DateGenerator.formatDate(0);
+    private final StringBuilder buf = new StringBuilder(32);
+    private final GregorianCalendar gc = new GregorianCalendar(GMT_TIME_ZONE);
 
     /**
      * Format HTTP date "EEE, dd MMM yyyy HH:mm:ss 'GMT'"
@@ -55,9 +55,6 @@ public class DateGenerator {
         formatCookieDate(buf, date);
         return buf.toString();
     }
-
-    private final StringBuilder buf = new StringBuilder(32);
-    private final GregorianCalendar gc = new GregorianCalendar(GMT_TIME_ZONE);
 
     /**
      * Format HTTP date "EEE, dd MMM yyyy HH:mm:ss 'GMT'"

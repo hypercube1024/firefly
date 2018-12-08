@@ -45,9 +45,6 @@ public abstract class Utf8Appendable {
     public static final byte[] REPLACEMENT_UTF8 = new byte[]{(byte) 0xEF, (byte) 0xBF, (byte) 0xBD};
     private static final int UTF8_ACCEPT = 0;
     private static final int UTF8_REJECT = 12;
-
-    protected final Appendable appendable;
-    protected int _state = UTF8_ACCEPT;
     private static final byte[] BYTE_TABLE =
             {
                     // The first part of the table maps bytes to character classes that
@@ -61,7 +58,6 @@ public abstract class Utf8Appendable {
                     8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
                     10, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 11, 6, 6, 6, 5, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
             };
-
     private static final byte[] TRANS_TABLE =
             {
                     // The second part is a transition table that maps a combination
@@ -72,6 +68,8 @@ public abstract class Utf8Appendable {
                     12, 12, 12, 12, 12, 12, 12, 36, 12, 36, 12, 12, 12, 36, 12, 12, 12, 12, 12, 36, 12, 36, 12, 12,
                     12, 36, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12
             };
+    protected final Appendable appendable;
+    protected int _state = UTF8_ACCEPT;
     private int codep;
 
     public Utf8Appendable(Appendable appendable) {
@@ -201,13 +199,6 @@ public abstract class Utf8Appendable {
         return _state == UTF8_ACCEPT;
     }
 
-    @SuppressWarnings("serial")
-    public static class NotUtf8Exception extends IllegalArgumentException {
-        public NotUtf8Exception(String reason) {
-            super("Not valid UTF8! " + reason);
-        }
-    }
-
     protected void checkState() {
         if (!isUtf8SequenceComplete()) {
             codep = 0;
@@ -232,5 +223,12 @@ public abstract class Utf8Appendable {
             }
         }
         return appendable.toString();
+    }
+
+    @SuppressWarnings("serial")
+    public static class NotUtf8Exception extends IllegalArgumentException {
+        public NotUtf8Exception(String reason) {
+            super("Not valid UTF8! " + reason);
+        }
     }
 }

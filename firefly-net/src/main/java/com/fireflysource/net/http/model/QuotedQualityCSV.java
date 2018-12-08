@@ -29,8 +29,8 @@ public class QuotedQualityCSV extends QuotedCSV implements Iterable<String> {
     };
 
     private final List<Double> quality = new ArrayList<>();
-    private boolean sorted = false;
     private final Function<String, Integer> secondaryOrdering;
+    private boolean sorted = false;
 
 
     /**

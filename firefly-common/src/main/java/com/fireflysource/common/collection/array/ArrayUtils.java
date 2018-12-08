@@ -11,8 +11,6 @@ import java.util.List;
  */
 public class ArrayUtils implements Cloneable, Serializable {
 
-    private static final long serialVersionUID = 2252854725258539040L;
-
     /**
      * An empty immutable <code>Object</code> array.
      */
@@ -89,6 +87,7 @@ public class ArrayUtils implements Cloneable, Serializable {
      * An empty immutable <code>Character</code> array.
      */
     public static final Character[] EMPTY_CHARACTER_OBJECT_ARRAY = new Character[0];
+    private static final long serialVersionUID = 2252854725258539040L;
 
     public static <T> T[] removeFromArray(T[] array, Object item) {
         if (item == null || array == null)

@@ -1,7 +1,5 @@
 package com.fireflysource.net.http.model;
 
-import com.fireflysource.common.collection.trie.ArrayTernaryTrie;
-import com.fireflysource.common.collection.trie.Trie;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.QuotedStringTokenizer;
 import com.fireflysource.common.sys.SystemLogger;
@@ -52,6 +50,71 @@ public class HttpFields implements Iterable<HttpField> {
     public HttpFields(HttpFields fields) {
         this.fields = Arrays.copyOf(fields.fields, fields.fields.length + 10);
         size = fields.size;
+    }
+
+    /**
+     * Get field value without parameters. Some field values can have
+     * parameters. This method separates the value from the parameters and
+     * optionally populates a map with the parameters. For example:
+     *
+     * <PRE>
+     * <p>
+     * FieldName : Value ; param1=val1 ; param2=val2
+     *
+     * </PRE>
+     *
+     * @param value The Field value, possibly with parameters.
+     * @return The value.
+     */
+    public static String stripParameters(String value) {
+        if (value == null)
+            return null;
+
+        int i = value.indexOf(';');
+        if (i < 0)
+            return value;
+        return value.substring(0, i).trim();
+    }
+
+    /**
+     * Get field value parameters. Some field values can have parameters. This
+     * method separates the value from the parameters and optionally populates a
+     * map with the parameters. For example:
+     *
+     * <PRE>
+     * <p>
+     * FieldName : Value ; param1=val1 ; param2=val2
+     *
+     * </PRE>
+     *
+     * @param value      The Field value, possibly with parameters.
+     * @param parameters A map to populate with the parameters, or null
+     * @return The value.
+     */
+    public static String valueParameters(String value, Map<String, String> parameters) {
+        if (value == null)
+            return null;
+
+        int i = value.indexOf(';');
+        if (i < 0)
+            return value;
+        if (parameters == null)
+            return value.substring(0, i).trim();
+
+        StringTokenizer tok1 = new QuotedStringTokenizer(value.substring(i), ";", false, true);
+        while (tok1.hasMoreTokens()) {
+            String token = tok1.nextToken();
+            StringTokenizer tok2 = new QuotedStringTokenizer(token, "= ");
+            if (tok2.hasMoreTokens()) {
+                String paramName = tok2.nextToken();
+                String paramVal = null;
+                if (tok2.hasMoreTokens())
+                    paramVal = tok2.nextToken();
+                parameters.put(paramName, paramVal);
+            }
+        }
+
+        return value.substring(0, i).trim();
     }
 
     public int size() {
@@ -785,71 +848,6 @@ public class HttpFields implements Iterable<HttpField> {
             while (values.hasMoreElements())
                 add(name, values.nextElement());
         }
-    }
-
-    /**
-     * Get field value without parameters. Some field values can have
-     * parameters. This method separates the value from the parameters and
-     * optionally populates a map with the parameters. For example:
-     *
-     * <PRE>
-     * <p>
-     * FieldName : Value ; param1=val1 ; param2=val2
-     *
-     * </PRE>
-     *
-     * @param value The Field value, possibly with parameters.
-     * @return The value.
-     */
-    public static String stripParameters(String value) {
-        if (value == null)
-            return null;
-
-        int i = value.indexOf(';');
-        if (i < 0)
-            return value;
-        return value.substring(0, i).trim();
-    }
-
-    /**
-     * Get field value parameters. Some field values can have parameters. This
-     * method separates the value from the parameters and optionally populates a
-     * map with the parameters. For example:
-     *
-     * <PRE>
-     * <p>
-     * FieldName : Value ; param1=val1 ; param2=val2
-     *
-     * </PRE>
-     *
-     * @param value      The Field value, possibly with parameters.
-     * @param parameters A map to populate with the parameters, or null
-     * @return The value.
-     */
-    public static String valueParameters(String value, Map<String, String> parameters) {
-        if (value == null)
-            return null;
-
-        int i = value.indexOf(';');
-        if (i < 0)
-            return value;
-        if (parameters == null)
-            return value.substring(0, i).trim();
-
-        StringTokenizer tok1 = new QuotedStringTokenizer(value.substring(i), ";", false, true);
-        while (tok1.hasMoreTokens()) {
-            String token = tok1.nextToken();
-            StringTokenizer tok2 = new QuotedStringTokenizer(token, "= ");
-            if (tok2.hasMoreTokens()) {
-                String paramName = tok2.nextToken();
-                String paramVal = null;
-                if (tok2.hasMoreTokens())
-                    paramVal = tok2.nextToken();
-                parameters.put(paramName, paramVal);
-            }
-        }
-
-        return value.substring(0, i).trim();
     }
 
     private class Itr implements Iterator<HttpField> {

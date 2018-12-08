@@ -59,6 +59,21 @@ public class HostPort {
     }
 
     /**
+     * Normalize IPv6 address as per https://www.ietf.org/rfc/rfc2732.txt
+     *
+     * @param host A host name
+     * @return Host name surrounded by '[' and ']' as needed.
+     */
+    public static String normalizeHost(String host) {
+        // if it is normalized IPv6 or could not be IPv6, return
+        if (host.isEmpty() || host.charAt(0) == '[' || host.indexOf(':') < 0)
+            return host;
+
+        // normalize with [ ]
+        return "[" + host + "]";
+    }
+
+    /**
      * Get the host.
      *
      * @return the host
@@ -84,20 +99,5 @@ public class HostPort {
      */
     public int getPort(int defaultPort) {
         return port > 0 ? port : defaultPort;
-    }
-
-    /**
-     * Normalize IPv6 address as per https://www.ietf.org/rfc/rfc2732.txt
-     *
-     * @param host A host name
-     * @return Host name surrounded by '[' and ']' as needed.
-     */
-    public static String normalizeHost(String host) {
-        // if it is normalized IPv6 or could not be IPv6, return
-        if (host.isEmpty() || host.charAt(0) == '[' || host.indexOf(':') < 0)
-            return host;
-
-        // normalize with [ ]
-        return "[" + host + "]";
     }
 }

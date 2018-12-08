@@ -30,20 +30,8 @@ import java.nio.charset.StandardCharsets;
  * parameters, the {@link #getParam()} method returns only the last one.
  */
 public class HttpURI {
-    private enum State {
-        START,
-        HOST_OR_PATH,
-        SCHEME_OR_PATH,
-        HOST,
-        IPV6,
-        PORT,
-        PATH,
-        PARAM,
-        QUERY,
-        FRAGMENT,
-        ASTERISK
-    }
-
+    String uri;
+    String decodedPath;
     private String scheme;
     private String user;
     private String host;
@@ -52,31 +40,6 @@ public class HttpURI {
     private String param;
     private String query;
     private String fragment;
-
-    String uri;
-    String decodedPath;
-
-    /**
-     * Construct a normalized URI.
-     * Port is not set if it is the default port.
-     *
-     * @param scheme   the URI scheme
-     * @param host     the URI hose
-     * @param port     the URI port
-     * @param path     the URI path
-     * @param param    the URI param
-     * @param query    the URI query
-     * @param fragment the URI fragment
-     * @return the normalized URI
-     */
-    public static HttpURI createHttpURI(String scheme, String host, int port, String path, String param, String query, String fragment) {
-        if (port == 80 && HttpScheme.HTTP.is(scheme))
-            port = 0;
-        if (port == 443 && HttpScheme.HTTPS.is(scheme))
-            port = 0;
-        return new HttpURI(scheme, host, port, path, param, query, fragment);
-    }
-
     public HttpURI() {
     }
 
@@ -133,6 +96,27 @@ public class HttpURI {
         if (pathQuery != null)
             parse(State.PATH, pathQuery, 0, pathQuery.length());
 
+    }
+
+    /**
+     * Construct a normalized URI.
+     * Port is not set if it is the default port.
+     *
+     * @param scheme   the URI scheme
+     * @param host     the URI hose
+     * @param port     the URI port
+     * @param path     the URI path
+     * @param param    the URI param
+     * @param query    the URI query
+     * @param fragment the URI fragment
+     * @return the normalized URI
+     */
+    public static HttpURI createHttpURI(String scheme, String host, int port, String path, String param, String query, String fragment) {
+        if (port == 80 && HttpScheme.HTTP.is(scheme))
+            port = 0;
+        if (port == 443 && HttpScheme.HTTPS.is(scheme))
+            port = 0;
+        return new HttpURI(scheme, host, port, path, param, query, fragment);
     }
 
     public void parse(String uri) {
@@ -475,6 +459,11 @@ public class HttpURI {
         return scheme;
     }
 
+    public void setScheme(String scheme) {
+        this.scheme = scheme;
+        uri = null;
+    }
+
     public String getHost() {
         // Return null for empty host to retain compatibility with java.net.URI
         if (host != null && host.length() == 0)
@@ -495,32 +484,41 @@ public class HttpURI {
         return path;
     }
 
+    /**
+     * @param path the path
+     */
+    public void setPath(String path) {
+        uri = null;
+        this.path = path;
+        decodedPath = null;
+    }
+
     public String getDecodedPath() {
         if (decodedPath == null && path != null)
             decodedPath = URIUtils.decodePath(path);
         return decodedPath;
     }
 
-
     public String getParam() {
         return param;
     }
-
 
     public String getQuery() {
         return query;
     }
 
+    public void setQuery(String query) {
+        this.query = query;
+        uri = null;
+    }
 
     public boolean hasQuery() {
         return query != null && query.length() > 0;
     }
 
-
     public String getFragment() {
         return fragment;
     }
-
 
     public void decodeQueryTo(MultiMap<String> parameters) {
         if (query == null)
@@ -528,11 +526,9 @@ public class HttpURI {
         UrlEncoded.decodeUtf8To(query, parameters);
     }
 
-
     public void decodeQueryTo(MultiMap<String> parameters, String encoding) throws UnsupportedEncodingException {
         decodeQueryTo(parameters, Charset.forName(encoding));
     }
-
 
     public void decodeQueryTo(MultiMap<String> parameters, Charset encoding) throws UnsupportedEncodingException {
         if (query == null)
@@ -543,7 +539,6 @@ public class HttpURI {
         else
             UrlEncoded.decodeTo(query, parameters, encoding);
     }
-
 
     public void clear() {
         uri = null;
@@ -559,11 +554,9 @@ public class HttpURI {
         decodedPath = null;
     }
 
-
     public boolean isAbsolute() {
         return scheme != null && scheme.length() > 0;
     }
-
 
     @Override
     public String toString() {
@@ -609,11 +602,6 @@ public class HttpURI {
         return toString().equals(o.toString());
     }
 
-    public void setScheme(String scheme) {
-        this.scheme = scheme;
-        uri = null;
-    }
-
     /**
      * @param host the host
      * @param port the port
@@ -624,16 +612,15 @@ public class HttpURI {
         uri = null;
     }
 
-
-    /**
-     * @param path the path
-     */
-    public void setPath(String path) {
-        uri = null;
-        this.path = path;
-        decodedPath = null;
+    public URI toURI() throws URISyntaxException {
+        return new URI(scheme, null, host, port, path, query == null ? null : UrlEncoded.decodeString(query), fragment);
     }
 
+    public String getPathQuery() {
+        if (query == null)
+            return path;
+        return path + "?" + query;
+    }
 
     public void setPathQuery(String path) {
         uri = null;
@@ -645,34 +632,29 @@ public class HttpURI {
             parse(State.PATH, path, 0, path.length());
     }
 
-
-    public void setQuery(String query) {
-        this.query = query;
-        uri = null;
-    }
-
-
-    public URI toURI() throws URISyntaxException {
-        return new URI(scheme, null, host, port, path, query == null ? null : UrlEncoded.decodeString(query), fragment);
-    }
-
-
-    public String getPathQuery() {
-        if (query == null)
-            return path;
-        return path + "?" + query;
-    }
-
-
     public String getAuthority() {
         if (port > 0)
             return host + ":" + port;
         return host;
     }
 
-
     public String getUser() {
         return user;
+    }
+
+
+    private enum State {
+        START,
+        HOST_OR_PATH,
+        SCHEME_OR_PATH,
+        HOST,
+        IPV6,
+        PORT,
+        PATH,
+        PARAM,
+        QUERY,
+        FRAGMENT,
+        ASTERISK
     }
 
 }

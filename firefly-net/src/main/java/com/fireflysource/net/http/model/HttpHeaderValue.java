@@ -24,12 +24,11 @@ public enum HttpHeaderValue {
     UPGRADE("Upgrade"),
     UNKNOWN("::UNKNOWN::");
 
+    public final static Trie<HttpHeaderValue> CACHE = new ArrayTrie<>();
     private static final EnumSet<HttpHeader> __known = EnumSet.of(
             HttpHeader.CONNECTION,
             HttpHeader.TRANSFER_ENCODING,
             HttpHeader.CONTENT_ENCODING);
-
-    public final static Trie<HttpHeaderValue> CACHE = new ArrayTrie<>();
 
     static {
         for (HttpHeaderValue value : HttpHeaderValue.values())
@@ -43,6 +42,12 @@ public enum HttpHeaderValue {
     HttpHeaderValue(String value) {
         this.value = value;
         bytes = StringUtils.getUtf8Bytes(value);
+    }
+
+    public static boolean hasKnownValues(HttpHeader header) {
+        if (header == null)
+            return false;
+        return __known.contains(header);
     }
 
     public boolean is(String value) {
@@ -60,11 +65,5 @@ public enum HttpHeaderValue {
     @Override
     public String toString() {
         return value;
-    }
-
-    public static boolean hasKnownValues(HttpHeader header) {
-        if (header == null)
-            return false;
-        return __known.contains(header);
     }
 }

@@ -47,13 +47,11 @@ import static com.fireflysource.common.object.TypeUtils.convertHexDigit;
 @SuppressWarnings("serial")
 public class UrlEncoded extends MultiMap<String> implements Cloneable {
 
-    private static Logger LOG = LoggerFactory.getLogger("firefly-system");
-
     public static final Charset ENCODING;
-
     private static final String __ISO_8859_1 = "iso-8859-1";
     private static final String __UTF8 = "utf-8";
     private static final String __UTF16 = "utf-16";
+    private static Logger LOG = LoggerFactory.getLogger("firefly-system");
 
     static {
         Charset encoding;
@@ -76,45 +74,6 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
 
     public UrlEncoded(String query) {
         decodeTo(query, this, ENCODING);
-    }
-
-    public void decode(String query) {
-        decodeTo(query, this, ENCODING);
-    }
-
-    public void decode(String query, Charset charset) {
-        decodeTo(query, this, charset);
-    }
-
-    /**
-     * Encode MultiMap with % encoding for UTF8 sequences.
-     *
-     * @return the MultiMap as a string with % encoding
-     */
-    public String encode() {
-        return encode(ENCODING, false);
-    }
-
-    /**
-     * Encode MultiMap with % encoding for arbitrary Charset sequences.
-     *
-     * @param charset the charset to use for encoding
-     * @return the MultiMap as a string encoded with % encodings
-     */
-    public String encode(Charset charset) {
-        return encode(charset, false);
-    }
-
-    /**
-     * Encode MultiMap with % encoding.
-     *
-     * @param charset            the charset to encode with
-     * @param equalsForNullValue if True, then an '=' is always used, even
-     *                           for parameters without a value. e.g. <code>"blah?a=&amp;b=&amp;c="</code>.
-     * @return the MultiMap as a string encoded with % encodings
-     */
-    public synchronized String encode(Charset charset, boolean equalsForNullValue) {
-        return encode(this, charset, equalsForNullValue);
     }
 
     /**
@@ -807,6 +766,45 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
             return string;
 
         return new String(encoded, 0, n, charset);
+    }
+
+    public void decode(String query) {
+        decodeTo(query, this, ENCODING);
+    }
+
+    public void decode(String query, Charset charset) {
+        decodeTo(query, this, charset);
+    }
+
+    /**
+     * Encode MultiMap with % encoding for UTF8 sequences.
+     *
+     * @return the MultiMap as a string with % encoding
+     */
+    public String encode() {
+        return encode(ENCODING, false);
+    }
+
+    /**
+     * Encode MultiMap with % encoding for arbitrary Charset sequences.
+     *
+     * @param charset the charset to use for encoding
+     * @return the MultiMap as a string encoded with % encodings
+     */
+    public String encode(Charset charset) {
+        return encode(charset, false);
+    }
+
+    /**
+     * Encode MultiMap with % encoding.
+     *
+     * @param charset            the charset to encode with
+     * @param equalsForNullValue if True, then an '=' is always used, even
+     *                           for parameters without a value. e.g. <code>"blah?a=&amp;b=&amp;c="</code>.
+     * @return the MultiMap as a string encoded with % encodings
+     */
+    public synchronized String encode(Charset charset, boolean equalsForNullValue) {
+        return encode(this, charset, equalsForNullValue);
     }
 
     @Override

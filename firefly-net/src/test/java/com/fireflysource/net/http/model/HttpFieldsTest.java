@@ -11,7 +11,8 @@ import java.util.NoSuchElementException;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class HttpFieldsTest {
+class HttpFieldsTest {
+
     @Test
     void testPut() {
         HttpFields header = new HttpFields();
@@ -36,30 +37,10 @@ public class HttpFieldsTest {
         assertEquals(2, matches);
 
         e = header.getValues("name0");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value:0");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
     }
-
-//    @Test
-//    void testPutTo()  {
-//        HttpFields header = new HttpFields();
-//
-//        header.put("name0", "value0");
-//        header.put("name1", "value:A");
-//        header.add("name1", "value:B");
-//        header.add("name2", "");
-//
-//        ByteBuffer buffer = BufferUtils.allocate(1024);
-//        BufferUtils.flipToFill(buffer);
-//        HttpGenerator.putTo(header, buffer);
-//        BufferUtils.flipToFlush(buffer, 0);
-//        String result = BufferUtils.toString(buffer);
-//
-//        assertThat(result, Matchers.containsString("name0: value0"));
-//        assertThat(result, Matchers.containsString("name1: value:A"));
-//        assertThat(result, Matchers.containsString("name1: value:B"));
-//    }
 
     @Test
     void testGet() {
@@ -72,20 +53,20 @@ public class HttpFieldsTest {
         assertEquals("value0", header.get("Name0"));
         assertEquals("value1", header.get("name1"));
         assertEquals("value1", header.get("Name1"));
-        assertEquals(null, header.get("Name2"));
+        assertNull(header.get("Name2"));
 
         assertEquals("value0", header.getField("name0").getValue());
         assertEquals("value0", header.getField("Name0").getValue());
         assertEquals("value1", header.getField("name1").getValue());
         assertEquals("value1", header.getField("Name1").getValue());
-        assertEquals(null, header.getField("Name2"));
+        assertNull(header.getField("Name2"));
 
         assertEquals("value0", header.getField(0).getValue());
         assertEquals("value1", header.getField(1).getValue());
         try {
             header.getField(2);
             fail();
-        } catch (NoSuchElementException e) {
+        } catch (NoSuchElementException ignored) {
         }
     }
 
@@ -102,49 +83,9 @@ public class HttpFieldsTest {
         assertEquals("value0", header.getField(HttpHeader.CONNECTION).getValue());
         assertEquals("value1", header.getField(HttpHeader.ACCEPT).getValue());
 
-        assertEquals(null, header.getField(HttpHeader.AGE));
-        assertEquals(null, header.get(HttpHeader.AGE));
+        assertNull(header.getField(HttpHeader.AGE));
+        assertNull(header.get(HttpHeader.AGE));
     }
-
-//    @Test
-//    void testCRLF()  {
-//        HttpFields header = new HttpFields();
-//
-//        header.put("name0", "value\r\n0");
-//        header.put("name\r\n1", "value1");
-//        header.put("name:2", "value:\r\n2");
-//
-//        ByteBuffer buffer = BufferUtils.allocate(1024);
-//        BufferUtils.flipToFill(buffer);
-//        HttpGenerator.putTo(header, buffer);
-//        BufferUtils.flipToFlush(buffer, 0);
-//        String out = BufferUtils.toString(buffer);
-//        assertThat(out, containsString("name0: value  0"));
-//        assertThat(out, containsString("name??1: value1"));
-//        assertThat(out, containsString("name?2: value:  2"));
-//    }
-
-//    @Test
-//    void testCachedPut()  {
-//        HttpFields header = new HttpFields();
-//
-//        header.put("Connection", "Keep-Alive");
-//        header.put("tRansfer-EncOding", "CHUNKED");
-//        header.put("CONTENT-ENCODING", "gZIP");
-//
-//        ByteBuffer buffer = BufferUtils.allocate(1024);
-//        BufferUtils.flipToFill(buffer);
-//        HttpGenerator.putTo(header, buffer);
-//        BufferUtils.flipToFlush(buffer, 0);
-//        String out = BufferUtils.toString(buffer).toLowerCase(Locale.ENGLISH);
-//
-//        Assert.assertThat(out, Matchers.containsString(
-//                (HttpHeader.CONNECTION + ": " + HttpHeaderValue.KEEP_ALIVE).toLowerCase(Locale.ENGLISH)));
-//        Assert.assertThat(out, Matchers.containsString(
-//                (HttpHeader.TRANSFER_ENCODING + ": " + HttpHeaderValue.CHUNKED).toLowerCase(Locale.ENGLISH)));
-//        Assert.assertThat(out, Matchers.containsString(
-//                (HttpHeader.CONTENT_ENCODING + ": " + HttpHeaderValue.GZIP).toLowerCase(Locale.ENGLISH)));
-//    }
 
     @Test
     void testRePut() {
@@ -179,9 +120,9 @@ public class HttpFieldsTest {
         assertEquals(3, matches);
 
         e = header.getValues("name1");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value1");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
     }
 
     @Test
@@ -217,7 +158,7 @@ public class HttpFieldsTest {
         assertEquals(2, matches);
 
         e = header.getValues("name1");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
     }
 
     @Test
@@ -253,11 +194,11 @@ public class HttpFieldsTest {
         assertEquals(3, matches);
 
         e = fields.getValues("name1");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "valueA");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "valueB");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
     }
 
     @Test
@@ -270,33 +211,33 @@ public class HttpFieldsTest {
         fields.add("name1", "\"value1C\",\tvalue1D");
 
         Enumeration<String> e = fields.getValues("name0");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0A,value0B");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0C,value0D");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
 
-        // e = fields.getValues("name0",",");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value0A");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value0B");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value0C");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value0D");
-        // assertEquals(false, e.hasMoreElements());
-        //
-        // e = fields.getValues("name1",",");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value1A");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value\t, 1B");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value1C");
-        // assertEquals(true, e.hasMoreElements());
-        // assertEquals(e.nextElement(), "value1D");
-        // assertEquals(false, e.hasMoreElements());
+//         e = fields.getValues("name0",",");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value0A");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value0B");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value0C");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value0D");
+//         assertEquals(false, e.hasMoreElements());
+//
+//         e = fields.getValues("name1",",");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value1A");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value\t, 1B");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value1C");
+//         assertEquals(true, e.hasMoreElements());
+//         assertEquals(e.nextElement(), "value1D");
+//         assertEquals(false, e.hasMoreElements());
     }
 
     @Test
@@ -309,33 +250,33 @@ public class HttpFieldsTest {
         fields.add("name1", "\"value1C\",\tvalue1D");
 
         Enumeration<String> e = fields.getValues("name0");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0A,value0B");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0C,value0D");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
 
         e = Collections.enumeration(fields.getCSV("name0", false));
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0A");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0B");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0C");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value0D");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
 
         e = Collections.enumeration(fields.getCSV("name1", false));
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value1A");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value\t, 1B");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value1C");
-        assertEquals(true, e.hasMoreElements());
+        assertTrue(e.hasMoreElements());
         assertEquals(e.nextElement(), "value1D");
-        assertEquals(false, e.hasMoreElements());
+        assertFalse(e.hasMoreElements());
     }
 
     @Test
@@ -470,7 +411,7 @@ public class HttpFieldsTest {
         long i1 = header.getLongField("I1");
         try {
             header.getLongField("I2");
-            assertTrue(false);
+            fail();
         } catch (NumberFormatException e) {
             assertTrue(true);
         }
@@ -479,21 +420,21 @@ public class HttpFieldsTest {
 
         try {
             header.getLongField("I4");
-            assertTrue(false);
+            fail();
         } catch (NumberFormatException e) {
             assertTrue(true);
         }
 
         try {
             header.getLongField("N1");
-            assertTrue(false);
+            fail();
         } catch (NumberFormatException e) {
             assertTrue(true);
         }
 
         try {
             header.getLongField("N2");
-            assertTrue(false);
+            fail();
         } catch (NumberFormatException e) {
             assertTrue(true);
         }

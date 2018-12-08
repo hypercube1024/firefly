@@ -13,6 +13,33 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class UrlEncodedUtf8Test {
 
+    static void fromString(String test, String s, String field, String expected, boolean thrown) {
+        MultiMap<String> values = new MultiMap<>();
+        try {
+            UrlEncoded.decodeUtf8To(s, 0, s.length(), values);
+            if (thrown)
+                fail();
+            assertEquals(expected, values.getString(field), test);
+        } catch (Exception e) {
+            if (!thrown)
+                throw e;
+        }
+    }
+
+    static void fromInputStream(String test, byte[] b, String field, String expected, boolean thrown) throws Exception {
+        InputStream is = new ByteArrayInputStream(b);
+        MultiMap<String> values = new MultiMap<>();
+        try {
+            UrlEncoded.decodeUtf8To(is, values, 1000000, -1);
+            if (thrown)
+                fail();
+            assertEquals(expected, values.getString(field), test);
+        } catch (Exception e) {
+            if (!thrown)
+                throw e;
+        }
+    }
+
     @Test
     void testIncompleteSequestAtTheEnd() throws Exception {
         byte[] bytes = {97, 98, 61, 99, -50};
@@ -54,33 +81,6 @@ class UrlEncodedUtf8Test {
 
         fromString(test, test, name, value, false);
         fromInputStream(test, bytes, name, value, false);
-    }
-
-    static void fromString(String test, String s, String field, String expected, boolean thrown) {
-        MultiMap<String> values = new MultiMap<>();
-        try {
-            UrlEncoded.decodeUtf8To(s, 0, s.length(), values);
-            if (thrown)
-                fail();
-            assertEquals(expected, values.getString(field), test);
-        } catch (Exception e) {
-            if (!thrown)
-                throw e;
-        }
-    }
-
-    static void fromInputStream(String test, byte[] b, String field, String expected, boolean thrown) throws Exception {
-        InputStream is = new ByteArrayInputStream(b);
-        MultiMap<String> values = new MultiMap<>();
-        try {
-            UrlEncoded.decodeUtf8To(is, values, 1000000, -1);
-            if (thrown)
-                fail();
-            assertEquals(expected, values.getString(field), test);
-        } catch (Exception e) {
-            if (!thrown)
-                throw e;
-        }
     }
 
 }

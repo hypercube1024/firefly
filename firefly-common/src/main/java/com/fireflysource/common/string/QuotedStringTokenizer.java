@@ -19,6 +19,16 @@ import java.util.StringTokenizer;
  */
 public class QuotedStringTokenizer extends StringTokenizer {
     private final static String DEFAULT_DELIMITER = "\t\n\r";
+    private static final char[] escapes = new char[32];
+
+    static {
+        Arrays.fill(escapes, (char) 0xFFFF);
+        escapes['\b'] = 'b';
+        escapes['\t'] = 't';
+        escapes['\n'] = 'n';
+        escapes['\f'] = 'f';
+        escapes['\r'] = 'r';
+    }
 
     private String string;
     private String delimiter = DEFAULT_DELIMITER;
@@ -55,138 +65,6 @@ public class QuotedStringTokenizer extends StringTokenizer {
 
     public QuotedStringTokenizer(String str) {
         this(str, null, false, false);
-    }
-
-    @Override
-    public boolean hasMoreTokens() {
-        // Already found a token
-        if (hasToken)
-            return true;
-
-        lastStart = index;
-
-        int state = 0;
-        boolean escape = false;
-        while (index < string.length()) {
-            char c = string.charAt(index++);
-
-            switch (state) {
-                case 0: // Start
-                    if (delimiter.indexOf(c) >= 0) {
-                        if (returnDelimiters) {
-                            token.append(c);
-                            return hasToken = true;
-                        }
-                    } else if (c == '\'' && isSingle) {
-                        if (returnQuotes)
-                            token.append(c);
-                        state = 2;
-                    } else if (c == '\"' && isDouble) {
-                        if (returnQuotes)
-                            token.append(c);
-                        state = 3;
-                    } else {
-                        token.append(c);
-                        hasToken = true;
-                        state = 1;
-                    }
-                    break;
-
-                case 1: // Token
-                    hasToken = true;
-                    if (delimiter.indexOf(c) >= 0) {
-                        if (returnDelimiters)
-                            index--;
-                        return hasToken;
-                    } else if (c == '\'' && isSingle) {
-                        if (returnQuotes)
-                            token.append(c);
-                        state = 2;
-                    } else if (c == '\"' && isDouble) {
-                        if (returnQuotes)
-                            token.append(c);
-                        state = 3;
-                    } else {
-                        token.append(c);
-                    }
-                    break;
-
-                case 2: // Single Quote
-                    hasToken = true;
-                    if (escape) {
-                        escape = false;
-                        token.append(c);
-                    } else if (c == '\'') {
-                        if (returnQuotes)
-                            token.append(c);
-                        state = 1;
-                    } else if (c == '\\') {
-                        if (returnQuotes)
-                            token.append(c);
-                        escape = true;
-                    } else {
-                        token.append(c);
-                    }
-                    break;
-
-                case 3: // Double Quote
-                    hasToken = true;
-                    if (escape) {
-                        escape = false;
-                        token.append(c);
-                    } else if (c == '\"') {
-                        if (returnQuotes)
-                            token.append(c);
-                        state = 1;
-                    } else if (c == '\\') {
-                        if (returnQuotes)
-                            token.append(c);
-                        escape = true;
-                    } else {
-                        token.append(c);
-                    }
-                    break;
-            }
-        }
-
-        return hasToken;
-    }
-
-    @Override
-    public String nextToken() throws NoSuchElementException {
-        if (!hasMoreTokens() || token == null)
-            throw new NoSuchElementException();
-        String t = token.toString();
-        token.setLength(0);
-        hasToken = false;
-        return t;
-    }
-
-    @Override
-    public String nextToken(String delim) throws NoSuchElementException {
-        delimiter = delim;
-        index = lastStart;
-        token.setLength(0);
-        hasToken = false;
-        return nextToken();
-    }
-
-    @Override
-    public boolean hasMoreElements() {
-        return hasMoreTokens();
-    }
-
-    @Override
-    public Object nextElement() throws NoSuchElementException {
-        return nextToken();
-    }
-
-    /**
-     * Not implemented.
-     */
-    @Override
-    public int countTokens() {
-        return -1;
     }
 
     /**
@@ -232,17 +110,6 @@ public class QuotedStringTokenizer extends StringTokenizer {
         quote(b, s);
         return b.toString();
 
-    }
-
-    private static final char[] escapes = new char[32];
-
-    static {
-        Arrays.fill(escapes, (char) 0xFFFF);
-        escapes['\b'] = 'b';
-        escapes['\t'] = 't';
-        escapes['\n'] = 'n';
-        escapes['\f'] = 'f';
-        escapes['\r'] = 'r';
     }
 
     /**
@@ -441,6 +308,138 @@ public class QuotedStringTokenizer extends StringTokenizer {
 
     public static boolean isQuoted(String s) {
         return s != null && s.length() > 0 && s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"';
+    }
+
+    @Override
+    public boolean hasMoreTokens() {
+        // Already found a token
+        if (hasToken)
+            return true;
+
+        lastStart = index;
+
+        int state = 0;
+        boolean escape = false;
+        while (index < string.length()) {
+            char c = string.charAt(index++);
+
+            switch (state) {
+                case 0: // Start
+                    if (delimiter.indexOf(c) >= 0) {
+                        if (returnDelimiters) {
+                            token.append(c);
+                            return hasToken = true;
+                        }
+                    } else if (c == '\'' && isSingle) {
+                        if (returnQuotes)
+                            token.append(c);
+                        state = 2;
+                    } else if (c == '\"' && isDouble) {
+                        if (returnQuotes)
+                            token.append(c);
+                        state = 3;
+                    } else {
+                        token.append(c);
+                        hasToken = true;
+                        state = 1;
+                    }
+                    break;
+
+                case 1: // Token
+                    hasToken = true;
+                    if (delimiter.indexOf(c) >= 0) {
+                        if (returnDelimiters)
+                            index--;
+                        return hasToken;
+                    } else if (c == '\'' && isSingle) {
+                        if (returnQuotes)
+                            token.append(c);
+                        state = 2;
+                    } else if (c == '\"' && isDouble) {
+                        if (returnQuotes)
+                            token.append(c);
+                        state = 3;
+                    } else {
+                        token.append(c);
+                    }
+                    break;
+
+                case 2: // Single Quote
+                    hasToken = true;
+                    if (escape) {
+                        escape = false;
+                        token.append(c);
+                    } else if (c == '\'') {
+                        if (returnQuotes)
+                            token.append(c);
+                        state = 1;
+                    } else if (c == '\\') {
+                        if (returnQuotes)
+                            token.append(c);
+                        escape = true;
+                    } else {
+                        token.append(c);
+                    }
+                    break;
+
+                case 3: // Double Quote
+                    hasToken = true;
+                    if (escape) {
+                        escape = false;
+                        token.append(c);
+                    } else if (c == '\"') {
+                        if (returnQuotes)
+                            token.append(c);
+                        state = 1;
+                    } else if (c == '\\') {
+                        if (returnQuotes)
+                            token.append(c);
+                        escape = true;
+                    } else {
+                        token.append(c);
+                    }
+                    break;
+            }
+        }
+
+        return hasToken;
+    }
+
+    @Override
+    public String nextToken() throws NoSuchElementException {
+        if (!hasMoreTokens() || token == null)
+            throw new NoSuchElementException();
+        String t = token.toString();
+        token.setLength(0);
+        hasToken = false;
+        return t;
+    }
+
+    @Override
+    public String nextToken(String delim) throws NoSuchElementException {
+        delimiter = delim;
+        index = lastStart;
+        token.setLength(0);
+        hasToken = false;
+        return nextToken();
+    }
+
+    @Override
+    public boolean hasMoreElements() {
+        return hasMoreTokens();
+    }
+
+    @Override
+    public Object nextElement() throws NoSuchElementException {
+        return nextToken();
+    }
+
+    /**
+     * Not implemented.
+     */
+    @Override
+    public int countTokens() {
+        return -1;
     }
 
     /**

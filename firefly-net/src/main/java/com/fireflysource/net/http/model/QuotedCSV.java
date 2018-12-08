@@ -16,11 +16,8 @@ import java.util.List;
  */
 public class QuotedCSV implements Iterable<String> {
 
-    private enum State {VALUE, PARAM_NAME, PARAM_VALUE}
-
     protected final List<String> values = new ArrayList<>();
     protected final boolean keepQuotes;
-
     public QuotedCSV(String... values) {
         this(true, values);
     }
@@ -29,6 +26,47 @@ public class QuotedCSV implements Iterable<String> {
         this.keepQuotes = keepQuotes;
         for (String v : values)
             addValue(v);
+    }
+
+    public static String unquote(String s) {
+        if (!StringUtils.hasText(s)) {
+            return s;
+        }
+        // handle trivial cases
+        int l = s.length();
+        // Look for any quotes
+        int i = 0;
+        for (; i < l; i++) {
+            char c = s.charAt(i);
+            if (c == '"')
+                break;
+        }
+        if (i == l)
+            return s;
+
+        boolean quoted = true;
+        boolean sloshed = false;
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(s, 0, i);
+        i++;
+        for (; i < l; i++) {
+            char c = s.charAt(i);
+            if (quoted) {
+                if (sloshed) {
+                    buffer.append(c);
+                    sloshed = false;
+                } else if (c == '"')
+                    quoted = false;
+                else if (c == '\\')
+                    sloshed = true;
+                else
+                    buffer.append(c);
+            } else if (c == '"')
+                quoted = true;
+            else
+                buffer.append(c);
+        }
+        return buffer.toString();
     }
 
     /**
@@ -231,47 +269,6 @@ public class QuotedCSV implements Iterable<String> {
         return values.iterator();
     }
 
-    public static String unquote(String s) {
-        if (!StringUtils.hasText(s)) {
-            return s;
-        }
-        // handle trivial cases
-        int l = s.length();
-        // Look for any quotes
-        int i = 0;
-        for (; i < l; i++) {
-            char c = s.charAt(i);
-            if (c == '"')
-                break;
-        }
-        if (i == l)
-            return s;
-
-        boolean quoted = true;
-        boolean sloshed = false;
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(s, 0, i);
-        i++;
-        for (; i < l; i++) {
-            char c = s.charAt(i);
-            if (quoted) {
-                if (sloshed) {
-                    buffer.append(c);
-                    sloshed = false;
-                } else if (c == '"')
-                    quoted = false;
-                else if (c == '\\')
-                    sloshed = true;
-                else
-                    buffer.append(c);
-            } else if (c == '"')
-                quoted = true;
-            else
-                buffer.append(c);
-        }
-        return buffer.toString();
-    }
-
     @Override
     public String toString() {
         List<String> list = new ArrayList<>();
@@ -280,4 +277,6 @@ public class QuotedCSV implements Iterable<String> {
         }
         return list.toString();
     }
+
+    private enum State {VALUE, PARAM_NAME, PARAM_VALUE}
 }
