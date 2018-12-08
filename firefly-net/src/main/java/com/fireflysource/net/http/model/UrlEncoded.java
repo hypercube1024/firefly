@@ -4,10 +4,10 @@ import com.fireflysource.common.collection.map.MultiMap;
 import com.fireflysource.common.io.ByteArrayOutputStream2;
 import com.fireflysource.common.io.IO;
 import com.fireflysource.common.object.TypeUtils;
+import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.Utf8Appendable;
 import com.fireflysource.common.string.Utf8StringBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fireflysource.common.sys.SystemLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +46,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
     private static final String __ISO_8859_1 = "iso-8859-1";
     private static final String __UTF8 = "utf-8";
     private static final String __UTF16 = "utf-16";
-    private static Logger LOG = LoggerFactory.getLogger("firefly-system");
+    private static LazyLogger log = SystemLogger.create(UrlEncoded.class);
 
     static {
         Charset encoding;
@@ -54,7 +54,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
             String charset = System.getProperty("com.firefly.codec.http2.encode.UrlEncoding.charset");
             encoding = charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset);
         } catch (Exception e) {
-            LOG.warn("get charset exception", e);
+            log.warn("get charset exception", e);
             encoding = StandardCharsets.UTF_8;
         }
         ENCODING = encoding;

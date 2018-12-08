@@ -1,5 +1,8 @@
 package com.fireflysource.common.string;
 
+import com.fireflysource.common.collection.trie.ArrayTrie;
+import com.fireflysource.common.collection.trie.Trie;
+
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -21,6 +24,20 @@ public class StringUtils {
             '\144', '\145', '\146', '\147', '\150', '\151', '\152', '\153', '\154', '\155', '\156', '\157', '\160',
             '\161', '\162', '\163', '\164', '\165', '\166', '\167', '\170', '\171', '\172', '\173', '\174', '\175',
             '\176', '\177'};
+    private static final Trie<String> CHARSETS = new ArrayTrie<>(256);
+
+    private static final String ISO_8859_1 = "iso-8859-1";
+    private static final String UTF8 = "utf-8";
+    private static final String __UTF16 = "utf-16";
+
+    static {
+        CHARSETS.put("utf-8", UTF8);
+        CHARSETS.put("utf8", UTF8);
+        CHARSETS.put("utf-16", __UTF16);
+        CHARSETS.put("utf16", __UTF16);
+        CHARSETS.put("iso-8859-1", ISO_8859_1);
+        CHARSETS.put("iso_8859_1", ISO_8859_1);
+    }
 
     /**
      * <p>
@@ -754,5 +771,29 @@ public class StringUtils {
                 c[i] = LOWER_CASE[c[i]];
         }
         return c == null ? s : new String(c);
+    }
+
+    /**
+     * Convert alternate charset names (eg utf8) to normalized name (eg UTF-8).
+     *
+     * @param s the charset to normalize
+     * @return the normalized charset (or null if normalized version not found)
+     */
+    public static String normalizeCharset(String s) {
+        String n = CHARSETS.get(s);
+        return (n == null) ? s : n;
+    }
+
+    /**
+     * Convert alternate charset names (eg utf8) to normalized name (eg UTF-8).
+     *
+     * @param s      the charset to normalize
+     * @param offset the offset in the charset
+     * @param length the length of the charset in the input param
+     * @return the normalized charset (or null if not found)
+     */
+    public static String normalizeCharset(String s, int offset, int length) {
+        String n = CHARSETS.get(s, offset, length);
+        return (n == null) ? s.substring(offset, offset + length) : n;
     }
 }
