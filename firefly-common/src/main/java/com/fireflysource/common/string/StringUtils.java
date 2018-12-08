@@ -1,5 +1,6 @@
 package com.fireflysource.common.string;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class StringUtils {
@@ -644,5 +645,79 @@ public class StringUtils {
         }
         int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR);
         return (separatorIndex != -1 ? path.substring(separatorIndex + 1) : path);
+    }
+
+    public static byte[] getUtf8Bytes(String string) {
+        return string.getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Convert String to an integer. Parses up to the first non-numeric
+     * character. If no number is found an IllegalArgumentException is thrown
+     *
+     * @param string A String containing an integer.
+     * @param from   The index to start parsing from
+     * @return an int
+     */
+    public static int toInt(String string, int from) {
+        int val = 0;
+        boolean started = false;
+        boolean minus = false;
+
+        for (int i = from; i < string.length(); i++) {
+            char b = string.charAt(i);
+            if (b <= ' ') {
+                if (started)
+                    break;
+            } else if (b >= '0' && b <= '9') {
+                val = val * 10 + (b - '0');
+                started = true;
+            } else if (b == '-' && !started) {
+                minus = true;
+            } else
+                break;
+        }
+
+        if (started)
+            return minus ? (-val) : val;
+        throw new NumberFormatException(string);
+    }
+
+    /**
+     * Append substring to StringBuilder
+     *
+     * @param buf    StringBuilder to append to
+     * @param s      String to append from
+     * @param offset The offset of the substring
+     * @param length The length of the substring
+     */
+    public static void append(StringBuilder buf, String s, int offset, int length) {
+        synchronized (buf) {
+            int end = offset + length;
+            for (int i = offset; i < end; i++) {
+                if (i >= s.length())
+                    break;
+                buf.append(s.charAt(i));
+            }
+        }
+    }
+
+    /**
+     * append hex digit
+     *
+     * @param buf  the buffer to append to
+     * @param b    the byte to append
+     * @param base the base of the hex output (almost always 16).
+     */
+    public static void append(StringBuilder buf, byte b, int base) {
+        int bi = 0xff & b;
+        int c = '0' + (bi / base) % base;
+        if (c > '9')
+            c = 'a' + (c - '0' - 10);
+        buf.append((char) c);
+        c = '0' + bi % base;
+        if (c > '9')
+            c = 'a' + (c - '0' - 10);
+        buf.append((char) c);
     }
 }
