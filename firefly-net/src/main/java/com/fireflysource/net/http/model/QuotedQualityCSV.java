@@ -68,13 +68,13 @@ public class QuotedQualityCSV extends QuotedCSV implements Iterable<String> {
     }
 
     @Override
-    protected void parsedValue(StringBuffer buffer) {
+    protected void parsedValue(StringBuilder buffer) {
         super.parsedValue(buffer);
         quality.add(ONE);
     }
 
     @Override
-    protected void parsedParam(StringBuffer buffer, int valueLength, int paramName, int paramValue) {
+    protected void parsedParam(StringBuilder buffer, int valueLength, int paramName, int paramValue) {
         if (paramName < 0) {
             if (buffer.charAt(buffer.length() - 1) == ';') {
                 buffer.setLength(buffer.length() - 1);

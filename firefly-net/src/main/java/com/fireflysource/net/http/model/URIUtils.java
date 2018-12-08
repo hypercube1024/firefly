@@ -26,7 +26,6 @@ public class URIUtils implements Cloneable {
     private URIUtils() {
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Encode a URI path.
@@ -44,7 +43,6 @@ public class URIUtils implements Cloneable {
         return buf == null ? path : buf.toString();
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Encode a URI path.
@@ -57,7 +55,6 @@ public class URIUtils implements Cloneable {
         return encodePath(buf, path, 0);
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Encode a URI path.
@@ -239,7 +236,6 @@ public class URIUtils implements Cloneable {
         return buf;
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Encode a URI path.
@@ -276,14 +272,14 @@ public class URIUtils implements Cloneable {
         return buf;
     }
 
-    /* ------------------------------------------------------------ */
+
     /* Decode a URI path and strip parameters
      */
     public static String decodePath(String path) {
         return decodePath(path, 0, path.length());
     }
 
-    /* ------------------------------------------------------------ */
+
     /* Decode a URI path and strip parameters of UTF-8 path
      */
     public static String decodePath(String path, int offset, int length) {
@@ -348,7 +344,6 @@ public class URIUtils implements Cloneable {
     }
 
 
-    /* ------------------------------------------------------------ */
     /* Decode a URI path and strip parameters of ISO-8859-1 path
      */
     private static String decodeISO88591Path(String path, int offset, int length) {
@@ -407,8 +402,6 @@ public class URIUtils implements Cloneable {
     }
 
 
-    /* ------------------------------------------------------------ */
-
     /**
      * Add two encoded URI path segments.
      * Handles null and empty paths, path and query params
@@ -456,7 +449,6 @@ public class URIUtils implements Cloneable {
         return buf.toString();
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Add two Decoded URI path segments.
@@ -501,7 +493,6 @@ public class URIUtils implements Cloneable {
         return buf.toString();
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Return the parent Path.
@@ -519,7 +510,6 @@ public class URIUtils implements Cloneable {
         return null;
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Convert a decoded path to a canonical form.
@@ -625,8 +615,6 @@ public class URIUtils implements Cloneable {
         return canonical.toString();
     }
 
-
-    /* ------------------------------------------------------------ */
 
     /**
      * Convert a path to a cananonical form.
@@ -740,9 +728,6 @@ public class URIUtils implements Cloneable {
     }
 
 
-
-    /* ------------------------------------------------------------ */
-
     /**
      * Convert a path to a compact form.
      * All instances of "//" and "///" etc. are factored out to single "/"
@@ -802,7 +787,6 @@ public class URIUtils implements Cloneable {
         return buf.toString();
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * @param uri URI
@@ -825,7 +809,6 @@ public class URIUtils implements Cloneable {
         return false;
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Create a new URI from the arguments, handling IPv6 host encoding and default ports
@@ -845,7 +828,6 @@ public class URIUtils implements Cloneable {
         return builder.toString();
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Create a new URI StringBuilder from the arguments, handling IPv6 host encoding and default ports
@@ -861,7 +843,6 @@ public class URIUtils implements Cloneable {
         return builder;
     }
 
-    /* ------------------------------------------------------------ */
 
     /**
      * Append scheme, host and port URI prefix, handling IPv6 address encoding and default ports
@@ -888,39 +869,6 @@ public class URIUtils implements Cloneable {
 
                 default:
                     url.append(':').append(port);
-            }
-        }
-    }
-
-    /* ------------------------------------------------------------ */
-
-    /**
-     * Append scheme, host and port URI prefix, handling IPv6 address encoding and default ports
-     *
-     * @param url    StringBuffer to append to
-     * @param scheme the URI scheme
-     * @param server the URI server
-     * @param port   the URI port
-     */
-    public static void appendSchemeHostPort(StringBuffer url, String scheme, String server, int port) {
-        synchronized (url) {
-            url.append(scheme).append("://").append(HostPort.normalizeHost(server));
-
-            if (port > 0) {
-                switch (scheme) {
-                    case "http":
-                        if (port != 80)
-                            url.append(':').append(port);
-                        break;
-
-                    case "https":
-                        if (port != 443)
-                            url.append(':').append(port);
-                        break;
-
-                    default:
-                        url.append(':').append(port);
-                }
             }
         }
     }

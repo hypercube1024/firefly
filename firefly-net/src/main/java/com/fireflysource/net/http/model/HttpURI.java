@@ -40,6 +40,7 @@ public class HttpURI {
     private String param;
     private String query;
     private String fragment;
+
     public HttpURI() {
     }
 

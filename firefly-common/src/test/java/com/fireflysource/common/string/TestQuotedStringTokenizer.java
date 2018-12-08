@@ -58,7 +58,7 @@ class TestQuotedStringTokenizer {
 
     @Test
     void testQuote() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         buf.setLength(0);
         QuotedStringTokenizer.quote(buf, "abc \n efg");

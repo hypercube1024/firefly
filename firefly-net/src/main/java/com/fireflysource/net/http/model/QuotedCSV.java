@@ -18,6 +18,7 @@ public class QuotedCSV implements Iterable<String> {
 
     protected final List<String> values = new ArrayList<>();
     protected final boolean keepQuotes;
+
     public QuotedCSV(String... values) {
         this(true, values);
     }
@@ -78,7 +79,7 @@ public class QuotedCSV implements Iterable<String> {
         if (value == null)
             return;
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         int l = value.length();
         State state = State.VALUE;
@@ -238,7 +239,7 @@ public class QuotedCSV implements Iterable<String> {
      *
      * @param buffer Containing the trimmed value, which may be mutated
      */
-    protected void parsedValue(StringBuffer buffer) {
+    protected void parsedValue(StringBuilder buffer) {
     }
 
     /**
@@ -249,7 +250,7 @@ public class QuotedCSV implements Iterable<String> {
      * @param paramName   The index of the start of the parameter just parsed
      * @param paramValue  The index of the start of the parameter value just parsed, or -1
      */
-    protected void parsedParam(StringBuffer buffer, int valueLength, int paramName, int paramValue) {
+    protected void parsedParam(StringBuilder buffer, int valueLength, int paramName, int paramValue) {
     }
 
     public int size() {

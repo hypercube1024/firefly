@@ -84,7 +84,7 @@ public class QuotedStringTokenizer extends StringTokenizer {
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if (c == '\\' || c == '"' || c == '\'' || Character.isWhitespace(c) || delim.indexOf(c) >= 0) {
-                StringBuffer b = new StringBuffer(s.length() + 8);
+                StringBuilder b = new StringBuilder(s.length() + 8);
                 quote(b, s);
                 return b.toString();
             }
@@ -106,7 +106,7 @@ public class QuotedStringTokenizer extends StringTokenizer {
         if (s.length() == 0)
             return "\"\"";
 
-        StringBuffer b = new StringBuffer(s.length() + 8);
+        StringBuilder b = new StringBuilder(s.length() + 8);
         quote(b, s);
         return b.toString();
 

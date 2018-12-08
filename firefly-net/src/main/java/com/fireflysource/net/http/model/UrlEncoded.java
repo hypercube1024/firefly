@@ -5,7 +5,6 @@ import com.fireflysource.common.io.ByteArrayOutputStream2;
 import com.fireflysource.common.io.IO;
 import com.fireflysource.common.object.TypeUtils;
 import com.fireflysource.common.string.Utf8Appendable;
-import com.fireflysource.common.string.Utf8StringBuffer;
 import com.fireflysource.common.string.Utf8StringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +35,6 @@ import static com.fireflysource.common.object.TypeUtils.convertHexDigit;
  * <p>
  * The hashtable either contains String single values, vectors of String or
  * arrays of Strings.
- * </p>
- * <p>
- * This class is only partially synchronised. In particular, simple get
- * operations are not protected from concurrent updates.
  * </p>
  *
  * @see java.net.URLEncoder
@@ -154,57 +149,56 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
             return;
         }
 
-        synchronized (map) {
-            String key = null;
-            String value = null;
-            int mark = -1;
-            boolean encoded = false;
-            for (int i = 0; i < content.length(); i++) {
-                char c = content.charAt(i);
-                switch (c) {
-                    case '&':
-                        int l = i - mark - 1;
-                        value = l == 0 ? "" :
-                                (encoded ? decodeString(content, mark + 1, l, charset) : content.substring(mark + 1, i));
-                        mark = i;
-                        encoded = false;
-                        if (key != null) {
-                            map.add(key, value);
-                        } else if (value != null && value.length() > 0) {
-                            map.add(value, "");
-                        }
-                        key = null;
-                        value = null;
+        String key = null;
+        String value = null;
+        int mark = -1;
+        boolean encoded = false;
+        for (int i = 0; i < content.length(); i++) {
+            char c = content.charAt(i);
+            switch (c) {
+                case '&':
+                    int l = i - mark - 1;
+                    value = l == 0 ? "" :
+                            (encoded ? decodeString(content, mark + 1, l, charset) : content.substring(mark + 1, i));
+                    mark = i;
+                    encoded = false;
+                    if (key != null) {
+                        map.add(key, value);
+                    } else if (value != null && value.length() > 0) {
+                        map.add(value, "");
+                    }
+                    key = null;
+                    value = null;
+                    break;
+                case '=':
+                    if (key != null)
                         break;
-                    case '=':
-                        if (key != null)
-                            break;
-                        key = encoded ? decodeString(content, mark + 1, i - mark - 1, charset) : content.substring(mark + 1, i);
-                        mark = i;
-                        encoded = false;
-                        break;
-                    case '+':
-                        encoded = true;
-                        break;
-                    case '%':
-                        encoded = true;
-                        break;
-                }
-            }
-
-            if (key != null) {
-                int l = content.length() - mark - 1;
-                value = l == 0 ? "" : (encoded ? decodeString(content, mark + 1, l, charset) : content.substring(mark + 1));
-                map.add(key, value);
-            } else if (mark < content.length()) {
-                key = encoded
-                        ? decodeString(content, mark + 1, content.length() - mark - 1, charset)
-                        : content.substring(mark + 1);
-                if (key != null && key.length() > 0) {
-                    map.add(key, "");
-                }
+                    key = encoded ? decodeString(content, mark + 1, i - mark - 1, charset) : content.substring(mark + 1, i);
+                    mark = i;
+                    encoded = false;
+                    break;
+                case '+':
+                    encoded = true;
+                    break;
+                case '%':
+                    encoded = true;
+                    break;
             }
         }
+
+        if (key != null) {
+            int l = content.length() - mark - 1;
+            value = l == 0 ? "" : (encoded ? decodeString(content, mark + 1, l, charset) : content.substring(mark + 1));
+            map.add(key, value);
+        } else if (mark < content.length()) {
+            key = encoded
+                    ? decodeString(content, mark + 1, content.length() - mark - 1, charset)
+                    : content.substring(mark + 1);
+            if (key != null && key.length() > 0) {
+                map.add(key, "");
+            }
+        }
+
     }
 
     public static void decodeUtf8To(String query, MultiMap<String> map) {
@@ -221,63 +215,63 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
      */
     public static void decodeUtf8To(String query, int offset, int length, MultiMap<String> map) {
         Utf8StringBuilder buffer = new Utf8StringBuilder();
-        synchronized (map) {
-            String key = null;
-            String value = null;
 
-            int end = offset + length;
-            for (int i = offset; i < end; i++) {
-                char c = query.charAt(i);
-                switch (c) {
-                    case '&':
-                        value = buffer.toReplacedString();
-                        buffer.reset();
-                        if (key != null) {
-                            map.add(key, value);
-                        } else if (value != null && value.length() > 0) {
-                            map.add(value, "");
-                        }
-                        key = null;
-                        value = null;
-                        break;
+        String key = null;
+        String value;
 
-                    case '=':
-                        if (key != null) {
-                            buffer.append(c);
-                            break;
-                        }
-                        key = buffer.toReplacedString();
-                        buffer.reset();
-                        break;
+        int end = offset + length;
+        for (int i = offset; i < end; i++) {
+            char c = query.charAt(i);
+            switch (c) {
+                case '&':
+                    value = buffer.toReplacedString();
+                    buffer.reset();
+                    if (key != null) {
+                        map.add(key, value);
+                    } else if (value != null && value.length() > 0) {
+                        map.add(value, "");
+                    }
+                    key = null;
+                    value = null;
+                    break;
 
-                    case '+':
-                        buffer.append((byte) ' ');
-                        break;
-
-                    case '%':
-                        if (i + 2 < end) {
-                            char hi = query.charAt(++i);
-                            char lo = query.charAt(++i);
-                            buffer.append(decodeHexByte(hi, lo));
-                        } else {
-                            throw new Utf8Appendable.NotUtf8Exception("Incomplete % encoding");
-                        }
-                        break;
-
-                    default:
+                case '=':
+                    if (key != null) {
                         buffer.append(c);
                         break;
-                }
-            }
+                    }
+                    key = buffer.toReplacedString();
+                    buffer.reset();
+                    break;
 
-            if (key != null) {
-                value = buffer.toReplacedString();
-                buffer.reset();
-                map.add(key, value);
-            } else if (buffer.length() > 0) {
-                map.add(buffer.toReplacedString(), "");
+                case '+':
+                    buffer.append((byte) ' ');
+                    break;
+
+                case '%':
+                    if (i + 2 < end) {
+                        char hi = query.charAt(++i);
+                        char lo = query.charAt(++i);
+                        buffer.append(decodeHexByte(hi, lo));
+                    } else {
+                        throw new Utf8Appendable.NotUtf8Exception("Incomplete % encoding");
+                    }
+                    break;
+
+                default:
+                    buffer.append(c);
+                    break;
             }
         }
+
+        if (key != null) {
+            value = buffer.toReplacedString();
+            buffer.reset();
+            map.add(key, value);
+        } else if (buffer.length() > 0) {
+            map.add(buffer.toReplacedString(), "");
+        }
+
     }
 
     /**
@@ -291,65 +285,65 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
      */
     public static void decode88591To(InputStream in, MultiMap<String> map, int maxLength, int maxKeys)
             throws IOException {
-        synchronized (map) {
-            StringBuffer buffer = new StringBuffer();
-            String key = null;
-            String value = null;
 
-            int b;
+        StringBuilder buffer = new StringBuilder();
+        String key = null;
+        String value;
 
-            int totalLength = 0;
-            while ((b = in.read()) >= 0) {
-                switch ((char) b) {
-                    case '&':
-                        value = buffer.length() == 0 ? "" : buffer.toString();
-                        buffer.setLength(0);
-                        if (key != null) {
-                            map.add(key, value);
-                        } else if (value != null && value.length() > 0) {
-                            map.add(value, "");
-                        }
-                        key = null;
-                        value = null;
-                        if (maxKeys > 0 && map.size() > maxKeys)
-                            throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
-                        break;
+        int b;
 
-                    case '=':
-                        if (key != null) {
-                            buffer.append((char) b);
-                            break;
-                        }
-                        key = buffer.toString();
-                        buffer.setLength(0);
-                        break;
+        int totalLength = 0;
+        while ((b = in.read()) >= 0) {
+            switch ((char) b) {
+                case '&':
+                    value = buffer.length() == 0 ? "" : buffer.toString();
+                    buffer.setLength(0);
+                    if (key != null) {
+                        map.add(key, value);
+                    } else if (value.length() > 0) {
+                        map.add(value, "");
+                    }
+                    key = null;
+                    value = null;
+                    if (maxKeys > 0 && map.size() > maxKeys)
+                        throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
+                    break;
 
-                    case '+':
-                        buffer.append(' ');
-                        break;
-
-                    case '%':
-                        int code0 = in.read();
-                        int code1 = in.read();
-                        buffer.append(decodeHexChar(code0, code1));
-                        break;
-
-                    default:
+                case '=':
+                    if (key != null) {
                         buffer.append((char) b);
                         break;
-                }
-                if (maxLength >= 0 && (++totalLength > maxLength))
-                    throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
-            }
+                    }
+                    key = buffer.toString();
+                    buffer.setLength(0);
+                    break;
 
-            if (key != null) {
-                value = buffer.length() == 0 ? "" : buffer.toString();
-                buffer.setLength(0);
-                map.add(key, value);
-            } else if (buffer.length() > 0) {
-                map.add(buffer.toString(), "");
+                case '+':
+                    buffer.append(' ');
+                    break;
+
+                case '%':
+                    int code0 = in.read();
+                    int code1 = in.read();
+                    buffer.append(decodeHexChar(code0, code1));
+                    break;
+
+                default:
+                    buffer.append((char) b);
+                    break;
             }
+            if (maxLength >= 0 && (++totalLength > maxLength))
+                throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
         }
+
+        if (key != null) {
+            value = buffer.length() == 0 ? "" : buffer.toString();
+            buffer.setLength(0);
+            map.add(key, value);
+        } else if (buffer.length() > 0) {
+            map.add(buffer.toString(), "");
+        }
+
     }
 
     /**
@@ -361,67 +355,66 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
      * @param maxKeys   the maximum number of keys to read or -1 for no limit
      * @throws IOException if unable to decode input stream
      */
-    public static void decodeUtf8To(InputStream in, MultiMap<String> map, int maxLength, int maxKeys)
-            throws IOException {
-        synchronized (map) {
-            Utf8StringBuilder buffer = new Utf8StringBuilder();
-            String key = null;
-            String value = null;
+    public static void decodeUtf8To(InputStream in, MultiMap<String> map, int maxLength, int maxKeys) throws IOException {
 
-            int b;
+        Utf8StringBuilder buffer = new Utf8StringBuilder();
+        String key = null;
+        String value;
 
-            int totalLength = 0;
-            while ((b = in.read()) >= 0) {
-                switch ((char) b) {
-                    case '&':
-                        value = buffer.toReplacedString();
-                        buffer.reset();
-                        if (key != null) {
-                            map.add(key, value);
-                        } else if (value != null && value.length() > 0) {
-                            map.add(value, "");
-                        }
-                        key = null;
-                        value = null;
-                        if (maxKeys > 0 && map.size() > maxKeys)
-                            throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
-                        break;
+        int b;
 
-                    case '=':
-                        if (key != null) {
-                            buffer.append((byte) b);
-                            break;
-                        }
-                        key = buffer.toReplacedString();
-                        buffer.reset();
-                        break;
+        int totalLength = 0;
+        while ((b = in.read()) >= 0) {
+            switch ((char) b) {
+                case '&':
+                    value = buffer.toReplacedString();
+                    buffer.reset();
+                    if (key != null) {
+                        map.add(key, value);
+                    } else if (value != null && value.length() > 0) {
+                        map.add(value, "");
+                    }
+                    key = null;
+                    value = null;
+                    if (maxKeys > 0 && map.size() > maxKeys)
+                        throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
+                    break;
 
-                    case '+':
-                        buffer.append((byte) ' ');
-                        break;
-
-                    case '%':
-                        char code0 = (char) in.read();
-                        char code1 = (char) in.read();
-                        buffer.append(decodeHexByte(code0, code1));
-                        break;
-
-                    default:
+                case '=':
+                    if (key != null) {
                         buffer.append((byte) b);
                         break;
-                }
-                if (maxLength >= 0 && (++totalLength > maxLength))
-                    throw new IllegalStateException("Form is too large");
-            }
+                    }
+                    key = buffer.toReplacedString();
+                    buffer.reset();
+                    break;
 
-            if (key != null) {
-                value = buffer.toReplacedString();
-                buffer.reset();
-                map.add(key, value);
-            } else if (buffer.length() > 0) {
-                map.add(buffer.toReplacedString(), "");
+                case '+':
+                    buffer.append((byte) ' ');
+                    break;
+
+                case '%':
+                    char code0 = (char) in.read();
+                    char code1 = (char) in.read();
+                    buffer.append(decodeHexByte(code0, code1));
+                    break;
+
+                default:
+                    buffer.append((byte) b);
+                    break;
             }
+            if (maxLength >= 0 && (++totalLength > maxLength))
+                throw new IllegalStateException("Form is too large");
         }
+
+        if (key != null) {
+            value = buffer.toReplacedString();
+            buffer.reset();
+            map.add(key, value);
+        } else if (buffer.length() > 0) {
+            map.add(buffer.toReplacedString(), "");
+        }
+
     }
 
     public static void decodeUtf16To(InputStream in, MultiMap<String> map, int maxLength, int maxKeys) throws IOException {
@@ -443,8 +436,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
      * @param maxKeys   the maximum number of keys to decode
      * @throws IOException if unable to decode input stream
      */
-    public static void decodeTo(InputStream in, MultiMap<String> map, String charset, int maxLength, int maxKeys)
-            throws IOException {
+    public static void decodeTo(InputStream in, MultiMap<String> map, String charset, int maxLength, int maxKeys) throws IOException {
         if (charset == null) {
             if (ENCODING.equals(StandardCharsets.UTF_8))
                 decodeUtf8To(in, map, maxLength, maxKeys);
@@ -470,8 +462,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
      * @param maxKeys   the maximum number of keys to decode
      * @throws IOException if unable to decode input stream
      */
-    public static void decodeTo(InputStream in, MultiMap<String> map, Charset charset, int maxLength, int maxKeys)
-            throws IOException {
+    public static void decodeTo(InputStream in, MultiMap<String> map, Charset charset, int maxLength, int maxKeys) throws IOException {
         //no charset present, use the configured default
         if (charset == null)
             charset = ENCODING;
@@ -486,75 +477,74 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
             return;
         }
 
-        if (StandardCharsets.UTF_16.equals(charset)) // Should be all 2 byte encodings
-        {
+        // Should be all 2 byte encodings
+        if (StandardCharsets.UTF_16.equals(charset)) {
             decodeUtf16To(in, map, maxLength, maxKeys);
             return;
         }
 
-        synchronized (map) {
-            String key = null;
-            String value = null;
 
-            int c;
+        String key = null;
+        String value;
 
-            int totalLength = 0;
+        int c;
 
-            try (ByteArrayOutputStream2 output = new ByteArrayOutputStream2();) {
-                int size = 0;
+        int totalLength = 0;
 
-                while ((c = in.read()) > 0) {
-                    switch ((char) c) {
-                        case '&':
-                            size = output.size();
-                            value = size == 0 ? "" : output.toString(charset);
-                            output.setCount(0);
-                            if (key != null) {
-                                map.add(key, value);
-                            } else if (value != null && value.length() > 0) {
-                                map.add(value, "");
-                            }
-                            key = null;
-                            value = null;
-                            if (maxKeys > 0 && map.size() > maxKeys)
-                                throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
-                            break;
-                        case '=':
-                            if (key != null) {
-                                output.write(c);
-                                break;
-                            }
-                            size = output.size();
-                            key = size == 0 ? "" : output.toString(charset);
-                            output.setCount(0);
-                            break;
-                        case '+':
-                            output.write(' ');
-                            break;
-                        case '%':
-                            int code0 = in.read();
-                            int code1 = in.read();
-                            output.write(decodeHexChar(code0, code1));
-                            break;
-                        default:
+        try (ByteArrayOutputStream2 output = new ByteArrayOutputStream2();) {
+            int size = 0;
+
+            while ((c = in.read()) > 0) {
+                switch ((char) c) {
+                    case '&':
+                        size = output.size();
+                        value = size == 0 ? "" : output.toString(charset);
+                        output.setCount(0);
+                        if (key != null) {
+                            map.add(key, value);
+                        } else if (value != null && value.length() > 0) {
+                            map.add(value, "");
+                        }
+                        key = null;
+                        if (maxKeys > 0 && map.size() > maxKeys)
+                            throw new IllegalStateException(String.format("Form with too many keys [%d > %d]", map.size(), maxKeys));
+                        break;
+                    case '=':
+                        if (key != null) {
                             output.write(c);
                             break;
-                    }
-
-                    totalLength++;
-                    if (maxLength >= 0 && totalLength > maxLength)
-                        throw new IllegalStateException("Form is too large");
+                        }
+                        size = output.size();
+                        key = size == 0 ? "" : output.toString(charset);
+                        output.setCount(0);
+                        break;
+                    case '+':
+                        output.write(' ');
+                        break;
+                    case '%':
+                        int code0 = in.read();
+                        int code1 = in.read();
+                        output.write(decodeHexChar(code0, code1));
+                        break;
+                    default:
+                        output.write(c);
+                        break;
                 }
 
-                size = output.size();
-                if (key != null) {
-                    value = size == 0 ? "" : output.toString(charset);
-                    output.setCount(0);
-                    map.add(key, value);
-                } else if (size > 0)
-                    map.add(output.toString(charset), "");
+                totalLength++;
+                if (maxLength >= 0 && totalLength > maxLength)
+                    throw new IllegalStateException("Form is too large");
             }
+
+            size = output.size();
+            if (key != null) {
+                value = size == 0 ? "" : output.toString(charset);
+                output.setCount(0);
+                map.add(key, value);
+            } else if (size > 0)
+                map.add(output.toString(charset), "");
         }
+
     }
 
     /**
@@ -582,27 +572,27 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
      */
     public static String decodeString(String encoded, int offset, int length, Charset charset) {
         if (charset == null || StandardCharsets.UTF_8.equals(charset)) {
-            Utf8StringBuffer buffer = null;
+            Utf8StringBuilder buffer = null;
 
             for (int i = 0; i < length; i++) {
                 char c = encoded.charAt(offset + i);
                 if (c < 0 || c > 0xff) {
                     if (buffer == null) {
-                        buffer = new Utf8StringBuffer(length);
-                        buffer.getStringBuffer().append(encoded, offset, offset + i + 1);
+                        buffer = new Utf8StringBuilder(length);
+                        buffer.getStringBuilder().append(encoded, offset, offset + i + 1);
                     } else
-                        buffer.getStringBuffer().append(c);
+                        buffer.getStringBuilder().append(c);
                 } else if (c == '+') {
                     if (buffer == null) {
-                        buffer = new Utf8StringBuffer(length);
-                        buffer.getStringBuffer().append(encoded, offset, offset + i);
+                        buffer = new Utf8StringBuilder(length);
+                        buffer.getStringBuilder().append(encoded, offset, offset + i);
                     }
 
-                    buffer.getStringBuffer().append(' ');
+                    buffer.getStringBuilder().append(' ');
                 } else if (c == '%') {
                     if (buffer == null) {
-                        buffer = new Utf8StringBuffer(length);
-                        buffer.getStringBuffer().append(encoded, offset, offset + i);
+                        buffer = new Utf8StringBuilder(length);
+                        buffer.getStringBuilder().append(encoded, offset, offset + i);
                     }
 
                     if ((i + 2) < length) {
@@ -611,41 +601,42 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
                         byte b = (byte) TypeUtils.parseInt(encoded, o, 2, 16);
                         buffer.append(b);
                     } else {
-                        buffer.getStringBuffer().append(Utf8Appendable.REPLACEMENT);
+                        buffer.getStringBuilder().append(Utf8Appendable.REPLACEMENT);
                         i = length;
                     }
                 } else if (buffer != null)
-                    buffer.getStringBuffer().append(c);
+                    buffer.getStringBuilder().append(c);
             }
 
             if (buffer == null) {
-                if (offset == 0 && encoded.length() == length)
+                if (offset == 0 && encoded.length() == length) {
                     return encoded;
+                }
                 return encoded.substring(offset, offset + length);
             }
 
             return buffer.toReplacedString();
         } else {
-            StringBuffer buffer = null;
+            StringBuilder buffer = null;
 
             for (int i = 0; i < length; i++) {
                 char c = encoded.charAt(offset + i);
                 if (c < 0 || c > 0xff) {
                     if (buffer == null) {
-                        buffer = new StringBuffer(length);
+                        buffer = new StringBuilder(length);
                         buffer.append(encoded, offset, offset + i + 1);
                     } else
                         buffer.append(c);
                 } else if (c == '+') {
                     if (buffer == null) {
-                        buffer = new StringBuffer(length);
+                        buffer = new StringBuilder(length);
                         buffer.append(encoded, offset, offset + i);
                     }
 
                     buffer.append(' ');
                 } else if (c == '%') {
                     if (buffer == null) {
-                        buffer = new StringBuffer(length);
+                        buffer = new StringBuilder(length);
                         buffer.append(encoded, offset, offset + i);
                     }
 
@@ -803,7 +794,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
      *                           for parameters without a value. e.g. <code>"blah?a=&amp;b=&amp;c="</code>.
      * @return the MultiMap as a string encoded with % encodings
      */
-    public synchronized String encode(Charset charset, boolean equalsForNullValue) {
+    public String encode(Charset charset, boolean equalsForNullValue) {
         return encode(this, charset, equalsForNullValue);
     }
 
