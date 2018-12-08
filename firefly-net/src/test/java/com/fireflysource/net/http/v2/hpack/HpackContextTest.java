@@ -98,7 +98,6 @@ class HpackContextTest {
     }
 
     @Test
-    @SuppressWarnings("ReferenceEquality")
     void testGetAddStatic() {
         HpackContext ctx = new HpackContext(4096);
 
@@ -185,7 +184,7 @@ class HpackContextTest {
         assertEquals(3, ctx.index(ctx.get(methodPost)));
         assertEquals(methodPost, ctx.get(3).getHttpField());
         assertEquals("www-authenticate", ctx.get(61).getHttpField().getName());
-        assertEquals(null, ctx.get(62 + ctx.size()));
+        assertNull(ctx.get(62 + ctx.size()));
 
 
         // Add 4 more entries

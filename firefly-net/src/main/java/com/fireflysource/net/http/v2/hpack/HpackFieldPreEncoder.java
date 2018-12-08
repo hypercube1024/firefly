@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.v2.hpack;
 
 import com.fireflysource.common.io.BufferUtils;
-import com.fireflysource.net.http.model.HttpFieldPreEncoder;
+import com.fireflysource.net.http.common.codec.HttpFieldPreEncoder;
 import com.fireflysource.net.http.model.HttpHeader;
 import com.fireflysource.net.http.model.HttpVersion;
 

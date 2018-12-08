@@ -5,6 +5,7 @@ import com.fireflysource.common.collection.trie.Trie;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.SystemLogger;
+import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
 
 import java.io.IOException;
 import java.io.InputStream;

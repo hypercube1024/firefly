@@ -36,8 +36,9 @@ class HpackEncoderTest {
         };
 
         // Add 4 entries
-        for (int i = 0; i <= 3; i++)
+        for (int i = 0; i <= 3; i++) {
             fields.add(field[i]);
+        }
 
         // encode them
         ByteBuffer buffer = ByteBuffer.allocate(4096);

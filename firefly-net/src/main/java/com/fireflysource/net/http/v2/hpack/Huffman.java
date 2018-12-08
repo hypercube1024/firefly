@@ -331,15 +331,8 @@ public class Huffman {
         int current = 0;
         int bits = 0;
 
-        byte[] array = buffer.array();
-        int position = buffer.position();
-        int start = buffer.arrayOffset() + position;
-        int end = start + length;
-        buffer.position(position + length);
-
-
-        for (int i = start; i < end; i++) {
-            int b = array[i] & 0xFF;
+        for (int i = 0; i < length; i++) {
+            int b = buffer.get() & 0xFF;
             current = (current << 8) | b;
             bits += 8;
             while (bits >= 8) {
@@ -420,10 +413,6 @@ public class Huffman {
     private static void encode(final int[][] table, ByteBuffer buffer, String s) {
         long current = 0;
         int n = 0;
-
-        byte[] array = buffer.array();
-        int p = buffer.arrayOffset() + buffer.position();
-
         int len = s.length();
         for (int i = 0; i < len; i++) {
             char c = s.charAt(i);
@@ -438,17 +427,16 @@ public class Huffman {
 
             while (n >= 8) {
                 n -= 8;
-                array[p++] = (byte) (current >> n);
+                buffer.put((byte) (current >> n));
             }
         }
 
         if (n > 0) {
             current <<= (8 - n);
             current |= (0xFF >>> n);
-            array[p++] = (byte) current;
+            buffer.put((byte) (current));
         }
 
-        buffer.position(p - buffer.arrayOffset());
     }
 
 }

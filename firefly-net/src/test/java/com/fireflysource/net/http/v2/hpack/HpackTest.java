@@ -1,5 +1,7 @@
 package com.fireflysource.net.http.v2.hpack;
 
+import com.fireflysource.net.http.common.codec.DateGenerator;
+import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
 import com.fireflysource.net.http.model.*;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +22,7 @@ class HpackTest {
     void encodeDecodeResponseTest() throws Exception {
         HpackEncoder encoder = new HpackEncoder();
         HpackDecoder decoder = new HpackDecoder(4096, 8192);
-        ByteBuffer buffer = ByteBuffer.allocate(16 * 1024);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(16 * 1024);
 
         HttpFields fields0 = new HttpFields();
         fields0.add(HttpHeader.CONTENT_TYPE, "text/html");
@@ -72,7 +74,7 @@ class HpackTest {
     void encodeDecodeTooLargeTest() throws Exception {
         HpackEncoder encoder = new HpackEncoder();
         HpackDecoder decoder = new HpackDecoder(4096, 164);
-        ByteBuffer buffer = ByteBuffer.allocate(16 * 1024);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(16 * 1024);
 
         HttpFields fields0 = new HttpFields();
         fields0.add("1234567890", "1234567890123456789012345678901234567890");

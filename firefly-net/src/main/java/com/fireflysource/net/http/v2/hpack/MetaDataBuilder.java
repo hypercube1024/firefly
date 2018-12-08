@@ -6,7 +6,7 @@ public class MetaDataBuilder {
 
     private final int maxSize;
     private int size;
-    private int status = -1;
+    private Integer status;
     private String method;
     private HttpScheme scheme;
     private HostPortHttpField authority;
@@ -20,7 +20,7 @@ public class MetaDataBuilder {
     /**
      * @param maxHeadersSize The maximum size of the headers, expressed as total name and value characters.
      */
-    public MetaDataBuilder(int maxHeadersSize) {
+    protected MetaDataBuilder(int maxHeadersSize) {
         maxSize = maxHeadersSize;
     }
 
@@ -55,7 +55,7 @@ public class MetaDataBuilder {
             StaticTableHttpField staticField = (StaticTableHttpField) field;
             switch (header) {
                 case C_STATUS:
-                    if (checkHeader(header, status))
+                    if (checkPseudoHeader(header, status))
                         status = (Integer) staticField.getStaticValue();
                     response = true;
                     break;
@@ -78,8 +78,8 @@ public class MetaDataBuilder {
         } else if (header != null) {
             switch (header) {
                 case C_STATUS:
-                    if (checkHeader(header, status))
-                        status = field.getIntValue();
+                    if (checkPseudoHeader(header, status))
+                        status = Integer.valueOf(field.getIntValue());
                     response = true;
                     break;
 
@@ -160,7 +160,7 @@ public class MetaDataBuilder {
         }
     }
 
-    void streamException(String messageFormat, Object... args) {
+    protected void streamException(String messageFormat, Object... args) {
         HpackException.StreamException stream = new HpackException.StreamException(messageFormat, args);
         if (streamException == null)
             streamException = stream;
@@ -168,18 +168,7 @@ public class MetaDataBuilder {
             streamException.addSuppressed(stream);
     }
 
-    private boolean checkHeader(HttpHeader header, int value) {
-        if (fields.size() > 0) {
-            streamException("Pseudo header %s after fields", header.getValue());
-            return false;
-        }
-        if (value == -1)
-            return true;
-        streamException("Duplicate pseudo header %s", header.getValue());
-        return false;
-    }
-
-    private boolean checkPseudoHeader(HttpHeader header, Object value) {
+    protected boolean checkPseudoHeader(HttpHeader header, Object value) {
         if (fields.size() > 0) {
             streamException("Pseudo header %s after fields", header.getValue());
             return false;
@@ -211,15 +200,18 @@ public class MetaDataBuilder {
                     throw new HpackException.StreamException("No Path");
                 return new MetaData.Request(method, scheme, authority, path, HttpVersion.HTTP_2, fields, contentLength);
             }
-            if (response)
+            if (response) {
+                if (status == null)
+                    throw new HpackException.StreamException("No Status");
                 return new MetaData.Response(HttpVersion.HTTP_2, status, fields, contentLength);
+            }
 
             return new MetaData(HttpVersion.HTTP_2, fields, contentLength);
         } finally {
             this.fields = new HttpFields(Math.max(10, fields.size() + 5));
             request = false;
             response = false;
-            status = -1;
+            status = null;
             method = null;
             scheme = null;
             authority = null;

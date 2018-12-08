@@ -1,9 +1,10 @@
-package com.fireflysource.net.http.model;
+package com.fireflysource.net.http.common.codec;
 
 import com.fireflysource.common.object.TypeUtils;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.string.Utf8Appendable;
 import com.fireflysource.common.string.Utf8StringBuilder;
+import com.fireflysource.net.http.model.HostPort;
 
 import java.net.URI;
 import java.net.URISyntaxException;

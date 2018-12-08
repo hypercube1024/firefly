@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.model;
 
+import com.fireflysource.net.http.common.codec.URIUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;

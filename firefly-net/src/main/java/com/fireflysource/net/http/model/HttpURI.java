@@ -2,6 +2,8 @@ package com.fireflysource.net.http.model;
 
 import com.fireflysource.common.collection.map.MultiMap;
 import com.fireflysource.common.object.TypeUtils;
+import com.fireflysource.net.http.common.codec.URIUtils;
+import com.fireflysource.net.http.common.codec.UrlEncoded;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;

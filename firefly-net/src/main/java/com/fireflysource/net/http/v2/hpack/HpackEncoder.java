@@ -6,6 +6,7 @@ import com.fireflysource.common.object.TypeUtils;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.SystemLogger;
+import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
 import com.fireflysource.net.http.model.*;
 
 import java.nio.ByteBuffer;
