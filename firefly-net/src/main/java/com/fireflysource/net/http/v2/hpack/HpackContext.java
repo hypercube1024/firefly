@@ -5,10 +5,10 @@ import com.fireflysource.common.collection.trie.Trie;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.SystemLogger;
-import com.fireflysource.net.http.model.HttpField;
-import com.fireflysource.net.http.model.HttpHeader;
-import com.fireflysource.net.http.model.HttpMethod;
-import com.fireflysource.net.http.model.HttpScheme;
+import com.fireflysource.net.http.common.model.HttpField;
+import com.fireflysource.net.http.common.model.HttpHeader;
+import com.fireflysource.net.http.common.model.HttpMethod;
+import com.fireflysource.net.http.common.model.HttpScheme;
 
 import java.nio.ByteBuffer;
 import java.util.*;

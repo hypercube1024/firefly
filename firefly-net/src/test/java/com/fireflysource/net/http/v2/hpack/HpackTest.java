@@ -2,13 +2,13 @@ package com.fireflysource.net.http.v2.hpack;
 
 import com.fireflysource.net.http.common.codec.DateGenerator;
 import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
-import com.fireflysource.net.http.model.*;
+import com.fireflysource.net.http.common.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
-import static com.fireflysource.net.http.model.MetaData.Response;
+import static com.fireflysource.net.http.common.model.MetaData.Response;
 import static org.junit.jupiter.api.Assertions.*;
 
 

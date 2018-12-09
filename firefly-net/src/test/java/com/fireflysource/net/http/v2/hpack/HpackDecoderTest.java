@@ -2,10 +2,10 @@ package com.fireflysource.net.http.v2.hpack;
 
 
 import com.fireflysource.common.object.TypeUtils;
-import com.fireflysource.net.http.model.HttpField;
-import com.fireflysource.net.http.model.HttpHeader;
-import com.fireflysource.net.http.model.HttpScheme;
-import com.fireflysource.net.http.model.MetaData;
+import com.fireflysource.net.http.common.model.HttpField;
+import com.fireflysource.net.http.common.model.HttpHeader;
+import com.fireflysource.net.http.common.model.HttpScheme;
+import com.fireflysource.net.http.common.model.MetaData;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;

@@ -2,7 +2,7 @@ package com.fireflysource.net.http.common.codec;
 
 
 import com.fireflysource.common.string.StringUtils;
-import com.fireflysource.net.http.model.Cookie;
+import com.fireflysource.net.http.common.model.Cookie;
 
 import java.util.ArrayList;
 import java.util.List;

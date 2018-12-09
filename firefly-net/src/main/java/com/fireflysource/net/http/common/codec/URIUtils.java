@@ -4,7 +4,7 @@ import com.fireflysource.common.object.TypeUtils;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.string.Utf8Appendable;
 import com.fireflysource.common.string.Utf8StringBuilder;
-import com.fireflysource.net.http.model.HostPort;
+import com.fireflysource.net.http.common.model.HostPort;
 
 import java.net.URI;
 import java.net.URISyntaxException;

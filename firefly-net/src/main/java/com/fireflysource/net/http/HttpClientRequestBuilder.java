@@ -1,9 +1,9 @@
 package com.fireflysource.net.http;
 
-import com.fireflysource.net.http.model.Cookie;
-import com.fireflysource.net.http.model.HttpField;
-import com.fireflysource.net.http.model.HttpFields;
-import com.fireflysource.net.http.model.HttpHeader;
+import com.fireflysource.net.http.common.model.Cookie;
+import com.fireflysource.net.http.common.model.HttpField;
+import com.fireflysource.net.http.common.model.HttpFields;
+import com.fireflysource.net.http.common.model.HttpHeader;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

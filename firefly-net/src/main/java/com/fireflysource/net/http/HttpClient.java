@@ -1,7 +1,7 @@
 package com.fireflysource.net.http;
 
 import com.fireflysource.common.lifecycle.LifeCycle;
-import com.fireflysource.net.http.model.HttpMethod;
+import com.fireflysource.net.http.common.model.HttpMethod;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
 import java.net.URL;

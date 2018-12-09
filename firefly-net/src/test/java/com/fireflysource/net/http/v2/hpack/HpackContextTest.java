@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.v2.hpack;
 
 
-import com.fireflysource.net.http.model.HttpField;
+import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.v2.hpack.HpackContext.Entry;
 import org.junit.jupiter.api.Test;
 

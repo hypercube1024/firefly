@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.common.codec;
 
-import com.fireflysource.net.http.model.HttpHeader;
-import com.fireflysource.net.http.model.HttpVersion;
+import com.fireflysource.net.http.common.model.HttpHeader;
+import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.util.Arrays;
 

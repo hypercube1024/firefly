@@ -8,8 +8,8 @@ import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.Utf8StringBuilder;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
+import com.fireflysource.net.http.common.model.*;
 import com.fireflysource.net.http.exception.BadMessageException;
-import com.fireflysource.net.http.model.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -17,9 +17,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 
-import static com.fireflysource.net.http.model.HttpComplianceSection.MULTIPLE_CONTENT_LENGTHS;
-import static com.fireflysource.net.http.model.HttpComplianceSection.TRANSFER_ENCODING_WITH_CONTENT_LENGTH;
-import static com.fireflysource.net.http.model.HttpTokens.EndOfContent;
+import static com.fireflysource.net.http.common.model.HttpComplianceSection.MULTIPLE_CONTENT_LENGTHS;
+import static com.fireflysource.net.http.common.model.HttpComplianceSection.TRANSFER_ENCODING_WITH_CONTENT_LENGTH;
+import static com.fireflysource.net.http.common.model.HttpTokens.EndOfContent;
 
 
 /**

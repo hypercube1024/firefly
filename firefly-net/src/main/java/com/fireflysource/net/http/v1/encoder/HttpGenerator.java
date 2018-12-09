@@ -8,8 +8,8 @@ import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.ProjectVersion;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
+import com.fireflysource.net.http.common.model.*;
 import com.fireflysource.net.http.exception.BadMessageException;
-import com.fireflysource.net.http.model.*;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
@@ -17,8 +17,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
-import static com.fireflysource.net.http.model.HttpStatus.INTERNAL_SERVER_ERROR_500;
-import static com.fireflysource.net.http.model.HttpTokens.EndOfContent;
+import static com.fireflysource.net.http.common.model.HttpStatus.INTERNAL_SERVER_ERROR_500;
+import static com.fireflysource.net.http.common.model.HttpTokens.EndOfContent;
 
 /**
  * HttpGenerator. Builds HTTP Messages.

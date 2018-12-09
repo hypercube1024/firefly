@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.v2.frame;
 
-import com.fireflysource.net.http.model.MetaData;
+import com.fireflysource.net.http.common.model.MetaData;
 
 public class HeadersFrame extends Frame {
     private final int streamId;

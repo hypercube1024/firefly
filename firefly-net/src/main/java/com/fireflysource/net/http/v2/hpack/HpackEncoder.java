@@ -7,7 +7,7 @@ import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
-import com.fireflysource.net.http.model.*;
+import com.fireflysource.net.http.common.model.*;
 
 import java.nio.ByteBuffer;
 import java.util.EnumSet;

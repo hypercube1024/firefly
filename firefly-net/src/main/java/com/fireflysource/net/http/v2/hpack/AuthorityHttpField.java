@@ -1,8 +1,8 @@
 package com.fireflysource.net.http.v2.hpack;
 
 
-import com.fireflysource.net.http.model.HostPortHttpField;
-import com.fireflysource.net.http.model.HttpHeader;
+import com.fireflysource.net.http.common.model.HostPortHttpField;
+import com.fireflysource.net.http.common.model.HttpHeader;
 
 public class AuthorityHttpField extends HostPortHttpField {
     public final static String AUTHORITY = HpackContext.STATIC_TABLE[1][0];

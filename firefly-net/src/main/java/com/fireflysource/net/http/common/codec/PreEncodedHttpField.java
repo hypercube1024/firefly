@@ -1,8 +1,8 @@
 package com.fireflysource.net.http.common.codec;
 
-import com.fireflysource.net.http.model.HttpField;
-import com.fireflysource.net.http.model.HttpHeader;
-import com.fireflysource.net.http.model.HttpVersion;
+import com.fireflysource.net.http.common.model.HttpField;
+import com.fireflysource.net.http.common.model.HttpHeader;
+import com.fireflysource.net.http.common.model.HttpVersion;
 import com.fireflysource.net.http.v2.hpack.HpackFieldPreEncoder;
 
 import java.nio.ByteBuffer;

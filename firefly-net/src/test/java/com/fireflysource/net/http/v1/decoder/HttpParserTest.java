@@ -2,8 +2,8 @@ package com.fireflysource.net.http.v1.decoder;
 
 
 import com.fireflysource.common.io.BufferUtils;
+import com.fireflysource.net.http.common.model.*;
 import com.fireflysource.net.http.exception.BadMessageException;
-import com.fireflysource.net.http.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.fireflysource.net.http.model.HttpComplianceSection.NO_FIELD_FOLDING;
+import static com.fireflysource.net.http.common.model.HttpComplianceSection.NO_FIELD_FOLDING;
 import static com.fireflysource.net.http.v1.decoder.HttpParser.State;
 import static org.junit.jupiter.api.Assertions.*;
 
