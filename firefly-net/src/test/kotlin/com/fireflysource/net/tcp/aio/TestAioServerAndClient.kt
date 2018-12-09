@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.sys.Result.discard
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
@@ -72,7 +73,7 @@ class TestAioServerAndClient {
 
                             val newBuf = ByteBuffer.allocate(4)
                             newBuf.putInt(num).flip()
-                            connection.write(newBuf)
+                            connection.write(newBuf, discard())
                         }
                     }
                 }
@@ -115,7 +116,7 @@ class TestAioServerAndClient {
                             (1..maxCount).forEach { i ->
                                 val buf = ByteBuffer.allocate(4)
                                 buf.putInt(i).flip()
-                                connection.write(buf)
+                                connection.write(buf, discard())
                             }
                         }
                         "array" -> {
@@ -124,7 +125,7 @@ class TestAioServerAndClient {
                                 buf.putInt(index + 1).flip()
                                 buf
                             }
-                            connection.write(bufArray, 0, bufArray.size)
+                            connection.write(bufArray, 0, bufArray.size, discard())
                         }
                         "list" -> {
                             val bufList = List<ByteBuffer>(maxCount) { index ->
@@ -132,7 +133,7 @@ class TestAioServerAndClient {
                                 buf.putInt(index + 1).flip()
                                 buf
                             }
-                            connection.write(bufList, 0, bufList.size)
+                            connection.write(bufList, 0, bufList.size, discard())
                         }
                     }
 

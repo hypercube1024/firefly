@@ -5,7 +5,7 @@ import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.aRead
 import com.fireflysource.common.io.aWrite
 import com.fireflysource.common.sys.Result
-import com.fireflysource.common.sys.Result.EMPTY_CONSUMER_RESULT
+import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.CoroutineDispatcher
@@ -29,7 +29,7 @@ abstract class AbstractTcpConnection(
     private val socketChannel: AsynchronousSocketChannel,
     private val timeout: Long,
     private val messageThread: CoroutineDispatcher
-                                    ) : TcpConnection {
+) : TcpConnection {
 
     companion object {
         private val log = SystemLogger.create(AbstractTcpConnection::class.java)
@@ -47,7 +47,7 @@ abstract class AbstractTcpConnection(
     private val outputShutdownState: AtomicBoolean = AtomicBoolean(false)
     private val socketChannelClosed: AtomicBoolean = AtomicBoolean(false)
     private val closeRequest: AtomicBoolean = AtomicBoolean(false)
-    private var closeConsumer: Consumer<Result<Void>> = EMPTY_CONSUMER_RESULT
+    private var closeConsumer: Consumer<Result<Void>> = discard()
 
     private val autoReadState: AtomicBoolean = AtomicBoolean(false)
 
@@ -190,7 +190,7 @@ abstract class AbstractTcpConnection(
                             length,
                             timeout,
                             timeUnit
-                                                        )
+                        )
                         message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
@@ -278,7 +278,7 @@ abstract class AbstractTcpConnection(
     }
 
     override fun close() {
-        close(EMPTY_CONSUMER_RESULT)
+        close(discard())
     }
 
     private fun shutdownInput() {
@@ -357,7 +357,7 @@ abstract class AbstractTcpConnection(
         offset: Int,
         length: Int,
         result: Consumer<Result<Long>>
-                      ): TcpConnection {
+    ): TcpConnection {
         if (checkWriteState(result)) {
             outChannel.offer(Buffers(byteBuffers, offset, length, result))
         }
@@ -369,7 +369,7 @@ abstract class AbstractTcpConnection(
         offset: Int,
         length: Int,
         result: Consumer<Result<Long>>
-                      ): TcpConnection {
+    ): TcpConnection {
         if (checkWriteState(result)) {
             outChannel.offer(BufferList(byteBufferList, offset, length, result))
         }
@@ -401,7 +401,7 @@ class Buffers(
     val offset: Int,
     val length: Int,
     val result: Consumer<Result<Long>>
-             ) : Message() {
+) : Message() {
 
     init {
         require(offset >= 0) { "The offset must be greater than or equal the 0" }
@@ -429,7 +429,7 @@ class BufferList(
     val offset: Int,
     val length: Int,
     val result: Consumer<Result<Long>>
-                ) : Message() {
+) : Message() {
 
     init {
         require(offset >= 0) { "The offset must be greater than or equal the 0" }

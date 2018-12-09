@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static com.fireflysource.common.sys.Result.discard;
+
 /**
  * @author Pengtao Qiu
  */
@@ -208,7 +210,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                             case NEED_TASK: {
                                 initialHSStatus = doTasks();
                                 if (packetBuffer.hasRemaining()) {
-                                    tcpConnection.write(packetBuffer);
+                                    tcpConnection.write(packetBuffer, discard());
                                 }
                             }
                             break;
@@ -228,7 +230,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                             break;
                             default: {
                                 if (packetBuffer.hasRemaining()) {
-                                    tcpConnection.write(packetBuffer);
+                                    tcpConnection.write(packetBuffer, discard());
                                 }
                             }
                         }
@@ -246,7 +248,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                         log.info("Connection {} handshake failure. SSLEngine will close inbound", tcpConnection.getId());
                         packetBuffer.flip();
                         if (packetBuffer.hasRemaining()) {
-                            tcpConnection.write(packetBuffer);
+                            tcpConnection.write(packetBuffer, discard());
                         }
                         closeOutbound();
                         break outer;
