@@ -1,4 +1,4 @@
-package com.fireflysource.net.tcp;
+package com.fireflysource.common.sys;
 
 import com.fireflysource.common.string.StringUtils;
 

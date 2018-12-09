@@ -2,7 +2,7 @@ package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.tcp.Result
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
@@ -58,7 +58,13 @@ class AioSecureTcpConnection(
             is Buffer -> {
                 val encryptedBuffers = secureEngine.encode(message.buffer)
                 tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
-                    message.result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
+                    message.result.accept(
+                        Result(
+                            it.isSuccess,
+                            it.value.toInt(),
+                            it.throwable
+                                                           )
+                                         )
                 }
             }
             is Buffers -> {

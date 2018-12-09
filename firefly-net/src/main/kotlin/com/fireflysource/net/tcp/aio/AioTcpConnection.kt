@@ -1,7 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.exception.UnsupportedOperationException
-import com.fireflysource.net.tcp.Result
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.CoroutineDispatcher
 import java.nio.channels.AsynchronousSocketChannel

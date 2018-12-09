@@ -1,6 +1,6 @@
 package com.fireflysource.net.tcp.secure;
 
-import com.fireflysource.net.tcp.Result;
+import com.fireflysource.common.sys.Result;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static com.fireflysource.net.tcp.Result.futureToConsumer;
+import static com.fireflysource.common.sys.Result.futureToConsumer;
 
 /**
  * The TLS engine. It can encrypt or decrypt the message.

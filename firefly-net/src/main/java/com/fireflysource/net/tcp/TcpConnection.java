@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp;
 
 import com.fireflysource.common.func.Callback;
+import com.fireflysource.common.sys.Result;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
 import kotlinx.coroutines.CoroutineDispatcher;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static com.fireflysource.net.tcp.Result.futureToConsumer;
+import static com.fireflysource.common.sys.Result.futureToConsumer;
 
 /**
  * The TCP connection. It reads or writes messages using the TCP (or TLS over the TCP) protocol.
