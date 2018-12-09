@@ -679,6 +679,10 @@ public class StringUtils {
         return string.getBytes(StandardCharsets.UTF_8);
     }
 
+    public static byte[] getBytes(String string) {
+        return string.getBytes(StandardCharsets.ISO_8859_1);
+    }
+
     /**
      * Convert String to an integer. Parses up to the first non-numeric
      * character. If no number is found an IllegalArgumentException is thrown
