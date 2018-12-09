@@ -37,6 +37,11 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         return this
     }
 
+    override fun timeout(timeout: Long): TcpClient {
+        config.timeout = timeout
+        return this
+    }
+
     override fun connect(address: SocketAddress): CompletableFuture<TcpConnection> =
         connect(address, listOf("h2", "http/1.1"))
 

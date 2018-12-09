@@ -60,6 +60,14 @@ public interface TcpServer extends LifeCycle {
     TcpServer enableSecureConnection();
 
     /**
+     * Set the TCP idle timeout. The unit is second.
+     *
+     * @param timeout The TCP idle timeout. The unit is second.
+     * @return The TCP server.
+     */
+    TcpServer timeout(Long timeout);
+
+    /**
      * Accept the client TCP connection.
      *
      * @param consumer Accept the connection callback.

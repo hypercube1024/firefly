@@ -57,6 +57,11 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         return this
     }
 
+    override fun timeout(timeout: Long): TcpServer {
+        config.timeout = timeout
+        return this
+    }
+
     override fun onAccept(consumer: Consumer<TcpConnection>): TcpServer {
         connectionConsumer = consumer
         return this

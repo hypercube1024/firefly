@@ -27,6 +27,14 @@ public interface HttpClient extends LifeCycle {
     HttpClient enableSecureConnection();
 
     /**
+     * Set the TCP idle timeout. The unit is second.
+     *
+     * @param timeout The TCP idle timeout. The unit is second.
+     * @return The TCP client.
+     */
+    HttpClient timeout(Long timeout);
+
+    /**
      * Create a RequestBuilder with GET method and URL.
      *
      * @param url The request URL.

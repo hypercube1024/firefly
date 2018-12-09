@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -134,7 +133,7 @@ public interface HttpClientRequestBuilder {
      * @param fields  The header fields of the content.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder addFieldPart(String name, ContentProvider content, HttpFields fields);
+    HttpClientRequestBuilder addFieldPart(String name, HttpClientContentProvider content, HttpFields fields);
 
     /**
      * Add a multi-part mime content. Such as a file.
@@ -145,7 +144,7 @@ public interface HttpClientRequestBuilder {
      * @param fields   The header fields of the content.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder addFilePart(String name, String fileName, ContentProvider content, HttpFields fields);
+    HttpClientRequestBuilder addFilePart(String name, String fileName, HttpClientContentProvider content, HttpFields fields);
 
     /**
      * Add a value in an existed form parameter. The form content type is "application/x-www-form-urlencoded".
@@ -251,7 +250,7 @@ public interface HttpClientRequestBuilder {
      *                it will execute this action. This action will be executed many times.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder content(BiConsumer<ByteBuffer, HttpClientResponse> content);
+    HttpClientRequestBuilder content(HttpClientContentHandler content);
 
 
     /**
