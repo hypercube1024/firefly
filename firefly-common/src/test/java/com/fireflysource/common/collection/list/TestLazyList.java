@@ -1,6 +1,5 @@
 package com.fireflysource.common.collection.list;
 
-
 import com.fireflysource.common.collection.array.ArrayUtils;
 import org.junit.jupiter.api.Test;
 
@@ -587,7 +586,7 @@ class TestLazyList {
      */
     @Test
     void testAddArray_GenericListInput_EmptyArray() {
-        List<String> input = new ArrayList<String>();
+        List<String> input = new ArrayList<>();
         input.add("x");
         input.add("y");
         input.add("z");
@@ -628,7 +627,7 @@ class TestLazyList {
      */
     @Test
     void testAddArray_GenericListInput_Array() {
-        List<String> input = new ArrayList<String>();
+        List<String> input = new ArrayList<>();
         input.add("x");
         input.add("y");
         input.add("z");
@@ -693,7 +692,7 @@ class TestLazyList {
      */
     @Test
     void testEnsureSize_GenericListInput() {
-        List<String> input = new ArrayList<String>();
+        List<String> input = new ArrayList<>();
         input.add("a");
         input.add("b");
 
@@ -1381,15 +1380,15 @@ class TestLazyList {
         assertEquals("a", LazyList.get(input, 0));
 
         List<URI> uris = new ArrayList<>();
-        uris.add(URI.create("http://www.mortbay.org/"));
-        uris.add(URI.create("http://jetty.codehaus.org/jetty/"));
-        uris.add(URI.create("http://www.intalio.com/jetty/"));
-        uris.add(URI.create("http://www.eclipse.org/jetty/"));
+        uris.add(URI.create("http://www.abc.org/"));
+        uris.add(URI.create("http://www.cde.ort/firefly/"));
+        uris.add(URI.create("http://www.fgh.com/firefly/"));
+        uris.add(URI.create("http://www.fireflysource.com/"));
 
         // Make sure that Generics pass through the 'get' routine safely.
         // We should be able to call this without casting the result to URI
         URI eclipseUri = LazyList.get(uris, 3);
-        assertEquals("http://www.eclipse.org/jetty/", eclipseUri.toASCIIString());
+        assertEquals("http://www.fireflysource.com/", eclipseUri.toASCIIString());
     }
 
     /**

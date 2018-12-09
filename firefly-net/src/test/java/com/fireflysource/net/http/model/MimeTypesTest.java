@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MimeTypesTest {
 
-
     @Test
     void testGetMimeByExtension_Gzip() {
         assertMimeTypeByExtension("application/gzip", "test.gz");

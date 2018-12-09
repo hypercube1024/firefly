@@ -9,10 +9,6 @@ import java.util.List;
 
 abstract public class CookieParser {
 
-    public interface CookieParserCallback {
-        void cookie(String name, String value);
-    }
-
     public static void parseCookies(String cookieStr, CookieParserCallback callback) {
         if (!StringUtils.hasText(cookieStr)) {
             throw new IllegalArgumentException("the cookie string is empty");
@@ -63,6 +59,10 @@ abstract public class CookieParser {
         final List<Cookie> list = new ArrayList<>();
         parseCookies(cookieStr, (name, value) -> list.add(new Cookie(name, value)));
         return list;
+    }
+
+    public interface CookieParserCallback {
+        void cookie(String name, String value);
     }
 
 }

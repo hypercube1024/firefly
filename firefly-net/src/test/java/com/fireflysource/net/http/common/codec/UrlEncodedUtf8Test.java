@@ -2,7 +2,6 @@ package com.fireflysource.net.http.common.codec;
 
 import com.fireflysource.common.collection.map.MultiMap;
 import com.fireflysource.common.string.Utf8Appendable;
-import com.fireflysource.net.http.common.codec.UrlEncoded;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

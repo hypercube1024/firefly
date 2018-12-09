@@ -50,13 +50,13 @@ class Utf8StringBuilderTest {
 
     @Test
     void testUtfStringBuilder() {
-        String source = "abcd012345\n\r\u0000\u00a4\u10fb\ufffdjetty";
+        String source = "abcd012345\n\r\u0000\u00a4\u10fb\ufffdfirefly";
         byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
         Utf8StringBuilder buffer = new Utf8StringBuilder();
         for (byte aByte : bytes)
             buffer.append(aByte);
         assertEquals(source, buffer.toString());
-        assertTrue(buffer.toString().endsWith("jetty"));
+        assertTrue(buffer.toString().endsWith("firefly"));
     }
 
     @Test

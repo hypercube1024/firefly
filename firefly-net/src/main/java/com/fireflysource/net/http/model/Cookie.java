@@ -67,6 +67,17 @@ public class Cookie {
     }
 
     /**
+     * Returns the comment describing the purpose of this cookie, or
+     * <code>null</code> if the cookie has no comment.
+     *
+     * @return the comment of the cookie, or <code>null</code> if unspecified
+     * @see #setComment
+     */
+    public String getComment() {
+        return comment;
+    }
+
+    /**
      * Specifies a comment that describes a cookie's purpose. The comment is
      * useful if the browser presents the cookie to the user. Comments are not
      * supported by Netscape Version 0 cookies.
@@ -80,14 +91,16 @@ public class Cookie {
     }
 
     /**
-     * Returns the comment describing the purpose of this cookie, or
-     * <code>null</code> if the cookie has no comment.
+     * Gets the domain name of this Cookie.
      *
-     * @return the comment of the cookie, or <code>null</code> if unspecified
-     * @see #setComment
+     * <p>
+     * Domain names are formatted according to RFC 2109.
+     *
+     * @return the domain name of this Cookie
+     * @see #setDomain
      */
-    public String getComment() {
-        return comment;
+    public String getDomain() {
+        return domain;
     }
 
     /**
@@ -110,16 +123,18 @@ public class Cookie {
     }
 
     /**
-     * Gets the domain name of this Cookie.
+     * Gets the maximum age in seconds of this Cookie.
      *
      * <p>
-     * Domain names are formatted according to RFC 2109.
+     * By default, <code>-1</code> is returned, which indicates that the cookie
+     * will persist until browser shutdown.
      *
-     * @return the domain name of this Cookie
-     * @see #setDomain
+     * @return an integer specifying the maximum age of the cookie in seconds;
+     * if negative, means the cookie persists until browser shutdown
+     * @see #setMaxAge
      */
-    public String getDomain() {
-        return domain;
+    public int getMaxAge() {
+        return maxAge;
     }
 
     /**
@@ -145,18 +160,15 @@ public class Cookie {
     }
 
     /**
-     * Gets the maximum age in seconds of this Cookie.
+     * Returns the path on the server to which the browser returns this cookie.
+     * The cookie is visible to all subpaths on the server.
      *
-     * <p>
-     * By default, <code>-1</code> is returned, which indicates that the cookie
-     * will persist until browser shutdown.
-     *
-     * @return an integer specifying the maximum age of the cookie in seconds;
-     * if negative, means the cookie persists until browser shutdown
-     * @see #setMaxAge
+     * @return a <code>String</code> specifying a path , for example,
+     * <i>/catalog</i>
+     * @see #setPath
      */
-    public int getMaxAge() {
-        return maxAge;
+    public String getPath() {
+        return path;
     }
 
     /**
@@ -181,15 +193,16 @@ public class Cookie {
     }
 
     /**
-     * Returns the path on the server to which the browser returns this cookie.
-     * The cookie is visible to all subpaths on the server.
+     * Returns <code>true</code> if the browser is sending cookies only over a
+     * secure protocol, or <code>false</code> if the browser can send cookies
+     * using any protocol.
      *
-     * @return a <code>String</code> specifying a path , for example,
-     * <i>/catalog</i>
-     * @see #setPath
+     * @return <code>true</code> if the browser uses a secure protocol,
+     * <code>false</code> otherwise
+     * @see #setSecure
      */
-    public String getPath() {
-        return path;
+    public boolean getSecure() {
+        return secure;
     }
 
     /**
@@ -209,23 +222,6 @@ public class Cookie {
     }
 
     /**
-     * Returns <code>true</code> if the browser is sending cookies only over a
-     * secure protocol, or <code>false</code> if the browser can send cookies
-     * using any protocol.
-     *
-     * @return <code>true</code> if the browser uses a secure protocol,
-     * <code>false</code> otherwise
-     * @see #setSecure
-     */
-    public boolean getSecure() {
-        return secure;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * Returns the name of the cookie. The name cannot be changed after
      * creation.
      *
@@ -233,6 +229,20 @@ public class Cookie {
      */
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * Gets the current value of this Cookie.
+     *
+     * @return the current value of this Cookie
+     * @see #setValue
+     */
+    public String getValue() {
+        return value;
     }
 
     /**
@@ -252,16 +262,6 @@ public class Cookie {
      */
     public void setValue(String newValue) {
         value = newValue;
-    }
-
-    /**
-     * Gets the current value of this Cookie.
-     *
-     * @return the current value of this Cookie
-     * @see #setValue
-     */
-    public String getValue() {
-        return value;
     }
 
     /**
@@ -310,6 +310,16 @@ public class Cookie {
     }
 
     /**
+     * Checks whether this Cookie has been marked as <i>HttpOnly</i>.
+     *
+     * @return true if this Cookie has been marked as <i>HttpOnly</i>, false
+     * otherwise
+     */
+    public boolean isHttpOnly() {
+        return isHttpOnly;
+    }
+
+    /**
      * Marks or unmarks this Cookie as <i>HttpOnly</i>.
      *
      * <p>
@@ -326,16 +336,6 @@ public class Cookie {
      */
     public void setHttpOnly(boolean isHttpOnly) {
         this.isHttpOnly = isHttpOnly;
-    }
-
-    /**
-     * Checks whether this Cookie has been marked as <i>HttpOnly</i>.
-     *
-     * @return true if this Cookie has been marked as <i>HttpOnly</i>, false
-     * otherwise
-     */
-    public boolean isHttpOnly() {
-        return isHttpOnly;
     }
 
     @Override

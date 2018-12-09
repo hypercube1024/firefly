@@ -166,7 +166,7 @@ class HpackEncoderTest {
         buffer0.flip();
 
         encoder = new HpackEncoder(128);
-        fields.add(new HttpField("user-agent", "jetty/test"));
+        fields.add(new HttpField("user-agent", "firefly/test"));
         ByteBuffer buffer1 = ByteBuffer.allocate(4096);
         encoder.encode(buffer1, new MetaData(HttpVersion.HTTP_2, fields));
         buffer1.flip();

@@ -40,7 +40,8 @@ public class MimeTypes {
                 ASSUMED_ENCODINGS.put(type.getValue(), type.getCharsetString());
         }
 
-        String resourceName = "com/fireflysource/net/http/model/mime.properties";
+        String path = MimeTypes.class.getPackage().getName().replace('.', '/');
+        String resourceName = path + "/mime.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null) {
                 log.warn("Missing mime-type resource: {}", resourceName);
@@ -67,7 +68,7 @@ public class MimeTypes {
             log.warn(e.toString());
         }
 
-        resourceName = "com/fireflysource/net/http/model/encoding.properties";
+        resourceName = path + "/encoding.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null)
                 log.warn("Missing encoding resource: {}", resourceName);

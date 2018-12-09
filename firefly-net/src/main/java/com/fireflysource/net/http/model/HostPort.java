@@ -6,7 +6,7 @@ import com.fireflysource.common.string.StringUtils;
  * Parse an authority string into Host and Port
  * <p>Parse a string in the form "host:port", handling IPv4 an IPv6 hosts</p>
  *
- * <p>The System property "org.eclipse.jetty.util.HostPort.STRIP_IPV6" can be set to a boolean
+ * <p>The System property "com.fireflysource.net.http.model.HostPort.STRIP_IPV6" can be set to a boolean
  * value to control of the square brackets are stripped off IPv6 addresses (default false).</p>
  */
 public class HostPort {
@@ -64,6 +64,23 @@ public class HostPort {
     /* ------------------------------------------------------------ */
 
     /**
+     * Normalize IPv6 address as per https://www.ietf.org/rfc/rfc2732.txt
+     *
+     * @param host A host name
+     * @return Host name surrounded by '[' and ']' as needed.
+     */
+    public static String normalizeHost(String host) {
+        // if it is normalized IPv6 or could not be IPv6, return
+        if (host.isEmpty() || host.charAt(0) == '[' || host.indexOf(':') < 0)
+            return host;
+
+        // normalize with [ ]
+        return "[" + host + "]";
+    }
+
+    /* ------------------------------------------------------------ */
+
+    /**
      * Get the host.
      *
      * @return the host
@@ -93,22 +110,5 @@ public class HostPort {
      */
     public int getPort(int defaultPort) {
         return port > 0 ? port : defaultPort;
-    }
-
-    /* ------------------------------------------------------------ */
-
-    /**
-     * Normalize IPv6 address as per https://www.ietf.org/rfc/rfc2732.txt
-     *
-     * @param host A host name
-     * @return Host name surrounded by '[' and ']' as needed.
-     */
-    public static String normalizeHost(String host) {
-        // if it is normalized IPv6 or could not be IPv6, return
-        if (host.isEmpty() || host.charAt(0) == '[' || host.indexOf(':') < 0)
-            return host;
-
-        // normalize with [ ]
-        return "[" + host + "]";
     }
 }
