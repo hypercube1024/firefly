@@ -2,8 +2,8 @@ package com.fireflysource.net.tcp.secure;
 
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
-import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.common.sys.Result;
+import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.tcp.TcpConnection;
 import com.fireflysource.net.tcp.secure.exception.SecureNetException;
 

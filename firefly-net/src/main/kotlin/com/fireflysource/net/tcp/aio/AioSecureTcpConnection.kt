@@ -1,8 +1,8 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
-import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
@@ -63,7 +63,7 @@ class AioSecureTcpConnection(
                             it.isSuccess,
                             it.value.toInt(),
                             it.throwable
-                                                           )
+                              )
                                          )
                 }
             }
