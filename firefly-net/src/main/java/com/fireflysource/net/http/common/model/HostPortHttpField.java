@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.common.model;
 
-import com.fireflysource.net.http.exception.BadMessageException;
+import com.fireflysource.net.http.common.exception.BadMessageException;
 
 public class HostPortHttpField extends HttpField {
 

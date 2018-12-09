@@ -8,8 +8,8 @@ import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.ProjectVersion;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
+import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.*;
-import com.fireflysource.net.http.exception.BadMessageException;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;

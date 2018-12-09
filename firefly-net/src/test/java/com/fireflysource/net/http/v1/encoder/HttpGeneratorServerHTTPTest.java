@@ -1,11 +1,11 @@
 package com.fireflysource.net.http.v1.encoder;
 
 import com.fireflysource.common.io.BufferUtils;
+import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpVersion;
 import com.fireflysource.net.http.common.model.MetaData;
-import com.fireflysource.net.http.exception.BadMessageException;
 import com.fireflysource.net.http.v1.decoder.HttpParser;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

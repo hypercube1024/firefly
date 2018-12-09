@@ -2,8 +2,8 @@ package com.fireflysource.net.http.v1.decoder;
 
 
 import com.fireflysource.common.io.BufferUtils;
+import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.*;
-import com.fireflysource.net.http.exception.BadMessageException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

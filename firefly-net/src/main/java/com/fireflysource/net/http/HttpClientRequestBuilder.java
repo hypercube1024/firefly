@@ -1,11 +1,11 @@
 package com.fireflysource.net.http;
 
 import com.fireflysource.common.func.Callback;
+import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpHeader;
-import com.fireflysource.net.http.exception.BadMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -1,4 +1,4 @@
-package com.fireflysource.net.http.exception;
+package com.fireflysource.net.http.common.exception;
 
 /**
  * <p>

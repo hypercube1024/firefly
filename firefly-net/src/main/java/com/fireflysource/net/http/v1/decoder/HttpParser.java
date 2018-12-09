@@ -8,8 +8,8 @@ import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.Utf8StringBuilder;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
+import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.*;
-import com.fireflysource.net.http.exception.BadMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

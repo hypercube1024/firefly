@@ -3,8 +3,8 @@ package com.fireflysource.net.http.v1.encoder;
 import com.fireflysource.common.io.BufferUtils;
 import com.fireflysource.common.sys.ProjectVersion;
 import com.fireflysource.net.http.common.codec.DateGenerator;
+import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.*;
-import com.fireflysource.net.http.exception.BadMessageException;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
