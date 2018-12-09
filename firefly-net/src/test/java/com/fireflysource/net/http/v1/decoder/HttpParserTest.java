@@ -2114,7 +2114,7 @@ class HttpParserTest {
         assertEquals("*", uriOrStatus);
         assertEquals("HTTP/2.0", versionOrReason);
         assertEquals(-1, headers);
-        assertEquals(null, bad);
+        assertNull(bad);
     }
 
     @BeforeEach
