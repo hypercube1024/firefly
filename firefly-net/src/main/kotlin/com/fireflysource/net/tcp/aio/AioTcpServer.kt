@@ -84,40 +84,51 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     }
 
     private fun accept(serverSocketChannel: AsynchronousServerSocketChannel) {
-        serverSocketChannel.accept(id.getAndIncrement(), object : CompletionHandler<AsynchronousSocketChannel, Int> {
-            override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
-                try {
-                    val tcpConnection =
-                        AioTcpConnection(connectionId, socketChannel, config.timeout, getMessageThread(connectionId))
-                    if (config.enableSecureConnection) {
-                        val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
-                            secureEngineFactory.create(tcpConnection, false, peerHost, peerPort, supportedProtocols)
-                        } else {
-                            secureEngineFactory.create(tcpConnection, false, supportedProtocols)
+        if (!closed.get()) {
+            serverSocketChannel.accept(
+                id.getAndIncrement(),
+                object : CompletionHandler<AsynchronousSocketChannel, Int> {
+                    override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
+                        try {
+                            val tcpConnection =
+                                AioTcpConnection(
+                                    connectionId,
+                                    socketChannel,
+                                    config.timeout,
+                                    getMessageThread(connectionId)
+                                )
+                            if (config.enableSecureConnection) {
+                                val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
+                                    secureEngineFactory.create(
+                                        tcpConnection,
+                                        false,
+                                        peerHost,
+                                        peerPort,
+                                        supportedProtocols
+                                    )
+                                } else {
+                                    secureEngineFactory.create(tcpConnection, false, supportedProtocols)
+                                }
+                                val secureConnection =
+                                    AioSecureTcpConnection(tcpConnection, secureEngine, getMessageThread(connectionId))
+                                connectionConsumer.accept(secureConnection)
+                            } else {
+                                connectionConsumer.accept(tcpConnection)
+                            }
+                            log.debug { "accept the client connection. $connectionId" }
+                        } catch (e: Exception) {
+                            log.warn(e) { "accept connection exception. $connectionId" }
+                        } finally {
+                            accept(serverSocketChannel)
                         }
-                        val secureConnection =
-                            AioSecureTcpConnection(tcpConnection, secureEngine, getMessageThread(connectionId))
-                        connectionConsumer.accept(secureConnection)
-                    } else {
-                        connectionConsumer.accept(tcpConnection)
                     }
-                    log.debug { "accept the client connection. $connectionId" }
-                } catch (e: Exception) {
-                    log.warn(e) { "accept connection exception. $connectionId" }
-                } finally {
-                    if (!closed.get()) {
+
+                    override fun failed(e: Throwable, connectionId: Int) {
+                        log.warn(e) { "accept connection failure. $connectionId" }
                         accept(serverSocketChannel)
                     }
-                }
-            }
-
-            override fun failed(e: Throwable, connectionId: Int) {
-                log.warn(e) { "accept connection failure. $connectionId" }
-                if (!closed.get()) {
-                    accept(serverSocketChannel)
-                }
-            }
-        })
+                })
+        }
     }
 
     override fun getThreadName() = "aio-tcp-server"
