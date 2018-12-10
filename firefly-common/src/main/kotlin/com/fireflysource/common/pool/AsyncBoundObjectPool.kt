@@ -31,7 +31,7 @@ class AsyncBoundObjectPool<T>(
     leakDetectorInterval: Long,
     releaseTimeout: Long,
     noLeakCallback: Callback
-                             ) : AbstractLifeCycle(), AsyncPool<T> {
+) : AbstractLifeCycle(), AsyncPool<T> {
 
     companion object {
         private val log = SystemLogger.create(AsyncBoundObjectPool::class.java)

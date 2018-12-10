@@ -14,7 +14,7 @@ private val dispatchExecutor: ExecutorService = ThreadPoolExecutor(
     0L, TimeUnit.MILLISECONDS,
     ArrayBlockingQueue(20),
     Executors.defaultThreadFactory()
-                                                                  )
+)
 
 class TestCoroutineLocal {
 

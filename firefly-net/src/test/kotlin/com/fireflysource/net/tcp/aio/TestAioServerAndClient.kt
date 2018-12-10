@@ -33,7 +33,7 @@ class TestAioServerAndClient {
                 arguments("single", false),
                 arguments("array", false),
                 arguments("list", false)
-                            )
+            )
         }
     }
 

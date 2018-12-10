@@ -15,7 +15,7 @@ class AioTcpConnection(
     socketChannel: AsynchronousSocketChannel,
     timeout: Long,
     messageThread: CoroutineDispatcher
-                      ) : AbstractTcpConnection(id, socketChannel, timeout, messageThread) {
+) : AbstractTcpConnection(id, socketChannel, timeout, messageThread) {
 
     override fun isSecureConnection(): Boolean = false
 

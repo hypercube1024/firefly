@@ -12,11 +12,11 @@ object CoroutineDispatchers {
     val defaultPoolSize: Int = Integer.getInteger(
         "com.fireflysource.common.coroutine.defaultPoolSize",
         Runtime.getRuntime().availableProcessors()
-                                                 )
+    )
     val ioBlockingQueueSize = Integer.getInteger(
         "com.fireflysource.common.coroutine.ioBlockingQueueSize",
         20000
-                                                )
+    )
 
     val computation: CoroutineDispatcher by lazy {
         ForkJoinPool(defaultPoolSize, { pool ->
@@ -31,7 +31,7 @@ object CoroutineDispatchers {
             defaultPoolSize, 64,
             30L, TimeUnit.SECONDS,
             ArrayBlockingQueue<Runnable>(ioBlockingQueueSize)
-                          ) { r ->
+        ) { r ->
             Thread(r, "firefly-io-blocking-pool-" + threadId.getAndIncrement())
         }.asCoroutineDispatcher()
     }
@@ -39,7 +39,7 @@ object CoroutineDispatchers {
         ThreadPoolExecutor(
             1, 1, 0, TimeUnit.MILLISECONDS,
             LinkedTransferQueue<Runnable>()
-                          ) { r ->
+        ) { r ->
             Thread(r, "firefly-single-thread-pool")
         }.asCoroutineDispatcher()
     }
@@ -47,7 +47,7 @@ object CoroutineDispatchers {
     fun newSingleThreadExecutor(name: String): ExecutorService {
         val executor = ThreadPoolExecutor(
             1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue<Runnable>()
-                                         ) { r ->
+        ) { r ->
             Thread(r, name)
         }
         return FinalizableExecutorService(executor)
@@ -57,7 +57,7 @@ object CoroutineDispatchers {
         require(poolSize > 0)
         val executor = ThreadPoolExecutor(
             Math.min(defaultPoolSize, poolSize), poolSize, 30, TimeUnit.SECONDS, LinkedTransferQueue<Runnable>()
-                                         ) { r ->
+        ) { r ->
             Thread(r, name)
         }
         return FinalizableExecutorService(executor)

@@ -19,7 +19,7 @@ class AdaptiveBufferSize {
             48 * 1024,
             56 * 1024,
             64 * 1024
-                                       )
+        )
     }
 
     private var index: Int = 0

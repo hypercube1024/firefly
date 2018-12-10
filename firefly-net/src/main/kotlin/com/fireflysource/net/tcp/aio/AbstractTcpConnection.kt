@@ -29,7 +29,7 @@ abstract class AbstractTcpConnection(
     private val socketChannel: AsynchronousSocketChannel,
     private val timeout: Long,
     private val messageThread: CoroutineDispatcher
-                                    ) : TcpConnection {
+) : TcpConnection {
 
     companion object {
         private val log = SystemLogger.create(AbstractTcpConnection::class.java)
@@ -190,7 +190,7 @@ abstract class AbstractTcpConnection(
                             length,
                             timeout,
                             timeUnit
-                                                        )
+                        )
                         message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
@@ -357,7 +357,7 @@ abstract class AbstractTcpConnection(
         offset: Int,
         length: Int,
         result: Consumer<Result<Long>>
-                      ): TcpConnection {
+    ): TcpConnection {
         if (checkWriteState(result)) {
             outChannel.offer(Buffers(byteBuffers, offset, length, result))
         }
@@ -369,7 +369,7 @@ abstract class AbstractTcpConnection(
         offset: Int,
         length: Int,
         result: Consumer<Result<Long>>
-                      ): TcpConnection {
+    ): TcpConnection {
         if (checkWriteState(result)) {
             outChannel.offer(BufferList(byteBufferList, offset, length, result))
         }
@@ -401,7 +401,7 @@ class Buffers(
     val offset: Int,
     val length: Int,
     val result: Consumer<Result<Long>>
-             ) : Message() {
+) : Message() {
 
     init {
         require(offset >= 0) { "The offset must be greater than or equal the 0" }
@@ -429,7 +429,7 @@ class BufferList(
     val offset: Int,
     val length: Int,
     val result: Consumer<Result<Long>>
-                ) : Message() {
+) : Message() {
 
     init {
         require(offset >= 0) { "The offset must be greater than or equal the 0" }

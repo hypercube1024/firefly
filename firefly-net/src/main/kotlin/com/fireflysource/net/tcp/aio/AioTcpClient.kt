@@ -53,7 +53,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         peerHost: String,
         peerPort: Int,
         supportedProtocols: List<String>
-                        ): CompletableFuture<TcpConnection> {
+    ): CompletableFuture<TcpConnection> {
         val future = CompletableFuture<TcpConnection>()
 
         val socketChannel = AsynchronousSocketChannel.open(group)
@@ -70,7 +70,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                             socketChannel,
                             config.timeout,
                             getMessageThread(connectionId)
-                                                            )
+                        )
                         val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
                             secureEngineFactory.create(tcpConnection, true, peerHost, peerPort, supportedProtocols)
                         } else {

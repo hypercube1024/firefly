@@ -19,7 +19,7 @@ class AioSecureTcpConnection(
     private val tcpConnection: TcpConnection,
     private val secureEngine: SecureEngine,
     private val messageThread: CoroutineDispatcher
-                            ) : TcpConnection by tcpConnection {
+) : TcpConnection by tcpConnection {
 
     companion object {
         private val log = SystemLogger.create(AioSecureTcpConnection::class.java)
@@ -63,8 +63,8 @@ class AioSecureTcpConnection(
                             it.isSuccess,
                             it.value.toInt(),
                             it.throwable
-                              )
-                                         )
+                        )
+                    )
                 }
             }
             is Buffers -> {
@@ -128,7 +128,7 @@ class AioSecureTcpConnection(
         offset: Int,
         length: Int,
         result: Consumer<Result<Long>>
-                      ): TcpConnection {
+    ): TcpConnection {
         encryptedOutChannel.offer(Buffers(byteBuffers, offset, length, result))
         return this
     }
@@ -138,7 +138,7 @@ class AioSecureTcpConnection(
         offset: Int,
         length: Int,
         result: Consumer<Result<Long>>
-                      ): TcpConnection {
+    ): TcpConnection {
         encryptedOutChannel.offer(BufferList(byteBufferList, offset, length, result))
         return this
     }

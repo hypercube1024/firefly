@@ -151,14 +151,14 @@ fun <T> asyncWithAttr(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
-                     ): Deferred<T> {
+): Deferred<T> {
     return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
 fun <T> asyncGlobally(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> T
-                     ): Deferred<T> {
+): Deferred<T> {
     return GlobalScope.async(context) { block.invoke(this) }
 }
 
@@ -174,14 +174,14 @@ fun launchWithAttr(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> Unit
-                  ): Job {
+): Job {
     return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
 fun launchGlobally(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> Unit
-                  ): Job {
+): Job {
     return GlobalScope.launch(context) { block.invoke(this) }
 }
 
@@ -197,6 +197,6 @@ suspend fun <T> withAttr(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
-                        ): T {
+): T {
     return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }

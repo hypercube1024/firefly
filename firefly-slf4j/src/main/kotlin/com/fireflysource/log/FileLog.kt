@@ -80,7 +80,7 @@ class FileLog : Log {
         fun newSingleThreadExecutor(name: String): ExecutorService {
             val executor = ThreadPoolExecutor(
                 1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue<Runnable>()
-                                             ) { r ->
+            ) { r ->
                 Thread(r, name)
             }
             return FinalizableExecutorService(executor)
@@ -169,7 +169,7 @@ class FileLog : Log {
             logName: String,
             logPath: Path,
             fileLastModifiedDateTime: LocalDateTime
-                                              ) {
+        ) {
             close()
             Files.move(logPath, Paths.get(path, getLogBakName(fileLastModifiedDateTime)))
             fileOutputStream = FileOutputStream(File(path, logName), true)

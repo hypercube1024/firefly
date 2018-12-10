@@ -30,7 +30,7 @@ suspend fun AsynchronousFileChannel.aLock(
     position: Long,
     size: Long,
     shared: Boolean
-                                         ) = suspendCancellableCoroutine<FileLock> { cont ->
+) = suspendCancellableCoroutine<FileLock> { cont ->
     lock(position, size, shared, cont, asyncIOHandler())
     closeOnCancel(cont)
 }
@@ -44,7 +44,7 @@ suspend fun AsynchronousFileChannel.aLock(
 suspend fun AsynchronousFileChannel.aRead(
     buf: ByteBuffer,
     position: Long
-                                         ) = suspendCancellableCoroutine<Int> { cont ->
+) = suspendCancellableCoroutine<Int> { cont ->
     read(buf, position, cont, asyncIOHandler())
     closeOnCancel(cont)
 }
@@ -58,7 +58,7 @@ suspend fun AsynchronousFileChannel.aRead(
 suspend fun AsynchronousFileChannel.aWrite(
     buf: ByteBuffer,
     position: Long
-                                          ) = suspendCancellableCoroutine<Int> { cont ->
+) = suspendCancellableCoroutine<Int> { cont ->
     write(buf, position, cont, asyncIOHandler())
     closeOnCancel(cont)
 }
@@ -82,7 +82,7 @@ suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCorout
  */
 suspend fun AsynchronousSocketChannel.aConnect(
     socketAddress: SocketAddress
-                                              ) = suspendCancellableCoroutine<Unit> { cont ->
+) = suspendCancellableCoroutine<Unit> { cont ->
     connect(socketAddress, cont, AsyncVoidIOHandler)
     closeOnCancel(cont)
 }
@@ -97,7 +97,7 @@ suspend fun AsynchronousSocketChannel.aRead(
     buf: ByteBuffer,
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-                                           ) = suspendCancellableCoroutine<Int> { cont ->
+) = suspendCancellableCoroutine<Int> { cont ->
     read(buf, timeout, timeUnit, cont, asyncIOHandler())
     closeOnCancel(cont)
 }
@@ -108,7 +108,7 @@ suspend fun AsynchronousSocketChannel.aRead(
     length: Int,
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-                                           ) = suspendCancellableCoroutine<Long> { cont ->
+) = suspendCancellableCoroutine<Long> { cont ->
 
     read(buffers, offset, length, timeout, timeUnit, cont, asyncIOHandler())
     closeOnCancel(cont)
@@ -124,7 +124,7 @@ suspend fun AsynchronousSocketChannel.aWrite(
     buf: ByteBuffer,
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-                                            ) = suspendCancellableCoroutine<Int> { cont ->
+) = suspendCancellableCoroutine<Int> { cont ->
     write(buf, timeout, timeUnit, cont, asyncIOHandler())
     closeOnCancel(cont)
 }
@@ -135,7 +135,7 @@ suspend fun AsynchronousSocketChannel.aWrite(
     length: Int,
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-                                            ) = suspendCancellableCoroutine<Long> { cont ->
+) = suspendCancellableCoroutine<Long> { cont ->
     write(buffers, offset, length, timeout, timeUnit, cont, asyncIOHandler())
     closeOnCancel(cont)
 }
