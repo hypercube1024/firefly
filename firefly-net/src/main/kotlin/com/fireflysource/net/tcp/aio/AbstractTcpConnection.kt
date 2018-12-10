@@ -5,7 +5,7 @@ import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.aRead
 import com.fireflysource.common.io.aWrite
 import com.fireflysource.common.sys.Result
-import com.fireflysource.common.sys.Result.EMPTY_CONSUMER_RESULT
+import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.CoroutineDispatcher
@@ -47,7 +47,7 @@ abstract class AbstractTcpConnection(
     private val outputShutdownState: AtomicBoolean = AtomicBoolean(false)
     private val socketChannelClosed: AtomicBoolean = AtomicBoolean(false)
     private val closeRequest: AtomicBoolean = AtomicBoolean(false)
-    private var closeConsumer: Consumer<Result<Void>> = EMPTY_CONSUMER_RESULT
+    private var closeConsumer: Consumer<Result<Void>> = discard()
 
     private val autoReadState: AtomicBoolean = AtomicBoolean(false)
 
@@ -278,7 +278,7 @@ abstract class AbstractTcpConnection(
     }
 
     override fun close() {
-        close(EMPTY_CONSUMER_RESULT)
+        close(discard())
     }
 
     private fun shutdownInput() {

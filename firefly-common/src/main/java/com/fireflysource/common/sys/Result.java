@@ -5,14 +5,15 @@ import com.fireflysource.common.string.StringUtils;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static com.fireflysource.common.func.FunctionInterfaceUtils.createEmptyConsumer;
+
 /**
  * @author Pengtao Qiu
  */
 public class Result<T> {
 
     public static final Result<Void> SUCCESS = new Result<>(true, null, null);
-    public static final Consumer<Result<Void>> EMPTY_CONSUMER_RESULT = result -> {
-    };
+    private static final Consumer EMPTY = createEmptyConsumer();
 
     private final boolean success;
     private final T value;
@@ -22,6 +23,11 @@ public class Result<T> {
         this.success = success;
         this.value = value;
         this.throwable = throwable;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Consumer<Result<T>> discard() {
+        return EMPTY;
     }
 
     public static <T> Consumer<Result<T>> futureToConsumer(CompletableFuture<T> future) {
