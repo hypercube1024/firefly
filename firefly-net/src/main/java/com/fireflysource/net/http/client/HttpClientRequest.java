@@ -1,4 +1,4 @@
-package com.fireflysource.net.http;
+package com.fireflysource.net.http.client;
 
 /**
  * @author Pengtao Qiu

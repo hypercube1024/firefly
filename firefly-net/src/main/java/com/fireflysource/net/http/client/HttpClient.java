@@ -1,4 +1,4 @@
-package com.fireflysource.net.http;
+package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.lifecycle.LifeCycle;
 import com.fireflysource.net.http.common.model.HttpMethod;

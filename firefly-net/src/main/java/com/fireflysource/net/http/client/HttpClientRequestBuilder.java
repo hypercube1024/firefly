@@ -1,4 +1,4 @@
-package com.fireflysource.net.http;
+package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.func.Callback;
 import com.fireflysource.net.http.common.exception.BadMessageException;
@@ -126,6 +126,14 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder write(ByteBuffer buffer);
 
     /**
+     * Set the content provider. When you submit the request, the HTTP client will send the data that read from the content provider.
+     *
+     * @param contentProvider When you submit the request, the HTTP client will send the data that read from the content provider.
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder contentProvider(HttpClientContentProvider contentProvider);
+
+    /**
      * Add a multi-part mime content. Such as a file.
      *
      * @param name    The content name.
@@ -246,12 +254,11 @@ public interface HttpClientRequestBuilder {
     /**
      * Set the HTTP content receiving callback.
      *
-     * @param content The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
-     *                it will execute this action. This action will be executed many times.
+     * @param contentHandler The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
+     *                       it will execute this action. This action will be executed many times.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder content(HttpClientContentHandler content);
-
+    HttpClientRequestBuilder contentHandler(HttpClientContentHandler contentHandler);
 
     /**
      * Set the HTTP content complete callback.

@@ -1,4 +1,4 @@
-package com.fireflysource.net.http;
+package com.fireflysource.net.http.client;
 
 import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
