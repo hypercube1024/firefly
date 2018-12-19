@@ -4,6 +4,7 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers.defaultPoolSize
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadExecutor
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.sys.SystemLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.TimeUnit
@@ -11,6 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
+ * The asynchronous channel group and message thread group. It manages the IO and message threads.
+ *
  * @author Pengtao Qiu
  */
 abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
@@ -23,6 +26,10 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
         newSingleThreadDispatcher("firefly-${getThreadName()}-message-thread-$i")
     }
 
+    companion object {
+        private val log = SystemLogger.create(AbstractAioTcpChannelGroup::class.java)
+    }
+
 
     protected fun getMessageThread(connectionId: Int): CoroutineDispatcher {
         return messageThreadGroup[connectionId % defaultPoolSize]
@@ -31,6 +38,8 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
     abstract fun getThreadName(): String
 
     override fun init() {
+        log.info { "initialize single thread asynchronous channel group." }
+        log.info { "initialize message thread group. thread number: $defaultPoolSize" }
     }
 
     override fun destroy() {
