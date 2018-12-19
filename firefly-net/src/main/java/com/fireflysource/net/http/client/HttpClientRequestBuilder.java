@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
+ * The HTTP client request builder.
+ *
  * @author Pengtao Qiu
  */
 public interface HttpClientRequestBuilder {
@@ -78,19 +80,12 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder add(HttpField field);
 
     /**
-     * Get the HTTP trailers.
-     *
-     * @return The HTTP trailers.
-     */
-    Supplier<HttpFields> getTrailerSupplier();
-
-    /**
      * Set the HTTP trailers.
      *
      * @param trailers The HTTP trailers.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder setTrailerSupplier(Supplier<HttpFields> trailers);
+    HttpClientRequestBuilder trailerSupplier(Supplier<HttpFields> trailers);
 
     /**
      * Set the JSON HTTP body data.
@@ -282,10 +277,7 @@ public interface HttpClientRequestBuilder {
      * Set the bad message callback.
      *
      * @param badMessage The bad message callback. When the HTTP client parses an incorrect message format,
-     *                   it will execute this action. The callback has three parameters.
-     *                   The first parameter is the bad status code.
-     *                   The second parameter is the reason.
-     *                   The third parameter is HTTP response.
+     *                   it will execute this action.
      * @return RequestBuilder
      */
     HttpClientRequestBuilder badMessage(Consumer<BadMessageException> badMessage);

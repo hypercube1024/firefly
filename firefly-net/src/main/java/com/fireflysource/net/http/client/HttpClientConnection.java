@@ -1,4 +1,8 @@
 package com.fireflysource.net.http.client;
 
-public interface HttpClientConnection {
+import com.fireflysource.net.Connection;
+
+public interface HttpClientConnection extends Connection {
+
+
 }
