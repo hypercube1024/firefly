@@ -258,7 +258,7 @@ public interface HttpClientRequestBuilder {
     /**
      * Set the HTTP content complete callback.
      *
-     * @param contentComplete The HTTP content complete callback. When the HTTP client receives the HTTP body finish,
+     * @param contentComplete The HTTP content complete callback. When the HTTP client receives the HTTP body is complete,
      *                        it will execute this action.
      * @return RequestBuilder
      */

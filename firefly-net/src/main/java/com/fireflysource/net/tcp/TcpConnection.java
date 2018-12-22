@@ -224,24 +224,24 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
      *
      * @return If return true, the TLS engine completes the handshake stage.
      */
-    boolean isHandshakeFinished();
+    boolean isHandshakeComplete();
 
     /**
-     * Listen the TLS handshake finished event. If the TLS handshake has finished, the framework will invoke the callback function.
+     * Listen the TLS handshake complete event. If the TLS handshake has finished, the framework will invoke the callback function.
      *
      * @param result The value is the negotiated application layer protocol.
      * @return The current connection.
      */
-    TcpConnection onHandshakeFinished(Consumer<Result<String>> result);
+    TcpConnection onHandshakeComplete(Consumer<Result<String>> result);
 
     /**
-     * Listen the TLS handshake finished event.
+     * Listen the TLS handshake complete event.
      *
      * @return The value is the negotiated application layer protocol.
      */
-    default CompletableFuture<String> onHandshakeFinished() {
+    default CompletableFuture<String> onHandshakeComplete() {
         CompletableFuture<String> future = new CompletableFuture<>();
-        onHandshakeFinished(futureToConsumer(future));
+        onHandshakeComplete(futureToConsumer(future));
         return future;
     }
 

@@ -27,7 +27,7 @@ class AioSecureTcpConnection(
 
     private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
     private val encryptedOutChannel: Channel<Message> = Channel(Channel.UNLIMITED)
-    private var handshakeFinishedResult: Consumer<Result<String>> = Consumer {}
+    private var handshakeCompleteResult: Consumer<Result<String>> = Consumer {}
     private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
         decryptedInChannel.offer(buf)
     }
@@ -39,12 +39,12 @@ class AioSecureTcpConnection(
     private fun launchWritingEncryptedMessageJob() = launchGlobally(messageThread) {
         try {
             secureEngine.beginHandshake().await()
-            handshakeFinishedResult.accept(Result(true, applicationProtocol, null))
+            handshakeCompleteResult.accept(Result(true, applicationProtocol, null))
         } catch (e: Exception) {
             log.error(e) { "The TLS handshake failure." }
             tcpConnection.close()
             secureEngine.close()
-            handshakeFinishedResult.accept(Result(false, "", e))
+            handshakeCompleteResult.accept(Result(false, "", e))
             throw e
         }
 
@@ -154,10 +154,10 @@ class AioSecureTcpConnection(
         return secureEngine.isClientMode
     }
 
-    override fun isHandshakeFinished(): Boolean = secureEngine.isHandshakeFinished
+    override fun isHandshakeComplete(): Boolean = secureEngine.isHandshakeComplete
 
-    override fun onHandshakeFinished(result: Consumer<Result<String>>): TcpConnection {
-        handshakeFinishedResult = result
+    override fun onHandshakeComplete(result: Consumer<Result<String>>): TcpConnection {
+        handshakeCompleteResult = result
         return this
     }
 

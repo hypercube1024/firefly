@@ -26,11 +26,11 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
     boolean isClientMode();
 
     /**
-     * If return true, the TLS handshake stage is finished.
+     * If return true, the TLS handshake stage is complete.
      *
-     * @return If return true, the TLS handshake stage is finished.
+     * @return If return true, the TLS handshake stage is complete.
      */
-    boolean isHandshakeFinished();
+    boolean isHandshakeComplete();
 
     /**
      * Begin the TLS handshake.

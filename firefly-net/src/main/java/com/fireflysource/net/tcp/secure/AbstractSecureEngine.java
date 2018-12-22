@@ -88,7 +88,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
         switch (initialHSStatus) {
             case NOT_HANDSHAKING:
             case FINISHED: {
-                handshakeFinish();
+                handshakeComplete();
                 return initialHSComplete.get();
             }
 
@@ -134,7 +134,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                                 break unwrap;
                             case NOT_HANDSHAKING:
                             case FINISHED:
-                                handshakeFinish();
+                                handshakeComplete();
                                 break needIO;
                             default:
                                 break unwrap;
@@ -145,7 +145,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                         switch (initialHSStatus) {
                             case NOT_HANDSHAKING:
                             case FINISHED:
-                                handshakeFinish();
+                                handshakeComplete();
                                 break needIO;
                         }
 
@@ -177,7 +177,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
         }
     }
 
-    protected void handshakeFinish() {
+    protected void handshakeComplete() {
         if (initialHSComplete.compareAndSet(false, true)) {
             log.info("Connection {} handshake success. The application protocol is {}", tcpConnection.getId(), getApplicationProtocol());
             handshakeResult.accept(new Result<>(true, null, null));
@@ -218,13 +218,13 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                                 if (packetBuffer.hasRemaining()) {
                                     tcpConnection.write(packetBuffer, r -> {
                                         if (r.isSuccess()) {
-                                            handshakeFinish();
+                                            handshakeComplete();
                                         } else {
                                             handshakeResult.accept(new Result<>(false, null, r.getThrowable()));
                                         }
                                     });
                                 } else {
-                                    handshakeFinish();
+                                    handshakeComplete();
                                 }
                             }
                             break;
@@ -552,7 +552,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
 
 
     @Override
-    public boolean isHandshakeFinished() {
+    public boolean isHandshakeComplete() {
         return initialHSComplete.get();
     }
 

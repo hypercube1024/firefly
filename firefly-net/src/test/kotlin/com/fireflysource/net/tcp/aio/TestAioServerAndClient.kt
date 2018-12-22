@@ -57,7 +57,8 @@ class TestAioServerAndClient {
                 connection.startReading()
 
                 if (connection.isSecureConnection) {
-                    println("server TLS handshake success. ${connection.onHandshakeFinished().await()}")
+                    val success = connection.onHandshakeComplete().await()
+                    println("server TLS handshake success. $success")
                 }
 
                 launchGlobally {
@@ -90,7 +91,8 @@ class TestAioServerAndClient {
                     connection.startReading()
 
                     if (connection.isSecureConnection) {
-                        println("client TLS handshake success. ${connection.onHandshakeFinished().await()}")
+                        val success = connection.onHandshakeComplete().await()
+                        println("client TLS handshake success. $success")
                     }
 
                     val readingJob = launchGlobally {
