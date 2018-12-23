@@ -4,6 +4,7 @@ import com.fireflysource.common.func.Callback;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractLifeCycle implements LifeCycle {
 
@@ -27,7 +28,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
         }
     }
 
-    protected volatile boolean start;
+    protected AtomicBoolean start;
 
     public AbstractLifeCycle() {
         stopActions.add(this::stop);
@@ -35,39 +36,25 @@ public abstract class AbstractLifeCycle implements LifeCycle {
 
     @Override
     public boolean isStarted() {
-        return start;
+        return start.get();
     }
 
     @Override
     public boolean isStopped() {
-        return !start;
+        return !start.get();
     }
 
     @Override
     public void start() {
-        if (isStarted())
-            return;
-
-        synchronized (this) {
-            if (isStarted())
-                return;
-
+        if (start.compareAndSet(false, true)) {
             init();
-            start = true;
         }
     }
 
     @Override
     public void stop() {
-        if (isStopped())
-            return;
-
-        synchronized (this) {
-            if (isStopped())
-                return;
-
+        if (start.compareAndSet(true, false)) {
             destroy();
-            start = false;
         }
     }
 
