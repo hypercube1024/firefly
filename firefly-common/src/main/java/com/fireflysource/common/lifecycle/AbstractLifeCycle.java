@@ -28,7 +28,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
         }
     }
 
-    protected AtomicBoolean start;
+    protected AtomicBoolean start = new AtomicBoolean(false);
 
     public AbstractLifeCycle() {
         stopActions.add(this::stop);
