@@ -12,10 +12,10 @@ import java.util.function.Consumer
  */
 class AioTcpConnection(
     id: Int,
+    maxIdleTime: Long,
     socketChannel: AsynchronousSocketChannel,
-    timeout: Long,
     messageThread: CoroutineDispatcher
-) : AbstractTcpConnection(id, socketChannel, timeout, messageThread) {
+) : AbstractTcpConnection(id, maxIdleTime, socketChannel, messageThread) {
 
     override fun isSecureConnection(): Boolean = false
 

@@ -93,20 +93,15 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             object : CompletionHandler<AsynchronousSocketChannel, Int> {
                 override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
                     try {
-                        val tcpConnection =
-                            AioTcpConnection(
-                                connectionId,
-                                socketChannel,
-                                config.timeout,
-                                getMessageThread(connectionId)
-                            )
+                        val tcpConnection = AioTcpConnection(
+                            connectionId, config.timeout,
+                            socketChannel, getMessageThread(connectionId)
+                        )
                         if (config.enableSecureConnection) {
                             val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
                                 secureEngineFactory.create(
-                                    tcpConnection,
-                                    false,
-                                    peerHost,
-                                    peerPort,
+                                    tcpConnection, false,
+                                    peerHost, peerPort,
                                     supportedProtocols
                                 )
                             } else {

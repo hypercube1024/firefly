@@ -7,6 +7,7 @@ import com.fireflysource.common.io.aWrite
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.AbstractConnection
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -25,11 +26,11 @@ import java.util.function.Consumer
  * @author Pengtao Qiu
  */
 abstract class AbstractTcpConnection(
-    private val connectionId: Int,
+    id: Int,
+    maxIdleTime: Long,
     private val socketChannel: AsynchronousSocketChannel,
-    private val timeout: Long,
     private val messageThread: CoroutineDispatcher
-) : TcpConnection {
+) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), TcpConnection {
 
     companion object {
         private val log = SystemLogger.create(AbstractTcpConnection::class.java)
@@ -39,7 +40,6 @@ abstract class AbstractTcpConnection(
         val startReadingException = StartReadingException()
     }
 
-    private val openTimestamp: Long = System.currentTimeMillis()
     private val inChannel: Channel<ByteBuffer> = Channel(UNLIMITED)
     private val outChannel: Channel<Message> = Channel(UNLIMITED)
 
@@ -55,14 +55,6 @@ abstract class AbstractTcpConnection(
     private val closeCallbacks: MutableList<Callback> = mutableListOf()
     private val exceptionConsumers: MutableList<Consumer<Throwable>> = mutableListOf()
 
-    @Volatile
-    private var attachmentObj: Any? = null
-    private var closeTimestamp: Long = 0
-    private var lastReadTimestamp: Long = 0
-    private var lastWrittenTimestamp: Long = 0
-    private var readByteCount: Long = 0
-    private var writtenByteCount: Long = 0
-
     private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
         inChannel.offer(buf)
     }
@@ -70,38 +62,6 @@ abstract class AbstractTcpConnection(
     private val writingJob = launchWritingJob()
 
     override fun getCoroutineDispatcher(): CoroutineDispatcher = messageThread
-
-    override fun getAttachment(): Any? = attachmentObj
-
-    override fun setAttachment(obj: Any?) {
-        attachmentObj = obj
-    }
-
-    override fun getId(): Int = connectionId
-
-    override fun getOpenTime(): Long = openTimestamp
-
-    override fun getCloseTime(): Long = closeTimestamp
-
-    override fun getDuration(): Long = if (isClosed) {
-        closeTime - openTime
-    } else {
-        System.currentTimeMillis() - openTimestamp
-    }
-
-    override fun getLastReadTime(): Long = lastReadTimestamp
-
-    override fun getLastWrittenTime(): Long = lastWrittenTimestamp
-
-    override fun getLastActiveTime(): Long = Math.max(lastReadTime, lastWrittenTime)
-
-    override fun getReadBytes(): Long = readByteCount
-
-    override fun getWrittenBytes(): Long = writtenByteCount
-
-    override fun getIdleTime(): Long = System.currentTimeMillis() - lastActiveTime
-
-    override fun getMaxIdleTime(): Long = timeout
 
     override fun isClosed(): Boolean = socketChannelClosed.get()
 
@@ -125,18 +85,18 @@ abstract class AbstractTcpConnection(
     }
 
     private suspend fun writeMessage(message: Message) {
-        lastWrittenTimestamp = System.currentTimeMillis()
+        lastWrittenTime = System.currentTimeMillis()
         when (message) {
             is Buffer -> {
                 while (message.buffer.hasRemaining()) {
                     try {
-                        val count = socketChannel.aWrite(message.buffer, timeout, timeUnit)
+                        val count = socketChannel.aWrite(message.buffer, maxIdleTime, timeUnit)
                         message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
                         } else {
-                            writtenByteCount += count
+                            writtenBytes += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
@@ -157,13 +117,13 @@ abstract class AbstractTcpConnection(
                         val offset = message.getCurrentOffset()
                         val length = message.getCurrentLength()
 
-                        val count = socketChannel.aWrite(message.buffers, offset, length, timeout, timeUnit)
+                        val count = socketChannel.aWrite(message.buffers, offset, length, maxIdleTime, timeUnit)
                         message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
                         } else {
-                            writtenByteCount += count
+                            writtenBytes += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
@@ -185,18 +145,15 @@ abstract class AbstractTcpConnection(
                         val length = message.getCurrentLength()
 
                         val count = socketChannel.aWrite(
-                            message.bufferList.toTypedArray(),
-                            offset,
-                            length,
-                            timeout,
-                            timeUnit
+                            message.bufferList.toTypedArray(), offset, length,
+                            maxIdleTime, timeUnit
                         )
                         message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
                         } else {
-                            writtenByteCount += count
+                            writtenBytes += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
@@ -225,14 +182,14 @@ abstract class AbstractTcpConnection(
                 while (true) {
                     val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
                     try {
-                        lastReadTimestamp = System.currentTimeMillis()
-                        val count = socketChannel.aRead(buf, timeout, timeUnit)
+                        lastReadTime = System.currentTimeMillis()
+                        val count = socketChannel.aRead(buf, maxIdleTime, timeUnit)
                         if (count < 0) {
                             shutdownAndClose()
                             break
                         } else {
                             adaptiveBufferSize.update(count)
-                            readByteCount += count
+                            readBytes += count
                             buf.flip()
                             try {
                                 receivedMessageConsumer.accept(buf)
@@ -332,7 +289,7 @@ abstract class AbstractTcpConnection(
     override fun closeNow(): TcpConnection {
         if (socketChannelClosed.compareAndSet(false, true)) {
             try {
-                closeTimestamp = System.currentTimeMillis()
+                closeTime = System.currentTimeMillis()
                 socketChannel.close()
                 log.info { "tcp connection close success. $id" }
                 closeCallbacks.forEach { it.call() }

@@ -46,18 +46,18 @@ public interface HttpClientRequest {
     void setURI(HttpURI uri);
 
     /**
-     * Set the query parameters.
-     *
-     * @param queryParameters The query parameters.
-     */
-    void setQueryParameters(Map<String, List<String>> queryParameters);
-
-    /**
      * Get the query parameters.
      *
      * @return The query parameters.ø
      */
     Map<String, List<String>> getQueryParameters();
+
+    /**
+     * Set the query parameters.
+     *
+     * @param queryParameters The query parameters.
+     */
+    void setQueryParameters(Map<String, List<String>> queryParameters);
 
     /**
      * Get the HTTP header fields.
