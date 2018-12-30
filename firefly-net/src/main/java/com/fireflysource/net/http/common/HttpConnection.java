@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.common;
 
+import com.fireflysource.net.Connection;
 import com.fireflysource.net.http.common.model.HttpVersion;
 import kotlinx.coroutines.CoroutineDispatcher;
 
@@ -8,7 +9,7 @@ import kotlinx.coroutines.CoroutineDispatcher;
  *
  * @author Pengtao Qiu
  */
-public interface HttpConnection {
+public interface HttpConnection extends Connection {
 
     /**
      * Get the HTTP version.

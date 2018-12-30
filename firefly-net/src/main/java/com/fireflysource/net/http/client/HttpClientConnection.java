@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client;
 
-import com.fireflysource.net.Connection;
 import com.fireflysource.net.http.common.HttpConnection;
 
 import java.util.concurrent.CompletableFuture;
@@ -13,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Pengtao Qiu
  */
-public interface HttpClientConnection extends HttpConnection, Connection {
+public interface HttpClientConnection extends HttpConnection {
 
     /**
      * Send HTTP request to the remote endpoint.
@@ -22,6 +21,5 @@ public interface HttpClientConnection extends HttpConnection, Connection {
      * @return The HTTP response.
      */
     CompletableFuture<HttpClientResponse> send(HttpClientRequest request);
-
 
 }
