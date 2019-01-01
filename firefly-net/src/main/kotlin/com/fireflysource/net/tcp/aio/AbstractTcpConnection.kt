@@ -49,7 +49,7 @@ abstract class AbstractTcpConnection(
     private val closeRequest: AtomicBoolean = AtomicBoolean(false)
     private var closeConsumer: Consumer<Result<Void>> = discard()
 
-    private val autoReadState: AtomicBoolean = AtomicBoolean(false)
+    private val readingState: AtomicBoolean = AtomicBoolean(false)
 
     private val adaptiveBufferSize: AdaptiveBufferSize = AdaptiveBufferSize()
     private val closeCallbacks: MutableList<Callback> = mutableListOf()
@@ -68,15 +68,6 @@ abstract class AbstractTcpConnection(
     override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
 
     override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
-
-    override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        if (!isStartReading) {
-            receivedMessageConsumer = messageConsumer
-        } else {
-            throw startReadingException
-        }
-        return this
-    }
 
     private fun launchWritingJob() = launchGlobally(messageThread) {
         while (!isShutdownOutput) {
@@ -174,12 +165,21 @@ abstract class AbstractTcpConnection(
         }
     }
 
+    override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
+        if (!isReading) {
+            receivedMessageConsumer = messageConsumer
+        } else {
+            throw startReadingException
+        }
+        return this
+    }
+
     override fun startReading(): TcpConnection {
-        if (autoReadState.compareAndSet(false, true)) {
+        if (readingState.compareAndSet(false, true)) {
             launchGlobally(messageThread) {
                 log.debug { "start automatic reading" }
 
-                while (true) {
+                while (isReading) {
                     val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
                     try {
                         lastReadTime = System.currentTimeMillis()
@@ -212,7 +212,12 @@ abstract class AbstractTcpConnection(
         return this
     }
 
-    override fun isStartReading(): Boolean = autoReadState.get()
+    override fun isReading(): Boolean = readingState.get()
+
+    override fun suspendReading(): TcpConnection {
+        readingState.set(false)
+        return this
+    }
 
     override fun onClose(callback: Callback): TcpConnection {
         closeCallbacks.add(callback)

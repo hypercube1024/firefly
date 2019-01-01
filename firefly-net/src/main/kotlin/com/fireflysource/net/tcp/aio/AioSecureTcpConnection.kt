@@ -86,11 +86,11 @@ class AioSecureTcpConnection(
     }
 
     override fun startReading(): TcpConnection {
-        if (!tcpConnection.isStartReading) {
+        if (!tcpConnection.isReading) {
             tcpConnection.startReading()
             launchGlobally(messageThread) {
                 val input = tcpConnection.inputChannel
-                recvLoop@ while (true) {
+                recvLoop@ while (tcpConnection.isReading) {
                     val buf = input.receive()
 
                     readBufLoop@ while (buf.hasRemaining()) {
@@ -106,7 +106,7 @@ class AioSecureTcpConnection(
     }
 
     override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        if (!tcpConnection.isStartReading) {
+        if (!tcpConnection.isReading) {
             receivedMessageConsumer = messageConsumer
         } else {
             throw startReadingException

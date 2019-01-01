@@ -49,11 +49,18 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
     TcpConnection startReading();
 
     /**
-     * If return true, the tcp connection has started automatic message reading.
+     * If return true, the tcp connection is reading messages.
      *
-     * @return If return true, the tcp connection has started automatic message reading.
+     * @return If return true, the tcp connection is reading messages.
      */
-    boolean isStartReading();
+    boolean isReading();
+
+    /**
+     * Suspend automatic reading messages.
+     *
+     * @return The current connection.
+     */
+    TcpConnection suspendReading();
 
     /**
      * Register a connection close event callback. When the connection close, the framework will invoke this function.
