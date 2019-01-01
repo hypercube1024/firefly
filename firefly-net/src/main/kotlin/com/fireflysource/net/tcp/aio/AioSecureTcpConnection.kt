@@ -101,6 +101,7 @@ class AioSecureTcpConnection(
                     }
                 }
             }
+            log.info { "stop receiving encrypted messages. id: $id" }
         }
         return this
     }

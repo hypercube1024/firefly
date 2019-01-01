@@ -199,15 +199,18 @@ abstract class AbstractTcpConnection(
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection reading timeout. $id" }
+                        suspendReading()
                         shutdownAndClose()
                         break
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection reading exception. $id" }
+                        suspendReading()
                         shutdownAndClose()
                         break
                     }
                 }
             }
+            log.info { "stop receiving messages. id: $id" }
         }
         return this
     }
