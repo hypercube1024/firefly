@@ -47,7 +47,7 @@ public class HpackEncoder {
                     HttpHeader.AUTHORIZATION,
                     HttpHeader.SET_COOKIE,
                     HttpHeader.SET_COOKIE2);
-    private static final LazyLogger log = SystemLogger.create(HpackEncoder.class);
+    private static final LazyLogger LOG = SystemLogger.create(HpackEncoder.class);
     private final static HttpField[] HTTP_STATUS = new HttpField[599];
     private static final PreEncodedHttpField CONNECTION_TE = new PreEncodedHttpField(HttpHeader.CONNECTION, "te");
     private static final PreEncodedHttpField TE_TRAILERS = new PreEncodedHttpField(HttpHeader.TE, "trailers");
@@ -84,7 +84,7 @@ public class HpackEncoder {
         this.remoteMaxDynamicTableSize = remoteMaxDynamicTableSize;
         this.localMaxDynamicTableSize = localMaxDynamicTableSize;
         this.maxHeaderListSize = maxHeaderListSize;
-        debug = log.isDebugEnabled();
+        debug = LOG.isDebugEnabled();
     }
 
     static void encodeValue(ByteBuffer buffer, boolean huffman, String value) {
@@ -127,8 +127,8 @@ public class HpackEncoder {
     }
 
     public void encode(ByteBuffer buffer, MetaData metadata) {
-        if (log.isDebugEnabled())
-            log.debug(String.format("CtxTbl[%x] encoding", context.hashCode()));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("CtxTbl[%x] encoding", context.hashCode()));
 
         headerListSize = 0;
         int pos = buffer.position();
@@ -181,13 +181,13 @@ public class HpackEncoder {
 
         // Check size
         if (maxHeaderListSize > 0 && headerListSize > maxHeaderListSize) {
-            log.warn("Header list size too large {} > {} for {}", headerListSize, maxHeaderListSize);
-            if (log.isDebugEnabled())
-                log.debug("metadata={}", metadata);
+            LOG.warn("Header list size too large {} > {} for {}", headerListSize, maxHeaderListSize);
+            if (LOG.isDebugEnabled())
+                LOG.debug("metadata={}", metadata);
         }
 
-        if (log.isDebugEnabled())
-            log.debug(String.format("CtxTbl[%x] encoded %d octets", context.hashCode(), buffer.position() - pos));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("CtxTbl[%x] encoded %d octets", context.hashCode(), buffer.position() - pos));
     }
 
     public void encodeMaxDynamicTableSize(ByteBuffer buffer, int maxDynamicTableSize) {
@@ -314,8 +314,8 @@ public class HpackEncoder {
 
         if (debug) {
             int e = buffer.position();
-            if (log.isDebugEnabled())
-                log.debug("encode {}:'{}' to '{}'", encoding, field, TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + p, e - p));
+            if (LOG.isDebugEnabled())
+                LOG.debug("encode {}:'{}' to '{}'", encoding, field, TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + p, e - p));
         }
     }
 

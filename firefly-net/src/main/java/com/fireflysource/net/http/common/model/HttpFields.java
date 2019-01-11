@@ -23,7 +23,7 @@ import java.util.stream.StreamSupport;
  */
 public class HttpFields implements Iterable<HttpField> {
 
-    private static final LazyLogger log = SystemLogger.create(HttpFields.class);
+    private static final LazyLogger LOG = SystemLogger.create(HttpFields.class);
 
     private HttpField[] fields;
     private int size;
@@ -811,7 +811,7 @@ public class HttpFields implements Iterable<HttpField> {
             buffer.append("\r\n");
             return buffer.toString();
         } catch (Exception e) {
-            log.warn("http fields toString exception", e);
+            LOG.warn("http fields toString exception", e);
             return e.toString();
         }
     }

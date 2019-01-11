@@ -25,7 +25,7 @@ import static com.fireflysource.common.sys.Result.discard;
  */
 abstract public class AbstractSecureEngine implements SecureEngine {
 
-    protected static final LazyLogger log = SystemLogger.create(AbstractSecureEngine.class);
+    protected static final LazyLogger LOG = SystemLogger.create(AbstractSecureEngine.class);
 
     protected static final ByteBuffer hsBuffer = ByteBuffer.allocateDirect(0);
     protected static final ByteBuffer emptyBuf = ByteBuffer.allocate(0);
@@ -122,8 +122,8 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                 SSLEngineResult result = unwrap();
                 initialHSStatus = result.getHandshakeStatus();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Connection {} handshake result -> {}, initialHSStatus -> {}, inNetRemain -> {}", tcpConnection.getId(), result.toString(), initialHSStatus, receivedPacketBuf.remaining());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Connection {} handshake result -> {}, initialHSStatus -> {}, inNetRemain -> {}", tcpConnection.getId(), result.toString(), initialHSStatus, receivedPacketBuf.remaining());
                 }
 
                 switch (result.getStatus()) {
@@ -164,7 +164,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                     break;
 
                     case CLOSED: {
-                        log.info("Connection {} handshake failure. SSLEngine will close inbound", tcpConnection.getId());
+                        LOG.info("Connection {} handshake failure. SSLEngine will close inbound", tcpConnection.getId());
                         closeInbound();
                     }
                     break needIO;
@@ -179,7 +179,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
 
     protected void handshakeComplete() {
         if (initialHSComplete.compareAndSet(false, true)) {
-            log.info("Connection {} handshake success. The application protocol is {}", tcpConnection.getId(), getApplicationProtocol());
+            LOG.info("Connection {} handshake success. The application protocol is {}", tcpConnection.getId(), getApplicationProtocol());
             handshakeResult.accept(new Result<>(true, null, null));
         }
     }
@@ -196,15 +196,15 @@ abstract public class AbstractSecureEngine implements SecureEngine {
             while (true) {
                 result = sslEngine.wrap(hsBuffer, packetBuffer);
                 initialHSStatus = result.getHandshakeStatus();
-                if (log.isDebugEnabled()) {
-                    log.debug("Connection {} handshake response, init: {} | ret: {} | complete: {} ",
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Connection {} handshake response, init: {} | ret: {} | complete: {} ",
                             tcpConnection.getId(), initialHSStatus, result.getStatus(), initialHSComplete.get());
                 }
                 switch (result.getStatus()) {
                     case OK: {
                         packetBuffer.flip();
-                        if (log.isDebugEnabled()) {
-                            log.debug("Connection {} handshake response {} bytes", tcpConnection.getId(), packetBuffer.remaining());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Connection {} handshake response {} bytes", tcpConnection.getId(), packetBuffer.remaining());
                         }
                         switch (initialHSStatus) {
                             case NEED_TASK: {
@@ -245,7 +245,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                         break;
 
                     case CLOSED:
-                        log.info("Connection {} handshake failure. SSLEngine will close inbound", tcpConnection.getId());
+                        LOG.info("Connection {} handshake failure. SSLEngine will close inbound", tcpConnection.getId());
                         packetBuffer.flip();
                         if (packetBuffer.hasRemaining()) {
                             tcpConnection.write(packetBuffer, discard());
@@ -275,8 +275,8 @@ abstract public class AbstractSecureEngine implements SecureEngine {
 
         if (receivedPacketBuf != null) {
             if (receivedPacketBuf.hasRemaining()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Connection {} read data, merge buffer -> {}, {}", tcpConnection.getId(),
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Connection {} read data, merge buffer -> {}, {}", tcpConnection.getId(),
                             receivedPacketBuf.remaining(), now.remaining());
                 }
                 ByteBuffer ret = newBuffer(receivedPacketBuf.remaining() + now.remaining());
@@ -292,13 +292,13 @@ abstract public class AbstractSecureEngine implements SecureEngine {
 
     protected ByteBuffer getReceivedAppBuf() {
         receivedAppBuf.flip();
-        log.debug("Connection {} read data, get app buf -> {}, {}", tcpConnection.getId(), receivedAppBuf.position(), receivedAppBuf.limit());
+        LOG.debug("Connection {} read data, get app buf -> {}, {}", tcpConnection.getId(), receivedAppBuf.position(), receivedAppBuf.limit());
         if (receivedAppBuf.hasRemaining()) {
             ByteBuffer buf = newBuffer(receivedAppBuf.remaining());
             buf.put(receivedAppBuf).flip();
             receivedAppBuf = newBuffer(sslEngine.getSession().getApplicationBufferSize());
-            if (log.isDebugEnabled()) {
-                log.debug("Connection {} unwrap, app buffer -> {}", tcpConnection.getId(), buf.remaining());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Connection {} unwrap, app buffer -> {}", tcpConnection.getId(), buf.remaining());
             }
             return buf;
         } else {
@@ -333,7 +333,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
         try {
             sslEngine.closeInbound();
         } catch (SSLException e) {
-            log.warn("close inbound exception", e);
+            LOG.warn("close inbound exception", e);
         } finally {
             try {
                 tcpConnection.close();
@@ -350,7 +350,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
     @Override
     public String getApplicationProtocol() {
         String protocol = applicationProtocolSelector.getApplicationProtocol();
-        log.debug("selected protocol -> {}", protocol);
+        LOG.debug("selected protocol -> {}", protocol);
         return protocol;
     }
 
@@ -382,8 +382,8 @@ abstract public class AbstractSecureEngine implements SecureEngine {
         int packetBufferSize = sslEngine.getSession().getPacketBufferSize();
         //split net buffer when the net buffer remaining great than the net size
         ByteBuffer buf = splitBuffer(packetBufferSize);
-        if (log.isDebugEnabled()) {
-            log.debug("Connection {} read data, buf -> {}, packet -> {}, appBuf -> {}",
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Connection {} read data, buf -> {}, packet -> {}, appBuf -> {}",
                     tcpConnection.getId(), buf.remaining(), packetBufferSize, receivedAppBuf.remaining());
         }
         if (!receivedAppBuf.hasRemaining()) {
@@ -408,8 +408,8 @@ abstract public class AbstractSecureEngine implements SecureEngine {
             throw new SecureNetException("The initial handshake is not complete.");
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Connection {} read data status -> {}, initialHSComplete -> {}",
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Connection {} read data status -> {}, initialHSComplete -> {}",
                     tcpConnection.getId(), !tcpConnection.isClosed(), initialHSComplete.get());
         }
 
@@ -422,8 +422,8 @@ abstract public class AbstractSecureEngine implements SecureEngine {
         while (true) {
             SSLEngineResult result = unwrap();
 
-            if (log.isDebugEnabled()) {
-                log.debug("Connection {} read data result -> {}, receivedPacketBuf -> {}, appBufSize -> {}",
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Connection {} read data result -> {}, receivedPacketBuf -> {}, appBufSize -> {}",
                         tcpConnection.getId(), result.toString().replace('\n', ' '),
                         receivedPacketBuf.remaining(), receivedAppBuf.remaining());
             }
@@ -454,7 +454,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                 }
 
                 case CLOSED: {
-                    log.info("Connection {} read data failure. SSLEngine will close inbound", tcpConnection.getId());
+                    LOG.info("Connection {} read data failure. SSLEngine will close inbound", tcpConnection.getId());
                     closeInbound();
                 }
                 break needIO;
@@ -524,7 +524,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
                     break; // retry the operation.
 
                     case CLOSED: {
-                        log.info("Connection {} SSLEngine will close", tcpConnection.getId());
+                        LOG.info("Connection {} SSLEngine will close", tcpConnection.getId());
                         packetBuffer.flip();
                         if (packetBuffer.hasRemaining()) {
                             pocketBuffers.add(packetBuffer);

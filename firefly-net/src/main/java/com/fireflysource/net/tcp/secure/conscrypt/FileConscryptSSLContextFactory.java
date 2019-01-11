@@ -38,7 +38,7 @@ public class FileConscryptSSLContextFactory extends AbstractConscryptSecureEngin
         try (FileInputStream in = new FileInputStream(file)) {
             ret = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
         } catch (Exception e) {
-            log.error(e, () -> "get SSL context exception");
+            LOG.error(e, () -> "get SSL context exception");
         }
         return ret;
     }

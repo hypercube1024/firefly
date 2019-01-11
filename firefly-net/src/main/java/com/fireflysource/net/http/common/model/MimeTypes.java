@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 public class MimeTypes {
 
-    private static final LazyLogger log = SystemLogger.create(MimeTypes.class);
+    private static final LazyLogger LOG = SystemLogger.create(MimeTypes.class);
 
     private static final Map<String, String> DFT_MIME_MAP = new HashMap<>();
     private static final Map<String, String> INFERRED_ENCODINGS = new HashMap<>();
@@ -44,7 +44,7 @@ public class MimeTypes {
         String resourceName = path + "/mime.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null) {
-                log.warn("Missing mime-type resource: {}", resourceName);
+                LOG.warn("Missing mime-type resource: {}", resourceName);
             } else {
                 try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
                     Properties props = new Properties();
@@ -55,23 +55,23 @@ public class MimeTypes {
                                  DFT_MIME_MAP.put(StringUtils.asciiToLowerCase(x), normalizeMimeType(props.getProperty(x))));
 
                     if (DFT_MIME_MAP.size() == 0) {
-                        log.warn("Empty mime types at {}", resourceName);
+                        LOG.warn("Empty mime types at {}", resourceName);
                     } else if (DFT_MIME_MAP.size() < props.keySet().size()) {
-                        log.warn("Duplicate or null mime-type extension in resource: {}", resourceName);
+                        LOG.warn("Duplicate or null mime-type extension in resource: {}", resourceName);
                     }
                 } catch (IOException e) {
-                    log.warn(e.toString());
+                    LOG.warn(e.toString());
                 }
 
             }
         } catch (IOException e) {
-            log.warn(e.toString());
+            LOG.warn(e.toString());
         }
 
         resourceName = path + "/encoding.properties";
         try (InputStream stream = MimeTypes.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (stream == null)
-                log.warn("Missing encoding resource: {}", resourceName);
+                LOG.warn("Missing encoding resource: {}", resourceName);
             else {
                 try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
                     Properties props = new Properties();
@@ -88,16 +88,16 @@ public class MimeTypes {
                          });
 
                     if (INFERRED_ENCODINGS.size() == 0) {
-                        log.warn("Empty encodings at {}", resourceName);
+                        LOG.warn("Empty encodings at {}", resourceName);
                     } else if ((INFERRED_ENCODINGS.size() + ASSUMED_ENCODINGS.size()) < props.keySet().size()) {
-                        log.warn("Null or duplicate encodings in resource: {}", resourceName);
+                        LOG.warn("Null or duplicate encodings in resource: {}", resourceName);
                     }
                 } catch (IOException e) {
-                    log.warn(e.toString());
+                    LOG.warn(e.toString());
                 }
             }
         } catch (IOException e) {
-            log.warn(e.toString());
+            LOG.warn(e.toString());
         }
     }
 

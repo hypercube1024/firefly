@@ -15,7 +15,7 @@ public class NoCheckConscryptSSLContextFactory extends AbstractConscryptSecureEn
         try {
             return getSSLContextWithManager(null, new TrustManager[]{SecureUtils.createX509TrustManagerNoCheck()}, null);
         } catch (Throwable e) {
-            log.error(e, () -> "get SSL context error");
+            LOG.error(e, () -> "get SSL context error");
             return null;
         }
     }

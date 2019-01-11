@@ -19,7 +19,7 @@ import java.util.List;
  */
 abstract public class AbstractConscryptSecureEngineFactory implements SecureEngineFactory {
 
-    protected static final LazyLogger log = SystemLogger.create(AbstractConscryptSecureEngineFactory.class);
+    protected static final LazyLogger LOG = SystemLogger.create(AbstractConscryptSecureEngineFactory.class);
 
     private static String provideName;
 
@@ -27,7 +27,7 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         Provider provider = Conscrypt.newProvider();
         provideName = provider.getName();
         Security.addProvider(provider);
-        log.info(() -> "add Conscrypt security provider");
+        LOG.info(() -> "add Conscrypt security provider");
     }
 
     public static String getProvideName() {
@@ -40,7 +40,7 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         final SSLContext sslContext = SSLContext.getInstance("TLSv1.2", provideName);
         sslContext.init(km, tm, random);
         long end = System.currentTimeMillis();
-        log.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");
+        LOG.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");
         return sslContext;
     }
 
@@ -72,7 +72,7 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         long end = System.currentTimeMillis();
-        log.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");
+        LOG.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");
         return sslContext;
     }
 

@@ -27,7 +27,7 @@ import java.util.*;
 public class HpackContext {
 
     static final int STATIC_SIZE;
-    private static final LazyLogger log = SystemLogger.create(HpackContext.class);
+    private static final LazyLogger LOG = SystemLogger.create(HpackContext.class);
     private static final String EMPTY = "";
     public static final String[][] STATIC_TABLE = {
             {null, null},
@@ -169,8 +169,8 @@ public class HpackContext {
         maxDynamicTableSizeInBytes = maxDynamicTableSize;
         int guesstimateEntries = 10 + maxDynamicTableSize / (32 + 10 + 10);
         dynamicTable = new DynamicTable(guesstimateEntries);
-        if (log.isDebugEnabled())
-            log.debug(String.format("HdrTbl[%x] created max=%d", hashCode(), maxDynamicTableSize));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("HdrTbl[%x] created max=%d", hashCode(), maxDynamicTableSize));
     }
 
     public static Entry getStatic(HttpHeader header) {
@@ -187,8 +187,8 @@ public class HpackContext {
     }
 
     public void resize(int newMaxDynamicTableSize) {
-        if (log.isDebugEnabled())
-            log.debug(String.format("HdrTbl[%x] resized max=%d->%d", hashCode(), maxDynamicTableSizeInBytes, newMaxDynamicTableSize));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("HdrTbl[%x] resized max=%d->%d", hashCode(), maxDynamicTableSizeInBytes, newMaxDynamicTableSize));
         maxDynamicTableSizeInBytes = newMaxDynamicTableSize;
         dynamicTable.evict();
     }
@@ -225,8 +225,8 @@ public class HpackContext {
         Entry entry = new Entry(field);
         int size = entry.getSize();
         if (size > maxDynamicTableSizeInBytes) {
-            if (log.isDebugEnabled())
-                log.debug(String.format("HdrTbl[%x] !added size %d>%d", hashCode(), size, maxDynamicTableSizeInBytes));
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("HdrTbl[%x] !added size %d>%d", hashCode(), size, maxDynamicTableSizeInBytes));
             dynamicTable.evictAll();
             return null;
         }
@@ -235,8 +235,8 @@ public class HpackContext {
         fieldMap.put(field, entry);
         nameMap.put(StringUtils.asciiToLowerCase(field.getName()), entry);
 
-        if (log.isDebugEnabled())
-            log.debug(String.format("HdrTbl[%x] added %s", hashCode(), entry));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("HdrTbl[%x] added %s", hashCode(), entry));
         dynamicTable.evict();
         return entry;
     }
@@ -402,8 +402,8 @@ public class HpackContext {
                 entries[offset] = null;
                 offset = (offset + 1) % entries.length;
                 size--;
-                if (log.isDebugEnabled())
-                    log.debug(String.format("HdrTbl[%x] evict %s", HpackContext.this.hashCode(), entry));
+                if (LOG.isDebugEnabled())
+                    LOG.debug(String.format("HdrTbl[%x] evict %s", HpackContext.this.hashCode(), entry));
                 dynamicTableSizeInBytes -= entry.getSize();
                 entry.slot = -1;
                 fieldMap.remove(entry.getHttpField());
@@ -412,13 +412,13 @@ public class HpackContext {
                     nameMap.remove(lc);
 
             }
-            if (log.isDebugEnabled())
-                log.debug(String.format("HdrTbl[%x] entries=%d, size=%d, max=%d", HpackContext.this.hashCode(), dynamicTable.size(), dynamicTableSizeInBytes, maxDynamicTableSizeInBytes));
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("HdrTbl[%x] entries=%d, size=%d, max=%d", HpackContext.this.hashCode(), dynamicTable.size(), dynamicTableSizeInBytes, maxDynamicTableSizeInBytes));
         }
 
         private void evictAll() {
-            if (log.isDebugEnabled())
-                log.debug(String.format("HdrTbl[%x] evictAll", HpackContext.this.hashCode()));
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("HdrTbl[%x] evictAll", HpackContext.this.hashCode()));
             fieldMap.clear();
             nameMap.clear();
             offset = 0;

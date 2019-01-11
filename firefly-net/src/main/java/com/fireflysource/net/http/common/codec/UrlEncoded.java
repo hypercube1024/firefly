@@ -46,7 +46,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
     private static final String __ISO_8859_1 = "iso-8859-1";
     private static final String __UTF8 = "utf-8";
     private static final String __UTF16 = "utf-16";
-    private static LazyLogger log = SystemLogger.create(UrlEncoded.class);
+    private static LazyLogger LOG = SystemLogger.create(UrlEncoded.class);
 
     static {
         Charset encoding;
@@ -54,7 +54,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
             String charset = System.getProperty("com.firefly.codec.http2.encode.UrlEncoding.charset");
             encoding = charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset);
         } catch (Exception e) {
-            log.warn("get charset exception", e);
+            LOG.warn("get charset exception", e);
             encoding = StandardCharsets.UTF_8;
         }
         ENCODING = encoding;

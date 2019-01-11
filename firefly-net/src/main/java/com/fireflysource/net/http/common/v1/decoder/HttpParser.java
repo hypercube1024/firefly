@@ -68,7 +68,7 @@ import static com.fireflysource.net.http.common.model.HttpTokens.EndOfContent;
  * @see <a href="http://tools.ietf.org/html/rfc7230">RFC 7230</a>
  */
 public class HttpParser {
-    public static final LazyLogger log = SystemLogger.create(HttpParser.class);
+    public static final LazyLogger LOG = SystemLogger.create(HttpParser.class);
     @Deprecated
     public final static String STRICT = "com.fireflysource.net.http.common.v1.decoder.HttpParser.STRICT";
     public final static int INITIAL_URI_LENGTH = 256;
@@ -88,7 +88,7 @@ public class HttpParser {
     private final static int MAX_CHUNK_LENGTH = Integer.MAX_VALUE / 16 - 16;
     private final static EnumSet<State> IDLE_STATES = EnumSet.of(State.START, State.END, State.CLOSE, State.CLOSED);
     private final static EnumSet<State> COMPLETE_STATES = EnumSet.of(State.END, State.CLOSE, State.CLOSED);
-    private static final boolean DEBUG = log.isDebugEnabled(); // Cache debug to help branch prediction
+    private static final boolean DEBUG = LOG.isDebugEnabled(); // Cache debug to help branch prediction
 
     static {
         CACHE.put(new HttpField(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE));
@@ -231,7 +231,7 @@ public class HttpParser {
     private static HttpCompliance compliance() {
         boolean strict = Boolean.getBoolean(STRICT);
         if (strict) {
-            log.warn("Deprecated property used: " + STRICT);
+            LOG.warn("Deprecated property used: " + STRICT);
             return HttpCompliance.LEGACY;
         }
         return HttpCompliance.RFC7230;
@@ -309,13 +309,13 @@ public class HttpParser {
 
     protected void setState(State state) {
         if (DEBUG)
-            log.debug("{} --> {}", this.state, state);
+            LOG.debug("{} --> {}", this.state, state);
         this.state = state;
     }
 
     protected void setState(FieldState state) {
         if (DEBUG)
-            log.debug("{}:{} --> {}", this.state, field != null ? field : headerString != null ? headerString : string, state);
+            LOG.debug("{}:{} --> {}", this.state, field != null ? field : headerString != null ? headerString : string, state);
         fieldState = state;
     }
 
@@ -460,7 +460,7 @@ public class HttpParser {
 
             // count this white space as a header byte to avoid DOS
             if (maxHeaderBytes > 0 && ++headerBytes > maxHeaderBytes) {
-                log.warn("padding is too large >" + maxHeaderBytes);
+                LOG.warn("padding is too large >" + maxHeaderBytes);
                 throw new BadMessageException(HttpStatus.BAD_REQUEST_400);
             }
         }
@@ -514,13 +514,13 @@ public class HttpParser {
 
             if (maxHeaderBytes > 0 && ++headerBytes > maxHeaderBytes) {
                 if (state == State.URI) {
-                    log.warn("URI is too large >" + maxHeaderBytes);
+                    LOG.warn("URI is too large >" + maxHeaderBytes);
                     throw new BadMessageException(HttpStatus.URI_TOO_LONG_414);
                 } else {
                     if (requestHandler != null)
-                        log.warn("request is too large >" + maxHeaderBytes);
+                        LOG.warn("request is too large >" + maxHeaderBytes);
                     else
-                        log.warn("response is too large >" + maxHeaderBytes);
+                        LOG.warn("response is too large >" + maxHeaderBytes);
                     throw new BadMessageException(HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431);
                 }
             }
@@ -616,7 +616,7 @@ public class HttpParser {
                                     headerBytes += len;
 
                                     if (maxHeaderBytes > 0 && ++headerBytes > maxHeaderBytes) {
-                                        log.warn("URI is too large >" + maxHeaderBytes);
+                                        LOG.warn("URI is too large >" + maxHeaderBytes);
                                         throw new BadMessageException(HttpStatus.URI_TOO_LONG_414);
                                     }
                                     uri.append(array, p - 1, len + 1);
@@ -952,7 +952,7 @@ public class HttpParser {
 
             if (maxHeaderBytes > 0 && ++headerBytes > maxHeaderBytes) {
                 boolean header = state == State.HEADER;
-                log.warn("{} is too large {}>{}", header ? "Header" : "Trailer", headerBytes, maxHeaderBytes);
+                LOG.warn("{} is too large {}>{}", header ? "Header" : "Trailer", headerBytes, maxHeaderBytes);
                 throw new BadMessageException(header ?
                         HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE_431 :
                         HttpStatus.PAYLOAD_TOO_LARGE_413);
@@ -1279,7 +1279,7 @@ public class HttpParser {
      */
     public boolean parseNext(ByteBuffer buffer) {
         if (DEBUG)
-            log.debug("parseNext s={} {}", state, BufferUtils.toDetailString(buffer));
+            LOG.debug("parseNext s={} {}", state, BufferUtils.toDetailString(buffer));
         try {
             // Start a request/response
             if (state == State.START) {
@@ -1369,7 +1369,7 @@ public class HttpParser {
 
                     default:
                         if (DEBUG)
-                            log.debug("{} EOF in {}", this, state);
+                            LOG.debug("{} EOF in {}", this, state);
                         setState(State.CLOSED);
                         handler.badMessage(new BadMessageException(HttpStatus.BAD_REQUEST_400));
                         break;
@@ -1387,7 +1387,7 @@ public class HttpParser {
 
     protected void badMessage(BadMessageException x) {
         if (DEBUG)
-            log.debug("Parse exception: " + this + " for " + handler, x);
+            LOG.debug("Parse exception: " + this + " for " + handler, x);
         setState(State.CLOSE);
         if (headerComplete)
             handler.earlyEOF();
@@ -1571,7 +1571,7 @@ public class HttpParser {
      */
     public void atEOF() {
         if (DEBUG)
-            log.debug("atEOF {}", this);
+            LOG.debug("atEOF {}", this);
         eof = true;
     }
 
@@ -1581,14 +1581,14 @@ public class HttpParser {
      */
     public void close() {
         if (DEBUG)
-            log.debug("close {}", this);
+            LOG.debug("close {}", this);
         setState(State.CLOSE);
     }
 
 
     public void reset() {
         if (DEBUG)
-            log.debug("reset {}", this);
+            LOG.debug("reset {}", this);
 
         // reset state
         if (state == State.CLOSE || state == State.CLOSED)
@@ -1761,8 +1761,8 @@ public class HttpParser {
     private static class IllegalCharacterException extends BadMessageException {
         private IllegalCharacterException(State state, HttpTokens.Token token, ByteBuffer buffer) {
             super(400, String.format("Illegal character %s", token));
-            if (log.isDebugEnabled())
-                log.debug(String.format("Illegal character %s in state=%s for buffer %s", token, state, BufferUtils.toDetailString(buffer)));
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("Illegal character %s in state=%s for buffer %s", token, state, BufferUtils.toDetailString(buffer)));
         }
     }
 }

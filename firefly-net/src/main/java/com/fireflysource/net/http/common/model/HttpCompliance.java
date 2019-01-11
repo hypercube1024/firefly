@@ -70,7 +70,7 @@ public enum HttpCompliance {
     @Deprecated
     CUSTOM3(sectionsByProperty("CUSTOM3"));
 
-    private static final LazyLogger log = SystemLogger.create(HttpCompliance.class);
+    private static final LazyLogger LOG = SystemLogger.create(HttpCompliance.class);
     private final static Map<HttpComplianceSection, HttpCompliance> REQUIRED = new HashMap<>();
 
     static {
@@ -135,7 +135,7 @@ public enum HttpCompliance {
                 element = element.substring(1);
             HttpComplianceSection section = HttpComplianceSection.valueOf(element);
             if (section == null) {
-                log.warn("Unknown section '" + element + "' in HttpCompliance spec: " + spec);
+                LOG.warn("Unknown section '" + element + "' in HttpCompliance spec: " + spec);
                 continue;
             }
             if (exclude)

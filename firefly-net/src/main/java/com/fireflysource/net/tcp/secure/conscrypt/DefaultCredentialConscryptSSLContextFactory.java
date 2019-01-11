@@ -15,7 +15,7 @@ public class DefaultCredentialConscryptSSLContextFactory extends AbstractConscry
         try {
             return getSSLContext(new ByteArrayInputStream(SecureUtils.DEFAULT_CREDENTIAL), "ptmima1234", "ptmima4321");
         } catch (Throwable e) {
-            log.error(e, () -> "get SSL context error");
+            LOG.error(e, () -> "get SSL context error");
             return null;
         }
     }

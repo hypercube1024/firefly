@@ -18,7 +18,7 @@ import java.util.Optional;
  */
 public class ConscryptApplicationProtocolSelector implements ApplicationProtocolSelector {
 
-    private static final LazyLogger log = SystemLogger.create(ConscryptApplicationProtocolSelector.class);
+    private static final LazyLogger LOG = SystemLogger.create(ConscryptApplicationProtocolSelector.class);
 
     private final String[] supportedProtocols;
     private final List<String> supportedProtocolList;
@@ -65,7 +65,7 @@ public class ConscryptApplicationProtocolSelector implements ApplicationProtocol
             if (clientProtocols != null) {
                 for (String p : supportedProtocols) {
                     if (clientProtocols.contains(p)) {
-                        log.debug(() -> "ALPN local server selected protocol -> " + p);
+                        LOG.debug(() -> "ALPN local server selected protocol -> " + p);
                         return p;
                     }
                 }

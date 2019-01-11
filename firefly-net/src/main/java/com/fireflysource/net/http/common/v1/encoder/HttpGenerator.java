@@ -38,7 +38,7 @@ public class HttpGenerator {
             }}, 0);
     // other statics
     public static final int CHUNK_SIZE = 12;
-    private final static LazyLogger log = SystemLogger.create(HttpGenerator.class);
+    private final static LazyLogger LOG = SystemLogger.create(HttpGenerator.class);
     private final static byte[] COLON_SPACE = new byte[]{':', ' '};
     private final static int SEND_SERVER = 0x01;
     private final static int SEND_XPOWEREDBY = 0x02;
@@ -314,8 +314,8 @@ public class HttpGenerator {
 
             case END:
                 if (BufferUtils.hasContent(content)) {
-                    if (log.isDebugEnabled())
-                        log.debug("discarding content in COMPLETING");
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("discarding content in COMPLETING");
                     BufferUtils.clear(content);
                 }
                 return Result.DONE;
@@ -349,8 +349,8 @@ public class HttpGenerator {
 
     private Result completing(ByteBuffer chunk, ByteBuffer content) {
         if (BufferUtils.hasContent(content)) {
-            if (log.isDebugEnabled())
-                log.debug("discarding content in COMPLETING");
+            if (LOG.isDebugEnabled())
+                LOG.debug("discarding content in COMPLETING");
             BufferUtils.clear(content);
         }
 
@@ -474,8 +474,8 @@ public class HttpGenerator {
 
             case END:
                 if (BufferUtils.hasContent(content)) {
-                    if (log.isDebugEnabled())
-                        log.debug("discarding content in COMPLETING");
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("discarding content in COMPLETING");
                     BufferUtils.clear(content);
                 }
                 return Result.DONE;
@@ -572,9 +572,9 @@ public class HttpGenerator {
         final MetaData.Request request = (info instanceof MetaData.Request) ? (MetaData.Request) info : null;
         final MetaData.Response response = (info instanceof MetaData.Response) ? (MetaData.Response) info : null;
 
-        if (log.isDebugEnabled()) {
-            log.debug("generateHeaders {} last={} content={}", info, last, BufferUtils.toDetailString(content));
-            log.debug(info.getFields().toString());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("generateHeaders {} last={} content={}", info, last, BufferUtils.toDetailString(content));
+            LOG.debug(info.getFields().toString());
         }
 
         // default field values
@@ -721,8 +721,8 @@ public class HttpGenerator {
             throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Unknown content length for request");
         }
 
-        if (log.isDebugEnabled())
-            log.debug(endOfContent.toString());
+        if (LOG.isDebugEnabled())
+            LOG.debug(endOfContent.toString());
 
         // Add transfer encoding if it is not chunking
         if (transfer_encoding != null) {
