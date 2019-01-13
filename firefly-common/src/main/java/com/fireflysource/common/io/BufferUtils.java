@@ -28,7 +28,7 @@ import java.util.Arrays;
  * Which looks as if it should write no data, but in fact writes the buffer worth of garbage.
  * </p>
  * <p>
- * The BufferUtil class provides a set of utilities that operate on the convention that ByteBuffers
+ * The BufferUtils class provides a set of utilities that operate on the convention that ByteBuffers
  * will always be left, passed in an API or returned from a method in the flush mode - ie with
  * valid data between the pos and limit.    This convention is adopted so as to avoid confusion as to
  * what state a buffer is in and to avoid excessive copying of data that can result with the usage
@@ -39,12 +39,12 @@ import java.util.Arrays;
  * in flush mode.   Thus the following tests will pass:
  * </p>
  * <pre>
- *     ByteBuffer buffer = BufferUtil.allocate(1024);
+ *     ByteBuffer buffer = BufferUtils.allocate(1024);
  *     assert(buffer.remaining()==0);
- *     BufferUtil.clear(buffer);
+ *     BufferUtils.clear(buffer);
  *     assert(buffer.remaining()==0);
  * </pre>
- * <p>If the BufferUtil methods {@link #fill(ByteBuffer, byte[], int, int)},
+ * <p>If the BufferUtils methods {@link #fill(ByteBuffer, byte[], int, int)},
  * {@link #append(ByteBuffer, byte[], int, int)} or {@link #put(ByteBuffer, ByteBuffer)} are used,
  * then the caller does not need to explicitly switch the buffer to fill mode.
  * If the caller wishes to use other ByteBuffer bases libraries to fill a buffer,
@@ -53,7 +53,7 @@ import java.util.Arrays;
  * is not set to zero on each fill cycle and so its value must be remembered:
  * </p>
  * <pre>
- *      int pos = BufferUtil.flipToFill(buffer);
+ *      int pos = BufferUtils.flipToFill(buffer);
  *      try
  *      {
  *          buffer.put(data);
