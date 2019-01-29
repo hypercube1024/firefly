@@ -2,6 +2,7 @@ package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwaitTermination
 import com.fireflysource.common.func.Callback
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -74,7 +75,7 @@ class TestAsyncBoundObjectPool {
             assertTrue(future.isDone)
         }
 
-        pool.take().use { pooledObject ->
+        pool.get().await().use { pooledObject ->
             assertFalse(pooledObject.getObject().closed)
             assertFalse(pooledObject.isReleased)
             assertTrue(pooledObject.getObject().id in 0..(maxSize - 1))
