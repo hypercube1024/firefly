@@ -1,13 +1,13 @@
 package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.func.Callback;
+import com.fireflysource.net.http.common.codec.UrlEncoded;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -49,16 +49,16 @@ public interface HttpClientRequest {
     /**
      * Get the query parameters.
      *
-     * @return The query parameters.ø
+     * @return The query parameters.
      */
-    Map<String, List<String>> getQueryParameters();
+    UrlEncoded getQueryParameters();
 
     /**
      * Set the query parameters.
      *
      * @param queryParameters The query parameters.
      */
-    void setQueryParameters(Map<String, List<String>> queryParameters);
+    void setQueryParameters(UrlEncoded queryParameters);
 
     /**
      * Get the HTTP header fields.
@@ -114,7 +114,7 @@ public interface HttpClientRequest {
      *
      * @return the content provider.
      */
-    HttpClientContentProvider getHttpClientContentProvider();
+    HttpClientContentProvider getContentProvider();
 
     /**
      * Set the HTTP header complete callback.
@@ -146,7 +146,7 @@ public interface HttpClientRequest {
      * @return The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
      * it will execute this action. This action will be executed many times.
      */
-    HttpClientContentHandler getHttpClientContentHandler();
+    HttpClientContentHandler getContentHandler();
 
     /**
      * Set the HTTP content complete callback.

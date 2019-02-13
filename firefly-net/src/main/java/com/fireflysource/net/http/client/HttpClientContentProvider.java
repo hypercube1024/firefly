@@ -15,5 +15,4 @@ public interface HttpClientContentProvider {
      * @return The number of bytes read. If return -1, it presents the end of the content.
      */
     CompletableFuture<Integer> read(ByteBuffer byteBuffer);
-
 }

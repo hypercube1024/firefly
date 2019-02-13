@@ -5,6 +5,7 @@ import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpFields
@@ -22,7 +23,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     private var method: String = defaultMethod
     private var uri: HttpURI = defaultHttpUri
-    private var queryParameters: MutableMap<String, MutableList<String>> = mutableMapOf()
+    private var queryParameters: UrlEncoded? = null
     private var httpFields: HttpFields = HttpFields()
     private var cookies: MutableList<Cookie>? = null
     private var trailerSupplier: Supplier<HttpFields>? = null
@@ -46,9 +47,14 @@ class AsyncHttpClientRequest : HttpClientRequest {
         this.uri = uri
     }
 
-    override fun getQueryParameters(): MutableMap<String, MutableList<String>> = queryParameters
+    override fun getQueryParameters(): UrlEncoded {
+        if (this.queryParameters == null) {
+            this.queryParameters = UrlEncoded()
+        }
+        return this.queryParameters!!
+    }
 
-    override fun setQueryParameters(queryParameters: MutableMap<String, MutableList<String>>) {
+    override fun setQueryParameters(queryParameters: UrlEncoded) {
         this.queryParameters = queryParameters
     }
 
@@ -74,7 +80,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
         this.contentProvider = contentProvider
     }
 
-    override fun getHttpClientContentProvider(): HttpClientContentProvider? = contentProvider
+    override fun getContentProvider(): HttpClientContentProvider? = contentProvider
 
     override fun setHeaderComplete(headerComplete: Consumer<HttpClientResponse>?) {
         this.headerComplete = headerComplete
@@ -86,7 +92,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
         this.contentHandler = contentHandler
     }
 
-    override fun getHttpClientContentHandler(): HttpClientContentHandler? = contentHandler
+    override fun getContentHandler(): HttpClientContentHandler? = contentHandler
 
     override fun setContentComplete(contentComplete: Consumer<HttpClientResponse>?) {
         this.contentComplete = contentComplete

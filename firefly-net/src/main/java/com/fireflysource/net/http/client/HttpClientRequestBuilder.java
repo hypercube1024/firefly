@@ -82,10 +82,10 @@ public interface HttpClientRequestBuilder {
     /**
      * Set the HTTP trailers.
      *
-     * @param trailers The HTTP trailers.
+     * @param trailerSupplier The HTTP trailers.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder trailerSupplier(Supplier<HttpFields> trailers);
+    HttpClientRequestBuilder trailerSupplier(Supplier<HttpFields> trailerSupplier);
 
     /**
      * Set the JSON HTTP body data.

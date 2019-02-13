@@ -26,7 +26,7 @@ public interface HttpClient extends LifeCycle {
      * @param timeout The TCP idle timeout. The unit is second.
      * @return The TCP client.
      */
-    HttpClient timeout(Long timeout);
+    HttpClient timeout(long timeout);
 
     /**
      * Create a RequestBuilder with GET method and URL.
