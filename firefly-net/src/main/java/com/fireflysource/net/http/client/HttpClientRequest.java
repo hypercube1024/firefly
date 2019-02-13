@@ -2,6 +2,7 @@ package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.func.Callback;
 import com.fireflysource.net.http.common.exception.BadMessageException;
+import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
 
@@ -62,7 +63,7 @@ public interface HttpClientRequest {
     /**
      * Get the HTTP header fields.
      *
-     * @return the HTTP header fields.
+     * @return The HTTP header fields.
      */
     HttpFields getHttpFields();
 
@@ -74,6 +75,20 @@ public interface HttpClientRequest {
     void setHttpFields(HttpFields httpFields);
 
     /**
+     * Get the HTTP cookies.
+     *
+     * @return The HTTP cookies.
+     */
+    List<Cookie> getCookies();
+
+    /**
+     * Set the HTTP cookies.
+     *
+     * @param cookies the HTTP cookies.
+     */
+    void setCookies(List<Cookie> cookies);
+
+    /**
      * Get the HTTP trailers.
      *
      * @return The HTTP trailers.
@@ -83,9 +98,9 @@ public interface HttpClientRequest {
     /**
      * Set the HTTP trailers.
      *
-     * @param trailers The HTTP trailers.
+     * @param trailerSupplier The HTTP trailers.
      */
-    void setTrailerSupplier(Supplier<HttpFields> trailers);
+    void setTrailerSupplier(Supplier<HttpFields> trailerSupplier);
 
     /**
      * Set the content provider. When you submit the request, the HTTP client will send the data that read from the content provider.
@@ -110,12 +125,28 @@ public interface HttpClientRequest {
     void setHeaderComplete(Consumer<HttpClientResponse> headerComplete);
 
     /**
+     * Get the HTTP header complete callback.
+     *
+     * @return The HTTP header complete callback. When the HTTP client receives all HTTP headers,
+     * it will execute this action.
+     */
+    Consumer<HttpClientResponse> getHeaderComplete();
+
+    /**
      * Set the HTTP content receiving callback.
      *
      * @param contentHandler The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
      *                       it will execute this action. This action will be executed many times.
      */
     void setContentHandler(HttpClientContentHandler contentHandler);
+
+    /**
+     * Get the HTTP content receiving callback.
+     *
+     * @return The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
+     * it will execute this action. This action will be executed many times.
+     */
+    HttpClientContentHandler getHttpClientContentHandler();
 
     /**
      * Set the HTTP content complete callback.
@@ -126,12 +157,28 @@ public interface HttpClientRequest {
     void setContentComplete(Consumer<HttpClientResponse> contentComplete);
 
     /**
+     * Get the HTTP content complete callback.
+     *
+     * @return The HTTP content complete callback. When the HTTP client receives the HTTP body is complete,
+     * it will execute this action.
+     */
+    Consumer<HttpClientResponse> getContentComplete();
+
+    /**
      * Set the HTTP message complete callback.
      *
      * @param messageComplete The HTTP message complete callback. When the HTTP client receives the complete HTTP message
      *                        that contains HTTP headers and body, it will execute this action.
      */
     void setMessageComplete(Consumer<HttpClientResponse> messageComplete);
+
+    /**
+     * Get the HTTP message complete callback.
+     *
+     * @return The HTTP message complete callback. When the HTTP client receives the complete HTTP message
+     * that contains HTTP headers and body, it will execute this action.
+     */
+    Consumer<HttpClientResponse> getMessageComplete();
 
     /**
      * Set the bad message callback.
@@ -142,9 +189,24 @@ public interface HttpClientRequest {
     void setBadMessage(Consumer<BadMessageException> badMessage);
 
     /**
+     * Get the bad message callback.
+     *
+     * @return The bad message callback. When the HTTP client parses an incorrect message format,
+     * it will execute this action.
+     */
+    Consumer<BadMessageException> getBadMessage();
+
+    /**
      * Set the early EOF callback.
      *
      * @param earlyEof The early EOF callback. When the HTTP client encounters an error, it will execute this action.
      */
     void setEarlyEof(Callback earlyEof);
+
+    /**
+     * Get the early EOF callback.
+     *
+     * @return The early EOF callback. When the HTTP client encounters an error, it will execute this action.
+     */
+    Callback getEarlyEof();
 }

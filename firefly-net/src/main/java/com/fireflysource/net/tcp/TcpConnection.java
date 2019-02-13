@@ -4,7 +4,6 @@ import com.fireflysource.common.func.Callback;
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
-import kotlinx.coroutines.CoroutineDispatcher;
 import kotlinx.coroutines.channels.Channel;
 
 import java.nio.ByteBuffer;
@@ -21,7 +20,7 @@ import static com.fireflysource.common.sys.Result.futureToConsumer;
  *
  * @author Pengtao Qiu
  */
-public interface TcpConnection extends Connection, ApplicationProtocolSelector {
+public interface TcpConnection extends Connection, ApplicationProtocolSelector, TcpCoroutineDispatcher {
 
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
@@ -251,12 +250,5 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector {
         onHandshakeComplete(futureToConsumer(future));
         return future;
     }
-
-    /**
-     * Get the coroutine dispatcher of this connection. One TCP connection is always in the same coroutine context.
-     *
-     * @return The coroutine dispatcher of this connection.
-     */
-    CoroutineDispatcher getCoroutineDispatcher();
 
 }

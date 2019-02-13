@@ -2,14 +2,14 @@ package com.fireflysource.net.http.common;
 
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.http.common.model.HttpVersion;
-import kotlinx.coroutines.CoroutineDispatcher;
+import com.fireflysource.net.tcp.TcpCoroutineDispatcher;
 
 /**
  * The HTTP connection.
  *
  * @author Pengtao Qiu
  */
-public interface HttpConnection extends Connection {
+public interface HttpConnection extends Connection, TcpCoroutineDispatcher {
 
     /**
      * Get the HTTP version.
@@ -24,11 +24,4 @@ public interface HttpConnection extends Connection {
      * @return If you enable the TLS protocol, it returns true.
      */
     boolean isSecureConnection();
-
-    /**
-     * Get the coroutine dispatcher of this connection. One TCP connection is always in the same coroutine context.
-     *
-     * @return The coroutine dispatcher of this connection.
-     */
-    CoroutineDispatcher getCoroutineDispatcher();
 }
