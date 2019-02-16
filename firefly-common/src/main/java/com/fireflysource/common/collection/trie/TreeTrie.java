@@ -44,12 +44,14 @@ public class TreeTrie<V> extends AbstractTrie<V> {
     private String _key;
     private V _value;
 
+    @SuppressWarnings("unchecked")
     public TreeTrie() {
         super(true);
         _nextIndex = new TreeTrie[INDEX];
         _c = 0;
     }
 
+    @SuppressWarnings("unchecked")
     private TreeTrie(char c) {
         super(true);
         _nextIndex = new TreeTrie[INDEX];

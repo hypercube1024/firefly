@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client;
 
-import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -15,9 +14,9 @@ public interface HttpClientConnectionManager {
     /**
      * Get HTTP client connection.
      *
-     * @param address The socket address.
+     * @param request The HTTP request.
      * @return The HTTP client connection.
      */
-    CompletableFuture<HttpClientConnection> getConnection(SocketAddress address);
+    CompletableFuture<HttpClientConnection> getConnection(HttpClientRequest request);
 
 }
