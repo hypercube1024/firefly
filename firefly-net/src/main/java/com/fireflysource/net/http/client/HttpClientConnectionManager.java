@@ -12,11 +12,11 @@ import java.util.concurrent.CompletableFuture;
 public interface HttpClientConnectionManager {
 
     /**
-     * Get HTTP client connection.
+     * Send HTTP request to the remote endpoint.
      *
      * @param request The HTTP request.
-     * @return The HTTP client connection.
+     * @return The HTTP response.
      */
-    CompletableFuture<HttpClientConnection> getConnection(HttpClientRequest request);
+    CompletableFuture<HttpClientResponse> send(HttpClientRequest request);
 
 }
