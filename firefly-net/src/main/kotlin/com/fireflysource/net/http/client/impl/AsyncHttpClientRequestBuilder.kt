@@ -173,6 +173,6 @@ class AsyncHttpClientRequestBuilder(
     }
 
     override fun submit(): CompletableFuture<HttpClientResponse> {
-        return connectionManager.getConnection(httpRequest).thenCompose { it.send(httpRequest) }
+        return connectionManager.send(httpRequest)
     }
 }
