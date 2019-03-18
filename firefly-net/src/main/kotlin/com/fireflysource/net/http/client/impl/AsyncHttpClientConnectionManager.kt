@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.collection.CollectionUtils
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.pool.FakePooledObject
 import com.fireflysource.common.pool.Pool
@@ -12,6 +11,8 @@ import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.v2.encoder.HeaderGenerator
+import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -76,9 +77,9 @@ class AsyncHttpClientConnectionManager(
                 } else {
                     // detect the protocol version using Connection and Upgrade HTTP headers
                     val oldValues: List<String>? = request.httpFields.getValuesList(HttpHeader.CONNECTION)
-                    if (!CollectionUtils.isEmpty(oldValues)) {
+                    if (!oldValues.isNullOrEmpty()) {
                         val newValues = mutableListOf<String>()
-                        newValues.addAll(oldValues!!)
+                        newValues.addAll(oldValues)
                         newValues.add("Upgrade")
                         newValues.add("HTTP2-Settings")
                         request.httpFields.addCSV(HttpHeader.CONNECTION, *newValues.toTypedArray())
@@ -86,6 +87,17 @@ class AsyncHttpClientConnectionManager(
                         request.httpFields.addCSV(HttpHeader.CONNECTION, "Upgrade", "HTTP2-Settings")
                     }
                     request.httpFields.put(HttpHeader.UPGRADE, "h2c")
+
+                    // generate http2 settings base64
+                    val settingsGenerator = SettingsGenerator(HeaderGenerator())
+                    if (request.http2Settings.isNullOrEmpty()) {
+
+                    } else {
+                        val frameBytes = settingsGenerator.generateSettings(request.http2Settings, false)
+
+//                        val base64 = Base64Utils.encodeToString()
+                        // TODO
+                    }
 
                     val tcpConn = createConnection(reqHostPort)
                     val http1ClientConnection = Http1ClientConnection(tcpConn)
