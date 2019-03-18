@@ -34,6 +34,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var messageComplete: Consumer<HttpClientResponse>? = null
     private var badMessage: Consumer<BadMessageException>? = null
     private var earlyEof: Callback? = null
+    private var http2Settings: Map<Int, Int>? = null
 
     override fun getMethod(): String = method
 
@@ -117,4 +118,10 @@ class AsyncHttpClientRequest : HttpClientRequest {
     }
 
     override fun getEarlyEof(): Callback? = earlyEof
+
+    override fun setHttp2Settings(http2Settings: Map<Int, Int>?) {
+        this.http2Settings = http2Settings
+    }
+
+    override fun getHttp2Settings(): Map<Int, Int>? = http2Settings
 }

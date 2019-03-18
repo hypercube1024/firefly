@@ -172,6 +172,11 @@ class AsyncHttpClientRequestBuilder(
         return this
     }
 
+    override fun http2Settings(http2Settings: Map<Int, Int>?): HttpClientRequestBuilder {
+        httpRequest.http2Settings = http2Settings
+        return this
+    }
+
     override fun submit(): CompletableFuture<HttpClientResponse> {
         return connectionManager.send(httpRequest)
     }

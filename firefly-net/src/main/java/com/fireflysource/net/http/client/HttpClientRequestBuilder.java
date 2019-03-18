@@ -10,6 +10,7 @@ import com.fireflysource.net.http.common.model.HttpHeader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -289,6 +290,14 @@ public interface HttpClientRequestBuilder {
      * @return RequestBuilder
      */
     HttpClientRequestBuilder earlyEof(Callback earlyEof);
+
+    /**
+     * Set the HTTP2 settings.
+     *
+     * @param http2Settings The HTTP2 settings.
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder http2Settings(Map<Integer, Integer> http2Settings);
 
     /**
      * Submit the HTTP request.

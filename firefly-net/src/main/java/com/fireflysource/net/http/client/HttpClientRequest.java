@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -209,4 +210,18 @@ public interface HttpClientRequest {
      * @return The early EOF callback. When the HTTP client encounters an error, it will execute this action.
      */
     Callback getEarlyEof();
+
+    /**
+     * Set the HTTP2 settings.
+     *
+     * @param settings The HTTP2 settings.
+     */
+    void setHttp2Settings(Map<Integer, Integer> settings);
+
+    /**
+     * Get the HTTP2 settings.
+     *
+     * @return The HTTP2 settings.
+     */
+    Map<Integer, Integer> getHttp2Settings();
 }

@@ -1,13 +1,13 @@
 package com.fireflysource.net.http.common.v1.encoder;
 
 import com.fireflysource.common.io.BufferUtils;
-import com.fireflysource.net.http.common.model.HttpFields;
-import com.fireflysource.net.http.common.model.HttpURI;
-import com.fireflysource.net.http.common.model.HttpVersion;
-import com.fireflysource.net.http.common.model.MetaData;
+import com.fireflysource.net.http.common.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -295,6 +295,49 @@ public class HttpGeneratorClientTest {
 
         assertEquals(58, gen.getContentPrepared());
 
+    }
+
+    @Test
+    void testAddFields() throws Exception {
+        ByteBuffer header = BufferUtils.allocate(2048);
+        HttpGenerator gen = new HttpGenerator();
+
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, null, true);
+        assertEquals(HttpGenerator.Result.NEED_INFO, result);
+        assertEquals(HttpGenerator.State.START, gen.getState());
+
+        Info info = new Info("GET", "/index.html");
+        info.getFields().add("Host", "something1");
+        info.getFields().add("User-Agent", "test1");
+        info.getFields().add("Connection", connect[1]);
+        List<String> values = info.getFields().getValuesList("Connection");
+        if (values != null && !values.isEmpty()) {
+            info.getFields().remove("Connection");
+            List<String> newValues = new LinkedList<>(values);
+            newValues.add("Upgrade");
+            newValues.add("HTTP2-Settings");
+            info.getFields().addCSV("Connection", newValues.toArray(new String[0]));
+        }
+        assertTrue(!gen.isChunking());
+
+        result = gen.generateRequest(info, null, null, null, true);
+        assertEquals(HttpGenerator.Result.NEED_HEADER, result);
+        assertEquals(HttpGenerator.State.START, gen.getState());
+
+        result = gen.generateRequest(info, header, null, null, true);
+        assertEquals(HttpGenerator.Result.FLUSH, result);
+        assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+        assertTrue(!gen.isChunking());
+        String out = BufferUtils.toString(header);
+        BufferUtils.clear(header);
+
+        result = gen.generateResponse(null, false, null, null, null, false);
+        assertEquals(HttpGenerator.Result.DONE, result);
+        assertEquals(HttpGenerator.State.END, gen.getState());
+        assertTrue(!gen.isChunking());
+
+        System.out.println(out);
+        assertTrue(out.contains("keep-alive, Upgrade, HTTP2-Settings"));
     }
 
     class Info extends MetaData.Request {
