@@ -1,6 +1,8 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.codec.base64.Base64Utils
 import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.pool.FakePooledObject
 import com.fireflysource.common.pool.Pool
 import com.fireflysource.common.pool.PooledObject
@@ -13,6 +15,7 @@ import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v2.encoder.HeaderGenerator
 import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator
+import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -21,6 +24,7 @@ import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
@@ -90,14 +94,21 @@ class AsyncHttpClientConnectionManager(
 
                     // generate http2 settings base64
                     val settingsGenerator = SettingsGenerator(HeaderGenerator())
-                    if (request.http2Settings.isNullOrEmpty()) {
-
+                    val frameBytes = if (request.http2Settings.isNullOrEmpty()) {
+                        settingsGenerator.generateSettings(SettingsFrame.DEFAULT_SETTINGS_FRAME.settings, false)
                     } else {
-                        val frameBytes = settingsGenerator.generateSettings(request.http2Settings, false)
-
-//                        val base64 = Base64Utils.encodeToString()
-                        // TODO
+                        settingsGenerator.generateSettings(request.http2Settings, false)
                     }
+                    val byteArrayOutputStream = ByteArrayOutputStream()
+                    byteArrayOutputStream.use { stream ->
+                        frameBytes.byteBuffers.forEach { buffer ->
+                            stream.write(BufferUtils.toArray(buffer))
+                        }
+                    }
+                    val bytes = byteArrayOutputStream.toByteArray()
+                    val base64 = Base64Utils.encodeToString(bytes)
+                    request.httpFields.put(HttpHeader.HTTP2_SETTINGS, base64)
+
 
                     val tcpConn = createConnection(reqHostPort)
                     val http1ClientConnection = Http1ClientConnection(tcpConn)
@@ -113,6 +124,10 @@ class AsyncHttpClientConnectionManager(
                         val http2Conn = Http2ClientConnection(tcpConn)
                         val http2ConnPool = Http2ConnectionPool(reqHostPort, http2Conn)
                         connPoolMap[reqHostPort] = http2ConnPool
+
+                        request.httpFields.remove(HttpHeader.HTTP2_SETTINGS)
+                        request.httpFields.remove(HttpHeader.UPGRADE)
+                        request.httpFields.put(HttpHeader.CONNECTION, "keep-alive")
                         val http2Resp = http2Conn.send(request).await()
                         http2Resp
                     } else {
