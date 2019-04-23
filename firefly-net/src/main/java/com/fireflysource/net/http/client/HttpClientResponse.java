@@ -39,7 +39,7 @@ public interface HttpClientResponse {
      *
      * @return The HTTP header fields.
      */
-    HttpFields getFields();
+    HttpFields getHttpFields();
 
     /**
      * Get the cookies.

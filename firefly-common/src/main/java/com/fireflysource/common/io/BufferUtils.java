@@ -11,6 +11,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Buffer utility methods.
@@ -197,6 +200,27 @@ public class BufferUtils {
             buffer.slice().get(to);
             return to;
         }
+    }
+
+    /**
+     * Convert a buffer collection to a byte array.
+     *
+     * @param buffers The buffer to convert in flush mode. The buffer is not altered.
+     * @return An array of bytes duplicated from the buffer.
+     */
+    public static byte[] toArray(Collection<ByteBuffer> buffers) {
+        List<byte[]> list = buffers.stream().map(BufferUtils::toArray).collect(Collectors.toList());
+        int count = list.stream().mapToInt(arr -> arr.length).sum();
+        if (count < 0) {
+            throw new IllegalArgumentException("The buffers are too big");
+        }
+        byte[] result = new byte[count];
+        int index = 0;
+        for (byte[] bytes : list) {
+            System.arraycopy(bytes, 0, result, index, bytes.length);
+            index += bytes.length;
+        }
+        return result;
     }
 
     /**

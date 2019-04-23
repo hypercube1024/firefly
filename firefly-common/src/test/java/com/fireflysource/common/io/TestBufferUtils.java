@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,6 +33,27 @@ class TestBufferUtils {
         buffer.flip();
         bytes = BufferUtils.toArray(buffer);
         assertEquals(3, ByteBuffer.wrap(bytes).getInt());
+    }
+
+    @Test
+    void testCollectionToArray() {
+        int count = 10;
+        List<ByteBuffer> list = new LinkedList<>();
+        for (int i = 0; i < count; i++) {
+            ByteBuffer buffer = ByteBuffer.allocate(4);
+            buffer.putInt(i);
+            buffer.flip();
+            list.add(buffer);
+        }
+
+        byte[] bytes = BufferUtils.toArray(list);
+        assertEquals(count * 4, bytes.length);
+
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        for (int i = 0; i < count; i++) {
+            int x = buffer.getInt();
+            assertEquals(i, x);
+        }
     }
 
     @Test
