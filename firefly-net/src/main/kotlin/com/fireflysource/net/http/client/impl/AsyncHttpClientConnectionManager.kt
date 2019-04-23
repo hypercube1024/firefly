@@ -47,6 +47,7 @@ class AsyncHttpClientConnectionManager(
 
     private val mutex = Mutex()
     private val connPoolMap: MutableMap<ReqHostPort, HttpConnectionPool> = ConcurrentHashMap()
+    private val settingsGenerator = SettingsGenerator(HeaderGenerator())
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally {
         mutex.withLock {
@@ -93,7 +94,6 @@ class AsyncHttpClientConnectionManager(
                     request.httpFields.put(HttpHeader.UPGRADE, "h2c")
 
                     // generate http2 settings base64
-                    val settingsGenerator = SettingsGenerator(HeaderGenerator())
                     val frameBytes = if (request.http2Settings.isNullOrEmpty()) {
                         settingsGenerator.generateSettings(SettingsFrame.DEFAULT_SETTINGS_FRAME.settings, false)
                     } else {
