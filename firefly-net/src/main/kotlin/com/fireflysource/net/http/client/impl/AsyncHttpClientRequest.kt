@@ -11,6 +11,7 @@ import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
+import com.fireflysource.net.io.OutputChannel
 import java.util.function.Consumer
 import java.util.function.Supplier
 
@@ -28,6 +29,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var cookies: MutableList<Cookie>? = null
     private var trailerSupplier: Supplier<HttpFields>? = null
     private var contentProvider: HttpClientContentProvider? = null
+    private var outputChannel: Consumer<OutputChannel>? = null
     private var headerComplete: Consumer<HttpClientResponse>? = null
     private var contentHandler: HttpClientContentHandler? = null
     private var contentComplete: Consumer<HttpClientResponse>? = null
@@ -82,6 +84,12 @@ class AsyncHttpClientRequest : HttpClientRequest {
     }
 
     override fun getContentProvider(): HttpClientContentProvider? = contentProvider
+
+    override fun getOutputChannel(): Consumer<OutputChannel>? = outputChannel
+
+    override fun setOutputChannel(outputChannel: Consumer<OutputChannel>?) {
+        this.outputChannel = outputChannel
+    }
 
     override fun setHeaderComplete(headerComplete: Consumer<HttpClientResponse>?) {
         this.headerComplete = headerComplete

@@ -7,6 +7,7 @@ import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpField
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.io.OutputChannel
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util.concurrent.CompletableFuture
@@ -71,7 +72,11 @@ class AsyncHttpClientRequestBuilder(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun write(buffer: ByteBuffer): HttpClientRequestBuilder {
+    override fun body(buffer: ByteBuffer): HttpClientRequestBuilder {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun output(consumer: Consumer<OutputChannel>): HttpClientRequestBuilder {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

@@ -6,6 +6,7 @@ import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpHeader;
+import com.fireflysource.net.io.OutputChannel;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -114,12 +115,20 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder body(String content, Charset charset);
 
     /**
-     * Write HTTP body data. When you submit the request, the data will be sent.
+     * Set the HTTP body data. When you submit the request, the data will be sent.
      *
      * @param buffer The HTTP body data.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder write(ByteBuffer buffer);
+    HttpClientRequestBuilder body(ByteBuffer buffer);
+
+    /**
+     * Set the HTTP body data output channel.
+     *
+     * @param consumer The output channel consumer.
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder output(Consumer<OutputChannel> consumer);
 
     /**
      * Set the content provider. When you submit the request, the HTTP client will send the data that read from the content provider.

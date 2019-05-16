@@ -6,6 +6,7 @@ import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
+import com.fireflysource.net.io.OutputChannel;
 
 import java.util.List;
 import java.util.Map;
@@ -116,6 +117,21 @@ public interface HttpClientRequest {
      * @return the content provider.
      */
     HttpClientContentProvider getContentProvider();
+
+
+    /**
+     * Set the output channel consumer.
+     *
+     * @param outputChannel The output channel consumer.
+     */
+    void setOutputChannel(Consumer<OutputChannel> outputChannel);
+
+    /**
+     * Get the output channel consumer.
+     *
+     * @return The output channel consumer.
+     */
+    Consumer<OutputChannel> getOutputChannel();
 
     /**
      * Set the HTTP header complete callback.
