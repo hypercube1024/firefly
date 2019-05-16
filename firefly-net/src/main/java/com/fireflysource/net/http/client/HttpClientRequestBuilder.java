@@ -6,7 +6,7 @@ import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpHeader;
-import com.fireflysource.net.io.OutputChannel;
+import com.fireflysource.common.io.OutputChannel;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -6,7 +6,7 @@ import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
-import com.fireflysource.net.io.OutputChannel;
+import com.fireflysource.common.io.OutputChannel;
 
 import java.util.List;
 import java.util.Map;
@@ -117,7 +117,6 @@ public interface HttpClientRequest {
      * @return the content provider.
      */
     HttpClientContentProvider getContentProvider();
-
 
     /**
      * Set the output channel consumer.

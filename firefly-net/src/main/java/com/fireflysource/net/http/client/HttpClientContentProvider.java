@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.client;
 
-import com.fireflysource.net.io.InputChannel;
+import com.fireflysource.common.io.InputChannel;
 
 /**
  * @author Pengtao Qiu

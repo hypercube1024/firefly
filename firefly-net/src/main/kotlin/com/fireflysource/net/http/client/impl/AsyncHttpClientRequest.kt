@@ -11,7 +11,7 @@ import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
-import com.fireflysource.net.io.OutputChannel
+import com.fireflysource.common.io.OutputChannel
 import java.util.function.Consumer
 import java.util.function.Supplier
 

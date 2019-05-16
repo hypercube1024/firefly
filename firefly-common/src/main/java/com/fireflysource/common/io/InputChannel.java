@@ -1,9 +1,10 @@
-package com.fireflysource.net.io;
+package com.fireflysource.common.io;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousChannel;
 import java.util.concurrent.CompletableFuture;
 
-public interface InputChannel {
+public interface InputChannel extends AsynchronousChannel {
 
     /**
      * Read the content asynchronously.
