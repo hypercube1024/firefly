@@ -9,14 +9,13 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author Pengtao Qiu
  */
 object CoroutineDispatchers {
+
     val defaultPoolSize: Int = Integer.getInteger(
         "com.fireflysource.common.coroutine.defaultPoolSize",
         Runtime.getRuntime().availableProcessors()
     )
-    val ioBlockingQueueSize = Integer.getInteger(
-        "com.fireflysource.common.coroutine.ioBlockingQueueSize",
-        20000
-    )
+    val ioBlockingQueueSize = Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingQueueSize", 20000)
+    val ioBlockingPoolSize: Int = Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolSize", 64)
 
     val computation: CoroutineDispatcher by lazy {
         ForkJoinPool(defaultPoolSize, { pool ->
@@ -28,7 +27,7 @@ object CoroutineDispatchers {
     val ioBlocking: CoroutineDispatcher by lazy {
         val threadId = AtomicInteger()
         ThreadPoolExecutor(
-            defaultPoolSize, 64,
+            defaultPoolSize, ioBlockingPoolSize,
             30L, TimeUnit.SECONDS,
             ArrayBlockingQueue<Runnable>(ioBlockingQueueSize)
         ) { r ->
@@ -56,7 +55,11 @@ object CoroutineDispatchers {
     fun newFixedThreadExecutor(name: String, poolSize: Int): ExecutorService {
         require(poolSize > 0)
         val executor = ThreadPoolExecutor(
-            Math.min(defaultPoolSize, poolSize), poolSize, 30, TimeUnit.SECONDS, LinkedTransferQueue<Runnable>()
+            Math.min(defaultPoolSize, poolSize),
+            Math.max(defaultPoolSize, poolSize),
+            30,
+            TimeUnit.SECONDS,
+            LinkedTransferQueue<Runnable>()
         ) { r ->
             Thread(r, name)
         }
