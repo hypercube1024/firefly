@@ -1,12 +1,12 @@
 package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.func.Callback;
+import com.fireflysource.common.io.OutputChannel;
 import com.fireflysource.net.http.common.codec.UrlEncoded;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
-import com.fireflysource.common.io.OutputChannel;
 
 import java.util.List;
 import java.util.Map;
@@ -61,6 +61,20 @@ public interface HttpClientRequest {
      * @param queryParameters The query parameters.
      */
     void setQueryParameters(UrlEncoded queryParameters);
+
+    /**
+     * Get the form parameters.
+     *
+     * @return The form parameters.
+     */
+    UrlEncoded getFormParameters();
+
+    /**
+     * Set the form parameters
+     *
+     * @param formParameters The form parameters.
+     */
+    void setFormParameters(UrlEncoded formParameters);
 
     /**
      * Get the HTTP header fields.

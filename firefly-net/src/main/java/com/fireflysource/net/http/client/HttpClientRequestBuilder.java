@@ -1,12 +1,12 @@
 package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.func.Callback;
+import com.fireflysource.common.io.OutputChannel;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpHeader;
-import com.fireflysource.common.io.OutputChannel;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -90,14 +90,6 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder trailerSupplier(Supplier<HttpFields> trailerSupplier);
 
     /**
-     * Set the JSON HTTP body data.
-     *
-     * @param obj The JSON HTTP body data. The HTTP client will serialize the object when the request is submitted.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder jsonBody(Object obj);
-
-    /**
      * Set the text HTTP body data.
      *
      * @param content The text HTTP body data.
@@ -125,10 +117,10 @@ public interface HttpClientRequestBuilder {
     /**
      * Set the HTTP body data output channel.
      *
-     * @param consumer The output channel consumer.
+     * @param outputChannel The output channel consumer.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder output(Consumer<OutputChannel> consumer);
+    HttpClientRequestBuilder output(Consumer<OutputChannel> outputChannel);
 
     /**
      * Set the content provider. When you submit the request, the HTTP client will send the data that read from the content provider.

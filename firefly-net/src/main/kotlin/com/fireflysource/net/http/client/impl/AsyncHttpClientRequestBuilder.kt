@@ -1,15 +1,18 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.func.Callback
+import com.fireflysource.common.io.OutputChannel
 import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.client.impl.content.provider.ByteBufferProvider
+import com.fireflysource.net.http.client.impl.content.provider.StringBodyProvider
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpField
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.common.io.OutputChannel
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 import java.util.function.Supplier
@@ -60,24 +63,16 @@ class AsyncHttpClientRequestBuilder(
         return this
     }
 
-    override fun jsonBody(obj: Any): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun body(content: String): HttpClientRequestBuilder = body(content, StandardCharsets.UTF_8)
 
-    override fun body(content: String): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun body(content: String, charset: Charset): HttpClientRequestBuilder =
+        contentProvider(StringBodyProvider(content, charset))
 
-    override fun body(content: String, charset: Charset): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun body(buffer: ByteBuffer): HttpClientRequestBuilder = contentProvider(ByteBufferProvider(buffer))
 
-    override fun body(buffer: ByteBuffer): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun output(consumer: Consumer<OutputChannel>): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun output(outputChannel: Consumer<OutputChannel>): HttpClientRequestBuilder {
+        httpRequest.outputChannel = outputChannel
+        return this
     }
 
     override fun contentProvider(contentProvider: HttpClientContentProvider?): HttpClientRequestBuilder {
@@ -103,23 +98,28 @@ class AsyncHttpClientRequestBuilder(
     }
 
     override fun addFormParam(name: String, value: String): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        httpRequest.formParameters.add(name, value)
+        return this
     }
 
     override fun addFormParam(name: String, values: MutableList<String>): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        httpRequest.formParameters.addValues(name, values)
+        return this
     }
 
     override fun putFormParam(name: String, value: String): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        httpRequest.formParameters.put(name, value)
+        return this
     }
 
     override fun putFormParam(name: String, values: MutableList<String>): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        httpRequest.formParameters.putValues(name, values)
+        return this
     }
 
     override fun removeFormParam(name: String): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        httpRequest.formParameters.remove(name)
+        return this
     }
 
     override fun addQueryParam(name: String, value: String): HttpClientRequestBuilder {

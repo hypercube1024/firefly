@@ -25,6 +25,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var method: String = defaultMethod
     private var uri: HttpURI = defaultHttpUri
     private var queryParameters: UrlEncoded? = null
+    private var formParameters: UrlEncoded? = null
     private var httpFields: HttpFields = HttpFields()
     private var cookies: MutableList<Cookie>? = null
     private var trailerSupplier: Supplier<HttpFields>? = null
@@ -59,6 +60,17 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     override fun setQueryParameters(queryParameters: UrlEncoded) {
         this.queryParameters = queryParameters
+    }
+
+    override fun getFormParameters(): UrlEncoded {
+        if (this.formParameters == null) {
+            this.formParameters = UrlEncoded()
+        }
+        return this.formParameters!!
+    }
+
+    override fun setFormParameters(formParameters: UrlEncoded?) {
+        this.formParameters = formParameters
     }
 
     override fun getHttpFields(): HttpFields = httpFields
