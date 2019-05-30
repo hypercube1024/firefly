@@ -24,7 +24,7 @@ class TestMultiPartContentProvider {
         httpFields.put("x1", "y1")
         provider.addFieldPart("string 2", strProvider2, httpFields)
 
-        val buffer = BufferUtils.allocate(1024)
+        val buffer = BufferUtils.allocate(provider.length().toInt())
         val pos = BufferUtils.flipToFill(buffer)
         while (buffer.hasRemaining()) {
             val len = provider.read(buffer).await()
