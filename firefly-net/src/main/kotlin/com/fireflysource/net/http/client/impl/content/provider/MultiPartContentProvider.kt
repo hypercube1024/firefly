@@ -1,8 +1,12 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
+import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
+import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.future.await
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -72,21 +76,88 @@ class MultiPartContentProvider : HttpClientContentProvider {
     }
 
     override fun length(): Long {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // Compute the length, if possible.
+        if (parts.isEmpty()) {
+            return onlyBoundary.size.toLong()
+        } else {
+            var result: Long = 0
+            for (i in 0 until parts.size) {
+                result += if (i == 0) firstBoundary.size.toLong() else middleBoundary.size.toLong()
+                val part = parts[i]
+                val partLength = part.length
+                result += partLength
+                if (partLength < 0) {
+                    result = -1
+                    break
+                }
+            }
+            if (result > 0) {
+                result += lastBoundary.size.toLong()
+            }
+            return result
+        }
     }
 
     override fun isOpen(): Boolean = open
 
     override fun toByteBuffer(): ByteBuffer {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw UnsupportedOperationException("The multi part content does not support the toByteBuffer method")
     }
 
     override fun close() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        open = false
+        state = State.COMPLETE
     }
 
-    override fun read(byteBuffer: ByteBuffer?): CompletableFuture<Int> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> = asyncGlobally {
+        generate(byteBuffer)
+    }.asCompletableFuture()
+
+    private suspend fun generate(byteBuffer: ByteBuffer): Int {
+        while (true) {
+            when (state) {
+                State.FIRST_BOUNDARY -> {
+                    return if (parts.isEmpty()) {
+                        state = State.COMPLETE
+                        byteBuffer.put(onlyBoundary)
+                        onlyBoundary.size
+                    } else {
+                        state = State.HEADERS
+                        byteBuffer.put(firstBoundary)
+                        firstBoundary.size
+                    }
+                }
+                State.HEADERS -> {
+                    val part = parts[index]
+                    state = State.CONTENT
+                    byteBuffer.put(part.headers)
+                    return part.headers.size
+                }
+                State.CONTENT -> {
+                    val part = parts[index]
+                    val len = part.content.read(byteBuffer).await()
+                    if (len >= 0) {
+                        return len
+                    } else {
+                        ++index
+                        state = if (index == parts.size) State.LAST_BOUNDARY else State.MIDDLE_BOUNDARY
+                    }
+                }
+                State.MIDDLE_BOUNDARY -> {
+                    state = State.HEADERS
+                    byteBuffer.put(middleBoundary)
+                    return middleBoundary.size
+                }
+                State.LAST_BOUNDARY -> {
+                    state = State.COMPLETE
+                    byteBuffer.put(lastBoundary)
+                    return lastBoundary.size
+                }
+                State.COMPLETE -> {
+                    return -1
+                }
+            }
+        }
     }
 
     private fun makeBoundary(): String {
