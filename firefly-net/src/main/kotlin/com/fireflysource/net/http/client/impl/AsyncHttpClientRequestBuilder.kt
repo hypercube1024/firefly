@@ -4,6 +4,7 @@ import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.OutputChannel
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferProvider
+import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringBodyProvider
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.Cookie
@@ -22,6 +23,7 @@ class AsyncHttpClientRequestBuilder(
 ) : HttpClientRequestBuilder {
 
     private val httpRequest: AsyncHttpClientRequest = AsyncHttpClientRequest()
+    private val multiPartContentProvider: MultiPartContentProvider by lazy { MultiPartContentProvider() }
 
     override fun cookies(cookies: MutableList<Cookie>?): HttpClientRequestBuilder {
         httpRequest.cookies = cookies
@@ -85,7 +87,9 @@ class AsyncHttpClientRequestBuilder(
         content: HttpClientContentProvider,
         fields: HttpFields?
     ): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        contentProvider(multiPartContentProvider)
+        multiPartContentProvider.addFieldPart(name, content, fields)
+        return this
     }
 
     override fun addFilePart(
@@ -94,7 +98,9 @@ class AsyncHttpClientRequestBuilder(
         content: HttpClientContentProvider,
         fields: HttpFields?
     ): HttpClientRequestBuilder {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        contentProvider(multiPartContentProvider)
+        multiPartContentProvider.addFilePart(name, fileName, content, fields)
+        return this
     }
 
     override fun addFormParam(name: String, value: String): HttpClientRequestBuilder {

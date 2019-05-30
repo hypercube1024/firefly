@@ -70,9 +70,9 @@
 
         <!-- The third party lib -->
         <metrics.version>4.0.5</metrics.version>
-        <jackson.version>2.9.8</jackson.version>
+        <jackson.version>2.9.9</jackson.version>
         <msgpack.version>0.8.16</msgpack.version>
-        <redisson.version>3.10.6</redisson.version>
+        <redisson.version>3.11.0</redisson.version>
         <conscrypt.version>2.1.0</conscrypt.version>
         <hikariCP.version>3.3.1</hikariCP.version>
         <spring.reactor.version>Californium-SR7</spring.reactor.version>
