@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingPool
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.io.aRead
@@ -14,7 +15,7 @@ import java.util.concurrent.CompletableFuture
 
 class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClientContentProvider {
 
-    private val fileChannel = AsynchronousFileChannel.open(path, *options)
+    private val fileChannel = AsynchronousFileChannel.open(path, setOf(*options), ioBlockingPool)
     private val length = Files.size(path)
     private var position: Long = 0
 

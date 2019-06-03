@@ -17,6 +17,26 @@ object CoroutineDispatchers {
     val ioBlockingQueueSize = Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingQueueSize", 20000)
     val ioBlockingPoolSize: Int = Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolSize", 64)
 
+
+    val ioBlockingPool: ExecutorService by lazy {
+        val threadId = AtomicInteger()
+        FinalizableExecutorService(ThreadPoolExecutor(
+            defaultPoolSize, ioBlockingPoolSize,
+            30L, TimeUnit.SECONDS,
+            ArrayBlockingQueue<Runnable>(ioBlockingQueueSize)
+        ) { r ->
+            Thread(r, "firefly-io-blocking-pool-" + threadId.getAndIncrement())
+        })
+    }
+    val singleThreadPool: ExecutorService by lazy {
+        FinalizableExecutorService(ThreadPoolExecutor(
+            1, 1, 0, TimeUnit.MILLISECONDS,
+            LinkedTransferQueue<Runnable>()
+        ) { r ->
+            Thread(r, "firefly-single-thread-pool")
+        })
+    }
+
     val computation: CoroutineDispatcher by lazy {
         ForkJoinPool(defaultPoolSize, { pool ->
             val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
@@ -24,24 +44,8 @@ object CoroutineDispatchers {
             worker
         }, null, true).asCoroutineDispatcher()
     }
-    val ioBlocking: CoroutineDispatcher by lazy {
-        val threadId = AtomicInteger()
-        ThreadPoolExecutor(
-            defaultPoolSize, ioBlockingPoolSize,
-            30L, TimeUnit.SECONDS,
-            ArrayBlockingQueue<Runnable>(ioBlockingQueueSize)
-        ) { r ->
-            Thread(r, "firefly-io-blocking-pool-" + threadId.getAndIncrement())
-        }.asCoroutineDispatcher()
-    }
-    val singleThread: CoroutineDispatcher by lazy {
-        ThreadPoolExecutor(
-            1, 1, 0, TimeUnit.MILLISECONDS,
-            LinkedTransferQueue<Runnable>()
-        ) { r ->
-            Thread(r, "firefly-single-thread-pool")
-        }.asCoroutineDispatcher()
-    }
+    val ioBlocking: CoroutineDispatcher by lazy { ioBlockingPool.asCoroutineDispatcher() }
+    val singleThread: CoroutineDispatcher by lazy { singleThreadPool.asCoroutineDispatcher() }
 
     fun newSingleThreadExecutor(name: String): ExecutorService {
         val executor = ThreadPoolExecutor(
