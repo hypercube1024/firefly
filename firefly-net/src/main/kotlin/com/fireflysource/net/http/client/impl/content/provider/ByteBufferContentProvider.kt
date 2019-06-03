@@ -5,7 +5,7 @@ import com.fireflysource.net.http.client.HttpClientContentProvider
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 
-class ByteBufferProvider(val content: ByteBuffer) : HttpClientContentProvider {
+class ByteBufferContentProvider(val content: ByteBuffer) : HttpClientContentProvider {
 
     private val buffer = content.duplicate()
     private var open = true

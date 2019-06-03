@@ -6,7 +6,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class TestByteBufferProvider {
+class TestByteBufferContentProvider {
 
     @Test
     fun testToByteBuffer() {
@@ -16,7 +16,7 @@ class TestByteBufferProvider {
         content.putLong(7777)
         BufferUtils.flipToFlush(content, pos)
 
-        val provider = ByteBufferProvider(content)
+        val provider = ByteBufferContentProvider(content)
         val buffer = provider.toByteBuffer()
         assertEquals(333, buffer.int)
         assertEquals(7777, buffer.long)
@@ -31,7 +31,7 @@ class TestByteBufferProvider {
         content.putLong(7777)
         BufferUtils.flipToFlush(content, pos)
 
-        val provider = ByteBufferProvider(content)
+        val provider = ByteBufferContentProvider(content)
         assertEquals(12, provider.length())
 
         val buffer = BufferUtils.allocate(6)

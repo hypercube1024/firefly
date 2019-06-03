@@ -3,9 +3,9 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.OutputChannel
 import com.fireflysource.net.http.client.*
-import com.fireflysource.net.http.client.impl.content.provider.ByteBufferProvider
+import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
-import com.fireflysource.net.http.client.impl.content.provider.StringBodyProvider
+import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpField
@@ -68,9 +68,9 @@ class AsyncHttpClientRequestBuilder(
     override fun body(content: String): HttpClientRequestBuilder = body(content, StandardCharsets.UTF_8)
 
     override fun body(content: String, charset: Charset): HttpClientRequestBuilder =
-        contentProvider(StringBodyProvider(content, charset))
+        contentProvider(StringContentProvider(content, charset))
 
-    override fun body(buffer: ByteBuffer): HttpClientRequestBuilder = contentProvider(ByteBufferProvider(buffer))
+    override fun body(buffer: ByteBuffer): HttpClientRequestBuilder = contentProvider(ByteBufferContentProvider(buffer))
 
     override fun output(outputChannel: Consumer<OutputChannel>): HttpClientRequestBuilder {
         httpRequest.outputChannel = outputChannel

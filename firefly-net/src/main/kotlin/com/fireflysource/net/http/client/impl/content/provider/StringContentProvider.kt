@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util.concurrent.CompletableFuture
 
-class StringBodyProvider(
+class StringContentProvider(
     val content: String,
     val charset: Charset
 ) : HttpClientContentProvider {

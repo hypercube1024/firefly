@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
 
-class TestStringBodyProvider {
+class TestStringContentProvider {
 
     @Test
     fun testToByteBuffer() {
         val str = "Hello string body"
-        val provider = StringBodyProvider(str, StandardCharsets.UTF_8)
+        val provider = StringContentProvider(str, StandardCharsets.UTF_8)
         val byteBuffer = provider.toByteBuffer()
         assertEquals(str, BufferUtils.toString(byteBuffer, StandardCharsets.UTF_8))
     }
@@ -20,7 +20,7 @@ class TestStringBodyProvider {
     @Test
     fun testRead() = runBlocking {
         val str = "Hello string body"
-        val provider = StringBodyProvider(str, StandardCharsets.UTF_8)
+        val provider = StringContentProvider(str, StandardCharsets.UTF_8)
 
         val byteBuffer = BufferUtils.allocate(5)
         val pos = BufferUtils.flipToFill(byteBuffer)
