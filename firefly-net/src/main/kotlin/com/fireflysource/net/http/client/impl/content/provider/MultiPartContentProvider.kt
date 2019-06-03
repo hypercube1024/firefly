@@ -101,7 +101,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
     override fun isOpen(): Boolean = open
 
     override fun toByteBuffer(): ByteBuffer {
-        throw UnsupportedOperationException("The multi part content does not support the toByteBuffer method")
+        throw UnsupportedOperationException("The multi part content does not support this method")
     }
 
     override fun close() {
