@@ -78,8 +78,8 @@
         <spring.reactor.version>Californium-SR7</spring.reactor.version>
 
         <!-- test lib -->
-        <junit.version>5.4.0</junit.version>
-        <mockito.version>2.24.0</mockito.version>
+        <junit.version>5.4.2</junit.version>
+        <mockito.version>2.28.2</mockito.version>
     </properties>
 
     <dependencyManagement>

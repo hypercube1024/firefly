@@ -109,9 +109,17 @@ class MultiPartContentProvider : HttpClientContentProvider {
         state = State.COMPLETE
     }
 
-    override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> = asyncGlobally {
-        generate(byteBuffer)
-    }.asCompletableFuture()
+    override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int>  {
+        if (!isOpen) {
+            return endStream()
+        }
+
+        if (state == State.COMPLETE) {
+            return endStream()
+        }
+
+        return asyncGlobally { generate(byteBuffer) }.asCompletableFuture()
+    }
 
     private suspend fun generate(byteBuffer: ByteBuffer): Int {
         while (true) {
@@ -154,6 +162,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
                     return lastBoundary.size
                 }
                 State.COMPLETE -> {
+                    open = false
                     return -1
                 }
             }
