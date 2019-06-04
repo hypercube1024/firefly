@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createStringContentProvider
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -12,7 +13,7 @@ class TestStringContentProvider {
     @Test
     fun testToByteBuffer() {
         val str = "Hello string body"
-        val provider = StringContentProvider(str, StandardCharsets.UTF_8)
+        val provider = createStringContentProvider(str, StandardCharsets.UTF_8)
         val byteBuffer = provider.toByteBuffer()
         assertEquals(str, BufferUtils.toString(byteBuffer, StandardCharsets.UTF_8))
     }
@@ -20,7 +21,7 @@ class TestStringContentProvider {
     @Test
     fun testRead() = runBlocking {
         val str = "Hello string body"
-        val provider = StringContentProvider(str, StandardCharsets.UTF_8)
+        val provider = createStringContentProvider(str, StandardCharsets.UTF_8)
 
         val byteBuffer = BufferUtils.allocate(5)
         val pos = BufferUtils.flipToFill(byteBuffer)

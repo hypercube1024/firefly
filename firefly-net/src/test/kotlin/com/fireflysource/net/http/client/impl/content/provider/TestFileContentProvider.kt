@@ -2,6 +2,7 @@ package com.fireflysource.net.http.client.impl.content.provider
 
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.aWrite
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createFileContentProvider
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -16,7 +17,7 @@ import java.nio.file.StandardOpenOption.WRITE
 
 class TestFileContentProvider {
 
-    val tmpFile = Paths.get(System.getProperty("user.home"), "tmpFile.txt")
+    private val tmpFile = Paths.get(System.getProperty("user.home"), "tmpFile.txt")
 
     @BeforeEach
     fun init() {
@@ -30,6 +31,7 @@ class TestFileContentProvider {
         println("delete file: $tmpFile")
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     @Test
     fun test() = runBlocking {
         val capacity = 24
@@ -45,7 +47,7 @@ class TestFileContentProvider {
             assertEquals(capacity, len)
         }
 
-        FileContentProvider(tmpFile, READ).use { provider ->
+        createFileContentProvider(tmpFile, READ).use { provider ->
             val buffer = BufferUtils.allocate(capacity)
             val pos = BufferUtils.flipToFill(buffer)
             val len = provider.read(buffer).await()

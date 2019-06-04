@@ -1,6 +1,8 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createStringContentProvider
 import com.fireflysource.net.http.common.model.HttpFields
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -15,11 +17,11 @@ class TestMultiPartContentProvider {
         val provider = MultiPartContentProvider()
 
         val str = "Hello string body"
-        val strProvider = StringContentProvider(str, StandardCharsets.UTF_8)
+        val strProvider = createStringContentProvider(str, StandardCharsets.UTF_8)
         provider.addFieldPart("hello string", strProvider, null)
 
         val str2 = "string body 2"
-        val strProvider2 = StringContentProvider(str2, StandardCharsets.UTF_8)
+        val strProvider2 = createStringContentProvider(str2, StandardCharsets.UTF_8)
         val httpFields = HttpFields()
         httpFields.put("x1", "y1")
         provider.addFieldPart("string 2", strProvider2, httpFields)
