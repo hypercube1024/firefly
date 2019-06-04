@@ -5,6 +5,10 @@ import java.util.stream.Collectors;
 
 public class CollectionUtils {
 
+    public static boolean isEmpty(Object[] array) {
+        return array == null || array.length == 0;
+    }
+
     public static boolean isEmpty(Map<?, ?> map) {
         return (map == null || map.isEmpty());
     }
