@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture
 
 class MultiPartContentProvider : HttpClientContentProvider {
 
-    private val contentType: String
+    val contentType: String
     private val firstBoundary: ByteArray
     private val middleBoundary: ByteArray
     private val onlyBoundary: ByteArray

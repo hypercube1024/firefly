@@ -1,11 +1,13 @@
 package com.fireflysource.net.http.common.v1.encoder;
 
 import com.fireflysource.common.io.BufferUtils;
-import com.fireflysource.net.http.common.model.*;
+import com.fireflysource.net.http.common.model.HttpFields;
+import com.fireflysource.net.http.common.model.HttpURI;
+import com.fireflysource.net.http.common.model.HttpVersion;
+import com.fireflysource.net.http.common.model.MetaData;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,7 +29,7 @@ public class HttpGeneratorClientTest {
         Info info = new Info("GET", "/index.html");
         info.getFields().add("Host", "something");
         info.getFields().add("User-Agent", "test");
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         result = gen.generateRequest(info, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_HEADER, result);
@@ -36,14 +38,14 @@ public class HttpGeneratorClientTest {
         result = gen.generateRequest(info, header, null, null, true);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
         String out = BufferUtils.toString(header);
         BufferUtils.clear(header);
 
         result = gen.generateResponse(null, false, null, null, null, false);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         assertEquals(0, gen.getContentPrepared());
         assertTrue(out.contains("GET /index.html HTTP/1.1"));
@@ -64,7 +66,7 @@ public class HttpGeneratorClientTest {
         info.getFields().add("Host", "something");
         info.getFields().add("Null", null);
         info.getFields().add("Empty", "");
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         result = gen.generateRequest(info, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_HEADER, result);
@@ -73,14 +75,14 @@ public class HttpGeneratorClientTest {
         result = gen.generateRequest(info, header, null, null, true);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
         String out = BufferUtils.toString(header);
         BufferUtils.clear(header);
 
         result = gen.generateResponse(null, false, null, null, null, false);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         assertEquals(0, gen.getContentPrepared());
         assertTrue(out.contains("GET /index.html HTTP/1.1"));
@@ -102,7 +104,7 @@ public class HttpGeneratorClientTest {
         Info info = new Info("POST", "/index.html");
         info.getFields().add("Host", "something");
         info.getFields().add("User-Agent", "test");
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         result = gen.generateRequest(info, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_HEADER, result);
@@ -111,14 +113,14 @@ public class HttpGeneratorClientTest {
         result = gen.generateRequest(info, header, null, null, true);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
         String out = BufferUtils.toString(header);
         BufferUtils.clear(header);
 
         result = gen.generateResponse(null, false, null, null, null, false);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         assertEquals(0, gen.getContentPrepared());
         assertTrue(out.contains("POST /index.html HTTP/1.1"));
@@ -148,7 +150,7 @@ public class HttpGeneratorClientTest {
         result = gen.generateRequest(info, header, null, content0, true);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
         out = BufferUtils.toString(header);
         BufferUtils.clear(header);
         out += BufferUtils.toString(content0);
@@ -157,7 +159,7 @@ public class HttpGeneratorClientTest {
         result = gen.generateResponse(null, false, null, null, null, false);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
 
         assertTrue(out.contains("POST /index.html HTTP/1.1"));
@@ -222,7 +224,7 @@ public class HttpGeneratorClientTest {
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
         out += BufferUtils.toString(chunk);
         BufferUtils.clear(chunk);
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         result = gen.generateResponse(null, false, null, chunk, null, true);
         assertEquals(HttpGenerator.Result.DONE, result);
@@ -264,7 +266,7 @@ public class HttpGeneratorClientTest {
         result = gen.generateRequest(info, header, null, content0, false);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
         out = BufferUtils.toString(header);
         BufferUtils.clear(header);
         out += BufferUtils.toString(content0);
@@ -273,14 +275,14 @@ public class HttpGeneratorClientTest {
         result = gen.generateRequest(null, null, null, content1, false);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
         out += BufferUtils.toString(content1);
         BufferUtils.clear(content1);
 
         result = gen.generateResponse(null, false, null, null, null, true);
         assertEquals(HttpGenerator.Result.CONTINUE, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         result = gen.generateResponse(null, false, null, null, null, true);
         assertEquals(HttpGenerator.Result.DONE, result);
@@ -318,7 +320,7 @@ public class HttpGeneratorClientTest {
             newValues.add("HTTP2-Settings");
             info.getFields().addCSV("Connection", newValues.toArray(new String[0]));
         }
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         result = gen.generateRequest(info, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_HEADER, result);
@@ -327,14 +329,14 @@ public class HttpGeneratorClientTest {
         result = gen.generateRequest(info, header, null, null, true);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
         String out = BufferUtils.toString(header);
         BufferUtils.clear(header);
 
         result = gen.generateResponse(null, false, null, null, null, false);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
-        assertTrue(!gen.isChunking());
+        assertFalse(gen.isChunking());
 
         System.out.println(out);
         assertTrue(out.contains("keep-alive, Upgrade, HTTP2-Settings"));
@@ -345,7 +347,7 @@ public class HttpGeneratorClientTest {
             super(method, new HttpURI(uri), HttpVersion.HTTP_1_1, new HttpFields(), -1);
         }
 
-        public Info(String method, String uri, int contentLength) {
+        Info(String method, String uri, int contentLength) {
             super(method, new HttpURI(uri), HttpVersion.HTTP_1_1, new HttpFields(), contentLength);
         }
     }

@@ -257,7 +257,7 @@ public class HttpGenerator {
         endOfContent = null;
     }
 
-    public Result generateRequest(MetaData.Request info, ByteBuffer header, ByteBuffer chunk, ByteBuffer content, boolean last) throws IOException {
+    public Result generateRequest(MetaData.Request info, ByteBuffer header, ByteBuffer chunk, ByteBuffer content, boolean last) {
         switch (state) {
             case START: {
                 if (info == null)

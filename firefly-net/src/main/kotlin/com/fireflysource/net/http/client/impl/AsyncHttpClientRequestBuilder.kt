@@ -7,10 +7,7 @@ import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContent
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
 import com.fireflysource.net.http.common.exception.BadMessageException
-import com.fireflysource.net.http.common.model.Cookie
-import com.fireflysource.net.http.common.model.HttpField
-import com.fireflysource.net.http.common.model.HttpFields
-import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -19,11 +16,21 @@ import java.util.function.Consumer
 import java.util.function.Supplier
 
 class AsyncHttpClientRequestBuilder(
-    private val connectionManager: HttpClientConnectionManager
+    private val connectionManager: HttpClientConnectionManager,
+    method: String,
+    uri: HttpURI,
+    httpVersion: HttpVersion
 ) : HttpClientRequestBuilder {
 
-    private val httpRequest: AsyncHttpClientRequest = AsyncHttpClientRequest()
     private val multiPartContentProvider: MultiPartContentProvider by lazy { MultiPartContentProvider() }
+
+    val httpRequest: AsyncHttpClientRequest = AsyncHttpClientRequest()
+
+    init {
+        httpRequest.method = method
+        httpRequest.uri = uri
+        httpRequest.httpVersion = httpVersion
+    }
 
     override fun cookies(cookies: MutableList<Cookie>?): HttpClientRequestBuilder {
         httpRequest.cookies = cookies

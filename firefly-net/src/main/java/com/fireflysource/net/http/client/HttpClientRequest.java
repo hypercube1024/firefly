@@ -7,6 +7,7 @@ import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
+import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ public interface HttpClientRequest {
     /**
      * Get the HTTP method.
      *
-     * @return the HTTP method
+     * @return the HTTP method.
      */
     String getMethod();
 
@@ -37,7 +38,7 @@ public interface HttpClientRequest {
     /**
      * Get the HTTP URI.
      *
-     * @return the HTTP URI
+     * @return the HTTP URI.
      */
     HttpURI getURI();
 
@@ -47,6 +48,20 @@ public interface HttpClientRequest {
      * @param uri the HTTP URI
      */
     void setURI(HttpURI uri);
+
+    /**
+     * Get the HTTP version.
+     *
+     * @return the HTTP version.
+     */
+    HttpVersion getHttpVersion();
+
+    /**
+     * Set the HTTP version.
+     *
+     * @param httpVersion the HTTP version.
+     */
+    void setHttpVersion(HttpVersion httpVersion);
 
     /**
      * Get the query parameters.

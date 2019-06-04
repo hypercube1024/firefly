@@ -17,7 +17,7 @@ public class MetaData implements Iterable<HttpField> {
     public MetaData(HttpVersion version, HttpFields fields, long contentLength) {
         httpVersion = version;
         this.fields = fields;
-        this.contentLength = contentLength;
+        this.contentLength = contentLength < 0 ? Long.MIN_VALUE : contentLength;
     }
 
     protected void recycle() {

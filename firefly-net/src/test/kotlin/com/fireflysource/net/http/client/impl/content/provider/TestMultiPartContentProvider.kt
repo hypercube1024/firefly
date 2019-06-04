@@ -30,12 +30,15 @@ class TestMultiPartContentProvider {
         val pos = BufferUtils.flipToFill(buffer)
         while (buffer.hasRemaining()) {
             val len = provider.read(buffer).await()
-            println(len)
             if (len < 0) {
                 break
             }
         }
         BufferUtils.flipToFlush(buffer, pos)
+        println()
+
+        println("Content-Type: ${provider.contentType}")
+        println()
 
         val content = BufferUtils.toUTF8String(buffer)
         println(content)

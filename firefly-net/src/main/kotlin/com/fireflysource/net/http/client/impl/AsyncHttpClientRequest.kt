@@ -1,17 +1,18 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.func.Callback
+import com.fireflysource.common.io.OutputChannel
+import com.fireflysource.common.string.StringUtils
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
+import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
 import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.exception.BadMessageException
-import com.fireflysource.net.http.common.model.Cookie
-import com.fireflysource.net.http.common.model.HttpFields
-import com.fireflysource.net.http.common.model.HttpMethod
-import com.fireflysource.net.http.common.model.HttpURI
-import com.fireflysource.common.io.OutputChannel
+import com.fireflysource.net.http.common.model.*
+import java.nio.charset.StandardCharsets
 import java.util.function.Consumer
 import java.util.function.Supplier
 
@@ -24,6 +25,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     private var method: String = defaultMethod
     private var uri: HttpURI = defaultHttpUri
+    private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
     private var queryParameters: UrlEncoded? = null
     private var formParameters: UrlEncoded? = null
     private var httpFields: HttpFields = HttpFields()
@@ -49,6 +51,12 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     override fun setURI(uri: HttpURI) {
         this.uri = uri
+    }
+
+    override fun getHttpVersion(): HttpVersion = httpVersion
+
+    override fun setHttpVersion(httpVersion: HttpVersion) {
+        this.httpVersion = httpVersion
     }
 
     override fun getQueryParameters(): UrlEncoded {
@@ -144,4 +152,44 @@ class AsyncHttpClientRequest : HttpClientRequest {
     }
 
     override fun getHttp2Settings(): Map<Int, Int>? = http2Settings
+
+    fun toMetaDataRequest(): MetaData.Request {
+        if (getFormParameters().size > 0) {
+            val formStr = getFormParameters().encode(StandardCharsets.UTF_8, true)
+            val stringContentProvider = StringContentProvider(formStr, StandardCharsets.UTF_8)
+            contentProvider = stringContentProvider
+            httpFields.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.value)
+            httpFields.put(HttpHeader.CONTENT_LENGTH, stringContentProvider.length().toString())
+        } else {
+            if (contentProvider != null) {
+                if (contentProvider is MultiPartContentProvider) {
+                    val multiPartContentProvider = (contentProvider as MultiPartContentProvider)
+                    httpFields.put(HttpHeader.CONTENT_TYPE, multiPartContentProvider.contentType)
+                    if (multiPartContentProvider.length() >= 0) {
+                        httpFields.put(HttpHeader.CONTENT_LENGTH, multiPartContentProvider.length().toString())
+                    }
+                } else {
+                    val contentLength = contentProvider!!.length()
+                    if (contentLength >= 0) {
+                        httpFields.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
+                    } else {
+                        httpFields.put(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED.value)
+                    }
+                }
+            }
+        }
+
+        if (getQueryParameters().size > 0) {
+            if (StringUtils.hasText(uri.query)) {
+                uri.query = uri.query + "&" + getFormParameters().encode(StandardCharsets.UTF_8, true)
+            } else {
+                uri.query = getFormParameters().encode(StandardCharsets.UTF_8, true)
+            }
+        }
+
+        val len = contentProvider?.length() ?: -1
+        val metaDataReq = MetaData.Request(method, uri, httpVersion, httpFields, len)
+        metaDataReq.trailerSupplier = trailerSupplier
+        return metaDataReq
+    }
 }
