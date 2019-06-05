@@ -181,9 +181,9 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
         if (getQueryParameters().size > 0) {
             if (StringUtils.hasText(uri.query)) {
-                uri.query = uri.query + "&" + getFormParameters().encode(StandardCharsets.UTF_8, true)
+                uri.query = uri.query + "&" + getQueryParameters().encode(StandardCharsets.UTF_8, true)
             } else {
-                uri.query = getFormParameters().encode(StandardCharsets.UTF_8, true)
+                uri.query = getQueryParameters().encode(StandardCharsets.UTF_8, true)
             }
         }
 
