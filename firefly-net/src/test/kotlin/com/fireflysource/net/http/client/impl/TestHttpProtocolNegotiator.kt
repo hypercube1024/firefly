@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 /**
  * @author Pengtao Qiu
  */
-class TestHttp2UpgradeHeader {
+class TestHttpProtocolNegotiator {
 
     @Test
     fun testRemoveHttp2UpgradeHeader() {
