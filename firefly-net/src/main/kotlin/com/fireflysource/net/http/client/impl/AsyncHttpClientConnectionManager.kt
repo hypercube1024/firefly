@@ -1,8 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.codec.base64.Base64Utils
 import com.fireflysource.common.coroutine.asyncGlobally
-import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.pool.FakePooledObject
 import com.fireflysource.common.pool.Pool
 import com.fireflysource.common.pool.PooledObject
@@ -10,12 +8,12 @@ import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
-import com.fireflysource.net.http.common.v2.encoder.HeaderGenerator
-import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator
-import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -46,52 +44,6 @@ class AsyncHttpClientConnectionManager(
 
     private val mutex = Mutex()
     private val connPoolMap: MutableMap<ReqHostPort, HttpConnectionPool> = ConcurrentHashMap()
-
-    companion object {
-        private val settingsGenerator = SettingsGenerator(HeaderGenerator())
-        val defaultSettingsFrameBytes: ByteArray
-
-        init {
-            defaultSettingsFrameBytes = BufferUtils.toArray(
-                settingsGenerator.generateSettings(
-                    SettingsFrame.DEFAULT_SETTINGS_FRAME.settings,
-                    false
-                ).byteBuffers
-            )
-        }
-
-        fun addHttp2UpgradeHeader(request: HttpClientRequest) {
-            // detect the protocol version using Connection and Upgrade HTTP headers
-            val oldValues: List<String>? = request.httpFields.getValuesList(HttpHeader.CONNECTION)
-            if (!oldValues.isNullOrEmpty()) {
-                val newValues = mutableListOf<String>()
-                newValues.addAll(oldValues)
-                newValues.add("Upgrade")
-                newValues.add("HTTP2-Settings")
-                request.httpFields.addCSV(HttpHeader.CONNECTION, *newValues.toTypedArray())
-            } else {
-                request.httpFields.addCSV(HttpHeader.CONNECTION, "Upgrade", "HTTP2-Settings")
-            }
-            request.httpFields.put(HttpHeader.UPGRADE, "h2c")
-
-            // generate http2 settings base64
-            val bytes = if (request.http2Settings.isNullOrEmpty()) {
-                defaultSettingsFrameBytes
-            } else {
-                BufferUtils.toArray(settingsGenerator.generateSettings(request.http2Settings, false).byteBuffers)
-            }
-
-            val base64 = Base64Utils.encodeToString(bytes)
-            request.httpFields.put(HttpHeader.HTTP2_SETTINGS, base64)
-        }
-
-        fun removeHttp2UpgradeHeader(request: HttpClientRequest) {
-            request.httpFields.remove(HttpHeader.HTTP2_SETTINGS)
-            request.httpFields.remove(HttpHeader.UPGRADE)
-            request.httpFields.put(HttpHeader.CONNECTION, "keep-alive")
-        }
-
-    }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally {
         mutex.withLock {
@@ -129,12 +81,7 @@ class AsyncHttpClientConnectionManager(
                     val http1ClientConnection = Http1ClientConnection(tcpConn)
                     val response = http1ClientConnection.use { http1ClientConnection.send(request).await() }
 
-                    val connValue: String? = response.httpFields[HttpHeader.CONNECTION]
-                    val upgradeValue: String? = response.httpFields[HttpHeader.UPGRADE]
-                    if (response.status == HttpStatus.SWITCHING_PROTOCOLS_101
-                        && connValue != null && connValue == "Upgrade"
-                        && upgradeValue != null && upgradeValue == "h2c"
-                    ) {
+                    if (isUpgradeSuccess(response)) {
                         // switch the protocol to http2
                         val http2Conn = Http2ClientConnection(tcpConn)
                         val http2ConnPool = Http2ConnectionPool(reqHostPort, http2Conn)

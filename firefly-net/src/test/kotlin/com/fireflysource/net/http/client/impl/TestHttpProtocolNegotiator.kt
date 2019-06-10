@@ -1,9 +1,9 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.codec.base64.Base64Utils
-import com.fireflysource.net.http.client.impl.AsyncHttpClientConnectionManager.Companion.addHttp2UpgradeHeader
-import com.fireflysource.net.http.client.impl.AsyncHttpClientConnectionManager.Companion.defaultSettingsFrameBytes
-import com.fireflysource.net.http.client.impl.AsyncHttpClientConnectionManager.Companion.removeHttp2UpgradeHeader
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.defaultSettingsFrameBytes
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader
 import com.fireflysource.net.http.common.model.HttpHeader
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test
 /**
  * @author Pengtao Qiu
  */
-class TestHttp2UpgradeHeader {
+class TestHttpProtocolNegotiator {
 
     @Test
-    fun testNoConnectionHeader() {
+    fun testRemoveHttp2UpgradeHeader() {
         val request = AsyncHttpClientRequest()
         addHttp2UpgradeHeader(request)
         assertTrue(
@@ -32,14 +32,13 @@ class TestHttp2UpgradeHeader {
         )
 
         removeHttp2UpgradeHeader(request)
-
         assertFalse(request.httpFields.contains(HttpHeader.HTTP2_SETTINGS))
         assertFalse(request.httpFields.contains(HttpHeader.UPGRADE))
         assertEquals("keep-alive", request.httpFields[HttpHeader.CONNECTION])
     }
 
     @Test
-    fun test() {
+    fun testAddHttp2UpgradeHeader() {
         val request = AsyncHttpClientRequest()
         request.httpFields.put(HttpHeader.CONNECTION, "keep-alive")
         addHttp2UpgradeHeader(request)
