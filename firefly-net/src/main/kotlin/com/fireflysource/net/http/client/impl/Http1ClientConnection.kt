@@ -16,7 +16,6 @@ class Http1ClientConnection(
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
 
     private val httpGenerator = HttpGenerator()
-
     private val httpHandler = Http1ClientResponseHandler()
     private val httpParser = HttpParser(httpHandler)
 

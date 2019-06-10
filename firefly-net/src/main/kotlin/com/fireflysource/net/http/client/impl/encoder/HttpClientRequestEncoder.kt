@@ -6,6 +6,7 @@ class HttpClientRequestEncoder {
 
     private val httpGenerator = HttpGenerator()
 
-
-
+    fun reset() {
+        httpGenerator.reset()
+    }
 }
