@@ -153,43 +153,44 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     override fun getHttp2Settings(): Map<Int, Int>? = http2Settings
 
-    fun toMetaDataRequest(): MetaData.Request {
-        if (getFormParameters().size > 0) {
-            val formStr = getFormParameters().encode(StandardCharsets.UTF_8, true)
-            val stringContentProvider = StringContentProvider(formStr, StandardCharsets.UTF_8)
-            contentProvider = stringContentProvider
-            httpFields.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.value)
-            httpFields.put(HttpHeader.CONTENT_LENGTH, stringContentProvider.length().toString())
-        } else {
-            if (contentProvider != null) {
-                if (contentProvider is MultiPartContentProvider) {
-                    val multiPartContentProvider = (contentProvider as MultiPartContentProvider)
-                    httpFields.put(HttpHeader.CONTENT_TYPE, multiPartContentProvider.contentType)
-                    if (multiPartContentProvider.length() >= 0) {
-                        httpFields.put(HttpHeader.CONTENT_LENGTH, multiPartContentProvider.length().toString())
-                    }
+}
+
+fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
+    if (request.formParameters.size > 0) {
+        val formStr = request.formParameters.encode(StandardCharsets.UTF_8, true)
+        val stringContentProvider = StringContentProvider(formStr, StandardCharsets.UTF_8)
+        request.contentProvider = stringContentProvider
+        request.httpFields.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.value)
+        request.httpFields.put(HttpHeader.CONTENT_LENGTH, stringContentProvider.length().toString())
+    } else {
+        if (request.contentProvider != null) {
+            if (request.contentProvider is MultiPartContentProvider) {
+                val multiPartContentProvider = (request.contentProvider as MultiPartContentProvider)
+                request.httpFields.put(HttpHeader.CONTENT_TYPE, multiPartContentProvider.contentType)
+                if (multiPartContentProvider.length() >= 0) {
+                    request.httpFields.put(HttpHeader.CONTENT_LENGTH, multiPartContentProvider.length().toString())
+                }
+            } else {
+                val contentLength = request.contentProvider!!.length()
+                if (contentLength >= 0) {
+                    request.httpFields.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
                 } else {
-                    val contentLength = contentProvider!!.length()
-                    if (contentLength >= 0) {
-                        httpFields.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
-                    } else {
-                        httpFields.put(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED.value)
-                    }
+                    request.httpFields.put(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED.value)
                 }
             }
         }
-
-        if (getQueryParameters().size > 0) {
-            if (StringUtils.hasText(uri.query)) {
-                uri.query = uri.query + "&" + getQueryParameters().encode(StandardCharsets.UTF_8, true)
-            } else {
-                uri.query = getQueryParameters().encode(StandardCharsets.UTF_8, true)
-            }
-        }
-
-        val len = contentProvider?.length() ?: -1
-        val metaDataReq = MetaData.Request(method, uri, httpVersion, httpFields, len)
-        metaDataReq.trailerSupplier = trailerSupplier
-        return metaDataReq
     }
+
+    if (request.queryParameters.size > 0) {
+        if (StringUtils.hasText(request.uri.query)) {
+            request.uri.query = request.uri.query + "&" + request.queryParameters.encode(StandardCharsets.UTF_8, true)
+        } else {
+            request.uri.query = request.queryParameters.encode(StandardCharsets.UTF_8, true)
+        }
+    }
+
+    val len = request.contentProvider?.length() ?: -1
+    val metaDataReq = MetaData.Request(request.method, request.uri, request.httpVersion, request.httpFields, len)
+    metaDataReq.trailerSupplier = request.trailerSupplier
+    return metaDataReq
 }

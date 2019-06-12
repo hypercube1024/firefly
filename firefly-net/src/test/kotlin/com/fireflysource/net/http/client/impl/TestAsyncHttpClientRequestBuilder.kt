@@ -22,7 +22,7 @@ class TestAsyncHttpClientRequestBuilder {
             .putFormParam("p2", "v2")
             .addFormParam("p3", "v3")
 
-        val metadata = builder.httpRequest.toMetaDataRequest()
+        val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
         println(metadata.fields)
 
@@ -46,7 +46,7 @@ class TestAsyncHttpClientRequestBuilder {
             .putQueryParam("q2", "v2")
             .addQueryParam("q2", "v22")
 
-        val metadata = builder.httpRequest.toMetaDataRequest()
+        val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
 
         assertTrue(metadata.isRequest)
@@ -63,7 +63,7 @@ class TestAsyncHttpClientRequestBuilder {
             .putQueryParam("q2", "v2")
             .addQueryParam("q2", "v22")
 
-        val metadata = builder.httpRequest.toMetaDataRequest()
+        val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
 
         assertTrue(metadata.isRequest)
@@ -85,7 +85,7 @@ class TestAsyncHttpClientRequestBuilder {
         fields2.add("t2", "x2")
         builder.addFieldPart("text2", createStringContentProvider("plain text2", StandardCharsets.UTF_8), fields2)
 
-        val metadata = builder.httpRequest.toMetaDataRequest()
+        val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
         println(metadata.fields)
 

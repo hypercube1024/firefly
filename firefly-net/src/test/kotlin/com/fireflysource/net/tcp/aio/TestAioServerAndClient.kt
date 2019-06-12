@@ -22,6 +22,7 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Pengtao Qiu
  */
+@Suppress("BlockingMethodInNonBlockingContext")
 class TestAioServerAndClient {
 
     companion object {
@@ -61,7 +62,7 @@ class TestAioServerAndClient {
                     println("server TLS handshake success. $success")
                 }
 
-                launchGlobally {
+                launchGlobally(connection.coroutineDispatcher) {
                     val inputChannel = connection.inputChannel
 
                     recvLoop@ while (true) {
@@ -95,7 +96,7 @@ class TestAioServerAndClient {
                         println("client TLS handshake success. $success")
                     }
 
-                    val readingJob = launchGlobally {
+                    val readingJob = launchGlobally(connection.coroutineDispatcher) {
                         val inputChannel = connection.inputChannel
                         recvLoop@ while (true) {
                             val buf = inputChannel.receive()

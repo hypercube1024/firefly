@@ -13,16 +13,16 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class HttpGeneratorClientTest {
-    public final static String[] connect = {null, "keep-alive", "close"};
+class HttpGeneratorClientTest {
+
+    private final static String[] CONNECT = {null, "keep-alive", "close"};
 
     @Test
     void testGETRequestNoContent() throws Exception {
         ByteBuffer header = BufferUtils.allocate(2048);
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, null, true);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_INFO, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
@@ -57,8 +57,7 @@ public class HttpGeneratorClientTest {
         ByteBuffer header = BufferUtils.allocate(2048);
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, null, true);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_INFO, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
@@ -96,8 +95,7 @@ public class HttpGeneratorClientTest {
         ByteBuffer header = BufferUtils.allocate(2048);
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, null, true);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_INFO, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
@@ -134,8 +132,7 @@ public class HttpGeneratorClientTest {
         ByteBuffer content0 = BufferUtils.toBuffer("Hello World. The quick brown fox jumped over the lazy dog.");
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, content0, true);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, content0, true);
         assertEquals(HttpGenerator.Result.NEED_INFO, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
@@ -151,6 +148,7 @@ public class HttpGeneratorClientTest {
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
         assertFalse(gen.isChunking());
+
         out = BufferUtils.toString(header);
         BufferUtils.clear(header);
         out += BufferUtils.toString(content0);
@@ -179,8 +177,7 @@ public class HttpGeneratorClientTest {
         ByteBuffer content1 = BufferUtils.toBuffer("The quick brown fox jumped over the lazy dog.");
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, content0, false);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, content0, false);
         assertEquals(HttpGenerator.Result.NEED_INFO, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
@@ -250,8 +247,7 @@ public class HttpGeneratorClientTest {
         ByteBuffer content1 = BufferUtils.toBuffer("The quick brown fox jumped over the lazy dog.");
         HttpGenerator gen = new HttpGenerator();
 
-        HttpGenerator.Result
-                result = gen.generateRequest(null, null, null, content0, false);
+        HttpGenerator.Result result = gen.generateRequest(null, null, null, content0, false);
         assertEquals(HttpGenerator.Result.NEED_INFO, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
@@ -311,7 +307,7 @@ public class HttpGeneratorClientTest {
         Info info = new Info("GET", "/index.html");
         info.getFields().add("Host", "something1");
         info.getFields().add("User-Agent", "test1");
-        info.getFields().add("Connection", connect[1]);
+        info.getFields().add("Connection", CONNECT[1]);
         List<String> values = info.getFields().getValuesList("Connection");
         if (values != null && !values.isEmpty()) {
             info.getFields().remove("Connection");

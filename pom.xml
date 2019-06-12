@@ -75,7 +75,7 @@
         <redisson.version>3.11.0</redisson.version>
         <conscrypt.version>2.1.0</conscrypt.version>
         <hikariCP.version>3.3.1</hikariCP.version>
-        <spring.reactor.version>Californium-SR7</spring.reactor.version>
+        <spring.reactor.version>Californium-SR9</spring.reactor.version>
 
         <!-- test lib -->
         <junit.version>5.4.2</junit.version>
