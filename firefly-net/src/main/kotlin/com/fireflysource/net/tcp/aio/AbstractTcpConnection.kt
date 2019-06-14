@@ -79,15 +79,16 @@ abstract class AbstractTcpConnection(
         lastWrittenTime = System.currentTimeMillis()
         when (message) {
             is Buffer -> {
+                var len = 0
                 while (message.buffer.hasRemaining()) {
                     try {
                         val count = socketChannel.aWrite(message.buffer, maxIdleTime, timeUnit)
-                        message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
                         } else {
                             writtenBytes += count
+                            len += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
@@ -101,20 +102,22 @@ abstract class AbstractTcpConnection(
                         break
                     }
                 }
+                message.result.accept(Result(true, len, null))
             }
             is Buffers -> {
+                var len = 0L
                 while (message.hasRemaining()) {
                     try {
                         val offset = message.getCurrentOffset()
                         val length = message.getCurrentLength()
 
                         val count = socketChannel.aWrite(message.buffers, offset, length, maxIdleTime, timeUnit)
-                        message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
                         } else {
                             writtenBytes += count
+                            len += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
@@ -128,8 +131,10 @@ abstract class AbstractTcpConnection(
                         break
                     }
                 }
+                message.result.accept(Result(true, len, null))
             }
             is BufferList -> {
+                var len = 0L
                 while (message.hasRemaining()) {
                     try {
                         val offset = message.getCurrentOffset()
@@ -139,12 +144,12 @@ abstract class AbstractTcpConnection(
                             message.bufferList.toTypedArray(), offset, length,
                             maxIdleTime, timeUnit
                         )
-                        message.result.accept(Result(true, count, null))
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
                         } else {
                             writtenBytes += count
+                            len += count
                         }
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
@@ -158,6 +163,7 @@ abstract class AbstractTcpConnection(
                         break
                     }
                 }
+                message.result.accept(Result(true, len, null))
             }
             is Shutdown -> {
                 shutdownInputAndOutput()

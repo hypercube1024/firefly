@@ -8,11 +8,11 @@ import com.fireflysource.net.http.common.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpGeneratorServerTest {
+    
     @Test
     void test_0_9() throws Exception {
         ByteBuffer header = BufferUtils.allocate(8096);
@@ -102,16 +102,16 @@ class HttpGeneratorServerTest {
         assertTrue(gen.isNoContent());
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
-        String responseheaders = BufferUtils.toString(header);
+        String responseHeaders = BufferUtils.toString(header);
         BufferUtils.clear(header);
 
         result = gen.generateResponse(null, false, null, null, content, false);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
 
-        assertTrue(responseheaders.contains("HTTP/1.1 204 Foo"));
-        assertTrue(responseheaders.contains("Last-Modified: Thu, 01 Jan 1970 00:00:00 GMT"));
-        assertFalse(responseheaders.contains("Content-Length: 10"));
+        assertTrue(responseHeaders.contains("HTTP/1.1 204 Foo"));
+        assertTrue(responseHeaders.contains("Last-Modified: Thu, 01 Jan 1970 00:00:00 GMT"));
+        assertFalse(responseHeaders.contains("Content-Length: 10"));
 
         //Note: the HttpConnection.process() method is responsible for actually
         //excluding the content from the response based on generator.isNoContent()==true
@@ -221,9 +221,8 @@ class HttpGeneratorServerTest {
         result = gen.generateResponse(info, false, null, null, null, true);
         assertEquals(HttpGenerator.Result.NEED_HEADER, result);
 
-        BadMessageException e = assertThrows(BadMessageException.class, () -> {
-            gen.generateResponse(info, false, header, null, null, true);
-        });
+        BadMessageException e = assertThrows(BadMessageException.class,
+                () -> gen.generateResponse(info, false, header, null, null, true));
         assertEquals(500, e.getCode());
     }
 
@@ -556,15 +555,12 @@ class HttpGeneratorServerTest {
         MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_1_1, 200, null, new HttpFields(), -1);
         info.getFields().add("Last-Modified", DateGenerator.JAN_01_1970);
         info.getFields().add(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED);
-        info.setTrailerSupplier(new Supplier<HttpFields>() {
-            @Override
-            public HttpFields get() {
-                HttpFields trailer = new HttpFields();
-                trailer.add("T-Name0", "T-ValueA");
-                trailer.add("T-Name0", "T-ValueB");
-                trailer.add("T-Name1", "T-ValueC");
-                return trailer;
-            }
+        info.setTrailerSupplier(() -> {
+            HttpFields trailer1 = new HttpFields();
+            trailer1.add("T-Name0", "T-ValueA");
+            trailer1.add("T-Name0", "T-ValueB");
+            trailer1.add("T-Name1", "T-ValueC");
+            return trailer1;
         });
 
         result = gen.generateResponse(info, false, null, null, null, true);
