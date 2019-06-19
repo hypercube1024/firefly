@@ -214,8 +214,14 @@ class HttpGeneratorClientTest {
         out += BufferUtils.toString(content1);
         BufferUtils.clear(content1);
 
-        result = gen.generateRequest(null, null, chunk, null, true);
+        result = gen.generateRequest(null, null, chunk, content1, true);
         assertEquals(HttpGenerator.Result.CONTINUE, result);
+        assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+        assertTrue(gen.isChunking());
+
+
+        result = gen.generateRequest(null, null, null, null, true);
+        assertEquals(HttpGenerator.Result.NEED_CHUNK, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
         assertTrue(gen.isChunking());
 

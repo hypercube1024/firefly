@@ -12,7 +12,7 @@ import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
-import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.FLUSH
+import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
@@ -41,61 +41,76 @@ class Http1ClientConnection(
             recvLoop@ while (true) {
                 val message = outChannel.receive()
 
-                // TODO encode request
-                val hasContent = (message.content != null)
-
-                genLoop@ while (true) {
-                    when (generator.state) {
-                        START -> {
-                            val result =
-                                generator.generateRequest(message.request, headerBuffer, null, null, !hasContent)
-                            Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
-                            flushHeaderBuffer()
-                        }
-                        COMMITTED -> {
-                            requireNotNull(message.content)
-                            val pos = BufferUtils.flipToFill(contentBuffer)
-                            val len = message.content.read(contentBuffer).await()
-                            BufferUtils.flipToFlush(contentBuffer, pos)
-
-                            val last = (len == -1)
-
-                            val chunked = generator.isChunking
-                            if (chunked) {
-                                if (!last) {
-                                    val result =
-                                        generator.generateRequest(null, null, chunkBuffer, contentBuffer, false)
-                                    Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
-                                    flushChunkedContentBuffer()
-                                } else {
-
-                                }
-                            } else {
-                                if (!last) {
-                                    val result = generator.generateRequest(null, null, null, contentBuffer, false)
-                                    Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
-                                    flushContentBuffer()
-                                } else {
-
-                                }
-                            }
-
-
-                        }
-                        COMPLETING -> {
-
-                        }
-                        END -> {
-
-                        }
-                        else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")
-                    }
+                try {
+                    encodeRequestAndFlushData(message)
+                    message.response.complete(parseResponse())
+                } catch (e: Exception) {
+                    message.response.completeExceptionally(e)
                 }
             }
         }
         tcpConnection.onClose {
             outChannel.close()
             acceptRequestJob.cancel()
+        }
+    }
+
+    private suspend fun parseResponse(): HttpClientResponse {
+        TODO("")
+    }
+
+    private suspend fun encodeRequestAndFlushData(message: RequestMessage) {
+        genLoop@ while (true) {
+            when (generator.state) {
+                START -> {
+                    val hasContent = (message.content != null)
+                    val result =
+                        generator.generateRequest(message.request, headerBuffer, null, null, !hasContent)
+                    Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
+                    flushHeaderBuffer()
+                }
+                COMMITTED -> {
+                    requireNotNull(message.content)
+                    val pos = BufferUtils.flipToFill(contentBuffer)
+                    val len = message.content.read(contentBuffer).await()
+                    BufferUtils.flipToFlush(contentBuffer, pos)
+
+                    val last = (len == -1)
+
+                    if (generator.isChunking) {
+                        when (val result =
+                            generator.generateRequest(null, null, chunkBuffer, contentBuffer, last)) {
+                            FLUSH -> flushChunkedContentBuffer()
+                            CONTINUE -> {
+                            }
+                            else -> throw IllegalStateException("The HTTP client generator result error. $result")
+                        }
+                    } else {
+                        val result = generator.generateRequest(null, null, null, contentBuffer, last)
+                        Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
+                        flushContentBuffer()
+                    }
+                }
+                COMPLETING -> {
+                    if (generator.isChunking) {
+                        when (val result = generator.generateRequest(null, null, chunkBuffer, null, true)) {
+                            FLUSH -> flushChunkBuffer()
+                            DONE -> {
+                            }
+                            else -> throw IllegalStateException("The HTTP client generator result error. $result")
+                        }
+                    } else {
+                        val result = generator.generateRequest(null, null, null, null, true)
+                        Assert.state(result == DONE, "The HTTP client generator result error. $result")
+                    }
+                }
+                END -> {
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    message.content?.close()
+                    break@genLoop
+                }
+                else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")
+            }
         }
     }
 
@@ -120,6 +135,13 @@ class Http1ClientConnection(
             tcpConnection.write(bufArray, 0, bufArray.size).await()
         }
         bufArray.forEach(BufferUtils::clear)
+    }
+
+    private suspend fun flushChunkBuffer() {
+        if (chunkBuffer.hasRemaining()) {
+            tcpConnection.write(chunkBuffer).await()
+        }
+        BufferUtils.clear(chunkBuffer)
     }
 
     override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_1_1
