@@ -9,6 +9,7 @@ import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
+import com.fireflysource.net.http.common.codec.CookieGenerator
 import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
@@ -189,8 +190,13 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
         }
     }
 
+    if (request.cookies != null) {
+        request.httpFields.put(HttpHeader.COOKIE, CookieGenerator.generateCookies(request.cookies))
+    }
+
     val len = request.contentProvider?.length() ?: -1
     val metaDataReq = MetaData.Request(request.method, request.uri, request.httpVersion, request.httpFields, len)
     metaDataReq.trailerSupplier = request.trailerSupplier
+
     return metaDataReq
 }

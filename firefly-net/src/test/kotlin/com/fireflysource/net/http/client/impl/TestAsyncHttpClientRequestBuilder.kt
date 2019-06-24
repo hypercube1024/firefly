@@ -94,4 +94,22 @@ class TestAsyncHttpClientRequestBuilder {
         assertEquals("327", metadata.fields[HttpHeader.CONTENT_LENGTH])
     }
 
+    @Test
+    fun testCookie() {
+        val uri = HttpURI("https://www.fireflysource.com")
+        val builder = AsyncHttpClientRequestBuilder(connectionManager, HttpMethod.POST.value, uri, HttpVersion.HTTP_1_1)
+
+        builder.cookies(
+            mutableListOf(
+                Cookie("c1", "v1"),
+                Cookie("c2", "v2"),
+                Cookie("c3", "v3")
+            )
+        )
+
+        val metadata = toMetaDataRequest(builder.httpRequest)
+        assertTrue(metadata.isRequest)
+        assertTrue(metadata.fields[HttpHeader.COOKIE].contains("c1=v1;c2=v2;c3=v3"))
+    }
+
 }
