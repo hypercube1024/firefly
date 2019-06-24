@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HttpParserTest {
     static {
+        //noinspection deprecation
         HttpCompliance.CUSTOM0.sections().remove(HttpComplianceSection.NO_WS_AFTER_FIELD_NAME);
     }
 
@@ -414,6 +415,7 @@ class HttpParserTest {
         assertEquals(2, headers);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void testSpaceInNameCustom0() {
         ByteBuffer buffer = BufferUtils.toBuffer(
@@ -431,6 +433,7 @@ class HttpParserTest {
         assertTrue(complianceViolation.contains(HttpComplianceSection.NO_WS_AFTER_FIELD_NAME));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void testNoColonCustom0() {
         ByteBuffer buffer = BufferUtils.toBuffer(
@@ -448,6 +451,7 @@ class HttpParserTest {
         assertTrue(complianceViolation.contains(HttpComplianceSection.NO_WS_AFTER_FIELD_NAME));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void testTrailingSpacesInHeaderNameInCustom0Mode() {
         ByteBuffer buffer = BufferUtils.toBuffer(
@@ -703,7 +707,7 @@ class HttpParserTest {
         assertEquals("Header2", hdr[1]);
         assertEquals("" + (char) 255, val[1]);
         assertEquals(1, headers);
-        assertEquals(null, bad);
+        assertNull(bad);
     }
 
     @Test
@@ -783,9 +787,9 @@ class HttpParserTest {
                         "Foo[Bar: value\r\n",
                 };
 
-        for (int i = 0; i < bad.length; i++) {
+        for (String s : bad) {
             ByteBuffer buffer = BufferUtils.toBuffer(
-                    "GET / HTTP/1.0\r\n" + bad[i] + "\r\n");
+                    "GET / HTTP/1.0\r\n" + s + "\r\n");
 
             HttpParser.RequestHandler handler = new Handler();
             HttpParser parser = new HttpParser(handler);
@@ -1133,7 +1137,7 @@ class HttpParserTest {
         parser.parseNext(BufferUtils.EMPTY_BUFFER);
 
         assertTrue(early);
-        assertEquals(null, bad);
+        assertNull(bad);
     }
 
     @Test
@@ -1230,7 +1234,7 @@ class HttpParserTest {
         assertEquals(2, headers);
         assertEquals("Header2", hdr[1]);
         assertEquals("value2", val[1]);
-        assertEquals(null, content);
+        assertNull(content);
 
         parser.reset();
         init();
@@ -1297,7 +1301,7 @@ class HttpParserTest {
         assertEquals(2, headers);
         assertEquals("Header2", hdr[1]);
         assertEquals("value2", val[1]);
-        assertEquals(null, content);
+        assertNull(content);
 
         parser.reset();
         init();
@@ -1417,7 +1421,7 @@ class HttpParserTest {
         parser.parseNext(buffer);
         assertEquals("HTTP/1.1", methodOrVersion);
         assertEquals("200", uriOrStatus);
-        assertEquals(null, versionOrReason);
+        assertNull(versionOrReason);
         assertEquals(content.length(), 10);
         assertTrue(headerCompleted);
         assertTrue(messageCompleted);
@@ -1438,7 +1442,7 @@ class HttpParserTest {
 
         assertEquals("HTTP/1.1", methodOrVersion);
         assertEquals("200", uriOrStatus);
-        assertEquals(null, versionOrReason);
+        assertNull(versionOrReason);
         assertEquals(12, content.length());
         assertEquals("0123456789\r\n", content);
         assertTrue(headerCompleted);
@@ -1539,7 +1543,7 @@ class HttpParserTest {
         HttpParser parser = new HttpParser(handler);
 
         parser.parseNext(buffer);
-        assertEquals(null, methodOrVersion);
+        assertNull(methodOrVersion);
         assertEquals("No URI", bad);
         assertFalse(buffer.hasRemaining());
         assertEquals(HttpParser.State.CLOSE, parser.getState());
@@ -1560,7 +1564,7 @@ class HttpParserTest {
         HttpParser parser = new HttpParser(handler);
 
         parser.parseNext(buffer);
-        assertEquals(null, methodOrVersion);
+        assertNull(methodOrVersion);
         assertEquals("No URI", bad);
         assertFalse(buffer.hasRemaining());
         assertEquals(HttpParser.State.CLOSE, parser.getState());
@@ -2045,12 +2049,11 @@ class HttpParserTest {
         HttpParser.RequestHandler handler = new Handler();
         HttpParser parser = new HttpParser(handler);
         parser.parseNext(buffer);
-        assertEquals(null, host);
-        assertEquals(null, bad);
+        assertNull(host);
+        assertNull(bad);
     }
 
     @Test
-    @SuppressWarnings("ReferenceEquality")
     void testCachedField() {
         ByteBuffer buffer = BufferUtils.toBuffer(
                 "GET / HTTP/1.1\r\n" +
@@ -2065,7 +2068,7 @@ class HttpParserTest {
 
         buffer.position(0);
         parseAll(parser, buffer);
-        assertTrue(field == fields.get(0));
+        assertSame(field, fields.get(0));
     }
 
     @Test
@@ -2133,6 +2136,7 @@ class HttpParserTest {
     }
 
     private class Handler implements HttpParser.RequestHandler, HttpParser.ResponseHandler, HttpParser.ComplianceHandler {
+
         @Override
         public boolean content(ByteBuffer ref) {
             if (content == null)

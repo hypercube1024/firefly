@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpField
 import com.fireflysource.net.http.common.model.HttpVersion
@@ -48,4 +49,11 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    fun toHttpClientResponse(): HttpClientResponse {
+        TODO("not implemented")
+    }
+
+    fun reset() {
+        TODO("not implemented")
+    }
 }

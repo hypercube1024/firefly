@@ -33,19 +33,20 @@ class Http1ClientConnection(
     private val outChannel = Channel<RequestMessage>(Channel.UNLIMITED)
     private val headerBuffer = BufferUtils.allocateDirect(requestHeaderBufferSize)
     private val contentBuffer = BufferUtils.allocateDirect(contentBufferSize)
-    private val chunkBuffer = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE)
+    private val chunkBuffer = BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE)
 
 
     init {
         val acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
-            recvLoop@ while (true) {
-                val message = outChannel.receive()
+            recvRequestLoop@ while (true) {
+                val requestMessage = outChannel.receive()
 
                 try {
-                    encodeRequestAndFlushData(message)
-                    message.response.complete(parseResponse())
+                    encodeRequestAndFlushData(requestMessage)
+                    val response = parseResponse()
+                    requestMessage.response.complete(response)
                 } catch (e: Exception) {
-                    message.response.completeExceptionally(e)
+                    requestMessage.response.completeExceptionally(e)
                 }
             }
         }
@@ -56,23 +57,44 @@ class Http1ClientConnection(
     }
 
     private suspend fun parseResponse(): HttpClientResponse {
-        TODO("")
+        if (parser.isState(HttpParser.State.START)) {
+            parser.reset()
+        }
+
+        Assert.state(parser.isState(HttpParser.State.START), "The parser state error. ${parser.state}")
+
+        val inputChannel = tcpConnection.inputChannel
+        recvLoop@ while (!parser.isState(HttpParser.State.END)) {
+            val buffer = inputChannel.receive()
+
+            var remaining = buffer.remaining()
+            readBufLoop@ while (!parser.isState(HttpParser.State.END) && remaining > 0) {
+                val wasRemaining = remaining
+                parser.parseNext(buffer)
+                remaining = buffer.remaining()
+                Assert.state(remaining != wasRemaining, "The received data can not be consumed")
+            }
+        }
+
+        val response = handler.toHttpClientResponse()
+        handler.reset()
+        return response
     }
 
-    private suspend fun encodeRequestAndFlushData(message: RequestMessage) {
+    private suspend fun encodeRequestAndFlushData(requestMessage: RequestMessage) {
         genLoop@ while (true) {
             when (generator.state) {
                 START -> {
-                    val hasContent = (message.content != null)
+                    val hasContent = (requestMessage.content != null)
                     val result =
-                        generator.generateRequest(message.request, headerBuffer, null, null, !hasContent)
+                        generator.generateRequest(requestMessage.request, headerBuffer, null, null, !hasContent)
                     Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
                     flushHeaderBuffer()
                 }
                 COMMITTED -> {
-                    requireNotNull(message.content)
+                    requireNotNull(requestMessage.content)
                     val pos = BufferUtils.flipToFill(contentBuffer)
-                    val len = message.content.read(contentBuffer).await()
+                    val len = requestMessage.content.read(contentBuffer).await()
                     BufferUtils.flipToFlush(contentBuffer, pos)
 
                     val last = (len == -1)
@@ -106,7 +128,7 @@ class Http1ClientConnection(
                 }
                 END -> {
                     @Suppress("BlockingMethodInNonBlockingContext")
-                    message.content?.close()
+                    requestMessage.content?.close()
                     break@genLoop
                 }
                 else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")
