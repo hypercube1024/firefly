@@ -7,6 +7,7 @@ import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.client.impl.content.handler.StringContentHandler
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
 import com.fireflysource.net.http.common.codec.CookieGenerator
@@ -192,6 +193,10 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
 
     if (request.cookies != null) {
         request.httpFields.put(HttpHeader.COOKIE, CookieGenerator.generateCookies(request.cookies))
+    }
+
+    if (request.contentHandler == null) {
+        request.contentHandler = StringContentHandler()
     }
 
     val len = request.contentProvider?.length() ?: -1

@@ -4,10 +4,7 @@ import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.net.Connection
-import com.fireflysource.net.http.client.HttpClientConnection
-import com.fireflysource.net.http.client.HttpClientContentProvider
-import com.fireflysource.net.http.client.HttpClientRequest
-import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
@@ -16,6 +13,7 @@ import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -34,33 +32,38 @@ class Http1ClientConnection(
     private val headerBuffer = BufferUtils.allocateDirect(requestHeaderBufferSize)
     private val contentBuffer = BufferUtils.allocateDirect(contentBufferSize)
     private val chunkBuffer = BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE)
+    private val acceptRequestJob: Job
 
 
     init {
-        val acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
+        acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
             recvRequestLoop@ while (true) {
                 val requestMessage = requestChannel.receive()
 
                 try {
                     encodeRequestAndFlushData(requestMessage)
+
+                    handler.contentHandler = requestMessage.contentHandler
                     val response = parseResponse()
                     requestMessage.response.complete(response)
                 } catch (e: Exception) {
                     requestMessage.response.completeExceptionally(e)
+                } finally {
+                    handler.reset()
+                    parser.reset()
+                    generator.reset()
                 }
             }
         }
-        tcpConnection.onClose {
-            requestChannel.close()
-            acceptRequestJob.cancel()
-        }
+        tcpConnection.onClose { closeRequestChannel() }
+    }
+
+    fun closeRequestChannel() {
+        requestChannel.close()
+        acceptRequestJob.cancel()
     }
 
     private suspend fun parseResponse(): HttpClientResponse {
-        if (parser.isState(HttpParser.State.START)) {
-            parser.reset()
-        }
-
         Assert.state(parser.isState(HttpParser.State.START), "The parser state error. ${parser.state}")
 
         val inputChannel = tcpConnection.inputChannel
@@ -76,25 +79,23 @@ class Http1ClientConnection(
             }
         }
 
-        val response = handler.toHttpClientResponse()
-        handler.reset()
-        return response
+        return handler.toHttpClientResponse()
     }
 
     private suspend fun encodeRequestAndFlushData(requestMessage: RequestMessage) {
         genLoop@ while (true) {
             when (generator.state) {
                 START -> {
-                    val hasContent = (requestMessage.content != null)
+                    val hasContent = (requestMessage.contentProvider != null)
                     val result =
                         generator.generateRequest(requestMessage.request, headerBuffer, null, null, !hasContent)
                     Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
                     flushHeaderBuffer()
                 }
                 COMMITTED -> {
-                    requireNotNull(requestMessage.content)
+                    requireNotNull(requestMessage.contentProvider)
                     val pos = BufferUtils.flipToFill(contentBuffer)
-                    val len = requestMessage.content.read(contentBuffer).await()
+                    val len = requestMessage.contentProvider.read(contentBuffer).await()
                     BufferUtils.flipToFlush(contentBuffer, pos)
 
                     val last = (len == -1)
@@ -128,7 +129,7 @@ class Http1ClientConnection(
                 }
                 END -> {
                     @Suppress("BlockingMethodInNonBlockingContext")
-                    requestMessage.content?.close()
+                    requestMessage.contentProvider?.close()
                     break@genLoop
                 }
                 else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")
@@ -173,13 +174,14 @@ class Http1ClientConnection(
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val future = CompletableFuture<HttpClientResponse>()
         val metaDataRequest = toMetaDataRequest(request)
-        requestChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, future))
+        requestChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, request.contentHandler, future))
         return future
     }
 
     private data class RequestMessage(
         val request: MetaData.Request,
-        val content: HttpClientContentProvider?,
+        val contentProvider: HttpClientContentProvider?,
+        val contentHandler: HttpClientContentHandler?,
         val response: CompletableFuture<HttpClientResponse>
     )
 }

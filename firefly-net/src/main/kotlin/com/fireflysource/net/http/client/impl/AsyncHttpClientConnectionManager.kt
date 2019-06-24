@@ -11,8 +11,6 @@ import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader
-import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
@@ -102,7 +100,7 @@ class AsyncHttpClientConnectionManager(
     }.asCompletableFuture()
 
     private suspend fun createConnection(reqHostPort: ReqHostPort): TcpConnection {
-        return when (reqHostPort.scheme) {
+        val conn = when (reqHostPort.scheme) {
             "http" -> {
                 tcpClient.connect(reqHostPort.host, reqHostPort.port).await()
             }
@@ -111,6 +109,8 @@ class AsyncHttpClientConnectionManager(
             }
             else -> throw IllegalArgumentException("not support the protocol: ${reqHostPort.scheme}")
         }
+        conn.startReading()
+        return conn
     }
 
     private suspend fun createHttp1ConnectionPool(reqHostPort: ReqHostPort): Http1ConnectionPool {

@@ -4,10 +4,11 @@ import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.model.MetaData
 import java.nio.ByteBuffer
 import java.util.function.Supplier
 
-class AsyncHttpClientResponse : HttpClientResponse {
+class AsyncHttpClientResponse(val response: MetaData.Response) : HttpClientResponse {
 
     override fun getStatus(): Int {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.

@@ -256,6 +256,12 @@ public class MetaData implements Iterable<HttpField> {
             this.reason = reason;
         }
 
+        public void recycle() {
+            super.recycle();
+            reason = null;
+            status = 0;
+        }
+
         @Override
         public String toString() {
             HttpFields fields = getFields();
