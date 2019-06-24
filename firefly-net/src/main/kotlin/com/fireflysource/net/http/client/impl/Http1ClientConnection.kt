@@ -30,7 +30,7 @@ class Http1ClientConnection(
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
 
-    private val outChannel = Channel<RequestMessage>(Channel.UNLIMITED)
+    private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
     private val headerBuffer = BufferUtils.allocateDirect(requestHeaderBufferSize)
     private val contentBuffer = BufferUtils.allocateDirect(contentBufferSize)
     private val chunkBuffer = BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE)
@@ -39,7 +39,7 @@ class Http1ClientConnection(
     init {
         val acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
             recvRequestLoop@ while (true) {
-                val requestMessage = outChannel.receive()
+                val requestMessage = requestChannel.receive()
 
                 try {
                     encodeRequestAndFlushData(requestMessage)
@@ -51,7 +51,7 @@ class Http1ClientConnection(
             }
         }
         tcpConnection.onClose {
-            outChannel.close()
+            requestChannel.close()
             acceptRequestJob.cancel()
         }
     }
@@ -173,7 +173,7 @@ class Http1ClientConnection(
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val future = CompletableFuture<HttpClientResponse>()
         val metaDataRequest = toMetaDataRequest(request)
-        outChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, future))
+        requestChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, future))
         return future
     }
 
