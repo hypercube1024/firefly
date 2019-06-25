@@ -17,9 +17,9 @@ import static com.fireflysource.net.http.common.model.HttpComplianceSection.NO_F
 import static com.fireflysource.net.http.common.v1.decoder.HttpParser.State;
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("deprecation")
 class HttpParserTest {
     static {
-        //noinspection deprecation
         HttpCompliance.CUSTOM0.sections().remove(HttpComplianceSection.NO_WS_AFTER_FIELD_NAME);
     }
 
@@ -415,7 +415,6 @@ class HttpParserTest {
         assertEquals(2, headers);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     void testSpaceInNameCustom0() {
         ByteBuffer buffer = BufferUtils.toBuffer(
@@ -433,7 +432,6 @@ class HttpParserTest {
         assertTrue(complianceViolation.contains(HttpComplianceSection.NO_WS_AFTER_FIELD_NAME));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     void testNoColonCustom0() {
         ByteBuffer buffer = BufferUtils.toBuffer(
@@ -451,7 +449,6 @@ class HttpParserTest {
         assertTrue(complianceViolation.contains(HttpComplianceSection.NO_WS_AFTER_FIELD_NAME));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     void testTrailingSpacesInHeaderNameInCustom0Mode() {
         ByteBuffer buffer = BufferUtils.toBuffer(

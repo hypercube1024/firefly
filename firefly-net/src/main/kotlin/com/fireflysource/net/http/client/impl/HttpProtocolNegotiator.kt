@@ -5,6 +5,7 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.v2.encoder.HeaderGenerator
 import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator
@@ -25,12 +26,13 @@ object HttpProtocolNegotiator {
 
     fun addHttp2UpgradeHeader(request: HttpClientRequest) {
         // detect the protocol version using Connection and Upgrade HTTP headers
-        val oldValues: List<String>? = request.httpFields.getValuesList(HttpHeader.CONNECTION)
-        if (!oldValues.isNullOrEmpty()) {
+        val oldValues: List<String> = request.httpFields.getCSV(HttpHeader.CONNECTION, false)
+        if (oldValues.isNotEmpty()) {
             val newValues = mutableListOf<String>()
             newValues.addAll(oldValues)
             newValues.add("Upgrade")
             newValues.add("HTTP2-Settings")
+            request.httpFields.remove(HttpHeader.CONNECTION)
             request.httpFields.addCSV(HttpHeader.CONNECTION, *newValues.toTypedArray())
         } else {
             request.httpFields.addCSV(HttpHeader.CONNECTION, "Upgrade", "HTTP2-Settings")
@@ -51,7 +53,7 @@ object HttpProtocolNegotiator {
     fun removeHttp2UpgradeHeader(request: HttpClientRequest) {
         request.httpFields.remove(HttpHeader.HTTP2_SETTINGS)
         request.httpFields.remove(HttpHeader.UPGRADE)
-        request.httpFields.put(HttpHeader.CONNECTION, "keep-alive")
+        request.httpFields.put(HttpHeader.CONNECTION, HttpHeaderValue.KEEP_ALIVE.value)
     }
 
     fun isUpgradeSuccess(response: HttpClientResponse): Boolean {

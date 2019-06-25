@@ -5,6 +5,8 @@ import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
@@ -172,6 +174,8 @@ class Http1ClientConnection(
     override fun isSecureConnection(): Boolean = tcpConnection.isSecureConnection
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        prepareHttp1Headers(request)
+
         val future = CompletableFuture<HttpClientResponse>()
         val metaDataRequest = toMetaDataRequest(request)
         requestChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, request.contentHandler, future))
@@ -184,4 +188,23 @@ class Http1ClientConnection(
         val contentHandler: HttpClientContentHandler?,
         val response: CompletableFuture<HttpClientResponse>
     )
+}
+
+fun prepareHttp1Headers(request: HttpClientRequest) {
+    if (request.httpFields.getValuesList(HttpHeader.HOST.value).isEmpty()) {
+        request.httpFields.put(HttpHeader.HOST, request.uri.host)
+    }
+
+    val connectionValues = request.httpFields.getCSV(HttpHeader.CONNECTION, false)
+    if (connectionValues.isNotEmpty()) {
+        if (!connectionValues.contains(HttpHeaderValue.KEEP_ALIVE.value)) {
+            val newValues = mutableListOf<String>()
+            newValues.addAll(connectionValues)
+            newValues.add(HttpHeaderValue.KEEP_ALIVE.value)
+            request.httpFields.remove(HttpHeader.CONNECTION)
+            request.httpFields.addCSV(HttpHeader.CONNECTION, *newValues.toTypedArray())
+        }
+    } else {
+        request.httpFields.put(HttpHeader.CONNECTION, HttpHeaderValue.KEEP_ALIVE.value)
+    }
 }
