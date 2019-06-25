@@ -9,14 +9,14 @@ import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import java.nio.ByteBuffer
+import java.util.function.Supplier
 
 class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
-    var response: MetaData.Response? = null
+    private var response: MetaData.Response? = null
     var contentHandler: HttpClientContentHandler? = null
-    var headerCompleted = false
-    var httpClientResponse: AsyncHttpClientResponse? = null
-    val trailers = HttpFields()
+    private var httpClientResponse: AsyncHttpClientResponse? = null
+    private val trailers = HttpFields()
 
     override fun getHeaderCacheSize(): Int {
         return 4096
@@ -32,12 +32,11 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun headerComplete(): Boolean {
-        headerCompleted = true
         val resp = MetaData.Response(
             response?.httpVersion, response?.status ?: 0, response?.reason,
             HttpFields(response?.fields), response?.contentLength ?: -1
         )
-        httpClientResponse = AsyncHttpClientResponse(resp)
+        httpClientResponse = AsyncHttpClientResponse(resp, contentHandler)
         return false
     }
 
@@ -47,7 +46,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun contentComplete(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return false
     }
 
     override fun parsedTrailer(field: HttpField) {
@@ -55,19 +54,20 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun messageComplete(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        httpClientResponse?.response?.trailerSupplier = Supplier { HttpFields(trailers) }
+        return true
     }
 
     override fun badMessage(failure: BadMessageException) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw failure
     }
 
     override fun earlyEOF() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw IllegalStateException("Early EOF")
     }
 
     fun toHttpClientResponse(): HttpClientResponse {
-        TODO("not implemented")
+        return httpClientResponse!!
     }
 
     fun reset() {

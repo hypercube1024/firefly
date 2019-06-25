@@ -5,6 +5,7 @@ import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -75,7 +76,7 @@ public interface HttpClientResponse {
      * @param charset The charset of the HTTP body string.
      * @return The HTTP body string.
      */
-    String getStringBody(String charset);
+    String getStringBody(Charset charset);
 
     /**
      * Get the HTTP body raw binary data.
