@@ -16,7 +16,7 @@ public interface Pool<T> extends LifeCycle {
      *
      * @return The pooled object.
      */
-    CompletableFuture<PooledObject<T>> get();
+    CompletableFuture<PooledObject<T>> poll();
 
     /**
      * Returns an instance from the pool. The call may be a blocking one or a

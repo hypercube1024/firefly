@@ -125,7 +125,7 @@ class AsyncHttpClientConnectionManager(
         override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_1_1
 
         override suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection> {
-            return connPool.get().await()
+            return connPool.poll().await()
         }
     }
 

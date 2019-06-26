@@ -51,11 +51,11 @@ class AsyncBoundObjectPool<T>(
 
     private class ArrivedMaxPoolSize(msg: String) : RuntimeException(msg)
 
-    override suspend fun asyncGet(): PooledObject<T> = getObjectDeferred().await()
+    override suspend fun getObject(): PooledObject<T> = getObjectAsync().await()
 
-    override fun get(): CompletableFuture<PooledObject<T>> = getObjectDeferred().asCompletableFuture()
+    override fun poll(): CompletableFuture<PooledObject<T>> = getObjectAsync().asCompletableFuture()
 
-    private fun getObjectDeferred(): Deferred<PooledObject<T>> = asyncGlobally(objectPoolThread) {
+    private fun getObjectAsync(): Deferred<PooledObject<T>> = asyncGlobally(objectPoolThread) {
         try {
             createNewIfLessThanMaxSize()
         } catch (e: ArrivedMaxPoolSize) {
@@ -104,7 +104,7 @@ class AsyncBoundObjectPool<T>(
     }
 
 
-    override fun take(): PooledObject<T> = get().get(timeout, TimeUnit.SECONDS)
+    override fun take(): PooledObject<T> = poll().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
         launchGlobally(objectPoolThread) {
