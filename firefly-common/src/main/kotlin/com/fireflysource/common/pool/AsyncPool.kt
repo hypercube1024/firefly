@@ -5,6 +5,6 @@ package com.fireflysource.common.pool
  */
 interface AsyncPool<T> : Pool<T> {
 
-    suspend fun getObject(): PooledObject<T>
+    suspend fun getPooledObject(): PooledObject<T>
 
 }

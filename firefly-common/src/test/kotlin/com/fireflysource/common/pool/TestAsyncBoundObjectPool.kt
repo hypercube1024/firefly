@@ -64,7 +64,7 @@ class TestAsyncBoundObjectPool {
             future.get().use { pooledObject ->
                 assertFalse(pooledObject.getObject().closed)
                 assertFalse(pooledObject.isReleased)
-                assertTrue(pooledObject.getObject().id in 0..(maxSize - 1))
+                assertTrue(pooledObject.getObject().id in 0 until maxSize)
                 println("test success. $i, $pooledObject")
             }
         }
@@ -78,7 +78,7 @@ class TestAsyncBoundObjectPool {
         pool.poll().await().use { pooledObject ->
             assertFalse(pooledObject.getObject().closed)
             assertFalse(pooledObject.isReleased)
-            assertTrue(pooledObject.getObject().id in 0..(maxSize - 1))
+            assertTrue(pooledObject.getObject().id in 0 until maxSize)
             println("test sync success. $pooledObject")
         }
 
