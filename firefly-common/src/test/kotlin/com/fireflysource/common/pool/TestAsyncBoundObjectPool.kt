@@ -1,14 +1,11 @@
 package com.fireflysource.common.pool
 
-import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwaitTermination
-import com.fireflysource.common.func.Callback
+import com.fireflysource.common.coroutine.asyncGlobally
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -21,35 +18,39 @@ class TestAsyncBoundObjectPool {
 
     @Test
     fun test() = runBlocking {
-        val idGenerator = AtomicInteger()
-        val threadPool = Executors.newCachedThreadPool()
+        val id = AtomicInteger()
+        val max = 4
 
-        val factory = Pool.ObjectFactory<TestObject> { pool ->
-            val future = CompletableFuture<PooledObject<TestObject>>()
-            val testObj = TestObject(idGenerator.getAndIncrement())
-            val pooledObject = PooledObject(testObj, pool) { obj ->
-                println("leaked: " + obj.getObject())
-            }
-            threadPool.submit {
-                Thread.sleep(100) // mock the object creating consumption.
-                future.complete(pooledObject)
-            }
-            future
-        }
-        val validator = Pool.Validator<TestObject> { pooledObject ->
-            !pooledObject.getObject().closed
-        }
-        val dispose = Pool.Dispose<TestObject> { pooledObject ->
-            pooledObject.getObject().closed = true
-        }
+        val pool = asyncPool<TestObject> {
 
-        val maxSize = 4
-        val pool = PoolFactory.newPool(
-            maxSize, 60,
-            factory, validator, dispose, 10, 60,
-            Callback {
+            maxSize = max
+            timeout = 60
+            leakDetectorInterval = 10
+            releaseTimeout = 60
+
+            objectFactory { pool ->
+                asyncGlobally {
+                    delay(100)
+                    PooledObject(TestObject(id.getAndIncrement()), pool) { obj ->
+                        println("leaked: " + obj.getObject())
+                    }
+                }.await()
+            }
+
+            validator { pooledObject ->
+                !pooledObject.getObject().closed
+            }
+
+            dispose { pooledObject ->
+                pooledObject.getObject().closed = true
+            }
+
+            noLeakCallback {
                 println("no leak")
-            })
+            }
+
+        }
+
         assertNotNull(pool.leakDetector)
         assertEquals(0, pool.size())
         assertTrue(pool.isEmpty)
@@ -64,11 +65,11 @@ class TestAsyncBoundObjectPool {
             future.get().use { pooledObject ->
                 assertFalse(pooledObject.getObject().closed)
                 assertFalse(pooledObject.isReleased)
-                assertTrue(pooledObject.getObject().id in 0 until maxSize)
+                assertTrue(pooledObject.getObject().id in 0 until max)
                 println("test success. $i, $pooledObject")
             }
         }
-        assertEquals(maxSize, pool.createdObjectCount)
+        assertEquals(max, pool.createdObjectCount)
 
         list.forEachIndexed { i, future ->
             println("complete test obj. $i, ${future.get()}")
@@ -78,12 +79,10 @@ class TestAsyncBoundObjectPool {
         pool.poll().await().use { pooledObject ->
             assertFalse(pooledObject.getObject().closed)
             assertFalse(pooledObject.isReleased)
-            assertTrue(pooledObject.getObject().id in 0 until maxSize)
+            assertTrue(pooledObject.getObject().id in 0 until max)
             println("test sync success. $pooledObject")
         }
 
         pool.stop()
-        shutdownAndAwaitTermination(threadPool, 5, TimeUnit.SECONDS)
-        Unit
     }
 }

@@ -35,7 +35,7 @@ class AsyncBoundObjectPool<T>(
 
     companion object {
         private val log = SystemLogger.create(AsyncBoundObjectPool::class.java)
-        private val objectPoolThread: CoroutineDispatcher = newSingleThreadDispatcher("firefly-object-pool-thread")
+        private val objectPoolDispatcher: CoroutineDispatcher = newSingleThreadDispatcher("firefly-object-pool-thread")
     }
 
     init {
@@ -55,7 +55,9 @@ class AsyncBoundObjectPool<T>(
 
     override fun poll(): CompletableFuture<PooledObject<T>> = getPooledObjectAsync().asCompletableFuture()
 
-    private fun getPooledObjectAsync(): Deferred<PooledObject<T>> = asyncGlobally(objectPoolThread) {
+    override fun getCoroutineDispatcher(): CoroutineDispatcher = objectPoolDispatcher
+
+    private fun getPooledObjectAsync(): Deferred<PooledObject<T>> = asyncGlobally(objectPoolDispatcher) {
         try {
             createNewIfLessThanMaxSize()
         } catch (e: ArrivedMaxPoolSize) {
@@ -107,7 +109,7 @@ class AsyncBoundObjectPool<T>(
     override fun take(): PooledObject<T> = poll().get(timeout, TimeUnit.SECONDS)
 
     override fun release(pooledObject: PooledObject<T>) {
-        launchGlobally(objectPoolThread) {
+        launchGlobally(objectPoolDispatcher) {
             if (pooledObject.released.compareAndSet(false, true)) {
                 leakDetector.clear(pooledObject)
                 channel.send(pooledObject)
