@@ -49,7 +49,7 @@ class AsyncHttpClientConnectionManager(
             val httpConnPool: HttpConnectionPool? = connPoolMap[reqHostPort]
             if (httpConnPool != null) {
                 val httpClientConnection = httpConnPool.getHttpClientConnection()
-                val response = httpClientConnection.use { it.`object`.send(request).await() }
+                val response = httpClientConnection.use { it.getObject().send(request).await() }
                 response
             } else {
                 // unknown the protocol version
