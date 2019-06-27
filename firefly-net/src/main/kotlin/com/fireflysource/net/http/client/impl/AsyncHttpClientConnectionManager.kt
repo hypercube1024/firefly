@@ -1,9 +1,12 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.pool.PooledObject
+import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.aio.Address
 import com.fireflysource.net.tcp.aio.AioTcpClientConnectionPool
 import kotlinx.coroutines.future.asCompletableFuture
@@ -148,10 +151,10 @@ class AsyncHttpClientConnectionManager(
 
 }
 
-//interface HttpConnectionPool {
-//
-//    fun getHttpVersion(): HttpVersion
-//
-//    suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection>
-//
-//}
+interface HttpConnectionPool {
+
+    fun getHttpVersion(): HttpVersion
+
+    suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection>
+
+}
