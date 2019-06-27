@@ -29,7 +29,7 @@ class TestAsyncBoundObjectPool {
             releaseTimeout = 60
 
             objectFactory { pool ->
-                asyncGlobally {
+                asyncGlobally(pool.getCoroutineDispatcher()) {
                     delay(100)
                     PooledObject(TestObject(id.getAndIncrement()), pool) { obj ->
                         println("leaked: " + obj.getObject())
