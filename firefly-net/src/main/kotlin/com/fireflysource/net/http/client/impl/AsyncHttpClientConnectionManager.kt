@@ -1,12 +1,9 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.coroutine.asyncGlobally
-import com.fireflysource.common.pool.PooledObject
-import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
-import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.aio.Address
 import com.fireflysource.net.tcp.aio.AioTcpClientConnectionPool
 import kotlinx.coroutines.future.asCompletableFuture
@@ -17,6 +14,8 @@ import java.util.concurrent.CompletableFuture
 class AsyncHttpClientConnectionManager(
     private val connectionPool: AioTcpClientConnectionPool
 ) : HttpClientConnectionManager {
+
+//    private val connMap = mutableMapOf<Address, HttpClientConnection>()
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally {
         val secure = isSecureProtocol(request.uri.scheme)
@@ -151,10 +150,10 @@ class AsyncHttpClientConnectionManager(
 
 }
 
-interface HttpConnectionPool {
-
-    fun getHttpVersion(): HttpVersion
-
-    suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection>
-
-}
+//interface HttpConnectionPool {
+//
+//    fun getHttpVersion(): HttpVersion
+//
+//    suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection>
+//
+//}
