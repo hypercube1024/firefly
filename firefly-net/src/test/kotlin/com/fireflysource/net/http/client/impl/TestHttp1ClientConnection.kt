@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 
 class TestHttp1ClientConnection {
 
-    //        @Test
+    // @Test
     @Suppress("BlockingMethodInNonBlockingContext")
     fun test() = runBlocking {
         val tcpClient = AioTcpClient().enableSecureConnection()
@@ -21,6 +21,7 @@ class TestHttp1ClientConnection {
         conn.startReading()
         val protocol = conn.onHandshakeComplete().await()
         println(protocol)
+        println(conn.applicationProtocol)
 
         val httpConn = Http1ClientConnection(conn)
         val request = AsyncHttpClientRequest()
