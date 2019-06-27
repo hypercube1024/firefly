@@ -1,14 +1,54 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.tcp.aio.Address
+import com.fireflysource.net.tcp.aio.AioTcpClientConnectionPool
+import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.future.await
+import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 
-class AsyncHttpClientConnectionManager(val tcpConnectionPool: TcpConnectionPool) : HttpClientConnectionManager {
+class AsyncHttpClientConnectionManager(
+    private val connectionPool: AioTcpClientConnectionPool
+) : HttpClientConnectionManager {
 
-    override fun send(request: HttpClientRequest?): CompletableFuture<HttpClientResponse> {
+    override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally {
+        val secure = isSecureProtocol(request.uri.scheme)
+        val address = Address(InetSocketAddress(request.uri.host, request.uri.port), secure)
+        val pooledObject = connectionPool.getConnection(address)
+        val connection = pooledObject.getObject()
+        if (connection.isSecureConnection) {
+            val protocol = if (connection.isHandshakeComplete) {
+                connection.applicationProtocol
+            } else {
+                connection.onHandshakeComplete().await()
+            }
+
+            when (protocol) {
+                "h2" -> {
+
+                }
+                else -> {
+
+                }
+            }
+        } else {
+
+        }
+
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }.asCompletableFuture()
+
+
+    private fun isSecureProtocol(scheme: String): Boolean {
+        return when (scheme) {
+            "wss", "https" -> true
+            "ws", "http" -> false
+            else -> throw IllegalArgumentException("not support the protocol: $scheme")
+        }
     }
 
 
