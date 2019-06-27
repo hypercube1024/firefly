@@ -36,6 +36,7 @@ class TestHttp1ClientConnection {
         println(response.httpFields)
         println()
         println(response.stringBody)
+
         conn.close()
         tcpClient.stop()
     }

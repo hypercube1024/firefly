@@ -1,5 +1,7 @@
 package com.fireflysource.net.http.client;
 
+import com.fireflysource.common.lifecycle.LifeCycle;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -9,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Pengtao Qiu
  */
-public interface HttpClientConnectionManager {
+public interface HttpClientConnectionManager extends LifeCycle {
 
     /**
      * Send HTTP request to the remote endpoint.

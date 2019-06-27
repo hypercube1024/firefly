@@ -1,159 +1,161 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.pool.AsyncPool
+import com.fireflysource.common.pool.PooledObject
+import com.fireflysource.common.pool.asyncPool
+import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
-import com.fireflysource.net.tcp.aio.Address
-import com.fireflysource.net.tcp.aio.AioTcpClientConnectionPool
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader
+import com.fireflysource.net.tcp.TcpClient
+import com.fireflysource.net.tcp.TcpConnection
+import com.fireflysource.net.tcp.aio.AioTcpClient
+import com.fireflysource.net.tcp.secure.SecureEngineFactory
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
 class AsyncHttpClientConnectionManager(
-    private val connectionPool: AioTcpClientConnectionPool
-) : HttpClientConnectionManager {
+    secureEngineFactory: SecureEngineFactory? = null,
+    val timeout: Long = 30,
+    val maxSize: Int = 16,
+    val leakDetectorInterval: Long = 60,
+    val releaseTimeout: Long = 60,
+    val requestHeaderBufferSize: Int = 4 * 1024,
+    val contentBufferSize: Int = 8 * 1024
+) : HttpClientConnectionManager, AbstractLifeCycle() {
 
-//    private val connMap = mutableMapOf<Address, HttpClientConnection>()
+
+    companion object {
+        private val log = SystemLogger.create(AsyncHttpClientConnectionManager::class.java)
+    }
+
+    private val tcpClient: TcpClient = AioTcpClient().timeout(timeout)
+    private val secureTcpClient: TcpClient = if (secureEngineFactory != null) {
+        AioTcpClient()
+            .timeout(timeout)
+            .secureEngineFactory(secureEngineFactory)
+            .enableSecureConnection()
+    } else {
+        AioTcpClient()
+            .timeout(timeout)
+            .enableSecureConnection()
+    }
+    private val connectionMap = ConcurrentHashMap<Address, AsyncPool<HttpClientConnection>>()
+
+
+    private suspend fun createConnection(address: Address): TcpConnection {
+        val conn = if (address.secure) {
+            secureTcpClient.connect(address.socketAddress).await()
+        } else {
+            tcpClient.connect(address.socketAddress).await()
+        }
+        conn.startReading()
+        return conn
+    }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally {
+        val socketAddress = InetSocketAddress(request.uri.host, request.uri.port)
         val secure = isSecureProtocol(request.uri.scheme)
-        val address = Address(InetSocketAddress(request.uri.host, request.uri.port), secure)
-        val pooledObject = connectionPool.getConnection(address)
-        val connection = pooledObject.getObject()
-        if (connection.isSecureConnection) {
-            val protocol = if (connection.isHandshakeComplete) {
-                connection.applicationProtocol
-            } else {
-                connection.onHandshakeComplete().await()
+        val address = Address(socketAddress, secure)
+        val httpResponseFuture = CompletableFuture<HttpClientResponse>()
+
+        val pooledObject = connectionMap.computeIfAbsent(address) { addr ->
+            asyncPool {
+                maxSize = this@AsyncHttpClientConnectionManager.maxSize
+                timeout = this@AsyncHttpClientConnectionManager.timeout
+                leakDetectorInterval = this@AsyncHttpClientConnectionManager.leakDetectorInterval
+                releaseTimeout = this@AsyncHttpClientConnectionManager.releaseTimeout
+
+                objectFactory { pool ->
+                    asyncGlobally(pool.getCoroutineDispatcher()) {
+                        val connection = createConnection(addr)
+                        val httpConnection: HttpClientConnection = if (connection.isSecureConnection) {
+                            when (connection.onHandshakeComplete().await()) {
+                                "h2" -> {
+                                    Http2ClientConnection(connection)
+                                }
+                                else -> {
+                                    Http1ClientConnection(connection, requestHeaderBufferSize, contentBufferSize)
+                                }
+                            }
+                        } else {
+                            // detect the protocol version using the Upgrade header
+                            addHttp2UpgradeHeader(request)
+
+                            val http1ClientConnection =
+                                Http1ClientConnection(connection, requestHeaderBufferSize, contentBufferSize)
+                            val response = http1ClientConnection.send(request).await()
+
+                            if (isUpgradeSuccess(response)) {
+                                http1ClientConnection.closeRequestChannel()
+
+                                // switch the protocol to http2
+                                val http2ClientConnection = Http2ClientConnection(connection)
+                                removeHttp2UpgradeHeader(request)
+                                val http2Response = http2ClientConnection.send(request).await()
+
+                                httpResponseFuture.complete(http2Response)
+                                http2ClientConnection
+                            } else {
+                                httpResponseFuture.complete(response)
+                                http1ClientConnection
+                            }
+                        }
+
+                        PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
+                    }.await()
+                }
+
+                validator { pooledObject ->
+                    !pooledObject.getObject().isClosed
+                }
+
+                dispose { pooledObject ->
+                    pooledObject.getObject().close()
+                }
+
+                noLeakCallback {
+                    log.info("no leak TCP connection pool.")
+                }
             }
 
-            when (protocol) {
-                "h2" -> {
+        }.getPooledObject()
 
-                }
-                else -> {
-
-                }
-            }
+        if (httpResponseFuture.isDone) {
+            pooledObject.release()
+            httpResponseFuture.await()
         } else {
-
+            pooledObject.use { o -> o.getObject().send(request) }.await()
         }
-
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }.asCompletableFuture()
 
 
-    private fun isSecureProtocol(scheme: String): Boolean {
-        return when (scheme) {
-            "wss", "https" -> true
-            "ws", "http" -> false
-            else -> throw IllegalArgumentException("not support the protocol: $scheme")
-        }
+    override fun init() {
     }
 
-
-//    private val mutex = Mutex()
-//    private val connPoolMap: MutableMap<ReqHostPort, HttpConnectionPool> = ConcurrentHashMap()
-
-//    override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally {
-//        mutex.withLock {
-//            val reqHostPort = ReqHostPort(request.uri.host, request.uri.port, request.uri.scheme)
-//            val httpConnPool: HttpConnectionPool? = connPoolMap[reqHostPort]
-//            if (httpConnPool != null) {
-//                val httpClientConnection = httpConnPool.getHttpClientConnection()
-//                val response = httpClientConnection.use { it.getObject().send(request).await() }
-//                response
-//            } else {
-//                // unknown the protocol version
-//                if (reqHostPort.isSecure()) {
-//                    // detect the protocol version using ALPN
-//                    val secureTcpConnection = createConnection(reqHostPort)
-//                    when (secureTcpConnection.onHandshakeComplete().await()) {
-//                        "h2" -> {
-//                            val http2Conn = Http2ClientConnection(secureTcpConnection)
-//                            val http2ConnPool = Http2ConnectionPool(reqHostPort, http2Conn)
-//                            connPoolMap[reqHostPort] = http2ConnPool
-//                            val response = http2Conn.send(request).await()
-//                            response
-//                        }
-//                        else -> {
-//                            val http1ClientConnection = Http1ClientConnection(secureTcpConnection)
-//                            val response = http1ClientConnection.use { it.send(request).await() }
-//                            val http1ConnPool = createHttp1ConnectionPool(reqHostPort)
-//                            connPoolMap[reqHostPort] = http1ConnPool
-//                            response
-//                        }
-//                    }
-//                } else {
-//                    addHttp2UpgradeHeader(request)
-//
-//                    val tcpConn = createConnection(reqHostPort)
-//                    val http1ClientConnection = Http1ClientConnection(tcpConn)
-//                    val response = http1ClientConnection.use { http1ClientConnection.send(request).await() }
-//
-//                    if (isUpgradeSuccess(response)) {
-//                        // switch the protocol to http2
-//                        val http2Conn = Http2ClientConnection(tcpConn)
-//                        val http2ConnPool = Http2ConnectionPool(reqHostPort, http2Conn)
-//                        connPoolMap[reqHostPort] = http2ConnPool
-//
-//                        removeHttp2UpgradeHeader(request)
-//
-//                        val http2Resp = http2Conn.send(request).await()
-//                        http2Resp
-//                    } else {
-//                        val http1ConnPool = createHttp1ConnectionPool(reqHostPort)
-//                        connPoolMap[reqHostPort] = http1ConnPool
-//                        response
-//                    }
-//                }
-//            }
-//        }
-//    }.asCompletableFuture()
-
-
-//    private suspend fun createHttp1ConnectionPool(reqHostPort: ReqHostPort): Http1ConnectionPool {
-//
-//    }
-//
-//    class Http1ConnectionPool(
-//        private val reqHostPort: ReqHostPort,
-//        private val connPool: Pool<HttpClientConnection>
-//    ) : HttpConnectionPool {
-//
-//        override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_1_1
-//
-//        override suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection> {
-//            return connPool.poll().await()
-//        }
-//    }
-
-//    private inner class Http2ConnectionPool(
-//        private val reqHostPort: ReqHostPort,
-//        private var conn: Http2ClientConnection
-//    ) : HttpConnectionPool {
-//
-//        override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_2
-//
-//        override suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection> {
-//            return if (conn.isClosed) {
-//                val tcpConn = createConnection(reqHostPort)
-//                conn = Http2ClientConnection(tcpConn)
-//                FakePooledObject(conn)
-//            } else {
-//                FakePooledObject(conn)
-//            }
-//        }
-//    }
-
+    override fun destroy() {
+        tcpClient.stop()
+        secureTcpClient.stop()
+        connectionMap.values.forEach { it.stop() }
+        connectionMap.clear()
+    }
 }
 
-//interface HttpConnectionPool {
-//
-//    fun getHttpVersion(): HttpVersion
-//
-//    suspend fun getHttpClientConnection(): PooledObject<HttpClientConnection>
-//
-//}
+fun isSecureProtocol(scheme: String): Boolean {
+    return when (scheme) {
+        "wss", "https" -> true
+        "ws", "http" -> false
+        else -> throw IllegalArgumentException("not support the protocol: $scheme")
+    }
+}
+
+data class Address(val socketAddress: InetSocketAddress, val secure: Boolean)
