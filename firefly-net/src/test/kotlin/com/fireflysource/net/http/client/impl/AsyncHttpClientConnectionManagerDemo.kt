@@ -6,8 +6,9 @@ import com.fireflysource.net.http.common.model.HttpURI
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import java.net.URL
+import kotlin.system.exitProcess
 
-fun main() = runBlocking {
+fun main(): Unit = runBlocking {
     val client = AsyncHttpClientConnectionManager()
 
     val request = AsyncHttpClientRequest()
@@ -25,4 +26,5 @@ fun main() = runBlocking {
     println(response.stringBody)
 
     println("exit.")
+    exitProcess(0)
 }
