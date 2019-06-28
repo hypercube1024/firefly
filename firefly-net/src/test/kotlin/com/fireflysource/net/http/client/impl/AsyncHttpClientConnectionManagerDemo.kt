@@ -24,6 +24,5 @@ fun main() = runBlocking {
     println()
     println(response.stringBody)
 
-    client.stop()
     println("exit.")
 }
