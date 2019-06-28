@@ -1,5 +1,6 @@
 package com.fireflysource.common.coroutine
 
+import com.fireflysource.common.concurrent.ExecutorServiceUtils
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.*
@@ -81,6 +82,6 @@ object CoroutineDispatchers {
 
 class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
     protected fun finalize() {
-        executor.shutdown()
+        ExecutorServiceUtils.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
     }
 }

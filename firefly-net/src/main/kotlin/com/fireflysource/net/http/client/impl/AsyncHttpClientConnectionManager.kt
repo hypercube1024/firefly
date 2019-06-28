@@ -38,6 +38,10 @@ class AsyncHttpClientConnectionManager(
         private val log = SystemLogger.create(AsyncHttpClientConnectionManager::class.java)
     }
 
+    init {
+        start()
+    }
+
     private val tcpClient: TcpClient = AioTcpClient().timeout(timeout)
     private val secureTcpClient: TcpClient = if (secureEngineFactory != null) {
         AioTcpClient()
@@ -143,10 +147,10 @@ class AsyncHttpClientConnectionManager(
     }
 
     override fun destroy() {
-        tcpClient.stop()
-        secureTcpClient.stop()
         connectionMap.values.forEach { it.stop() }
         connectionMap.clear()
+        tcpClient.stop()
+        secureTcpClient.stop()
     }
 }
 

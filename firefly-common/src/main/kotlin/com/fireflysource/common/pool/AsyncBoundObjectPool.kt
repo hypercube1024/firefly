@@ -137,6 +137,15 @@ class AsyncBoundObjectPool<T>(
     }
 
     override fun destroy() {
+        while (true) {
+            val o = channel.poll()
+            if (o == null) {
+                break
+            } else {
+                dispose.destroy(o)
+            }
+        }
+
         leakDetector.stop()
         channel.close()
     }
