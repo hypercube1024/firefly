@@ -80,43 +80,41 @@ class AsyncHttpClientConnectionManager(
                 releaseTimeout = this@AsyncHttpClientConnectionManager.releaseTimeout
 
                 objectFactory { pool ->
-                    asyncGlobally(pool.getCoroutineDispatcher()) {
-                        val connection = createConnection(addr)
-                        val httpConnection: HttpClientConnection = if (connection.isSecureConnection) {
-                            when (connection.onHandshakeComplete().await()) {
-                                "h2" -> {
-                                    Http2ClientConnection(connection)
-                                }
-                                else -> {
-                                    Http1ClientConnection(connection, requestHeaderBufferSize, contentBufferSize)
-                                }
+                    val connection = createConnection(addr)
+                    val httpConnection: HttpClientConnection = if (connection.isSecureConnection) {
+                        when (connection.onHandshakeComplete().await()) {
+                            "h2" -> {
+                                Http2ClientConnection(connection)
                             }
-                        } else {
-                            // detect the protocol version using the Upgrade header
-                            addHttp2UpgradeHeader(request)
-
-                            val http1ClientConnection =
+                            else -> {
                                 Http1ClientConnection(connection, requestHeaderBufferSize, contentBufferSize)
-                            val response = http1ClientConnection.send(request).await()
-
-                            if (isUpgradeSuccess(response)) {
-                                http1ClientConnection.closeRequestChannel()
-
-                                // switch the protocol to http2
-                                val http2ClientConnection = Http2ClientConnection(connection)
-                                removeHttp2UpgradeHeader(request)
-                                val http2Response = http2ClientConnection.send(request).await()
-
-                                httpResponseFuture.complete(http2Response)
-                                http2ClientConnection
-                            } else {
-                                httpResponseFuture.complete(response)
-                                http1ClientConnection
                             }
                         }
+                    } else {
+                        // detect the protocol version using the Upgrade header
+                        addHttp2UpgradeHeader(request)
 
-                        PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
-                    }.await()
+                        val http1ClientConnection =
+                            Http1ClientConnection(connection, requestHeaderBufferSize, contentBufferSize)
+                        val response = http1ClientConnection.send(request).await()
+
+                        if (isUpgradeSuccess(response)) {
+                            http1ClientConnection.closeRequestChannel()
+
+                            // switch the protocol to http2
+                            val http2ClientConnection = Http2ClientConnection(connection)
+                            removeHttp2UpgradeHeader(request)
+                            val http2Response = http2ClientConnection.send(request).await()
+
+                            httpResponseFuture.complete(http2Response)
+                            http2ClientConnection
+                        } else {
+                            httpResponseFuture.complete(response)
+                            http1ClientConnection
+                        }
+                    }
+
+                    PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
                 }
 
                 validator { pooledObject ->

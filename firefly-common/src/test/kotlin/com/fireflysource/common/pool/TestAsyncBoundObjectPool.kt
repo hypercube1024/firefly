@@ -1,6 +1,5 @@
 package com.fireflysource.common.pool
 
-import com.fireflysource.common.coroutine.asyncGlobally
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -29,12 +28,10 @@ class TestAsyncBoundObjectPool {
             releaseTimeout = 60
 
             objectFactory { pool ->
-                asyncGlobally(pool.getCoroutineDispatcher()) {
-                    delay(100)
-                    PooledObject(TestObject(id.getAndIncrement()), pool) { obj ->
-                        println("leaked: " + obj.getObject())
-                    }
-                }.await()
+                delay(100)
+                PooledObject(TestObject(id.getAndIncrement()), pool) { obj ->
+                    println("leaked: " + obj.getObject())
+                }
             }
 
             validator { pooledObject ->
