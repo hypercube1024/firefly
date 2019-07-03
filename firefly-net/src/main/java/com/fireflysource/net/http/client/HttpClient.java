@@ -3,7 +3,6 @@ package com.fireflysource.net.http.client;
 import com.fireflysource.common.lifecycle.LifeCycle;
 import com.fireflysource.net.http.common.model.HttpMethod;
 import com.fireflysource.net.http.common.model.HttpURI;
-import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
 import java.net.URL;
 
@@ -11,30 +10,6 @@ import java.net.URL;
  * @author Pengtao Qiu
  */
 public interface HttpClient extends LifeCycle {
-
-    /**
-     * Set the TLS engine factory.
-     *
-     * @param secureEngineFactory The TLS engine factory.
-     * @return The HTTP client.
-     */
-    HttpClient secureEngineFactory(SecureEngineFactory secureEngineFactory);
-
-    /**
-     * Set the TCP idle timeout. The unit is second.
-     *
-     * @param timeout The TCP idle timeout. The unit is second.
-     * @return The HTTP client.
-     */
-    HttpClient timeout(long timeout);
-
-    /**
-     * Set the HTTP request generator header buffer size. The default value is 4096 bytes.
-     *
-     * @param size The HTTP request generator header buffer size.
-     * @return The HTTP client.
-     */
-    HttpClient requestHeaderBufferSize(int size);
 
     /**
      * Create a RequestBuilder with GET method and URL.

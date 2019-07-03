@@ -1,38 +1,27 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
 import com.fireflysource.common.pool.asyncPool
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.http.client.HttpClientConnection
-import com.fireflysource.net.http.client.HttpClientConnectionManager
-import com.fireflysource.net.http.client.HttpClientRequest
-import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
-import com.fireflysource.net.tcp.secure.SecureEngineFactory
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 
 class AsyncHttpClientConnectionManager(
-    secureEngineFactory: SecureEngineFactory? = null,
-    val timeout: Long = 30,
-    val maxSize: Int = 16,
-    val leakDetectorInterval: Long = 60,
-    val releaseTimeout: Long = 60,
-    val requestHeaderBufferSize: Int = 4 * 1024,
-    val contentBufferSize: Int = 8 * 1024
+    private val config: HttpClientConfig = HttpClientConfig()
 ) : HttpClientConnectionManager, AbstractLifeCycle() {
-
 
     companion object {
         private val log = SystemLogger.create(AsyncHttpClientConnectionManager::class.java)
@@ -42,18 +31,18 @@ class AsyncHttpClientConnectionManager(
         start()
     }
 
-    private val tcpClient: TcpClient = AioTcpClient().timeout(timeout)
-    private val secureTcpClient: TcpClient = if (secureEngineFactory != null) {
+    private val tcpClient: TcpClient = AioTcpClient().timeout(config.timeout)
+    private val secureTcpClient: TcpClient = if (config.secureEngineFactory != null) {
         AioTcpClient()
-            .timeout(timeout)
-            .secureEngineFactory(secureEngineFactory)
+            .timeout(config.timeout)
+            .secureEngineFactory(config.secureEngineFactory)
             .enableSecureConnection()
     } else {
         AioTcpClient()
-            .timeout(timeout)
+            .timeout(config.timeout)
             .enableSecureConnection()
     }
-    private val connectionMap = ConcurrentHashMap<Address, AsyncPool<HttpClientConnection>>()
+    private val connectionMap = HashMap<Address, AsyncPool<HttpClientConnection>>()
 
 
     private suspend fun createConnection(address: Address): TcpConnection {
@@ -66,7 +55,7 @@ class AsyncHttpClientConnectionManager(
         return conn
     }
 
-    override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally {
+    override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally(singleThread) {
         val socketAddress = InetSocketAddress(request.uri.host, request.uri.port)
         val secure = isSecureProtocol(request.uri.scheme)
         val address = Address(socketAddress, secure)
@@ -74,10 +63,10 @@ class AsyncHttpClientConnectionManager(
 
         val pooledObject = connectionMap.computeIfAbsent(address) { addr ->
             asyncPool {
-                maxSize = this@AsyncHttpClientConnectionManager.maxSize
-                timeout = this@AsyncHttpClientConnectionManager.timeout
-                leakDetectorInterval = this@AsyncHttpClientConnectionManager.leakDetectorInterval
-                releaseTimeout = this@AsyncHttpClientConnectionManager.releaseTimeout
+                maxSize = config.connectionPoolSize
+                timeout = config.timeout
+                leakDetectorInterval = config.leakDetectorInterval
+                releaseTimeout = config.releaseTimeout
 
                 objectFactory { pool ->
                     val connection = createConnection(addr)
@@ -87,7 +76,11 @@ class AsyncHttpClientConnectionManager(
                                 Http2ClientConnection(connection)
                             }
                             else -> {
-                                Http1ClientConnection(connection, requestHeaderBufferSize, contentBufferSize)
+                                Http1ClientConnection(
+                                    connection,
+                                    config.requestHeaderBufferSize,
+                                    config.contentBufferSize
+                                )
                             }
                         }
                     } else {
@@ -95,7 +88,7 @@ class AsyncHttpClientConnectionManager(
                         addHttp2UpgradeHeader(request)
 
                         val http1ClientConnection =
-                            Http1ClientConnection(connection, requestHeaderBufferSize, contentBufferSize)
+                            Http1ClientConnection(connection, config.requestHeaderBufferSize, config.contentBufferSize)
                         val response = http1ClientConnection.send(request).await()
 
                         if (isUpgradeSuccess(response)) {
