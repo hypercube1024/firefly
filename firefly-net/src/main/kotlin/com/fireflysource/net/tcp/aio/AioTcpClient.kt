@@ -43,7 +43,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     }
 
     override fun connect(address: SocketAddress): CompletableFuture<TcpConnection> =
-        connect(address, listOf("h2", "http/1.1"))
+        connect(address, defaultSupportedProtocols)
 
     override fun connect(address: SocketAddress, supportedProtocols: List<String>): CompletableFuture<TcpConnection> =
         connect(address, "", 0, supportedProtocols)

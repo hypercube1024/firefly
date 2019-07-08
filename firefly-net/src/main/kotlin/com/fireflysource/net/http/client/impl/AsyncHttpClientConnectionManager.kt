@@ -14,6 +14,7 @@ import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
+import com.fireflysource.net.tcp.aio.SupportedProtocolEnum
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
@@ -72,7 +73,7 @@ class AsyncHttpClientConnectionManager(
                     val connection = createConnection(addr)
                     val httpConnection: HttpClientConnection = if (connection.isSecureConnection) {
                         when (connection.onHandshakeComplete().await()) {
-                            "h2" -> {
+                            SupportedProtocolEnum.H2.value -> {
                                 Http2ClientConnection(connection)
                             }
                             else -> {

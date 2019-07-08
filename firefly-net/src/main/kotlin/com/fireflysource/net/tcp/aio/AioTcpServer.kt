@@ -26,7 +26,7 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     private val connChannel = Channel<TcpConnection>(UNLIMITED)
     private var connectionConsumer: Consumer<TcpConnection> = Consumer { connChannel.offer(it) }
     private var secureEngineFactory: SecureEngineFactory = DefaultCredentialConscryptSSLContextFactory()
-    private var supportedProtocols: List<String> = listOf("h2", "http/1.1")
+    private var supportedProtocols: List<String> = defaultSupportedProtocols
     private var peerHost: String = ""
     private var peerPort: Int = 0
 

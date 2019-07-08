@@ -14,3 +14,9 @@ data class TcpConfig(
     var keepAlive: Boolean = true,
     var tcpNoDelay: Boolean = false
 )
+
+enum class SupportedProtocolEnum(val value: String) {
+    H2("h2"), HTTP_1_1("http/1.1")
+}
+
+val defaultSupportedProtocols: List<String> = SupportedProtocolEnum.values().map { it.value }

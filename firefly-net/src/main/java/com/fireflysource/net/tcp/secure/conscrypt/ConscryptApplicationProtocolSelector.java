@@ -8,8 +8,6 @@ import org.conscrypt.Conscrypt;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,11 +23,7 @@ public class ConscryptApplicationProtocolSelector implements ApplicationProtocol
     private final SSLEngine sslEngine;
 
     public ConscryptApplicationProtocolSelector(SSLEngine sslEngine, List<String> supportedProtocolList) {
-        if (supportedProtocolList == null || supportedProtocolList.isEmpty()) {
-            this.supportedProtocolList = Collections.unmodifiableList(Arrays.asList("h2", "http/1.1"));
-        } else {
-            this.supportedProtocolList = supportedProtocolList;
-        }
+        this.supportedProtocolList = supportedProtocolList;
         supportedProtocols = this.supportedProtocolList.toArray(StringUtils.EMPTY_STRING_ARRAY);
         this.sslEngine = sslEngine;
         if (sslEngine.getUseClientMode()) {
