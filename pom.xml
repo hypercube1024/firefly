@@ -75,6 +75,8 @@
         <redisson.version>3.11.1</redisson.version>
         <conscrypt.version>2.1.0</conscrypt.version>
         <hikariCP.version>3.3.1</hikariCP.version>
+        <javassist.version>3.25.0-GA</javassist.version>
+        <slf4j.api.version>1.7.26</slf4j.api.version>
         <spring.reactor.version>Californium-SR9</spring.reactor.version>
 
         <!-- test lib -->
@@ -105,12 +107,12 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.25</version>
+                <version>${slf4j.api.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.23.1-GA</version>
+                <version>${javassist.version}</version>
             </dependency>
 
             <!-- reactor -->
