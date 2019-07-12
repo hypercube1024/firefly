@@ -3,7 +3,7 @@ package com.fireflysource.net.http.client.impl.content.handler
 import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.launchGlobally
-import com.fireflysource.common.io.aWrite
+import com.fireflysource.common.io.writeAwait
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientResponse
 import kotlinx.coroutines.channels.Channel
@@ -24,6 +24,7 @@ class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClien
 
     init {
         launchGlobally(singleThread) {
+            var pos = 0L
             msgLoop@ while (true) {
                 val buf = inputChannel.receive()
                 if (buf == closeFlag) {
@@ -31,8 +32,7 @@ class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClien
                 }
 
                 writeLoop@ while (buf.hasRemaining()) {
-                    var pos = 0L
-                    val len = fileChannel.aWrite(buf, pos)
+                    val len = fileChannel.writeAwait(buf, pos)
                     if (len <= 0) {
                         break@msgLoop
                     }

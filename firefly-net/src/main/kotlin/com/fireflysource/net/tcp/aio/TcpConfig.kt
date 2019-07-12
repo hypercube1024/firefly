@@ -20,3 +20,10 @@ enum class SupportedProtocolEnum(val value: String) {
 }
 
 val defaultSupportedProtocols: List<String> = SupportedProtocolEnum.values().map { it.value }
+
+val schemaDefaultPort = mapOf(
+    "http" to 80,
+    "https" to 443,
+    "ws" to 80,
+    "wss" to 443
+)

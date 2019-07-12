@@ -3,7 +3,7 @@ package com.fireflysource.net.http.client.impl.content.provider
 import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingPool
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.exception.UnsupportedOperationException
-import com.fireflysource.common.io.aRead
+import com.fireflysource.common.io.readAwait
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import kotlinx.coroutines.future.asCompletableFuture
 import java.nio.ByteBuffer
@@ -32,7 +32,7 @@ class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClie
     }
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> = asyncGlobally {
-        val len = fileChannel.aRead(byteBuffer, position)
+        val len = fileChannel.readAwait(byteBuffer, position)
         if (len > 0) {
             position += len
         }

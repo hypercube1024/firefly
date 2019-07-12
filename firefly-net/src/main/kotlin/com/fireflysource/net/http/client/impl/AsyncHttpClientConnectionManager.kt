@@ -15,6 +15,7 @@ import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
 import com.fireflysource.net.tcp.aio.SupportedProtocolEnum
+import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
@@ -57,7 +58,12 @@ class AsyncHttpClientConnectionManager(
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally(singleThread) {
-        val socketAddress = InetSocketAddress(request.uri.host, request.uri.port)
+        val port: Int = if (request.uri.port > 0) {
+            request.uri.port
+        } else {
+            schemaDefaultPort[request.uri.scheme] ?: throw IllegalArgumentException("The port is missing")
+        }
+        val socketAddress = InetSocketAddress(request.uri.host, port)
         val secure = isSecureProtocol(request.uri.scheme)
         val address = Address(socketAddress, secure)
         val httpResponseFuture = CompletableFuture<HttpClientResponse>()

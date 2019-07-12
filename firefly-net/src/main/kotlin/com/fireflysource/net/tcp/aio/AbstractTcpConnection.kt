@@ -2,8 +2,8 @@ package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.func.Callback
-import com.fireflysource.common.io.aRead
-import com.fireflysource.common.io.aWrite
+import com.fireflysource.common.io.readAwait
+import com.fireflysource.common.io.writeAwait
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
@@ -82,7 +82,7 @@ abstract class AbstractTcpConnection(
                 var len = 0
                 while (message.buffer.hasRemaining()) {
                     try {
-                        val count = socketChannel.aWrite(message.buffer, maxIdleTime, timeUnit)
+                        val count = socketChannel.writeAwait(message.buffer, maxIdleTime, timeUnit)
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
@@ -111,7 +111,7 @@ abstract class AbstractTcpConnection(
                         val offset = message.getCurrentOffset()
                         val length = message.getCurrentLength()
 
-                        val count = socketChannel.aWrite(message.buffers, offset, length, maxIdleTime, timeUnit)
+                        val count = socketChannel.writeAwait(message.buffers, offset, length, maxIdleTime, timeUnit)
                         if (count < 0) {
                             shutdownInputAndOutput()
                             break
@@ -140,7 +140,7 @@ abstract class AbstractTcpConnection(
                         val offset = message.getCurrentOffset()
                         val length = message.getCurrentLength()
 
-                        val count = socketChannel.aWrite(
+                        val count = socketChannel.writeAwait(
                             message.bufferList.toTypedArray(), offset, length,
                             maxIdleTime, timeUnit
                         )
@@ -189,7 +189,7 @@ abstract class AbstractTcpConnection(
                     val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
                     try {
                         lastReadTime = System.currentTimeMillis()
-                        val count = socketChannel.aRead(buf, maxIdleTime, timeUnit)
+                        val count = socketChannel.readAwait(buf, maxIdleTime, timeUnit)
                         if (count < 0) {
                             shutdownAndClose()
                             break
@@ -264,6 +264,7 @@ abstract class AbstractTcpConnection(
         }
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun shutdownOutput() {
         if (outputShutdownState.compareAndSet(false, true)) {
             try {

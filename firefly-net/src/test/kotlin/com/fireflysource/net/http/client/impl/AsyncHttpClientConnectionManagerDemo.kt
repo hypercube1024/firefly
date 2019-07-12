@@ -13,7 +13,7 @@ fun main(): Unit = runBlocking {
 
     val request = AsyncHttpClientRequest()
     request.method = HttpMethod.GET.value
-    request.uri = HttpURI(URL("https://www.baidu.com:443/").toURI())
+    request.uri = HttpURI(URL("https://www.baidu.com/").toURI())
 
     request.httpFields.put(
         HttpHeader.USER_AGENT,

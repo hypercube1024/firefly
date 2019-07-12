@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
 import com.fireflysource.common.io.BufferUtils
-import com.fireflysource.common.io.aWrite
+import com.fireflysource.common.io.writeAwait
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createFileContentProvider
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -14,10 +14,11 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption.READ
 import java.nio.file.StandardOpenOption.WRITE
+import java.util.*
 
 class TestFileContentProvider {
 
-    private val tmpFile = Paths.get(System.getProperty("user.home"), "tmpFile.txt")
+    private val tmpFile = Paths.get(System.getProperty("user.home"), "tmpFile${UUID.randomUUID()}.txt")
 
     @BeforeEach
     fun init() {
@@ -43,7 +44,7 @@ class TestFileContentProvider {
                 .putInt(4).putInt(5).putInt(6)
             BufferUtils.flipToFlush(buffer, pos)
 
-            val len = it.aWrite(buffer, 0L)
+            val len = it.writeAwait(buffer, 0L)
             assertEquals(capacity, len)
         }
 
