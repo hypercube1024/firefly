@@ -6,6 +6,7 @@ import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.io.writeAwait
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientResponse
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import java.io.Closeable
 import java.nio.ByteBuffer
@@ -17,13 +18,14 @@ class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClien
 
     private val fileChannel = AsynchronousFileChannel.open(path, setOf(*options), CoroutineDispatchers.ioBlockingPool)
     private val inputChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
+    private val writeJob: Job
 
     companion object {
         private val closeFlag = ByteBuffer.allocate(0)
     }
 
     init {
-        launchGlobally(singleThread) {
+        writeJob = launchGlobally(singleThread) {
             var pos = 0L
             msgLoop@ while (true) {
                 val buf = inputChannel.receive()
@@ -51,5 +53,10 @@ class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClien
 
     override fun close() {
         inputChannel.offer(closeFlag)
+    }
+
+    suspend fun closeAwait() {
+        close()
+        writeJob.join()
     }
 }
