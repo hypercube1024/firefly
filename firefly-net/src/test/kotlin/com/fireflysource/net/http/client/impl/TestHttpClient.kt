@@ -1,21 +1,19 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.net.http.common.model.HttpMethod
+import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.model.HttpStatus
-import com.fireflysource.net.http.common.model.HttpURI
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
-import java.net.URL
 import java.nio.charset.StandardCharsets
 import kotlin.random.Random
 
-class TestAsyncHttpClientConnectionManager {
+class TestHttpClient {
 
     private lateinit var address: InetSocketAddress
     private lateinit var httpServer: HttpServer
@@ -25,8 +23,8 @@ class TestAsyncHttpClientConnectionManager {
         address = InetSocketAddress("localhost", Random.nextInt(2000, 5000))
         httpServer = HttpServer.create(address, 1024)
 
-        httpServer.createContext("/test1") { exg ->
-            val body = "test ok".toByteArray(StandardCharsets.UTF_8)
+        httpServer.createContext("/testHttpClient") { exg ->
+            val body = "test client ok".toByteArray(StandardCharsets.UTF_8)
             exg.sendResponseHeaders(200, body.size.toLong())
             exg.responseBody.use { out -> out.write(body) }
             exg.close()
@@ -41,24 +39,20 @@ class TestAsyncHttpClientConnectionManager {
 
     @Test
     fun test() = runBlocking {
-        val manager = AsyncHttpClientConnectionManager()
+        val httpClient = HttpClientFactory.create()
 
         repeat(5) {
-            val request = AsyncHttpClientRequest()
-            request.method = HttpMethod.GET.value
-            request.uri = HttpURI(URL("http://${address.hostName}:${address.port}/test1").toURI())
-
-            val response = manager.send(request).await()
+            val response = httpClient.get("http://${address.hostName}:${address.port}/testHttpClient").submit().await()
             println("${response.status} ${response.reason}")
             println(response.httpFields)
             println(response.stringBody)
             println()
 
-            assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals(7L, response.contentLength)
-            assertEquals("test ok", response.stringBody)
+            Assertions.assertEquals(HttpStatus.OK_200, response.status)
+            Assertions.assertEquals(14L, response.contentLength)
+            Assertions.assertEquals("test client ok", response.stringBody)
         }
 
-        manager.stop()
+        httpClient.stop()
     }
 }
