@@ -6,7 +6,9 @@ import java.nio.charset.StandardCharsets
 
 class StringContentHandler : ByteBufferContentHandler() {
 
-    override fun toString(): String = toString(StandardCharsets.UTF_8)
+    private val utf8String: String by lazy { toString(StandardCharsets.UTF_8) }
+
+    override fun toString(): String = utf8String
 
     fun toString(charset: Charset): String {
         val size = byteBufferList.map { it.remaining() }.sum()
@@ -16,7 +18,10 @@ class StringContentHandler : ByteBufferContentHandler() {
 
         val buffer = BufferUtils.allocate(size)
         val pos = BufferUtils.flipToFill(buffer)
-        byteBufferList.forEach { buffer.put(it) }
+        byteBufferList.forEach {
+            buffer.put(it)
+            it.flip()
+        }
         BufferUtils.flipToFlush(buffer, pos)
 
         return BufferUtils.toString(buffer, charset)

@@ -57,11 +57,10 @@ class Http1ClientConnection(
                 }
             }
         }
-        tcpConnection.onClose { closeRequestChannel() }
+        tcpConnection.onClose { cancelRequestJob() }
     }
 
-    fun closeRequestChannel() {
-        requestChannel.close()
+    fun cancelRequestJob() {
         acceptRequestJob.cancel()
     }
 
