@@ -54,6 +54,7 @@ class TestAsyncHttpClientConnectionManager {
         println(response.stringBody)
 
         assertEquals(HttpStatus.OK_200, response.status)
+        assertEquals(7L, response.contentLength)
         assertEquals("test ok", response.stringBody)
 
         client.stop()
