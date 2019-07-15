@@ -43,19 +43,21 @@ class TestAsyncHttpClientConnectionManager {
     fun test() = runBlocking {
         val client = AsyncHttpClientConnectionManager()
 
-        val request = AsyncHttpClientRequest()
-        request.method = HttpMethod.GET.value
-        request.uri = HttpURI(URL("http://${address.hostName}:${address.port}/test1").toURI())
+        repeat(5) {
+            val request = AsyncHttpClientRequest()
+            request.method = HttpMethod.GET.value
+            request.uri = HttpURI(URL("http://${address.hostName}:${address.port}/test1").toURI())
 
-        val response = client.send(request).await()
-        println("${response.status} ${response.reason}")
-        println(response.httpFields)
-        println()
-        println(response.stringBody)
+            val response = client.send(request).await()
+            println("${response.status} ${response.reason}")
+            println(response.httpFields)
+            println()
+            println(response.stringBody)
 
-        assertEquals(HttpStatus.OK_200, response.status)
-        assertEquals(7L, response.contentLength)
-        assertEquals("test ok", response.stringBody)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals(7L, response.contentLength)
+            assertEquals("test ok", response.stringBody)
+        }
 
         client.stop()
     }
