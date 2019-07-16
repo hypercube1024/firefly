@@ -12,17 +12,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
 
     static {
         try {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                stopActions.forEach(a -> {
-                    try {
-                        a.call();
-                    } catch (Exception e) {
-                        System.err.println(e.getMessage());
-                    }
-                });
-                System.out.println("Shutdown instance: " + stopActions.size());
-                stopActions.clear();
-            }, "the firefly shutdown thread"));
+            Runtime.getRuntime().addShutdownHook(new Thread(AbstractLifeCycle::stopAll, "the firefly shutdown thread"));
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
@@ -63,7 +53,15 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     abstract protected void destroy();
 
     public static void stopAll() {
-        stopActions.forEach(Callback::call);
+        stopActions.forEach(a -> {
+            try {
+                a.call();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        });
+        System.out.println("Shutdown instance: " + stopActions.size());
+        stopActions.clear();
     }
 
 }
