@@ -27,3 +27,11 @@ val schemaDefaultPort = mapOf(
     "ws" to 80,
     "wss" to 443
 )
+
+fun isSecureProtocol(scheme: String): Boolean {
+    return when (scheme) {
+        "wss", "https" -> true
+        "ws", "http" -> false
+        else -> throw IllegalArgumentException("not support the protocol: $scheme")
+    }
+}

@@ -36,6 +36,7 @@ class AioSecureTcpConnection(
         launchWritingEncryptedMessageJob()
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     private fun launchWritingEncryptedMessageJob() = launchGlobally(messageThread) {
         try {
             secureEngine.beginHandshake().await()
@@ -85,6 +86,7 @@ class AioSecureTcpConnection(
         }
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     override fun startReading(): TcpConnection {
         if (!tcpConnection.isReading) {
             tcpConnection.startReading()

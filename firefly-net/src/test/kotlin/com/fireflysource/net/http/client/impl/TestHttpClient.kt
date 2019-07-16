@@ -1,17 +1,22 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.net.http.client.HttpClientFactory
+import com.fireflysource.net.http.common.codec.CookieGenerator
+import com.fireflysource.net.http.common.model.Cookie
+import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
+import kotlin.math.roundToLong
 import kotlin.random.Random
+import kotlin.system.measureTimeMillis
 
 class TestHttpClient {
 
@@ -24,6 +29,14 @@ class TestHttpClient {
         httpServer = HttpServer.create(address, 1024)
 
         httpServer.createContext("/testHttpClient") { exg ->
+            exg.responseHeaders.add(
+                HttpHeader.SET_COOKIE.value,
+                CookieGenerator.generateSetCookie(Cookie("cookie1", "value1"))
+            )
+            exg.responseHeaders.add(
+                HttpHeader.SET_COOKIE.value,
+                CookieGenerator.generateSetCookie(Cookie("cookie2", "value2"))
+            )
             val body = "test client ok".toByteArray(StandardCharsets.UTF_8)
             exg.sendResponseHeaders(200, body.size.toLong())
             exg.responseBody.use { out -> out.write(body) }
@@ -40,18 +53,25 @@ class TestHttpClient {
     @Test
     fun test() = runBlocking {
         val httpClient = HttpClientFactory.create()
+        val count = 50000
 
-        repeat(5) {
-            val response = httpClient.get("http://${address.hostName}:${address.port}/testHttpClient").submit().await()
-            println("${response.status} ${response.reason}")
-            println(response.httpFields)
-            println(response.stringBody)
-            println()
+        val time = measureTimeMillis {
+            (1..count).map { httpClient.get("http://${address.hostName}:${address.port}/testHttpClient").submit() }
+                .forEach { future ->
+                    val response = future.await()
 
-            Assertions.assertEquals(HttpStatus.OK_200, response.status)
-            Assertions.assertEquals(14L, response.contentLength)
-            Assertions.assertEquals("test client ok", response.stringBody)
+                    assertEquals(HttpStatus.OK_200, response.status)
+                    assertEquals(14L, response.contentLength)
+                    assertEquals("test client ok", response.stringBody)
+
+                    assertEquals(2, response.cookies.size)
+                    assertEquals("value1", response.cookies.filter { it.name == "cookie1" }.map { it.value }[0])
+                    assertEquals("value2", response.cookies.filter { it.name == "cookie2" }.map { it.value }[0])
+                }
         }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
 
         httpClient.stop()
     }

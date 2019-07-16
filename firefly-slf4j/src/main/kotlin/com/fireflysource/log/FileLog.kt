@@ -5,7 +5,6 @@ import com.fireflysource.log.internal.utils.TimeUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -20,49 +19,12 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.LinkedTransferQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 
 /**
  * @author Pengtao Qiu
  */
 class FileLog : Log {
-
-    var level: LogLevel = LogLevel.fromName(DEFAULT_LOG_LEVEL)
-    var path: String = DEFAULT_LOG_DIRECTORY.absolutePath
-    var logName: String = DEFAULT_LOG_NAME
-    var consoleOutput: Boolean = false
-    var fileOutput: Boolean = true
-    var maxFileSize: Long = DEFAULT_MAX_FILE_SIZE
-    var logFormatter: LogFormatter = DEFAULT_LOG_FORMATTER
-    var logNameFormatter: LogNameFormatter = DEFAULT_LOG_NAME_FORMATTER
-    var logFilter: LogFilter = DEFAULT_LOG_FILTER
-    var maxSplitTime: MaxSplitTimeEnum = MaxSplitTimeEnum.DAY
-    var charset: Charset = DEFAULT_CHARSET
-
-    private val mdc: MappedDiagnosticContext = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
-    private val closed = AtomicBoolean(false)
-    private val output = LogOutputStream()
-    private val channel = Channel<LogItem>(UNLIMITED)
-    private val consumerJob = GlobalScope.launch(logThread) {
-        while (!closed.get()) {
-            try {
-                val logItem = channel.receive()
-
-                logFilter.filter(logItem)
-                if (consoleOutput) {
-                    println(logFormatter.format(logItem))
-                }
-
-                if (fileOutput) {
-                    output.write(logFormatter.format(logItem), logItem.date)
-                }
-            } catch (e: ClosedReceiveChannelException) {
-                println("File log $logName ${e.message}")
-            }
-        }
-        println("File log $logName was closed.")
-    }
 
     companion object {
         private val stackTrace =
@@ -77,7 +39,7 @@ class FileLog : Log {
             }
         }
 
-        fun newSingleThreadExecutor(name: String): ExecutorService {
+        private fun newSingleThreadExecutor(name: String): ExecutorService {
             val executor = ThreadPoolExecutor(
                 1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue<Runnable>()
             ) { r ->
@@ -85,7 +47,45 @@ class FileLog : Log {
             }
             return FinalizableExecutorService(executor)
         }
+
+        private val stopLogMessage = LogItem()
     }
+
+    var level: LogLevel = LogLevel.fromName(DEFAULT_LOG_LEVEL)
+    var path: String = DEFAULT_LOG_DIRECTORY.absolutePath
+    var logName: String = DEFAULT_LOG_NAME
+    var consoleOutput: Boolean = false
+    var fileOutput: Boolean = true
+    var maxFileSize: Long = DEFAULT_MAX_FILE_SIZE
+    var logFormatter: LogFormatter = DEFAULT_LOG_FORMATTER
+    var logNameFormatter: LogNameFormatter = DEFAULT_LOG_NAME_FORMATTER
+    var logFilter: LogFilter = DEFAULT_LOG_FILTER
+    var maxSplitTime: MaxSplitTimeEnum = MaxSplitTimeEnum.DAY
+    var charset: Charset = DEFAULT_CHARSET
+
+    private val mdc: MappedDiagnosticContext = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
+
+    private val output = LogOutputStream()
+    private val channel = Channel<LogItem>(UNLIMITED)
+    private val consumerJob = GlobalScope.launch(logThread) {
+        recvLogItemLoop@ while (true) {
+            val logItem = channel.receive()
+            if (logItem == stopLogMessage) {
+                break@recvLogItemLoop
+            }
+
+            logFilter.filter(logItem)
+            if (consoleOutput) {
+                println(logFormatter.format(logItem))
+            }
+
+            if (fileOutput) {
+                output.write(logFormatter.format(logItem), logItem.date)
+            }
+        }
+        println("File log $logName was closed.")
+    }
+
 
     private inner class LogOutputStream {
         private var fileOutputStream: FileOutputStream? = null
@@ -311,10 +311,9 @@ class FileLog : Log {
 
     override fun close() = runBlocking {
         try {
-            if (closed.compareAndSet(false, true)) {
-                channel.close()
-                consumerJob.join()
-            }
+            channel.offer(stopLogMessage)
+            consumerJob.cancel()
+            consumerJob.join()
         } finally {
             output.close()
         }

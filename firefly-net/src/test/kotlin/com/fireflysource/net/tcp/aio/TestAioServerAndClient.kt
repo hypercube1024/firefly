@@ -16,6 +16,7 @@ import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
+import kotlin.math.roundToLong
 import kotlin.system.measureTimeMillis
 
 
@@ -155,9 +156,7 @@ class TestAioServerAndClient {
             assertEquals(maxMsgCount * 2, msgCount.get())
         }
         val throughput = maxMsgCount / (time / 1000.00)
-        println("success. $time, $throughput")
-//        println("success. $time")
-
+        println("success. $time ms, ${throughput.roundToLong()} qps")
 
         val stopTime = measureTimeMillis {
             serverAcceptsConnJob.cancel()

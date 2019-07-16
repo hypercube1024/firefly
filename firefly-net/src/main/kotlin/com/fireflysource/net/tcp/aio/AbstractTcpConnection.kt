@@ -183,7 +183,7 @@ abstract class AbstractTcpConnection(
     override fun startReading(): TcpConnection {
         if (readingState.compareAndSet(false, true)) {
             launchGlobally(messageThread) {
-                log.debug { "start automatic reading" }
+                log.info { "The TCP connection $id starts automatic reading" }
 
                 while (isReading) {
                     val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
@@ -215,8 +215,9 @@ abstract class AbstractTcpConnection(
                         break
                     }
                 }
+
+                log.info { "The TCP connection $id stops receiving messages." }
             }
-            log.info { "stop receiving messages. id: $id" }
         }
         return this
     }

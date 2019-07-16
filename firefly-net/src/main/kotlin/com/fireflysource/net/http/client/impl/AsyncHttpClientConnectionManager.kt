@@ -11,10 +11,12 @@ import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader
+import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
 import com.fireflysource.net.tcp.aio.SupportedProtocolEnum
+import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
@@ -66,9 +68,8 @@ class AsyncHttpClientConnectionManager(
         val socketAddress = InetSocketAddress(request.uri.host, port)
         val secure = isSecureProtocol(request.uri.scheme)
         val address = Address(socketAddress, secure)
-        val httpResponseFuture = CompletableFuture<HttpClientResponse>()
 
-        val pooledObject = connectionMap.computeIfAbsent(address) { addr ->
+        val pooledHttpClientConnection = connectionMap.computeIfAbsent(address) { addr ->
             asyncPool {
                 maxSize = config.connectionPoolSize
                 timeout = config.timeout
@@ -91,27 +92,7 @@ class AsyncHttpClientConnectionManager(
                             }
                         }
                     } else {
-                        // detect the protocol version using the Upgrade header
-                        addHttp2UpgradeHeader(request)
-
-                        val http1ClientConnection =
-                            Http1ClientConnection(connection, config.requestHeaderBufferSize, config.contentBufferSize)
-                        val response = http1ClientConnection.send(request).await()
-
-                        if (isUpgradeSuccess(response)) {
-                            http1ClientConnection.cancelRequestJob()
-
-                            // switch the protocol to http2
-                            val http2ClientConnection = Http2ClientConnection(connection)
-                            removeHttp2UpgradeHeader(request)
-                            val http2Response = http2ClientConnection.send(request).await()
-
-                            httpResponseFuture.complete(http2Response)
-                            http2ClientConnection
-                        } else {
-                            httpResponseFuture.complete(response)
-                            http1ClientConnection
-                        }
+                        Http1ClientConnection(connection, config.requestHeaderBufferSize, config.contentBufferSize)
                     }
 
                     PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
@@ -132,12 +113,44 @@ class AsyncHttpClientConnectionManager(
 
         }.getPooledObject()
 
-        if (httpResponseFuture.isDone) {
-            pooledObject.release()
-            httpResponseFuture.await()
-        } else {
-            pooledObject.use { o -> o.getObject().send(request) }.await()
-        }
+        pooledHttpClientConnection.use { o ->
+            val httpClientConnection = o.getObject()
+            if (!httpClientConnection.isSecureConnection
+                && httpClientConnection.httpVersion == HttpVersion.HTTP_1_1
+                && httpClientConnection is Http1ClientConnection
+            ) {
+                val attachment = httpClientConnection.attachment
+
+                if (attachment != null && attachment is HttpClientConnection) {
+                    attachment.send(request)
+                } else {
+                    // detect the protocol version using the Upgrade header
+                    addHttp2UpgradeHeader(request)
+
+                    val response = httpClientConnection.send(request).await()
+                    if (isUpgradeSuccess(response)) {
+                        httpClientConnection.cancelRequestJob()
+
+                        // switch the protocol to http2
+                        val http2ClientConnection = Http2ClientConnection(httpClientConnection.tcpConnection)
+                        httpClientConnection.attachment = http2ClientConnection
+                        log.info { "HTTP1 connection ${httpClientConnection.id} upgrade HTTP2 success" }
+
+                        removeHttp2UpgradeHeader(request)
+                        http2ClientConnection.send(request)
+                    } else {
+                        httpClientConnection.attachment = httpClientConnection
+                        log.info { "HTTP1 connection ${httpClientConnection.id} upgrade HTTP2 failure" }
+
+                        val httpResponseFuture = CompletableFuture<HttpClientResponse>()
+                        httpResponseFuture.complete(response)
+                        httpResponseFuture
+                    }
+                }
+            } else {
+                httpClientConnection.send(request)
+            }
+        }.await()
     }.asCompletableFuture()
 
 
@@ -149,14 +162,6 @@ class AsyncHttpClientConnectionManager(
         connectionMap.clear()
         tcpClient.stop()
         secureTcpClient.stop()
-    }
-}
-
-fun isSecureProtocol(scheme: String): Boolean {
-    return when (scheme) {
-        "wss", "https" -> true
-        "ws", "http" -> false
-        else -> throw IllegalArgumentException("not support the protocol: $scheme")
     }
 }
 

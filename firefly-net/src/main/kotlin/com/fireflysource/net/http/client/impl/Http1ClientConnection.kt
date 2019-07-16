@@ -3,12 +3,10 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
-import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.net.http.common.model.HttpHeaderValue
-import com.fireflysource.net.http.common.model.HttpVersion
-import com.fireflysource.net.http.common.model.MetaData
+import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
@@ -21,19 +19,28 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class Http1ClientConnection(
-    private val tcpConnection: TcpConnection,
+    val tcpConnection: TcpConnection,
     requestHeaderBufferSize: Int = 4 * 1024,
     contentBufferSize: Int = 8 * 1024
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
 
+    companion object {
+        private val log = SystemLogger.create(Http1ClientConnection::class.java)
+        private val stopRequestMessage = RequestMessage(MetaData.Request(HttpFields()), null, null, CompletableFuture())
+    }
+
     private val generator = HttpGenerator()
+
+    // generator buffer
+    private val headerBuffer = BufferUtils.allocateDirect(requestHeaderBufferSize)
+    private val contentBuffer = BufferUtils.allocateDirect(contentBufferSize)
+    private val chunkBuffer = BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE)
+
+    // parser
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
 
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
-    private val headerBuffer = BufferUtils.allocateDirect(requestHeaderBufferSize)
-    private val contentBuffer = BufferUtils.allocateDirect(contentBufferSize)
-    private val chunkBuffer = BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE)
     private val acceptRequestJob: Job
 
 
@@ -41,6 +48,10 @@ class Http1ClientConnection(
         acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
             recvRequestLoop@ while (true) {
                 val requestMessage = requestChannel.receive()
+
+                if (requestMessage == stopRequestMessage) {
+                    break@recvRequestLoop
+                }
 
                 try {
                     encodeRequestAndFlushData(requestMessage)
@@ -56,12 +67,20 @@ class Http1ClientConnection(
                     generator.reset()
                 }
             }
+
+            log.info { "The HTTP1 connection $id stops accepting requests." }
         }
-        tcpConnection.onClose { cancelRequestJob() }
+
+        tcpConnection.onClose {
+            requestChannel.offer(stopRequestMessage)
+            acceptRequestJob.cancel()
+        }
     }
 
-    fun cancelRequestJob() {
+    suspend fun cancelRequestJob() {
+        requestChannel.offer(stopRequestMessage)
         acceptRequestJob.cancel()
+        acceptRequestJob.join()
     }
 
     private suspend fun parseResponse(): HttpClientResponse {
@@ -180,14 +199,14 @@ class Http1ClientConnection(
         requestChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, request.contentHandler, future))
         return future
     }
-
-    private data class RequestMessage(
-        val request: MetaData.Request,
-        val contentProvider: HttpClientContentProvider?,
-        val contentHandler: HttpClientContentHandler?,
-        val response: CompletableFuture<HttpClientResponse>
-    )
 }
+
+private data class RequestMessage(
+    val request: MetaData.Request,
+    val contentProvider: HttpClientContentProvider?,
+    val contentHandler: HttpClientContentHandler?,
+    val response: CompletableFuture<HttpClientResponse>
+)
 
 fun prepareHttp1Headers(request: HttpClientRequest) {
     if (request.httpFields.getValuesList(HttpHeader.HOST.value).isEmpty()) {
