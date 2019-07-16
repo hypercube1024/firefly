@@ -1,9 +1,9 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.net.http.client.HttpClientFactory
+import com.fireflysource.net.utils.LifeCycleUtils.stopAll
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import kotlin.system.exitProcess
 
 fun main(): Unit = runBlocking {
     val httpClient = HttpClientFactory.create()
@@ -14,6 +14,5 @@ fun main(): Unit = runBlocking {
     println(response.stringBody)
     println()
 
-    println("exit")
-    exitProcess(0)
+    stopAll()
 }

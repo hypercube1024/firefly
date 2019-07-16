@@ -62,4 +62,8 @@ public abstract class AbstractLifeCycle implements LifeCycle {
 
     abstract protected void destroy();
 
+    public static void stopAll() {
+        stopActions.forEach(Callback::call);
+    }
+
 }

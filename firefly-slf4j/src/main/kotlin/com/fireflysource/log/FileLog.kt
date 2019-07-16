@@ -30,8 +30,9 @@ class FileLog : Log {
         private val stackTrace =
             java.lang.Boolean.getBoolean("com.fireflysource.log.FileLog.debugMode")
 
-        private val logThread: CoroutineDispatcher =
-            newSingleThreadExecutor("firefly-log-thread").asCoroutineDispatcher()
+        val executor = newSingleThreadExecutor("firefly-log-thread")
+
+        private val logThread: CoroutineDispatcher = executor.asCoroutineDispatcher()
 
         class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
             protected fun finalize() {
