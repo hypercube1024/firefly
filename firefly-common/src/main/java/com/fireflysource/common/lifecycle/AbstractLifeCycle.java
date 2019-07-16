@@ -1,14 +1,18 @@
 package com.fireflysource.common.lifecycle;
 
 import com.fireflysource.common.func.Callback;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractLifeCycle implements LifeCycle {
 
-    protected static final List<Callback> stopActions = new CopyOnWriteArrayList<>();
+    private static final List<Callback> stopActions = new CopyOnWriteArrayList<>();
 
     static {
         try {
@@ -53,15 +57,26 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     abstract protected void destroy();
 
     public static void stopAll() {
-        stopActions.forEach(a -> {
+        if (!stopActions.isEmpty()) {
+            stopActions.forEach(a -> {
+                try {
+                    a.call();
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
+                }
+            });
+            System.out.println("Shutdown instance: " + stopActions.size());
+            stopActions.clear();
+        }
+
+        ILoggerFactory iLoggerFactory = LoggerFactory.getILoggerFactory();
+        if (iLoggerFactory instanceof Closeable) {
             try {
-                a.call();
-            } catch (Exception e) {
-                System.err.println(e.getMessage());
+                ((Closeable) iLoggerFactory).close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        });
-        System.out.println("Shutdown instance: " + stopActions.size());
-        stopActions.clear();
+        }
     }
 
 }

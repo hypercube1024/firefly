@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.net.http.client.HttpClientFactory
-import com.fireflysource.net.utils.LifeCycleUtils.stopAll
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 

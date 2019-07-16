@@ -84,7 +84,7 @@ class FileLog : Log {
                 output.write(logFormatter.format(logItem), logItem.date)
             }
         }
-        println("File log $logName was closed.")
+        println("File log $logName is closed.")
     }
 
 
