@@ -46,7 +46,7 @@ class TestAioServerAndClient {
     fun test(bufType: String, enableSecure: Boolean) = runBlocking {
         val host = "localhost"
         val port = 4001
-        val maxMsgCount = 10_000
+        val maxMsgCount = 1_000
         val connectionNum = 4
         val msgCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)

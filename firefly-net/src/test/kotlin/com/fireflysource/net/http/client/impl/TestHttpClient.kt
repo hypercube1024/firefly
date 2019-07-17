@@ -55,7 +55,7 @@ class TestHttpClient {
     @Test
     fun test() = runBlocking {
         val httpClient = HttpClientFactory.create()
-        val count = 50000
+        val count = 1_000
 
         val time = measureTimeMillis {
             (1..count).map { httpClient.get("http://${address.hostName}:${address.port}/testHttpClient").submit() }
