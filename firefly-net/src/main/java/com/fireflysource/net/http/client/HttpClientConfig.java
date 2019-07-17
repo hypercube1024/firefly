@@ -1,11 +1,12 @@
 package com.fireflysource.net.http.client;
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
 public class HttpClientConfig {
 
     private long timeout = 30;
-    private int connectionPoolSize = 16;
+    private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
     private long releaseTimeout = 60;
     private int requestHeaderBufferSize = 4 * 1024;
@@ -66,5 +67,17 @@ public class HttpClientConfig {
 
     public void setSecureEngineFactory(SecureEngineFactory secureEngineFactory) {
         this.secureEngineFactory = secureEngineFactory;
+    }
+
+    @Override
+    public String toString() {
+        return "HttpClientConfig{" +
+                "timeout=" + timeout +
+                ", connectionPoolSize=" + connectionPoolSize +
+                ", leakDetectorInterval=" + leakDetectorInterval +
+                ", releaseTimeout=" + releaseTimeout +
+                ", requestHeaderBufferSize=" + requestHeaderBufferSize +
+                ", contentBufferSize=" + contentBufferSize +
+                '}';
     }
 }

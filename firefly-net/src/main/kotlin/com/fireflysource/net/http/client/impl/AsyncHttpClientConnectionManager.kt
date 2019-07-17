@@ -31,10 +31,6 @@ class AsyncHttpClientConnectionManager(
         private val log = SystemLogger.create(AsyncHttpClientConnectionManager::class.java)
     }
 
-    init {
-        start()
-    }
-
     private val tcpClient: TcpClient = AioTcpClient().timeout(config.timeout)
     private val secureTcpClient: TcpClient = if (config.secureEngineFactory != null) {
         AioTcpClient()
@@ -48,6 +44,9 @@ class AsyncHttpClientConnectionManager(
     }
     private val connectionMap = HashMap<Address, AsyncPool<HttpClientConnection>>()
 
+    init {
+        start()
+    }
 
     private suspend fun createConnection(address: Address): TcpConnection {
         val conn = if (address.secure) {

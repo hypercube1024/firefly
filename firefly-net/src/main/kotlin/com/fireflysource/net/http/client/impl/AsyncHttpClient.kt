@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientConfig
 import com.fireflysource.net.http.client.HttpClientRequestBuilder
@@ -9,9 +10,17 @@ import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.HttpVersion
 import java.net.URL
 
-class AsyncHttpClient(config: HttpClientConfig = HttpClientConfig()) : HttpClient, AbstractLifeCycle() {
+class AsyncHttpClient(private val config: HttpClientConfig = HttpClientConfig()) : HttpClient, AbstractLifeCycle() {
+
+    companion object {
+        private val log = SystemLogger.create(AsyncHttpClient::class.java)
+    }
 
     private val httpClientConnectionManager = AsyncHttpClientConnectionManager(config)
+
+    init {
+        start()
+    }
 
     override fun get(url: String): HttpClientRequestBuilder {
         return request(HttpMethod.GET, url)
@@ -50,7 +59,7 @@ class AsyncHttpClient(config: HttpClientConfig = HttpClientConfig()) : HttpClien
     }
 
     override fun init() {
-
+        log.info { "AsyncHttpClient startup. $config" }
     }
 
     override fun destroy() {

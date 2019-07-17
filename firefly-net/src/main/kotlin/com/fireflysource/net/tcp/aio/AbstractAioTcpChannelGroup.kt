@@ -6,6 +6,7 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadEx
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import kotlinx.coroutines.CoroutineDispatcher
+import java.lang.Math.abs
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -18,6 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
 
+    companion object {
+        private val log = SystemLogger.create(AbstractAioTcpChannelGroup::class.java)
+    }
+
     protected val id: AtomicInteger = AtomicInteger(0)
     protected var closed = AtomicBoolean(false)
     protected val group: AsynchronousChannelGroup =
@@ -26,13 +31,8 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
         newSingleThreadDispatcher("firefly-${getThreadName()}-message-thread-$i")
     }
 
-    companion object {
-        private val log = SystemLogger.create(AbstractAioTcpChannelGroup::class.java)
-    }
-
-
     protected fun getMessageThread(connectionId: Int): CoroutineDispatcher {
-        return messageThreadGroup[connectionId % defaultPoolSize]
+        return messageThreadGroup[abs(connectionId % defaultPoolSize)]
     }
 
     abstract fun getThreadName(): String

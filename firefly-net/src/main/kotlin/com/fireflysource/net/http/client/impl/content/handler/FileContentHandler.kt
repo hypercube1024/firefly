@@ -16,13 +16,13 @@ import java.nio.file.Path
 
 class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClientContentHandler, Closeable {
 
-    private val fileChannel = AsynchronousFileChannel.open(path, setOf(*options), CoroutineDispatchers.ioBlockingPool)
-    private val inputChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
-    private val writeJob: Job
-
     companion object {
         private val closeFlag = ByteBuffer.allocate(0)
     }
+
+    private val fileChannel = AsynchronousFileChannel.open(path, setOf(*options), CoroutineDispatchers.ioBlockingPool)
+    private val inputChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
+    private val writeJob: Job
 
     init {
         writeJob = launchGlobally(singleThread) {

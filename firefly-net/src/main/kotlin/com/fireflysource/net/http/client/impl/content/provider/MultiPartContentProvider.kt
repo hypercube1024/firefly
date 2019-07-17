@@ -16,6 +16,12 @@ import java.util.concurrent.CompletableFuture
 
 class MultiPartContentProvider : HttpClientContentProvider {
 
+    companion object {
+        private const val newLine = "\r\n"
+        private val colonSpaceBytes: ByteArray = byteArrayOf(':'.toByte(), ' '.toByte())
+        private val newLineBytes: ByteArray = byteArrayOf('\r'.toByte(), '\n'.toByte())
+    }
+
     val contentType: String
     private val firstBoundary: ByteArray
     private val middleBoundary: ByteArray
@@ -27,26 +33,20 @@ class MultiPartContentProvider : HttpClientContentProvider {
     private var state = State.FIRST_BOUNDARY
     private var open = true
 
-    companion object {
-        private const val CR_LF = "\r\n"
-        private val COLON_SPACE_BYTES: ByteArray = byteArrayOf(':'.toByte(), ' '.toByte())
-        private val CR_LF_BYTES: ByteArray = byteArrayOf('\r'.toByte(), '\n'.toByte())
-    }
-
     init {
         val boundary = makeBoundary()
         this.contentType = "multipart/form-data; boundary=$boundary"
 
-        val firstBoundaryLine = "--$boundary$CR_LF"
+        val firstBoundaryLine = "--$boundary$newLine"
         this.firstBoundary = firstBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
 
-        val middleBoundaryLine = CR_LF + firstBoundaryLine
+        val middleBoundaryLine = newLine + firstBoundaryLine
         this.middleBoundary = middleBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
 
-        val onlyBoundaryLine = "--$boundary--$CR_LF"
+        val onlyBoundaryLine = "--$boundary--$newLine"
         this.onlyBoundary = onlyBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
 
-        val lastBoundaryLine = CR_LF + onlyBoundaryLine
+        val lastBoundaryLine = newLine + onlyBoundaryLine
         this.lastBoundary = lastBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
     }
 
@@ -109,7 +109,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         state = State.COMPLETE
     }
 
-    override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int>  {
+    override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
         if (!isOpen) {
             return endStream()
         }
@@ -175,17 +175,17 @@ class MultiPartContentProvider : HttpClientContentProvider {
         val length = builder.length
         while (builder.length < length + 16) {
             val rnd = random.nextLong()
-            builder.append(java.lang.Long.toString(if (rnd < 0) -rnd else rnd, 36))
+            builder.append((if (rnd < 0) -rnd else rnd).toString(36))
         }
         builder.setLength(length + 16)
         return builder.toString()
     }
 
     private class Part(
-        val name: String,
-        val fileName: String?,
+        name: String,
+        fileName: String?,
         val content: HttpClientContentProvider,
-        val fields: HttpFields?,
+        fields: HttpFields?,
         val contentType: String
     ) {
         val headers: ByteArray
@@ -197,20 +197,20 @@ class MultiPartContentProvider : HttpClientContentProvider {
             if (fileName != null) {
                 contentDisposition += "; filename=\"$fileName\""
             }
-            contentDisposition += CR_LF
+            contentDisposition += newLine
 
             // Compute the Content-Type.
             var contentType = fields?.get(HttpHeader.CONTENT_TYPE)
             if (contentType == null) {
                 contentType = this.contentType
             }
-            contentType = "Content-Type: $contentType$CR_LF"
+            contentType = "Content-Type: $contentType$newLine"
 
             // Compute the headers
             if (fields == null || fields.size() == 0) {
                 var headers = contentDisposition
                 headers += contentType
-                headers += CR_LF
+                headers += newLine
                 this.headers = headers.toByteArray(StandardCharsets.UTF_8)
             } else {
                 val buffer = ByteArrayOutputStream((fields.size() + 1) * contentDisposition.length)
@@ -221,14 +221,14 @@ class MultiPartContentProvider : HttpClientContentProvider {
                         continue
                     }
                     buffer.write(field.name.toByteArray(StandardCharsets.US_ASCII))
-                    buffer.write(COLON_SPACE_BYTES)
+                    buffer.write(colonSpaceBytes)
                     val value = field.value
                     if (value != null) {
                         buffer.write(value.toByteArray(StandardCharsets.UTF_8))
                     }
-                    buffer.write(CR_LF_BYTES)
+                    buffer.write(newLineBytes)
                 }
-                buffer.write(CR_LF_BYTES)
+                buffer.write(newLineBytes)
                 headers = buffer.toByteArray()
             }
 

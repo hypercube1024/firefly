@@ -38,16 +38,16 @@ class AsyncBoundObjectPool<T>(
         private val objectPoolDispatcher: CoroutineDispatcher = newSingleThreadDispatcher("firefly-object-pool-thread")
     }
 
-    init {
-        start()
-    }
-
     private val createdCount = AtomicInteger(0)
     private val size = AtomicInteger(0)
     private val mutex = Mutex()
     private val channel = Channel<PooledObject<T>>(maxSize)
     private val leakDetector =
         FixedTimeLeakDetector<PooledObject<T>>(leakDetectorInterval, releaseTimeout, noLeakCallback)
+
+    init {
+        start()
+    }
 
     private class ArrivedMaxPoolSize(msg: String) : RuntimeException(msg)
 
