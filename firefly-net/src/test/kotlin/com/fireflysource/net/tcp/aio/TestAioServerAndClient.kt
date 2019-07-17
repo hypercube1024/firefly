@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -160,8 +161,7 @@ class TestAioServerAndClient {
 
         val stopTime = measureTimeMillis {
             serverAcceptsConnJob.cancel()
-            server.stop()
-            client.stop()
+            stopAll()
         }
         println("stop success. $stopTime")
     }
@@ -193,8 +193,7 @@ class TestAioServerAndClient {
 
         val stopTime = measureTimeMillis {
             serverAcceptsConnJob.cancel()
-            server.stop()
-            client.stop()
+            stopAll()
         }
         println("stop success. $stopTime")
     }

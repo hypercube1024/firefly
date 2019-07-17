@@ -4,42 +4,11 @@ import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
-import com.fireflysource.net.tcp.aio.AioTcpClient
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class TestHttp1ClientConnection {
-
-    // @Test
-    @Suppress("BlockingMethodInNonBlockingContext")
-    fun test() = runBlocking {
-        val tcpClient = AioTcpClient().enableSecureConnection()
-        val conn = tcpClient.connect("www.baidu.com", 443).await()
-        conn.startReading()
-        val protocol = conn.onHandshakeComplete().await()
-        println(protocol)
-        println(conn.applicationProtocol)
-
-        val httpConn = Http1ClientConnection(conn)
-        val request = AsyncHttpClientRequest()
-        request.method = HttpMethod.GET.value
-        request.uri = HttpURI("https://www.baidu.com/")
-        request.httpFields.put(
-            HttpHeader.USER_AGENT,
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-        )
-        val response = httpConn.send(request).await()
-        println("${response.status} ${response.reason}")
-        println(response.httpFields)
-        println()
-        println(response.stringBody)
-
-        conn.close()
-        tcpClient.stop()
-    }
 
     @Test
     fun testPrepareHttp1Headers() {

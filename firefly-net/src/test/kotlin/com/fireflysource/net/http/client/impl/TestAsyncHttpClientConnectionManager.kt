@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpURI
@@ -37,6 +38,7 @@ class TestAsyncHttpClientConnectionManager {
     @AfterEach
     fun destroy() {
         httpServer.stop(5)
+        stopAll()
     }
 
     @Test
@@ -58,7 +60,5 @@ class TestAsyncHttpClientConnectionManager {
             assertEquals(7L, response.contentLength)
             assertEquals("test ok", response.stringBody)
         }
-
-        manager.stop()
     }
 }

@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.codec.CookieGenerator
 import com.fireflysource.net.http.common.model.Cookie
@@ -48,6 +49,7 @@ class TestHttpClient {
     @AfterEach
     fun destroy() {
         httpServer.stop(5)
+        stopAll()
     }
 
     @Test
@@ -72,7 +74,5 @@ class TestHttpClient {
 
         val throughput = count / (time / 1000.00)
         println("success. $time ms, ${throughput.roundToLong()} qps")
-
-        httpClient.stop()
     }
 }

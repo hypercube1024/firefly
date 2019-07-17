@@ -349,7 +349,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.0</version>
+                    <version>3.8.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -359,12 +359,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.1.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -392,7 +392,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.2</version>
+                    <version>0.8.4</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.maven.reporting</groupId>
@@ -628,33 +628,24 @@
 
                     <!-- javadoc -->
                     <plugin>
-                        <groupId>org.jetbrains.dokka</groupId>
-                        <artifactId>dokka-maven-plugin</artifactId>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>
                             <execution>
-                                <phase>prepare-package</phase>
+                                <id>attach-javadocs</id>
                                 <goals>
-                                    <goal>dokka</goal>
-                                    <goal>javadoc</goal>
-                                    <goal>javadocJar</goal>
+                                    <goal>jar</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <sourceDirectories>
-                                <dir>${project.basedir}/src/main/java</dir>
-                                <dir>${project.basedir}/src/main/kotlin</dir>
-                            </sourceDirectories>
-                            <sourceLinks>
-                                <link>
-                                    <dir>${project.basedir}/src/main/java</dir>
-                                    <dir>${project.basedir}/src/main/kotlin</dir>
-                                </link>
-                            </sourceLinks>
-                            <noStdlibLink>${dokka.config.noStdlibLink}</noStdlibLink>
-                            <jdkVersion>${dokka.config.jdkVersion}</jdkVersion>
+                            <additionalJOption>-Xdoclint:none</additionalJOption>
+                            <failOnError>true</failOnError>
+                            <charset>UTF-8</charset>
+                            <encoding>UTF-8</encoding>
                         </configuration>
                     </plugin>
+
                 </plugins>
             </build>
         </profile>
@@ -762,6 +753,27 @@
                             </execution>
                         </executions>
                     </plugin>
+
+                    <!-- javadoc -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <additionalJOption>-Xdoclint:none</additionalJOption>
+                            <failOnError>true</failOnError>
+                            <charset>UTF-8</charset>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                    </plugin>
+
                 </plugins>
             </build>
         </profile>
