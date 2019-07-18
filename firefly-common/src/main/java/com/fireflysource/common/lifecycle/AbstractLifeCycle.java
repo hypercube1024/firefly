@@ -15,17 +15,14 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     private static final List<Callback> stopActions = new CopyOnWriteArrayList<>();
 
     static {
-        try {
-            Runtime.getRuntime().addShutdownHook(new Thread(AbstractLifeCycle::stopAll, "the firefly shutdown thread"));
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-        }
+        Runtime.getRuntime().addShutdownHook(new Thread(AbstractLifeCycle::stopAll, "the firefly shutdown thread"));
     }
 
     protected AtomicBoolean start = new AtomicBoolean(false);
+    protected Callback stopCallback = this::stop;
 
     public AbstractLifeCycle() {
-        stopActions.add(this::stop);
+        stopActions.add(stopCallback);
     }
 
     @Override
@@ -49,6 +46,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     public void stop() {
         if (start.compareAndSet(true, false)) {
             destroy();
+            stopActions.remove(stopCallback);
         }
     }
 
