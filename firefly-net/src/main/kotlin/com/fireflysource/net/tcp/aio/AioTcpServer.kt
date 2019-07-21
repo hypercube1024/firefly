@@ -133,6 +133,8 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             )
         } catch (e: ShutdownChannelGroupException) {
             log.info { "the channel group is shutdown." }
+        } catch (e: Exception) {
+            log.error(e) { "accept socket channel exception." }
         }
     }
 
