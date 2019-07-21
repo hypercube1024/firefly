@@ -57,6 +57,8 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
             group.shutdownNow()
             // Preserve interrupt status
             Thread.currentThread().interrupt()
+        } catch (e: Exception) {
+            log.info { "shutdown channel group exception." }
         }
     }
 
