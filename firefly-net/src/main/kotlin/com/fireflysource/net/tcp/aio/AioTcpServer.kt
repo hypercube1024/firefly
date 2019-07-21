@@ -29,6 +29,7 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     private var supportedProtocols: List<String> = defaultSupportedProtocols
     private var peerHost: String = ""
     private var peerPort: Int = 0
+    private lateinit var serverSocketChannel: AsynchronousServerSocketChannel
 
     override fun getTcpConnectionChannel(): Channel<TcpConnection> = connChannel
 
@@ -73,21 +74,18 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         start()
 
         try {
-            val serverSocketChannel = AsynchronousServerSocketChannel.open(group)
+            serverSocketChannel = AsynchronousServerSocketChannel.open(group)
             serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
             serverSocketChannel.bind(address, config.backlog)
-            accept(serverSocketChannel)
+            accept()
+
         } catch (e: Exception) {
             log.error(e) { "bind server address exception" }
         }
         return this
     }
 
-    private fun accept(serverSocketChannel: AsynchronousServerSocketChannel) {
-        if (closed.get()) {
-            return
-        }
-
+    private fun accept() {
         serverSocketChannel.accept(
             id.getAndIncrement(),
             object : CompletionHandler<AsynchronousSocketChannel, Int> {
@@ -117,13 +115,13 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     } catch (e: Exception) {
                         log.warn(e) { "accept connection exception. $connectionId" }
                     } finally {
-                        accept(serverSocketChannel)
+                        accept()
                     }
                 }
 
                 override fun failed(e: Throwable, connectionId: Int) {
                     log.warn(e) { "accept connection failure. $connectionId" }
-                    accept(serverSocketChannel)
+                    accept()
                 }
             })
     }
@@ -131,7 +129,11 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     override fun getThreadName() = "aio-tcp-server"
 
     override fun destroy() {
-        connChannel.close()
+        try {
+            serverSocketChannel.close()
+        } catch (e: Exception) {
+            log.error(e) { "close server socket channel exception" }
+        }
         super.destroy()
     }
 }

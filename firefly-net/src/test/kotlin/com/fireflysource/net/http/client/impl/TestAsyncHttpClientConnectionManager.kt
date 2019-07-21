@@ -37,7 +37,7 @@ class TestAsyncHttpClientConnectionManager {
 
     @AfterEach
     fun destroy() {
-        httpServer.stop(5)
+        httpServer.stop(2)
         stopAll()
     }
 

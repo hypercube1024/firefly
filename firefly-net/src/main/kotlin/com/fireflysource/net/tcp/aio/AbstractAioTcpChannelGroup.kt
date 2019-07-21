@@ -24,7 +24,6 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
     }
 
     protected val id: AtomicInteger = AtomicInteger(0)
-    protected var closed = AtomicBoolean(false)
     protected val group: AsynchronousChannelGroup =
         AsynchronousChannelGroup.withThreadPool(newSingleThreadExecutor("firefly-aio-channel-group-thread"))
     private val messageThreadGroup: Array<CoroutineDispatcher> = Array(defaultPoolSize) { i ->
@@ -43,7 +42,6 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
     }
 
     override fun destroy() {
-        closed.set(true)
         group.shutdown()
         try {
             // Wait a while for existing tasks to terminate
