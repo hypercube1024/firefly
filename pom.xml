@@ -639,7 +639,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <additionalJOption>-Xdoclint:none</additionalJOption>
+                            <sourceFileIncludes>**/FeignedDoc.java</sourceFileIncludes>
                             <failOnError>true</failOnError>
                             <charset>UTF-8</charset>
                             <encoding>UTF-8</encoding>
@@ -752,6 +752,28 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+
+                    <!-- javadoc -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <source>${java.release.version}</source>
+                            <release>${java.release.version}</release>
+                            <sourceFileIncludes>**/FeignedDoc.java</sourceFileIncludes>
+                            <failOnError>true</failOnError>
+                            <charset>UTF-8</charset>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
                     </plugin>
 
                 </plugins>

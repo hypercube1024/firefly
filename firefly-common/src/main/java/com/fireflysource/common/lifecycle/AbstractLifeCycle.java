@@ -19,7 +19,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     }
 
     protected AtomicBoolean start = new AtomicBoolean(false);
-    protected Callback stopCallback = this::stop;
+    private Callback stopCallback = this::stopNoRemove;
 
     public AbstractLifeCycle() {
         stopActions.add(stopCallback);
@@ -47,6 +47,12 @@ public abstract class AbstractLifeCycle implements LifeCycle {
         if (start.compareAndSet(true, false)) {
             destroy();
             stopActions.remove(stopCallback);
+        }
+    }
+
+    private void stopNoRemove() {
+        if (start.compareAndSet(true, false)) {
+            destroy();
         }
     }
 
