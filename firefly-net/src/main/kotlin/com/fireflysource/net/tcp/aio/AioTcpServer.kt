@@ -70,7 +70,9 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     }
 
     override fun listen(address: SocketAddress): TcpServer {
-        if (isStarted) return this
+        if (isStarted) {
+            return this
+        }
 
         start()
 
@@ -79,7 +81,6 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
             serverSocketChannel.bind(address, config.backlog)
             accept()
-
         } catch (e: Exception) {
             log.error(e) { "bind server address exception" }
         }
