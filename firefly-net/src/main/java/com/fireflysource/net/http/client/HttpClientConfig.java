@@ -9,9 +9,11 @@ public class HttpClientConfig {
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
     private long releaseTimeout = 60;
-    private int requestHeaderBufferSize = 4 * 1024;
+    private int requestHeaderBufferSize = 8 * 1024;
     private int contentBufferSize = 8 * 1024;
     private SecureEngineFactory secureEngineFactory;
+    private int maxDynamicTableSize = 8 * 1024;
+    private int maxHeaderSize = 8 * 1024;
 
     public long getTimeout() {
         return timeout;
@@ -69,6 +71,22 @@ public class HttpClientConfig {
         this.secureEngineFactory = secureEngineFactory;
     }
 
+    public int getMaxDynamicTableSize() {
+        return maxDynamicTableSize;
+    }
+
+    public void setMaxDynamicTableSize(int maxDynamicTableSize) {
+        this.maxDynamicTableSize = maxDynamicTableSize;
+    }
+
+    public int getMaxHeaderSize() {
+        return maxHeaderSize;
+    }
+
+    public void setMaxHeaderSize(int maxHeaderSize) {
+        this.maxHeaderSize = maxHeaderSize;
+    }
+
     @Override
     public String toString() {
         return "HttpClientConfig{" +
@@ -78,6 +96,8 @@ public class HttpClientConfig {
                 ", releaseTimeout=" + releaseTimeout +
                 ", requestHeaderBufferSize=" + requestHeaderBufferSize +
                 ", contentBufferSize=" + contentBufferSize +
+                ", maxDynamicTableSize=" + maxDynamicTableSize +
+                ", maxHeaderSize=" + maxHeaderSize +
                 '}';
     }
 }

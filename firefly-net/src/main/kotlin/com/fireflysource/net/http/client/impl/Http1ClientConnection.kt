@@ -13,14 +13,13 @@ import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class Http1ClientConnection(
     val tcpConnection: TcpConnection,
-    requestHeaderBufferSize: Int = 4 * 1024,
+    requestHeaderBufferSize: Int = 8 * 1024,
     contentBufferSize: Int = 8 * 1024
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
 
@@ -41,36 +40,34 @@ class Http1ClientConnection(
     private val parser = HttpParser(handler)
 
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
-    private val acceptRequestJob: Job
+    private val acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
+        recvRequestLoop@ while (true) {
+            val requestMessage = requestChannel.receive()
+
+            if (requestMessage == stopRequestMessage) {
+                break@recvRequestLoop
+            }
+
+            try {
+                encodeRequestAndFlushData(requestMessage)
+
+                handler.contentHandler = requestMessage.contentHandler
+                val response = parseResponse()
+                requestMessage.response.complete(response)
+            } catch (e: Exception) {
+                requestMessage.response.completeExceptionally(e)
+            } finally {
+                handler.reset()
+                parser.reset()
+                generator.reset()
+            }
+        }
+
+        log.info { "The HTTP1 connection $id stops accepting requests." }
+    }
 
 
     init {
-        acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
-            recvRequestLoop@ while (true) {
-                val requestMessage = requestChannel.receive()
-
-                if (requestMessage == stopRequestMessage) {
-                    break@recvRequestLoop
-                }
-
-                try {
-                    encodeRequestAndFlushData(requestMessage)
-
-                    handler.contentHandler = requestMessage.contentHandler
-                    val response = parseResponse()
-                    requestMessage.response.complete(response)
-                } catch (e: Exception) {
-                    requestMessage.response.completeExceptionally(e)
-                } finally {
-                    handler.reset()
-                    parser.reset()
-                    generator.reset()
-                }
-            }
-
-            log.info { "The HTTP1 connection $id stops accepting requests." }
-        }
-
         tcpConnection.onClose {
             requestChannel.offer(stopRequestMessage)
             acceptRequestJob.cancel()

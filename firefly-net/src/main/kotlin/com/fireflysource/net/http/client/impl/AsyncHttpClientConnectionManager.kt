@@ -80,7 +80,7 @@ class AsyncHttpClientConnectionManager(
                     val httpConnection: HttpClientConnection = if (connection.isSecureConnection) {
                         when (connection.onHandshakeComplete().await()) {
                             SupportedProtocolEnum.H2.value -> {
-                                Http2ClientConnection(connection)
+                                Http2ClientConnection(connection, config.maxDynamicTableSize, config.maxHeaderSize)
                             }
                             else -> {
                                 Http1ClientConnection(
@@ -131,7 +131,11 @@ class AsyncHttpClientConnectionManager(
                         httpClientConnection.cancelRequestJob()
 
                         // switch the protocol to http2
-                        val http2ClientConnection = Http2ClientConnection(httpClientConnection.tcpConnection)
+                        val http2ClientConnection = Http2ClientConnection(
+                            httpClientConnection.tcpConnection,
+                            config.maxDynamicTableSize,
+                            config.maxHeaderSize
+                        )
                         httpClientConnection.attachment = http2ClientConnection
                         log.info { "HTTP1 connection ${httpClientConnection.id} upgrade HTTP2 success" }
 
