@@ -11,6 +11,7 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import java.util.concurrent.CompletableFuture
+import java.util.function.UnaryOperator
 
 class Http2ClientConnection(
     private val tcpConnection: TcpConnection,
@@ -25,53 +26,56 @@ class Http2ClientConnection(
 
     private val parser = Parser(object : Parser.Listener {
 
-        override fun onData(frame: DataFrame?) {
+        override fun onData(frame: DataFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onHeaders(frame: HeadersFrame?) {
+        override fun onHeaders(frame: HeadersFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onPriority(frame: PriorityFrame?) {
+        override fun onPriority(frame: PriorityFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onReset(frame: ResetFrame?) {
+        override fun onReset(frame: ResetFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onSettings(frame: SettingsFrame?) {
+        override fun onSettings(frame: SettingsFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onPushPromise(frame: PushPromiseFrame?) {
+        override fun onPushPromise(frame: PushPromiseFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onPing(frame: PingFrame?) {
+        override fun onPing(frame: PingFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onGoAway(frame: GoAwayFrame?) {
+        override fun onGoAway(frame: GoAwayFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onWindowUpdate(frame: WindowUpdateFrame?) {
+        override fun onWindowUpdate(frame: WindowUpdateFrame) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onStreamFailure(streamId: Int, error: Int, reason: String?) {
+        override fun onStreamFailure(streamId: Int, error: Int, reason: String) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-        override fun onConnectionFailure(error: Int, reason: String?) {
+        override fun onConnectionFailure(error: Int, reason: String) {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
     }, maxDynamicTableSize, maxHeaderSize)
 
-
+    init {
+        parser.init(UnaryOperator.identity())
+    }
+    
 
     override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_2
 

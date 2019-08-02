@@ -3,7 +3,6 @@ package com.fireflysource.net.http.common.v2.hpack;
 import com.fireflysource.net.http.common.model.*;
 
 public class MetaDataBuilder {
-
     private final int maxSize;
     private int size;
     private Integer status;
@@ -12,7 +11,7 @@ public class MetaDataBuilder {
     private HostPortHttpField authority;
     private String path;
     private long contentLength = Long.MIN_VALUE;
-    private HttpFields fields = new HttpFields(10);
+    private HttpFields fields = new HttpFields();
     private HpackException.StreamException streamException;
     private boolean request;
     private boolean response;
@@ -46,8 +45,8 @@ public class MetaDataBuilder {
         HttpHeader header = field.getHeader();
         String name = field.getName();
         String value = field.getValue();
-        int field_size = name.length() + (value == null ? 0 : value.length());
-        size += field_size + 32;
+        int fieldSize = name.length() + (value == null ? 0 : value.length());
+        size += fieldSize + 32;
         if (size > maxSize)
             throw new HpackException.SessionException("Header Size %d > %d", size, maxSize);
 
@@ -79,7 +78,7 @@ public class MetaDataBuilder {
             switch (header) {
                 case C_STATUS:
                     if (checkPseudoHeader(header, status))
-                        status = Integer.valueOf(field.getIntValue());
+                        status = field.getIntValue();
                     response = true;
                     break;
 
@@ -188,7 +187,6 @@ public class MetaDataBuilder {
         if (request && response)
             throw new HpackException.StreamException("Request and Response headers");
 
-
         HttpFields fields = this.fields;
         try {
             if (request) {
@@ -208,7 +206,7 @@ public class MetaDataBuilder {
 
             return new MetaData(HttpVersion.HTTP_2, fields, contentLength);
         } finally {
-            this.fields = new HttpFields(Math.max(10, fields.size() + 5));
+            this.fields = new HttpFields(Math.max(16, fields.size() + 5));
             request = false;
             response = false;
             status = null;
