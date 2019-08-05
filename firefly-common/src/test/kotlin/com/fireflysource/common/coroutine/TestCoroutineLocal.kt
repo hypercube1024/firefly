@@ -1,9 +1,13 @@
 package com.fireflysource.common.coroutine
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author Pengtao Qiu
@@ -19,6 +23,7 @@ private val dispatchExecutor: ExecutorService = ThreadPoolExecutor(
 class TestCoroutineLocal {
 
     @Test
+    @DisplayName("should get the coroutine local value across the many coroutines.")
     fun test(): Unit = runBlocking {
         val dispatcher: CoroutineDispatcher = dispatchExecutor.asCoroutineDispatcher()
         val key = "index"
@@ -54,5 +59,32 @@ class TestCoroutineLocal {
             assertEquals(i, CoroutineLocalContext.getAttr("e")!!)
             println("inner fun [expected: $i, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
         }.join()
+    }
+
+    @Test
+    @DisplayName("should cancel the channel")
+    fun testCancelChannel(): Unit = runBlocking {
+        val count = AtomicInteger()
+        val channel = Channel<Int>()
+        val job = launchGlobally {
+            while (true) {
+                val i = channel.receive()
+                println("test: $i")
+                count.incrementAndGet()
+            }
+        }
+
+        launchGlobally {
+            (1..10).forEach {
+                delay(100)
+                channel.offer(it)
+            }
+        }
+
+        delay(500)
+        job.cancel()
+        job.join()
+        println("end")
+        assertTrue(count.get() < 10)
     }
 }
