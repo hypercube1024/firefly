@@ -72,12 +72,12 @@
         <metrics.version>4.0.5</metrics.version>
         <jackson.version>2.9.9.1</jackson.version>
         <msgpack.version>0.8.17</msgpack.version>
-        <redisson.version>3.11.1</redisson.version>
+        <redisson.version>3.11.2</redisson.version>
         <conscrypt.version>2.1.0</conscrypt.version>
         <hikariCP.version>3.3.1</hikariCP.version>
         <javassist.version>3.25.0-GA</javassist.version>
         <slf4j.api.version>1.7.26</slf4j.api.version>
-        <spring.reactor.version>Californium-SR9</spring.reactor.version>
+        <spring.reactor.version>Californium-SR10</spring.reactor.version>
 
         <!-- test lib -->
         <junit.version>5.4.2</junit.version>

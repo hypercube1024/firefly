@@ -16,18 +16,14 @@ class DefaultHttp2ClientConnectionListener : Http2ClientConnectionListener {
     }
 
     override suspend fun onPriorityFrame(http2ClientConnection: Http2ClientConnection, frame: PriorityFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override suspend fun onSettingsFrame(http2ClientConnection: Http2ClientConnection, frame: SettingsFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override suspend fun onPingFrame(http2ClientConnection: Http2ClientConnection, frame: PingFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override suspend fun onGoAwayFrame(http2ClientConnection: Http2ClientConnection, frame: GoAwayFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

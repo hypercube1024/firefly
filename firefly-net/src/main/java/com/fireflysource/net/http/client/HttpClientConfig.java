@@ -14,6 +14,7 @@ public class HttpClientConfig {
     private SecureEngineFactory secureEngineFactory;
     private int maxDynamicTableSize = 8 * 1024;
     private int maxHeaderSize = 8 * 1024;
+    private int maxHeaderBlockFragment = 0;
 
     public long getTimeout() {
         return timeout;
@@ -85,6 +86,14 @@ public class HttpClientConfig {
 
     public void setMaxHeaderSize(int maxHeaderSize) {
         this.maxHeaderSize = maxHeaderSize;
+    }
+
+    public int getMaxHeaderBlockFragment() {
+        return maxHeaderBlockFragment;
+    }
+
+    public void setMaxHeaderBlockFragment(int maxHeaderBlockFragment) {
+        this.maxHeaderBlockFragment = maxHeaderBlockFragment;
     }
 
     @Override
