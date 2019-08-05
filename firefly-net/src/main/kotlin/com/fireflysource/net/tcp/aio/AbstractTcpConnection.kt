@@ -59,7 +59,11 @@ abstract class AbstractTcpConnection(
         inChannel.offer(buf)
     }
 
-    private val writingJob = launchWritingJob()
+    private val writingJob = launchGlobally(messageThread) {
+        while (!isShutdownOutput) {
+            writeMessage(outChannel.receive())
+        }
+    }
 
     override fun getCoroutineDispatcher(): CoroutineDispatcher = messageThread
 
@@ -68,12 +72,6 @@ abstract class AbstractTcpConnection(
     override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
 
     override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
-
-    private fun launchWritingJob() = launchGlobally(messageThread) {
-        while (!isShutdownOutput) {
-            writeMessage(outChannel.receive())
-        }
-    }
 
     private suspend fun writeMessage(message: Message) {
         lastWrittenTime = System.currentTimeMillis()

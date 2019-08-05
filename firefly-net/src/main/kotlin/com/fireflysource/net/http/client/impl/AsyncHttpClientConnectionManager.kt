@@ -128,8 +128,6 @@ class AsyncHttpClientConnectionManager(
 
                     val response = httpClientConnection.send(request).await()
                     if (isUpgradeSuccess(response)) {
-                        httpClientConnection.cancelRequestJob()
-
                         // switch the protocol to http2
                         val http2ClientConnection = Http2ClientConnection(
                             httpClientConnection.tcpConnection,

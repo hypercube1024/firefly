@@ -6,7 +6,10 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
-import com.fireflysource.net.http.common.model.*
+import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpHeaderValue
+import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
@@ -25,7 +28,6 @@ class Http1ClientConnection(
 
     companion object {
         private val log = SystemLogger.create(Http1ClientConnection::class.java)
-        private val stopRequestMessage = RequestMessage(MetaData.Request(HttpFields()), null, null, CompletableFuture())
     }
 
     private val generator = HttpGenerator()
@@ -44,13 +46,10 @@ class Http1ClientConnection(
         recvRequestLoop@ while (true) {
             val requestMessage = requestChannel.receive()
 
-            if (requestMessage == stopRequestMessage) {
-                break@recvRequestLoop
-            }
-
             try {
                 encodeRequestAndFlushData(requestMessage)
 
+                // receive response data
                 handler.contentHandler = requestMessage.contentHandler
                 val response = parseResponse()
                 requestMessage.response.complete(response)
@@ -62,22 +61,13 @@ class Http1ClientConnection(
                 generator.reset()
             }
         }
-
-        log.info { "The HTTP1 connection $id stops accepting requests." }
     }
 
 
     init {
         tcpConnection.onClose {
-            requestChannel.offer(stopRequestMessage)
             acceptRequestJob.cancel()
         }
-    }
-
-    suspend fun cancelRequestJob() {
-        requestChannel.offer(stopRequestMessage)
-        acceptRequestJob.cancel()
-        acceptRequestJob.join()
     }
 
     private suspend fun parseResponse(): HttpClientResponse {
