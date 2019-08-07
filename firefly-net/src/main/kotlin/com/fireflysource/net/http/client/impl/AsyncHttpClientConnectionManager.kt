@@ -31,30 +31,34 @@ class AsyncHttpClientConnectionManager(
     }
 
     private val tcpClient: TcpClient = AioTcpClient().timeout(config.timeout)
-    private val secureTcpClient: TcpClient = if (config.secureEngineFactory != null) {
-        AioTcpClient()
-            .timeout(config.timeout)
-            .secureEngineFactory(config.secureEngineFactory)
-            .enableSecureConnection()
-    } else {
-        AioTcpClient()
-            .timeout(config.timeout)
-            .enableSecureConnection()
-    }
-    private val connectionMap = HashMap<Address, AsyncPool<HttpClientConnection>>()
+    private val secureTcpClient: TcpClient = createSecureTcpClient()
+    private val connectionPoolMap = HashMap<Address, AsyncPool<HttpClientConnection>>()
 
     init {
         start()
     }
 
+    private fun createSecureTcpClient(): TcpClient {
+        return if (config.secureEngineFactory != null) {
+            AioTcpClient()
+                .timeout(config.timeout)
+                .secureEngineFactory(config.secureEngineFactory)
+                .enableSecureConnection()
+        } else {
+            AioTcpClient()
+                .timeout(config.timeout)
+                .enableSecureConnection()
+        }
+    }
+
     private suspend fun createConnection(address: Address): TcpConnection {
-        val conn = if (address.secure) {
+        val tcpConnection = if (address.secure) {
             secureTcpClient.connect(address.socketAddress).await()
         } else {
             tcpClient.connect(address.socketAddress).await()
         }
-        conn.startReading()
-        return conn
+        tcpConnection.startReading()
+        return tcpConnection
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally(singleThread) {
@@ -67,54 +71,9 @@ class AsyncHttpClientConnectionManager(
         val secure = isSecureProtocol(request.uri.scheme)
         val address = Address(socketAddress, secure)
 
-        val pooledObject = connectionMap.computeIfAbsent(address) { addr ->
-            asyncPool {
-                maxSize = config.connectionPoolSize
-                timeout = config.timeout
-                leakDetectorInterval = config.leakDetectorInterval
-                releaseTimeout = config.releaseTimeout
-
-                objectFactory { pool ->
-                    val connection = createConnection(addr)
-                    val httpConnection: HttpClientConnection = if (connection.isSecureConnection) {
-                        when (connection.onHandshakeComplete().await()) {
-                            SupportedProtocolEnum.H2.value -> {
-                                Http2ClientConnection(
-                                    connection,
-                                    config.maxDynamicTableSize,
-                                    config.maxHeaderSize,
-                                    config.maxHeaderBlockFragment
-                                )
-                            }
-                            else -> {
-                                Http1ClientConnection(
-                                    connection,
-                                    config.requestHeaderBufferSize,
-                                    config.contentBufferSize
-                                )
-                            }
-                        }
-                    } else {
-                        Http1ClientConnection(connection, config.requestHeaderBufferSize, config.contentBufferSize)
-                    }
-
-                    PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
-                }
-
-                validator { pooledObject ->
-                    !pooledObject.getObject().isClosed
-                }
-
-                dispose { pooledObject ->
-                    pooledObject.getObject().close()
-                }
-
-                noLeakCallback {
-                    log.info("no leak TCP connection pool.")
-                }
-            }
-
-        }.getPooledObject()
+        val pooledObject = connectionPoolMap
+            .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+            .getPooledObject()
 
         val httpClientResponse = if (pooledObject.getObject().isSecureConnection) {
             pooledObject.use { o -> o.getObject().send(request) }.await()
@@ -132,6 +91,60 @@ class AsyncHttpClientConnectionManager(
         httpClientResponse
     }.asCompletableFuture()
 
+    private fun buildHttpClientConnectionPool(address: Address): AsyncPool<HttpClientConnection> = asyncPool {
+        maxSize = config.connectionPoolSize
+        timeout = config.timeout
+        leakDetectorInterval = config.leakDetectorInterval
+        releaseTimeout = config.releaseTimeout
+
+        objectFactory { pool ->
+            val connection = createConnection(address)
+            val httpConnection = if (connection.isSecureConnection) {
+                when (connection.onHandshakeComplete().await()) {
+                    SupportedProtocolEnum.H2.value -> {
+                        createHttp2ClientConnection(connection)
+                    }
+                    else -> {
+                        createHttp1ClientConnection(connection)
+                    }
+                }
+            } else {
+                createHttp1ClientConnection(connection)
+            }
+
+            PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
+        }
+
+        validator { pooledObject ->
+            !pooledObject.getObject().isClosed
+        }
+
+        dispose { pooledObject ->
+            pooledObject.getObject().close()
+        }
+
+        noLeakCallback {
+            log.info("no leak TCP connection pool.")
+        }
+    }
+
+    private fun createHttp1ClientConnection(connection: TcpConnection): Http1ClientConnection {
+        return Http1ClientConnection(
+            connection,
+            config.requestHeaderBufferSize,
+            config.contentBufferSize
+        )
+    }
+
+    private fun createHttp2ClientConnection(connection: TcpConnection): Http2ClientConnection {
+        return Http2ClientConnection(
+            connection,
+            config.maxDynamicTableSize,
+            config.maxHeaderSize,
+            config.maxHeaderBlockFragment
+        )
+    }
+
     private suspend fun sendRequestWithHttp2UpgradeHeader(
         request: HttpClientRequest,
         http1ClientConnection: Http1ClientConnection
@@ -140,24 +153,19 @@ class AsyncHttpClientConnectionManager(
         addHttp2UpgradeHeader(request)
 
         val response = http1ClientConnection.send(request).await()
-        if (isUpgradeSuccess(response)) {
+        return if (isUpgradeSuccess(response)) {
             // switch the protocol to http2
-            val http2ClientConnection = Http2ClientConnection(
-                http1ClientConnection.tcpConnection,
-                config.maxDynamicTableSize,
-                config.maxHeaderSize,
-                config.maxHeaderBlockFragment
-            )
+            val http2ClientConnection = createHttp2ClientConnection(http1ClientConnection.tcpConnection)
             http1ClientConnection.attachment = http2ClientConnection
             log.info { "HTTP1 connection ${http1ClientConnection.id} upgrades HTTP2 success" }
 
             removeHttp2UpgradeHeader(request)
-            return http2ClientConnection.send(request).await()
+            http2ClientConnection.send(request).await()
         } else {
             http1ClientConnection.attachment = http1ClientConnection
             log.info { "HTTP1 connection ${http1ClientConnection.id} upgrades HTTP2 failure" }
 
-            return response
+            response
         }
     }
 
@@ -165,8 +173,8 @@ class AsyncHttpClientConnectionManager(
     }
 
     override fun destroy() {
-        connectionMap.values.forEach { it.stop() }
-        connectionMap.clear()
+        connectionPoolMap.values.forEach { it.stop() }
+        connectionPoolMap.clear()
         tcpClient.stop()
         secureTcpClient.stop()
     }
