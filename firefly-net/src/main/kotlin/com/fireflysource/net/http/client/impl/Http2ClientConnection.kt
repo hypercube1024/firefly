@@ -161,6 +161,6 @@ class Http2ClientConnection(
     }
 
     fun updateRecvWindow(delta: Int) {
-        // TODO("not implement")
+        TODO("not implemented")
     }
 }
