@@ -5,6 +5,8 @@ import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
 public class HttpClientConfig {
 
+    public static int DEFAULT_WINDOW_SIZE = 65535;
+
     private long timeout = 30;
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
@@ -15,6 +17,9 @@ public class HttpClientConfig {
     private int maxDynamicTableSize = 8 * 1024;
     private int maxHeaderSize = 8 * 1024;
     private int maxHeaderBlockFragment = 0;
+    private int initialStreamRecvWindow = 8 * 1024 * 1024;
+    private int maxConcurrentPushedStreams = 32;
+    private int initialSessionRecvWindow = 16 * 1024 * 1024;
 
     public long getTimeout() {
         return timeout;
@@ -96,6 +101,30 @@ public class HttpClientConfig {
         this.maxHeaderBlockFragment = maxHeaderBlockFragment;
     }
 
+    public int getInitialStreamRecvWindow() {
+        return initialStreamRecvWindow;
+    }
+
+    public void setInitialStreamRecvWindow(int initialStreamRecvWindow) {
+        this.initialStreamRecvWindow = initialStreamRecvWindow;
+    }
+
+    public int getMaxConcurrentPushedStreams() {
+        return maxConcurrentPushedStreams;
+    }
+
+    public void setMaxConcurrentPushedStreams(int maxConcurrentPushedStreams) {
+        this.maxConcurrentPushedStreams = maxConcurrentPushedStreams;
+    }
+
+    public int getInitialSessionRecvWindow() {
+        return initialSessionRecvWindow;
+    }
+
+    public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
+        this.initialSessionRecvWindow = initialSessionRecvWindow;
+    }
+
     @Override
     public String toString() {
         return "HttpClientConfig{" +
@@ -105,8 +134,13 @@ public class HttpClientConfig {
                 ", releaseTimeout=" + releaseTimeout +
                 ", requestHeaderBufferSize=" + requestHeaderBufferSize +
                 ", contentBufferSize=" + contentBufferSize +
+                ", secureEngineFactory=" + secureEngineFactory +
                 ", maxDynamicTableSize=" + maxDynamicTableSize +
                 ", maxHeaderSize=" + maxHeaderSize +
+                ", maxHeaderBlockFragment=" + maxHeaderBlockFragment +
+                ", initialStreamRecvWindow=" + initialStreamRecvWindow +
+                ", maxConcurrentPushedStreams=" + maxConcurrentPushedStreams +
+                ", initialSessionRecvWindow=" + initialSessionRecvWindow +
                 '}';
     }
 }

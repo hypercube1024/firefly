@@ -7,7 +7,7 @@ import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 
 class DefaultHttp2ClientConnectionListener : Http2ClientConnectionListener {
     
-    override suspend fun onPreface(http2ClientConnection: Http2ClientConnection): Map<Int, Int> {
+    override fun onPreface(http2ClientConnection: Http2ClientConnection): MutableMap<Int, Int> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

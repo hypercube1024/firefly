@@ -129,20 +129,11 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun createHttp1ClientConnection(connection: TcpConnection): Http1ClientConnection {
-        return Http1ClientConnection(
-            connection,
-            config.requestHeaderBufferSize,
-            config.contentBufferSize
-        )
+        return Http1ClientConnection(config, connection)
     }
 
     private fun createHttp2ClientConnection(connection: TcpConnection): Http2ClientConnection {
-        return Http2ClientConnection(
-            connection,
-            config.maxDynamicTableSize,
-            config.maxHeaderSize,
-            config.maxHeaderBlockFragment
-        )
+        return Http2ClientConnection(config, connection)
     }
 
     private suspend fun sendRequestWithHttp2UpgradeHeader(

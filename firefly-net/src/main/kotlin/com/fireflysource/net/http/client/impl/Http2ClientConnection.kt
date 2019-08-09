@@ -4,6 +4,8 @@ import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
+import com.fireflysource.net.http.client.HttpClientConfig
+import com.fireflysource.net.http.client.HttpClientConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
@@ -20,10 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.UnaryOperator
 
 class Http2ClientConnection(
-    private val tcpConnection: TcpConnection,
-    private val maxDynamicTableSize: Int = 8192,
-    private val maxHeaderSize: Int = 8192,
-    private val maxHeaderBlockFragment: Int = 0,
+    config: HttpClientConfig,
+    val tcpConnection: TcpConnection,
     private val listener: Http2ClientConnectionListener = DefaultHttp2ClientConnectionListener()
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
 
@@ -33,7 +33,8 @@ class Http2ClientConnection(
 
     private val streamId = AtomicInteger(1)
     private val http2StreamMap: Map<Int, Http2Stream> = ConcurrentHashMap()
-    private val generator = Generator(maxDynamicTableSize, maxHeaderBlockFragment)
+
+    private val generator = Generator(config.maxDynamicTableSize, config.maxHeaderBlockFragment)
     private val parser = Parser(object : Parser.Listener {
 
         override fun onData(frame: DataFrame) {
@@ -91,12 +92,14 @@ class Http2ClientConnection(
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
 
-    }, maxDynamicTableSize, maxHeaderSize)
+    }, config.maxDynamicTableSize, config.maxHeaderSize)
 
     private val receiveDataJob: Job
 
     init {
         parser.init(UnaryOperator.identity())
+
+        sendConnectionPreface(config)
 
         receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
             val inputChannel = tcpConnection.inputChannel
@@ -110,6 +113,28 @@ class Http2ClientConnection(
 
         tcpConnection.onClose {
             receiveDataJob.cancel()
+        }
+    }
+
+    private fun sendConnectionPreface(config: HttpClientConfig) {
+        val settings = listener.onPreface(this)
+        settings.computeIfAbsent(SettingsFrame.INITIAL_WINDOW_SIZE) { config.initialStreamRecvWindow }
+        settings.computeIfAbsent(SettingsFrame.MAX_CONCURRENT_STREAMS) { config.maxConcurrentPushedStreams }
+
+        val maxFrameLength = settings[SettingsFrame.MAX_FRAME_SIZE]
+        if (maxFrameLength != null) {
+            parser.maxFrameLength = maxFrameLength
+        }
+
+        val prefaceFrame = PrefaceFrame()
+        val settingsFrame = SettingsFrame(settings, false)
+        val windowDelta = config.initialSessionRecvWindow - DEFAULT_WINDOW_SIZE
+        if (windowDelta > 0) {
+            val windowUpdateFrame = WindowUpdateFrame(0, windowDelta)
+            updateRecvWindow(windowDelta)
+            sendControlFrame(prefaceFrame, settingsFrame, windowUpdateFrame)
+        } else {
+            sendControlFrame(prefaceFrame, settingsFrame)
         }
     }
 
@@ -130,8 +155,12 @@ class Http2ClientConnection(
         TODO("not implemented")
     }
 
-    fun sendControlFrame(frame: Frame) {
-        val bufList = generator.control(frame).byteBuffers
+    fun sendControlFrame(vararg frame: Frame) {
+        val bufList = frame.map { generator.control(it).byteBuffers }.flatten()
         tcpConnection.write(bufList, 0, bufList.size, Result.discard())
+    }
+
+    fun updateRecvWindow(delta: Int) {
+        // TODO("not implement")
     }
 }

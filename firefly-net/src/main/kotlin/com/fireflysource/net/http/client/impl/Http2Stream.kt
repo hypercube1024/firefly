@@ -7,7 +7,6 @@ import com.fireflysource.net.http.common.v2.frame.ResetFrame
 
 class Http2Stream(
     val id: Int,
-    val http2ClientConnection: Http2ClientConnection,
     val listener: Http2StreamListener
 ) {
 

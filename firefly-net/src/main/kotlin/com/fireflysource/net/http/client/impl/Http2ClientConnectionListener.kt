@@ -7,7 +7,7 @@ import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 
 interface Http2ClientConnectionListener {
 
-    suspend fun onPreface(http2ClientConnection: Http2ClientConnection): Map<Int, Int>
+    fun onPreface(http2ClientConnection: Http2ClientConnection): MutableMap<Int, Int>
 
     suspend fun onNewStream(stream: Http2Stream): Http2StreamListener
 

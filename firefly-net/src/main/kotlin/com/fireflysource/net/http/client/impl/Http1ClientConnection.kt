@@ -21,9 +21,8 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class Http1ClientConnection(
-    val tcpConnection: TcpConnection,
-    requestHeaderBufferSize: Int = 8 * 1024,
-    contentBufferSize: Int = 8 * 1024
+    config: HttpClientConfig,
+    val tcpConnection: TcpConnection
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
 
     companion object {
@@ -33,8 +32,8 @@ class Http1ClientConnection(
     private val generator = HttpGenerator()
 
     // generator buffer
-    private val headerBuffer = BufferUtils.allocateDirect(requestHeaderBufferSize)
-    private val contentBuffer = BufferUtils.allocateDirect(contentBufferSize)
+    private val headerBuffer = BufferUtils.allocateDirect(config.requestHeaderBufferSize)
+    private val contentBuffer = BufferUtils.allocateDirect(config.contentBufferSize)
     private val chunkBuffer = BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE)
 
     // parser
@@ -43,7 +42,7 @@ class Http1ClientConnection(
 
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
     private val acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
-        recvRequestLoop@ while (true) {
+        while (true) {
             val requestMessage = requestChannel.receive()
 
             try {
