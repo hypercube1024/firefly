@@ -13,6 +13,7 @@ import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.encoder.Generator
 import com.fireflysource.net.http.common.v2.frame.*
+import com.fireflysource.net.http.common.v2.stream.Http2Stream
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -32,7 +33,7 @@ class Http2ClientConnection(
     }
 
     private val streamId = AtomicInteger(1)
-    private val http2StreamMap: Map<Int, Http2Stream> = ConcurrentHashMap()
+    private val http2StreamMap = ConcurrentHashMap<Int, Http2Stream>()
 
     private val generator = Generator(config.maxDynamicTableSize, config.maxHeaderBlockFragment)
     private val parser = Parser(object : Parser.Listener {
@@ -144,10 +145,6 @@ class Http2ClientConnection(
     override fun isSecureConnection(): Boolean = tcpConnection.isSecureConnection
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-        TODO("not implemented")
-    }
-
-    suspend fun newStream(listener: Http2StreamListener): Http2Stream {
         TODO("not implemented")
     }
 

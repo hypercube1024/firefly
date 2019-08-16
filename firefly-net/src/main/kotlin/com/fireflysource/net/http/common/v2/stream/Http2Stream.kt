@@ -1,4 +1,4 @@
-package com.fireflysource.net.http.client.impl
+package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.net.http.common.v2.frame.DataFrame
 import com.fireflysource.net.http.common.v2.frame.HeadersFrame
