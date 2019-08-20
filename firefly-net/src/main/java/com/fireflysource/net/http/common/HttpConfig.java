@@ -1,9 +1,9 @@
-package com.fireflysource.net.http.client;
+package com.fireflysource.net.http.common;
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
-public class HttpClientConfig {
+public class HttpConfig {
 
     public static int DEFAULT_WINDOW_SIZE = 65535;
 
@@ -20,6 +20,8 @@ public class HttpClientConfig {
     private int initialStreamRecvWindow = 8 * 1024 * 1024;
     private int maxConcurrentPushedStreams = 32;
     private int initialSessionRecvWindow = 16 * 1024 * 1024;
+    private int maxLocalStreams = -1;
+    private int maxRemoteStreams = -1;
 
     public long getTimeout() {
         return timeout;
@@ -123,6 +125,22 @@ public class HttpClientConfig {
 
     public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
         this.initialSessionRecvWindow = initialSessionRecvWindow;
+    }
+
+    public int getMaxLocalStreams() {
+        return maxLocalStreams;
+    }
+
+    public void setMaxLocalStreams(int maxLocalStreams) {
+        this.maxLocalStreams = maxLocalStreams;
+    }
+
+    public int getMaxRemoteStreams() {
+        return maxRemoteStreams;
+    }
+
+    public void setMaxRemoteStreams(int maxRemoteStreams) {
+        this.maxRemoteStreams = maxRemoteStreams;
     }
 
     @Override

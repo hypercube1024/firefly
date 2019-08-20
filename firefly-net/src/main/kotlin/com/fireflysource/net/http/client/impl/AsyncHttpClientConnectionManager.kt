@@ -11,6 +11,7 @@ import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader
+import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -23,7 +24,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 
 class AsyncHttpClientConnectionManager(
-    private val config: HttpClientConfig = HttpClientConfig()
+    private val config: HttpConfig = HttpConfig()
 ) : HttpClientConnectionManager, AbstractLifeCycle() {
 
     companion object {

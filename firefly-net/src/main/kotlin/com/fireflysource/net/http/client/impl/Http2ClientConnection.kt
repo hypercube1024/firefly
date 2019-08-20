@@ -1,29 +1,25 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.coroutine.launchGlobally
-import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
-import com.fireflysource.net.http.client.HttpClientConfig
-import com.fireflysource.net.http.client.HttpClientConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v2.decoder.Parser
-import com.fireflysource.net.http.common.v2.encoder.Generator
 import com.fireflysource.net.http.common.v2.frame.*
-import com.fireflysource.net.http.common.v2.stream.Http2Stream
+import com.fireflysource.net.http.common.v2.stream.FrameSender
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.Job
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.UnaryOperator
 
 class Http2ClientConnection(
-    config: HttpClientConfig,
+    config: HttpConfig,
     val tcpConnection: TcpConnection,
     private val listener: Http2ClientConnectionListener = DefaultHttp2ClientConnectionListener()
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
@@ -32,10 +28,8 @@ class Http2ClientConnection(
         private val log = SystemLogger.create(Http2ClientConnection::class.java)
     }
 
-    private val streamId = AtomicInteger(1)
-    private val http2StreamMap = ConcurrentHashMap<Int, Http2Stream>()
+    private val frameSender = FrameSender(config, tcpConnection)
 
-    private val generator = Generator(config.maxDynamicTableSize, config.maxHeaderBlockFragment)
     private val parser = Parser(object : Parser.Listener {
 
         override fun onData(frame: DataFrame) {
@@ -72,7 +66,7 @@ class Http2ClientConnection(
                     }
                 } else {
                     val replay = PingFrame(frame.payload, true)
-                    sendControlFrame(replay)
+                    frameSender.sendControlFrame(replay)
                 }
             }
         }
@@ -117,7 +111,7 @@ class Http2ClientConnection(
         }
     }
 
-    private fun sendConnectionPreface(config: HttpClientConfig) {
+    private fun sendConnectionPreface(config: HttpConfig) {
         val settings = listener.onPreface(this)
         settings.computeIfAbsent(SettingsFrame.INITIAL_WINDOW_SIZE) { config.initialStreamRecvWindow }
         settings.computeIfAbsent(SettingsFrame.MAX_CONCURRENT_STREAMS) { config.maxConcurrentPushedStreams }
@@ -133,12 +127,11 @@ class Http2ClientConnection(
         if (windowDelta > 0) {
             val windowUpdateFrame = WindowUpdateFrame(0, windowDelta)
             updateRecvWindow(windowDelta)
-            sendControlFrame(prefaceFrame, settingsFrame, windowUpdateFrame)
+            frameSender.sendControlFrame(prefaceFrame, settingsFrame, windowUpdateFrame)
         } else {
-            sendControlFrame(prefaceFrame, settingsFrame)
+            frameSender.sendControlFrame(prefaceFrame, settingsFrame)
         }
     }
-
 
     override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_2
 
@@ -150,11 +143,6 @@ class Http2ClientConnection(
 
     suspend fun close(error: Int, payload: String) {
         TODO("not implemented")
-    }
-
-    fun sendControlFrame(vararg frame: Frame) {
-        val bufList = frame.map { generator.control(it).byteBuffers }.flatten()
-        tcpConnection.write(bufList, 0, bufList.size, Result.discard())
     }
 
     fun updateRecvWindow(delta: Int) {

@@ -6,6 +6,7 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpVersion
@@ -21,7 +22,7 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class Http1ClientConnection(
-    config: HttpClientConfig,
+    config: HttpConfig,
     val tcpConnection: TcpConnection
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
 
