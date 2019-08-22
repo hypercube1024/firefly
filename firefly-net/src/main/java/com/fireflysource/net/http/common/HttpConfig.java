@@ -6,6 +6,7 @@ import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 public class HttpConfig {
 
     public static int DEFAULT_WINDOW_SIZE = 65535;
+    public static int DEFAULT_HEADER_TABLE_SIZE = 4096;
 
     private long timeout = 30;
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
@@ -14,7 +15,7 @@ public class HttpConfig {
     private int requestHeaderBufferSize = 8 * 1024;
     private int contentBufferSize = 8 * 1024;
     private SecureEngineFactory secureEngineFactory;
-    private int maxDynamicTableSize = 8 * 1024;
+    private int maxDynamicTableSize = DEFAULT_HEADER_TABLE_SIZE;
     private int maxHeaderSize = 8 * 1024;
     private int maxHeaderBlockFragment = 0;
     private int initialStreamRecvWindow = 8 * 1024 * 1024;

@@ -25,6 +25,14 @@ public class Result<T> {
         this.throwable = throwable;
     }
 
+    public static <T> Result<T> createFailedResult(T value, Throwable throwable) {
+        return new Result<>(false, value, throwable);
+    }
+
+    public static Result<Void> createFailedResult(Throwable throwable) {
+        return new Result<>(false, null, throwable);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> Consumer<Result<T>> discard() {
         return EMPTY;

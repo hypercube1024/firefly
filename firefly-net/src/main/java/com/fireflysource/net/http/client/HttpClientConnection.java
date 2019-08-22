@@ -18,7 +18,7 @@ public interface HttpClientConnection extends HttpConnection {
      * Send HTTP request to the remote endpoint.
      *
      * @param request The HTTP request.
-     * @return The HTTP response.
+     * @return The response future.
      */
     CompletableFuture<HttpClientResponse> send(HttpClientRequest request);
 
