@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * Http2Connection http2Connection = ...;
  * HeadersFrame frame = ...;
  * Promise&lt;Stream&gt; promise = ...
- * session.newStream(frame, promise, new Stream.Listener.Adapter()
+ * http2Connection.newStream(frame, promise, new Stream.Listener.Adapter()
  * {
  *     public void onHeaders(Stream stream, HeadersFrame frame)
  *     {

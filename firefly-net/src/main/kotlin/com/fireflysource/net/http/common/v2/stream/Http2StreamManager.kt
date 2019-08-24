@@ -11,7 +11,7 @@ class Http2StreamManager(
     var maxLocalStreams: Int = -1,
     val local: Boolean = true,
     private val frameSender: FrameSender,
-    private val flowControl: FlowControlStrategy
+    private val flowControl: FlowControl
 ) : Parser.Listener {
 
     private val streamId = AtomicInteger(initStreamId)
@@ -51,7 +51,7 @@ class Http2StreamManager(
         return http2StreamMap.computeIfAbsent(id) {
             checkMaxLocalStreams()
             val stream = Http2Stream(id, listener)
-            flowControl.onStreamCreated(stream)
+//            flowControl.onStreamCreated(stream)
             stream
         }
     }
