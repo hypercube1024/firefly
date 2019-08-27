@@ -1,114 +1,36 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
-import com.fireflysource.net.http.common.model.HttpVersion
-import com.fireflysource.net.http.common.v2.decoder.Parser
-import com.fireflysource.net.http.common.v2.frame.*
-import com.fireflysource.net.http.common.v2.stream.FrameSender
+import com.fireflysource.net.http.common.v2.frame.PrefaceFrame
+import com.fireflysource.net.http.common.v2.frame.SettingsFrame
+import com.fireflysource.net.http.common.v2.frame.WindowUpdateFrame
+import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Connection
+import com.fireflysource.net.http.common.v2.stream.FlowControl
+import com.fireflysource.net.http.common.v2.stream.Http2Connection
+import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
 import com.fireflysource.net.tcp.TcpConnection
-import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import kotlinx.coroutines.Job
 import java.util.concurrent.CompletableFuture
-import java.util.function.UnaryOperator
 
 class Http2ClientConnection(
     config: HttpConfig,
-    val tcpConnection: TcpConnection,
-    private val listener: Http2ClientConnectionListener = DefaultHttp2ClientConnectionListener()
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
+    tcpConnection: TcpConnection,
+    private val flowControl: FlowControl = SimpleFlowControlStrategy(),
+    private val listener: Http2Connection.Listener = DefaultHttp2ConnectionListener(),
+    private val asyncHttp2Connection: AsyncHttp2Connection =
+        AsyncHttp2Connection(1, config, tcpConnection, flowControl, listener)
+) : Http2Connection by asyncHttp2Connection, HttpClientConnection {
 
     companion object {
         private val log = SystemLogger.create(Http2ClientConnection::class.java)
     }
 
-    private val frameSender = FrameSender(config, tcpConnection)
-
-    private val parser = Parser(object : Parser.Listener {
-
-        override fun onData(frame: DataFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onHeaders(frame: HeadersFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onPriority(frame: PriorityFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onReset(frame: ResetFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onSettings(frame: SettingsFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onPushPromise(frame: PushPromiseFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onPing(frame: PingFrame) {
-            launchGlobally(tcpConnection.coroutineDispatcher) {
-                if (frame.isReply) {
-                    try {
-                        listener.onPingFrame(this@Http2ClientConnection, frame)
-                    } catch (e: Exception) {
-                        log.error(e) { "failure while notifying listener" }
-                    }
-                } else {
-                    val replay = PingFrame(frame.payload, true)
-                    frameSender.sendControlFrame(replay)
-                }
-            }
-        }
-
-        override fun onGoAway(frame: GoAwayFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onWindowUpdate(frame: WindowUpdateFrame) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onStreamFailure(streamId: Int, error: Int, reason: String) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onConnectionFailure(error: Int, reason: String) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-    }, config.maxDynamicTableSize, config.maxHeaderSize)
-
-    private val receiveDataJob: Job
-
     init {
-        parser.init(UnaryOperator.identity())
-
         sendConnectionPreface(config)
-
-        receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
-            val inputChannel = tcpConnection.inputChannel
-            recvLoop@ while (true) {
-                val buffer = inputChannel.receive()
-                parsingLoop@ while (buffer.hasRemaining()) {
-                    parser.parse(buffer)
-                }
-            }
-        }
-
-        tcpConnection.onClose {
-            receiveDataJob.cancel()
-        }
     }
 
     private fun sendConnectionPreface(config: HttpConfig) {
@@ -118,34 +40,22 @@ class Http2ClientConnection(
 
         val maxFrameLength = settings[SettingsFrame.MAX_FRAME_SIZE]
         if (maxFrameLength != null) {
-            parser.maxFrameLength = maxFrameLength
+            asyncHttp2Connection.parser.maxFrameLength = maxFrameLength
         }
 
         val prefaceFrame = PrefaceFrame()
         val settingsFrame = SettingsFrame(settings, false)
-        val windowDelta = config.initialSessionRecvWindow - DEFAULT_WINDOW_SIZE
+        val windowDelta = asyncHttp2Connection.initialSessionRecvWindow - DEFAULT_WINDOW_SIZE
         if (windowDelta > 0) {
             val windowUpdateFrame = WindowUpdateFrame(0, windowDelta)
-            updateRecvWindow(windowDelta)
-            frameSender.sendControlFrame(prefaceFrame, settingsFrame, windowUpdateFrame)
+            asyncHttp2Connection.updateRecvWindow(windowDelta)
+            asyncHttp2Connection.sendControlFrame(prefaceFrame, settingsFrame, windowUpdateFrame)
         } else {
-            frameSender.sendControlFrame(prefaceFrame, settingsFrame)
+            asyncHttp2Connection.sendControlFrame(prefaceFrame, settingsFrame)
         }
     }
 
-    override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_2
-
-    override fun isSecureConnection(): Boolean = tcpConnection.isSecureConnection
-
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-        TODO("not implemented")
-    }
-
-    suspend fun close(error: Int, payload: String) {
-        TODO("not implemented")
-    }
-
-    fun updateRecvWindow(delta: Int) {
         TODO("not implemented")
     }
 }
