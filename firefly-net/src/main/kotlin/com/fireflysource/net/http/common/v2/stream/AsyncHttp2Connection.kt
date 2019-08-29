@@ -1,10 +1,12 @@
 package com.fireflysource.net.http.common.v2.stream
 
+import com.fireflysource.common.concurrent.AtomicBiInteger
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.encoder.Generator
@@ -12,6 +14,7 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.Job
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
@@ -20,10 +23,11 @@ import java.util.function.UnaryOperator
 class AsyncHttp2Connection(
     initStreamId: Int,
     config: HttpConfig,
-    val tcpConnection: TcpConnection,
+    private val tcpConnection: TcpConnection,
     private val flowControl: FlowControl,
     private val listener: Http2Connection.Listener
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, Http2Connection, Parser.Listener {
+) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, Http2Connection, TcpBasedHttpConnection,
+    Parser.Listener {
 
     companion object {
         private val log = SystemLogger.create(AsyncHttp2Connection::class.java)
@@ -32,7 +36,7 @@ class AsyncHttp2Connection(
     private val streamId = AtomicInteger(initStreamId)
     private val http2StreamMap = ConcurrentHashMap<Int, Stream>()
     private val localStreamCount = AtomicInteger()
-    private val remoteStreamCount = AtomicInteger()
+    private val remoteStreamCount = AtomicBiInteger()
     private val lastRemoteStreamId = AtomicInteger()
 
     private val sendWindow = AtomicInteger(HttpConfig.DEFAULT_WINDOW_SIZE)
@@ -67,6 +71,8 @@ class AsyncHttp2Connection(
 
     override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_2
 
+    override fun getTcpConnection(): TcpConnection = tcpConnection
+
     override fun newStream(headersFrame: HeadersFrame, promise: Consumer<Result<Stream>>, listener: Stream.Listener) {
         val frameStreamId = headersFrame.streamId
         if (frameStreamId <= 0) {
@@ -97,7 +103,7 @@ class AsyncHttp2Connection(
     private fun createLocalStream(id: Int, listener: Stream.Listener): Stream {
         return http2StreamMap.computeIfAbsent(id) {
             checkMaxLocalStreams()
-            val stream = AsyncHttp2Stream(id, true, listener)
+            val stream = AsyncHttp2Stream(this, id, true, listener)
             flowControl.onStreamCreated(stream)
             stream
         }
@@ -114,9 +120,9 @@ class AsyncHttp2Connection(
         }
     }
 
-    fun sendControlFrame(vararg frame: Frame) {
+    fun sendControlFrame(vararg frame: Frame): CompletableFuture<Long> {
         val bufList = frame.map { generator.control(it).byteBuffers }.flatten()
-        tcpConnection.write(bufList, 0, bufList.size, Result.discard())
+        return tcpConnection.write(bufList, 0, bufList.size)
     }
 
     override fun priority(frame: PriorityFrame, result: Consumer<Result<Void>>): Int {
@@ -203,5 +209,21 @@ class AsyncHttp2Connection(
 
     fun updateSendWindow(delta: Int): Int {
         return sendWindow.getAndAdd(delta)
+    }
+
+    fun getSendWindow(): Int {
+        return sendWindow.get()
+    }
+
+    fun getRecvWindow(): Int {
+        return recvWindow.get()
+    }
+
+    fun updateStreamCount(local: Boolean, deltaStreams: Int, deltaClosing: Int) {
+        if (local) {
+            localStreamCount.addAndGet(deltaStreams)
+        } else {
+            remoteStreamCount.add(deltaStreams, deltaClosing)
+        }
     }
 }

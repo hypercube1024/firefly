@@ -3,8 +3,8 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClient
-import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.client.HttpClientRequestBuilder
+import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.HttpVersion

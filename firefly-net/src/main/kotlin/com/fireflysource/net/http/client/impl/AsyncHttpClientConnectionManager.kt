@@ -7,7 +7,10 @@ import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
 import com.fireflysource.common.pool.asyncPool
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.client.HttpClientConnection
+import com.fireflysource.net.http.client.HttpClientConnectionManager
+import com.fireflysource.net.http.client.HttpClientRequest
+import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.removeHttp2UpgradeHeader

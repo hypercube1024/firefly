@@ -7,6 +7,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpVersion
@@ -23,8 +24,8 @@ import java.util.concurrent.CompletableFuture
 
 class Http1ClientConnection(
     config: HttpConfig,
-    val tcpConnection: TcpConnection
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection {
+    private val tcpConnection: TcpConnection
+) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection, TcpBasedHttpConnection {
 
     companion object {
         private val log = SystemLogger.create(Http1ClientConnection::class.java)
@@ -177,6 +178,8 @@ class Http1ClientConnection(
     override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_1_1
 
     override fun isSecureConnection(): Boolean = tcpConnection.isSecureConnection
+
+    override fun getTcpConnection(): TcpConnection = tcpConnection
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         prepareHttp1Headers(request)
