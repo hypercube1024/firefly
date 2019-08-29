@@ -29,7 +29,7 @@ class AsyncHttp2Stream(
     private val attributes: ConcurrentMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
     private val localReset = AtomicBoolean()
     private val remoteReset = AtomicBoolean()
-    private val closeState = AtomicReference(CloseState.NOT_CLOSED)
+    private val closeState = AtomicReference(NOT_CLOSED)
     private val createTime = System.currentTimeMillis()
 
     fun updateSendWindow(delta: Int): Int {
@@ -90,12 +90,11 @@ class AsyncHttp2Stream(
     }
 
     override fun isClosed(): Boolean {
-        return closeState.get() == CloseState.CLOSED
+        return closeState.get() == CLOSED
     }
 
-    fun updateClose(update: Boolean, event: CloseState.Event): Boolean {
-
-        log.debug("Update close for {} update={} event={}", this, update, event)
+    fun updateClose(update: Boolean, event: Event): Boolean {
+        log.debug { "Update close for $this update=$update event=$event" }
 
         if (!update) {
             return false
@@ -112,11 +111,11 @@ class AsyncHttp2Stream(
         while (true) {
             when (val current = closeState.get()) {
                 NOT_CLOSED -> {
-                    if (closeState.compareAndSet(current, CloseState.REMOTELY_CLOSED))
+                    if (closeState.compareAndSet(current, REMOTELY_CLOSED))
                         return false
                 }
                 LOCALLY_CLOSING -> {
-                    if (closeState.compareAndSet(current, CloseState.CLOSING)) {
+                    if (closeState.compareAndSet(current, CLOSING)) {
                         asyncHttp2Connection.updateStreamCount(local, 0, 1)
                         return false
                     }
@@ -136,11 +135,11 @@ class AsyncHttp2Stream(
         while (true) {
             when (val current = closeState.get()) {
                 NOT_CLOSED -> {
-                    if (closeState.compareAndSet(current, CloseState.LOCALLY_CLOSING))
+                    if (closeState.compareAndSet(current, LOCALLY_CLOSING))
                         return false
                 }
                 REMOTELY_CLOSED -> {
-                    if (closeState.compareAndSet(current, CloseState.CLOSING)) {
+                    if (closeState.compareAndSet(current, CLOSING)) {
                         asyncHttp2Connection.updateStreamCount(local, 0, 1)
                         return false
                     }
@@ -179,7 +178,20 @@ class AsyncHttp2Stream(
     }
 
     override fun close() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val oldState = closeState.getAndSet(CloseState.CLOSED)
+        if (oldState != CloseState.CLOSED) {
+            val deltaClosing = if (oldState == CloseState.CLOSING) -1 else 0
+            asyncHttp2Connection.updateStreamCount(local, -1, deltaClosing)
+            notifyClosed(this)
+        }
+    }
+
+    private fun notifyClosed(stream: Stream) {
+        try {
+            listener.onClosed(stream)
+        } catch (x: Throwable) {
+            log.info("Failure while notifying listener $listener", x)
+        }
     }
 
     override fun toString(): String {
