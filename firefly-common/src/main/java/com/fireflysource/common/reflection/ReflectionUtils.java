@@ -30,9 +30,9 @@ public class ReflectionUtils {
     }
 
     /**
-     * Invokes a object's "setter" method by property name
+     * Invokes an object's "setter" method by property name
      *
-     * @param obj      The instance of a object
+     * @param obj      The instance of an object
      * @param property The property name of this object
      * @param value    The parameter of "setter" method that you want to set
      * @throws Throwable A runtime exception
@@ -42,9 +42,9 @@ public class ReflectionUtils {
     }
 
     /**
-     * Invokes a object's "getter" method by property name
+     * Invokes an object's "getter" method by property name
      *
-     * @param obj      The instance of a object
+     * @param obj      The instance of an object
      * @param property The property name of this object
      * @return The value of this property
      * @throws Throwable A runtime exception
