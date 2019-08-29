@@ -155,8 +155,7 @@ class AsyncHttp2Stream(
         while (true) {
             when (val current = closeState.get()) {
                 NOT_CLOSED, LOCALLY_CLOSING -> {
-                    if (closeState.compareAndSet(current, CloseState.LOCALLY_CLOSED))
-                        return false
+                    if (closeState.compareAndSet(current, LOCALLY_CLOSED)) return false
                 }
                 REMOTELY_CLOSED, CLOSING -> {
                     close()
@@ -178,9 +177,9 @@ class AsyncHttp2Stream(
     }
 
     override fun close() {
-        val oldState = closeState.getAndSet(CloseState.CLOSED)
-        if (oldState != CloseState.CLOSED) {
-            val deltaClosing = if (oldState == CloseState.CLOSING) -1 else 0
+        val oldState = closeState.getAndSet(CLOSED)
+        if (oldState != CLOSED) {
+            val deltaClosing = if (oldState == CLOSING) -1 else 0
             asyncHttp2Connection.updateStreamCount(local, -1, deltaClosing)
             notifyClosed(this)
         }
