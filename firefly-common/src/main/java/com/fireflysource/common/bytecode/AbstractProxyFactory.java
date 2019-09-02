@@ -30,22 +30,22 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
 
     @Override
     public MethodProxy getMethodProxy(Method method) {
-        return methodCache.computeIfAbsent(method, this::_getMethodProxy);
+        return methodCache.computeIfAbsent(method, this::createMethodProxy);
     }
 
-    abstract protected MethodProxy _getMethodProxy(Method method);
+    abstract protected MethodProxy createMethodProxy(Method method);
 
     @Override
     public ArrayProxy getArrayProxy(Class<?> clazz) {
-        return arrayCache.computeIfAbsent(clazz, this::_getArrayProxy);
+        return arrayCache.computeIfAbsent(clazz, this::createArrayProxy);
     }
 
-    abstract protected ArrayProxy _getArrayProxy(Class<?> clazz);
+    abstract protected ArrayProxy createArrayProxy(Class<?> clazz);
 
     @Override
     public FieldProxy getFieldProxy(Field field) {
-        return fieldCache.computeIfAbsent(field, this::_getFieldProxy);
+        return fieldCache.computeIfAbsent(field, this::createFieldProxy);
     }
 
-    abstract protected FieldProxy _getFieldProxy(Field field);
+    abstract protected FieldProxy createFieldProxy(Field field);
 }

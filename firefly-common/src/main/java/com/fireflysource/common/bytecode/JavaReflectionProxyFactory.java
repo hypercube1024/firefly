@@ -17,7 +17,7 @@ public class JavaReflectionProxyFactory extends AbstractProxyFactory {
 
     }
 
-    protected FieldProxy _getFieldProxy(Field field) {
+    protected FieldProxy createFieldProxy(Field field) {
         try {
             String packageName = "com.firefly.utils";
             String className = "FieldReflectionProxy" + UUID.randomUUID().toString().replace("-", "");
@@ -59,7 +59,7 @@ public class JavaReflectionProxyFactory extends AbstractProxyFactory {
         }
     }
 
-    protected MethodProxy _getMethodProxy(Method method) {
+    protected MethodProxy createMethodProxy(Method method) {
         try {
             String packageName = "com.firefly.utils";
             String className = "MethodReflectionProxy" + UUID.randomUUID().toString().replace("-", "");
@@ -119,7 +119,7 @@ public class JavaReflectionProxyFactory extends AbstractProxyFactory {
         }
     }
 
-    protected ArrayProxy _getArrayProxy(Class<?> clazz) {
+    protected ArrayProxy createArrayProxy(Class<?> clazz) {
         try {
             String packageName = "com.firefly.utils";
             String className = "ArrayReflectionProxy" + UUID.randomUUID().toString().replace("-", "");

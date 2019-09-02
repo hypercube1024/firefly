@@ -18,7 +18,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
 
     }
 
-    protected ArrayProxy _getArrayProxy(Class<?> clazz) {
+    protected ArrayProxy createArrayProxy(Class<?> clazz) {
         try {
             ClassPool classPool = ClassPool.getDefault();
             classPool.insertClassPath(new ClassClassPath(ArrayProxy.class));
@@ -81,7 +81,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
         return code.toString();
     }
 
-    protected FieldProxy _getFieldProxy(Field field) {
+    protected FieldProxy createFieldProxy(Field field) {
         try {
             ClassPool classPool = ClassPool.getDefault();
             classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
@@ -140,7 +140,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
         return code.toString();
     }
 
-    protected MethodProxy _getMethodProxy(Method method) {
+    protected MethodProxy createMethodProxy(Method method) {
         try {
             ClassPool classPool = ClassPool.getDefault();
             classPool.insertClassPath(new ClassClassPath(MethodProxy.class));

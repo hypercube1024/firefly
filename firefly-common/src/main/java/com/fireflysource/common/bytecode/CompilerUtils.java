@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
@@ -21,8 +22,11 @@ public class CompilerUtils {
 
     public static Class<?> compileSource(String completeClassName, String source) throws IOException {
         boolean result;
-        try (JavaFileManager fileManager = getStringSourceJavaFileManager(compiler, null, null, Charset.forName("UTF-8"))) {
-            CompilationTask task = compiler.getTask(null, fileManager, null, null, null, Collections.singletonList(new JavaSourceFromString(completeClassName, source)));
+        try (JavaFileManager fileManager = getStringSourceJavaFileManager(compiler,
+                null, null, StandardCharsets.UTF_8)) {
+            CompilationTask task = compiler.getTask(null, fileManager,
+                    null, null, null,
+                    Collections.singletonList(new JavaSourceFromString(completeClassName, source)));
             result = task.call();
         }
 
