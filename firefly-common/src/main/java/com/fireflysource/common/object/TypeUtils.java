@@ -127,7 +127,7 @@ public class TypeUtils {
             class2Value.put(Short.class,
                     Short.class.getMethod("valueOf", s));
         } catch (Exception e) {
-            throw new Error(e);
+            e.printStackTrace();
         }
     }
 
@@ -159,7 +159,7 @@ public class TypeUtils {
     }
 
     /**
-     * Canonical name for a type.
+     * The canonical name for a type.
      *
      * @param type A class , which may be a primitive TYPE field.
      * @return Canonical name.
@@ -172,7 +172,7 @@ public class TypeUtils {
      * Convert String value to instance.
      *
      * @param type  The class of the instance, which may be a primitive TYPE field.
-     * @param value The value as a string.
+     * @param value The value as string.
      * @return The value as an Object.
      */
     public static Object valueOf(Class<?> type, String value) {

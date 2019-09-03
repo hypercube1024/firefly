@@ -576,6 +576,29 @@ public class StringUtils {
         return ret.toString();
     }
 
+    public static String replaceStr(String s, String sub, String with) {
+        if (s == null) {
+            return null;
+        }
+
+        int c = 0;
+        int i = s.indexOf(sub, c);
+        if (i == -1) {
+            return s;
+        }
+        StringBuilder buf = new StringBuilder(s.length() + with.length());
+        do {
+            buf.append(s, c, i);
+            buf.append(with);
+            c = i + sub.length();
+        }
+        while ((i = s.indexOf(sub, c)) != -1);
+        if (c < s.length()) {
+            buf.append(s.substring(c));
+        }
+        return buf.toString();
+    }
+
     public static String escapeXML(String str) {
         if (str == null)
             return "";
@@ -799,5 +822,21 @@ public class StringUtils {
     public static String normalizeCharset(String s, int offset, int length) {
         String n = CHARSETS.get(s, offset, length);
         return (n == null) ? s.substring(offset, offset + length) : n;
+    }
+
+    public static boolean isHex(String str, int offset, int length) {
+        if (offset + length > str.length()) {
+            return false;
+        }
+
+        for (int i = offset; i < (offset + length); i++) {
+            char c = str.charAt(i);
+            if (!(((c >= 'a') && (c <= 'f')) ||
+                    ((c >= 'A') && (c <= 'F')) ||
+                    ((c >= '0') && (c <= '9')))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

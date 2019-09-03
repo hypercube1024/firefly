@@ -10,10 +10,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
- * Parse an authority string into Host and Port
- * <p>Parse a string in the form "host:port", handling IPv4 an IPv6 hosts</p>
+ * URI Utility methods.
+ * <p>
+ * This class assists with the decoding and encoding or HTTP URI's.
+ * It differs from the java.net.URL class as it does not provide
+ * communications ability, but it does assist with query string
+ * formatting.
+ * </p>
  */
 public class URIUtils implements Cloneable {
 
@@ -26,7 +32,6 @@ public class URIUtils implements Cloneable {
 
     private URIUtils() {
     }
-
 
     /**
      * Encode a URI path.
@@ -44,7 +49,6 @@ public class URIUtils implements Cloneable {
         return buf == null ? path : buf.toString();
     }
 
-
     /**
      * Encode a URI path.
      *
@@ -55,7 +59,6 @@ public class URIUtils implements Cloneable {
     public static StringBuilder encodePath(StringBuilder buf, String path) {
         return encodePath(buf, path, 0);
     }
-
 
     /**
      * Encode a URI path.
@@ -237,6 +240,114 @@ public class URIUtils implements Cloneable {
         return buf;
     }
 
+    /**
+     * Encode a raw URI String and convert any raw spaces to
+     * their "%20" equivalent.
+     *
+     * @param str input raw string
+     * @return output with spaces converted to "%20"
+     */
+    public static String encodeSpaces(String str) {
+        return StringUtils.replaceStr(str, " ", "%20");
+    }
+
+    /**
+     * Encode a raw String and convert any specific characters to their URI encoded equivalent.
+     *
+     * @param str           input raw string
+     * @param charsToEncode the list of raw characters that need to be encoded (if encountered)
+     * @return output with specified characters encoded.
+     */
+    @SuppressWarnings("Duplicates")
+    public static String encodeSpecific(String str, String charsToEncode) {
+        if ((str == null) || (str.length() == 0))
+            return null;
+
+        if ((charsToEncode == null) || (charsToEncode.length() == 0))
+            return str;
+
+        char[] find = charsToEncode.toCharArray();
+        int len = str.length();
+        StringBuilder ret = new StringBuilder((int) (len * 0.20d));
+        for (int i = 0; i < len; i++) {
+            char c = str.charAt(i);
+            boolean escaped = false;
+            for (char f : find) {
+                if (c == f) {
+                    escaped = true;
+                    ret.append('%');
+                    int d = 0xf & ((0xF0 & c) >> 4);
+                    ret.append((char) ((d > 9 ? ('A' - 10) : '0') + d));
+                    d = 0xf & c;
+                    ret.append((char) ((d > 9 ? ('A' - 10) : '0') + d));
+                    break;
+                }
+            }
+            if (!escaped) {
+                ret.append(c);
+            }
+        }
+        return ret.toString();
+    }
+
+    /**
+     * Decode a raw String and convert any specific URI encoded sequences into characters.
+     *
+     * @param str           input raw string
+     * @param charsToDecode the list of raw characters that need to be decoded (if encountered), leaving all other encoded sequences alone.
+     * @return output with specified characters decoded.
+     */
+    @SuppressWarnings("Duplicates")
+    public static String decodeSpecific(String str, String charsToDecode) {
+        if ((str == null) || (str.length() == 0))
+            return null;
+
+        if ((charsToDecode == null) || (charsToDecode.length() == 0))
+            return str;
+
+        int idx = str.indexOf('%');
+        if (idx == -1) {
+            // no hits
+            return str;
+        }
+
+        char[] find = charsToDecode.toCharArray();
+        int len = str.length();
+        Utf8StringBuilder ret = new Utf8StringBuilder(len);
+        ret.append(str, 0, idx);
+
+        for (int i = idx; i < len; i++) {
+            char c = str.charAt(i);
+            switch (c) {
+                case '%':
+                    if ((i + 2) < len) {
+                        char u = str.charAt(i + 1);
+                        char l = str.charAt(i + 2);
+                        char result = (char) (0xff & (TypeUtils.convertHexDigit(u) * 16 + TypeUtils.convertHexDigit(l)));
+                        boolean decoded = false;
+                        for (char f : find) {
+                            if (f == result) {
+                                ret.append(result);
+                                decoded = true;
+                                break;
+                            }
+                        }
+                        if (decoded) {
+                            i += 2;
+                        } else {
+                            ret.append(c);
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Bad URI % encoding");
+                    }
+                    break;
+                default:
+                    ret.append(c);
+                    break;
+            }
+        }
+        return ret.toString();
+    }
 
     /**
      * Encode a URI path.
@@ -273,13 +384,11 @@ public class URIUtils implements Cloneable {
         return buf;
     }
 
-
     /* Decode a URI path and strip parameters
      */
     public static String decodePath(String path) {
         return decodePath(path, 0, path.length());
     }
-
 
     /* Decode a URI path and strip parameters of UTF-8 path
      */
@@ -295,18 +404,51 @@ public class URIUtils implements Cloneable {
                             builder = new Utf8StringBuilder(path.length());
                             builder.append(path, offset, i - offset);
                         }
-                        if ((i + 2) < end) {
-                            char u = path.charAt(i + 1);
-                            if (u == 'u') {
-                                // this is wrong. This is a codepoint not a char
-                                builder.append((char) (0xffff & TypeUtils.parseInt(path, i + 2, 4, 16)));
-                                i += 5;
+
+                        // lenient percent decoding
+                        if (i >= end) {
+                            // [LENIENT] a percent sign at end of string.
+                            builder.append('%');
+                            i = end;
+                        } else if (end > (i + 1)) {
+                            char type = path.charAt(i + 1);
+                            if (type == 'u') {
+                                // We have a possible (deprecated) microsoft unicode code point "%u####"
+                                // - not recommended to use as it's limited to 2 bytes.
+                                if ((i + 5) >= end) {
+                                    // [LENIENT] we have a partial "%u####" at the end of a string.
+                                    builder.append(path, i, (end - i));
+                                    i = end;
+                                } else {
+                                    // this seems wrong, as we are casting to a char, but that's the known
+                                    // limitation of this deprecated encoding (only 2 bytes allowed)
+                                    if (StringUtils.isHex(path, i + 2, 4)) {
+                                        builder.append((char) (0xffff & TypeUtils.parseInt(path, i + 2, 4, 16)));
+                                        i += 5;
+                                    } else {
+                                        // [LENIENT] copy the "%u" as-is.
+                                        builder.append(path, i, 2);
+                                        i += 1;
+                                    }
+                                }
+                            } else if (end > (i + 2)) {
+                                // we have a possible "%##" encoding
+                                if (StringUtils.isHex(path, i + 1, 2)) {
+                                    builder.append((byte) TypeUtils.parseInt(path, i + 1, 2, 16));
+                                    i += 2;
+                                } else {
+                                    builder.append(path, i, 3);
+                                    i += 2;
+                                }
                             } else {
-                                builder.append((byte) (0xff & (TypeUtils.convertHexDigit(u) * 16 + TypeUtils.convertHexDigit(path.charAt(i + 2)))));
-                                i += 2;
+                                // [LENIENT] incomplete "%##" sequence at end of string
+                                builder.append(path, i, (end - i));
+                                i = end;
                             }
                         } else {
-                            throw new IllegalArgumentException("Bad URI % encoding");
+                            // [LENIENT] the "%" at the end of the string
+                            builder.append(path, i, (end - i));
+                            i = end;
                         }
 
                         break;
@@ -339,11 +481,9 @@ public class URIUtils implements Cloneable {
                 return path;
             return path.substring(offset, end);
         } catch (Utf8Appendable.NotUtf8Exception e) {
-            System.err.println(path.substring(offset, offset + length) + " " + e);
             return decodeISO88591Path(path, offset, length);
         }
     }
-
 
     /* Decode a URI path and strip parameters of ISO-8859-1 path
      */
@@ -361,7 +501,7 @@ public class URIUtils implements Cloneable {
                     if ((i + 2) < end) {
                         char u = path.charAt(i + 1);
                         if (u == 'u') {
-                            // this is wrong. This is a codepoint not a char
+                            // TODO this is wrong. This is a codepoint not a char
                             builder.append((char) (0xffff & TypeUtils.parseInt(path, i + 2, 4, 16)));
                             i += 5;
                         } else {
@@ -387,7 +527,6 @@ public class URIUtils implements Cloneable {
                     }
                     break;
 
-
                 default:
                     if (builder != null)
                         builder.append(c);
@@ -401,7 +540,6 @@ public class URIUtils implements Cloneable {
             return path;
         return path.substring(offset, end);
     }
-
 
     /**
      * Add two encoded URI path segments.
@@ -450,7 +588,6 @@ public class URIUtils implements Cloneable {
         return buf.toString();
     }
 
-
     /**
      * Add two Decoded URI path segments.
      * Handles null and empty paths.  Path and query params (eg ?a=b or
@@ -494,7 +631,6 @@ public class URIUtils implements Cloneable {
         return buf.toString();
     }
 
-
     /**
      * Return the parent Path.
      * Treat a URI like a directory path and return the parent directory.
@@ -510,7 +646,6 @@ public class URIUtils implements Cloneable {
             return p.substring(0, slash + 1);
         return null;
     }
-
 
     /**
      * Convert a decoded path to a canonical form.
@@ -583,8 +718,9 @@ public class URIUtils implements Cloneable {
                             break;
 
                         default:
-                            while (dots-- > 0)
+                            while (dots-- > 0) {
                                 canonical.append('.');
+                            }
                             if (c != '\0')
                                 canonical.append(c);
                     }
@@ -604,8 +740,9 @@ public class URIUtils implements Cloneable {
                     break;
 
                 default:
-                    while (dots-- > 0)
+                    while (dots-- > 0) {
                         canonical.append('.');
+                    }
                     canonical.append(c);
                     dots = 0;
                     slash = false;
@@ -615,7 +752,6 @@ public class URIUtils implements Cloneable {
         }
         return canonical.toString();
     }
-
 
     /**
      * Convert a path to a cananonical form.
@@ -695,8 +831,9 @@ public class URIUtils implements Cloneable {
                                 canonical.append(c);
                             break;
                         default:
-                            while (dots-- > 0)
+                            while (dots-- > 0) {
                                 canonical.append('.');
+                            }
                             if (c != '\0')
                                 canonical.append(c);
                     }
@@ -716,8 +853,9 @@ public class URIUtils implements Cloneable {
                     break;
 
                 default:
-                    while (dots-- > 0)
+                    while (dots-- > 0) {
                         canonical.append('.');
+                    }
                     canonical.append(c);
                     dots = 0;
                     slash = false;
@@ -727,7 +865,6 @@ public class URIUtils implements Cloneable {
         }
         return canonical.toString();
     }
-
 
     /**
      * Convert a path to a compact form.
@@ -788,7 +925,6 @@ public class URIUtils implements Cloneable {
         return buf.toString();
     }
 
-
     /**
      * @param uri URI
      * @return True if the uri has a scheme
@@ -796,20 +932,17 @@ public class URIUtils implements Cloneable {
     public static boolean hasScheme(String uri) {
         for (int i = 0; i < uri.length(); i++) {
             char c = uri.charAt(i);
-            if (c == ':')
+            if (c == ':') {
                 return true;
+            }
             if (!(c >= 'a' && c <= 'z' ||
                     c >= 'A' && c <= 'Z' ||
-                    (i > 0 && (c >= '0' && c <= '9' ||
-                            c == '.' ||
-                            c == '+' ||
-                            c == '-'))
-            ))
+                    (i > 0 && (c >= '0' && c <= '9' || c == '.' || c == '+' || c == '-')))) {
                 break;
+            }
         }
         return false;
     }
-
 
     /**
      * Create a new URI from the arguments, handling IPv6 host encoding and default ports
@@ -829,7 +962,6 @@ public class URIUtils implements Cloneable {
         return builder.toString();
     }
 
-
     /**
      * Create a new URI StringBuilder from the arguments, handling IPv6 host encoding and default ports
      *
@@ -843,7 +975,6 @@ public class URIUtils implements Cloneable {
         appendSchemeHostPort(builder, scheme, server, port);
         return builder;
     }
-
 
     /**
      * Append scheme, host and port URI prefix, handling IPv6 address encoding and default ports
@@ -874,6 +1005,37 @@ public class URIUtils implements Cloneable {
         }
     }
 
+    /**
+     * Append scheme, host and port URI prefix, handling IPv6 address encoding and default ports
+     *
+     * @param url    StringBuffer to append to
+     * @param scheme the URI scheme
+     * @param server the URI server
+     * @param port   the URI port
+     */
+    public static void appendSchemeHostPort(StringBuffer url, String scheme, String server, int port) {
+        synchronized (url) {
+            url.append(scheme).append("://").append(HostPort.normalizeHost(server));
+
+            if (port > 0) {
+                switch (scheme) {
+                    case "http":
+                        if (port != 80)
+                            url.append(':').append(port);
+                        break;
+
+                    case "https":
+                        if (port != 443)
+                            url.append(':').append(port);
+                        break;
+
+                    default:
+                        url.append(':').append(port);
+                }
+            }
+        }
+    }
+
     public static boolean equalsIgnoreEncodings(String uriA, String uriB) {
         int lenA = uriA.length();
         int lenB = uriB.length();
@@ -883,21 +1045,45 @@ public class URIUtils implements Cloneable {
         while (a < lenA && b < lenB) {
             int oa = uriA.charAt(a++);
             int ca = oa;
-            if (ca == '%')
-                ca = TypeUtils.convertHexDigit(uriA.charAt(a++)) * 16 + TypeUtils.convertHexDigit(uriA.charAt(a++));
+            if (ca == '%') {
+                ca = lenientPercentDecode(uriA, a);
+                if (ca == (-1)) {
+                    ca = '%';
+                } else {
+                    a += 2;
+                }
+            }
 
             int ob = uriB.charAt(b++);
             int cb = ob;
-            if (cb == '%')
-                cb = TypeUtils.convertHexDigit(uriB.charAt(b++)) * 16 + TypeUtils.convertHexDigit(uriB.charAt(b++));
+            if (cb == '%') {
+                cb = lenientPercentDecode(uriB, b);
+                if (cb == (-1)) {
+                    cb = '%';
+                } else {
+                    b += 2;
+                }
+            }
 
+            // Don't match on encoded slash
             if (ca == '/' && oa != ob)
                 return false;
 
             if (ca != cb)
-                return URIUtils.decodePath(uriA).equals(URIUtils.decodePath(uriB));
+                return false;
         }
         return a == lenA && b == lenB;
+    }
+
+    private static int lenientPercentDecode(String str, int offset) {
+        if (offset >= str.length())
+            return -1;
+
+        if (StringUtils.isHex(str, offset, 2)) {
+            return TypeUtils.parseInt(str, offset, 2, 16);
+        } else {
+            return -1;
+        }
     }
 
     public static boolean equalsIgnoreEncodings(URI uriA, URI uriB) {
@@ -907,8 +1093,15 @@ public class URIUtils implements Cloneable {
         if (uriA.getScheme() == null) {
             if (uriB.getScheme() != null)
                 return false;
-        } else if (!uriA.getScheme().equals(uriB.getScheme()))
+        } else if (!uriA.getScheme().equalsIgnoreCase(uriB.getScheme()))
             return false;
+
+        if ("jar".equalsIgnoreCase(uriA.getScheme())) {
+            // at this point we know that both uri's are "jar:"
+            URI uriAssp = URI.create(uriA.getSchemeSpecificPart());
+            URI uriBssp = URI.create(uriB.getSchemeSpecificPart());
+            return equalsIgnoreEncodings(uriAssp, uriBssp);
+        }
 
         if (uriA.getAuthority() == null) {
             if (uriB.getAuthority() != null)
@@ -943,9 +1136,9 @@ public class URIUtils implements Cloneable {
                 return uri;
             // Get SSP (retaining encoded form)
             String s = uri.getRawSchemeSpecificPart();
-            int bang_slash = s.indexOf("!/");
-            if (bang_slash >= 0)
-                s = s.substring(0, bang_slash);
+            int bangSlash = s.indexOf("!/");
+            if (bangSlash >= 0)
+                s = s.substring(0, bangSlash);
             return new URI(s);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
@@ -955,7 +1148,7 @@ public class URIUtils implements Cloneable {
     public static String getJarSource(String uri) {
         if (!uri.startsWith("jar:"))
             return uri;
-        int bang_slash = uri.indexOf("!/");
-        return (bang_slash >= 0) ? uri.substring(4, bang_slash) : uri.substring(4);
+        int bangSlash = uri.indexOf("!/");
+        return (bangSlash >= 0) ? uri.substring(4, bangSlash) : uri.substring(4);
     }
 }

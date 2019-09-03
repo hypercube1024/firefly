@@ -37,48 +37,45 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
     }
 
     private String createArraySetCode(Class<?> clazz) {
-        StringBuilder code = new StringBuilder();
-        code.append("public void set(Object array, int index, Object value){\n")
-            .append(StringUtils.replace("\t(({})array)[index] = ", clazz.getCanonicalName()));
+        StringBuilder code = new StringBuilder("public void set(Object array, int index, Object value){\n");
 
         Class<?> componentType = clazz.getComponentType();
         if (componentType.isPrimitive()) {
-            code.append(StringUtils.replace("(({})value).{}Value()", primitiveWrapMap.get(componentType), componentType.getCanonicalName()));
+            String t = "\t(({})array)[index] = (({})value).{}Value();\n";
+            code.append(StringUtils.replace(t,
+                    clazz.getCanonicalName(),
+                    primitiveWrapMap.get(componentType),
+                    componentType.getCanonicalName()));
         } else {
-            code.append(StringUtils.replace("({})value", componentType.getCanonicalName()));
+            String t = "\t(({})array)[index] = ({})value;\n";
+            code.append(StringUtils.replace(t, clazz.getCanonicalName(), componentType.getCanonicalName()));
         }
 
-        code.append(";\n")
-            .append("}");
+        code.append("}");
         return code.toString();
     }
 
     private String createArrayGetCode(Class<?> clazz) {
-        StringBuilder code = new StringBuilder();
-        code.append("public Object get(Object array, int index){\n")
-            .append("\treturn ");
+        StringBuilder code = new StringBuilder("public Object get(Object array, int index){\n");
+
         Class<?> componentType = clazz.getComponentType();
-        boolean hasValueOf = false;
         if (componentType.isPrimitive()) {
-            code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(componentType)));
-            hasValueOf = true;
+            String t = "\treturn (Object){}.valueOf((({})array)[index]);\n";
+            code.append(StringUtils.replace(t, primitiveWrapMap.get(componentType), clazz.getCanonicalName()));
+        } else {
+            String t = "\treturn (({})array)[index];\n";
+            code.append(StringUtils.replace(t, clazz.getCanonicalName()));
         }
 
-        code.append(StringUtils.replace("(({})array)[index]", clazz.getCanonicalName()));
-        if (hasValueOf)
-            code.append(")");
-
-        code.append(";\n")
-            .append("}");
+        code.append("}");
         return code.toString();
     }
 
     private String createArraySizeCode(Class<?> clazz) {
-        StringBuilder code = new StringBuilder();
-        code.append("public int size(Object array){\n")
-            .append("\treturn ").append(StringUtils.replace("(({})array).length;\n", clazz.getCanonicalName()))
-            .append("}");
-        return code.toString();
+        String t = "public int size(Object array){\n" +
+                "\treturn (({})array).length;\n" +
+                "}";
+        return StringUtils.replace(t, clazz.getCanonicalName());
     }
 
     protected FieldProxy createFieldProxy(Field field) {
@@ -106,37 +103,42 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
 
     private String createFieldGetterMethodCode(Field field) {
         Class<?> fieldClazz = field.getType();
-        StringBuilder code = new StringBuilder();
-        code.append("public Object get(Object obj){\n")
-            .append("\treturn ");
+        StringBuilder code = new StringBuilder("public Object get(Object obj){\n");
 
-        boolean hasValueOf = false;
         if (fieldClazz.isPrimitive()) {
-            code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(fieldClazz)));
-            hasValueOf = true;
+            String t = "\treturn (Object){}.valueOf( (({})obj).{} );\n";
+            code.append(StringUtils.replace(t,
+                    primitiveWrapMap.get(fieldClazz),
+                    field.getDeclaringClass().getCanonicalName(),
+                    field.getName()));
+        } else {
+            String t = "\treturn (({})obj).{};\n";
+            code.append(StringUtils.replace(t,
+                    field.getDeclaringClass().getCanonicalName(),
+                    field.getName()));
         }
-        code.append(StringUtils.replace("(({})obj).{}", field.getDeclaringClass().getCanonicalName(), field.getName()));
-        if (hasValueOf)
-            code.append(")");
 
-        code.append(";\n")
-            .append("}");
+        code.append("}");
         return code.toString();
     }
 
     private String createFieldSetterMethodCode(Field field) {
         Class<?> fieldClazz = field.getType();
-        StringBuilder code = new StringBuilder();
-        code.append("public void set(Object obj, Object value){\n");
-        code.append(StringUtils.replace("\t(({})obj).{} = ", field.getDeclaringClass().getCanonicalName(), field.getName()));
+        StringBuilder code = new StringBuilder("public void set(Object obj, Object value){\n");
 
         if (fieldClazz.isPrimitive()) {
-            code.append(StringUtils.replace("(({})value).{}Value()", primitiveWrapMap.get(fieldClazz), fieldClazz.getCanonicalName()));
+            String t = "\t(({})obj).{} = (({})value).{}Value();\n";
+            code.append(StringUtils.replace(t,
+                    field.getDeclaringClass().getCanonicalName(), field.getName(),
+                    primitiveWrapMap.get(fieldClazz), fieldClazz.getCanonicalName()));
         } else {
-            code.append(StringUtils.replace("({})value", fieldClazz.getCanonicalName()));
+            String t = "\t(({})obj).{} = ({})value;\n";
+            code.append(StringUtils.replace(t,
+                    field.getDeclaringClass().getCanonicalName(), field.getName(),
+                    fieldClazz.getCanonicalName()));
         }
-        code.append(";\n")
-            .append("}");
+
+        code.append("}");
         return code.toString();
     }
 
@@ -168,12 +170,11 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
         StringBuilder code = new StringBuilder();
 
         code.append("public Object invoke(Object obj, Object[] args){\n ");
-        if (paramClazz.length > 0)
-            code.append('\t')
-                .append(StringUtils.replace("if(args == null || args.length != {})", paramClazz.length))
-                .append("\n\t\t")
-                .append("throw new IllegalArgumentException(\"arguments error\");\n")
-                .append('\n');
+        if (paramClazz.length > 0) {
+            String t = "\tif(args == null || args.length != {})\n" +
+                    "\t\tthrow new IllegalArgumentException(\"arguments error\");\n\n";
+            code.append(StringUtils.replace(t, paramClazz.length));
+        }
 
         boolean hasValueOf = false;
         code.append('\t');
@@ -185,10 +186,11 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             }
         }
 
-        if (java.lang.reflect.Modifier.isStatic(method.getModifiers()))
+        if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
             code.append(method.getDeclaringClass().getCanonicalName());
-        else
+        } else {
             code.append(StringUtils.replace("(({})obj)", method.getDeclaringClass().getCanonicalName()));
+        }
 
         code.append('.').append(method.getName()).append('(');
         if (paramClazz.length > 0) {

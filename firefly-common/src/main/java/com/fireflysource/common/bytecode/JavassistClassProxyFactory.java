@@ -1,6 +1,5 @@
 package com.fireflysource.common.bytecode;
 
-import com.fireflysource.common.string.StringUtils;
 import javassist.*;
 
 import java.lang.reflect.Method;
@@ -8,6 +7,8 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static com.fireflysource.common.string.StringUtils.replace;
 
 public class JavassistClassProxyFactory implements ClassProxyFactory {
 
@@ -73,43 +74,68 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
         for (int i = 0; i < methods.length; i++) {
             Method m = methods[i];
             methodProxies[i] = JavassistReflectionProxyFactory.INSTANCE.getMethodProxy(m);
-            StringBuilder parameterArray = new StringBuilder("Object[] args = new Object[]{");
-            StringBuilder str = new StringBuilder("public " + m.getReturnType().getCanonicalName() + " " + m.getName() + "(");
+
             Class[] parameters = m.getParameterTypes();
+
+            StringBuilder parameterArray;
+            if (parameters.length == 0) {
+                parameterArray = new StringBuilder("Object[] args = new Object[0];\n");
+            } else {
+                parameterArray = new StringBuilder("Object[] args = new Object[]{");
+            }
+
+            StringBuilder str = new StringBuilder("public " + m.getReturnType().getCanonicalName() + " " + m.getName() + "(");
+
             for (int j = 0; j < parameters.length; j++) {
                 if (j != 0) {
                     str.append(", ");
                     parameterArray.append(", ");
                 }
+
                 str.append(parameters[j].getCanonicalName()).append(" arg").append(j);
+
                 if (parameters[j].isPrimitive()) {
-                    parameterArray.append(StringUtils.replace("(Object){}.valueOf(", AbstractProxyFactory.primitiveWrapMap.get(parameters[j]))).append("arg").append(j).append(")");
+                    String t = "(Object){}.valueOf(arg{})";
+                    parameterArray.append(replace(t, AbstractProxyFactory.primitiveWrapMap.get(parameters[j]), j));
                 } else {
                     parameterArray.append("(Object)arg").append(j);
                 }
             }
+
             str.append("){\n");
-            parameterArray.append("};\n");
-            if (parameters.length == 0) {
-                parameterArray = new StringBuilder(Object[].class.getCanonicalName() + " args = new Object[0];\n");
+
+            if (parameters.length > 0) {
+                parameterArray.append("};\n");
             }
 
             str.append("\t").append(parameterArray);
             if (!m.getReturnType().equals(void.class)) {
                 if (m.getReturnType().isPrimitive()) {
-                    str.append("\t").append(m.getReturnType().getCanonicalName()).append(" ret = ((").append(AbstractProxyFactory.primitiveWrapMap.get(m.getReturnType())).append(")").append("classProxy.intercept(methodProxies[").append(i).append("], ").append("originalInstance, ").append("args").append(")).").append(m.getReturnType().getCanonicalName()).append("Value()").append(";\n");
+                    String t = "\t{} ret = (({})classProxy.intercept(methodProxies[{}], originalInstance, args)).{}Value();\n";
+                    str.append(replace(t,
+                            m.getReturnType().getCanonicalName(),
+                            AbstractProxyFactory.primitiveWrapMap.get(m.getReturnType()),
+                            i,
+                            m.getReturnType().getCanonicalName()));
                 } else {
-                    str.append("\t").append(m.getReturnType().getCanonicalName()).append(" ret = (").append(m.getReturnType().getCanonicalName()).append(")").append("classProxy.intercept(methodProxies[").append(i).append("], ").append("originalInstance, ").append("args").append(");\n");
+                    String t = "\t{} ret = ({})classProxy.intercept(methodProxies[{}], originalInstance, args);\n";
+                    str.append(replace(t,
+                            m.getReturnType().getCanonicalName(),
+                            m.getReturnType().getCanonicalName(),
+                            i));
                 }
                 str.append("\treturn ret;\n");
             } else {
-                str.append("\tclassProxy.intercept(methodProxies[").append(i).append("], ").append("originalInstance, ").append("args").append(");\n");
+                String t = "\tclassProxy.intercept(methodProxies[{}], originalInstance, args);\n";
+                str.append(replace(t, i));
             }
             str.append("}");
             cc.addMethod(CtMethod.make(str.toString(), cc));
         }
 
         // generate a proxy instance
-        return (T) cc.toClass(classLoader, null).getConstructor(ClassProxy.class, clazz, MethodProxy[].class).newInstance(proxy, instance, methodProxies);
+        return (T) cc.toClass(classLoader, null)
+                     .getConstructor(ClassProxy.class, clazz, MethodProxy[].class)
+                     .newInstance(proxy, instance, methodProxies);
     }
 }
