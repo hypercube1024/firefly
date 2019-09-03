@@ -175,16 +175,27 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
                     "\t\tthrow new IllegalArgumentException(\"arguments error\");\n\n";
             code.append(StringUtils.replace(t, paramClazz.length));
         }
-
-        boolean hasValueOf = false;
-        code.append('\t');
-        if (!method.getReturnType().equals(Void.TYPE)) {
-            code.append("return ");
+        if (method.getReturnType().equals(Void.TYPE)) {
+            code.append('\t').append(createMethodCall(method)).append(";\n")
+                .append("\treturn null;\n");
+        } else {
+            code.append("\treturn ");
             if (method.getReturnType().isPrimitive()) {
-                code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(method.getReturnType())));
-                hasValueOf = true;
+                code.append(StringUtils.replace("(Object){}.valueOf(", primitiveWrapMap.get(method.getReturnType())))
+                    .append(createMethodCall(method))
+                    .append(");\n");
+            } else {
+                code.append(createMethodCall(method)).append(";\n");
             }
         }
+
+        code.append('}');
+        return code.toString();
+    }
+
+    private String createMethodCall(Method method) {
+        Class<?>[] paramClazz = method.getParameterTypes();
+        StringBuilder code = new StringBuilder();
 
         if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
             code.append(method.getDeclaringClass().getCanonicalName());
@@ -209,16 +220,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
                 code.append(", ");
             }
         }
-        if (hasValueOf) {
-            code.append(")");
-        }
-        code.append(");\n");
-
-        if (method.getReturnType().equals(Void.TYPE)) {
-            code.append("\treturn null;\n");
-        }
-        code.append('}');
-
+        code.append(')');
         return code.toString();
     }
 }
