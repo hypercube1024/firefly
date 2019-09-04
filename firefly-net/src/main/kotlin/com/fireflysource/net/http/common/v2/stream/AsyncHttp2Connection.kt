@@ -183,7 +183,8 @@ class AsyncHttp2Connection(
                             }
                         }
                         FrameType.GO_AWAY -> {
-                            TODO("not implemented")
+                            @Suppress("BlockingMethodInNonBlockingContext")
+                            tcpConnection.close()
                         }
                         FrameType.WINDOW_UPDATE -> {
                             flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
@@ -203,24 +204,53 @@ class AsyncHttp2Connection(
         }.asCompletableFuture()
 
     override fun priority(frame: PriorityFrame, result: Consumer<Result<Void>>): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val stream = http2StreamMap[frame.streamId]
+        if (stream == null) {
+            val newStreamId = getNextStreamId()
+            val newFrame = PriorityFrame(newStreamId, frame.parentStreamId, frame.weight, frame.isExclusive)
+            sendControlFrame(null, newFrame)
+                .thenAccept { result.accept(Result.SUCCESS) }
+                .exceptionally {
+                    result.accept(Result.createFailedResult(it))
+                    null
+                }
+            return newStreamId
+        } else {
+            sendControlFrame(stream, frame)
+                .thenAccept { result.accept(Result.SUCCESS) }
+                .exceptionally {
+                    result.accept(Result.createFailedResult(it))
+                    null
+                }
+            return stream.id
+        }
     }
 
     override fun settings(frame: SettingsFrame, result: Consumer<Result<Void>>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        sendControlFrame(null, frame)
+            .thenAccept { result.accept(Result.SUCCESS) }
+            .exceptionally {
+                result.accept(Result.createFailedResult(it))
+                null
+            }
     }
 
     override fun ping(frame: PingFrame, result: Consumer<Result<Void>>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        if (frame.isReply) {
+            result.accept(Result.createFailedResult(IllegalArgumentException("The reply must be false")))
+        } else {
+            sendControlFrame(null, frame)
+                .thenAccept { result.accept(Result.SUCCESS) }
+                .exceptionally {
+                    result.accept(Result.createFailedResult(it))
+                    null
+                }
+        }
     }
 
-    override fun getStreams(): MutableCollection<Stream> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getStreams(): MutableCollection<Stream> = http2StreamMap.values
 
-    override fun getStream(streamId: Int): Stream {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getStream(streamId: Int): Stream? = http2StreamMap[streamId]
 
     override fun close(error: Int, payload: String, result: Consumer<Result<Void>>): Boolean {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
