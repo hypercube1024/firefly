@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.concurrent.AtomicBiInteger
+import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
@@ -14,6 +15,8 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -89,12 +92,21 @@ class AsyncHttp2Connection(
             }
             val newHeadersFrame = HeadersFrame(nextStreamId, headersFrame.metaData, priority, headersFrame.isEndStream)
             val stream = createLocalStream(nextStreamId, listener)
-            sendControlFrame(newHeadersFrame)
+            sendControlFrame(stream, newHeadersFrame)
             promise.accept(Result(true, stream, null))
         } else {
             val stream = createLocalStream(frameStreamId, listener)
-            sendControlFrame(headersFrame)
+            sendControlFrame(stream, headersFrame)
             promise.accept(Result(true, stream, null))
+        }
+    }
+
+    fun removeStream(stream: Stream) {
+        val removed = http2StreamMap.remove(stream.id)
+        if (removed != null) {
+            listener.onStreamClosed(this, stream)
+            flowControl.onStreamDestroyed(stream)
+            log.debug { "Removed $stream" }
         }
     }
 
@@ -120,10 +132,75 @@ class AsyncHttp2Connection(
         }
     }
 
-    fun sendControlFrame(vararg frame: Frame): CompletableFuture<Long> {
-        val bufList = frame.map { generator.control(it).byteBuffers }.flatten()
-        return tcpConnection.write(bufList, 0, bufList.size)
-    }
+    fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> =
+        asyncGlobally(tcpConnection.coroutineDispatcher) {
+            var writeBytes = 0L
+            for (frame in frames) {
+                val byteBuffers = generator.control(frame).byteBuffers
+
+                when (frame.type) {
+                    FrameType.HEADERS -> {
+                        val headersFrame = frame as HeadersFrame
+                        if (stream != null && stream is AsyncHttp2Stream) {
+                            stream.updateClose(headersFrame.isEndStream, CloseState.Event.BEFORE_SEND)
+                        }
+                    }
+                    FrameType.SETTINGS -> {
+                        val settingsFrame = frame as SettingsFrame
+                        val initialWindow = settingsFrame.settings[SettingsFrame.INITIAL_WINDOW_SIZE]
+                        if (initialWindow != null) {
+                            flowControl.updateInitialStreamWindow(this@AsyncHttp2Connection, initialWindow, true)
+                        }
+                    }
+                    else -> {
+                    }
+                }
+
+                try {
+                    val bytes = tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
+                    writeBytes += bytes
+
+                    when (frame.type) {
+                        FrameType.HEADERS -> {
+                            val headersFrame = frame as HeadersFrame
+                            if (stream != null && stream is AsyncHttp2Stream) {
+                                listener.onStreamOpened(this@AsyncHttp2Connection, stream)
+                                if (stream.updateClose(headersFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
+                                    removeStream(stream)
+                                }
+                            }
+                        }
+                        FrameType.RST_STREAM -> {
+                            val resetFrame = frame as ResetFrame
+                            if (stream != null && stream is AsyncHttp2Stream) {
+                                stream.close()
+                                removeStream(stream)
+                            }
+                        }
+                        FrameType.PUSH_PROMISE -> {
+                            if (stream != null && stream is AsyncHttp2Stream) {
+                                stream.updateClose(true, CloseState.Event.RECEIVED)
+                            }
+                        }
+                        FrameType.GO_AWAY -> {
+                            TODO("not implemented")
+                        }
+                        FrameType.WINDOW_UPDATE -> {
+                            flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
+                        }
+                        FrameType.DISCONNECT -> {
+                            TODO("not implemented")
+                        }
+                        else -> {
+
+                        }
+                    }
+                } catch (e: Exception) {
+                    TODO("not implemented")
+                }
+            }
+            writeBytes
+        }.asCompletableFuture()
 
     override fun priority(frame: PriorityFrame, result: Consumer<Result<Void>>): Int {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -150,27 +227,27 @@ class AsyncHttp2Connection(
     }
 
 
-    override fun onData(frame: DataFrame?) {
+    override fun onData(frame: DataFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onHeaders(frame: HeadersFrame?) {
+    override fun onHeaders(frame: HeadersFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onPriority(frame: PriorityFrame?) {
+    override fun onPriority(frame: PriorityFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onReset(frame: ResetFrame?) {
+    override fun onReset(frame: ResetFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onSettings(frame: SettingsFrame?) {
+    override fun onSettings(frame: SettingsFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onPushPromise(frame: PushPromiseFrame?) {
+    override fun onPushPromise(frame: PushPromiseFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -183,23 +260,23 @@ class AsyncHttp2Connection(
             }
         } else {
             val replay = PingFrame(frame.payload, true)
-            sendControlFrame(replay)
+            sendControlFrame(null, replay)
         }
     }
 
-    override fun onGoAway(frame: GoAwayFrame?) {
+    override fun onGoAway(frame: GoAwayFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onWindowUpdate(frame: WindowUpdateFrame?) {
+    override fun onWindowUpdate(frame: WindowUpdateFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onStreamFailure(streamId: Int, error: Int, reason: String?) {
+    override fun onStreamFailure(streamId: Int, error: Int, reason: String) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onConnectionFailure(error: Int, reason: String?) {
+    override fun onConnectionFailure(error: Int, reason: String) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

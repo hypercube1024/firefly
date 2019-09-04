@@ -49,9 +49,9 @@ class Http2ClientConnection(
         if (windowDelta > 0) {
             val windowUpdateFrame = WindowUpdateFrame(0, windowDelta)
             asyncHttp2Connection.updateRecvWindow(windowDelta)
-            asyncHttp2Connection.sendControlFrame(prefaceFrame, settingsFrame, windowUpdateFrame)
+            asyncHttp2Connection.sendControlFrame(null, prefaceFrame, settingsFrame, windowUpdateFrame)
         } else {
-            asyncHttp2Connection.sendControlFrame(prefaceFrame, settingsFrame)
+            asyncHttp2Connection.sendControlFrame(null, prefaceFrame, settingsFrame)
         }
     }
 

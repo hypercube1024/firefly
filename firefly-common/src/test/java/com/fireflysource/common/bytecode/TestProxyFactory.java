@@ -16,7 +16,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 /**
  * @author Pengtao Qiu
  */
-public class TestProxyFactory {
+class TestProxyFactory {
 
     static Stream<Arguments> parametersProvider() {
         return Stream.of(

@@ -69,7 +69,7 @@ class AsyncHttp2Stream(
     }
 
     private fun sendControlFrame(frame: Frame, result: Consumer<Result<Void>>) {
-        asyncHttp2Connection.sendControlFrame(frame)
+        asyncHttp2Connection.sendControlFrame(this, frame)
             .thenAccept { result.accept(Result.SUCCESS) }
             .exceptionally {
                 result.accept(Result.createFailedResult(it))
@@ -195,12 +195,13 @@ class AsyncHttp2Stream(
 
     override fun toString(): String {
         return String.format(
-            "%s@%x#%d{sendWindow=%s,recvWindow=%s,reset=%b/%b,%s,age=%d}",
+            "%s@%x#%d{sendWindow=%s,recvWindow=%s,local=%b,reset=%b/%b,%s,age=%d}",
             "AsyncHttp2Stream",
             hashCode(),
             getId(),
             sendWindow,
             recvWindow,
+            local,
             localReset,
             remoteReset,
             closeState,
