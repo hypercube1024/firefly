@@ -183,8 +183,7 @@ class AsyncHttp2Connection(
                             }
                         }
                         FrameType.GO_AWAY -> {
-                            @Suppress("BlockingMethodInNonBlockingContext")
-                            tcpConnection.close()
+                            tcpConnection.shutdownOutput()
                         }
                         FrameType.WINDOW_UPDATE -> {
                             flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)

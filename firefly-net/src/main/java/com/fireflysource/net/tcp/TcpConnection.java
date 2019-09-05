@@ -27,7 +27,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     /**
      * If you start automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
      *
-     * @param messageConsumer Received message.
+     * @param messageConsumer Receiving message consumer.
      * @return The current connection.
      */
     TcpConnection onRead(Consumer<ByteBuffer> messageConsumer);
@@ -80,7 +80,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     /**
      * Close the current connection and wait the remaining messages of the channel have been sent completely.
      *
-     * @param result When the connection is closed, the framework will invoke this function.
+     * @param result When the connection close, the framework will invoke this function.
      * @return The current connection.
      */
     TcpConnection close(Consumer<Result<Void>> result);
@@ -105,6 +105,20 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
      * @return If return true, the connection output channel has been closed. You can't send any messages to the remote endpoint.
      */
     boolean isShutdownOutput();
+
+    /**
+     * Shutdown the connection for reading without closing the connection.
+     *
+     * @return The current connection.
+     */
+    TcpConnection shutdownInput();
+
+    /**
+     * Shutdown the connection for writing without closing the connection.
+     *
+     * @return The current connection.
+     */
+    TcpConnection shutdownOutput();
 
     /**
      * Write the message to the remote endpoint.

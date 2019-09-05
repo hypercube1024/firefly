@@ -40,8 +40,8 @@ abstract class AbstractTcpConnection(
         val startReadingException = StartReadingException()
     }
 
-    private val inChannel: Channel<ByteBuffer> = Channel(UNLIMITED)
-    private val outChannel: Channel<Message> = Channel(UNLIMITED)
+    private val inputChannel: Channel<ByteBuffer> = Channel(UNLIMITED)
+    private val outputChannel: Channel<Message> = Channel(UNLIMITED)
 
     private val inputShutdownState: AtomicBoolean = AtomicBoolean(false)
     private val outputShutdownState: AtomicBoolean = AtomicBoolean(false)
@@ -56,12 +56,12 @@ abstract class AbstractTcpConnection(
     private val exceptionConsumers: MutableList<Consumer<Throwable>> = mutableListOf()
 
     private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
-        inChannel.offer(buf)
+        inputChannel.offer(buf)
     }
 
     private val writingJob = launchGlobally(messageThread) {
         while (!isShutdownOutput) {
-            writeMessage(outChannel.receive())
+            writeMessage(outputChannel.receive())
         }
     }
 
@@ -240,7 +240,7 @@ abstract class AbstractTcpConnection(
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
         if (closeRequest.compareAndSet(false, true)) {
             closeConsumer = result
-            outChannel.offer(Shutdown(result))
+            outputChannel.offer(Shutdown(result))
         } else {
             result.accept(closeFailureResult)
         }
@@ -251,20 +251,26 @@ abstract class AbstractTcpConnection(
         close(discard())
     }
 
-    private fun shutdownInput() {
+    override fun shutdownInput(): TcpConnection {
         if (inputShutdownState.compareAndSet(false, true)) {
             try {
                 socketChannel.shutdownInput()
             } catch (e: ClosedChannelException) {
-                log.warn { "The channel is closed. $id" }
+                log.warn { "The channel closed. $id" }
             } catch (e: IOException) {
                 log.warn { "Shutdown input exception. $id" }
             }
         }
+        return this
+    }
+
+    override fun shutdownOutput(): TcpConnection {
+        launchGlobally(messageThread) { shutdownOutputAwaitRemainingMessage() }
+        return this
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    private suspend fun shutdownOutput() {
+    private suspend fun shutdownOutputAwaitRemainingMessage() {
         if (outputShutdownState.compareAndSet(false, true)) {
             try {
                 writeRemainingMessage()
@@ -280,8 +286,8 @@ abstract class AbstractTcpConnection(
 
     private suspend fun writeRemainingMessage() {
         while (true) {
-            val msg = outChannel.poll() ?: break
-            log.debug { "The channel will close. Writes the remaining data in the out channel." }
+            val msg = outputChannel.poll() ?: break
+            log.debug { "The channel will close. Writes the remaining data in the output channel." }
             writeMessage(msg)
         }
     }
@@ -292,7 +298,7 @@ abstract class AbstractTcpConnection(
     }
 
     private suspend fun shutdownInputAndOutput() {
-        shutdownOutput()
+        shutdownOutputAwaitRemainingMessage()
         shutdownInput()
     }
 
@@ -318,7 +324,7 @@ abstract class AbstractTcpConnection(
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
         if (checkWriteState(result)) {
-            outChannel.offer(Buffer(byteBuffer, result))
+            outputChannel.offer(Buffer(byteBuffer, result))
         }
         return this
     }
@@ -330,7 +336,7 @@ abstract class AbstractTcpConnection(
         result: Consumer<Result<Long>>
     ): TcpConnection {
         if (checkWriteState(result)) {
-            outChannel.offer(Buffers(byteBuffers, offset, length, result))
+            outputChannel.offer(Buffers(byteBuffers, offset, length, result))
         }
         return this
     }
@@ -342,7 +348,7 @@ abstract class AbstractTcpConnection(
         result: Consumer<Result<Long>>
     ): TcpConnection {
         if (checkWriteState(result)) {
-            outChannel.offer(BufferList(byteBufferList, offset, length, result))
+            outputChannel.offer(BufferList(byteBufferList, offset, length, result))
         }
         return this
     }
@@ -356,7 +362,7 @@ abstract class AbstractTcpConnection(
         }
     }
 
-    override fun getInputChannel(): Channel<ByteBuffer> = inChannel
+    override fun getInputChannel(): Channel<ByteBuffer> = inputChannel
 }
 
 class CloseRequestException : IllegalStateException("The close request has been sent")

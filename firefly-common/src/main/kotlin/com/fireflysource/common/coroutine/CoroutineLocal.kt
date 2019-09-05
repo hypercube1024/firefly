@@ -88,10 +88,10 @@ object CoroutineLocalContext {
     fun getAttributes(): MutableMap<String, Any>? = ctx.get()
 
     /**
-     * Get a attribute in the current coroutine scope.
+     * Get an attribute in the current coroutine scope.
      *
      * @param name The attribute name.
-     * @return A attribute in the current coroutine scope.
+     * @return An attribute in the current coroutine scope.
      */
     inline fun <reified T> getAttr(name: String): T? {
         val value = getAttributes()?.get(name)
@@ -99,11 +99,11 @@ object CoroutineLocalContext {
     }
 
     /**
-     * Get a attribute in the current coroutine scope, if the value is null return the default value.
+     * Get an attribute in the current coroutine scope, if the value is null return the default value.
      *
      * @param name The attribute name.
      * @param func Get the default value lazily.
-     * @return A attribute in the current coroutine scope or the default value.
+     * @return An attribute in the current coroutine scope or the default value.
      */
     inline fun <reified T> getAttrOrDefault(name: String, func: (String) -> T): T {
         val value = getAttributes()?.get(name)
@@ -111,10 +111,10 @@ object CoroutineLocalContext {
     }
 
     /**
-     * Set a attribute in the current coroutine scope.
+     * Set an attribute in the current coroutine scope.
      *
-     * @param name The attribute name.
-     * @param value The attribute value.
+     * @param name The attribute's name.
+     * @param value The attribute's value.
      * @return The old value in the current coroutine scope.
      */
     inline fun <reified T : Any> setAttr(name: String, value: T): T? {
@@ -127,7 +127,7 @@ object CoroutineLocalContext {
      * to null), attempts to compute its value using the given mapping
      * function and enters it into this map unless null.
      *
-     * @param name The attribute name.
+     * @param name The attribute's name.
      * @param func The mapping function.
      * @return The value in the current coroutine scope.
      */
@@ -140,11 +140,11 @@ object CoroutineLocalContext {
 }
 
 /**
- * Starts a asynchronous task and inherits parent coroutine local attributes.
+ * Starts an asynchronous task and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
  * @param attributes The attributes are merged into the parent coroutine context element.
- * @param block The coroutine code.
+ * @param block The coroutine code block.
  * @return The deferred task result.
  */
 fun <T> asyncWithAttr(
@@ -163,11 +163,11 @@ fun <T> asyncGlobally(
 }
 
 /**
- * Starts a asynchronous task without the return value and inherits parent coroutine local attributes.
+ * Starts an asynchronous task without the return value and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
  * @param attributes The attributes are merged into the parent coroutine context element.
- * @param block The coroutine code.
+ * @param block The coroutine code block.
  * @return The current job.
  */
 fun launchWithAttr(
@@ -186,12 +186,12 @@ fun launchGlobally(
 }
 
 /**
- * Starts a asynchronous task waiting the result and inherits parent coroutine local attributes.
+ * Starts an asynchronous task waiting the result and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
  * @param attributes The attributes are merged into the parent coroutine context element.
- * @param block The coroutine code.
- * @return The task result.
+ * @param block The coroutine code block.
+ * @return The result.
  */
 suspend fun <T> withAttr(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
