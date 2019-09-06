@@ -50,7 +50,7 @@ class TestAioServerAndClient {
     fun test(bufType: String, enableSecure: Boolean) = runBlocking {
         val host = "localhost"
         val port = 4001
-        val maxMsgCount = 10_000
+        val maxMsgCount = 1_000
         val connectionNum = 4
         val msgCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)
@@ -156,17 +156,12 @@ class TestAioServerAndClient {
     fun testTimeout() = runBlocking {
         val host = "localhost"
         val port = 4001
-        val server = AioTcpServer(TcpConfig(1)).listen(host, port)
-        val serverAcceptsConnJob = launchGlobally(singleThread) {
-            val tcpConnChannel = server.tcpConnectionChannel
-            acceptLoop@ while (true) {
-                val conn = tcpConnChannel.receive()
-                conn.startReading()
-                delay(Duration.ofSeconds(2))
-                assertTrue(conn.isClosed)
-                break@acceptLoop
-            }
-        }
+
+        AioTcpServer(TcpConfig(1)).onAcceptAsync { conn ->
+            conn.startReading()
+            delay(Duration.ofSeconds(2))
+            assertTrue(conn.isClosed)
+        }.listen(host, port)
 
         val client = AioTcpClient(TcpConfig(1))
         val conn = client.connect(host, port).await()
@@ -178,7 +173,6 @@ class TestAioServerAndClient {
         assertTrue(conn.closeTime > 0)
 
         val stopTime = measureTimeMillis {
-            serverAcceptsConnJob.cancel()
             stopAll()
         }
         println("stop success. $stopTime")
