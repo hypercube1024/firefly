@@ -5,6 +5,8 @@ import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.launch
+import com.fireflysource.net.tcp.onAcceptAsync
+import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
@@ -48,33 +50,24 @@ class TestAioServerAndClient {
     fun test(bufType: String, enableSecure: Boolean) = runBlocking {
         val host = "localhost"
         val port = 4001
-        val maxMsgCount = 1_000
+        val maxMsgCount = 10_000
         val connectionNum = 4
         val msgCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)
 
-        AioTcpServer(tcpConfig).onAccept { connection ->
+        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
+            val inputChannel = connection.startReadingAndAwaitHandshake().inputChannel
+            recvLoop@ while (true) {
+                val buf = inputChannel.receive()
 
-            connection.startReading().launch {
-                if (connection.isSecureConnection) {
-                    val success = connection.onHandshakeComplete().await()
-                    println("server TLS handshake success. $success")
-                }
+                readBufLoop@ while (buf.hasRemaining()) {
+                    val num = buf.int
+                    msgCount.incrementAndGet()
 
-                val inputChannel = connection.inputChannel
-
-                recvLoop@ while (true) {
-                    val buf = inputChannel.receive()
-
-                    readBufLoop@ while (buf.hasRemaining()) {
-                        val num = buf.int
-                        msgCount.incrementAndGet()
-
-                        val newBuf = ByteBuffer.allocate(4)
-                        newBuf.putInt(num).flip()
-                        connection.write(newBuf, discard())
-                    }
+                    val newBuf = ByteBuffer.allocate(4)
+                    newBuf.putInt(num).flip()
+                    connection.write(newBuf, discard())
                 }
             }
         }.listen(host, port)
@@ -101,7 +94,6 @@ class TestAioServerAndClient {
                             readBufLoop@ while (buf.hasRemaining()) {
                                 val num = buf.int
                                 msgCount.incrementAndGet()
-//                                println("client ------> $num")
 
                                 if (num == maxCount) {
                                     connection.close()
@@ -165,7 +157,7 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = 4001
         val server = AioTcpServer(TcpConfig(1)).listen(host, port)
-        val serverAcceptsConnJob = launchGlobally {
+        val serverAcceptsConnJob = launchGlobally(singleThread) {
             val tcpConnChannel = server.tcpConnectionChannel
             acceptLoop@ while (true) {
                 val conn = tcpConnChannel.receive()

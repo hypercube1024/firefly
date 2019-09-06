@@ -5,6 +5,7 @@ import com.fireflysource.common.coroutine.launchGlobally
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.future.await
 
 fun TcpConnection.launch(block: suspend CoroutineScope.() -> Unit): Job = launchGlobally(coroutineDispatcher, block)
 
@@ -20,3 +21,19 @@ fun <T> TcpConnection.asyncWithAttr(
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
 ): Deferred<T> = com.fireflysource.common.coroutine.asyncWithAttr(coroutineDispatcher, attributes, block)
+
+suspend fun TcpConnection.startReadingAndAwaitHandshake(): TcpConnection {
+    this.startReading()
+    if (this.isSecureConnection) {
+        this.onHandshakeComplete().await()
+    }
+    return this
+}
+
+fun TcpServer.onAcceptAsync(block: suspend CoroutineScope.(connection: TcpConnection) -> Unit): TcpServer {
+    this.onAccept { connection ->
+        val job = connection.launch { block.invoke(this, connection) }
+        connection.onClose { job.cancel() }
+    }
+    return this
+}
