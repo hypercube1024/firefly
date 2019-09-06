@@ -171,7 +171,6 @@ class AsyncHttp2Connection(
                             }
                         }
                         FrameType.RST_STREAM -> {
-                            val resetFrame = frame as ResetFrame
                             if (stream != null && stream is AsyncHttp2Stream) {
                                 stream.close()
                                 removeStream(stream)

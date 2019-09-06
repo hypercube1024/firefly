@@ -6,11 +6,10 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadEx
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import kotlinx.coroutines.CoroutineDispatcher
-import java.lang.Math.abs
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.abs
 
 /**
  * The asynchronous channel group and message thread group. It manages the IO and message threads.

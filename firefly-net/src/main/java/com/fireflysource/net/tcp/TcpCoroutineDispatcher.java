@@ -10,4 +10,11 @@ public interface TcpCoroutineDispatcher {
      * @return The coroutine dispatcher of this connection.
      */
     CoroutineDispatcher getCoroutineDispatcher();
+
+    /**
+     * Execute a task in the current TCP message process thread.
+     *
+     * @param runnable The runnable task.
+     */
+    void execute(Runnable runnable);
 }

@@ -1,8 +1,10 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
+import com.fireflysource.net.tcp.launch
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
@@ -51,44 +53,37 @@ class TestAioServerAndClient {
         val msgCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)
 
-        val server = AioTcpServer(tcpConfig).listen(host, port)
-        val serverAcceptsConnJob = launchGlobally {
-            val tcpConnChannel = server.tcpConnectionChannel
-            acceptLoop@ while (true) {
-                val connection = tcpConnChannel.receive()
-                println("accept connection. ${connection.id}")
-                connection.startReading()
+        AioTcpServer(tcpConfig).onAccept { connection ->
+            println("accept connection. ${connection.id}")
 
+            connection.startReading().launch {
                 if (connection.isSecureConnection) {
                     val success = connection.onHandshakeComplete().await()
                     println("server TLS handshake success. $success")
                 }
 
-                launchGlobally(connection.coroutineDispatcher) {
-                    val inputChannel = connection.inputChannel
+                val inputChannel = connection.inputChannel
 
-                    recvLoop@ while (true) {
-                        val buf = inputChannel.receive()
+                recvLoop@ while (true) {
+                    val buf = inputChannel.receive()
 
-                        readBufLoop@ while (buf.hasRemaining()) {
-                            val num = buf.int
-                            msgCount.incrementAndGet()
-//                            println("server =======> $num")
+                    readBufLoop@ while (buf.hasRemaining()) {
+                        val num = buf.int
+                        msgCount.incrementAndGet()
 
-                            val newBuf = ByteBuffer.allocate(4)
-                            newBuf.putInt(num).flip()
-                            connection.write(newBuf, discard())
-                        }
+                        val newBuf = ByteBuffer.allocate(4)
+                        newBuf.putInt(num).flip()
+                        connection.write(newBuf, discard())
                     }
                 }
             }
-        }
+        }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)
         val time = measureTimeMillis {
             val maxCount = maxMsgCount / connectionNum
             val jobs = (1..connectionNum).map {
-                launchGlobally {
+                launchGlobally(singleThread) {
                     val connection = client.connect(host, port).await()
                     println("create connection. ${connection.id}")
                     connection.startReading()
@@ -98,7 +93,7 @@ class TestAioServerAndClient {
                         println("client TLS handshake success. $success")
                     }
 
-                    val readingJob = launchGlobally(connection.coroutineDispatcher) {
+                    val readingJob = connection.launch {
                         val inputChannel = connection.inputChannel
                         recvLoop@ while (true) {
                             val buf = inputChannel.receive()
@@ -160,7 +155,6 @@ class TestAioServerAndClient {
         println("success. $time ms, ${throughput.roundToLong()} qps")
 
         val stopTime = measureTimeMillis {
-            serverAcceptsConnJob.cancel()
             stopAll()
         }
         println("stop success. $stopTime")

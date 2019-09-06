@@ -67,6 +67,10 @@ abstract class AbstractTcpConnection(
 
     override fun getCoroutineDispatcher(): CoroutineDispatcher = messageThread
 
+    override fun execute(runnable: Runnable) {
+        launchGlobally(messageThread) { runnable.run() }
+    }
+
     override fun isClosed(): Boolean = socketChannelClosed.get()
 
     override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
