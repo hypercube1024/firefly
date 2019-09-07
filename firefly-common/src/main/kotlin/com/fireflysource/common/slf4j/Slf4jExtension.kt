@@ -18,77 +18,77 @@ object LazyLoggerKt {
 /**
  * Lazy add a log message if isTraceEnabled is true
  */
-inline fun Logger.trace(msg: () -> Any?) {
-    if (isTraceEnabled) trace(msg.toStringSafe())
+inline fun Logger.trace(crossinline msg: () -> Any?) {
+    if (isTraceEnabled) trace(toStringSafe(msg))
 }
 
 /**
  * Lazy add a log message if isDebugEnabled is true
  */
-inline fun Logger.debug(msg: () -> Any?) {
-    if (isDebugEnabled) debug(msg.toStringSafe())
+inline fun Logger.debug(crossinline msg: () -> Any?) {
+    if (isDebugEnabled) debug(toStringSafe(msg))
 }
 
 /**
  * Lazy add a log message if isInfoEnabled is true
  */
-inline fun Logger.info(msg: () -> Any?) {
-    if (isInfoEnabled) info(msg.toStringSafe())
+inline fun Logger.info(crossinline msg: () -> Any?) {
+    if (isInfoEnabled) info(toStringSafe(msg))
 }
 
 /**
  * Lazy add a log message if isWarnEnabled is true
  */
-inline fun Logger.warn(msg: () -> Any?) {
-    if (isWarnEnabled) warn(msg.toStringSafe())
+inline fun Logger.warn(crossinline msg: () -> Any?) {
+    if (isWarnEnabled) warn(toStringSafe(msg))
 }
 
 /**
  * Lazy add a log message if isErrorEnabled is true
  */
-inline fun Logger.error(msg: () -> Any?) {
-    if (isErrorEnabled) error(msg.toStringSafe())
+inline fun Logger.error(crossinline msg: () -> Any?) {
+    if (isErrorEnabled) error(toStringSafe(msg))
 }
 
 /**
  * Lazy add a log message with throwable payload if isTraceEnabled is true
  */
-inline fun Logger.trace(msg: () -> Any?, t: Throwable) {
-    if (isTraceEnabled) trace(msg.toStringSafe(), t)
+inline fun Logger.trace(throwable: Throwable, crossinline msg: () -> Any?) {
+    if (isTraceEnabled) trace(toStringSafe(msg), throwable)
 }
 
 /**
  * Lazy add a log message with throwable payload if isDebugEnabled is true
  */
-inline fun Logger.debug(msg: () -> Any?, t: Throwable) {
-    if (isDebugEnabled) debug(msg.toStringSafe(), t)
+inline fun Logger.debug(throwable: Throwable, crossinline msg: () -> Any?) {
+    if (isDebugEnabled) debug(toStringSafe(msg), throwable)
 }
 
 /**
  * Lazy add a log message with throwable payload if isInfoEnabled is true
  */
-inline fun Logger.info(msg: () -> Any?, t: Throwable) {
-    if (isInfoEnabled) info(msg.toStringSafe(), t)
+inline fun Logger.info(throwable: Throwable, crossinline msg: () -> Any?) {
+    if (isInfoEnabled) info(toStringSafe(msg), throwable)
 }
 
 /**
  * Lazy add a log message with throwable payload if isWarnEnabled is true
  */
-inline fun Logger.warn(msg: () -> Any?, t: Throwable) {
-    if (isWarnEnabled) warn(msg.toStringSafe(), t)
+inline fun Logger.warn(throwable: Throwable, crossinline msg: () -> Any?) {
+    if (isWarnEnabled) warn(toStringSafe(msg), throwable)
 }
 
 /**
  * Lazy add a log message with throwable payload if isErrorEnabled is true
  */
-inline fun Logger.error(msg: () -> Any?, t: Throwable) {
-    if (isErrorEnabled) error(msg.toStringSafe(), t)
+inline fun Logger.error(throwable: Throwable, crossinline msg: () -> Any?) {
+    if (isErrorEnabled) error(toStringSafe(msg), throwable)
 }
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun (() -> Any?).toStringSafe(): String {
+
+inline fun toStringSafe(crossinline msg: () -> Any?): String {
     return try {
-        invoke().toString()
+        msg.invoke().toString()
     } catch (e: Exception) {
         "KtLogger: get message exception: $e"
     }
