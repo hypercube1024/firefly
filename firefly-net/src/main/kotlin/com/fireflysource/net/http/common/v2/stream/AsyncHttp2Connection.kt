@@ -17,9 +17,11 @@ import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
+import java.nio.channels.ClosedChannelException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import java.util.function.UnaryOperator
 
@@ -41,6 +43,7 @@ class AsyncHttp2Connection(
     private val localStreamCount = AtomicInteger()
     private val remoteStreamCount = AtomicBiInteger()
     private val lastRemoteStreamId = AtomicInteger()
+    private val closeState = AtomicReference(CloseState.NOT_CLOSED)
 
     private val sendWindow = AtomicInteger(HttpConfig.DEFAULT_WINDOW_SIZE)
     private val recvWindow = AtomicInteger(HttpConfig.DEFAULT_WINDOW_SIZE)
@@ -153,53 +156,69 @@ class AsyncHttp2Connection(
                         }
                     }
                     else -> {
+                        // ignore the other control frame types
                     }
                 }
 
-                try {
-                    val bytes = tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
-                    writeBytes += bytes
+                val bytes = tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
+                writeBytes += bytes
 
-                    when (frame.type) {
-                        FrameType.HEADERS -> {
-                            val headersFrame = frame as HeadersFrame
-                            if (stream != null && stream is AsyncHttp2Stream) {
-                                listener.onStreamOpened(this@AsyncHttp2Connection, stream)
-                                if (stream.updateClose(headersFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
-                                    removeStream(stream)
-                                }
-                            }
-                        }
-                        FrameType.RST_STREAM -> {
-                            if (stream != null && stream is AsyncHttp2Stream) {
-                                stream.close()
+                when (frame.type) {
+                    FrameType.HEADERS -> {
+                        val headersFrame = frame as HeadersFrame
+                        if (stream != null && stream is AsyncHttp2Stream) {
+                            listener.onStreamOpened(this@AsyncHttp2Connection, stream)
+                            if (stream.updateClose(headersFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
                                 removeStream(stream)
                             }
                         }
-                        FrameType.PUSH_PROMISE -> {
-                            if (stream != null && stream is AsyncHttp2Stream) {
-                                stream.updateClose(true, CloseState.Event.RECEIVED)
-                            }
-                        }
-                        FrameType.GO_AWAY -> {
-                            tcpConnection.shutdownOutput()
-                        }
-                        FrameType.WINDOW_UPDATE -> {
-                            flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
-                        }
-                        FrameType.DISCONNECT -> {
-                            TODO("not implemented")
-                        }
-                        else -> {
-
+                    }
+                    FrameType.RST_STREAM -> {
+                        if (stream != null && stream is AsyncHttp2Stream) {
+                            stream.close()
+                            removeStream(stream)
                         }
                     }
-                } catch (e: Exception) {
-                    TODO("not implemented")
+                    FrameType.PUSH_PROMISE -> {
+                        if (stream != null && stream is AsyncHttp2Stream) {
+                            stream.updateClose(true, CloseState.Event.RECEIVED)
+                        }
+                    }
+                    FrameType.GO_AWAY -> {
+                        tcpConnection.shutdownOutput()
+                    }
+                    FrameType.WINDOW_UPDATE -> {
+                        flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
+                    }
+                    FrameType.DISCONNECT -> {
+                        terminate(ClosedChannelException())
+                    }
+                    else -> {
+                        // ignore the other control frame types
+                    }
                 }
             }
             writeBytes
         }.asCompletableFuture()
+
+    private fun terminate(cause: Throwable) {
+        while (true) {
+            when (val current = closeState.get()) {
+                CloseState.NOT_CLOSED, CloseState.LOCALLY_CLOSED, CloseState.REMOTELY_CLOSED -> {
+                    if (closeState.compareAndSet(current, CloseState.CLOSED)) {
+                        for (stream in http2StreamMap.values) {
+                            (stream as AsyncHttp2Stream).close()
+                        }
+                        streams.clear()
+                        tcpConnection.close()
+                    }
+                }
+                else -> {
+                    // ignore the other close states
+                }
+            }
+        }
+    }
 
     override fun priority(frame: PriorityFrame, result: Consumer<Result<Void>>): Int {
         val stream = http2StreamMap[frame.streamId]
