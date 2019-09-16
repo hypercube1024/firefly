@@ -54,7 +54,7 @@ class TestHuffman {
     void testEncode8859Only(char bad) {
         String s = "bad '" + bad + "'";
 
-        assertThrows(IllegalArgumentException.class, () -> Huffman.octetsNeeded(s));
+        assertEquals(-1, Huffman.octetsNeeded(s));
         assertThrows(BufferOverflowException.class, () -> Huffman.encode(BufferUtils.allocate(32), s));
     }
 

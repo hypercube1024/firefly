@@ -1,7 +1,5 @@
 package com.fireflysource.net.http.common.v2.hpack;
 
-import com.fireflysource.common.collection.trie.ArrayTrie;
-import com.fireflysource.common.collection.trie.Trie;
 import com.fireflysource.common.object.TypeUtils;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
@@ -10,19 +8,24 @@ import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
 import com.fireflysource.net.http.common.model.*;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static com.fireflysource.net.http.common.v2.hpack.HpackContext.Entry;
+import static com.fireflysource.net.http.common.v2.hpack.HpackContext.StaticEntry;
 
 public class HpackEncoder {
-
-    final static EnumSet<HttpHeader> DO_NOT_HUFFMAN =
+    private static final LazyLogger LOG = SystemLogger.create(HpackEncoder.class);
+    private static final HttpField[] STATUSES = new HttpField[599];
+    static final EnumSet<HttpHeader> DO_NOT_HUFFMAN =
             EnumSet.of(
                     HttpHeader.AUTHORIZATION,
                     HttpHeader.CONTENT_MD5,
                     HttpHeader.PROXY_AUTHENTICATE,
                     HttpHeader.PROXY_AUTHORIZATION);
-    final static EnumSet<HttpHeader> DO_NOT_INDEX =
+    static final EnumSet<HttpHeader> DO_NOT_INDEX =
             EnumSet.of(
                     // HttpHeader.C_PATH,  // TODO more data needed
                     // HttpHeader.DATE,    // TODO more data needed
@@ -42,22 +45,19 @@ public class HpackEncoder {
                     HttpHeader.LAST_MODIFIED,
                     HttpHeader.SET_COOKIE,
                     HttpHeader.SET_COOKIE2);
-    final static EnumSet<HttpHeader> __NEVER_INDEX =
+    static final EnumSet<HttpHeader> NEVER_INDEX =
             EnumSet.of(
                     HttpHeader.AUTHORIZATION,
                     HttpHeader.SET_COOKIE,
                     HttpHeader.SET_COOKIE2);
-    private static final LazyLogger LOG = SystemLogger.create(HpackEncoder.class);
-    private final static HttpField[] HTTP_STATUS = new HttpField[599];
-    private static final PreEncodedHttpField CONNECTION_TE = new PreEncodedHttpField(HttpHeader.CONNECTION, "te");
+    private static final EnumSet<HttpHeader> IGNORED_HEADERS = EnumSet.of(HttpHeader.CONNECTION, HttpHeader.KEEP_ALIVE,
+            HttpHeader.PROXY_CONNECTION, HttpHeader.TRANSFER_ENCODING, HttpHeader.UPGRADE);
     private static final PreEncodedHttpField TE_TRAILERS = new PreEncodedHttpField(HttpHeader.TE, "trailers");
-    private static final Trie<Boolean> specialHopHeaders = new ArrayTrie<>(6);
 
     static {
-        for (HttpStatus.Code code : HttpStatus.Code.values())
-            HTTP_STATUS[code.getCode()] = new PreEncodedHttpField(HttpHeader.C_STATUS, Integer.toString(code.getCode()));
-        specialHopHeaders.put("close", true);
-        specialHopHeaders.put("te", true);
+        for (HttpStatus.Code code : HttpStatus.Code.values()) {
+            STATUSES[code.getCode()] = new PreEncodedHttpField(HttpHeader.C_STATUS, Integer.toString(code.getCode()));
+        }
     }
 
     private final HpackContext context;
@@ -85,25 +85,6 @@ public class HpackEncoder {
         this.localMaxDynamicTableSize = localMaxDynamicTableSize;
         this.maxHeaderListSize = maxHeaderListSize;
         debug = LOG.isDebugEnabled();
-    }
-
-    static void encodeValue(ByteBuffer buffer, boolean huffman, String value) {
-        if (huffman) {
-            // huffman literal value
-            buffer.put((byte) 0x80);
-            NBitInteger.encode(buffer, 7, Huffman.octetsNeeded(value));
-            Huffman.encode(buffer, value);
-        } else {
-            // add literal assuming iso_8859_1
-            buffer.put((byte) 0x00);
-            NBitInteger.encode(buffer, 7, value.length());
-            for (int i = 0; i < value.length(); i++) {
-                char c = value.charAt(i);
-                if (c < ' ' || c > 127)
-                    throw new IllegalArgumentException();
-                buffer.put((byte) c);
-            }
-        }
     }
 
     public int getMaxHeaderListSize() {
@@ -151,30 +132,33 @@ public class HpackEncoder {
         } else if (metadata.isResponse()) {
             MetaData.Response response = (MetaData.Response) metadata;
             int code = response.getStatus();
-            HttpField status = code < HTTP_STATUS.length ? HTTP_STATUS[code] : null;
+            HttpField status = code < STATUSES.length ? STATUSES[code] : null;
             if (status == null)
                 status = new HttpField.IntValueHttpField(HttpHeader.C_STATUS, code);
             encode(buffer, status);
         }
 
-        // Add all non-connection fields.
+        // Remove fields as specified in RFC 7540, 8.1.2.2.
         HttpFields fields = metadata.getFields();
         if (fields != null) {
-            Set<String> hopHeaders = fields.getCSV(HttpHeader.CONNECTION, false).stream()
-                                           .filter(v -> specialHopHeaders.get(v) == Boolean.TRUE)
-                                           .map(StringUtils::asciiToLowerCase)
-                                           .collect(Collectors.toSet());
+            // For example: Connection: Close, TE, Upgrade, Custom.
+            Set<String> hopHeaders = null;
+            for (String value : fields.getCSV(HttpHeader.CONNECTION, false)) {
+                if (hopHeaders == null)
+                    hopHeaders = new HashSet<>();
+                hopHeaders.add(StringUtils.asciiToLowerCase(value));
+            }
             for (HttpField field : fields) {
-                if (field.getHeader() == HttpHeader.CONNECTION)
+                HttpHeader header = field.getHeader();
+                if (header != null && IGNORED_HEADERS.contains(header))
                     continue;
-                if (!hopHeaders.isEmpty() && hopHeaders.contains(StringUtils.asciiToLowerCase(field.getName())))
+                if (header == HttpHeader.TE) {
+                    if (field.contains("trailers"))
+                        encode(buffer, TE_TRAILERS);
                     continue;
-                if (field.getHeader() == HttpHeader.TE) {
-                    if (!field.contains("trailers"))
-                        continue;
-                    encode(buffer, CONNECTION_TE);
-                    encode(buffer, TE_TRAILERS);
                 }
+                if (hopHeaders != null && hopHeaders.contains(StringUtils.asciiToLowerCase(field.getName())))
+                    continue;
                 encode(buffer, field);
             }
         }
@@ -202,19 +186,19 @@ public class HpackEncoder {
         if (field.getValue() == null)
             field = new HttpField(field.getHeader(), field.getName(), "");
 
-        int field_size = field.getName().length() + field.getValue().length();
-        headerListSize += field_size + 32;
+        int fieldSize = field.getName().length() + field.getValue().length();
+        headerListSize += fieldSize + 32;
 
         final int p = debug ? buffer.position() : -1;
 
         String encoding = null;
 
         // Is there an entry for the field?
-        HpackContext.Entry entry = context.get(field);
+        Entry entry = context.get(field);
         if (entry != null) {
             // Known field entry, so encode it as indexed
             if (entry.isStatic()) {
-                buffer.put(((HpackContext.StaticEntry) entry).getEncodedField());
+                buffer.put(((StaticEntry) entry).getEncodedField());
                 if (debug)
                     encoding = "IdxFieldS1";
             } else {
@@ -234,7 +218,7 @@ public class HpackEncoder {
             // Select encoding strategy
             if (header == null) {
                 // Select encoding strategy for unknown header names
-                HpackContext.Entry name = context.get(field.getName());
+                Entry name = context.get(field.getName());
 
                 if (field instanceof PreEncodedHttpField) {
                     int i = buffer.position();
@@ -265,7 +249,7 @@ public class HpackEncoder {
                 }
             } else {
                 // Select encoding strategy for known header names
-                HpackContext.Entry name = context.get(header);
+                Entry name = context.get(header);
 
                 if (field instanceof PreEncodedHttpField) {
                     // Preencoded field
@@ -278,17 +262,17 @@ public class HpackEncoder {
                 } else if (DO_NOT_INDEX.contains(header)) {
                     // Non indexed field
                     indexed = false;
-                    boolean never_index = __NEVER_INDEX.contains(header);
+                    boolean neverIndex = NEVER_INDEX.contains(header);
                     boolean huffman = !DO_NOT_HUFFMAN.contains(header);
-                    encodeName(buffer, never_index ? (byte) 0x10 : (byte) 0x00, 4, header.getValue(), name);
+                    encodeName(buffer, neverIndex ? (byte) 0x10 : (byte) 0x00, 4, header.getValue(), name);
                     encodeValue(buffer, huffman, field.getValue());
 
                     if (debug)
                         encoding = "Lit" +
                                 ((name == null) ? "HuffN" : ("IdxN" + (name.isStatic() ? "S" : "") + (1 + NBitInteger.octectsNeeded(4, context.index(name))))) +
                                 (huffman ? "HuffV" : "LitV") +
-                                (never_index ? "!!Idx" : "!Idx");
-                } else if (field_size >= context.getMaxDynamicTableSize() || header == HttpHeader.CONTENT_LENGTH && field.getValue().length() > 2) {
+                                (neverIndex ? "!!Idx" : "!Idx");
+                } else if (fieldSize >= context.getMaxDynamicTableSize() || header == HttpHeader.CONTENT_LENGTH && field.getValue().length() > 2) {
                     // Non indexed if field too large or a content length for 3 digits or more
                     indexed = false;
                     encodeName(buffer, (byte) 0x00, 4, header.getValue(), name);
@@ -319,7 +303,7 @@ public class HpackEncoder {
         }
     }
 
-    private void encodeName(ByteBuffer buffer, byte mask, int bits, String name, HpackContext.Entry entry) {
+    private void encodeName(ByteBuffer buffer, byte mask, int bits, String name, Entry entry) {
         buffer.put(mask);
         if (entry == null) {
             // leave name index bits as 0
@@ -329,6 +313,40 @@ public class HpackEncoder {
             Huffman.encodeLC(buffer, name);
         } else {
             NBitInteger.encode(buffer, bits, context.index(entry));
+        }
+    }
+
+    static void encodeValue(ByteBuffer buffer, boolean huffman, String value) {
+        if (huffman) {
+            // huffman literal value
+            buffer.put((byte) 0x80);
+
+            int needed = Huffman.octetsNeeded(value);
+            if (needed >= 0) {
+                NBitInteger.encode(buffer, 7, needed);
+                Huffman.encode(buffer, value);
+            } else {
+                // Not iso_8859_1
+                byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+                NBitInteger.encode(buffer, 7, Huffman.octetsNeeded(bytes));
+                Huffman.encode(buffer, bytes);
+            }
+        } else {
+            // add literal assuming iso_8859_1
+            buffer.put((byte) 0x00).mark();
+            NBitInteger.encode(buffer, 7, value.length());
+            for (int i = 0; i < value.length(); i++) {
+                char c = value.charAt(i);
+                if (c < ' ' || c > 127) {
+                    // Not iso_8859_1, so re-encode as UTF-8
+                    buffer.reset();
+                    byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+                    NBitInteger.encode(buffer, 7, bytes.length);
+                    buffer.put(bytes, 0, bytes.length);
+                    return;
+                }
+                buffer.put((byte) c);
+            }
         }
     }
 }

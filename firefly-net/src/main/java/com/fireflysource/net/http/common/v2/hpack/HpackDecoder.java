@@ -4,6 +4,7 @@ import com.fireflysource.common.object.TypeUtils;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpHeader;
+import com.fireflysource.net.http.common.model.HttpTokens;
 import com.fireflysource.net.http.common.model.MetaData;
 import com.fireflysource.net.http.common.v2.hpack.HpackContext.Entry;
 import org.slf4j.Logger;
@@ -17,9 +18,10 @@ import java.nio.ByteBuffer;
  * </p>
  */
 public class HpackDecoder {
-    public static final Logger log = SystemLogger.create(HpackDecoder.class);
+    public static final Logger LOG = SystemLogger.create(HpackDecoder.class);
 
-    public final static HttpField.LongValueHttpField CONTENT_LENGTH_0 = new HttpField.LongValueHttpField(HttpHeader.CONTENT_LENGTH, 0L);
+    public static final HttpField.LongValueHttpField CONTENT_LENGTH_0 =
+            new HttpField.LongValueHttpField(HttpHeader.CONTENT_LENGTH, 0L);
 
     private final HpackContext context;
     private final MetaDataBuilder builder;
@@ -35,29 +37,17 @@ public class HpackDecoder {
         builder = new MetaDataBuilder(maxHeaderSize);
     }
 
-    public static String toASCIIString(ByteBuffer buffer, int length) {
-        StringBuilder builder = new StringBuilder(length);
-        int position = buffer.position();
-        int start = buffer.arrayOffset() + position;
-        int end = start + length;
-        buffer.position(position + length);
-        byte[] array = buffer.array();
-        for (int i = start; i < end; i++)
-            builder.append((char) (0x7f & array[i]));
-        return builder.toString();
-    }
-
     public HpackContext getHpackContext() {
         return context;
     }
 
-    public void setLocalMaxDynamicTableSize(int localMaxDynamicTableSize) {
-        this.localMaxDynamicTableSize = localMaxDynamicTableSize;
+    public void setLocalMaxDynamicTableSize(int localMaxdynamciTableSize) {
+        localMaxDynamicTableSize = localMaxdynamciTableSize;
     }
 
     public MetaData decode(ByteBuffer buffer) throws HpackException.SessionException, HpackException.StreamException {
-        if (log.isDebugEnabled())
-            log.debug(String.format("CtxTbl[%x] decoding %d octets", context.hashCode(), buffer.remaining()));
+        if (LOG.isDebugEnabled())
+            LOG.debug(String.format("CtxTbl[%x] decoding %d octets", context.hashCode(), buffer.remaining()));
 
         // If the buffer is big, don't even think about decoding it
         if (buffer.remaining() > builder.getMaxSize())
@@ -66,9 +56,9 @@ public class HpackDecoder {
         boolean emitted = false;
 
         while (buffer.hasRemaining()) {
-            if (log.isDebugEnabled() && buffer.hasArray()) {
+            if (LOG.isDebugEnabled() && buffer.hasArray()) {
                 int l = Math.min(buffer.remaining(), 32);
-                log.debug("decode {}{}",
+                LOG.debug("decode {}{}",
                         TypeUtils.toHexString(buffer.array(), buffer.arrayOffset() + buffer.position(), l),
                         l < buffer.remaining() ? "..." : "");
             }
@@ -82,17 +72,17 @@ public class HpackDecoder {
                     throw new HpackException.SessionException("Unknown index %d", index);
 
                 if (entry.isStatic()) {
-                    if (log.isDebugEnabled())
-                        log.debug("decode IdxStatic {}", entry);
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("decode IdxStatic {}", entry);
                     // emit field
                     emitted = true;
                     builder.emit(entry.getHttpField());
 
                     // TODO copy and add to reference set if there is room
-                    // context.add(entry.getHttpField());
+                    // _context.add(entry.getHttpField());
                 } else {
-                    if (log.isDebugEnabled())
-                        log.debug("decode Idx {}", entry);
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("decode Idx {}", entry);
                     // emit
                     emitted = true;
                     builder.emit(entry.getHttpField());
@@ -105,15 +95,15 @@ public class HpackDecoder {
                 String value;
 
                 boolean indexed;
-                int name_index;
+                int nameIndex;
 
                 switch (f) {
                     case 2: // 7.3
                     case 3: // 7.3
                         // change table size
                         int size = NBitInteger.decode(buffer, 5);
-                        if (log.isDebugEnabled())
-                            log.debug("decode resize=" + size);
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("decode resize=" + size);
                         if (size > localMaxDynamicTableSize)
                             throw new IllegalArgumentException();
                         if (emitted)
@@ -124,7 +114,7 @@ public class HpackDecoder {
                     case 0: // 7.2.2
                     case 1: // 7.2.3
                         indexed = false;
-                        name_index = NBitInteger.decode(buffer, 4);
+                        nameIndex = NBitInteger.decode(buffer, 4);
                         break;
 
                     case 4: // 7.2.1
@@ -132,7 +122,7 @@ public class HpackDecoder {
                     case 6: // 7.2.1
                     case 7: // 7.2.1
                         indexed = true;
-                        name_index = NBitInteger.decode(buffer, 6);
+                        nameIndex = NBitInteger.decode(buffer, 6);
                         break;
 
                     default:
@@ -142,10 +132,10 @@ public class HpackDecoder {
                 boolean huffmanName = false;
 
                 // decode the name
-                if (name_index > 0) {
-                    Entry name_entry = context.get(name_index);
-                    name = name_entry.getHttpField().getName();
-                    header = name_entry.getHttpField().getHeader();
+                if (nameIndex > 0) {
+                    Entry nameEntry = context.get(nameIndex);
+                    name = nameEntry.getHttpField().getName();
+                    header = nameEntry.getHttpField().getHeader();
                 } else {
                     huffmanName = (buffer.get() & 0x80) == 0x80;
                     int length = NBitInteger.decode(buffer, 7);
@@ -154,11 +144,30 @@ public class HpackDecoder {
                         name = Huffman.decode(buffer, length);
                     else
                         name = toASCIIString(buffer, length);
-                    for (int i = 0; i < name.length(); i++) {
+                    check:
+                    for (int i = name.length(); i-- > 0; ) {
                         char c = name.charAt(i);
-                        if (c >= 'A' && c <= 'Z') {
-                            builder.streamException("Uppercase header name %s", name);
+                        if (c > 0xff) {
+                            builder.streamException("Illegal header name %s", name);
                             break;
+                        }
+                        HttpTokens.Token token = HttpTokens.TOKENS[0xFF & c];
+                        switch (token.getType()) {
+                            case ALPHA:
+                                if (c >= 'A' && c <= 'Z') {
+                                    builder.streamException("Uppercase header name %s", name);
+                                    break check;
+                                }
+                                break;
+
+                            case COLON:
+                            case TCHAR:
+                            case DIGIT:
+                                break;
+
+                            default:
+                                builder.streamException("Illegal header name %s", name);
+                                break check;
                         }
                     }
                     header = HttpHeader.CACHE.get(name);
@@ -206,10 +215,10 @@ public class HpackDecoder {
                     }
                 }
 
-                if (log.isDebugEnabled()) {
-                    log.debug("decoded '{}' by {}/{}/{}",
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("decoded '{}' by {}/{}/{}",
                             field,
-                            name_index > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"),
+                            nameIndex > 0 ? "IdxName" : (huffmanName ? "HuffName" : "LitName"),
                             huffmanValue ? "HuffVal" : "LitVal",
                             indexed ? "Idx" : "");
                 }
@@ -225,6 +234,19 @@ public class HpackDecoder {
         }
 
         return builder.build();
+    }
+
+    public static String toASCIIString(ByteBuffer buffer, int length) {
+        StringBuilder builder = new StringBuilder(length);
+        int position = buffer.position();
+        int start = buffer.arrayOffset() + position;
+        int end = start + length;
+        buffer.position(position + length);
+        byte[] array = buffer.array();
+        for (int i = start; i < end; i++) {
+            builder.append((char) (0x7f & array[i]));
+        }
+        return builder.toString();
     }
 
     @Override

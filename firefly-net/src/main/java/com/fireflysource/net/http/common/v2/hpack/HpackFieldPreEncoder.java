@@ -24,7 +24,7 @@ public class HpackFieldPreEncoder implements HttpFieldPreEncoder {
 
         if (not_indexed) {
             // Non indexed field
-            boolean never_index = HpackEncoder.__NEVER_INDEX.contains(header);
+            boolean never_index = HpackEncoder.NEVER_INDEX.contains(header);
             huffman = !HpackEncoder.DO_NOT_HUFFMAN.contains(header);
             buffer.put(never_index ? (byte) 0x10 : (byte) 0x00);
             bits = 4;

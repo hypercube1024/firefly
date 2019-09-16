@@ -44,11 +44,13 @@ public class MetaDataBuilder {
     public void emit(HttpField field) throws HpackException.SessionException {
         HttpHeader header = field.getHeader();
         String name = field.getName();
+        if (name == null || name.length() == 0)
+            throw new HpackException.SessionException("Header size 0");
         String value = field.getValue();
         int fieldSize = name.length() + (value == null ? 0 : value.length());
         size += fieldSize + 32;
         if (size > maxSize)
-            throw new HpackException.SessionException("Header Size %d > %d", size, maxSize);
+            throw new HpackException.SessionException("Header size %d > %d", size, maxSize);
 
         if (field instanceof StaticTableHttpField) {
             StaticTableHttpField staticField = (StaticTableHttpField) field;
