@@ -111,8 +111,7 @@ class AsyncHttp2Stream(
         while (true) {
             when (val current = closeState.get()) {
                 NOT_CLOSED -> {
-                    if (closeState.compareAndSet(current, REMOTELY_CLOSED))
-                        return false
+                    if (closeState.compareAndSet(current, REMOTELY_CLOSED)) return false
                 }
                 LOCALLY_CLOSING -> {
                     if (closeState.compareAndSet(current, CLOSING)) {

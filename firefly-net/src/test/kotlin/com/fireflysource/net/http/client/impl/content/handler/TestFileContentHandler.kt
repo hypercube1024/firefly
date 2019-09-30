@@ -22,7 +22,7 @@ class TestFileContentHandler {
     @BeforeEach
     fun init() {
         Files.createFile(tmpFile)
-        println("create file: $tmpFile")
+        println("create a file: $tmpFile")
     }
 
     @AfterEach

@@ -113,6 +113,7 @@ class Http1ClientConnection(
                             generator.generateRequest(null, null, chunkBuffer, contentBuffer, last)) {
                             FLUSH -> flushChunkedContentBuffer()
                             CONTINUE -> {
+                                // ignore the generator result continue.
                             }
                             else -> throw IllegalStateException("The HTTP client generator result error. $result")
                         }
@@ -127,6 +128,7 @@ class Http1ClientConnection(
                         when (val result = generator.generateRequest(null, null, chunkBuffer, null, true)) {
                             FLUSH -> flushChunkBuffer()
                             DONE -> {
+                                // ignore the generator result done.
                             }
                             else -> throw IllegalStateException("The HTTP client generator result error. $result")
                         }
