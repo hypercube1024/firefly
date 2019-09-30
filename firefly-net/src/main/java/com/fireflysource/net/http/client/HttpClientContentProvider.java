@@ -17,7 +17,7 @@ public interface HttpClientContentProvider extends InputChannel {
     long length();
 
     /**
-     * Convert fixed length content to a ByteBuffer. If the content is the data stream, return a empty ByteBuffer.
+     * Convert fixed length content to a ByteBuffer. If the content is the data stream, return an empty ByteBuffer.
      *
      * @return The ByteBuffer.
      */
