@@ -29,34 +29,38 @@ import static com.fireflysource.net.http.common.model.HttpTokens.EndOfContent;
  * case and white space of some methods/headers
  */
 public class HttpGenerator {
-    public final static boolean STRICT = Boolean.getBoolean("com.fireflysource.net.http.common.v1.encoder.HttpGenerator.STRICT");
+    private final static LazyLogger LOG = SystemLogger.create(HttpGenerator.class);
+
     public static final MetaData.Response CONTINUE_100_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 100, null, null, -1);
     public static final MetaData.Response PROGRESS_102_INFO = new MetaData.Response(HttpVersion.HTTP_1_1, 102, null, null, -1);
     public final static MetaData.Response RESPONSE_500_INFO =
             new MetaData.Response(HttpVersion.HTTP_1_1, INTERNAL_SERVER_ERROR_500, null, new HttpFields() {{
                 put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE);
             }}, 0);
+
     // other statics
     public static final int CHUNK_SIZE = 12;
-    private final static LazyLogger LOG = SystemLogger.create(HttpGenerator.class);
     private final static byte[] COLON_SPACE = new byte[]{':', ' '};
     private final static int SEND_SERVER = 0x01;
     private final static int SEND_XPOWEREDBY = 0x02;
     private final static Trie<Boolean> ASSUMED_CONTENT_METHODS = new ArrayTrie<>(8);
+
     // common _content
     private static final byte[] ZERO_CHUNK = {(byte) '0', (byte) '\015', (byte) '\012'};
     private static final byte[] LAST_CHUNK = {(byte) '0', (byte) '\015', (byte) '\012', (byte) '\015', (byte) '\012'};
-    private static final byte[] CONTENT_LENGTH_0 = StringUtils.getBytes("Content-Length: 0\015\012");
-    private static final byte[] CONNECTION_CLOSE = StringUtils.getBytes("Connection: close\015\012");
+    private static final byte[] CONTENT_LENGTH_0 = StringUtils.getBytes("Content-Length: 0\r\n");
+    private static final byte[] CONNECTION_CLOSE = StringUtils.getBytes("Connection: close\r\n");
     private static final byte[] HTTP_1_1_SPACE = StringUtils.getBytes(HttpVersion.HTTP_1_1 + " ");
-    private static final byte[] TRANSFER_ENCODING_CHUNKED = StringUtils.getBytes("Transfer-Encoding: chunked\015\012");
+    private static final byte[] TRANSFER_ENCODING_CHUNKED = StringUtils.getBytes("Transfer-Encoding: chunked\r\n");
     private static final byte[][] SEND = new byte[][]{
             new byte[0],
-            StringUtils.getBytes("Server: Firefly(" + ProjectVersion.getValue() + ")\015\012"),
-            StringUtils.getBytes("X-Powered-By: Firefly(" + ProjectVersion.getValue() + ")\015\012"),
-            StringUtils.getBytes("Server: Firefly(" + ProjectVersion.getValue() + ")\015\012X-Powered-By: Firefly(" + ProjectVersion.getValue() + ")\015\012")
+            StringUtils.getBytes("Server: Firefly(" + ProjectVersion.getValue() + ")\r\n"),
+            StringUtils.getBytes("X-Powered-By: Firefly(" + ProjectVersion.getValue() + ")\r\n"),
+            StringUtils.getBytes(
+                    "Server: Firefly(" + ProjectVersion.getValue() + ")\r\n" +
+                            "X-Powered-By: Firefly(" + ProjectVersion.getValue() + ")\r\n")
     };
-    private static final PreparedResponse[] PREPREPARED = new PreparedResponse[HttpStatus.MAX_CODE + 1];
+    private static final PreparedResponse[] PREPARED_RESPONSE = new PreparedResponse[HttpStatus.MAX_CODE + 1];
 
     static {
         ASSUMED_CONTENT_METHODS.put(HttpMethod.POST.getValue(), Boolean.TRUE);
@@ -66,7 +70,7 @@ public class HttpGenerator {
     static {
         int versionLength = HttpVersion.HTTP_1_1.toString().length();
 
-        for (int i = 0; i < PREPREPARED.length; i++) {
+        for (int i = 0; i < PREPARED_RESPONSE.length; i++) {
             HttpStatus.Code code = HttpStatus.getCode(i);
             if (code == null)
                 continue;
@@ -83,10 +87,10 @@ public class HttpGenerator {
             line[versionLength + 5 + reason.length()] = HttpTokens.CARRIAGE_RETURN;
             line[versionLength + 6 + reason.length()] = HttpTokens.LINE_FEED;
 
-            PREPREPARED[i] = new PreparedResponse();
-            PREPREPARED[i].schemeCode = Arrays.copyOfRange(line, 0, versionLength + 5);
-            PREPREPARED[i].reason = Arrays.copyOfRange(line, versionLength + 5, line.length - 2);
-            PREPREPARED[i].responseLine = line;
+            PREPARED_RESPONSE[i] = new PreparedResponse();
+            PREPARED_RESPONSE[i].schemeCode = Arrays.copyOfRange(line, 0, versionLength + 5);
+            PREPARED_RESPONSE[i].reason = Arrays.copyOfRange(line, versionLength + 5, line.length - 2);
+            PREPARED_RESPONSE[i].responseLine = line;
         }
     }
 
@@ -111,10 +115,11 @@ public class HttpGenerator {
     }
 
     public static void setServerVersion(String serverVersion) {
-        SEND[SEND_SERVER] = StringUtils.getBytes("Server: " + serverVersion + "\015\012");
-        SEND[SEND_XPOWEREDBY] = StringUtils.getBytes("X-Powered-By: " + serverVersion + "\015\012");
-        SEND[SEND_SERVER | SEND_XPOWEREDBY] = StringUtils.getBytes("Server: " + serverVersion + "\015\012X-Powered-By: " +
-                serverVersion + "\015\012");
+        SEND[SEND_SERVER] = StringUtils.getBytes("Server: " + serverVersion + "\r\n");
+        SEND[SEND_XPOWEREDBY] = StringUtils.getBytes("X-Powered-By: " + serverVersion + "\r\n");
+        SEND[SEND_SERVER | SEND_XPOWEREDBY] = StringUtils.getBytes(
+                "Server: " + serverVersion + "\r\n" +
+                        "X-Powered-By: " + serverVersion + "\r\n");
     }
 
     private static void putContentLength(ByteBuffer header, long contentLength) {
@@ -128,7 +133,7 @@ public class HttpGenerator {
     }
 
     public static byte[] getReasonBuffer(int code) {
-        PreparedResponse status = code < PREPREPARED.length ? PREPREPARED[code] : null;
+        PreparedResponse status = code < PREPARED_RESPONSE.length ? PREPARED_RESPONSE[code] : null;
         if (status != null)
             return status.reason;
         return null;
@@ -233,7 +238,7 @@ public class HttpGenerator {
     }
 
     /**
-     * @return true if known to be persistent
+     * @return true, if known to be persistent
      */
     public boolean isPersistent() {
         return Boolean.TRUE.equals(persistent);
@@ -530,7 +535,7 @@ public class HttpGenerator {
     private void generateResponseLine(MetaData.Response response, ByteBuffer header) {
         // Look for prepared response line
         int status = response.getStatus();
-        PreparedResponse preprepared = status < PREPREPARED.length ? PREPREPARED[status] : null;
+        PreparedResponse preprepared = status < PREPARED_RESPONSE.length ? PREPARED_RESPONSE[status] : null;
         String reason = response.getReason();
         if (preprepared != null) {
             if (reason == null)
@@ -680,10 +685,10 @@ public class HttpGenerator {
                     throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Content for no content response");
             }
         }
-        // Else if we are HTTP/1.1 and the content length is unknown and we are either persistent
-        // or it is a request with content (which cannot EOF) or the app has requested chunking
+        // Else if we are HTTP/1.1, and the content length is unknown, and we are either persistent
+        // or it is a request with content (which cannot EOF), or the app has requested chunk
         else if (http11 && (chunked_hint || content_length < 0 && (persistent || assumed_content_request))) {
-            // we use chunking
+            // we use chunk
             endOfContent = EndOfContent.CHUNKED_CONTENT;
 
             // try to use user supplied encoding as it may have other values.
@@ -698,7 +703,7 @@ public class HttpGenerator {
             } else
                 throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Bad Transfer-Encoding");
         }
-        // Else if we known the content length and are a request or a persistent response,
+        // Else if we have known the content length and are a request or a persistent response,
         else if (content_length >= 0 && (request != null || persistent)) {
             // Use the content length
             endOfContent = EndOfContent.CONTENT_LENGTH;
@@ -765,12 +770,12 @@ public class HttpGenerator {
     public enum Result {
         NEED_CHUNK,             // Need a small chunk buffer of CHUNK_SIZE
         NEED_INFO,              // Need the request/response metadata info
-        NEED_HEADER,            // Need a buffer to build HTTP headers into
+        NEED_HEADER,            // Need buffer to build HTTP headers into
         NEED_CHUNK_TRAILER,     // Need a large chunk buffer for last chunk and trailers
         FLUSH,                  // The buffers previously generated should be flushed
         CONTINUE,               // Continue generating the message
         SHUTDOWN_OUT,           // Need EOF to be signaled
-        DONE                    // Message generation complete
+        DONE                    // The current phase of generation is complete
     }
 
     // Build cache of response lines for status
