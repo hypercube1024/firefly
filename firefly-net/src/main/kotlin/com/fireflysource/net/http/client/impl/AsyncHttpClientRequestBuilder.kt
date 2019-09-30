@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.func.Callback
-import com.fireflysource.common.io.OutputChannel
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
@@ -78,11 +77,6 @@ class AsyncHttpClientRequestBuilder(
         contentProvider(StringContentProvider(content, charset))
 
     override fun body(buffer: ByteBuffer): HttpClientRequestBuilder = contentProvider(ByteBufferContentProvider(buffer))
-
-    override fun output(outputChannel: Consumer<OutputChannel>): HttpClientRequestBuilder {
-        httpRequest.outputChannel = outputChannel
-        return this
-    }
 
     override fun contentProvider(contentProvider: HttpClientContentProvider?): HttpClientRequestBuilder {
         httpRequest.contentProvider = contentProvider

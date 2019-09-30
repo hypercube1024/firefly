@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.func.Callback;
-import com.fireflysource.common.io.OutputChannel;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpField;
@@ -113,14 +112,6 @@ public interface HttpClientRequestBuilder {
      * @return RequestBuilder
      */
     HttpClientRequestBuilder body(ByteBuffer buffer);
-
-    /**
-     * Set the HTTP body data output channel.
-     *
-     * @param outputChannel The output channel consumer.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder output(Consumer<OutputChannel> outputChannel);
 
     /**
      * Set the content provider. When you submit the request, the HTTP client will send the data that read from the content provider.
