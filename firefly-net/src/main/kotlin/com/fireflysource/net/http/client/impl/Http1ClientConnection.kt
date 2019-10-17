@@ -66,9 +66,7 @@ class Http1ClientConnection(
 
 
     init {
-        tcpConnection.onClose {
-            acceptRequestJob.cancel()
-        }
+        tcpConnection.onClose { acceptRequestJob.cancel() }
     }
 
     private suspend fun parseResponse(): HttpClientResponse {
@@ -93,50 +91,9 @@ class Http1ClientConnection(
     private suspend fun encodeRequestAndFlushData(requestMessage: RequestMessage) {
         genLoop@ while (true) {
             when (generator.state) {
-                START -> {
-                    val hasContent = (requestMessage.contentProvider != null)
-                    val result =
-                        generator.generateRequest(requestMessage.request, headerBuffer, null, null, !hasContent)
-                    Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
-                    flushHeaderBuffer()
-                }
-                COMMITTED -> {
-                    requireNotNull(requestMessage.contentProvider)
-                    val pos = BufferUtils.flipToFill(contentBuffer)
-                    val len = requestMessage.contentProvider.read(contentBuffer).await()
-                    BufferUtils.flipToFlush(contentBuffer, pos)
-
-                    val last = (len == -1)
-
-                    if (generator.isChunking) {
-                        when (val result =
-                            generator.generateRequest(null, null, chunkBuffer, contentBuffer, last)) {
-                            FLUSH -> flushChunkedContentBuffer()
-                            CONTINUE -> {
-                                // ignore the generator result continue.
-                            }
-                            else -> throw IllegalStateException("The HTTP client generator result error. $result")
-                        }
-                    } else {
-                        val result = generator.generateRequest(null, null, null, contentBuffer, last)
-                        Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
-                        flushContentBuffer()
-                    }
-                }
-                COMPLETING -> {
-                    if (generator.isChunking) {
-                        when (val result = generator.generateRequest(null, null, chunkBuffer, null, true)) {
-                            FLUSH -> flushChunkBuffer()
-                            DONE -> {
-                                // ignore the generator result done.
-                            }
-                            else -> throw IllegalStateException("The HTTP client generator result error. $result")
-                        }
-                    } else {
-                        val result = generator.generateRequest(null, null, null, null, true)
-                        Assert.state(result == DONE, "The HTTP client generator result error. $result")
-                    }
-                }
+                START -> generateHeader(requestMessage)
+                COMMITTED -> generateContent(requestMessage)
+                COMPLETING -> completeContent()
                 END -> {
                     @Suppress("BlockingMethodInNonBlockingContext")
                     requestMessage.contentProvider?.close()
@@ -144,6 +101,67 @@ class Http1ClientConnection(
                 }
                 else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")
             }
+        }
+    }
+
+    private suspend fun generateHeader(requestMessage: RequestMessage) {
+        val hasContent = (requestMessage.contentProvider != null)
+        val result =
+            generator.generateRequest(requestMessage.request, headerBuffer, null, null, !hasContent)
+        Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
+        flushHeaderBuffer()
+    }
+
+    private suspend fun generateContent(requestMessage: RequestMessage) {
+        requireNotNull(requestMessage.contentProvider)
+        val pos = BufferUtils.flipToFill(contentBuffer)
+        val len = requestMessage.contentProvider.read(contentBuffer).await()
+        BufferUtils.flipToFlush(contentBuffer, pos)
+
+        val last = (len == -1)
+
+        if (generator.isChunking) {
+            when (val result =
+                generator.generateRequest(null, null, chunkBuffer, contentBuffer, last)) {
+                FLUSH -> flushChunkedContentBuffer()
+                CONTINUE -> {
+                    // ignore the generator result continue.
+                }
+                DONE -> {
+                    completeContent()
+                }
+                else -> throw IllegalStateException("The HTTP client generator result error. $result")
+            }
+        } else {
+            when (val result =
+                generator.generateRequest(null, null, null, contentBuffer, last)) {
+                FLUSH -> flushContentBuffer()
+                CONTINUE -> {
+                    // ignore the generator result continue.
+                }
+                DONE -> {
+                    completeContent()
+                }
+                else -> throw IllegalStateException("The HTTP client generator result error. $result")
+            }
+        }
+    }
+
+    private suspend fun completeContent() {
+        if (generator.isChunking) {
+            when (val result = generator.generateRequest(null, null, chunkBuffer, null, true)) {
+                FLUSH -> flushChunkBuffer()
+                CONTINUE, DONE -> {
+                    // ignore the generator result done.
+                }
+                else -> throw IllegalStateException("The HTTP client generator result error. $result")
+            }
+        } else {
+            val result = generator.generateRequest(null, null, null, null, true)
+            Assert.state(
+                result == DONE || result == CONTINUE,
+                "The HTTP client generator result error. $result"
+            )
         }
     }
 

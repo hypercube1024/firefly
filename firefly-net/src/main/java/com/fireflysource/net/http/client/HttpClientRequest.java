@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.func.Callback;
-import com.fireflysource.common.io.OutputChannel;
 import com.fireflysource.net.http.common.codec.UrlEncoded;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
@@ -146,20 +145,6 @@ public interface HttpClientRequest {
      * @return the content provider.
      */
     HttpClientContentProvider getContentProvider();
-
-    /**
-     * Set the output channel consumer.
-     *
-     * @param outputChannel The output channel consumer.
-     */
-    void setOutputChannel(Consumer<OutputChannel> outputChannel);
-
-    /**
-     * Get the output channel consumer.
-     *
-     * @return The output channel consumer.
-     */
-    Consumer<OutputChannel> getOutputChannel();
 
     /**
      * Set the HTTP header complete callback.

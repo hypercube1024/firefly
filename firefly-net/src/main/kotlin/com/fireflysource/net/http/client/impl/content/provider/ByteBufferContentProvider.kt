@@ -4,10 +4,11 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
+import kotlin.math.min
 
-class ByteBufferContentProvider(private val content: ByteBuffer) : HttpClientContentProvider {
+open class ByteBufferContentProvider(private val content: ByteBuffer) : HttpClientContentProvider {
 
-    private val buffer = content.duplicate()
+    protected val buffer = content.duplicate()
     private var open = true
 
     override fun isOpen(): Boolean = open
@@ -27,7 +28,7 @@ class ByteBufferContentProvider(private val content: ByteBuffer) : HttpClientCon
             return endStream()
         }
 
-        val len = Math.min(content.remaining(), byteBuffer.remaining())
+        val len = min(content.remaining(), byteBuffer.remaining())
         val to = ByteArray(len)
         content.get(to)
         byteBuffer.put(to)

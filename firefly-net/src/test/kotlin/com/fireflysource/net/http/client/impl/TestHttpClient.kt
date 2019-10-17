@@ -1,7 +1,9 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.io.IO
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.net.http.client.HttpClientFactory
+import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.codec.CookieGenerator
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import kotlin.math.roundToLong
 import kotlin.random.Random
@@ -23,6 +26,7 @@ class TestHttpClient {
 
     private lateinit var address: InetSocketAddress
     private lateinit var httpServer: HttpServer
+    private val content = (1..50000).joinToString("") { it.toString() }
 
     @BeforeEach
     fun init() {
@@ -39,6 +43,26 @@ class TestHttpClient {
                 CookieGenerator.generateSetCookie(Cookie("cookie2", "value2"))
             )
             val body = "test client ok".toByteArray(StandardCharsets.UTF_8)
+            exg.sendResponseHeaders(200, body.size.toLong())
+            exg.responseBody.use { out -> out.write(body) }
+            exg.close()
+        }
+
+        httpServer.createContext("/testChunkedEncoding") { exg ->
+            val requestBody = exg.requestBody.use { IO.toString(it, StandardCharsets.UTF_8) }
+            assertEquals(content, requestBody)
+
+            val body = "test chunked encoding success".toByteArray(StandardCharsets.UTF_8)
+            exg.sendResponseHeaders(200, body.size.toLong())
+            exg.responseBody.use { out -> out.write(body) }
+            exg.close()
+        }
+
+        httpServer.createContext("/testNoChunkedEncoding") { exg ->
+            val requestBody = exg.requestBody.use { IO.toString(it, StandardCharsets.UTF_8) }
+            assertEquals(content, requestBody)
+
+            val body = "test no chunked encoding success".toByteArray(StandardCharsets.UTF_8)
             exg.sendResponseHeaders(200, body.size.toLong())
             exg.responseBody.use { out -> out.write(body) }
             exg.close()
@@ -77,5 +101,46 @@ class TestHttpClient {
 
         val throughput = count / (time / 1000.00)
         println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    fun testChunkedEncoding() = runBlocking {
+        val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
+        println("data length: ${data.remaining()}")
+
+        val httpClient = HttpClientFactory.create()
+        val response = httpClient
+            .get("http://${address.hostName}:${address.port}/testChunkedEncoding")
+            .contentProvider(object : ByteBufferContentProvider(data) {
+
+                override fun length(): Long = -1
+
+                override fun isOpen(): Boolean = buffer.hasRemaining()
+
+            }).submit().await()
+
+        assertEquals(HttpStatus.OK_200, response.status)
+        assertEquals("test chunked encoding success", response.stringBody)
+    }
+
+    @Test
+    fun testNoChunkedEncoding() = runBlocking {
+        val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
+        val length = data.remaining()
+        println("data length: $length")
+
+        val httpClient = HttpClientFactory.create()
+        val response = httpClient
+            .get("http://${address.hostName}:${address.port}/testNoChunkedEncoding")
+            .contentProvider(object : ByteBufferContentProvider(data) {
+
+                override fun length(): Long = length.toLong()
+
+                override fun isOpen(): Boolean = buffer.hasRemaining()
+
+            }).submit().await()
+
+        assertEquals(HttpStatus.OK_200, response.status)
+        assertEquals("test no chunked encoding success", response.stringBody)
     }
 }

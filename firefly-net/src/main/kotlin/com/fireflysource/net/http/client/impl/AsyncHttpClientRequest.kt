@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.func.Callback
-import com.fireflysource.common.io.OutputChannel
 import com.fireflysource.common.string.StringUtils
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
@@ -34,7 +33,6 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var cookies: MutableList<Cookie>? = null
     private var trailerSupplier: Supplier<HttpFields>? = null
     private var contentProvider: HttpClientContentProvider? = null
-    private var outputChannel: Consumer<OutputChannel>? = null
     private var headerComplete: Consumer<HttpClientResponse>? = null
     private var contentHandler: HttpClientContentHandler? = null
     private var contentComplete: Consumer<HttpClientResponse>? = null
@@ -106,12 +104,6 @@ class AsyncHttpClientRequest : HttpClientRequest {
     }
 
     override fun getContentProvider(): HttpClientContentProvider? = contentProvider
-
-    override fun getOutputChannel(): Consumer<OutputChannel>? = outputChannel
-
-    override fun setOutputChannel(outputChannel: Consumer<OutputChannel>?) {
-        this.outputChannel = outputChannel
-    }
 
     override fun setHeaderComplete(headerComplete: Consumer<HttpClientResponse>?) {
         this.headerComplete = headerComplete
