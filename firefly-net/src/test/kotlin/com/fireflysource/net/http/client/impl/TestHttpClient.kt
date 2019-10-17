@@ -80,7 +80,7 @@ class TestHttpClient {
     }
 
     @Test
-    fun test() = runBlocking {
+    fun testNoContent() = runBlocking {
         val httpClient = HttpClientFactory.create()
         val count = 1_000
 
@@ -104,13 +104,13 @@ class TestHttpClient {
     }
 
     @Test
-    fun testChunkedEncoding() = runBlocking {
+    fun testContentWithChunkedEncoding() = runBlocking {
         val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
         println("data length: ${data.remaining()}")
 
         val httpClient = HttpClientFactory.create()
         val response = httpClient
-            .get("http://${address.hostName}:${address.port}/testChunkedEncoding")
+            .post("http://${address.hostName}:${address.port}/testChunkedEncoding")
             .contentProvider(object : ByteBufferContentProvider(data) {
 
                 override fun length(): Long = -1
@@ -124,14 +124,14 @@ class TestHttpClient {
     }
 
     @Test
-    fun testNoChunkedEncoding() = runBlocking {
+    fun testContentWithoutChunkedEncoding() = runBlocking {
         val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
         val length = data.remaining()
         println("data length: $length")
 
         val httpClient = HttpClientFactory.create()
         val response = httpClient
-            .get("http://${address.hostName}:${address.port}/testNoChunkedEncoding")
+            .post("http://${address.hostName}:${address.port}/testNoChunkedEncoding")
             .contentProvider(object : ByteBufferContentProvider(data) {
 
                 override fun length(): Long = length.toLong()
