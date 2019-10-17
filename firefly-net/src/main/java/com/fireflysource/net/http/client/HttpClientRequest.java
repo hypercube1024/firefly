@@ -1,8 +1,6 @@
 package com.fireflysource.net.http.client;
 
-import com.fireflysource.common.func.Callback;
 import com.fireflysource.net.http.common.codec.UrlEncoded;
-import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpURI;
@@ -10,7 +8,6 @@ import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -147,22 +144,6 @@ public interface HttpClientRequest {
     HttpClientContentProvider getContentProvider();
 
     /**
-     * Set the HTTP header complete callback.
-     *
-     * @param headerComplete The HTTP header complete callback. When the HTTP client receives all HTTP headers,
-     *                       it will execute this action.
-     */
-    void setHeaderComplete(Consumer<HttpClientResponse> headerComplete);
-
-    /**
-     * Get the HTTP header complete callback.
-     *
-     * @return The HTTP header complete callback. When the HTTP client receives all HTTP headers,
-     * it will execute this action.
-     */
-    Consumer<HttpClientResponse> getHeaderComplete();
-
-    /**
      * Set the HTTP content receiving callback.
      *
      * @param contentHandler The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
@@ -177,68 +158,6 @@ public interface HttpClientRequest {
      * it will execute this action. This action will be executed many times.
      */
     HttpClientContentHandler getContentHandler();
-
-    /**
-     * Set the HTTP content complete callback.
-     *
-     * @param contentComplete The HTTP content complete callback. When the HTTP client receives the HTTP body is complete,
-     *                        it will execute this action.
-     */
-    void setContentComplete(Consumer<HttpClientResponse> contentComplete);
-
-    /**
-     * Get the HTTP content complete callback.
-     *
-     * @return The HTTP content complete callback. When the HTTP client receives the HTTP body is complete,
-     * it will execute this action.
-     */
-    Consumer<HttpClientResponse> getContentComplete();
-
-    /**
-     * Set the HTTP message complete callback.
-     *
-     * @param messageComplete The HTTP message complete callback. When the HTTP client receives the complete HTTP message
-     *                        that contains HTTP headers and body, it will execute this action.
-     */
-    void setMessageComplete(Consumer<HttpClientResponse> messageComplete);
-
-    /**
-     * Get the HTTP message complete callback.
-     *
-     * @return The HTTP message complete callback. When the HTTP client receives the complete HTTP message
-     * that contains HTTP headers and body, it will execute this action.
-     */
-    Consumer<HttpClientResponse> getMessageComplete();
-
-    /**
-     * Set the bad message callback.
-     *
-     * @param badMessage The bad message callback. When the HTTP client parses an incorrect message format,
-     *                   it will execute this action.
-     */
-    void setBadMessage(Consumer<BadMessageException> badMessage);
-
-    /**
-     * Get the bad message callback.
-     *
-     * @return The bad message callback. When the HTTP client parses an incorrect message format,
-     * it will execute this action.
-     */
-    Consumer<BadMessageException> getBadMessage();
-
-    /**
-     * Set the early EOF callback.
-     *
-     * @param earlyEof The early EOF callback. When the HTTP client encounters an error, it will execute this action.
-     */
-    void setEarlyEof(Callback earlyEof);
-
-    /**
-     * Get the early EOF callback.
-     *
-     * @return The early EOF callback. When the HTTP client encounters an error, it will execute this action.
-     */
-    Callback getEarlyEof();
 
     /**
      * Set the HTTP2 settings.

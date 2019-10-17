@@ -1,17 +1,14 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.func.Callback
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
-import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
-import java.util.function.Consumer
 import java.util.function.Supplier
 
 class AsyncHttpClientRequestBuilder(
@@ -154,33 +151,8 @@ class AsyncHttpClientRequestBuilder(
         return this
     }
 
-    override fun headerComplete(headerComplete: Consumer<HttpClientResponse>?): HttpClientRequestBuilder {
-        httpRequest.headerComplete = headerComplete
-        return this
-    }
-
     override fun contentHandler(contentHandler: HttpClientContentHandler?): HttpClientRequestBuilder {
         httpRequest.contentHandler = contentHandler
-        return this
-    }
-
-    override fun contentComplete(contentComplete: Consumer<HttpClientResponse>?): HttpClientRequestBuilder {
-        httpRequest.contentComplete = contentComplete
-        return this
-    }
-
-    override fun messageComplete(messageComplete: Consumer<HttpClientResponse>?): HttpClientRequestBuilder {
-        httpRequest.messageComplete = messageComplete
-        return this
-    }
-
-    override fun badMessage(badMessage: Consumer<BadMessageException>?): HttpClientRequestBuilder {
-        httpRequest.badMessage = badMessage
-        return this
-    }
-
-    override fun earlyEof(earlyEof: Callback?): HttpClientRequestBuilder {
-        httpRequest.earlyEof = earlyEof
         return this
     }
 

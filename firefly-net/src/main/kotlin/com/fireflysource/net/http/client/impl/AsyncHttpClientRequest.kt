@@ -1,20 +1,16 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.func.Callback
 import com.fireflysource.common.string.StringUtils
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.client.HttpClientRequest
-import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.client.impl.content.handler.StringContentHandler
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
 import com.fireflysource.net.http.common.codec.CookieGenerator
 import com.fireflysource.net.http.common.codec.UrlEncoded
-import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import java.nio.charset.StandardCharsets
-import java.util.function.Consumer
 import java.util.function.Supplier
 
 class AsyncHttpClientRequest : HttpClientRequest {
@@ -33,12 +29,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var cookies: MutableList<Cookie>? = null
     private var trailerSupplier: Supplier<HttpFields>? = null
     private var contentProvider: HttpClientContentProvider? = null
-    private var headerComplete: Consumer<HttpClientResponse>? = null
     private var contentHandler: HttpClientContentHandler? = null
-    private var contentComplete: Consumer<HttpClientResponse>? = null
-    private var messageComplete: Consumer<HttpClientResponse>? = null
-    private var badMessage: Consumer<BadMessageException>? = null
-    private var earlyEof: Callback? = null
     private var http2Settings: Map<Int, Int>? = null
 
     override fun getMethod(): String = method
@@ -105,41 +96,11 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     override fun getContentProvider(): HttpClientContentProvider? = contentProvider
 
-    override fun setHeaderComplete(headerComplete: Consumer<HttpClientResponse>?) {
-        this.headerComplete = headerComplete
-    }
-
-    override fun getHeaderComplete(): Consumer<HttpClientResponse>? = headerComplete
-
     override fun setContentHandler(contentHandler: HttpClientContentHandler?) {
         this.contentHandler = contentHandler
     }
 
     override fun getContentHandler(): HttpClientContentHandler? = contentHandler
-
-    override fun setContentComplete(contentComplete: Consumer<HttpClientResponse>?) {
-        this.contentComplete = contentComplete
-    }
-
-    override fun getContentComplete(): Consumer<HttpClientResponse>? = contentComplete
-
-    override fun setMessageComplete(messageComplete: Consumer<HttpClientResponse>?) {
-        this.messageComplete = messageComplete
-    }
-
-    override fun getMessageComplete(): Consumer<HttpClientResponse>? = messageComplete
-
-    override fun setBadMessage(badMessage: Consumer<BadMessageException>?) {
-        this.badMessage = badMessage
-    }
-
-    override fun getBadMessage(): Consumer<BadMessageException>? = badMessage
-
-    override fun setEarlyEof(earlyEof: Callback?) {
-        this.earlyEof = earlyEof
-    }
-
-    override fun getEarlyEof(): Callback? = earlyEof
 
     override fun setHttp2Settings(http2Settings: Map<Int, Int>?) {
         this.http2Settings = http2Settings

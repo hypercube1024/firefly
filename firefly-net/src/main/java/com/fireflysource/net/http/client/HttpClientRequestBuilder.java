@@ -1,7 +1,5 @@
 package com.fireflysource.net.http.client;
 
-import com.fireflysource.common.func.Callback;
-import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpFields;
@@ -12,7 +10,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -231,15 +228,6 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder removeQueryParam(String name);
 
     /**
-     * Set the HTTP header complete callback.
-     *
-     * @param headerComplete The HTTP header complete callback. When the HTTP client receives all HTTP headers,
-     *                       it will execute this action.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder headerComplete(Consumer<HttpClientResponse> headerComplete);
-
-    /**
      * Set the HTTP content receiving callback.
      *
      * @param contentHandler The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
@@ -247,41 +235,6 @@ public interface HttpClientRequestBuilder {
      * @return RequestBuilder
      */
     HttpClientRequestBuilder contentHandler(HttpClientContentHandler contentHandler);
-
-    /**
-     * Set the HTTP content complete callback.
-     *
-     * @param contentComplete The HTTP content complete callback. When the HTTP client receives the HTTP body is complete,
-     *                        it will execute this action.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder contentComplete(Consumer<HttpClientResponse> contentComplete);
-
-    /**
-     * Set the HTTP message complete callback.
-     *
-     * @param messageComplete The HTTP message complete callback. When the HTTP client receives the complete HTTP message
-     *                        that contains HTTP headers and body, it will execute this action.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder messageComplete(Consumer<HttpClientResponse> messageComplete);
-
-    /**
-     * Set the bad message callback.
-     *
-     * @param badMessage The bad message callback. When the HTTP client parses an incorrect message format,
-     *                   it will execute this action.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder badMessage(Consumer<BadMessageException> badMessage);
-
-    /**
-     * Set the early EOF callback.
-     *
-     * @param earlyEof The early EOF callback. When the HTTP client encounters an error, it will execute this action.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder earlyEof(Callback earlyEof);
 
     /**
      * Set the HTTP2 settings.
