@@ -121,27 +121,19 @@ class Http1ClientConnection(
         val last = (len == -1)
 
         if (generator.isChunking) {
-            when (val result =
-                generator.generateRequest(null, null, chunkBuffer, contentBuffer, last)) {
+            when (val result = generator.generateRequest(null, null, chunkBuffer, contentBuffer, last)) {
                 FLUSH -> flushChunkedContentBuffer()
-                CONTINUE -> {
-                    // ignore the generator result continue.
+                CONTINUE -> { // ignore the generator result continue.
                 }
-                DONE -> {
-                    completeContent()
-                }
+                DONE -> completeContent()
                 else -> throw IllegalStateException("The HTTP client generator result error. $result")
             }
         } else {
-            when (val result =
-                generator.generateRequest(null, null, null, contentBuffer, last)) {
+            when (val result = generator.generateRequest(null, null, null, contentBuffer, last)) {
                 FLUSH -> flushContentBuffer()
-                CONTINUE -> {
-                    // ignore the generator result continue.
+                CONTINUE -> { // ignore the generator result continue.
                 }
-                DONE -> {
-                    completeContent()
-                }
+                DONE -> completeContent()
                 else -> throw IllegalStateException("The HTTP client generator result error. $result")
             }
         }
@@ -151,8 +143,7 @@ class Http1ClientConnection(
         if (generator.isChunking) {
             when (val result = generator.generateRequest(null, null, chunkBuffer, null, true)) {
                 FLUSH -> flushChunkBuffer()
-                CONTINUE, DONE -> {
-                    // ignore the generator result done.
+                CONTINUE, DONE -> { // ignore the generator result done.
                 }
                 else -> throw IllegalStateException("The HTTP client generator result error. $result")
             }
