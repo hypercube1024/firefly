@@ -294,6 +294,14 @@ class AsyncHttp2Connection(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    fun onSettings(frame: SettingsFrame, reply: Boolean) {
+        log.debug { "received frame: $frame" }
+        if (frame.isReply) {
+            return
+        }
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun onPushPromise(frame: PushPromiseFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
