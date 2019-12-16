@@ -18,13 +18,14 @@ import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
-import java.nio.channels.ClosedChannelException
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import java.util.function.UnaryOperator
+import kotlin.math.min
 
 class AsyncHttp2Connection(
     initStreamId: Int,
@@ -140,7 +141,8 @@ class AsyncHttp2Connection(
     fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> =
         asyncGlobally(tcpConnection.coroutineDispatcher) {
             var writeBytes = 0L
-            for (frame in frames) {
+
+            frameLoop@ for (frame in frames) {
                 val byteBuffers = generator.control(frame).byteBuffers
 
                 when (frame.type) {
@@ -156,6 +158,10 @@ class AsyncHttp2Connection(
                         if (initialWindow != null) {
                             flowControl.updateInitialStreamWindow(this@AsyncHttp2Connection, initialWindow, true)
                         }
+                    }
+                    FrameType.DISCONNECT -> {
+                        terminate()
+                        break@frameLoop
                     }
                     else -> {
                         // ignore the other control frame types
@@ -192,9 +198,6 @@ class AsyncHttp2Connection(
                     FrameType.WINDOW_UPDATE -> {
                         flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
                     }
-                    FrameType.DISCONNECT -> {
-                        terminate(ClosedChannelException())
-                    }
                     else -> {
                         // ignore the other control frame types
                     }
@@ -203,8 +206,8 @@ class AsyncHttp2Connection(
             writeBytes
         }.asCompletableFuture()
 
-    private fun terminate(cause: Throwable) {
-        while (true) {
+    private fun terminate() {
+        terminateLoop@ while (true) {
             when (val current = closeState.get()) {
                 CloseState.NOT_CLOSED, CloseState.LOCALLY_CLOSED, CloseState.REMOTELY_CLOSED -> {
                     if (closeState.compareAndSet(current, CloseState.CLOSED)) {
@@ -212,14 +215,21 @@ class AsyncHttp2Connection(
                             (stream as AsyncHttp2Stream).close()
                         }
                         streams.clear()
-                        tcpConnection.close()
+                        disconnect()
+                        break@terminateLoop
                     }
                 }
                 else -> {
                     // ignore the other close states
+                    break@terminateLoop
                 }
             }
         }
+    }
+
+    fun disconnect() {
+        log.debug { "Disconnecting $this" }
+        tcpConnection.close()
     }
 
     override fun priority(frame: PriorityFrame, result: Consumer<Result<Void>>): Int {
@@ -344,9 +354,9 @@ class AsyncHttp2Connection(
         }
     }
 
-    private fun notifySettings(connection: AsyncHttp2Connection, frame: SettingsFrame) {
+    private fun notifySettings(connection: Http2Connection, frame: SettingsFrame) {
         try {
-            listener.onSettings(this, frame)
+            listener.onSettings(connection, frame)
         } catch (e: Exception) {
             log.error(e) { "failure while notifying listener" }
         }
@@ -365,16 +375,56 @@ class AsyncHttp2Connection(
         }
     }
 
-    private fun notifyPing(connection: AsyncHttp2Connection, frame: PingFrame) {
+    private fun notifyPing(connection: Http2Connection, frame: PingFrame) {
         try {
-            listener.onPing(this, frame)
+            listener.onPing(connection, frame)
         } catch (e: Exception) {
             log.error(e) { "failure while notifying listener" }
         }
     }
 
     override fun onGoAway(frame: GoAwayFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        log.debug { "Received $frame" }
+        closeLoop@ while (true) {
+            when (val current: CloseState = closeState.get()) {
+                CloseState.NOT_CLOSED -> {
+                    if (closeState.compareAndSet(current, CloseState.REMOTELY_CLOSED)) {
+                        // We received a GO_AWAY, so try to write what's in the queue and then disconnect.
+                        closeFrame = frame
+                        notifyClose(this, frame, Consumer {
+                            val goAwayFrame = newGoAwayFrame(CloseState.CLOSED, ErrorCode.NO_ERROR.code, null)
+                            val disconnectFrame = DisconnectFrame()
+                            sendControlFrame(null, goAwayFrame, disconnectFrame)
+                        })
+                        break@closeLoop
+                    }
+                }
+                else -> {
+                    log.debug { "Ignored $frame, already closed" }
+                    break@closeLoop
+                }
+            }
+        }
+    }
+
+    private fun notifyClose(connection: Http2Connection, frame: GoAwayFrame, consumer: Consumer<Result<Void>>) {
+        try {
+            listener.onClose(connection, frame, consumer)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+        }
+    }
+
+    private fun newGoAwayFrame(closeState: CloseState, error: Int, reason: String?): GoAwayFrame {
+        var payload: ByteArray? = null
+        if (reason != null) { // Trim the reason to avoid attack vectors.
+            payload = reason.substring(0, min(reason.length, 32)).toByteArray(StandardCharsets.UTF_8)
+        }
+        return GoAwayFrame(closeState, getLastRemoteStreamId(), error, payload)
+    }
+
+    protected fun getLastRemoteStreamId(): Int {
+        return lastRemoteStreamId.get()
     }
 
     override fun onWindowUpdate(frame: WindowUpdateFrame) {

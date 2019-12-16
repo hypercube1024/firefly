@@ -30,6 +30,10 @@ import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
 
+    fun testGoAway() {
+        // TODO
+    }
+
     @Test
     fun testSettings() = runBlocking {
         val host = "localhost"
