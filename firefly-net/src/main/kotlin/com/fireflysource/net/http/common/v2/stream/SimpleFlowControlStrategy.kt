@@ -17,7 +17,7 @@ class SimpleFlowControlStrategy : FlowControl {
         initialStreamWindow: Int,
         local: Boolean
     ) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // TODO
     }
 
     override fun onWindowUpdate(http2Connection: Http2Connection, stream: Stream, frame: WindowUpdateFrame) {

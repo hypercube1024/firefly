@@ -4,6 +4,7 @@ import com.fireflysource.common.concurrent.AtomicBiInteger
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
@@ -56,6 +57,7 @@ class AsyncHttp2Connection(
     var maxRemoteStreams: Int = -1
     var initialSessionRecvWindow: Int = config.initialSessionRecvWindow
     var pushEnabled: Boolean = false
+    var closeFrame: GoAwayFrame? = null
 
     init {
         parser.init(UnaryOperator.identity())
@@ -291,7 +293,8 @@ class AsyncHttp2Connection(
     }
 
     override fun onSettings(frame: SettingsFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // SPEC: SETTINGS frame MUST be replied.
+        onSettings(frame, true)
     }
 
     fun onSettings(frame: SettingsFrame, reply: Boolean) {
@@ -299,7 +302,54 @@ class AsyncHttp2Connection(
         if (frame.isReply) {
             return
         }
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+        frame.settings.forEach { (key, value) ->
+            when (key) {
+                SettingsFrame.HEADER_TABLE_SIZE -> {
+                    log.debug { "Updating HPACK header table size to $value for $this" }
+                    generator.setHeaderTableSize(value)
+                }
+                SettingsFrame.ENABLE_PUSH -> {
+                    val enabled = value == 1
+                    log.debug { "${if (enabled) "Enabling" else "Disabling"} push for $this" }
+                    pushEnabled = enabled
+                }
+                SettingsFrame.MAX_CONCURRENT_STREAMS -> {
+                    log.debug { "Updating max local concurrent streams to $value for $this" }
+                    maxLocalStreams = value
+                }
+                SettingsFrame.INITIAL_WINDOW_SIZE -> {
+                    log.debug { "Updating initial window size to $value for $this" }
+                    flowControl.updateInitialStreamWindow(this, value, false)
+                }
+                SettingsFrame.MAX_FRAME_SIZE -> {
+                    log.debug { "Updating max frame size to $value for $this" }
+                    generator.setMaxFrameSize(value)
+                }
+                SettingsFrame.MAX_HEADER_LIST_SIZE -> {
+                    log.debug { "Updating max header list size to $value for $this" }
+                    generator.setMaxHeaderListSize(value)
+                }
+                else -> {
+                    log.debug { "Unknown setting $key:$value for $this" }
+                }
+            }
+        }
+
+        notifySettings(this, frame)
+
+        if (reply) {
+            val replyFrame = SettingsFrame(emptyMap(), true)
+            settings(replyFrame, discard())
+        }
+    }
+
+    private fun notifySettings(connection: AsyncHttp2Connection, frame: SettingsFrame) {
+        try {
+            listener.onSettings(this, frame)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+        }
     }
 
     override fun onPushPromise(frame: PushPromiseFrame) {
@@ -308,14 +358,18 @@ class AsyncHttp2Connection(
 
     override fun onPing(frame: PingFrame) {
         if (frame.isReply) {
-            try {
-                listener.onPing(this, frame)
-            } catch (e: Exception) {
-                log.error(e) { "failure while notifying listener" }
-            }
+            notifyPing(this, frame)
         } else {
             val replay = PingFrame(frame.payload, true)
             sendControlFrame(null, replay)
+        }
+    }
+
+    private fun notifyPing(connection: AsyncHttp2Connection, frame: PingFrame) {
+        try {
+            listener.onPing(this, frame)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
         }
     }
 
@@ -357,5 +411,20 @@ class AsyncHttp2Connection(
         } else {
             remoteStreamCount.add(deltaStreams, deltaClosing)
         }
+    }
+
+    override fun toString(): String {
+        return java.lang.String.format(
+            "%s@%x{l:%s <-> r:%s,sendWindow=%s,recvWindow=%s,streams=%d,%s,%s}",
+            this::class.java.simpleName,
+            hashCode(),
+            tcpConnection.localAddress,
+            tcpConnection.remoteAddress,
+            sendWindow,
+            recvWindow,
+            streams.size,
+            closeState.get(),
+            closeFrame
+        )
     }
 }
