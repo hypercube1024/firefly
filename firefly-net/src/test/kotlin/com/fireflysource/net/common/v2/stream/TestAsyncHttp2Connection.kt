@@ -42,7 +42,7 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            val http2Connection = AsyncHttp2Connection(
+            AsyncHttp2Connection(
                 2, httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
 
