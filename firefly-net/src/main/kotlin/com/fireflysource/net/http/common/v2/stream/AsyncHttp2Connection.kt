@@ -84,7 +84,7 @@ class AsyncHttp2Connection(
 
     override fun getTcpConnection(): TcpConnection = tcpConnection
 
-    override fun newStream(headersFrame: HeadersFrame, promise: Consumer<Result<Stream>>, listener: Stream.Listener) {
+    override fun newStream(headersFrame: HeadersFrame, promise: Consumer<Result<Stream?>>, listener: Stream.Listener) {
         val frameStreamId = headersFrame.streamId
         if (frameStreamId <= 0) {
             val nextStreamId = getNextStreamId()
@@ -100,13 +100,21 @@ class AsyncHttp2Connection(
             }
             val newHeadersFrame = HeadersFrame(nextStreamId, headersFrame.metaData, priority, headersFrame.isEndStream)
             val stream = createLocalStream(nextStreamId, listener)
-            sendControlFrame(stream, newHeadersFrame)
-            promise.accept(Result(true, stream, null))
+            sendNewHeadersFrame(stream, newHeadersFrame, promise)
+
         } else {
             val stream = createLocalStream(frameStreamId, listener)
-            sendControlFrame(stream, headersFrame)
-            promise.accept(Result(true, stream, null))
+            sendNewHeadersFrame(stream, headersFrame, promise)
         }
+    }
+
+    private fun sendNewHeadersFrame(stream: Stream, newHeadersFrame: HeadersFrame, promise: Consumer<Result<Stream?>>) {
+        sendControlFrame(stream, newHeadersFrame)
+            .thenAccept { promise.accept(Result(true, stream, null)) }
+            .exceptionally {
+                promise.accept(createFailedResult(null, it))
+                null
+            }
     }
 
     fun removeStream(stream: Stream) {
@@ -329,7 +337,19 @@ class AsyncHttp2Connection(
     }
 
     override fun onReset(frame: ResetFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        log.debug { "Received $frame" }
+        val stream = getStream(frame.streamId)
+        if (stream != null) {
+            if (stream is AsyncHttp2Stream) {
+                stream.process(frame, discard())
+            }
+        } else {
+            onResetForUnknownStream(frame)
+        }
+    }
+
+    protected fun onResetForUnknownStream(frame: ResetFrame) {
+
     }
 
     override fun onSettings(frame: SettingsFrame) {

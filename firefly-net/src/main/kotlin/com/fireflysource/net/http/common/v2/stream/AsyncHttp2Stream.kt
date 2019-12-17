@@ -48,6 +48,10 @@ class AsyncHttp2Stream(
         return recvWindow.get()
     }
 
+    fun process(frame: Frame, result: Consumer<Result<Void>>) {
+        TODO("not implemented")
+    }
+
     override fun getId(): Int = id
 
     override fun getHttp2Connection(): Http2Connection = asyncHttp2Connection
