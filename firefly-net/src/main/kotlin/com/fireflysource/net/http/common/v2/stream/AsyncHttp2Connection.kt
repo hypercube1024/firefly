@@ -210,7 +210,7 @@ class AsyncHttp2Connection(
                         val connectionInfo = this@AsyncHttp2Connection.toString()
                         "The socket channel has been closed. $connectionInfo "
                     }
-                    break@frameLoop
+                    throw e
                 }
             }
             writeBytes
