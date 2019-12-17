@@ -25,7 +25,7 @@ public class ServerParser extends Parser {
 
     /**
      * <p>A direct upgrade is an unofficial upgrade from HTTP/1.1 to HTTP/2.0.</p>
-     * <p>A direct upgrade is initiated when the HTTP connection
+     * <p>A direct upgrade has been initiated when the HTTP connection
      * sees a request with these bytes:</p>
      * <pre>
      * PRI * HTTP/2.0\r\n

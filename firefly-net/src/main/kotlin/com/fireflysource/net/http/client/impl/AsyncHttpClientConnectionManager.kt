@@ -132,11 +132,11 @@ class AsyncHttpClientConnectionManager(
         }
     }
 
-    private fun createHttp1ClientConnection(connection: TcpConnection): Http1ClientConnection {
+    private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {
         return Http1ClientConnection(config, connection)
     }
 
-    private fun createHttp2ClientConnection(connection: TcpConnection): Http2ClientConnection {
+    private fun createHttp2ClientConnection(connection: TcpConnection): HttpClientConnection {
         return Http2ClientConnection(config, connection)
     }
 

@@ -3,14 +3,15 @@ package com.fireflysource.net.common.v2.stream
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.Result.futureToConsumer
+import com.fireflysource.net.http.client.impl.Http2ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.v2.frame.ErrorCode
 import com.fireflysource.net.http.common.v2.frame.GoAwayFrame
 import com.fireflysource.net.http.common.v2.frame.PingFrame
 import com.fireflysource.net.http.common.v2.frame.SettingsFrame
-import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Connection
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
+import com.fireflysource.net.http.server.impl.Http2ServerConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.TcpConfig
@@ -44,8 +45,8 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            AsyncHttp2Connection(
-                2, httpConfig, connection, SimpleFlowControlStrategy(),
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
 
                     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
@@ -60,8 +61,8 @@ class TestAsyncHttp2Connection {
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
         connection.startReadingAndAwaitHandshake()
-        val http2Connection = AsyncHttp2Connection(
-            1, httpConfig, connection, SimpleFlowControlStrategy(),
+        val http2Connection = Http2ClientConnection(
+            httpConfig, connection, SimpleFlowControlStrategy(),
             object : Http2Connection.Listener.Adapter() {
 
                 override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
@@ -90,34 +91,6 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         val settingsReference = AtomicReference<SettingsFrame>()
-
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
-            AsyncHttp2Connection(
-                2, httpConfig, connection, SimpleFlowControlStrategy(),
-                object : Http2Connection.Listener.Adapter() {
-
-                    override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
-                        settingsReference.set(frame)
-                        println("server receives settings: $frame")
-                        semaphore.release()
-                    }
-                }
-            )
-        }.listen(host, port)
-
-        val client = AioTcpClient(tcpConfig)
-        val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
-        val http2Connection = AsyncHttp2Connection(
-            1, httpConfig, connection, SimpleFlowControlStrategy(),
-            object : Http2Connection.Listener.Adapter() {
-
-                override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
-                    println("client receives settings: $frame")
-                }
-            }
-        )
         val settings = SettingsFrame(
             mutableMapOf(
                 SettingsFrame.HEADER_TABLE_SIZE to 8192,
@@ -128,6 +101,38 @@ class TestAsyncHttp2Connection {
                 SettingsFrame.MAX_HEADER_LIST_SIZE to 64
             ), false
         )
+
+        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+            connection.startReadingAndAwaitHandshake()
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
+
+                    override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
+                        println("server receives settings: $frame")
+
+                        if (frame.settings == settings.settings) {
+                            settingsReference.set(frame)
+                            semaphore.release()
+                        }
+                    }
+                }
+            )
+        }.listen(host, port)
+
+        val client = AioTcpClient(tcpConfig)
+        val connection = client.connect(host, port).await()
+        connection.startReadingAndAwaitHandshake()
+        val http2Connection = Http2ClientConnection(
+            httpConfig, connection, SimpleFlowControlStrategy(),
+            object : Http2Connection.Listener.Adapter() {
+
+                override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
+                    println("client receives settings: $frame")
+                }
+            }
+        )
+
         http2Connection.settings(settings, discard())
 
         semaphore.acquire()
@@ -156,8 +161,8 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            val http2Connection = AsyncHttp2Connection(
-                2, httpConfig, connection, SimpleFlowControlStrategy(),
+            val http2Connection = Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
                 http2ConnectionListener(semaphore, receivedCount, maxPing)
             )
             sendPingFrames(count, http2Connection)
@@ -166,8 +171,8 @@ class TestAsyncHttp2Connection {
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
         connection.startReadingAndAwaitHandshake()
-        val http2Connection = AsyncHttp2Connection(
-            1, httpConfig, connection, SimpleFlowControlStrategy(),
+        val http2Connection = Http2ClientConnection(
+            httpConfig, connection, SimpleFlowControlStrategy(),
             http2ConnectionListener(semaphore, receivedCount, maxPing)
         )
         sendPingFrames(count, http2Connection)
@@ -205,7 +210,7 @@ class TestAsyncHttp2Connection {
         }
     }
 
-    private suspend fun sendPingFrames(count: Int, http2Connection: AsyncHttp2Connection) {
+    private suspend fun sendPingFrames(count: Int, http2Connection: Http2Connection) {
         (1..count).asFlow().map { index ->
             val pingFrame = PingFrame(index.toLong(), false)
             val future = CompletableFuture<Void>()

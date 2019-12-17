@@ -2,7 +2,6 @@ package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.concurrent.AtomicBiInteger
 import com.fireflysource.common.coroutine.asyncGlobally
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.createFailedResult
 import com.fireflysource.common.sys.Result.discard
@@ -17,7 +16,6 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import com.fireflysource.net.tcp.aio.ChannelClosedException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.nio.charset.StandardCharsets
@@ -26,10 +24,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
-import java.util.function.UnaryOperator
 import kotlin.math.min
 
-class AsyncHttp2Connection(
+abstract class AsyncHttp2Connection(
     initStreamId: Int,
     config: HttpConfig,
     private val tcpConnection: TcpConnection,
@@ -52,31 +49,13 @@ class AsyncHttp2Connection(
     private val sendWindow = AtomicInteger(HttpConfig.DEFAULT_WINDOW_SIZE)
     private val recvWindow = AtomicInteger(HttpConfig.DEFAULT_WINDOW_SIZE)
 
-    val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
     private val generator = Generator(config.maxDynamicTableSize, config.maxHeaderBlockFragment)
-    private val receiveDataJob: Job
 
     private var maxLocalStreams: Int = -1
     private var maxRemoteStreams: Int = -1
-    var initialSessionRecvWindow: Int = config.initialSessionRecvWindow
+    protected var initialSessionRecvWindow: Int = config.initialSessionRecvWindow
     private var pushEnabled: Boolean = false
     private var closeFrame: GoAwayFrame? = null
-
-    init {
-        parser.init(UnaryOperator.identity())
-        receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
-            val inputChannel = tcpConnection.inputChannel
-            recvLoop@ while (true) {
-                val buffer = inputChannel.receive()
-                parsingLoop@ while (buffer.hasRemaining()) {
-                    parser.parse(buffer)
-                }
-            }
-        }
-        tcpConnection.onClose {
-            receiveDataJob.cancel()
-        }
-    }
 
     override fun isSecureConnection(): Boolean = tcpConnection.isSecureConnection
 
@@ -328,9 +307,7 @@ class AsyncHttp2Connection(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun onHeaders(frame: HeadersFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    abstract override fun onHeaders(frame: HeadersFrame)
 
     override fun onPriority(frame: PriorityFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -348,9 +325,7 @@ class AsyncHttp2Connection(
         }
     }
 
-    protected fun onResetForUnknownStream(frame: ResetFrame) {
-
-    }
+    protected abstract fun onResetForUnknownStream(frame: ResetFrame)
 
     override fun onSettings(frame: SettingsFrame) {
         // SPEC: SETTINGS frame MUST be replied.
