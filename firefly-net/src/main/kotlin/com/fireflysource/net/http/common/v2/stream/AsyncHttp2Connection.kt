@@ -4,6 +4,7 @@ import com.fireflysource.common.concurrent.AtomicBiInteger
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.Result.createFailedResult
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
@@ -15,6 +16,7 @@ import com.fireflysource.net.http.common.v2.encoder.Generator
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import com.fireflysource.net.tcp.aio.ChannelClosedException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
@@ -54,11 +56,11 @@ class AsyncHttp2Connection(
     private val generator = Generator(config.maxDynamicTableSize, config.maxHeaderBlockFragment)
     private val receiveDataJob: Job
 
-    var maxLocalStreams: Int = -1
-    var maxRemoteStreams: Int = -1
+    private var maxLocalStreams: Int = -1
+    private var maxRemoteStreams: Int = -1
     var initialSessionRecvWindow: Int = config.initialSessionRecvWindow
-    var pushEnabled: Boolean = false
-    var closeFrame: GoAwayFrame? = null
+    private var pushEnabled: Boolean = false
+    private var closeFrame: GoAwayFrame? = null
 
     init {
         parser.init(UnaryOperator.identity())
@@ -168,39 +170,47 @@ class AsyncHttp2Connection(
                     }
                 }
 
-                val bytes = tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
-                writeBytes += bytes
+                try {
+                    val bytes = tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
+                    writeBytes += bytes
 
-                when (frame.type) {
-                    FrameType.HEADERS -> {
-                        val headersFrame = frame as HeadersFrame
-                        if (stream != null && stream is AsyncHttp2Stream) {
-                            listener.onStreamOpened(this@AsyncHttp2Connection, stream)
-                            if (stream.updateClose(headersFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
+                    when (frame.type) {
+                        FrameType.HEADERS -> {
+                            val headersFrame = frame as HeadersFrame
+                            if (stream != null && stream is AsyncHttp2Stream) {
+                                listener.onStreamOpened(this@AsyncHttp2Connection, stream)
+                                if (stream.updateClose(headersFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
+                                    removeStream(stream)
+                                }
+                            }
+                        }
+                        FrameType.RST_STREAM -> {
+                            if (stream != null && stream is AsyncHttp2Stream) {
+                                stream.close()
                                 removeStream(stream)
                             }
                         }
-                    }
-                    FrameType.RST_STREAM -> {
-                        if (stream != null && stream is AsyncHttp2Stream) {
-                            stream.close()
-                            removeStream(stream)
+                        FrameType.PUSH_PROMISE -> {
+                            if (stream != null && stream is AsyncHttp2Stream) {
+                                stream.updateClose(true, CloseState.Event.RECEIVED)
+                            }
+                        }
+                        FrameType.GO_AWAY -> {
+                            tcpConnection.shutdownOutput()
+                        }
+                        FrameType.WINDOW_UPDATE -> {
+                            flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
+                        }
+                        else -> {
+                            // ignore the other control frame types
                         }
                     }
-                    FrameType.PUSH_PROMISE -> {
-                        if (stream != null && stream is AsyncHttp2Stream) {
-                            stream.updateClose(true, CloseState.Event.RECEIVED)
-                        }
+                } catch (e: ChannelClosedException) {
+                    log.warn {
+                        val connectionInfo = this@AsyncHttp2Connection.toString()
+                        "The socket channel has been closed. $connectionInfo "
                     }
-                    FrameType.GO_AWAY -> {
-                        tcpConnection.shutdownOutput()
-                    }
-                    FrameType.WINDOW_UPDATE -> {
-                        flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
-                    }
-                    else -> {
-                        // ignore the other control frame types
-                    }
+                    break@frameLoop
                 }
             }
             writeBytes
@@ -227,7 +237,7 @@ class AsyncHttp2Connection(
         }
     }
 
-    fun disconnect() {
+    private fun disconnect() {
         log.debug { "Disconnecting $this" }
         tcpConnection.close()
     }
@@ -240,7 +250,7 @@ class AsyncHttp2Connection(
             sendControlFrame(null, newFrame)
                 .thenAccept { result.accept(Result.SUCCESS) }
                 .exceptionally {
-                    result.accept(Result.createFailedResult(it))
+                    result.accept(createFailedResult(it))
                     null
                 }
             return newStreamId
@@ -248,7 +258,7 @@ class AsyncHttp2Connection(
             sendControlFrame(stream, frame)
                 .thenAccept { result.accept(Result.SUCCESS) }
                 .exceptionally {
-                    result.accept(Result.createFailedResult(it))
+                    result.accept(createFailedResult(it))
                     null
                 }
             return stream.id
@@ -259,19 +269,19 @@ class AsyncHttp2Connection(
         sendControlFrame(null, frame)
             .thenAccept { result.accept(Result.SUCCESS) }
             .exceptionally {
-                result.accept(Result.createFailedResult(it))
+                result.accept(createFailedResult(it))
                 null
             }
     }
 
     override fun ping(frame: PingFrame, result: Consumer<Result<Void>>) {
         if (frame.isReply) {
-            result.accept(Result.createFailedResult(IllegalArgumentException("The reply must be false")))
+            result.accept(createFailedResult(IllegalArgumentException("The reply must be false")))
         } else {
             sendControlFrame(null, frame)
                 .thenAccept { result.accept(Result.SUCCESS) }
                 .exceptionally {
-                    result.accept(Result.createFailedResult(it))
+                    result.accept(createFailedResult(it))
                     null
                 }
         }
@@ -281,10 +291,30 @@ class AsyncHttp2Connection(
 
     override fun getStream(streamId: Int): Stream? = http2StreamMap[streamId]
 
-    override fun close(error: Int, payload: String, result: Consumer<Result<Void>>): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun close(error: Int, reason: String, result: Consumer<Result<Void>>): Boolean {
+        while (true) {
+            when (val current: CloseState = closeState.get()) {
+                CloseState.NOT_CLOSED -> {
+                    if (closeState.compareAndSet(current, CloseState.LOCALLY_CLOSED)) {
+                        val goAwayFrame = newGoAwayFrame(CloseState.LOCALLY_CLOSED, error, reason)
+                        closeFrame = goAwayFrame
+                        sendControlFrame(null, goAwayFrame)
+                            .thenAccept { result.accept(Result.SUCCESS) }
+                            .exceptionally {
+                                result.accept(createFailedResult(it))
+                                null
+                            }
+                        return true
+                    }
+                }
+                else -> {
+                    log.debug { "Ignoring close $error/$reason, already closed" }
+                    result.accept(Result.SUCCESS)
+                    return false
+                }
+            }
+        }
     }
-
 
     override fun onData(frame: DataFrame) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -474,7 +504,7 @@ class AsyncHttp2Connection(
             recvWindow,
             streams.size,
             closeState.get(),
-            closeFrame
+            closeFrame?.toString()
         )
     }
 }

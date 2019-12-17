@@ -4,6 +4,8 @@ import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.v2.frame.ErrorCode
+import com.fireflysource.net.http.common.v2.frame.GoAwayFrame
 import com.fireflysource.net.http.common.v2.frame.PingFrame
 import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Connection
@@ -30,8 +32,53 @@ import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
 
-    fun testGoAway() {
-        // TODO
+    @Test
+    fun testGoAway() = runBlocking {
+        val host = "localhost"
+        val port = 4022
+        val semaphore = Semaphore(1, 1)
+        val tcpConfig = TcpConfig(30, false)
+        val httpConfig = HttpConfig()
+
+        val goAwayReference = AtomicReference<GoAwayFrame>()
+
+        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+            connection.startReadingAndAwaitHandshake()
+            AsyncHttp2Connection(
+                2, httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
+
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        goAwayReference.set(frame)
+                        println("server receives go away frame: $frame")
+                        semaphore.release()
+                    }
+                }
+            )
+        }.listen(host, port)
+
+        val client = AioTcpClient(tcpConfig)
+        val connection = client.connect(host, port).await()
+        connection.startReadingAndAwaitHandshake()
+        val http2Connection = AsyncHttp2Connection(
+            1, httpConfig, connection, SimpleFlowControlStrategy(),
+            object : Http2Connection.Listener.Adapter() {
+
+                override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                    println("client receives go away frame: $frame")
+                }
+            }
+        )
+
+        http2Connection.close(ErrorCode.INTERNAL_ERROR.code, "test error message") {
+            println("client close success")
+        }
+
+        semaphore.acquire()
+        assertNotNull(goAwayReference.get())
+        assertEquals(ErrorCode.INTERNAL_ERROR.code, goAwayReference.get().error)
+
+        stopTest()
     }
 
     @Test
@@ -63,7 +110,7 @@ class TestAsyncHttp2Connection {
         val connection = client.connect(host, port).await()
         connection.startReadingAndAwaitHandshake()
         val http2Connection = AsyncHttp2Connection(
-            2, httpConfig, connection, SimpleFlowControlStrategy(),
+            1, httpConfig, connection, SimpleFlowControlStrategy(),
             object : Http2Connection.Listener.Adapter() {
 
                 override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {

@@ -21,7 +21,7 @@ public enum ErrorCode {
      */
     INTERNAL_ERROR(2),
     /**
-     * Indicates a HTTP/2 flow control violation.
+     * Indicates an HTTP/2 flow control violation.
      */
     FLOW_CONTROL_ERROR(3),
     /**
@@ -29,7 +29,7 @@ public enum ErrorCode {
      */
     SETTINGS_TIMEOUT_ERROR(4),
     /**
-     * Indicates that a stream frame has been received after the stream was closed.
+     * Indicates that a stream frame has been received after the stream closed.
      */
     STREAM_CLOSED_ERROR(5),
     /**
@@ -37,7 +37,7 @@ public enum ErrorCode {
      */
     FRAME_SIZE_ERROR(6),
     /**
-     * Indicates that a stream was rejected before application processing.
+     * Indicates that a stream rejected before application processing.
      */
     REFUSED_STREAM_ERROR(7),
     /**
@@ -49,7 +49,7 @@ public enum ErrorCode {
      */
     COMPRESSION_ERROR(9),
     /**
-     * Indicates that the connection established by a HTTP CONNECT was abnormally closed.
+     * Indicates that the connection established by an HTTP CONNECT was abnormally closed.
      */
     HTTP_CONNECT_ERROR(10),
     /**
@@ -67,7 +67,7 @@ public enum ErrorCode {
 
     public final int code;
 
-    private ErrorCode(int code) {
+    ErrorCode(int code) {
         this.code = code;
         Codes.codes.put(code, this);
     }
@@ -76,15 +76,16 @@ public enum ErrorCode {
         return Codes.codes.get(error);
     }
 
-    public static String toString(int error, String dft) {
+    public static String toString(int error, String defaultError) {
         ErrorCode errorCode = from(error);
         String result;
-        if (errorCode != null)
+        if (errorCode != null) {
             result = errorCode.name().toLowerCase(Locale.ENGLISH);
-        else if (dft == null)
+        } else if (defaultError == null) {
             result = String.valueOf(error);
-        else
-            result = dft;
+        } else {
+            result = defaultError;
+        }
         return result;
     }
 

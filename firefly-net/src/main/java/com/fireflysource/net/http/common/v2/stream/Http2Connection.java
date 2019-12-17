@@ -80,7 +80,7 @@ public interface Http2Connection extends HttpConnection {
      * @param error   the error code
      * @param payload an optional payload (maybe null)
      * @param result  the result that gets notified when the frame has been sent
-     * @return true if the frame is being sent, false if the http2Connection was already closed
+     * @return true if the frame sent, false if the http2Connection was already closed
      */
     boolean close(int error, String payload, Consumer<Result<Void>> result);
 
@@ -112,7 +112,7 @@ public interface Http2Connection extends HttpConnection {
         /**
          * <p>Consumer<Result<Void>> method invoked:</p>
          * <ul>
-         * <li>for clients, just before the preface is sent, to gather the
+         * <li>for clients, just before the preface sent, to gather the
          * SETTINGS configuration options the client wants to send to the server;</li>
          * <li>for servers, just after having received the preface, to gather
          * the SETTINGS configuration options the server wants to send to the
@@ -126,10 +126,10 @@ public interface Http2Connection extends HttpConnection {
         Map<Integer, Integer> onPreface(Http2Connection http2Connection);
 
         /**
-         * <p>Consumer<Result<Void>> method invoked when a new stream is being created upon
-         * receiving a HEADERS frame representing a HTTP request.</p>
+         * <p>Consumer<Result<Void>> method invoked when a new stream created upon
+         * receiving a HEADERS frame representing an HTTP request.</p>
          * <p>Applications should implement this method to process HTTP requests,
-         * typically providing a HTTP response via
+         * typically providing an HTTP response via
          * {@link Stream#headers(HeadersFrame, Consumer<Result<Void>>)}.</p>
          * <p>Applications can detect whether request DATA frames will be arriving
          * by testing {@link HeadersFrame#isEndStream()}. If the application is
@@ -160,7 +160,7 @@ public interface Http2Connection extends HttpConnection {
         void onPing(Http2Connection http2Connection, PingFrame frame);
 
         /**
-         * <p>Consumer<Result<Void>> method invoked when a RST_STREAM frame has been received for an unknown stream.</p>
+         * <p>Consumer<Result<Void>> method invoked when an RST_STREAM frame has been received for an unknown stream.</p>
          *
          * @param http2Connection the http2Connection
          * @param frame           the RST_STREAM frame received

@@ -9,10 +9,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import java.net.SocketAddress
 import java.net.StandardSocketOptions
-import java.nio.channels.AsynchronousServerSocketChannel
-import java.nio.channels.AsynchronousSocketChannel
-import java.nio.channels.CompletionHandler
-import java.nio.channels.ShutdownChannelGroupException
+import java.nio.channels.*
 import java.util.function.Consumer
 
 /**
@@ -123,11 +120,17 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     }
 
                     override fun failed(e: Throwable, connectionId: Int) {
-                        if (e is ShutdownChannelGroupException) {
-                            log.info { "the server is shutdown. stop to accept connection." }
-                        } else {
-                            log.warn(e) { "accept connection failure. $connectionId" }
-                            accept()
+                        when (e) {
+                            is ClosedChannelException -> {
+                                log.info { "The server socket channel has been closed." }
+                            }
+                            is ShutdownChannelGroupException -> {
+                                log.info { "the server is shutdown. stop to accept connection." }
+                            }
+                            else -> {
+                                log.warn(e) { "accept connection failure. $connectionId" }
+                                accept()
+                            }
                         }
                     }
                 }

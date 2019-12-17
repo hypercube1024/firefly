@@ -280,7 +280,7 @@ abstract class AbstractTcpConnection(
                 writeRemainingMessage()
                 socketChannel.shutdownOutput()
             } catch (e: ClosedChannelException) {
-                log.warn { "The channel is closed. $id" }
+                log.warn { "The channel closed. $id" }
             } catch (e: IOException) {
                 log.warn { "Shutdown output exception. $id" }
             }
@@ -371,7 +371,7 @@ abstract class AbstractTcpConnection(
 
 class CloseRequestException : IllegalStateException("The close request has been sent")
 
-class ChannelClosedException : IllegalStateException("The socket channel is closed")
+class ChannelClosedException : IllegalStateException("The socket channel has been closed")
 
 class StartReadingException : IllegalStateException("The connection has started reading.")
 
