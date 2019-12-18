@@ -73,7 +73,7 @@ class TestAsyncHttp2Connection {
         assertTrue(success)
         future.await()
 
-        stopTest()
+        stopTest(http2Connection)
     }
 
     @Test
@@ -130,8 +130,7 @@ class TestAsyncHttp2Connection {
         val receivedSettings = channel.receive()
         assertEquals(settingsFrame.settings, receivedSettings.settings)
 
-        http2Connection.close()
-        stopTest()
+        stopTest(http2Connection)
     }
 
     @Test
@@ -174,17 +173,7 @@ class TestAsyncHttp2Connection {
         println(channel.receive())
         assertTrue(receivedCount.get() > 0)
 
-        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {
-            println("client close. $it")
-        }
-        stopTest()
-    }
-
-    private fun stopTest() {
-        val stopTime = measureTimeMillis {
-            stopAll()
-        }
-        println("stop success. $stopTime")
+        stopTest(http2Connection)
     }
 
     private suspend fun sendPingFrames(count: Int, http2Connection: Http2Connection) {
@@ -195,5 +184,16 @@ class TestAsyncHttp2Connection {
             future
         }.collect { future -> future.await() }
     }
+
+    private fun stopTest(http2Connection: Http2ClientConnection) {
+        val stopTime = measureTimeMillis {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            http2Connection.close()
+            stopAll()
+        }
+        println("stop success. $stopTime")
+    }
+
+
 
 }

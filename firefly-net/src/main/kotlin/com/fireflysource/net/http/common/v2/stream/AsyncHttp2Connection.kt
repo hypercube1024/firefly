@@ -5,8 +5,7 @@ import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.math.MathUtils
 import com.fireflysource.common.sys.Result
-import com.fireflysource.common.sys.Result.createFailedResult
-import com.fireflysource.common.sys.Result.discard
+import com.fireflysource.common.sys.Result.*
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
@@ -186,7 +185,10 @@ abstract class AsyncHttp2Connection(
                             }
                         }
                         FrameType.GO_AWAY -> {
-                            tcpConnection.shutdownOutput()
+                            val future = CompletableFuture<Void>()
+                            tcpConnection.close(futureToConsumer(future))
+                            future.await()
+                            log.info { "Send go away frame and close TCP connection success" }
                         }
                         FrameType.WINDOW_UPDATE -> {
                             flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame as WindowUpdateFrame)
