@@ -125,7 +125,9 @@ class TestAsyncHttp2Connection {
             }
         )
 
-        http2Connection.settings(settingsFrame, discard())
+        http2Connection.settings(settingsFrame) {
+            println("send settings success. $it")
+        }
 
         val receivedSettings = channel.receive()
         assertEquals(settingsFrame.settings, receivedSettings.settings)
@@ -168,21 +170,18 @@ class TestAsyncHttp2Connection {
                 }
             }
         )
-        sendPingFrames(count, http2Connection)
+
+        (1..count).forEach {index ->
+            val pingFrame = PingFrame(index.toLong(), false)
+            http2Connection.ping(pingFrame) {
+                println("send ping success. $it")
+            }
+        }
 
         println(channel.receive())
         assertTrue(receivedCount.get() > 0)
 
         stopTest(http2Connection)
-    }
-
-    private suspend fun sendPingFrames(count: Int, http2Connection: Http2Connection) {
-        (1..count).asFlow().map { index ->
-            val pingFrame = PingFrame(index.toLong(), false)
-            val future = CompletableFuture<Void>()
-            http2Connection.ping(pingFrame, futureToConsumer(future))
-            future
-        }.collect { future -> future.await() }
     }
 
     private fun stopTest(http2Connection: Http2ClientConnection) {
