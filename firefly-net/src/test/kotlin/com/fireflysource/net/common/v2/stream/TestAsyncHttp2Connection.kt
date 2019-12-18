@@ -76,7 +76,7 @@ class TestAsyncHttp2Connection {
     fun testSettings() = runBlocking {
         val host = "localhost"
         val port = 4021
-        val channel = Channel<SettingsFrame>()
+        val channel = Channel<SettingsFrame>(10)
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
@@ -140,7 +140,7 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         val receivedCount = AtomicInteger()
-        val channel = Channel<Int>()
+        val channel = Channel<Int>(10)
 
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
@@ -170,9 +170,7 @@ class TestAsyncHttp2Connection {
 
         (1..count).forEach { index ->
             val pingFrame = PingFrame(index.toLong(), false)
-            http2Connection.ping(pingFrame) {
-                println("send ping success. $it")
-            }
+            http2Connection.ping(pingFrame) { println("send ping success. $it") }
         }
 
         // TODO

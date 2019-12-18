@@ -44,9 +44,9 @@ class Http2ClientConnection(
                 }
             }
         }
-//        tcpConnection.onClose {
-//            receiveDataJob.cancel()
-//        }
+        tcpConnection.onClose {
+            receiveDataJob.cancel()
+        }
     }
 
     override fun onHeaders(frame: HeadersFrame) {
