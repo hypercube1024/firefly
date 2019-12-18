@@ -26,7 +26,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
@@ -42,7 +41,7 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            Http2ServerConnection(
+            connection.attachment = Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
 
@@ -97,7 +96,7 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            Http2ServerConnection(
+            connection.attachment = Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
 
@@ -150,7 +149,7 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            Http2ServerConnection(
+            connection.attachment = Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 Http2Connection.Listener.Adapter()
             )
@@ -174,7 +173,7 @@ class TestAsyncHttp2Connection {
         )
 
         (1..count).forEach { index ->
-            val pingFrame = PingFrame(index.toLong(), false)
+            val pingFrame = PingFrame(index, false)
             http2Connection.ping(pingFrame) { println("send ping success. $it") }
         }
 
