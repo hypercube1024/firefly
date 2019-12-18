@@ -18,7 +18,6 @@ import com.fireflysource.net.tcp.aio.TcpConfig
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
@@ -85,7 +84,7 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-        val settings = SettingsFrame(
+        val settingsFrame = SettingsFrame(
             mutableMapOf(
                 SettingsFrame.HEADER_TABLE_SIZE to 8192,
                 SettingsFrame.ENABLE_PUSH to 1,
@@ -105,7 +104,7 @@ class TestAsyncHttp2Connection {
                     override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
                         println("server receives settings: $frame")
 
-                        if (frame.settings == settings.settings) {
+                        if (frame.settings.equals(settingsFrame.settings)) {
                             channel.offer(frame)
                         }
                     }
@@ -126,15 +125,12 @@ class TestAsyncHttp2Connection {
             }
         )
 
-        http2Connection.settings(settings, discard())
+        http2Connection.settings(settingsFrame, discard())
 
         val receivedSettings = channel.receive()
-        assertEquals(settings.settings, receivedSettings.settings)
+        assertEquals(settingsFrame.settings, receivedSettings.settings)
 
-        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {
-            println("client close success")
-        }
-
+        http2Connection.close()
         stopTest()
     }
 
@@ -179,7 +175,7 @@ class TestAsyncHttp2Connection {
         assertTrue(receivedCount.get() > 0)
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {
-            println("client close success")
+            println("client close. $it")
         }
         stopTest()
     }
@@ -190,16 +186,6 @@ class TestAsyncHttp2Connection {
         }
         println("stop success. $stopTime")
     }
-
-//    private fun http2ConnectionListener(name: String, receivedCount: AtomicInteger): Http2Connection.Listener.Adapter {
-//        return object : Http2Connection.Listener.Adapter() {
-//
-//            override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
-//                println("$name receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
-//                receivedCount.incrementAndGet()
-//            }
-//        }
-//    }
 
     private suspend fun sendPingFrames(count: Int, http2Connection: Http2Connection) {
         (1..count).asFlow().map { index ->
