@@ -1,7 +1,7 @@
 package com.fireflysource.net.common.v2.stream
 
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
-import com.fireflysource.common.sys.Result.futureToConsumer
+import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.http.client.impl.Http2ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.v2.frame.ErrorCode
@@ -17,6 +17,7 @@ import com.fireflysource.net.tcp.aio.TcpConfig
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -24,7 +25,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
 
@@ -37,6 +37,8 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
+        val channel = Channel<GoAwayFrame>(UNLIMITED)
+
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
             Http2ServerConnection(
@@ -45,7 +47,8 @@ class TestAsyncHttp2Connection {
 
                     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
                         println("server receives go away frame: $frame")
-                        http2Connection.close()
+                        val success = channel.offer(frame)
+                        println("put go away result: $success")
                     }
                 }
             )
@@ -64,19 +67,19 @@ class TestAsyncHttp2Connection {
             }
         )
 
-        val future = CompletableFuture<Void>()
-        val success = http2Connection.close(
-            ErrorCode.INTERNAL_ERROR.code, "test error message",
-            futureToConsumer(future)
-        )
+        val success = http2Connection.close(ErrorCode.INTERNAL_ERROR.code, "test error message") {
+            println("send go away success. $it")
+        }
         assertTrue(success)
+        val receivedGoAwayFrame = withTimeout(2000) { channel.receive() }
+        assertEquals(ErrorCode.INTERNAL_ERROR.code, receivedGoAwayFrame.error)
     }
 
     @Test
     fun testSettings() = runBlocking {
         val host = "localhost"
         val port = 4021
-        val channel = Channel<SettingsFrame>(10)
+        val channel = Channel<SettingsFrame>(UNLIMITED)
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
@@ -101,8 +104,9 @@ class TestAsyncHttp2Connection {
                         println("server receives settings: $frame")
 
                         if (frame.settings.equals(settingsFrame.settings)) {
-                            channel.offer(frame)
-                            http2Connection.close()
+                            val success = channel.offer(frame)
+                            http2Connection.close(ErrorCode.NO_ERROR.code, "exit test", discard())
+                            println("put settings result: $success")
                         }
                     }
                 }
@@ -122,9 +126,7 @@ class TestAsyncHttp2Connection {
             }
         )
 
-        http2Connection.settings(settingsFrame) {
-            println("send settings success. $it")
-        }
+        http2Connection.settings(settingsFrame) { println("send settings success. $it") }
 
         // TODO
         val receivedSettings = withTimeout(2000) { channel.receive() }
@@ -140,7 +142,7 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         val receivedCount = AtomicInteger()
-        val channel = Channel<Int>(10)
+        val channel = Channel<Int>(UNLIMITED)
 
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
@@ -161,8 +163,9 @@ class TestAsyncHttp2Connection {
                 override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
                     println("Client receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
                     if (receivedCount.incrementAndGet() >= count) {
-                        channel.offer(receivedCount.get())
-                        http2Connection.close()
+                        val success = channel.offer(receivedCount.get())
+                        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test", discard())
+                        println("put ping result: $success")
                     }
                 }
             }
