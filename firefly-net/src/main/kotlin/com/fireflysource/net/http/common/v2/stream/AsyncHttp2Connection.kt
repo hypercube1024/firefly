@@ -16,10 +16,10 @@ import com.fireflysource.net.http.common.v2.encoder.Generator
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import com.fireflysource.net.tcp.aio.ChannelClosedException
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.io.IOException
+import java.nio.channels.ClosedChannelException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -197,8 +197,8 @@ abstract class AsyncHttp2Connection(
                             // ignore the other control frame types
                         }
                     }
-                } catch (e: ChannelClosedException) {
-                    log.warn {
+                } catch (e: ClosedChannelException) {
+                    log.warn(e) {
                         val connectionInfo = this@AsyncHttp2Connection.toString()
                         "The socket channel has been closed. $connectionInfo "
                     }

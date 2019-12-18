@@ -186,12 +186,16 @@ class TestAsyncHttp2Connection {
     }
 
     private fun stopTest(http2Connection: Http2ClientConnection) {
-        val stopTime = measureTimeMillis {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            http2Connection.close()
-            stopAll()
+        try {
+            val stopTime = measureTimeMillis {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                http2Connection.close()
+                stopAll()
+            }
+            println("stop success. $stopTime")
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        println("stop success. $stopTime")
     }
 
 

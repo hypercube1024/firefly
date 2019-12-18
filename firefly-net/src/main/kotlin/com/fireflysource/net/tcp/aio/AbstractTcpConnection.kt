@@ -36,7 +36,7 @@ abstract class AbstractTcpConnection(
     companion object {
         private val log = SystemLogger.create(AbstractTcpConnection::class.java)
         private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
-        private val channelClosedException = ChannelClosedException()
+        private val closedChannelException = ClosedChannelException()
         private val timeUnit = TimeUnit.SECONDS
         val startReadingException = StartReadingException()
     }
@@ -94,7 +94,7 @@ abstract class AbstractTcpConnection(
                         if (count < 0) {
                             shutdownOutput()
                             shutdownInput()
-                            message.result.accept(Result(false, -1, channelClosedException))
+                            message.result.accept(Result(false, -1, closedChannelException))
                             return false
                         } else {
                             writtenBytes += count
@@ -134,7 +134,7 @@ abstract class AbstractTcpConnection(
                         if (count < 0) {
                             shutdownOutput()
                             shutdownInput()
-                            message.result.accept(Result(false, -1, channelClosedException))
+                            message.result.accept(Result(false, -1, closedChannelException))
                             return false
                         } else {
                             writtenBytes += count
@@ -180,7 +180,7 @@ abstract class AbstractTcpConnection(
                         if (count < 0) {
                             shutdownOutput()
                             shutdownInput()
-                            message.result.accept(Result(false, -1, channelClosedException))
+                            message.result.accept(Result(false, -1, closedChannelException))
                             return false
                         } else {
                             writtenBytes += count
@@ -361,7 +361,7 @@ abstract class AbstractTcpConnection(
         if (isWriteable()) {
             outputChannel.offer(Buffer(byteBuffer, result))
         } else {
-            result.accept(createFailedResult(-1, channelClosedException))
+            result.accept(createFailedResult(-1, closedChannelException))
         }
         return this
     }
@@ -375,7 +375,7 @@ abstract class AbstractTcpConnection(
         if (isWriteable()) {
             outputChannel.offer(Buffers(byteBuffers, offset, length, result))
         } else {
-            result.accept(createFailedResult(-1, channelClosedException))
+            result.accept(createFailedResult(-1, closedChannelException))
         }
         return this
     }
@@ -389,7 +389,7 @@ abstract class AbstractTcpConnection(
         if (isWriteable()) {
             outputChannel.offer(BufferList(byteBufferList, offset, length, result))
         } else {
-            result.accept(createFailedResult(-1, channelClosedException))
+            result.accept(createFailedResult(-1, closedChannelException))
         }
         return this
     }
@@ -400,8 +400,6 @@ abstract class AbstractTcpConnection(
 }
 
 class CloseRequestException : IllegalStateException("The close request has been sent")
-
-class ChannelClosedException : IllegalStateException("The socket channel has been closed")
 
 class StartReadingException : IllegalStateException("The connection has started reading.")
 
