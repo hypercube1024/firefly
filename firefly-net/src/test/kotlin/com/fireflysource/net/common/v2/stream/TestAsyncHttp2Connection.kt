@@ -131,8 +131,8 @@ class TestAsyncHttp2Connection {
         }
 
         // TODO
-//        val receivedSettings = withTimeout(2000) { channel.receive() }
-//        assertEquals(settingsFrame.settings, receivedSettings.settings)
+        val receivedSettings = withTimeout(2000) { channel.receive() }
+        assertEquals(settingsFrame.settings, receivedSettings.settings)
 
         stopTest(http2Connection)
     }
@@ -181,14 +181,15 @@ class TestAsyncHttp2Connection {
         }
 
         // TODO
-//        val pingCount = withTimeout(2000) { channel.receive() }
-//        assertTrue(pingCount > 0)
+        val pingCount = withTimeout(2000) { channel.receive() }
+        assertTrue(pingCount > 0)
 
         stopTest(http2Connection)
     }
 
     private fun stopTest(http2Connection: Http2ClientConnection) {
         try {
+            Thread.sleep(2000)
             val stopTime = measureTimeMillis {
                 @Suppress("BlockingMethodInNonBlockingContext")
                 http2Connection.close()
