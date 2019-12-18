@@ -240,7 +240,7 @@ abstract class AsyncHttp2Connection(
             val newStreamId = getNextStreamId()
             val newFrame = PriorityFrame(newStreamId, frame.parentStreamId, frame.weight, frame.isExclusive)
             sendControlFrame(null, newFrame)
-                .thenAccept { result.accept(Result.SUCCESS) }
+                .thenAccept { result.accept(SUCCESS) }
                 .exceptionally {
                     result.accept(createFailedResult(it))
                     null
@@ -248,7 +248,7 @@ abstract class AsyncHttp2Connection(
             return newStreamId
         } else {
             sendControlFrame(stream, frame)
-                .thenAccept { result.accept(Result.SUCCESS) }
+                .thenAccept { result.accept(SUCCESS) }
                 .exceptionally {
                     result.accept(createFailedResult(it))
                     null
@@ -259,7 +259,7 @@ abstract class AsyncHttp2Connection(
 
     override fun settings(frame: SettingsFrame, result: Consumer<Result<Void>>) {
         sendControlFrame(null, frame)
-            .thenAccept { result.accept(Result.SUCCESS) }
+            .thenAccept { result.accept(SUCCESS) }
             .exceptionally {
                 result.accept(createFailedResult(it))
                 null
@@ -271,7 +271,7 @@ abstract class AsyncHttp2Connection(
             result.accept(createFailedResult(IllegalArgumentException("The reply must be false")))
         } else {
             sendControlFrame(null, frame)
-                .thenAccept { result.accept(Result.SUCCESS) }
+                .thenAccept { result.accept(SUCCESS) }
                 .exceptionally {
                     result.accept(createFailedResult(it))
                     null
@@ -291,7 +291,7 @@ abstract class AsyncHttp2Connection(
                         val goAwayFrame = newGoAwayFrame(CloseState.LOCALLY_CLOSED, error, reason)
                         closeFrame = goAwayFrame
                         sendControlFrame(null, goAwayFrame)
-                            .thenAccept { result.accept(Result.SUCCESS) }
+                            .thenAccept { result.accept(SUCCESS) }
                             .exceptionally {
                                 result.accept(createFailedResult(it))
                                 null
@@ -301,7 +301,7 @@ abstract class AsyncHttp2Connection(
                 }
                 else -> {
                     log.debug { "Ignoring close $error/$reason, already closed" }
-                    result.accept(Result.SUCCESS)
+                    result.accept(SUCCESS)
                     return false
                 }
             }
@@ -334,7 +334,7 @@ abstract class AsyncHttp2Connection(
 
     protected fun reset(frame: ResetFrame, result: Consumer<Result<Void>>) {
         sendControlFrame(getStream(frame.streamId), frame)
-            .thenAccept { result.accept(Result.SUCCESS) }
+            .thenAccept { result.accept(SUCCESS) }
             .exceptionally {
                 result.accept(createFailedResult(it))
                 null

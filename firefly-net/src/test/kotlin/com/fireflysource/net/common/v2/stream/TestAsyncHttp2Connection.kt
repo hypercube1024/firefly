@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -129,7 +130,7 @@ class TestAsyncHttp2Connection {
             println("send settings success. $it")
         }
 
-        val receivedSettings = channel.receive()
+        val receivedSettings = withTimeout(2000) { channel.receive() }
         assertEquals(settingsFrame.settings, receivedSettings.settings)
 
         stopTest(http2Connection)
@@ -178,8 +179,8 @@ class TestAsyncHttp2Connection {
             }
         }
 
-        println(channel.receive())
-        assertTrue(receivedCount.get() > 0)
+        val pingCount = withTimeout(2000) { channel.receive() }
+        assertTrue(pingCount > 0)
 
         stopTest(http2Connection)
     }
