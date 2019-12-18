@@ -45,6 +45,10 @@ class TestAsyncHttp2Connection {
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
 
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
+
                     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
                         println("server receives go away frame: $frame")
 //                        val success = channel.offer(frame)
@@ -66,6 +70,7 @@ class TestAsyncHttp2Connection {
                 }
             }
         )
+        http2Connection.sendConnectionPreface(httpConfig)
 
         val success = http2Connection.close(ErrorCode.INTERNAL_ERROR.code, "test error message") {
             println("send go away success. $it")
@@ -100,6 +105,10 @@ class TestAsyncHttp2Connection {
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
 
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
+
                     override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
                         println("server receives settings: $frame")
 
@@ -119,11 +128,16 @@ class TestAsyncHttp2Connection {
             httpConfig, connection, SimpleFlowControlStrategy(),
             object : Http2Connection.Listener.Adapter() {
 
+                override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                    failure.printStackTrace()
+                }
+
                 override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
                     println("client receives settings: $frame")
                 }
             }
         )
+        http2Connection.sendConnectionPreface(httpConfig)
 
         http2Connection.settings(settingsFrame) { println("send settings success. $it") }
 
@@ -175,6 +189,7 @@ class TestAsyncHttp2Connection {
                 }
             }
         )
+        http2Connection.sendConnectionPreface(httpConfig)
 
         (1..count).forEach { index ->
             val pingFrame = PingFrame(index, false)

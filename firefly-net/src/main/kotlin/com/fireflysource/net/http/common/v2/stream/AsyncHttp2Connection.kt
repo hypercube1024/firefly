@@ -132,7 +132,6 @@ abstract class AsyncHttp2Connection(
     fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> =
         asyncGlobally(tcpConnection.coroutineDispatcher) {
             var writeBytes = 0L
-
             frameLoop@ for (frame in frames) {
                 val byteBuffers = generator.control(frame).byteBuffers
 

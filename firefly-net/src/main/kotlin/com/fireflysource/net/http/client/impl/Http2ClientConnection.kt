@@ -15,6 +15,7 @@ import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 import java.util.function.UnaryOperator
 
@@ -33,7 +34,7 @@ class Http2ClientConnection(
     private val receiveDataJob: Job
 
     init {
-        sendConnectionPreface(config)
+//        sendConnectionPreface(config)
         parser.init(UnaryOperator.identity())
         receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
             val inputChannel = tcpConnection.inputChannel
@@ -57,7 +58,7 @@ class Http2ClientConnection(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    private fun sendConnectionPreface(config: HttpConfig) {
+    suspend fun sendConnectionPreface(config: HttpConfig) {
         val settings = listener.onPreface(this) ?: mutableMapOf()
         settings.computeIfAbsent(SettingsFrame.INITIAL_WINDOW_SIZE) { config.initialStreamRecvWindow }
         settings.computeIfAbsent(SettingsFrame.MAX_CONCURRENT_STREAMS) { config.maxConcurrentPushedStreams }
@@ -73,19 +74,19 @@ class Http2ClientConnection(
         if (windowDelta > 0) {
             val windowUpdateFrame = WindowUpdateFrame(0, windowDelta)
             updateRecvWindow(windowDelta)
-            sendControlFrame(null, prefaceFrame, settingsFrame, windowUpdateFrame)
-                .thenAccept { log.info { "send connection preface success. $it" } }
-                .exceptionally {
-                    log.error(it) { "send connection preface exception" }
-                    null
-                }
+            sendControlFrame(null, prefaceFrame, settingsFrame, windowUpdateFrame).await()
+//                .thenAccept { log.info { "send connection preface success. $it" } }
+//                .exceptionally {
+//                    log.error(it) { "send connection preface exception" }
+//                    null
+//                }
         } else {
-            sendControlFrame(null, prefaceFrame, settingsFrame)
-                .thenAccept { log.info { "send connection preface success. $it" } }
-                .exceptionally {
-                    log.error(it) { "send connection preface exception" }
-                    null
-                }
+            sendControlFrame(null, prefaceFrame, settingsFrame).await()
+//                .thenAccept { log.info { "send connection preface success. $it" } }
+//                .exceptionally {
+//                    log.error(it) { "send connection preface exception" }
+//                    null
+//                }
         }
     }
 
