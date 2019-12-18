@@ -17,18 +17,18 @@ import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.TcpConfig
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Semaphore
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
@@ -37,11 +37,9 @@ class TestAsyncHttp2Connection {
     fun testGoAway() = runBlocking {
         val host = "localhost"
         val port = 4022
-        val semaphore = Semaphore(1, 1)
+        val channel = Channel<GoAwayFrame>()
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
-
-        val goAwayReference = AtomicReference<GoAwayFrame>()
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
@@ -50,9 +48,8 @@ class TestAsyncHttp2Connection {
                 object : Http2Connection.Listener.Adapter() {
 
                     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
-                        goAwayReference.set(frame)
                         println("server receives go away frame: $frame")
-                        semaphore.release()
+                        channel.offer(frame)
                     }
                 }
             )
@@ -75,9 +72,8 @@ class TestAsyncHttp2Connection {
             println("client close success")
         }
 
-        semaphore.acquire()
-        assertNotNull(goAwayReference.get())
-        assertEquals(ErrorCode.INTERNAL_ERROR.code, goAwayReference.get().error)
+        val receivedGoAwayFrame = channel.receive()
+        assertEquals(ErrorCode.INTERNAL_ERROR.code, receivedGoAwayFrame.error)
 
         stopTest()
     }
@@ -86,11 +82,10 @@ class TestAsyncHttp2Connection {
     fun testSettings() = runBlocking {
         val host = "localhost"
         val port = 4021
-        val semaphore = Semaphore(1, 1)
+        val channel = Channel<SettingsFrame>()
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-        val settingsReference = AtomicReference<SettingsFrame>()
         val settings = SettingsFrame(
             mutableMapOf(
                 SettingsFrame.HEADER_TABLE_SIZE to 8192,
@@ -112,8 +107,7 @@ class TestAsyncHttp2Connection {
                         println("server receives settings: $frame")
 
                         if (frame.settings == settings.settings) {
-                            settingsReference.set(frame)
-                            semaphore.release()
+                            channel.offer(frame)
                         }
                     }
                 }
@@ -135,13 +129,12 @@ class TestAsyncHttp2Connection {
 
         http2Connection.settings(settings, discard())
 
-        semaphore.acquire()
+        val receivedSettings = channel.receive()
+        assertEquals(settings.settings, receivedSettings.settings)
 
-        @Suppress("BlockingMethodInNonBlockingContext")
-        connection.close()
-
-        assertNotNull(settingsReference.get())
-        assertEquals(settings.settings, settingsReference.get().settings)
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {
+            println("client close success")
+        }
 
         stopTest()
     }
@@ -154,8 +147,6 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-        val maxPing = count * 2
-        val semaphore = Semaphore(1, 1)
         val receivedCount = AtomicInteger()
 
 
@@ -163,7 +154,7 @@ class TestAsyncHttp2Connection {
             connection.startReadingAndAwaitHandshake()
             val http2Connection = Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
-                http2ConnectionListener(semaphore, receivedCount, maxPing)
+                http2ConnectionListener(receivedCount)
             )
             sendPingFrames(count, http2Connection)
         }.listen(host, port)
@@ -173,17 +164,18 @@ class TestAsyncHttp2Connection {
         connection.startReadingAndAwaitHandshake()
         val http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
-            http2ConnectionListener(semaphore, receivedCount, maxPing)
+            http2ConnectionListener(receivedCount)
         )
         sendPingFrames(count, http2Connection)
 
-        semaphore.acquire()
-        @Suppress("BlockingMethodInNonBlockingContext")
-        connection.close()
+        delay(1000)
 
         println(receivedCount.get())
-        assertEquals(maxPing, receivedCount.get())
+        assertTrue(receivedCount.get() > 0)
 
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {
+            println("client close success")
+        }
         stopTest()
     }
 
@@ -194,18 +186,12 @@ class TestAsyncHttp2Connection {
         println("stop success. $stopTime")
     }
 
-    private fun http2ConnectionListener(
-        semaphore: Semaphore,
-        receivedCount: AtomicInteger,
-        maxPing: Int
-    ): Http2Connection.Listener.Adapter {
+    private fun http2ConnectionListener(receivedCount: AtomicInteger): Http2Connection.Listener.Adapter {
         return object : Http2Connection.Listener.Adapter() {
 
             override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
                 println("receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
-                if (receivedCount.incrementAndGet() == maxPing) {
-                    semaphore.release()
-                }
+                receivedCount.incrementAndGet()
             }
         }
     }
