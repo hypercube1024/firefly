@@ -50,11 +50,11 @@ class Http2ServerConnection(
     }
 
     override fun onHeaders(frame: HeadersFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // TODO
     }
 
     override fun onResetForUnknownStream(frame: ResetFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // TODO
     }
 
     override fun onPreface() {

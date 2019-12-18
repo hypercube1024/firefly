@@ -18,6 +18,7 @@ import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -130,6 +131,8 @@ class TestAsyncHttp2Connection {
         // TODO
         val receivedSettings = withTimeout(2000) { channel.receive() }
         assertEquals(settingsFrame.settings, receivedSettings.settings)
+
+        delay(1000)
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test", discard())
         Unit
     }
@@ -138,12 +141,11 @@ class TestAsyncHttp2Connection {
     fun testPing() = runBlocking {
         val host = "localhost"
         val port = 4020
-        val count = 10
+        val count = 10L
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-        val receivedCount = AtomicInteger()
-        val channel = Channel<Int>(UNLIMITED)
+        val channel = Channel<Long>(UNLIMITED)
 
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
@@ -163,8 +165,8 @@ class TestAsyncHttp2Connection {
 
                 override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
                     println("Client receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
-                    if (receivedCount.incrementAndGet() >= count) {
-                        val success = channel.offer(receivedCount.get())
+                    if (frame.payloadAsLong == count) {
+                        val success = channel.offer(frame.payloadAsLong)
                         println("put result ping frame: $success")
                     }
                 }
@@ -179,6 +181,8 @@ class TestAsyncHttp2Connection {
         // TODO
         val pingCount = withTimeout(2000) { channel.receive() }
         assertTrue(pingCount > 0)
+
+        delay(1000)
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test", discard())
         Unit
     }
