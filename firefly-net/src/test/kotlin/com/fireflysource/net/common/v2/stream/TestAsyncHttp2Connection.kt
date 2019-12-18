@@ -36,24 +36,22 @@ class TestAsyncHttp2Connection {
         val port = 4022
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
-        val serverConnection = AtomicReference<Http2ServerConnection>()
 
 //        val channel = Channel<GoAwayFrame>(UNLIMITED)
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            serverConnection.set(
-                Http2ServerConnection(
-                    httpConfig, connection, SimpleFlowControlStrategy(),
-                    object : Http2Connection.Listener.Adapter() {
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
 
-                        override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
-                            println("server receives go away frame: $frame")
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("server receives go away frame: $frame")
 //                        val success = channel.offer(frame)
 //                        println("put result go away frame: $success")
-                        }
                     }
-                ))
+                }
+            )
         }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)
@@ -84,7 +82,6 @@ class TestAsyncHttp2Connection {
         val channel = Channel<SettingsFrame>(UNLIMITED)
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
-        val serverConnection = AtomicReference<Http2ServerConnection>()
 
         val settingsFrame = SettingsFrame(
             mutableMapOf(
@@ -99,21 +96,20 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            serverConnection.set(
-                Http2ServerConnection(
-                    httpConfig, connection, SimpleFlowControlStrategy(),
-                    object : Http2Connection.Listener.Adapter() {
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
 
-                        override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
-                            println("server receives settings: $frame")
+                    override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
+                        println("server receives settings: $frame")
 
-                            if (frame.settings.equals(settingsFrame.settings)) {
-                                val success = channel.offer(frame)
-                                println("put result settings frame: $success")
-                            }
+                        if (frame.settings.equals(settingsFrame.settings)) {
+                            val success = channel.offer(frame)
+                            println("put result settings frame: $success")
                         }
                     }
-                ))
+                }
+            )
         }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)
@@ -148,16 +144,18 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         val channel = Channel<Long>(UNLIMITED)
-        val serverConnection = AtomicReference<Http2ServerConnection>()
 
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            serverConnection.set(
-                Http2ServerConnection(
-                    httpConfig, connection, SimpleFlowControlStrategy(),
-                    Http2Connection.Listener.Adapter()
-                )
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
+
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
+                }
             )
         }.listen(host, port)
 
