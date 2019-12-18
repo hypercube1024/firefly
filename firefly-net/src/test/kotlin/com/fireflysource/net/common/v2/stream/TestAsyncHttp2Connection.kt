@@ -37,7 +37,6 @@ class TestAsyncHttp2Connection {
     fun testGoAway() = runBlocking {
         val host = "localhost"
         val port = 4022
-        val channel = Channel<GoAwayFrame>()
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
@@ -49,7 +48,6 @@ class TestAsyncHttp2Connection {
 
                     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
                         println("server receives go away frame: $frame")
-                        channel.offer(frame)
                     }
                 }
             )
@@ -68,12 +66,13 @@ class TestAsyncHttp2Connection {
             }
         )
 
-        http2Connection.close(ErrorCode.INTERNAL_ERROR.code, "test error message") {
-            println("client close success")
-        }
-
-        val receivedGoAwayFrame = channel.receive()
-        assertEquals(ErrorCode.INTERNAL_ERROR.code, receivedGoAwayFrame.error)
+        val future = CompletableFuture<Void>()
+        val success = http2Connection.close(
+            ErrorCode.INTERNAL_ERROR.code, "test error message",
+            futureToConsumer(future)
+        )
+        assertTrue(success)
+        future.await()
 
         stopTest()
     }
@@ -152,11 +151,10 @@ class TestAsyncHttp2Connection {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
-            val http2Connection = Http2ServerConnection(
+            Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 http2ConnectionListener(receivedCount)
             )
-            sendPingFrames(count, http2Connection)
         }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)

@@ -7,6 +7,8 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.v2.decoder.ServerParser
 import com.fireflysource.net.http.common.v2.frame.HeadersFrame
 import com.fireflysource.net.http.common.v2.frame.ResetFrame
+import com.fireflysource.net.http.common.v2.frame.SettingsFrame
+import com.fireflysource.net.http.common.v2.frame.WindowUpdateFrame
 import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Connection
 import com.fireflysource.net.http.common.v2.stream.FlowControl
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
@@ -20,7 +22,7 @@ class Http2ServerConnection(
     config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
-    listener: Http2Connection.Listener = DefaultHttp2ConnectionListener()
+    private val listener: Http2Connection.Listener = DefaultHttp2ConnectionListener()
 ) : AsyncHttp2Connection(2, config, tcpConnection, flowControl, listener), HttpServerConnection,
     ServerParser.Listener {
 
@@ -56,6 +58,28 @@ class Http2ServerConnection(
     }
 
     override fun onPreface() {
-        // TODO
+        val settings = notifyPreface(this) ?: mutableMapOf()
+        val settingsFrame = SettingsFrame(settings, false)
+
+        var windowFrame: WindowUpdateFrame? = null
+        val sessionWindow: Int = initialSessionRecvWindow - HttpConfig.DEFAULT_WINDOW_SIZE
+        if (sessionWindow > 0) {
+            updateRecvWindow(sessionWindow)
+            windowFrame = WindowUpdateFrame(0, sessionWindow)
+        }
+        if (windowFrame == null) {
+            sendControlFrame(null, settingsFrame)
+        } else {
+            sendControlFrame(null, settingsFrame, windowFrame)
+        }
+    }
+
+    private fun notifyPreface(connection: Http2Connection): MutableMap<Int, Int>? {
+        return try {
+            listener.onPreface(connection)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+            null
+        }
     }
 }
