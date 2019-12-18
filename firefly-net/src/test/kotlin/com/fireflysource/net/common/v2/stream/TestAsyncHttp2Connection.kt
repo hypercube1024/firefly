@@ -1,7 +1,6 @@
 package com.fireflysource.net.common.v2.stream
 
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
-import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.net.http.client.impl.Http2ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
@@ -18,12 +17,10 @@ import com.fireflysource.net.tcp.aio.TcpConfig
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -48,6 +45,7 @@ class TestAsyncHttp2Connection {
 
                     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
                         println("server receives go away frame: $frame")
+                        http2Connection.close()
                     }
                 }
             )
@@ -72,9 +70,6 @@ class TestAsyncHttp2Connection {
             futureToConsumer(future)
         )
         assertTrue(success)
-        future.await()
-
-        stopTest(http2Connection)
     }
 
     @Test
@@ -107,6 +102,7 @@ class TestAsyncHttp2Connection {
 
                         if (frame.settings.equals(settingsFrame.settings)) {
                             channel.offer(frame)
+                            http2Connection.close()
                         }
                     }
                 }
@@ -133,8 +129,6 @@ class TestAsyncHttp2Connection {
         // TODO
         val receivedSettings = withTimeout(2000) { channel.receive() }
         assertEquals(settingsFrame.settings, receivedSettings.settings)
-
-        stopTest(http2Connection)
     }
 
     @Test
@@ -168,12 +162,13 @@ class TestAsyncHttp2Connection {
                     println("Client receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
                     if (receivedCount.incrementAndGet() >= count) {
                         channel.offer(receivedCount.get())
+                        http2Connection.close()
                     }
                 }
             }
         )
 
-        (1..count).forEach {index ->
+        (1..count).forEach { index ->
             val pingFrame = PingFrame(index.toLong(), false)
             http2Connection.ping(pingFrame) {
                 println("send ping success. $it")
@@ -183,24 +178,13 @@ class TestAsyncHttp2Connection {
         // TODO
         val pingCount = withTimeout(2000) { channel.receive() }
         assertTrue(pingCount > 0)
-
-        stopTest(http2Connection)
     }
 
-    private fun stopTest(http2Connection: Http2ClientConnection) {
-        try {
-            Thread.sleep(2000)
-            val stopTime = measureTimeMillis {
-                @Suppress("BlockingMethodInNonBlockingContext")
-                http2Connection.close()
-                stopAll()
-            }
-            println("stop success. $stopTime")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    @AfterEach
+    fun destroy() {
+        val time = measureTimeMillis { stopAll() }
+        println("shutdown time: $time ms")
     }
-
 
 
 }
