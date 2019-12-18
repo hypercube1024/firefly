@@ -2,6 +2,8 @@ package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.concurrent.AtomicBiInteger
 import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.math.MathUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.createFailedResult
 import com.fireflysource.common.sys.Result.discard
@@ -18,6 +20,7 @@ import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import com.fireflysource.net.tcp.aio.ChannelClosedException
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
+import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -39,7 +42,7 @@ abstract class AsyncHttp2Connection(
         private val log = SystemLogger.create(AsyncHttp2Connection::class.java)
     }
 
-    private val streamId = AtomicInteger(initStreamId)
+    private val localStreamId = AtomicInteger(initStreamId)
     private val http2StreamMap = ConcurrentHashMap<Int, Stream>()
     private val localStreamCount = AtomicInteger()
     private val remoteStreamCount = AtomicBiInteger()
@@ -105,7 +108,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    private fun getNextStreamId(): Int = streamId.getAndAdd(2)
+    private fun getNextStreamId(): Int = localStreamId.getAndAdd(2)
 
     private fun createLocalStream(id: Int, listener: Stream.Listener): Stream {
         return http2StreamMap.computeIfAbsent(id) {
@@ -327,6 +330,15 @@ abstract class AsyncHttp2Connection(
 
     protected abstract fun onResetForUnknownStream(frame: ResetFrame)
 
+    protected fun reset(frame: ResetFrame, result: Consumer<Result<Void>>) {
+        sendControlFrame(getStream(frame.streamId), frame)
+            .thenAccept { result.accept(Result.SUCCESS) }
+            .exceptionally {
+                result.accept(createFailedResult(it))
+                null
+            }
+    }
+
     override fun onSettings(frame: SettingsFrame) {
         // SPEC: SETTINGS frame MUST be replied.
         onSettings(frame, true)
@@ -379,7 +391,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    private fun notifySettings(connection: Http2Connection, frame: SettingsFrame) {
+    protected fun notifySettings(connection: Http2Connection, frame: SettingsFrame) {
         try {
             listener.onSettings(connection, frame)
         } catch (e: Exception) {
@@ -400,7 +412,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    private fun notifyPing(connection: Http2Connection, frame: PingFrame) {
+    protected fun notifyPing(connection: Http2Connection, frame: PingFrame) {
         try {
             listener.onPing(connection, frame)
         } catch (e: Exception) {
@@ -432,7 +444,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    private fun notifyClose(connection: Http2Connection, frame: GoAwayFrame, consumer: Consumer<Result<Void>>) {
+    protected fun notifyClose(connection: Http2Connection, frame: GoAwayFrame, consumer: Consumer<Result<Void>>) {
         try {
             listener.onClose(connection, frame, consumer)
         } catch (e: Exception) {
@@ -453,7 +465,46 @@ abstract class AsyncHttp2Connection(
     }
 
     override fun onWindowUpdate(frame: WindowUpdateFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        log.debug { "Received $frame" }
+        val streamId = frame.streamId
+        val windowDelta = frame.windowDelta
+        if (streamId > 0) {
+            val stream = getStream(streamId)
+            if (stream != null && stream is AsyncHttp2Stream) {
+                val streamSendWindow: Int = stream.updateSendWindow(0)
+                if (MathUtils.sumOverflows(streamSendWindow, windowDelta)) {
+                    reset(ResetFrame(streamId, ErrorCode.FLOW_CONTROL_ERROR.code), discard())
+                } else {
+                    stream.process(frame, discard())
+                    onWindowUpdate(stream, frame)
+                }
+            } else {
+                if (!isRemoteStreamClosed(streamId)) {
+                    onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_window_update_frame")
+                }
+            }
+        } else {
+            val sessionSendWindow = updateSendWindow(0)
+            if (MathUtils.sumOverflows(sessionSendWindow, windowDelta)) {
+                onConnectionFailure(ErrorCode.FLOW_CONTROL_ERROR.code, "invalid_flow_control_window")
+            } else {
+                onWindowUpdate(null, frame)
+            }
+        }
+    }
+
+    fun onWindowUpdate(stream: Stream?, frame: WindowUpdateFrame) {
+        launchGlobally(tcpConnection.coroutineDispatcher) {
+            flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame)
+        }
+    }
+
+    protected fun isLocalStreamClosed(streamId: Int): Boolean {
+        return streamId <= this.localStreamId.get()
+    }
+
+    protected fun isRemoteStreamClosed(streamId: Int): Boolean {
+        return streamId <= getLastRemoteStreamId()
     }
 
     override fun onStreamFailure(streamId: Int, error: Int, reason: String) {
@@ -461,7 +512,21 @@ abstract class AsyncHttp2Connection(
     }
 
     override fun onConnectionFailure(error: Int, reason: String) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        onConnectionFailure(error, reason, discard())
+    }
+
+    protected fun onConnectionFailure(error: Int, reason: String, result: Consumer<Result<Void>>) {
+        notifyFailure(this,
+            IOException(String.format("%d/%s", error, reason)),
+            Consumer { close(error, reason, result) })
+    }
+
+    protected fun notifyFailure(connection: Http2Connection, throwable: Throwable, consumer: Consumer<Result<Void>>) {
+        try {
+            listener.onFailure(connection, throwable, consumer)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+        }
     }
 
     fun updateRecvWindow(delta: Int): Int {

@@ -56,6 +56,6 @@ class Http2ServerConnection(
     }
 
     override fun onPreface() {
-        println("on preface")
+        // TODO
     }
 }

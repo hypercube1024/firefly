@@ -32,8 +32,8 @@ class SimpleFlowControlStrategy : FlowControl {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun windowUpdate(http2Connection: Http2Connection, stream: Stream, frame: WindowUpdateFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun windowUpdate(http2Connection: Http2Connection, stream: Stream?, frame: WindowUpdateFrame) {
+        // TODO
     }
 
     override fun onDataSending(stream: Stream, length: Int) {
