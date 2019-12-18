@@ -147,13 +147,14 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         val receivedCount = AtomicInteger()
+        val channel = Channel<Int>()
 
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
-                http2ConnectionListener(receivedCount)
+                Http2Connection.Listener.Adapter()
             )
         }.listen(host, port)
 
@@ -162,13 +163,19 @@ class TestAsyncHttp2Connection {
         connection.startReadingAndAwaitHandshake()
         val http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
-            http2ConnectionListener(receivedCount)
+            object : Http2Connection.Listener.Adapter() {
+
+                override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
+                    println("Client receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
+                    if (receivedCount.incrementAndGet() >= count) {
+                        channel.offer(receivedCount.get())
+                    }
+                }
+            }
         )
         sendPingFrames(count, http2Connection)
 
-        delay(1000)
-
-        println(receivedCount.get())
+        println(channel.receive())
         assertTrue(receivedCount.get() > 0)
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {
@@ -184,15 +191,15 @@ class TestAsyncHttp2Connection {
         println("stop success. $stopTime")
     }
 
-    private fun http2ConnectionListener(receivedCount: AtomicInteger): Http2Connection.Listener.Adapter {
-        return object : Http2Connection.Listener.Adapter() {
-
-            override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
-                println("receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
-                receivedCount.incrementAndGet()
-            }
-        }
-    }
+//    private fun http2ConnectionListener(name: String, receivedCount: AtomicInteger): Http2Connection.Listener.Adapter {
+//        return object : Http2Connection.Listener.Adapter() {
+//
+//            override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
+//                println("$name receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
+//                receivedCount.incrementAndGet()
+//            }
+//        }
+//    }
 
     private suspend fun sendPingFrames(count: Int, http2Connection: Http2Connection) {
         (1..count).asFlow().map { index ->

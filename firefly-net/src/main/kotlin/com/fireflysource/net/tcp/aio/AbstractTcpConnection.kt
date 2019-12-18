@@ -64,7 +64,10 @@ abstract class AbstractTcpConnection(
 
     private val writingJob = launchGlobally(messageThread) {
         while (isWriteable()) {
-            writeMessage(outputChannel.receive())
+            val write = writeMessage(outputChannel.receive())
+            if (!write) {
+                break
+            }
         }
     }
 
@@ -80,7 +83,7 @@ abstract class AbstractTcpConnection(
 
     override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
 
-    private suspend fun writeMessage(message: Message) {
+    private suspend fun writeMessage(message: Message): Boolean {
         lastWrittenTime = System.currentTimeMillis()
         when (message) {
             is Buffer -> {
@@ -92,7 +95,7 @@ abstract class AbstractTcpConnection(
                             shutdownOutput()
                             shutdownInput()
                             message.result.accept(Result(false, -1, channelClosedException))
-                            return
+                            return false
                         } else {
                             writtenBytes += count
                             len += count
@@ -102,22 +105,23 @@ abstract class AbstractTcpConnection(
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection writing exception. $id" }
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     }
                 }
                 message.result.accept(Result(true, len, null))
+                return true
             }
             is Buffers -> {
                 var len = 0L
@@ -131,7 +135,7 @@ abstract class AbstractTcpConnection(
                             shutdownOutput()
                             shutdownInput()
                             message.result.accept(Result(false, -1, channelClosedException))
-                            return
+                            return false
                         } else {
                             writtenBytes += count
                             len += count
@@ -141,22 +145,23 @@ abstract class AbstractTcpConnection(
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection writing exception. $id" }
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     }
                 }
                 message.result.accept(Result(true, len, null))
+                return true
             }
             is BufferList -> {
                 var len = 0L
@@ -176,30 +181,38 @@ abstract class AbstractTcpConnection(
                             shutdownOutput()
                             shutdownInput()
                             message.result.accept(Result(false, -1, channelClosedException))
-                            return
+                            return false
                         } else {
                             writtenBytes += count
                             len += count
                         }
+                    } catch (e: ClosedChannelException) {
+                        log.warn { "Tcp connection has been closed. $id" }
+                        shutdownOutput()
+                        shutdownInput()
+                        message.result.accept(Result(false, -1, e))
+                        return false
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection writing exception. $id" }
                         shutdownOutput()
                         shutdownInput()
                         message.result.accept(Result(false, -1, e))
-                        return
+                        return false
                     }
                 }
                 message.result.accept(Result(true, len, null))
+                return true
             }
             is Shutdown -> {
                 shutdownOutput()
                 shutdownInput()
+                return false
             }
         }
     }
@@ -319,17 +332,27 @@ abstract class AbstractTcpConnection(
 
     override fun closeNow(): TcpConnection {
         if (socketChannelClosed.compareAndSet(false, true)) {
+            closeTime = System.currentTimeMillis()
             try {
-                closeTime = System.currentTimeMillis()
                 socketChannel.close()
-                writingJob.cancel()
-                log.info { "tcp connection close success. $id" }
-                closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
                 log.warn(e) { "close socket channel exception. $id" }
-            } finally {
-                closeConsumer.accept(Result.SUCCESS)
             }
+
+            try {
+                writingJob.cancel()
+            } catch (e: Exception) {
+                log.warn(e) { "cancel writing job exception. $id" }
+            }
+
+            try {
+                closeCallbacks.forEach { it.call() }
+            } catch (e: Exception) {
+                log.warn(e) { "close callback exception. $id" }
+            }
+
+            log.info { "tcp connection close success. $id" }
+            closeConsumer.accept(Result.SUCCESS)
         }
         return this
     }
