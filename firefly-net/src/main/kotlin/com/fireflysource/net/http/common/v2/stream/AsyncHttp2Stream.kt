@@ -49,7 +49,7 @@ class AsyncHttp2Stream(
     }
 
     fun process(frame: Frame, result: Consumer<Result<Void>>) {
-        TODO("not implemented")
+        // TODO
     }
 
     override fun getId(): Int = id
