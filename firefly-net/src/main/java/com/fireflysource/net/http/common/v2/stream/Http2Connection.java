@@ -212,10 +212,6 @@ public interface Http2Connection extends HttpConnection {
 
         void onFailure(Http2Connection http2Connection, Throwable failure);
 
-        void onStreamOpened(Http2Connection http2Connection, Stream stream);
-
-        void onStreamClosed(Http2Connection http2Connection, Stream stream);
-
         /**
          * <p>Empty implementation of {@link Stream.Listener}.</p>
          */
@@ -253,14 +249,6 @@ public interface Http2Connection extends HttpConnection {
 
             @Override
             public void onFailure(Http2Connection http2Connection, Throwable failure) {
-            }
-
-            @Override
-            public void onStreamOpened(Http2Connection http2Connection, Stream stream) {
-            }
-
-            @Override
-            public void onStreamClosed(Http2Connection http2Connection, Stream stream) {
             }
         }
     }

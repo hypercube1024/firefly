@@ -134,7 +134,7 @@ abstract class AsyncHttp2Connection(
                     FrameType.HEADERS -> {
                         val headersFrame = frame as HeadersFrame
                         if (stream != null && stream is AsyncHttp2Stream) {
-                            listener.onStreamOpened(this@AsyncHttp2Connection, stream)
+                            onStreamOpened(stream)
                             if (stream.updateClose(headersFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
                                 removeStream(stream)
                             }
@@ -234,7 +234,7 @@ abstract class AsyncHttp2Connection(
     fun removeStream(stream: Stream) {
         val removed = http2StreamMap.remove(stream.id)
         if (removed != null) {
-            listener.onStreamClosed(this, stream)
+            onStreamClosed(stream)
             flowControl.onStreamDestroyed(stream)
             log.debug { "Removed $stream" }
         }
