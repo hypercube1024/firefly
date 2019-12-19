@@ -107,7 +107,7 @@ class TestAsyncHttp2Connection {
                     override fun onSettings(http2Connection: Http2Connection, frame: SettingsFrame) {
                         println("server receives settings: $frame")
 
-                        if (frame.settings.equals(settingsFrame.settings)) {
+                        if (frame.settings == settingsFrame.settings) {
                             val success = channel.offer(frame)
                             println("put result settings frame: $success")
                         }
