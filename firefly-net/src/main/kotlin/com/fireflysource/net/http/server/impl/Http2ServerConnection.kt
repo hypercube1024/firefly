@@ -5,17 +5,13 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.impl.DefaultHttp2ConnectionListener
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.v2.decoder.ServerParser
-import com.fireflysource.net.http.common.v2.frame.HeadersFrame
-import com.fireflysource.net.http.common.v2.frame.ResetFrame
-import com.fireflysource.net.http.common.v2.frame.SettingsFrame
-import com.fireflysource.net.http.common.v2.frame.WindowUpdateFrame
+import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Connection
 import com.fireflysource.net.http.common.v2.stream.FlowControl
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpConnection
-import kotlinx.coroutines.Job
 import java.util.function.UnaryOperator
 
 class Http2ServerConnection(
@@ -31,11 +27,10 @@ class Http2ServerConnection(
     }
 
     private val parser: ServerParser = ServerParser(this, config.maxDynamicTableSize, config.maxHeaderSize)
-    private val receiveDataJob: Job
 
     init {
         parser.init(UnaryOperator.identity())
-        receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
+        val receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
             val inputChannel = tcpConnection.inputChannel
             recvLoop@ while (true) {
                 val buffer = inputChannel.receive()
@@ -80,6 +75,18 @@ class Http2ServerConnection(
         } catch (e: Exception) {
             log.error(e) { "failure while notifying listener" }
             null
+        }
+    }
+
+    override fun onFrame(frame: Frame) {
+        when (frame.type) {
+            FrameType.PREFACE -> onPreface()
+            FrameType.SETTINGS -> onSettings(
+                (frame as SettingsFrame),
+                false
+            ) // SPEC: the required reply to these SETTINGS frame is the 101 response.
+            FrameType.HEADERS -> onHeaders((frame as HeadersFrame))
+            else -> super.onFrame(frame)
         }
     }
 }

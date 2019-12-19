@@ -1,7 +1,6 @@
 package com.fireflysource.net.common.v2.stream
 
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
-import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.http.client.impl.Http2ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.v2.frame.ErrorCode
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
@@ -37,7 +35,7 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-//        val channel = Channel<GoAwayFrame>(UNLIMITED)
+        val channel = Channel<GoAwayFrame>(UNLIMITED)
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
@@ -50,9 +48,9 @@ class TestAsyncHttp2Connection {
                     }
 
                     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
-                        println("server receives go away frame: $frame")
-//                        val success = channel.offer(frame)
-//                        println("put result go away frame: $success")
+                        println("Server receives go away frame: $frame")
+                        val success = channel.offer(frame)
+                        println("put result go away frame: $success")
                     }
                 }
             )
@@ -66,18 +64,15 @@ class TestAsyncHttp2Connection {
             object : Http2Connection.Listener.Adapter() {
 
                 override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
-                    println("client receives go away frame: $frame")
+                    println("Client receives go away frame: $frame")
                 }
             }
         )
-        http2Connection.sendConnectionPreface(httpConfig)
 
-        val success = http2Connection.close(ErrorCode.INTERNAL_ERROR.code, "test error message") {
-            println("send go away success. $it")
-        }
+        val success = http2Connection.close(ErrorCode.INTERNAL_ERROR.code, "test error message")
         assertTrue(success)
-//        val receivedGoAwayFrame = withTimeout(2000) { channel.receive() }
-//        assertEquals(ErrorCode.INTERNAL_ERROR.code, receivedGoAwayFrame.error)
+        val receivedGoAwayFrame = withTimeout(2000) { channel.receive() }
+        assertEquals(ErrorCode.INTERNAL_ERROR.code, receivedGoAwayFrame.error)
     }
 
     @Test
@@ -137,15 +132,13 @@ class TestAsyncHttp2Connection {
                 }
             }
         )
-        http2Connection.sendConnectionPreface(httpConfig)
 
         http2Connection.settings(settingsFrame) { println("send settings success. $it") }
 
-        // TODO
         val receivedSettings = withTimeout(2000) { channel.receive() }
         assertEquals(settingsFrame.settings, receivedSettings.settings)
 
-        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test", discard())
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test")
         Unit
     }
 
@@ -189,18 +182,16 @@ class TestAsyncHttp2Connection {
                 }
             }
         )
-        http2Connection.sendConnectionPreface(httpConfig)
 
         (1..count).forEach { index ->
             val pingFrame = PingFrame(index, false)
             http2Connection.ping(pingFrame) { println("send ping success. $it") }
         }
 
-        // TODO
         val pingCount = withTimeout(2000) { channel.receive() }
         assertTrue(pingCount > 0)
 
-        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test", discard())
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test")
         Unit
     }
 
@@ -209,6 +200,5 @@ class TestAsyncHttp2Connection {
         val time = measureTimeMillis { stopAll() }
         println("shutdown time: $time ms")
     }
-
 
 }
