@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.concurrent.AtomicBiInteger
+import com.fireflysource.common.concurrent.Atomics
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.math.MathUtils
 import com.fireflysource.common.sys.Result
@@ -39,6 +40,7 @@ abstract class AsyncHttp2Connection(
 
     companion object {
         private val log = SystemLogger.create(AsyncHttp2Connection::class.java)
+        val defaultHttp2ConnectionListener = Http2Connection.Listener.Adapter()
     }
 
     private val localStreamId = AtomicInteger(initStreamId)
@@ -240,7 +242,7 @@ abstract class AsyncHttp2Connection(
 
     private fun getNextStreamId(): Int = localStreamId.getAndAdd(2)
 
-    private fun createLocalStream(id: Int, listener: Stream.Listener): Stream {
+    protected fun createLocalStream(id: Int, listener: Stream.Listener): Stream {
         return http2StreamMap.computeIfAbsent(id) {
             checkMaxLocalStreams()
             val stream = AsyncHttp2Stream(this, id, true, listener)
@@ -258,6 +260,62 @@ abstract class AsyncHttp2Connection(
                 break
             }
         }
+    }
+
+    protected open fun onStreamOpened(stream: Stream?) {}
+
+    protected open fun onStreamClosed(stream: Stream?) {}
+
+    protected open fun notifyNewStream(stream: Stream?, frame: HeadersFrame): Stream.Listener? {
+        return try {
+            listener.onNewStream(stream, frame)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+            null
+        }
+    }
+
+    protected fun createRemoteStream(streamId: Int): Stream? {
+        // SPEC: exceeding max concurrent streams is treated as stream error.
+        if (checkMaxRemoteStreams(streamId)) {
+            return null
+        }
+        val stream: Stream = newStream(streamId, false)
+        // SPEC: duplicate stream is treated as connection error.
+        return if (http2StreamMap.putIfAbsent(streamId, stream) == null) {
+            updateLastRemoteStreamId(streamId)
+            // TODO stream.setIdleTimeout(getStreamIdleTimeout())
+            flowControl.onStreamCreated(stream)
+            log.debug { "Created remote $stream" }
+            stream
+        } else {
+            remoteStreamCount.addAndGetHi(-1)
+            onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "duplicate_stream")
+            null
+        }
+    }
+
+    private fun checkMaxRemoteStreams(streamId: Int): Boolean {
+        while (true) {
+            val encoded = remoteStreamCount.get()
+            val remoteCount = AtomicBiInteger.getHi(encoded)
+            val remoteClosing = AtomicBiInteger.getLo(encoded)
+            val maxCount: Int = maxRemoteStreams
+            if (maxCount >= 0 && remoteCount - remoteClosing >= maxCount) {
+                reset(ResetFrame(streamId, ErrorCode.REFUSED_STREAM_ERROR.code), discard())
+                return true
+            }
+            if (remoteStreamCount.compareAndSet(encoded, remoteCount + 1, remoteClosing)) break
+        }
+        return false
+    }
+
+    protected fun newStream(streamId: Int, local: Boolean): Stream {
+        return AsyncHttp2Stream(this, streamId, local)
+    }
+
+    private fun updateLastRemoteStreamId(streamId: Int) {
+        Atomics.updateMax(lastRemoteStreamId, streamId)
     }
 
     fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> =
@@ -376,6 +434,14 @@ abstract class AsyncHttp2Connection(
 
     abstract override fun onHeaders(frame: HeadersFrame)
 
+    protected fun notifyHeaders(stream: AsyncHttp2Stream, frame: HeadersFrame) {
+        try {
+            stream.listener.onHeaders(stream, frame)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+        }
+    }
+
     override fun onPriority(frame: PriorityFrame) {
         // TODO
     }
@@ -389,6 +455,14 @@ abstract class AsyncHttp2Connection(
             }
         } else {
             onResetForUnknownStream(frame)
+        }
+    }
+
+    protected fun notifyReset(http2Connection: Http2Connection, frame: ResetFrame) {
+        try {
+            listener.onReset(http2Connection, frame)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
         }
     }
 
@@ -619,6 +693,8 @@ abstract class AsyncHttp2Connection(
     open fun onFrame(frame: Frame) {
         onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "upgrade")
     }
+
+    fun isClientStream(streamId: Int) = (streamId and 1 == 1)
 
     override fun toString(): String {
         return java.lang.String.format(

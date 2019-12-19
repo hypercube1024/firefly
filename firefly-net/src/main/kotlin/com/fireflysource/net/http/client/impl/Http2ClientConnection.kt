@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientRequest
@@ -17,7 +18,7 @@ class Http2ClientConnection(
     config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
-    private val listener: Http2Connection.Listener = DefaultHttp2ConnectionListener()
+    private val listener: Http2Connection.Listener = defaultHttp2ConnectionListener
 ) : AsyncHttp2Connection(1, config, tcpConnection, flowControl, listener), HttpClientConnection {
 
     companion object {
@@ -65,11 +66,43 @@ class Http2ClientConnection(
     }
 
     override fun onHeaders(frame: HeadersFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        log.debug { "Received $frame" }
+
+        // HEADERS can be received for normal and pushed responses.
+        val streamId = frame.streamId
+        val stream = getStream(streamId)
+        if (stream != null && stream is AsyncHttp2Stream) {
+            val metaData = frame.metaData
+            if (metaData.isRequest) {
+                onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "invalid_response")
+            } else {
+                stream.process(frame, discard())
+                notifyHeaders(stream, frame)
+            }
+        } else {
+            log.debug { "Stream: $streamId not found" }
+            if (isClientStream(streamId)) {
+                // The normal stream. Headers or trailers arriving after the stream has been reset are ignored.
+                if (!isLocalStreamClosed(streamId)) {
+                    onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_headers_frame")
+                }
+            } else {
+                // The pushed stream. Headers or trailers arriving after the stream has been reset are ignored.
+                if (!isRemoteStreamClosed(streamId)) {
+                    onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_headers_frame")
+                }
+            }
+        }
     }
 
     override fun onResetForUnknownStream(frame: ResetFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val streamId = frame.streamId
+        val closed = if (isClientStream(streamId)) isLocalStreamClosed(streamId) else isRemoteStreamClosed(streamId)
+        if (closed) {
+            notifyReset(this, frame)
+        } else {
+            onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_rst_stream_frame")
+        }
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {

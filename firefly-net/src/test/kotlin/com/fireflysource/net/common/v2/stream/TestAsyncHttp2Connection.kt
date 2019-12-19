@@ -28,6 +28,14 @@ import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
 
+//    @Test
+//    fun testNewStream() = runBlocking {
+//        val host = "localhost"
+//        val port = 4023
+//        val tcpConfig = TcpConfig(30, false)
+//        val httpConfig = HttpConfig()
+//    }
+
     @Test
     fun testGoAway() = runBlocking {
         val host = "localhost"

@@ -18,11 +18,12 @@ class AsyncHttp2Stream(
     private val asyncHttp2Connection: AsyncHttp2Connection,
     private val id: Int,
     private val local: Boolean,
-    private val listener: Stream.Listener
+    var listener: Stream.Listener = defaultStreamListener
 ) : Stream, Closeable {
 
     companion object {
         private val log = SystemLogger.create(AsyncHttp2Stream::class.java)
+        val defaultStreamListener = Stream.Listener.Adapter()
     }
 
     private val sendWindow = AtomicInteger()
