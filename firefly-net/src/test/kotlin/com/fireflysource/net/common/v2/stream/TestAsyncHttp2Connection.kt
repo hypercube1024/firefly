@@ -138,7 +138,7 @@ class TestAsyncHttp2Connection {
         val receivedSettings = withTimeout(2000) { channel.receive() }
         assertEquals(settingsFrame.settings, receivedSettings.settings)
 
-        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test")
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
         Unit
     }
 
@@ -191,7 +191,7 @@ class TestAsyncHttp2Connection {
         val pingCount = withTimeout(2000) { channel.receive() }
         assertTrue(pingCount > 0)
 
-        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test")
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
         Unit
     }
 
