@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.server.impl
 
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.impl.DefaultHttp2ConnectionListener
 import com.fireflysource.net.http.common.HttpConfig
@@ -30,18 +29,7 @@ class Http2ServerConnection(
 
     init {
         parser.init(UnaryOperator.identity())
-        val receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
-            val inputChannel = tcpConnection.inputChannel
-            recvLoop@ while (true) {
-                val buffer = inputChannel.receive()
-                parsingLoop@ while (buffer.hasRemaining()) {
-                    parser.parse(buffer)
-                }
-            }
-        }
-        tcpConnection.onClose {
-            receiveDataJob.cancel()
-        }
+        launchParserJob(parser)
     }
 
     override fun onHeaders(frame: HeadersFrame) {

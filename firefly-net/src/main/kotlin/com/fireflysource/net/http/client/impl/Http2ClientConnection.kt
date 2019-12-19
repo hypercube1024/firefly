@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientRequest
@@ -9,10 +8,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.frame.*
-import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Connection
-import com.fireflysource.net.http.common.v2.stream.FlowControl
-import com.fireflysource.net.http.common.v2.stream.Http2Connection
-import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
+import com.fireflysource.net.http.common.v2.stream.*
 import com.fireflysource.net.tcp.TcpConnection
 import java.util.concurrent.CompletableFuture
 import java.util.function.UnaryOperator
@@ -31,28 +27,9 @@ class Http2ClientConnection(
     private val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
 
     init {
-        sendConnectionPreface(config)
         parser.init(UnaryOperator.identity())
-        val receiveDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
-            val inputChannel = tcpConnection.inputChannel
-            recvLoop@ while (true) {
-                val buffer = inputChannel.receive()
-                parsingLoop@ while (buffer.hasRemaining()) {
-                    parser.parse(buffer)
-                }
-            }
-        }
-        tcpConnection.onClose {
-            receiveDataJob.cancel()
-        }
-    }
-
-    override fun onHeaders(frame: HeadersFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun onResetForUnknownStream(frame: ResetFrame) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        sendConnectionPreface(config)
+        launchParserJob(parser)
     }
 
     private fun sendConnectionPreface(config: HttpConfig) {
@@ -85,6 +62,14 @@ class Http2ClientConnection(
                     null
                 }
         }
+    }
+
+    override fun onHeaders(frame: HeadersFrame) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onResetForUnknownStream(frame: ResetFrame) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
