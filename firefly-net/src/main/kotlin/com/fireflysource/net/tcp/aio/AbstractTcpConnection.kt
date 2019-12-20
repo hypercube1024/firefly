@@ -73,123 +73,130 @@ abstract class AbstractTcpConnection(
 
     private suspend fun flushData(outputMessage: OutputMessage): Boolean {
         lastWrittenTime = System.currentTimeMillis()
-        when (outputMessage) {
-            is Buffer -> {
-                var len = 0
-                while (outputMessage.buffer.hasRemaining()) {
-                    try {
-                        val count = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
-                        if (count < 0) {
-                            shutdownOutputAndInput()
-                            outputMessage.result.accept(Result(false, -1, closedChannelException))
-                            return false
-                        } else {
-                            writtenBytes += count
-                            len += count
-                        }
-                    } catch (e: ClosedChannelException) {
-                        log.warn { "Tcp connection has been closed. id: $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection writing timeout. id: $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection writing exception. id: $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    }
-                }
-                outputMessage.result.accept(Result(true, len, null))
-                return true
-            }
-            is Buffers -> {
-                var len = 0L
-                while (outputMessage.hasRemaining()) {
-                    try {
-                        val offset = outputMessage.getCurrentOffset()
-                        val length = outputMessage.getCurrentLength()
-
-                        val count = socketChannel.writeAwait(outputMessage.buffers, offset, length, maxIdleTime, timeUnit)
-                        if (count < 0) {
-                            shutdownOutputAndInput()
-                            outputMessage.result.accept(Result(false, -1, closedChannelException))
-                            return false
-                        } else {
-                            writtenBytes += count
-                            len += count
-                        }
-                    } catch (e: ClosedChannelException) {
-                        log.warn { "Tcp connection has been closed. $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection writing timeout. $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection writing exception. $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    }
-                }
-                outputMessage.result.accept(Result(true, len, null))
-                return true
-            }
-            is BufferList -> {
-                var len = 0L
-                while (outputMessage.hasRemaining()) {
-                    try {
-                        val offset = outputMessage.getCurrentOffset()
-                        val length = outputMessage.getCurrentLength()
-
-                        val count = socketChannel.writeAwait(
-                            outputMessage.bufferList.toTypedArray(),
-                            offset,
-                            length,
-                            maxIdleTime,
-                            timeUnit
-                        )
-                        if (count < 0) {
-                            shutdownOutputAndInput()
-                            outputMessage.result.accept(Result(false, -1, closedChannelException))
-                            return false
-                        } else {
-                            writtenBytes += count
-                            len += count
-                        }
-                    } catch (e: ClosedChannelException) {
-                        log.warn { "Tcp connection has been closed. $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection writing timeout. $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection writing exception. $id" }
-                        shutdownOutputAndInput()
-                        outputMessage.result.accept(Result(false, -1, e))
-                        return false
-                    }
-                }
-                outputMessage.result.accept(Result(true, len, null))
-                return true
-            }
+        return when (outputMessage) {
+            is Buffer -> flushBuffer(outputMessage)
+            is Buffers -> flushBuffers(outputMessage)
+            is BufferList -> flushBufferList(outputMessage)
             is Shutdown -> {
                 shutdownOutputAndInput()
+                false
+            }
+        }
+    }
+
+    private suspend fun flushBufferList(outputMessage: BufferList): Boolean {
+        var len = 0L
+        while (outputMessage.hasRemaining()) {
+            try {
+                val offset = outputMessage.getCurrentOffset()
+                val length = outputMessage.getCurrentLength()
+
+                val count = socketChannel.writeAwait(
+                    outputMessage.bufferList.toTypedArray(),
+                    offset,
+                    length,
+                    maxIdleTime,
+                    timeUnit
+                )
+                if (count < 0) {
+                    shutdownOutputAndInput()
+                    outputMessage.result.accept(Result(false, -1, closedChannelException))
+                    return false
+                } else {
+                    writtenBytes += count
+                    len += count
+                }
+            } catch (e: ClosedChannelException) {
+                log.warn { "Tcp connection has been closed. $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            } catch (e: InterruptedByTimeoutException) {
+                log.warn { "Tcp connection writing timeout. $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            } catch (e: Exception) {
+                log.warn(e) { "Tcp connection writing exception. $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
                 return false
             }
         }
+        outputMessage.result.accept(Result(true, len, null))
+        return true
+    }
+
+    private suspend fun flushBuffers(outputMessage: Buffers): Boolean {
+        var len = 0L
+        while (outputMessage.hasRemaining()) {
+            try {
+                val offset = outputMessage.getCurrentOffset()
+                val length = outputMessage.getCurrentLength()
+
+                val count =
+                    socketChannel.writeAwait(outputMessage.buffers, offset, length, maxIdleTime, timeUnit)
+                if (count < 0) {
+                    shutdownOutputAndInput()
+                    outputMessage.result.accept(Result(false, -1, closedChannelException))
+                    return false
+                } else {
+                    writtenBytes += count
+                    len += count
+                }
+            } catch (e: ClosedChannelException) {
+                log.warn { "Tcp connection has been closed. $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            } catch (e: InterruptedByTimeoutException) {
+                log.warn { "Tcp connection writing timeout. $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            } catch (e: Exception) {
+                log.warn(e) { "Tcp connection writing exception. $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            }
+        }
+        outputMessage.result.accept(Result(true, len, null))
+        return true
+    }
+
+    private suspend fun flushBuffer(outputMessage: Buffer): Boolean {
+        var len = 0
+        while (outputMessage.buffer.hasRemaining()) {
+            try {
+                val count = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
+                if (count < 0) {
+                    shutdownOutputAndInput()
+                    outputMessage.result.accept(Result(false, -1, closedChannelException))
+                    return false
+                } else {
+                    writtenBytes += count
+                    len += count
+                }
+            } catch (e: ClosedChannelException) {
+                log.warn { "Tcp connection has been closed. id: $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            } catch (e: InterruptedByTimeoutException) {
+                log.warn { "Tcp connection writing timeout. id: $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            } catch (e: Exception) {
+                log.warn(e) { "Tcp connection writing exception. id: $id" }
+                shutdownOutputAndInput()
+                outputMessage.result.accept(Result(false, -1, e))
+                return false
+            }
+        }
+        outputMessage.result.accept(Result(true, len, null))
+        return true
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
@@ -202,9 +209,7 @@ abstract class AbstractTcpConnection(
     }
 
     override fun write(
-        byteBuffers: Array<ByteBuffer>,
-        offset: Int,
-        length: Int,
+        byteBuffers: Array<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
         if (isWriteable()) {
@@ -216,9 +221,7 @@ abstract class AbstractTcpConnection(
     }
 
     override fun write(
-        byteBufferList: List<ByteBuffer>,
-        offset: Int,
-        length: Int,
+        byteBufferList: List<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
         if (isWriteable()) {
@@ -230,7 +233,6 @@ abstract class AbstractTcpConnection(
     }
 
     private fun isWriteable() = !outputShutdownState.get() && !socketChannelClosed.get()
-
 
 
     override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
@@ -293,7 +295,6 @@ abstract class AbstractTcpConnection(
         readingState.set(false)
         return this
     }
-
 
 
     override fun onClose(callback: Callback): TcpConnection {
