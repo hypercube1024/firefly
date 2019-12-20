@@ -116,7 +116,6 @@ class TestAsyncHttp2Connection {
             val newStream = newPushStreamChannel.receive()
             assertEquals(2, newStream.id)
             assertFalse(newStream.isReset)
-            assertFalse(newStream.isClosed)
 
             val frame = pushPromiseChannel.receive()
             assertEquals(1, frame.streamId)
@@ -202,7 +201,6 @@ class TestAsyncHttp2Connection {
             val newStream = newStreamChannel.receive()
             assertEquals(1, newStream.id)
             assertFalse(newStream.isReset)
-            assertFalse(newStream.isClosed)
 
             val requestHeadersFrame = requestHeadersChannel.receive()
             assertEquals(1, requestHeadersFrame.streamId)
