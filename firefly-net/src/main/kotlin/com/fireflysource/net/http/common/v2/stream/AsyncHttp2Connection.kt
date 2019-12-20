@@ -209,26 +209,31 @@ abstract class AsyncHttp2Connection(
     override fun getStream(streamId: Int): Stream? = http2StreamMap[streamId]
 
     override fun newStream(headersFrame: HeadersFrame, promise: Consumer<Result<Stream?>>, listener: Stream.Listener) {
-        val frameStreamId = headersFrame.streamId
-        if (frameStreamId <= 0) {
-            val nextStreamId = getNextStreamId()
-            val priority = if (headersFrame.priority == null) {
-                null
-            } else {
-                PriorityFrame(
-                    nextStreamId,
-                    headersFrame.priority.parentStreamId,
-                    headersFrame.priority.weight,
-                    headersFrame.priority.isExclusive
-                )
-            }
-            val newHeadersFrame = HeadersFrame(nextStreamId, headersFrame.metaData, priority, headersFrame.isEndStream)
-            val stream = createLocalStream(nextStreamId, listener)
-            sendNewHeadersFrame(stream, newHeadersFrame, promise)
+        try {
+            val frameStreamId = headersFrame.streamId
+            if (frameStreamId <= 0) {
+                val nextStreamId = getNextStreamId()
+                val priority = if (headersFrame.priority == null) {
+                    null
+                } else {
+                    PriorityFrame(
+                        nextStreamId,
+                        headersFrame.priority.parentStreamId,
+                        headersFrame.priority.weight,
+                        headersFrame.priority.isExclusive
+                    )
+                }
+                val newHeadersFrame =
+                    HeadersFrame(nextStreamId, headersFrame.metaData, priority, headersFrame.isEndStream)
+                val stream = createLocalStream(nextStreamId, listener)
+                sendNewHeadersFrame(stream, newHeadersFrame, promise)
 
-        } else {
-            val stream = createLocalStream(frameStreamId, listener)
-            sendNewHeadersFrame(stream, headersFrame, promise)
+            } else {
+                val stream = createLocalStream(frameStreamId, listener)
+                sendNewHeadersFrame(stream, headersFrame, promise)
+            }
+        } catch (e: Exception) {
+            promise.accept(Result(false, null, e))
         }
     }
 
@@ -270,7 +275,7 @@ abstract class AsyncHttp2Connection(
         while (true) {
             val localCount = localStreamCount.get()
             val maxCount = maxLocalStreams
-            if (maxCount >= 0 && (localCount in 0..maxCount)) {
+            if (maxCount in 0..localCount) {
                 throw IllegalStateException("Max local stream count $localCount exceeded $maxCount")
             }
             if (localStreamCount.compareAndSet(localCount, localCount + 1)) {
@@ -281,7 +286,7 @@ abstract class AsyncHttp2Connection(
 
     protected fun createRemoteStream(streamId: Int): Stream? {
         // SPEC: exceeding max concurrent streams treated as stream error.
-        if (checkMaxRemoteStreams(streamId)) {
+        if (!checkMaxRemoteStreams(streamId)) {
             return null
         }
         val stream: Stream = AsyncHttp2Stream(this, streamId, false)
@@ -307,13 +312,13 @@ abstract class AsyncHttp2Connection(
             val maxCount: Int = maxRemoteStreams
             if (maxCount >= 0 && remoteCount - remoteClosing >= maxCount) {
                 reset(ResetFrame(streamId, ErrorCode.REFUSED_STREAM_ERROR.code), discard())
-                return true
+                return false
             }
             if (remoteStreamCount.compareAndSet(encoded, remoteCount + 1, remoteClosing)) {
                 break
             }
         }
-        return false
+        return true
     }
 
     protected open fun onStreamOpened(stream: Stream?) {}

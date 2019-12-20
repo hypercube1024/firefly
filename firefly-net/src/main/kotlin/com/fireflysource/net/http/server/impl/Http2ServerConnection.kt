@@ -31,7 +31,7 @@ class Http2ServerConnection(
 
     // preface frame
     override fun onPreface() {
-        val settings = notifyPreface(this) ?: mutableMapOf()
+        val settings = notifyPreface(this)
         val settingsFrame = SettingsFrame(settings, false)
 
         var windowFrame: WindowUpdateFrame? = null
@@ -47,12 +47,12 @@ class Http2ServerConnection(
         }
     }
 
-    private fun notifyPreface(connection: Http2Connection): MutableMap<Int, Int>? {
+    private fun notifyPreface(connection: Http2Connection): MutableMap<Int, Int> {
         return try {
             listener.onPreface(connection)
         } catch (e: Exception) {
             log.error(e) { "failure while notifying listener" }
-            null
+            mutableMapOf()
         }
     }
 
@@ -79,33 +79,40 @@ class Http2ServerConnection(
             return
         }
 
-        var stream = getStream(streamId)
+        val stream = getStream(streamId)
         val metaData = frame.metaData
-        if (metaData.isRequest) {
-            if (stream == null) {
-                if (isRemoteStreamClosed(streamId)) {
-                    onConnectionFailure(ErrorCode.STREAM_CLOSED_ERROR.code, "unexpected_headers_frame")
-                } else {
-                    stream = createRemoteStream(streamId)
-                    if (stream != null && stream is AsyncHttp2Stream) {
-                        onStreamOpened(stream)
-                        stream.process(frame, discard())
-                        stream.listener = notifyNewStream(stream, frame)
-                    }
+        when {
+            metaData.isRequest -> onHttpRequest(stream, streamId, frame)
+            metaData.isResponse -> onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "invalid_request")
+            else -> onTrailers(stream, frame, streamId)
+        }
+    }
+
+    private fun onHttpRequest(stream: Stream?, streamId: Int, frame: HeadersFrame) {
+        var remoteStream = stream
+        if (remoteStream == null) {
+            if (isRemoteStreamClosed(streamId)) {
+                onConnectionFailure(ErrorCode.STREAM_CLOSED_ERROR.code, "unexpected_headers_frame")
+            } else {
+                remoteStream = createRemoteStream(streamId)
+                if (remoteStream != null && remoteStream is AsyncHttp2Stream) {
+                    onStreamOpened(remoteStream)
+                    remoteStream.process(frame, discard())
+                    remoteStream.listener = notifyNewStream(remoteStream, frame)
                 }
-            } else {
-                onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "duplicate_stream")
             }
-        } else if (metaData.isResponse) {
-            onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "invalid_request")
-        } else { // Trailers.
-            if (stream != null && stream is AsyncHttp2Stream) {
-                stream.process(frame, discard())
-                notifyHeaders(stream, frame)
-            } else {
-                log.debug { "Stream: $streamId not found" }
-                onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_headers_frame")
-            }
+        } else {
+            onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "duplicate_stream")
+        }
+    }
+
+    private fun onTrailers(stream: Stream?, frame: HeadersFrame, streamId: Int) {
+        if (stream != null && stream is AsyncHttp2Stream) {
+            stream.process(frame, discard())
+            notifyHeaders(stream, frame)
+        } else {
+            log.debug { "Stream: $streamId not found" }
+            onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_headers_frame")
         }
     }
 
