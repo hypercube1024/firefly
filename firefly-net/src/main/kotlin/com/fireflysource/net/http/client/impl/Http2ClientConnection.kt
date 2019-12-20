@@ -9,6 +9,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.frame.*
+import com.fireflysource.net.http.common.v2.frame.SettingsFrame.DEFAULT_SETTINGS_FRAME
 import com.fireflysource.net.http.common.v2.stream.*
 import com.fireflysource.net.tcp.TcpConnection
 import java.util.concurrent.CompletableFuture
@@ -34,7 +35,7 @@ class Http2ClientConnection(
     }
 
     private fun sendConnectionPreface(config: HttpConfig) {
-        val settings = listener.onPreface(this) ?: mutableMapOf()
+        val settings = listener.onPreface(this) ?: DEFAULT_SETTINGS_FRAME.settings
         settings.computeIfAbsent(SettingsFrame.INITIAL_WINDOW_SIZE) { config.initialStreamRecvWindow }
         settings.computeIfAbsent(SettingsFrame.MAX_CONCURRENT_STREAMS) { config.maxConcurrentPushedStreams }
 

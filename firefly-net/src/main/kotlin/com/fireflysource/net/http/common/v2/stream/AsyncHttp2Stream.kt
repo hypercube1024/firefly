@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.common.v2.stream
 
+import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -75,7 +76,14 @@ class AsyncHttp2Stream(
     }
 
     // header frame
-    override fun headers(frame: HeadersFrame, result: Consumer<Result<Void>>) = sendControlFrame(frame, result)
+    override fun headers(frame: HeadersFrame, result: Consumer<Result<Void>>) {
+        try {
+            Assert.isTrue(frame.streamId == id, "The headers frame id must equal the stream id")
+            sendControlFrame(frame, result)
+        } catch (e: Exception) {
+            result.accept(Result.createFailedResult(e))
+        }
+    }
 
     private fun onHeaders(frame: HeadersFrame, result: Consumer<Result<Void>>) {
         val metaData: MetaData = frame.metaData

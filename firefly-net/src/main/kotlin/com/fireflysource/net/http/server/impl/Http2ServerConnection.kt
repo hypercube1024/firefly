@@ -49,10 +49,10 @@ class Http2ServerConnection(
 
     private fun notifyPreface(connection: Http2Connection): MutableMap<Int, Int> {
         return try {
-            listener.onPreface(connection)
+            listener.onPreface(connection) ?: SettingsFrame.DEFAULT_SETTINGS_FRAME.settings
         } catch (e: Exception) {
             log.error(e) { "failure while notifying listener" }
-            mutableMapOf()
+            SettingsFrame.DEFAULT_SETTINGS_FRAME.settings
         }
     }
 

@@ -53,8 +53,9 @@ public class HeadersBodyParser extends BodyParser {
             switch (state) {
                 case PREPARE: {
                     // SPEC: wrong streamId is treated as connection error.
-                    if (getStreamId() == 0)
+                    if (getStreamId() == 0) {
                         return connectionFailure(buffer, ErrorCode.PROTOCOL_ERROR.code, "invalid_headers_frame");
+                    }
 
                     length = getBodyLength();
 
