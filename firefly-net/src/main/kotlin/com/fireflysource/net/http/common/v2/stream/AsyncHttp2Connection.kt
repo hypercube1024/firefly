@@ -252,12 +252,17 @@ abstract class AsyncHttp2Connection(
 
     private fun getNextStreamId(): Int = localStreamId.getAndAdd(2)
 
-    protected fun createLocalStream(id: Int, listener: Stream.Listener): Stream {
-        return http2StreamMap.computeIfAbsent(id) {
-            checkMaxLocalStreams()
-            val stream = AsyncHttp2Stream(this, id, true, listener)
+    protected fun createLocalStream(streamId: Int, listener: Stream.Listener): Stream {
+        checkMaxLocalStreams()
+        val stream = AsyncHttp2Stream(this, streamId, true, listener)
+        if (http2StreamMap.putIfAbsent(streamId, stream) == null) {
+            stream.idleTimeout = streamIdleTimeout
             flowControl.onStreamCreated(stream)
-            stream
+            log.debug { "Created local $stream" }
+            return stream
+        } else {
+            localStreamCount.decrementAndGet()
+            throw IllegalStateException("Duplicate stream $streamId")
         }
     }
 
@@ -265,7 +270,9 @@ abstract class AsyncHttp2Connection(
         while (true) {
             val localCount = localStreamCount.get()
             val maxCount = maxLocalStreams
-            check(localCount in 0..maxCount) { "Max local stream count $localCount exceeded $maxCount" }
+            if (maxCount >= 0 && (localCount in 0..maxCount)) {
+                throw IllegalStateException("Max local stream count $localCount exceeded $maxCount")
+            }
             if (localStreamCount.compareAndSet(localCount, localCount + 1)) {
                 break
             }
@@ -277,7 +284,7 @@ abstract class AsyncHttp2Connection(
         if (checkMaxRemoteStreams(streamId)) {
             return null
         }
-        val stream: Stream = newStream(streamId, false)
+        val stream: Stream = AsyncHttp2Stream(this, streamId, false)
         // SPEC: duplicate stream treated as connection error.
         return if (http2StreamMap.putIfAbsent(streamId, stream) == null) {
             updateLastRemoteStreamId(streamId)
@@ -313,17 +320,13 @@ abstract class AsyncHttp2Connection(
 
     protected open fun onStreamClosed(stream: Stream?) {}
 
-    protected open fun notifyNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener? {
+    protected open fun notifyNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
         return try {
             listener.onNewStream(stream, frame)
         } catch (e: Exception) {
             log.error(e) { "failure while notifying listener" }
-            null
+            AsyncHttp2Stream.defaultStreamListener
         }
-    }
-
-    protected fun newStream(streamId: Int, local: Boolean): Stream {
-        return AsyncHttp2Stream(this, streamId, local)
     }
 
     private fun updateLastRemoteStreamId(streamId: Int) {
@@ -407,7 +410,7 @@ abstract class AsyncHttp2Connection(
     }
 
     fun push(frame: PushPromiseFrame, promise: Consumer<Result<Stream?>>, listener: Stream.Listener) {
-        val promiseStreamId = localStreamId.getAndAdd(2)
+        val promiseStreamId = getNextStreamId()
         val pushStream = createLocalStream(promiseStreamId, listener)
         val pushPromiseFrame = PushPromiseFrame(frame.streamId, promiseStreamId, frame.metaData)
         sendControlFrame(pushStream, pushPromiseFrame)

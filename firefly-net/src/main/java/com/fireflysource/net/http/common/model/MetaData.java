@@ -22,8 +22,9 @@ public class MetaData implements Iterable<HttpField> {
 
     protected void recycle() {
         httpVersion = null;
-        if (fields != null)
+        if (fields != null) {
             fields.clear();
+        }
         contentLength = Long.MIN_VALUE;
     }
 
@@ -33,14 +34,6 @@ public class MetaData implements Iterable<HttpField> {
 
     public boolean isResponse() {
         return false;
-    }
-
-    /**
-     * @deprecated use {@link #getHttpVersion()} instead
-     */
-    @Deprecated
-    public HttpVersion getVersion() {
-        return getHttpVersion();
     }
 
     /**

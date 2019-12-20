@@ -90,7 +90,7 @@ class Http2ServerConnection(
                     if (stream != null && stream is AsyncHttp2Stream) {
                         onStreamOpened(stream)
                         stream.process(frame, discard())
-                        stream.listener = notifyNewStream(stream, frame) ?: Stream.Listener.Adapter()
+                        stream.listener = notifyNewStream(stream, frame)
                     }
                 }
             } else {
