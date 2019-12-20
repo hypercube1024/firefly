@@ -107,17 +107,17 @@ abstract class AbstractTcpConnection(
                     len += count
                 }
             } catch (e: ClosedChannelException) {
-                log.warn { "Tcp connection has been closed. $id" }
+                log.warn { "The TCP connection closed. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
             } catch (e: InterruptedByTimeoutException) {
-                log.warn { "Tcp connection writing timeout. $id" }
+                log.warn { "The TCP connection writing timeout. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
             } catch (e: Exception) {
-                log.warn(e) { "Tcp connection writing exception. $id" }
+                log.warn(e) { "The TCP connection writing exception. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
@@ -145,17 +145,17 @@ abstract class AbstractTcpConnection(
                     len += count
                 }
             } catch (e: ClosedChannelException) {
-                log.warn { "Tcp connection has been closed. $id" }
+                log.warn { "The TCP connection closed. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
             } catch (e: InterruptedByTimeoutException) {
-                log.warn { "Tcp connection writing timeout. $id" }
+                log.warn { "The TCP connection writing timeout. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
             } catch (e: Exception) {
-                log.warn(e) { "Tcp connection writing exception. $id" }
+                log.warn(e) { "The TCP connection writing exception. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
@@ -179,17 +179,17 @@ abstract class AbstractTcpConnection(
                     len += count
                 }
             } catch (e: ClosedChannelException) {
-                log.warn { "Tcp connection has been closed. id: $id" }
+                log.warn { "The TCP connection closed. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
             } catch (e: InterruptedByTimeoutException) {
-                log.warn { "Tcp connection writing timeout. id: $id" }
+                log.warn { "The TCP connection writing timeout. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false
             } catch (e: Exception) {
-                log.warn(e) { "Tcp connection writing exception. id: $id" }
+                log.warn(e) { "The TCP connection writing exception. id: $id" }
                 shutdownOutputAndInput()
                 outputMessage.result.accept(Result(false, -1, e))
                 return false

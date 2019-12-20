@@ -81,11 +81,8 @@ abstract class AsyncHttp2Connection(
                             try {
                                 val length = flushControlFrameEntry(frameEntry)
                                 frameEntry.result.accept(Result(true, length, null))
-                            } catch (e: ClosedChannelException) {
-                                log.warn(e) { "The TCP connection closed" }
-                                frameEntry.result.accept(createFailedResult(-1, e))
                             } catch (e: Exception) {
-                                log.error(e) { "flush control frame exception" }
+                                log.warn(e) { "Flush control frame exception. frames: ${frameEntry.frames.asList()}" }
                                 frameEntry.result.accept(createFailedResult(-1, e))
                             }
                         }
