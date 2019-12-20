@@ -29,6 +29,47 @@ class Http2ServerConnection(
         launchParserJob(parser)
     }
 
+    // preface frame
+    override fun onPreface() {
+        val settings = notifyPreface(this) ?: mutableMapOf()
+        val settingsFrame = SettingsFrame(settings, false)
+
+        var windowFrame: WindowUpdateFrame? = null
+        val sessionWindow: Int = initialSessionRecvWindow - HttpConfig.DEFAULT_WINDOW_SIZE
+        if (sessionWindow > 0) {
+            updateRecvWindow(sessionWindow)
+            windowFrame = WindowUpdateFrame(0, sessionWindow)
+        }
+        if (windowFrame == null) {
+            sendControlFrame(null, settingsFrame)
+        } else {
+            sendControlFrame(null, settingsFrame, windowFrame)
+        }
+    }
+
+    private fun notifyPreface(connection: Http2Connection): MutableMap<Int, Int>? {
+        return try {
+            listener.onPreface(connection)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+            null
+        }
+    }
+
+    override fun onFrame(frame: Frame) {
+        when (frame.type) {
+            FrameType.PREFACE -> onPreface()
+            FrameType.SETTINGS -> onSettings(
+                (frame as SettingsFrame),
+                false
+            ) // SPEC: the required reply to these SETTINGS frame is the 101 response.
+            FrameType.HEADERS -> onHeaders((frame as HeadersFrame))
+            else -> super.onFrame(frame)
+        }
+    }
+
+
+    // headers frame
     override fun onHeaders(frame: HeadersFrame) {
         log.debug { "Received $frame" }
 
@@ -68,6 +109,13 @@ class Http2ServerConnection(
         }
     }
 
+
+    // promise frame
+    override fun onPushPromise(frame: PushPromiseFrame) {
+        onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "push_promise")
+    }
+
+
     override fun onResetForUnknownStream(frame: ResetFrame) {
         val streamId = frame.streamId
         val closed = if (isClientStream(streamId)) isRemoteStreamClosed(streamId) else isLocalStreamClosed(streamId)
@@ -78,41 +126,4 @@ class Http2ServerConnection(
         }
     }
 
-    override fun onPreface() {
-        val settings = notifyPreface(this) ?: mutableMapOf()
-        val settingsFrame = SettingsFrame(settings, false)
-
-        var windowFrame: WindowUpdateFrame? = null
-        val sessionWindow: Int = initialSessionRecvWindow - HttpConfig.DEFAULT_WINDOW_SIZE
-        if (sessionWindow > 0) {
-            updateRecvWindow(sessionWindow)
-            windowFrame = WindowUpdateFrame(0, sessionWindow)
-        }
-        if (windowFrame == null) {
-            sendControlFrame(null, settingsFrame)
-        } else {
-            sendControlFrame(null, settingsFrame, windowFrame)
-        }
-    }
-
-    private fun notifyPreface(connection: Http2Connection): MutableMap<Int, Int>? {
-        return try {
-            listener.onPreface(connection)
-        } catch (e: Exception) {
-            log.error(e) { "failure while notifying listener" }
-            null
-        }
-    }
-
-    override fun onFrame(frame: Frame) {
-        when (frame.type) {
-            FrameType.PREFACE -> onPreface()
-            FrameType.SETTINGS -> onSettings(
-                (frame as SettingsFrame),
-                false
-            ) // SPEC: the required reply to these SETTINGS frame is the 101 response.
-            FrameType.HEADERS -> onHeaders((frame as HeadersFrame))
-            else -> super.onFrame(frame)
-        }
-    }
 }

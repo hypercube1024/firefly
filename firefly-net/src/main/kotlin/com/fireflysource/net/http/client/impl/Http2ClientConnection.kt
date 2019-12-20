@@ -95,6 +95,33 @@ class Http2ClientConnection(
         }
     }
 
+
+    // promise frame
+    override fun onPushPromise(frame: PushPromiseFrame) {
+        log.debug { "Received $frame" }
+
+        val stream = getStream(frame.streamId)
+        if (stream == null) {
+            log.debug { "Ignoring $frame, stream: ${frame.streamId} not found" }
+        } else {
+            val pushStream = createRemoteStream(frame.promisedStreamId)
+            if (pushStream != null && pushStream is AsyncHttp2Stream) {
+                pushStream.process(frame, discard())
+                pushStream.listener = notifyPush(stream, pushStream, frame)
+            }
+        }
+    }
+
+    private fun notifyPush(stream: Stream, pushStream: Stream, frame: PushPromiseFrame): Stream.Listener {
+        return try {
+            val listener = (stream as AsyncHttp2Stream).listener
+            listener.onPush(pushStream, frame)
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+            AsyncHttp2Stream.defaultStreamListener
+        }
+    }
+
     override fun onResetForUnknownStream(frame: ResetFrame) {
         val streamId = frame.streamId
         val closed = if (isClientStream(streamId)) isLocalStreamClosed(streamId) else isRemoteStreamClosed(streamId)

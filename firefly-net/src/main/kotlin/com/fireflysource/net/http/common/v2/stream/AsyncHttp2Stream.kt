@@ -35,22 +35,26 @@ class AsyncHttp2Stream(
     private var dataLength = Long.MIN_VALUE
     private var localReset = false
     private var remoteReset = false
+    private var idleTimeout = asyncHttp2Connection.maxIdleTime
 
-    fun updateSendWindow(delta: Int): Int {
-        return sendWindow.getAndAdd(delta)
+    override fun getId(): Int = id
+
+    override fun getHttp2Connection(): Http2Connection = asyncHttp2Connection
+
+    override fun getIdleTimeout(): Long = idleTimeout
+
+    override fun setIdleTimeout(idleTimeout: Long) {
+        this.idleTimeout = idleTimeout
     }
 
-    fun updateRecvWindow(delta: Int): Int {
-        return recvWindow.getAndAdd(delta)
+    override fun getAttribute(key: String): Any? = attributes[key]
+
+    override fun setAttribute(key: String, value: Any) {
+        attributes[key] = value
     }
 
-    fun getSendWindow(): Int {
-        return sendWindow.get()
-    }
+    override fun removeAttribute(key: String): Any? = attributes.remove(key)
 
-    fun getRecvWindow(): Int {
-        return recvWindow.get()
-    }
 
     fun process(frame: Frame, result: Consumer<Result<Void>>) {
         when (frame.type) {
@@ -70,6 +74,9 @@ class AsyncHttp2Stream(
         }
     }
 
+    // header frame
+    override fun headers(frame: HeadersFrame, result: Consumer<Result<Void>>) = sendControlFrame(frame, result)
+
     private fun onHeaders(frame: HeadersFrame, result: Consumer<Result<Void>>) {
         val metaData: MetaData = frame.metaData
         if (metaData.isRequest || metaData.isResponse) {
@@ -86,8 +93,53 @@ class AsyncHttp2Stream(
         result.accept(Result.SUCCESS)
     }
 
+
+    // push promise frame
+    override fun push(frame: PushPromiseFrame, promise: Consumer<Result<Stream?>>, listener: Stream.Listener) {
+        asyncHttp2Connection.push(frame, promise, listener)
+    }
+
+
+    // data frame
+    override fun data(frame: DataFrame, result: Consumer<Result<Void>>) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     private fun onData(frame: DataFrame, result: Consumer<Result<Void>>) {
         // TODO
+    }
+
+
+    // window update
+    fun updateSendWindow(delta: Int): Int {
+        return sendWindow.getAndAdd(delta)
+    }
+
+    fun updateRecvWindow(delta: Int): Int {
+        return recvWindow.getAndAdd(delta)
+    }
+
+    fun getSendWindow(): Int {
+        return sendWindow.get()
+    }
+
+    fun getRecvWindow(): Int {
+        return recvWindow.get()
+    }
+
+
+    // reset frame
+    override fun reset(frame: ResetFrame, result: Consumer<Result<Void>>) {
+        if (isReset) {
+            result.accept(Result.createFailedResult(IllegalStateException("The stream: $id is reset")))
+            return
+        }
+        localReset = true
+        sendControlFrame(frame, result)
+    }
+
+    override fun isReset(): Boolean {
+        return localReset || remoteReset
     }
 
     private fun onReset(frame: ResetFrame, result: Consumer<Result<Void>>) {
@@ -114,28 +166,6 @@ class AsyncHttp2Stream(
         }
     }
 
-    override fun getId(): Int = id
-
-    override fun getHttp2Connection(): Http2Connection = asyncHttp2Connection
-
-    override fun headers(frame: HeadersFrame, result: Consumer<Result<Void>>) = sendControlFrame(frame, result)
-
-    override fun push(frame: PushPromiseFrame, promise: Consumer<Result<Stream>>, listener: Stream.Listener) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun data(frame: DataFrame, result: Consumer<Result<Void>>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun reset(frame: ResetFrame, result: Consumer<Result<Void>>) {
-        if (isReset) {
-            result.accept(Result.createFailedResult(IllegalStateException("The stream: $id is reset")))
-            return
-        }
-        localReset = true
-        sendControlFrame(frame, result)
-    }
 
     private fun sendControlFrame(frame: Frame, result: Consumer<Result<Void>>) {
         asyncHttp2Connection.sendControlFrame(this, frame)
@@ -146,20 +176,15 @@ class AsyncHttp2Stream(
             }
     }
 
-    override fun getAttribute(key: String): Any? = attributes[key]
 
-    override fun setAttribute(key: String, value: Any) {
-        attributes[key] = value
-    }
-
-    override fun removeAttribute(key: String): Any? = attributes.remove(key)
-
-    override fun isReset(): Boolean {
-        return localReset || remoteReset
-    }
-
-    override fun isClosed(): Boolean {
-        return closeState.get() == CLOSED
+    // close frame
+    override fun close() {
+        val oldState = closeState.getAndSet(CLOSED)
+        if (oldState != CLOSED) {
+            val deltaClosing = if (oldState == CLOSING) -1 else 0
+            asyncHttp2Connection.updateStreamCount(local, -1, deltaClosing)
+            notifyClosed(this)
+        }
     }
 
     fun updateClose(update: Boolean, event: Event): Boolean {
@@ -174,6 +199,10 @@ class AsyncHttp2Stream(
             BEFORE_SEND -> updateCloseBeforeSend()
             AFTER_SEND -> updateCloseAfterSend()
         }
+    }
+
+    override fun isClosed(): Boolean {
+        return closeState.get() == CLOSED
     }
 
     private fun updateCloseAfterReceived(): Boolean {
@@ -227,23 +256,6 @@ class AsyncHttp2Stream(
         }
     }
 
-    override fun getIdleTimeout(): Long {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun setIdleTimeout(idleTimeout: Long) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun close() {
-        val oldState = closeState.getAndSet(CLOSED)
-        if (oldState != CLOSED) {
-            val deltaClosing = if (oldState == CLOSING) -1 else 0
-            asyncHttp2Connection.updateStreamCount(local, -1, deltaClosing)
-            notifyClosed(this)
-        }
-    }
-
     private fun notifyClosed(stream: Stream) {
         try {
             listener.onClosed(stream)
@@ -251,6 +263,7 @@ class AsyncHttp2Stream(
             log.info("Failure while notifying listener $listener", x)
         }
     }
+
 
     override fun toString(): String {
         return String.format(
