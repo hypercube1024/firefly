@@ -26,7 +26,7 @@ class AioSecureTcpConnection(
     }
 
     private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
-    private val encryptedOutChannel: Channel<Message> = Channel(Channel.UNLIMITED)
+    private val encryptedOutChannel: Channel<OutputMessage> = Channel(Channel.UNLIMITED)
     private var handshakeCompleteResult: Consumer<Result<String>> = Consumer {}
     private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
         decryptedInChannel.offer(buf)
@@ -54,12 +54,12 @@ class AioSecureTcpConnection(
         }
     }
 
-    private fun writeEncryptedMessage(message: Message) {
-        when (message) {
+    private fun writeEncryptedMessage(outputMessage: OutputMessage) {
+        when (outputMessage) {
             is Buffer -> {
-                val encryptedBuffers = secureEngine.encode(message.buffer)
+                val encryptedBuffers = secureEngine.encode(outputMessage.buffer)
                 tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
-                    message.result.accept(
+                    outputMessage.result.accept(
                         Result(
                             it.isSuccess,
                             it.value.toInt(),
@@ -69,19 +69,19 @@ class AioSecureTcpConnection(
                 }
             }
             is Buffers -> {
-                val lastIndex = message.offset + message.length - 1
+                val lastIndex = outputMessage.offset + outputMessage.length - 1
                 val encryptedBuffers =
-                    (message.offset..lastIndex).map { i -> secureEngine.encode(message.buffers[i]) }.flatten()
-                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, message.result)
+                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.buffers[i]) }.flatten()
+                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
             }
             is BufferList -> {
-                val lastIndex = message.offset + message.length - 1
+                val lastIndex = outputMessage.offset + outputMessage.length - 1
                 val encryptedBuffers =
-                    (message.offset..lastIndex).map { i -> secureEngine.encode(message.bufferList[i]) }.flatten()
-                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, message.result)
+                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.bufferList[i]) }.flatten()
+                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
             }
             is Shutdown -> {
-                tcpConnection.close(message.result)
+                tcpConnection.close(outputMessage.result)
             }
         }
     }

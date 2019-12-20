@@ -30,7 +30,7 @@ abstract class AbstractTcpConnection(
     id: Int,
     maxIdleTime: Long,
     private val socketChannel: AsynchronousSocketChannel,
-    private val messageThread: CoroutineDispatcher
+    private val dispatcher: CoroutineDispatcher
 ) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), TcpConnection {
 
     companion object {
@@ -42,7 +42,7 @@ abstract class AbstractTcpConnection(
     }
 
     private val inputChannel: Channel<ByteBuffer> = Channel(UNLIMITED)
-    private val outputChannel: Channel<Message> = Channel(UNLIMITED)
+    private val outputChannel: Channel<OutputMessage> = Channel(UNLIMITED)
 
     private val inputShutdownState: AtomicBoolean = AtomicBoolean(false)
     private val outputShutdownState: AtomicBoolean = AtomicBoolean(false)
@@ -62,79 +62,62 @@ abstract class AbstractTcpConnection(
         inputChannel.offer(buf)
     }
 
-    private val writingJob = launchGlobally(messageThread) {
+    private val flushDataJob = launchGlobally(dispatcher) {
         while (isWriteable()) {
-            val write = writeMessage(outputChannel.receive())
+            val write = flushData(outputChannel.receive())
             if (!write) {
                 break
             }
         }
     }
 
-    override fun getCoroutineDispatcher(): CoroutineDispatcher = messageThread
-
-    override fun execute(runnable: Runnable) {
-        launchGlobally(messageThread) { runnable.run() }
-    }
-
-    override fun isClosed(): Boolean = socketChannelClosed.get()
-
-    override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
-
-    override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
-
-    private suspend fun writeMessage(message: Message): Boolean {
+    private suspend fun flushData(outputMessage: OutputMessage): Boolean {
         lastWrittenTime = System.currentTimeMillis()
-        when (message) {
+        when (outputMessage) {
             is Buffer -> {
                 var len = 0
-                while (message.buffer.hasRemaining()) {
+                while (outputMessage.buffer.hasRemaining()) {
                     try {
-                        val count = socketChannel.writeAwait(message.buffer, maxIdleTime, timeUnit)
+                        val count = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
                         if (count < 0) {
-                            shutdownOutput()
-                            shutdownInput()
-                            message.result.accept(Result(false, -1, closedChannelException))
+                            shutdownOutputAndInput()
+                            outputMessage.result.accept(Result(false, -1, closedChannelException))
                             return false
                         } else {
                             writtenBytes += count
                             len += count
                         }
                     } catch (e: ClosedChannelException) {
-                        log.warn { "Tcp connection has been closed. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        log.warn { "Tcp connection has been closed. id: $id" }
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection writing timeout. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        log.warn { "Tcp connection writing timeout. id: $id" }
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection writing exception. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        log.warn(e) { "Tcp connection writing exception. id: $id" }
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     }
                 }
-                message.result.accept(Result(true, len, null))
+                outputMessage.result.accept(Result(true, len, null))
                 return true
             }
             is Buffers -> {
                 var len = 0L
-                while (message.hasRemaining()) {
+                while (outputMessage.hasRemaining()) {
                     try {
-                        val offset = message.getCurrentOffset()
-                        val length = message.getCurrentLength()
+                        val offset = outputMessage.getCurrentOffset()
+                        val length = outputMessage.getCurrentLength()
 
-                        val count = socketChannel.writeAwait(message.buffers, offset, length, maxIdleTime, timeUnit)
+                        val count = socketChannel.writeAwait(outputMessage.buffers, offset, length, maxIdleTime, timeUnit)
                         if (count < 0) {
-                            shutdownOutput()
-                            shutdownInput()
-                            message.result.accept(Result(false, -1, closedChannelException))
+                            shutdownOutputAndInput()
+                            outputMessage.result.accept(Result(false, -1, closedChannelException))
                             return false
                         } else {
                             writtenBytes += count
@@ -142,45 +125,41 @@ abstract class AbstractTcpConnection(
                         }
                     } catch (e: ClosedChannelException) {
                         log.warn { "Tcp connection has been closed. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection writing exception. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     }
                 }
-                message.result.accept(Result(true, len, null))
+                outputMessage.result.accept(Result(true, len, null))
                 return true
             }
             is BufferList -> {
                 var len = 0L
-                while (message.hasRemaining()) {
+                while (outputMessage.hasRemaining()) {
                     try {
-                        val offset = message.getCurrentOffset()
-                        val length = message.getCurrentLength()
+                        val offset = outputMessage.getCurrentOffset()
+                        val length = outputMessage.getCurrentLength()
 
                         val count = socketChannel.writeAwait(
-                            message.bufferList.toTypedArray(),
+                            outputMessage.bufferList.toTypedArray(),
                             offset,
                             length,
                             maxIdleTime,
                             timeUnit
                         )
                         if (count < 0) {
-                            shutdownOutput()
-                            shutdownInput()
-                            message.result.accept(Result(false, -1, closedChannelException))
+                            shutdownOutputAndInput()
+                            outputMessage.result.accept(Result(false, -1, closedChannelException))
                             return false
                         } else {
                             writtenBytes += count
@@ -188,34 +167,71 @@ abstract class AbstractTcpConnection(
                         }
                     } catch (e: ClosedChannelException) {
                         log.warn { "Tcp connection has been closed. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     } catch (e: InterruptedByTimeoutException) {
                         log.warn { "Tcp connection writing timeout. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     } catch (e: Exception) {
                         log.warn(e) { "Tcp connection writing exception. $id" }
-                        shutdownOutput()
-                        shutdownInput()
-                        message.result.accept(Result(false, -1, e))
+                        shutdownOutputAndInput()
+                        outputMessage.result.accept(Result(false, -1, e))
                         return false
                     }
                 }
-                message.result.accept(Result(true, len, null))
+                outputMessage.result.accept(Result(true, len, null))
                 return true
             }
             is Shutdown -> {
-                shutdownOutput()
-                shutdownInput()
+                shutdownOutputAndInput()
                 return false
             }
         }
     }
+
+    override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
+        if (isWriteable()) {
+            outputChannel.offer(Buffer(byteBuffer, result))
+        } else {
+            result.accept(createFailedResult(-1, closedChannelException))
+        }
+        return this
+    }
+
+    override fun write(
+        byteBuffers: Array<ByteBuffer>,
+        offset: Int,
+        length: Int,
+        result: Consumer<Result<Long>>
+    ): TcpConnection {
+        if (isWriteable()) {
+            outputChannel.offer(Buffers(byteBuffers, offset, length, result))
+        } else {
+            result.accept(createFailedResult(-1, closedChannelException))
+        }
+        return this
+    }
+
+    override fun write(
+        byteBufferList: List<ByteBuffer>,
+        offset: Int,
+        length: Int,
+        result: Consumer<Result<Long>>
+    ): TcpConnection {
+        if (isWriteable()) {
+            outputChannel.offer(BufferList(byteBufferList, offset, length, result))
+        } else {
+            result.accept(createFailedResult(-1, closedChannelException))
+        }
+        return this
+    }
+
+    private fun isWriteable() = !outputShutdownState.get() && !socketChannelClosed.get()
+
+
 
     override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
         if (!isReading) {
@@ -228,7 +244,7 @@ abstract class AbstractTcpConnection(
 
     override fun startReading(): TcpConnection {
         if (readingState.compareAndSet(false, true)) {
-            launchGlobally(messageThread) {
+            launchGlobally(dispatcher) {
                 log.info { "The TCP connection $id starts automatic reading" }
 
                 while (isReading) {
@@ -269,6 +285,8 @@ abstract class AbstractTcpConnection(
         return this
     }
 
+    override fun getInputChannel(): Channel<ByteBuffer> = inputChannel
+
     override fun isReading(): Boolean = readingState.get()
 
     override fun suspendReading(): TcpConnection {
@@ -276,13 +294,10 @@ abstract class AbstractTcpConnection(
         return this
     }
 
+
+
     override fun onClose(callback: Callback): TcpConnection {
         closeCallbacks.add(callback)
-        return this
-    }
-
-    override fun onException(exception: Consumer<Throwable>): TcpConnection {
-        exceptionConsumers.add(exception)
         return this
     }
 
@@ -298,6 +313,11 @@ abstract class AbstractTcpConnection(
 
     override fun close() {
         close(discard())
+    }
+
+    private fun shutdownOutputAndInput() {
+        shutdownOutput()
+        shutdownInput()
     }
 
     override fun shutdownInput(): TcpConnection {
@@ -340,7 +360,7 @@ abstract class AbstractTcpConnection(
             }
 
             try {
-                writingJob.cancel()
+                flushDataJob.cancel()
             } catch (e: Exception) {
                 log.warn(e) { "cancel writing job exception. $id" }
             }
@@ -357,60 +377,37 @@ abstract class AbstractTcpConnection(
         return this
     }
 
-    override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        if (isWriteable()) {
-            outputChannel.offer(Buffer(byteBuffer, result))
-        } else {
-            result.accept(createFailedResult(-1, closedChannelException))
-        }
+
+    override fun onException(exception: Consumer<Throwable>): TcpConnection {
+        exceptionConsumers.add(exception)
         return this
     }
 
-    override fun write(
-        byteBuffers: Array<ByteBuffer>,
-        offset: Int,
-        length: Int,
-        result: Consumer<Result<Long>>
-    ): TcpConnection {
-        if (isWriteable()) {
-            outputChannel.offer(Buffers(byteBuffers, offset, length, result))
-        } else {
-            result.accept(createFailedResult(-1, closedChannelException))
-        }
-        return this
+    override fun getCoroutineDispatcher(): CoroutineDispatcher = dispatcher
+
+    override fun execute(runnable: Runnable) {
+        launchGlobally(dispatcher) { runnable.run() }
     }
 
-    override fun write(
-        byteBufferList: List<ByteBuffer>,
-        offset: Int,
-        length: Int,
-        result: Consumer<Result<Long>>
-    ): TcpConnection {
-        if (isWriteable()) {
-            outputChannel.offer(BufferList(byteBufferList, offset, length, result))
-        } else {
-            result.accept(createFailedResult(-1, closedChannelException))
-        }
-        return this
-    }
+    override fun isClosed(): Boolean = socketChannelClosed.get()
 
-    private fun isWriteable() = !outputShutdownState.get() && !socketChannelClosed.get()
+    override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
 
-    override fun getInputChannel(): Channel<ByteBuffer> = inputChannel
+    override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
 }
 
 class CloseRequestException : IllegalStateException("The close request has been sent")
 
 class StartReadingException : IllegalStateException("The connection has started reading.")
 
-sealed class Message
-class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : Message()
+sealed class OutputMessage
+class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage()
 class Buffers(
     val buffers: Array<ByteBuffer>,
     val offset: Int,
     val length: Int,
     val result: Consumer<Result<Long>>
-) : Message() {
+) : OutputMessage() {
 
     init {
         require(offset >= 0) { "The offset must be greater than or equal the 0" }
@@ -438,7 +435,7 @@ class BufferList(
     val offset: Int,
     val length: Int,
     val result: Consumer<Result<Long>>
-) : Message() {
+) : OutputMessage() {
 
     init {
         require(offset >= 0) { "The offset must be greater than or equal the 0" }
@@ -461,4 +458,4 @@ class BufferList(
     fun hasRemaining(): Boolean = getCurrentOffset() < bufferList.size
 }
 
-class Shutdown(val result: Consumer<Result<Void>>) : Message()
+class Shutdown(val result: Consumer<Result<Void>>) : OutputMessage()
