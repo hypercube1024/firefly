@@ -29,6 +29,108 @@ import kotlin.system.measureTimeMillis
 class TestAsyncHttp2Connection {
 
     @Test
+    fun testResetFrame() = runBlocking {
+        val host = "localhost"
+        val port = 4025
+        val tcpConfig = TcpConfig(30, false)
+        val httpConfig = HttpConfig()
+
+        val resetFrameChannel = Channel<ResetFrame>(UNLIMITED)
+
+        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+            connection.startReadingAndAwaitHandshake()
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
+
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
+
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("Server receives go away frame: $frame")
+                    }
+
+                    override fun onReset(http2Connection: Http2Connection, frame: ResetFrame) {
+                        println("Server receives reset frame for unknown stream. frame: $frame")
+                    }
+
+                    override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+                        println("Server creates the remote stream: $stream . the headers: $frame .")
+
+                        val fields = HttpFields()
+                        fields.put("Test-New-Stream-Response", "R1")
+                        val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
+                        val headersFrame = HeadersFrame(stream.id, response, null, true)
+                        stream.headers(headersFrame) { println("Server response success.") }
+
+                        return object : Stream.Listener.Adapter() {
+                            override fun onReset(stream: Stream, frame: ResetFrame) {
+                                println("Server receives the reset frame: $frame .")
+                                resetFrameChannel.offer(frame)
+                            }
+                        }
+                    }
+                }
+            )
+        }.listen(host, port)
+
+
+        val client = AioTcpClient(tcpConfig)
+        val connection = client.connect(host, port).await()
+        connection.startReadingAndAwaitHandshake()
+        val http2Connection: Http2Connection = Http2ClientConnection(
+            httpConfig, connection, SimpleFlowControlStrategy(),
+            createClientHttp2ConnectionListener()
+        )
+
+        val newStreamChannel = Channel<Stream>(UNLIMITED)
+        val responseHeadersChannel = Channel<HeadersFrame>(UNLIMITED)
+        val headersFrame = createRequestHeadersFrame()
+        http2Connection.newStream(headersFrame,
+            {
+                if (it.isSuccess) {
+                    val success = newStreamChannel.offer(it.value)
+                    println("offer new stream success: $success .")
+                } else {
+                    println("new a stream failed")
+                    it.throwable?.printStackTrace()
+                }
+            },
+            object : Stream.Listener.Adapter() {
+                override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                    println("Client receives headers: $frame")
+                    responseHeadersChannel.offer(frame)
+                }
+
+                override fun onReset(stream: Stream, frame: ResetFrame) {
+                    println("Client receives reset frame: $frame")
+                }
+            })
+
+        val time = measureTimeMillis {
+            val newStream = newStreamChannel.receive()
+            assertEquals(1, newStream.id)
+            assertFalse(newStream.isReset)
+
+            val resetFrame = ResetFrame(newStream.id, ErrorCode.INTERNAL_ERROR.code)
+            newStream.reset(resetFrame) {
+                println("reset frame success. $it")
+            }
+            val serverReceivedResetFrame = resetFrameChannel.receive()
+            assertTrue(newStream.isReset)
+            assertEquals(1, serverReceivedResetFrame.streamId)
+            assertEquals(ErrorCode.INTERNAL_ERROR.code, serverReceivedResetFrame.error)
+            assertTrue(newStream.isClosed)
+        }
+
+        println("reset stream time: $time ms")
+
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
+        Unit
+    }
+
+    @Test
     fun testPushPromise() = runBlocking {
         val host = "localhost"
         val port = 4024
@@ -123,7 +225,7 @@ class TestAsyncHttp2Connection {
             assertTrue(frame.metaData.isResponse)
             assertEquals("P1", frame.metaData.fields["Test-Push-Promise-Stream"])
         }
-        println("new stream time: $time ms")
+        println("push promise stream time: $time ms")
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
         Unit

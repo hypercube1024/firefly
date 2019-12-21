@@ -2,7 +2,6 @@ package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.concurrent.AtomicBiInteger
 import com.fireflysource.common.concurrent.Atomics
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.math.MathUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.*
@@ -16,11 +15,11 @@ import com.fireflysource.net.http.common.v2.encoder.Generator
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import com.fireflysource.net.tcp.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.io.IOException
-import java.nio.channels.ClosedChannelException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -74,7 +73,7 @@ abstract class AsyncHttp2Connection(
         }
 
         private fun launchEntryFlushJob(): Job {
-            val entryFlushJob = launchGlobally(tcpConnection.coroutineDispatcher) {
+            val entryFlushJob = tcpConnection.launch {
                 while (true) {
                     when (val frameEntry = frameEntryChannel.receive()) {
                         is ControlFrameEntry -> {
@@ -178,7 +177,7 @@ abstract class AsyncHttp2Connection(
         flusher.sendControlFrame(stream, *frames)
 
     fun launchParserJob(parser: Parser): Job {
-        val parsingDataJob = launchGlobally(tcpConnection.coroutineDispatcher) {
+        val parsingDataJob = tcpConnection.launch {
             val inputChannel = tcpConnection.inputChannel
             recvLoop@ while (true) {
                 val buffer = inputChannel.receive()
@@ -561,9 +560,7 @@ abstract class AsyncHttp2Connection(
     }
 
     fun onWindowUpdate(stream: Stream?, frame: WindowUpdateFrame) {
-        launchGlobally(tcpConnection.coroutineDispatcher) {
-            flowControl.windowUpdate(this@AsyncHttp2Connection, stream, frame)
-        }
+        flowControl.windowUpdate(this, stream, frame)
     }
 
     fun updateRecvWindow(delta: Int): Int {

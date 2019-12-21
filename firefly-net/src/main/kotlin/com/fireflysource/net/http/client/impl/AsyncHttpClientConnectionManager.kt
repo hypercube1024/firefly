@@ -105,12 +105,8 @@ class AsyncHttpClientConnectionManager(
             val connection = createConnection(address)
             val httpConnection = if (connection.isSecureConnection) {
                 when (connection.onHandshakeComplete().await()) {
-                    SupportedProtocolEnum.H2.value -> {
-                        createHttp2ClientConnection(connection)
-                    }
-                    else -> {
-                        createHttp1ClientConnection(connection)
-                    }
+                    SupportedProtocolEnum.H2.value -> createHttp2ClientConnection(connection)
+                    else -> createHttp1ClientConnection(connection)
                 }
             } else {
                 createHttp1ClientConnection(connection)

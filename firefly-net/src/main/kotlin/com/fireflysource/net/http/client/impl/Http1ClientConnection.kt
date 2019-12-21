@@ -18,6 +18,7 @@ import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import com.fireflysource.net.tcp.launch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -43,7 +44,7 @@ class Http1ClientConnection(
     private val parser = HttpParser(handler)
 
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
-    private val acceptRequestJob = launchGlobally(tcpConnection.coroutineDispatcher) {
+    private val acceptRequestJob = tcpConnection.launch {
         while (true) {
             val requestMessage = requestChannel.receive()
 
