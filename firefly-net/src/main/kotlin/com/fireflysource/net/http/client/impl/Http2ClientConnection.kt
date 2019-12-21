@@ -13,6 +13,7 @@ import com.fireflysource.net.http.common.v2.frame.SettingsFrame.DEFAULT_SETTINGS
 import com.fireflysource.net.http.common.v2.stream.*
 import com.fireflysource.net.tcp.TcpConnection
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicLong
 import java.util.function.UnaryOperator
 
 class Http2ClientConnection(
@@ -26,6 +27,8 @@ class Http2ClientConnection(
         private val log = SystemLogger.create(Http2ClientConnection::class.java)
     }
 
+    private val streamsOpened = AtomicLong()
+    private val streamsClosed = AtomicLong()
     private val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
 
     init {
@@ -132,6 +135,20 @@ class Http2ClientConnection(
             onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_rst_stream_frame")
         }
     }
+
+    override fun onStreamOpened(stream: Stream) {
+        super.onStreamOpened(stream)
+        streamsOpened.incrementAndGet()
+    }
+
+    override fun onStreamClosed(stream: Stream) {
+        super.onStreamClosed(stream)
+        streamsClosed.incrementAndGet()
+    }
+
+    fun getStreamsOpened() = streamsOpened.get()
+
+    fun getStreamsClosed() = streamsClosed.get()
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         TODO("not implemented")

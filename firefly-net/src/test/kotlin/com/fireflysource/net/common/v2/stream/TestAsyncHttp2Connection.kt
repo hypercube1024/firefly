@@ -53,6 +53,7 @@ class TestAsyncHttp2Connection {
 
                     override fun onReset(http2Connection: Http2Connection, frame: ResetFrame) {
                         println("Server receives reset frame for unknown stream. frame: $frame")
+                        resetFrameChannel.offer(frame)
                     }
 
                     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
@@ -61,7 +62,7 @@ class TestAsyncHttp2Connection {
                         val fields = HttpFields()
                         fields.put("Test-New-Stream-Response", "R1")
                         val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
-                        val headersFrame = HeadersFrame(stream.id, response, null, true)
+                        val headersFrame = HeadersFrame(stream.id, response, null, false)
                         stream.headers(headersFrame) { println("Server response success.") }
 
                         return object : Stream.Listener.Adapter() {
@@ -112,6 +113,11 @@ class TestAsyncHttp2Connection {
             val newStream = newStreamChannel.receive()
             assertEquals(1, newStream.id)
             assertFalse(newStream.isReset)
+
+            val responseHeadersFrame = responseHeadersChannel.receive()
+            assertEquals(1, responseHeadersFrame.streamId)
+            assertTrue(responseHeadersFrame.metaData.isResponse)
+            assertEquals("R1", responseHeadersFrame.metaData.fields["Test-New-Stream-Response"])
 
             val resetFrame = ResetFrame(newStream.id, ErrorCode.INTERNAL_ERROR.code)
             newStream.reset(resetFrame) {

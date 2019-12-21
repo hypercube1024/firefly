@@ -317,9 +317,9 @@ abstract class AsyncHttp2Connection(
         return true
     }
 
-    protected open fun onStreamOpened(stream: Stream?) {}
+    protected open fun onStreamOpened(stream: Stream) {}
 
-    protected open fun onStreamClosed(stream: Stream?) {}
+    protected open fun onStreamClosed(stream: Stream) {}
 
     protected open fun notifyNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
         return try {
