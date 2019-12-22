@@ -1,6 +1,7 @@
 package com.fireflysource.net.common.v2.stream
 
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
+import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.net.http.client.impl.Http2ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
@@ -24,9 +25,127 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.net.URL
+import java.util.concurrent.CompletableFuture
 import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
+
+    @Test
+    fun testPriority() = runBlocking {
+        val host = "localhost"
+        val port = 4025
+        val tcpConfig = TcpConfig(30, false)
+        val httpConfig = HttpConfig()
+
+        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+            connection.startReadingAndAwaitHandshake()
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
+
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
+
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("Server receives go away frame: $frame")
+                    }
+
+                    override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+                        println("Server creates the remote stream: $stream . the headers: $frame .")
+
+                        val fields = HttpFields()
+                        fields.put("Test-New-Stream-Response", "R1")
+                        if (frame.priority != null) {
+                            fields.put("Stream-Priority", "${frame.priority.weight}")
+                            fields.put("Dependency-Stream", "${frame.priority.parentStreamId}")
+                        }
+                        val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
+                        val headersFrame = HeadersFrame(stream.id, response, null, false)
+                        stream.headers(headersFrame) { println("Server response success.") }
+
+                        return Stream.Listener.Adapter()
+                    }
+                }
+            )
+        }.listen(host, port)
+
+
+        val client = AioTcpClient(tcpConfig)
+        val connection = client.connect(host, port).await()
+        connection.startReadingAndAwaitHandshake()
+        val http2Connection: Http2Connection = Http2ClientConnection(
+            httpConfig, connection, SimpleFlowControlStrategy(),
+            createClientHttp2ConnectionListener()
+        )
+
+        val responseHeadersChannel = Channel<HeadersFrame>(UNLIMITED)
+        val newStreamChannel = Channel<Stream>(UNLIMITED)
+        val headersFrame = createRequestHeadersFrame()
+        http2Connection.newStream(headersFrame,
+            {
+                if (it.isSuccess) {
+                    val success = newStreamChannel.offer(it.value)
+                    println("offer new stream success: $success .")
+                } else {
+                    println("new a stream failed")
+                    it.throwable?.printStackTrace()
+                }
+            },
+            object : Stream.Listener.Adapter() {
+                override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                    println("Client received headers: $frame")
+                    responseHeadersChannel.offer(frame)
+                }
+            })
+
+        val stream = newStreamChannel.receive()
+        val responseHeadersFrame = responseHeadersChannel.receive()
+        assertEquals(1, responseHeadersFrame.streamId)
+        assertTrue(responseHeadersFrame.metaData.isResponse)
+        assertEquals("R1", responseHeadersFrame.metaData.fields["Test-New-Stream-Response"])
+        assertNull(responseHeadersFrame.metaData.fields["Dependency-Stream"])
+
+
+        val priorityFrame = PriorityFrame(stream.id + 2, stream.id, 10, false)
+        val headersFrameWithPriority = createRequestHeadersFrame(priorityFrame)
+        http2Connection.newStream(headersFrameWithPriority,
+            {
+                if (it.isSuccess) {
+                    val success = newStreamChannel.offer(it.value)
+                    println("offer new stream success: $success .")
+                } else {
+                    println("new a stream failed")
+                    it.throwable?.printStackTrace()
+                }
+            },
+            object : Stream.Listener.Adapter() {
+                override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                    println("Client received headers: $frame")
+                    responseHeadersChannel.offer(frame)
+                }
+            })
+
+        val future = CompletableFuture<Void>()
+        http2Connection.priority(
+            PriorityFrame(stream.id + 2, stream.id, 15, false),
+            futureToConsumer(future)
+        )
+
+        val stream2 = newStreamChannel.receive()
+        assertEquals(3, stream2.id)
+        assertFalse(stream2.isReset)
+        val responseHeadersFrame2 = responseHeadersChannel.receive()
+        assertEquals(3, responseHeadersFrame2.streamId)
+        assertTrue(responseHeadersFrame2.metaData.isResponse)
+        assertEquals("1", responseHeadersFrame2.metaData.fields["Dependency-Stream"])
+        assertEquals("10", responseHeadersFrame2.metaData.fields["Stream-Priority"])
+
+        future.await()
+
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
+        Unit
+    }
 
     @Test
     fun testResetFrame() = runBlocking {
@@ -339,7 +458,7 @@ class TestAsyncHttp2Connection {
         }
     }
 
-    private fun createRequestHeadersFrame(): HeadersFrame {
+    private fun createRequestHeadersFrame(priorityFrame: PriorityFrame? = null): HeadersFrame {
         val httpFields = HttpFields()
         httpFields.put("Test-New-Stream", "V1")
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -349,7 +468,7 @@ class TestAsyncHttp2Connection {
             HttpVersion.HTTP_2,
             httpFields
         )
-        return HeadersFrame(request, null, true)
+        return HeadersFrame(request, priorityFrame, true)
     }
 
     @Test
