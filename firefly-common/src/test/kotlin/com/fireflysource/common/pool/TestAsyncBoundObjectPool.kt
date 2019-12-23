@@ -58,7 +58,7 @@ class TestAsyncBoundObjectPool {
         }
 
         list.forEachIndexed { i, future ->
-            //            println("The future is done. $i, ${future.isDone}, ${future.get()}")
+            println("The future done. $i, ${future.isDone}, ${future.get()}")
             future.get().use { pooledObject ->
                 assertFalse(pooledObject.getObject().closed)
                 assertFalse(pooledObject.isReleased)

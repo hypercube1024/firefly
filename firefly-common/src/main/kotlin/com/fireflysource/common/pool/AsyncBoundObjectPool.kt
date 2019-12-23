@@ -2,19 +2,15 @@ package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
-import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.common.track.FixedTimeLeakDetector
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -40,51 +36,59 @@ class AsyncBoundObjectPool<T>(
 
     private val createdCount = AtomicInteger(0)
     private val size = AtomicInteger(0)
-    private val mutex = Mutex()
-    private val channel = Channel<PooledObject<T>>(maxSize)
+    private val poolChannel = Channel<PooledObject<T>>(maxSize)
+    private val pollTaskChannel = Channel<CompletableFuture<PooledObject<T>>>(Channel.UNLIMITED)
     private val leakDetector =
         FixedTimeLeakDetector<PooledObject<T>>(leakDetectorInterval, releaseTimeout, noLeakCallback)
+    private val pollObjectJob: Job
 
     init {
+        pollObjectJob = launchPollObjectJob()
         start()
     }
 
-    private class ArrivedMaxPoolSize(msg: String) : RuntimeException(msg)
-
-    override suspend fun getPooledObject(): PooledObject<T> = getPooledObjectAsync().await()
-
-    override fun poll(): CompletableFuture<PooledObject<T>> = getPooledObjectAsync().asCompletableFuture()
-
     override fun getCoroutineDispatcher(): CoroutineDispatcher = objectPoolDispatcher
 
-    private fun getPooledObjectAsync(): Deferred<PooledObject<T>> = asyncGlobally(objectPoolDispatcher) {
-        try {
-            createNewIfLessThanMaxSize()
-        } catch (e: ArrivedMaxPoolSize) {
-            getFromPool()
+    override suspend fun getPooledObject(): PooledObject<T> = poll().await()
+
+    override fun poll(): CompletableFuture<PooledObject<T>> {
+        val future = CompletableFuture<PooledObject<T>>()
+        pollTaskChannel.offer(future)
+        return future
+    }
+
+    private fun launchPollObjectJob(): Job = launchGlobally(objectPoolDispatcher) {
+        while (true) {
+            val future = pollTaskChannel.receive()
+            try {
+                val pooledObject = createNewIfLessThanMaxSize()
+                future.complete(pooledObject)
+            } catch (e: Exception) {
+                future.completeExceptionally(e)
+            }
         }
     }
 
-    private suspend fun createNewIfLessThanMaxSize(): PooledObject<T> = mutex.withLock {
-        if (createdCount.get() < maxSize) {
+    private suspend fun createNewIfLessThanMaxSize(): PooledObject<T> {
+        return if (createdCount.get() < maxSize) {
             val obj = objectFactory.createNew(this).await()
             createdCount.incrementAndGet()
             log.debug { "create a new object. $obj" }
             obj
         } else {
-            throw ArrivedMaxPoolSize("Arrived the max pool size")
+            getFromPool()
         }
     }
 
     private suspend fun getFromPool(): PooledObject<T> {
-        val oldPooledObject = channel.receive()
+        val oldPooledObject = poolChannel.receive()
         size.decrementAndGet()
         return if (isValid(oldPooledObject)) {
             initPooledObject(oldPooledObject)
             log.debug { "get an old object. $oldPooledObject" }
             oldPooledObject
         } else {
-            destroy(oldPooledObject)
+            destroyPooledObject(oldPooledObject)
             val newPooledObject = createNewIfLessThanMaxSize()
             initPooledObject(oldPooledObject)
             newPooledObject
@@ -99,7 +103,7 @@ class AsyncBoundObjectPool<T>(
         pooledObject.released.set(false)
     }
 
-    private suspend fun destroy(pooledObject: PooledObject<T>) = mutex.withLock {
+    private fun destroyPooledObject(pooledObject: PooledObject<T>) {
         log.debug { "destroy the object. $pooledObject" }
         Atomics.getAndDecrement(createdCount, 0)
         dispose.destroy(pooledObject)
@@ -108,11 +112,12 @@ class AsyncBoundObjectPool<T>(
 
     override fun take(): PooledObject<T> = poll().get(timeout, TimeUnit.SECONDS)
 
+
     override fun release(pooledObject: PooledObject<T>) {
         launchGlobally(objectPoolDispatcher) {
             if (pooledObject.released.compareAndSet(false, true)) {
                 leakDetector.clear(pooledObject)
-                channel.send(pooledObject)
+                poolChannel.send(pooledObject)
                 size.incrementAndGet()
                 log.debug { "release the object. $pooledObject, ${size()}" }
             }
@@ -138,7 +143,7 @@ class AsyncBoundObjectPool<T>(
 
     override fun destroy() {
         while (true) {
-            val o = channel.poll()
+            val o = poolChannel.poll()
             if (o == null) {
                 break
             } else {
@@ -147,6 +152,7 @@ class AsyncBoundObjectPool<T>(
         }
 
         leakDetector.stop()
-        channel.close()
+        poolChannel.close()
+        pollObjectJob.cancel()
     }
 }
