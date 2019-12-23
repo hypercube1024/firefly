@@ -11,6 +11,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.time.withTimeout
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -38,16 +40,19 @@ class AsyncBoundObjectPool<T>(
     private val size = AtomicInteger(0)
     private val poolChannel = Channel<PooledObject<T>>(maxSize)
     private val pollTaskChannel = Channel<CompletableFuture<PooledObject<T>>>(Channel.UNLIMITED)
+    private val releaseTaskChannel = Channel<PooledObject<T>>(Channel.UNLIMITED)
     private val leakDetector =
         FixedTimeLeakDetector<PooledObject<T>>(leakDetectorInterval, releaseTimeout, noLeakCallback)
     private val pollObjectJob: Job
+    private val releaseObjectJob: Job
 
     init {
         pollObjectJob = launchPollObjectJob()
+        releaseObjectJob = launchReleaseObjectJob()
         start()
     }
 
-    override fun getCoroutineDispatcher(): CoroutineDispatcher = objectPoolDispatcher
+    override fun take(): PooledObject<T> = poll().get(timeout, TimeUnit.SECONDS)
 
     override suspend fun getPooledObject(): PooledObject<T> = poll().await()
 
@@ -61,20 +66,35 @@ class AsyncBoundObjectPool<T>(
         while (true) {
             val future = pollTaskChannel.receive()
             try {
-                val pooledObject = createNewIfLessThanMaxSize()
+                val pooledObject = getPooledObjectOrCreateNew()
+                initPooledObject(pooledObject)
                 future.complete(pooledObject)
             } catch (e: Exception) {
+                log.error(e) { "poll object from pool exception." }
                 future.completeExceptionally(e)
             }
         }
     }
 
-    private suspend fun createNewIfLessThanMaxSize(): PooledObject<T> {
+    private fun initPooledObject(pooledObject: PooledObject<T>) {
+        leakDetector.register(pooledObject) {
+            try {
+                pooledObject.leakCallback.accept(pooledObject)
+            } catch (e: Exception) {
+                log.error(e) { "The pooled object has leaked. object: $pooledObject ." }
+            } finally {
+                destroyPooledObject(pooledObject)
+            }
+        }
+        pooledObject.released.set(false)
+    }
+
+    private suspend fun getPooledObjectOrCreateNew(): PooledObject<T> {
         return if (createdCount.get() < maxSize) {
-            val obj = objectFactory.createNew(this).await()
+            val pooledObject = objectFactory.createNew(this).await()
             createdCount.incrementAndGet()
-            log.debug { "create a new object. $obj" }
-            obj
+            log.debug { "create a new object. $pooledObject" }
+            pooledObject
         } else {
             getFromPool()
         }
@@ -84,44 +104,48 @@ class AsyncBoundObjectPool<T>(
         val oldPooledObject = poolChannel.receive()
         size.decrementAndGet()
         return if (isValid(oldPooledObject)) {
-            initPooledObject(oldPooledObject)
             log.debug { "get an old object. $oldPooledObject" }
             oldPooledObject
         } else {
             destroyPooledObject(oldPooledObject)
-            val newPooledObject = createNewIfLessThanMaxSize()
-            initPooledObject(oldPooledObject)
-            newPooledObject
+            getPooledObjectOrCreateNew()
         }
-    }
-
-    private fun initPooledObject(pooledObject: PooledObject<T>) {
-        leakDetector.register(pooledObject) {
-            createdCount.decrementAndGet()
-            pooledObject.leakCallback.accept(pooledObject)
-        }
-        pooledObject.released.set(false)
     }
 
     private fun destroyPooledObject(pooledObject: PooledObject<T>) {
-        log.debug { "destroy the object. $pooledObject" }
-        Atomics.getAndDecrement(createdCount, 0)
-        dispose.destroy(pooledObject)
+        try {
+            dispose.destroy(pooledObject)
+        } catch (e: Exception) {
+            log.error(e) { "destroy pooled object exception." }
+        } finally {
+            log.debug { "destroy the object: $pooledObject ." }
+            Atomics.getAndDecrement(createdCount, 0)
+        }
     }
 
 
-    override fun take(): PooledObject<T> = poll().get(timeout, TimeUnit.SECONDS)
-
-
-    override fun release(pooledObject: PooledObject<T>) {
-        launchGlobally(objectPoolDispatcher) {
-            if (pooledObject.released.compareAndSet(false, true)) {
-                leakDetector.clear(pooledObject)
-                poolChannel.send(pooledObject)
-                size.incrementAndGet()
-                log.debug { "release the object. $pooledObject, ${size()}" }
+    // release task
+    private fun launchReleaseObjectJob(): Job = launchGlobally(objectPoolDispatcher) {
+        while (true) {
+            val pooledObject = releaseTaskChannel.receive()
+            try {
+                if (pooledObject.released.compareAndSet(false, true)) {
+                    leakDetector.clear(pooledObject)
+                    withTimeout(Duration.ofSeconds(timeout)) {
+                        poolChannel.send(pooledObject)
+                        size.incrementAndGet()
+                    }
+                    log.debug { "release pooled object: $pooledObject, pool size: ${size()}." }
+                }
+            } catch (e: Exception) {
+                log.error(e) { "release pooled object exception" }
+                destroyPooledObject(pooledObject)
             }
         }
+    }
+
+    override fun release(pooledObject: PooledObject<T>) {
+        releaseTaskChannel.offer(pooledObject)
     }
 
     override fun isValid(pooledObject: PooledObject<T>): Boolean {
@@ -133,6 +157,8 @@ class AsyncBoundObjectPool<T>(
     override fun isEmpty(): Boolean {
         return size() == 0
     }
+
+    override fun getCoroutineDispatcher(): CoroutineDispatcher = objectPoolDispatcher
 
     override fun getLeakDetector(): FixedTimeLeakDetector<PooledObject<T>> = leakDetector
 
@@ -154,5 +180,6 @@ class AsyncBoundObjectPool<T>(
         leakDetector.stop()
         poolChannel.close()
         pollObjectJob.cancel()
+        releaseObjectJob.cancel()
     }
 }

@@ -45,14 +45,22 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     @Override
     public void stop() {
         if (start.compareAndSet(true, false)) {
-            destroy();
+            try {
+                destroy();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             stopActions.remove(stopCallback);
         }
     }
 
     private void stopNoRemove() {
         if (start.compareAndSet(true, false)) {
-            destroy();
+            try {
+                destroy();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
