@@ -19,7 +19,10 @@ object CoroutineDispatchers {
         Runtime.getRuntime().availableProcessors()
     )
     val ioBlockingQueueSize: Int = Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingQueueSize", 20000)
-    val ioBlockingPoolSize: Int = Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolSize", 64)
+    val ioBlockingPoolSize: Int = Integer.getInteger(
+        "com.fireflysource.common.coroutine.ioBlockingPoolSize",
+        max(64, Runtime.getRuntime().availableProcessors())
+    )
 
 
     val ioBlockingPool: ExecutorService by lazy {
@@ -46,12 +49,17 @@ object CoroutineDispatchers {
     val ioBlocking: CoroutineDispatcher by lazy { ioBlockingPool.asCoroutineDispatcher() }
     val singleThread: CoroutineDispatcher by lazy { singleThreadPool.asCoroutineDispatcher() }
 
+    val scheduler: ScheduledExecutorService by lazy {
+        Executors.newScheduledThreadPool(defaultPoolSize) {
+            Thread(it, "firefly-scheduler-thread")
+        }
+    }
+
     fun newSingleThreadExecutor(name: String): ExecutorService {
         val executor = ThreadPoolExecutor(
-            1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue<Runnable>()
-        ) { r ->
-            Thread(r, name)
-        }
+            1, 1, 0, TimeUnit.MILLISECONDS,
+            LinkedTransferQueue<Runnable>()
+        ) { runnable -> Thread(runnable, name) }
         return FinalizableExecutorService(executor)
     }
 
@@ -60,12 +68,9 @@ object CoroutineDispatchers {
         val executor = ThreadPoolExecutor(
             min(defaultPoolSize, poolSize),
             max(defaultPoolSize, poolSize),
-            30,
-            TimeUnit.SECONDS,
+            30, TimeUnit.SECONDS,
             LinkedTransferQueue<Runnable>()
-        ) { r ->
-            Thread(r, name)
-        }
+        ) { runnable -> Thread(runnable, name) }
         return FinalizableExecutorService(executor)
     }
 
@@ -90,6 +95,28 @@ object CoroutineDispatchers {
 class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor,
     AbstractLifeCycle() {
 
+    init {
+        start()
+    }
+
+    override fun init() {
+    }
+
+    override fun destroy() {
+        if (!executor.isShutdown) {
+            ExecutorServiceUtils.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+        }
+    }
+
+    protected fun finalize() {
+        if (!executor.isShutdown) {
+            ExecutorServiceUtils.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+        }
+    }
+}
+
+class FinalizableScheduledExecutorService(private val executor: ScheduledExecutorService) :
+    ScheduledExecutorService by executor, AbstractLifeCycle() {
     init {
         start()
     }

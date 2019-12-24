@@ -73,7 +73,7 @@ class TestHttpClient {
     @AfterEach
     fun destroy() {
         val time = measureTimeMillis {
-            httpServer.stop(2)
+            httpServer.stop(1)
             stopAll()
         }
         println("shutdown time: $time ms")

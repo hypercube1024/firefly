@@ -1,8 +1,10 @@
 package com.fireflysource.common.track;
 
+import com.fireflysource.common.coroutine.FinalizableScheduledExecutorService;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,7 +20,9 @@ class TestFixedTimeLeakDetector {
     void testFixedTimeLeakDetector() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean leaked = new AtomicBoolean(false);
-        FixedTimeLeakDetector<TrackedObject> detector = new FixedTimeLeakDetector<>(1, 1,
+        FixedTimeLeakDetector<TrackedObject> detector = new FixedTimeLeakDetector<>(
+                new FinalizableScheduledExecutorService(Executors.newSingleThreadScheduledExecutor()),
+                1, 1, 1, TimeUnit.SECONDS,
                 () -> System.out.println("not any leaked object"));
 
         TrackedObject trackedObject = new TrackedObject();

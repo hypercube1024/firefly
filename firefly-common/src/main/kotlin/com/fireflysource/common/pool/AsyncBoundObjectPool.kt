@@ -2,6 +2,7 @@ package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
+import com.fireflysource.common.coroutine.CoroutineDispatchers.scheduler
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
@@ -14,6 +15,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.time.withTimeout
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -40,8 +42,11 @@ class AsyncBoundObjectPool<T>(
     private val poolChannel = Channel<PooledObject<T>>(maxSize)
     private val pollTaskChannel = Channel<CompletableFuture<PooledObject<T>>>(Channel.UNLIMITED)
     private val releaseTaskChannel = Channel<ReleasePooledObjectMessage>(Channel.UNLIMITED)
-    private val leakDetector =
-        FixedTimeLeakDetector<PooledObject<T>>(leakDetectorInterval, releaseTimeout, noLeakCallback)
+    private val leakDetector = FixedTimeLeakDetector<PooledObject<T>>(
+        scheduler,
+        leakDetectorInterval, leakDetectorInterval, releaseTimeout, TimeUnit.SECONDS,
+        noLeakCallback
+    )
     private val pollObjectJob: Job
     private val releaseObjectJob: Job
 
