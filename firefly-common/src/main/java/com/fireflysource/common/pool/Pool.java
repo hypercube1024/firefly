@@ -19,38 +19,18 @@ public interface Pool<T> extends LifeCycle {
     CompletableFuture<PooledObject<T>> poll();
 
     /**
-     * Returns an instance from the pool. The call may be a blocking one or a
-     * non-blocking one and that is determined by the internal implementation.
-     * <p>
-     * If the call is a blocking call, the call returns immediately with a valid
-     * object if available, else the thread is made to wait until an object
-     * becomes available. In case of a blocking call, it is advised that clients
-     * react to {@link InterruptedException} which might be thrown when the
-     * thread waits for an object to become available.
-     * <p>
-     * If the call is a non-blocking one, the call returns immediately
-     * irrespective of whether an object is available or not. If any object is
-     * available the call returns it else the call returns null.
-     * <p>
-     * The validity of the objects are determined using the Validator interface,
-     * such that an object o is valid if Validator.isValid(o) == true
-     *
-     * @return T The pooled object.
-     */
-    PooledObject<T> take() throws InterruptedException;
-
-    /**
      * Releases the object and puts it back to the pool.
      * <p>
      * The mechanism of putting the object back to the pool is generally
      * asynchronous.
      *
      * @param pooledObject the object to return to the pool
+     * @return The release future result.
      */
-    void release(PooledObject<T> pooledObject);
+    CompletableFuture<Void> release(PooledObject<T> pooledObject);
 
     /**
-     * Check the pooled object. If return true, the object is valid
+     * Check the pooled object. If return true, the object is valid.
      *
      * @param pooledObject The pooled object
      * @return if return true, the object is valid.
@@ -81,7 +61,7 @@ public interface Pool<T> extends LifeCycle {
     /**
      * Get the created object count.
      *
-     * @return The created object count
+     * @return The created object count.
      */
     int getCreatedObjectCount();
 
@@ -129,9 +109,9 @@ public interface Pool<T> extends LifeCycle {
     interface ObjectFactory<T> {
 
         /**
-         * Create a new object in future.
+         * Create a new object in the future.
          *
-         * @return a future that is a new instance of an object of type T.
+         * @return a new instance of an object of type T.
          */
         CompletableFuture<PooledObject<T>> createNew(Pool<T> pool);
     }

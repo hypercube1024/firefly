@@ -14,7 +14,6 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.time.withTimeout
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -40,7 +39,7 @@ class AsyncBoundObjectPool<T>(
     private val size = AtomicInteger(0)
     private val poolChannel = Channel<PooledObject<T>>(maxSize)
     private val pollTaskChannel = Channel<CompletableFuture<PooledObject<T>>>(Channel.UNLIMITED)
-    private val releaseTaskChannel = Channel<PooledObject<T>>(Channel.UNLIMITED)
+    private val releaseTaskChannel = Channel<ReleasePooledObjectMessage>(Channel.UNLIMITED)
     private val leakDetector =
         FixedTimeLeakDetector<PooledObject<T>>(leakDetectorInterval, releaseTimeout, noLeakCallback)
     private val pollObjectJob: Job
@@ -52,9 +51,7 @@ class AsyncBoundObjectPool<T>(
         start()
     }
 
-    override fun take(): PooledObject<T> = poll().get(timeout, TimeUnit.SECONDS)
-
-    override suspend fun getPooledObject(): PooledObject<T> = poll().await()
+    override suspend fun takePooledObject(): PooledObject<T> = poll().await()
 
     override fun poll(): CompletableFuture<PooledObject<T>> {
         val future = CompletableFuture<PooledObject<T>>()
@@ -101,7 +98,7 @@ class AsyncBoundObjectPool<T>(
     }
 
     private suspend fun getFromPool(): PooledObject<T> {
-        val oldPooledObject = poolChannel.receive()
+        val oldPooledObject = withTimeout(Duration.ofSeconds(timeout)) { poolChannel.receive() }
         size.decrementAndGet()
         return if (isValid(oldPooledObject)) {
             log.debug { "get an old object. $oldPooledObject" }
@@ -127,25 +124,33 @@ class AsyncBoundObjectPool<T>(
     // release task
     private fun launchReleaseObjectJob(): Job = launchGlobally(objectPoolDispatcher) {
         while (true) {
-            val pooledObject = releaseTaskChannel.receive()
+            val message = releaseTaskChannel.receive()
+            val pooledObject = message.pooledObject
+            val future = message.future
             try {
                 if (pooledObject.released.compareAndSet(false, true)) {
                     leakDetector.clear(pooledObject)
-                    withTimeout(Duration.ofSeconds(timeout)) {
-                        poolChannel.send(pooledObject)
-                        size.incrementAndGet()
-                    }
+                    withTimeout(Duration.ofSeconds(timeout)) { poolChannel.send(pooledObject) }
+                    size.incrementAndGet()
+                    future.complete(null)
                     log.debug { "release pooled object: $pooledObject, pool size: ${size()}." }
                 }
             } catch (e: Exception) {
                 log.error(e) { "release pooled object exception" }
                 destroyPooledObject(pooledObject)
+                future.completeExceptionally(e)
             }
         }
     }
 
-    override fun release(pooledObject: PooledObject<T>) {
-        releaseTaskChannel.offer(pooledObject)
+    override fun release(pooledObject: PooledObject<T>): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        releaseTaskChannel.offer(ReleasePooledObjectMessage(pooledObject, future))
+        return future
+    }
+
+    override suspend fun putPooledObject(pooledObject: PooledObject<T>) {
+        release(pooledObject).await()
     }
 
     override fun isValid(pooledObject: PooledObject<T>): Boolean {
@@ -182,4 +187,9 @@ class AsyncBoundObjectPool<T>(
         pollObjectJob.cancel()
         releaseObjectJob.cancel()
     }
+
+    inner class ReleasePooledObjectMessage(
+        val pooledObject: PooledObject<T>,
+        val future: CompletableFuture<Void>
+    )
 }

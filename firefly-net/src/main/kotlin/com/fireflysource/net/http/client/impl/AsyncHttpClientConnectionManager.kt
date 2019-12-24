@@ -77,7 +77,7 @@ class AsyncHttpClientConnectionManager(
 
         val pooledObject = connectionPoolMap
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-            .getPooledObject()
+            .takePooledObject()
 
         val httpClientResponse = if (pooledObject.getObject().isSecureConnection) {
             pooledObject.use { o -> o.getObject().send(request) }.await()

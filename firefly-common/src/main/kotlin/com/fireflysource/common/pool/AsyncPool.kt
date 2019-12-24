@@ -11,7 +11,9 @@ import kotlinx.coroutines.future.asCompletableFuture
  */
 interface AsyncPool<T> : Pool<T> {
 
-    suspend fun getPooledObject(): PooledObject<T>
+    suspend fun takePooledObject(): PooledObject<T>
+
+    suspend fun putPooledObject(pooledObject: PooledObject<T>)
 
     fun getCoroutineDispatcher(): CoroutineDispatcher
 

@@ -1,6 +1,9 @@
 package com.fireflysource.common.pool
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
@@ -53,32 +56,26 @@ class TestAsyncBoundObjectPool {
         assertTrue(pool.isEmpty)
 
         // get 20 test objects
-        val list = List(20) {
-            pool.poll()
-        }
-
-        list.forEachIndexed { i, future ->
-            println("The future done. $i, ${future.isDone}, ${future.get()}")
-            future.get().use { pooledObject ->
+        (1..20).asFlow().map { pool.takePooledObject() }
+            .collect { pooledObject ->
                 assertFalse(pooledObject.getObject().closed)
                 assertFalse(pooledObject.isReleased)
                 assertTrue(pooledObject.getObject().id in 0..max)
-                println("test success. $i, $pooledObject")
+                println("get pooled object success. object: $pooledObject")
+
+                pooledObject.release().await()
+                assertTrue(pooledObject.isReleased)
             }
-        }
+
+        assertEquals(max, pool.size())
         assertEquals(max, pool.createdObjectCount)
         println("current size: ${pool.size()}")
 
-        list.forEachIndexed { i, future ->
-            println("complete test obj. $i, ${future.get()}")
-            assertTrue(future.isDone)
-        }
-
-        pool.poll().await().use { pooledObject ->
+        pool.takePooledObject().use { pooledObject ->
             assertFalse(pooledObject.getObject().closed)
             assertFalse(pooledObject.isReleased)
             assertTrue(pooledObject.getObject().id in 0..max)
-            println("test sync success. $pooledObject")
+            println("get pooled object success. object: $pooledObject")
         }
 
         pool.stop()

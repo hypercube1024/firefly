@@ -1,6 +1,7 @@
 package com.fireflysource.common.pool;
 
 import java.io.Closeable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -32,8 +33,8 @@ public class PooledObject<T> implements Closeable {
     /**
      * Return the pooled object to the pool.
      */
-    public void release() {
-        pool.release(this);
+    public CompletableFuture<Void> release() {
+        return pool.release(this);
     }
 
     public boolean isReleased() {
@@ -43,5 +44,13 @@ public class PooledObject<T> implements Closeable {
     @Override
     public void close() {
         release();
+    }
+
+    @Override
+    public String toString() {
+        return "PooledObject{" +
+                "object=" + object +
+                ", released=" + released +
+                '}';
     }
 }
