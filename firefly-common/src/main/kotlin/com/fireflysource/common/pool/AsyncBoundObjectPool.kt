@@ -76,11 +76,11 @@ class AsyncBoundObjectPool<T>(
     private fun initPooledObject(pooledObject: PooledObject<T>) {
         leakDetector.register(pooledObject) {
             try {
-                pooledObject.leakCallback.accept(pooledObject)
+                pooledObject.leakCallback.accept(it)
             } catch (e: Exception) {
-                log.error(e) { "The pooled object has leaked. object: $pooledObject ." }
+                log.error(e) { "The pooled object has leaked. object: $it ." }
             } finally {
-                destroyPooledObject(pooledObject)
+                destroyPooledObject(it)
             }
         }
         pooledObject.released.set(false)

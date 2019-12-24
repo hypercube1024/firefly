@@ -1,5 +1,6 @@
 package com.fireflysource.common.pool
 
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
@@ -22,34 +23,8 @@ class TestAsyncBoundObjectPool {
     fun test() = runBlocking {
         val id = AtomicInteger()
         val max = 4
-
-        val pool = asyncPool<TestObject> {
-
-            maxSize = max
-            timeout = 60
-            leakDetectorInterval = 10
-            releaseTimeout = 60
-
-            objectFactory { pool ->
-                delay(100)
-                PooledObject(TestObject(id.getAndIncrement()), pool) { obj ->
-                    println("leaked: " + obj.getObject())
-                }
-            }
-
-            validator { pooledObject ->
-                !pooledObject.getObject().closed
-            }
-
-            dispose { pooledObject ->
-                pooledObject.getObject().closed = true
-            }
-
-            noLeakCallback {
-                println("no leak")
-            }
-
-        }
+        val destroyedChannel = Channel<PooledObject<TestObject>>(Channel.UNLIMITED)
+        val pool = createAsyncPool(id, max, 60, destroyedChannel)
 
         assertNotNull(pool.leakDetector)
         assertEquals(0, pool.size())
@@ -79,5 +54,52 @@ class TestAsyncBoundObjectPool {
         }
 
         pool.stop()
+    }
+
+    @Test
+    fun testPooledObjectLeak() = runBlocking {
+        val id = AtomicInteger()
+        val max = 10
+        val destroyedChannel = Channel<PooledObject<TestObject>>(Channel.UNLIMITED)
+        val pool = createAsyncPool(id, max, 1, destroyedChannel)
+        val pooledObject = pool.takePooledObject()
+        val destroyedObject = destroyedChannel.receive()
+        pool.leakDetector.clear(pooledObject)
+        assertTrue(destroyedObject.getObject().closed)
+        assertTrue(pooledObject.getObject().closed)
+    }
+
+    private fun createAsyncPool(
+        id: AtomicInteger,
+        max: Int,
+        time: Long,
+        destroyedChannel: Channel<PooledObject<TestObject>>
+    ) = asyncPool<TestObject> {
+
+        maxSize = max
+        timeout = 60
+        leakDetectorInterval = time
+        releaseTimeout = time
+
+        objectFactory { pool ->
+            delay(100)
+            PooledObject(TestObject(id.getAndIncrement()), pool) { obj ->
+                println("leaked: " + obj.getObject())
+            }
+        }
+
+        validator { pooledObject ->
+            !pooledObject.getObject().closed
+        }
+
+        dispose { pooledObject ->
+            pooledObject.getObject().closed = true
+            destroyedChannel.offer(pooledObject)
+        }
+
+        noLeakCallback {
+            println("no leak")
+        }
+
     }
 }
