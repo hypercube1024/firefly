@@ -13,8 +13,8 @@ import java.util.function.Consumer;
  * <p>Differently from socket streams, where the input and output streams permanently associated
  * with the socket (and hence with the connection that the socket represents), there can be multiple
  * HTTP/2 streams present concurrent for an HTTP/2 session.</p>
- * <p>A {@link Stream} maps to an HTTP request/response cycle, and after the request/response cycle is
- * completed, the stream closed and removed from the session.</p>
+ * <p>A {@link Stream} maps to an HTTP request/response cycle, and after the request/response cycle completed,
+ * the stream closed and removed from the session.</p>
  * <p>Like {@link Http2Connection}, {@link Stream} is the active part and by calling its API applications
  * can generate events on the stream; conversely, {@link Stream.Listener} is the passive part, and
  * its results invoked when events happen on the stream.</p>
@@ -35,7 +35,7 @@ public interface Stream {
     /**
      * <p>Sends the given HEADERS {@code frame} representing a HTTP response.</p>
      *
-     * @param frame    the HEADERS frame to send
+     * @param frame  the HEADERS frame to send
      * @param result the result that gets notified when the frame has been sent
      */
     void headers(HeadersFrame frame, Consumer<Result<Void>> result);
@@ -52,7 +52,7 @@ public interface Stream {
     /**
      * <p>Sends the given DATA {@code frame}.</p>
      *
-     * @param frame    the DATA frame to send
+     * @param frame  the DATA frame to send
      * @param result the result that gets notified when the frame has been sent
      */
     void data(DataFrame frame, Consumer<Result<Void>> result);
@@ -60,7 +60,7 @@ public interface Stream {
     /**
      * <p>Sends the given RST_STREAM {@code frame}.</p>
      *
-     * @param frame    the RST_FRAME to send
+     * @param frame  the RST_FRAME to send
      * @param result the result that gets notified when the frame has been sent
      */
     void reset(ResetFrame frame, Consumer<Result<Void>> result);
@@ -94,7 +94,7 @@ public interface Stream {
     boolean isReset();
 
     /**
-     * @return whether this stream is closed, both locally and remotely.
+     * @return whether this stream closed, both locally and remotely.
      */
     boolean isClosed();
 
@@ -138,8 +138,8 @@ public interface Stream {
         /**
          * <p>Callback method invoked when a DATA frame has been received.</p>
          *
-         * @param stream   the stream
-         * @param frame    the DATA frame received
+         * @param stream the stream
+         * @param frame  the DATA frame received
          * @param result the result to complete when the bytes of the DATA frame have been consumed
          */
         void onData(Stream stream, DataFrame frame, Consumer<Result<Void>> result);
@@ -147,8 +147,8 @@ public interface Stream {
         /**
          * <p>Callback method invoked when an RST_STREAM frame has been received for this stream.</p>
          *
-         * @param stream   the stream
-         * @param frame    the RST_FRAME received
+         * @param stream the stream
+         * @param frame  the RST_FRAME received
          * @param result the result to complete when the reset has been handled
          */
         default void onReset(Stream stream, ResetFrame frame, Consumer<Result<Void>> result) {
@@ -186,9 +186,9 @@ public interface Stream {
         /**
          * <p>Callback method invoked when the stream failed.</p>
          *
-         * @param stream   the stream
-         * @param error    the error code
-         * @param reason   the error reason, or null
+         * @param stream the stream
+         * @param error  the error code
+         * @param reason the error reason, or null
          * @param result the result to complete when the failure has been handled
          */
         default void onFailure(Stream stream, int error, String reason, Consumer<Result<Void>> result) {
