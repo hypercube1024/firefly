@@ -246,7 +246,6 @@ class TestAsyncHttp2Connection {
             assertTrue(newStream.isReset)
             assertEquals(1, serverReceivedResetFrame.streamId)
             assertEquals(ErrorCode.INTERNAL_ERROR.code, serverReceivedResetFrame.error)
-            assertTrue(newStream.isClosed)
         }
 
         println("reset stream time: $time ms")
