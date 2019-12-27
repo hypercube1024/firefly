@@ -36,7 +36,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
      * If you start automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
      * The default message consumer will send data to the channel.
      *
-     * @return The receiving data channel
+     * @return The receiving data channel.
      */
     Channel<ByteBuffer> getInputChannel();
 
