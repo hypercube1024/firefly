@@ -76,8 +76,6 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         try {
             serverSocketChannel = AsynchronousServerSocketChannel.open(group)
             serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
-            serverSocketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
-            serverSocketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
             serverSocketChannel.bind(address, config.backlog)
             accept()
         } catch (e: Exception) {
