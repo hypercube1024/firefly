@@ -18,10 +18,11 @@ object CoroutineDispatchers {
         "com.fireflysource.common.coroutine.defaultPoolSize",
         Runtime.getRuntime().availableProcessors()
     )
-    val ioBlockingQueueSize: Int = Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingQueueSize", 20000)
+    val ioBlockingQueueSize: Int =
+        Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingQueueSize", 16 * 1024)
     val ioBlockingPoolSize: Int = Integer.getInteger(
         "com.fireflysource.common.coroutine.ioBlockingPoolSize",
-        max(64, Runtime.getRuntime().availableProcessors())
+        max(32, Runtime.getRuntime().availableProcessors())
     )
 
 
@@ -31,9 +32,7 @@ object CoroutineDispatchers {
             defaultPoolSize, ioBlockingPoolSize,
             30L, TimeUnit.SECONDS,
             ArrayBlockingQueue<Runnable>(ioBlockingQueueSize)
-        ) { r ->
-            Thread(r, "firefly-io-blocking-pool-" + threadId.getAndIncrement())
-        })
+        ) { runnable -> Thread(runnable, "firefly-io-blocking-pool-" + threadId.getAndIncrement()) })
     }
 
     val singleThreadPool: ExecutorService by lazy {

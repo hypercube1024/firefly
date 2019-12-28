@@ -57,9 +57,9 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
         val future = CompletableFuture<TcpConnection>()
 
         val socketChannel = AsynchronousSocketChannel.open(group)
-        socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true)
-        socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true)
-        socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, false)
+        socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
+        socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
+        socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
         socketChannel.connect(address, id.getAndIncrement(), object : CompletionHandler<Void?, Int> {
 
             override fun completed(result: Void?, connectionId: Int) {
