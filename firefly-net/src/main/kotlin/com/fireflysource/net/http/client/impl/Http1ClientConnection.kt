@@ -159,14 +159,16 @@ class Http1ClientConnection(
 
     private suspend fun flushHeaderBuffer() {
         if (headerBuffer.hasRemaining()) {
-            tcpConnection.write(headerBuffer).await()
+            val size = tcpConnection.write(headerBuffer).await()
+            log.debug { "flush header bytes: $size" }
         }
         BufferUtils.clear(headerBuffer)
     }
 
     private suspend fun flushContentBuffer() {
         if (contentBuffer.hasRemaining()) {
-            tcpConnection.write(contentBuffer).await()
+            val size = tcpConnection.write(contentBuffer).await()
+            log.debug { "flush content bytes: $size" }
         }
         BufferUtils.clear(contentBuffer)
     }
@@ -175,14 +177,16 @@ class Http1ClientConnection(
         val bufArray = arrayOf(chunkBuffer, contentBuffer)
         val remaining = bufArray.map { it.remaining().toLong() }.sum()
         if (remaining > 0) {
-            tcpConnection.write(bufArray, 0, bufArray.size).await()
+            val size = tcpConnection.write(bufArray, 0, bufArray.size).await()
+            log.debug { "flush chunked content bytes: $size" }
         }
         bufArray.forEach(BufferUtils::clear)
     }
 
     private suspend fun flushChunkBuffer() {
         if (chunkBuffer.hasRemaining()) {
-            tcpConnection.write(chunkBuffer).await()
+            val size = tcpConnection.write(chunkBuffer).await()
+            log.debug { "flush chunked bytes: $size" }
         }
         BufferUtils.clear(chunkBuffer)
     }

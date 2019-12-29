@@ -12,11 +12,11 @@ public class HttpConfig {
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
     private long releaseTimeout = 60;
-    private int requestHeaderBufferSize = 8 * 1024;
-    private int contentBufferSize = 8 * 1024;
+    private int requestHeaderBufferSize = 4 * 1024;
+    private int contentBufferSize = 16 * 1024;
     private SecureEngineFactory secureEngineFactory;
     private int maxDynamicTableSize = DEFAULT_HEADER_TABLE_SIZE;
-    private int maxHeaderSize = 8 * 1024;
+    private int maxHeaderSize = 32 * 1024;
     private int maxHeaderBlockFragment = 0;
     private int initialStreamRecvWindow = 8 * 1024 * 1024;
     private int maxConcurrentPushedStreams = 32;

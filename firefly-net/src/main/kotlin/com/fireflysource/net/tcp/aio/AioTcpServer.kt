@@ -91,6 +91,9 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                 object : CompletionHandler<AsynchronousSocketChannel, Int> {
                     override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
                         try {
+                            socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
+                            socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
+                            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
                             val tcpConnection = AioTcpConnection(
                                 connectionId, config.timeout,
                                 socketChannel, getMessageThread(connectionId)

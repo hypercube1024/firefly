@@ -6,11 +6,13 @@ import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 class TestHttp1ClientConnection {
 
     @Test
+    @DisplayName("should add HOST and KEEP_ALIVE headers")
     fun testPrepareHttp1Headers() {
         val request = AsyncHttpClientRequest()
         request.method = HttpMethod.GET.value
@@ -23,6 +25,7 @@ class TestHttp1ClientConnection {
     }
 
     @Test
+    @DisplayName("should not remove user setting headers")
     fun testExistConnectionHeaders() {
         val request = AsyncHttpClientRequest()
         request.method = HttpMethod.GET.value

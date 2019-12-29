@@ -14,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -80,6 +81,7 @@ class TestHttpClient {
     }
 
     @Test
+    @DisplayName("should send HTTP request no body successfully")
     fun testNoContent() = runBlocking {
         val httpClient = HttpClientFactory.create()
         val count = 1_000
@@ -104,6 +106,7 @@ class TestHttpClient {
     }
 
     @Test
+    @DisplayName("should send HTTP request and body using chucked encoding successfully")
     fun testContentWithChunkedEncoding() = runBlocking {
         val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
         println("data length: ${data.remaining()}")
@@ -124,6 +127,7 @@ class TestHttpClient {
     }
 
     @Test
+    @DisplayName("should send HTTP request and body with content length successfully")
     fun testContentWithoutChunkedEncoding() = runBlocking {
         val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
         val length = data.remaining()

@@ -9,6 +9,7 @@ class AdaptiveBufferSize {
             1 * 1024,
             2 * 1024,
             4 * 1024,
+            4 * 1024,
             8 * 1024,
             8 * 1024,
             8 * 1024,
@@ -18,7 +19,9 @@ class AdaptiveBufferSize {
             32 * 1024,
             32 * 1024,
             64 * 1024,
-            64 * 1024
+            128 * 1024,
+            256 * 1024,
+            512 * 1024
         )
     }
 
@@ -28,9 +31,9 @@ class AdaptiveBufferSize {
 
     fun update(size: Int) {
         index = if (size >= getBufferSize()) {
-            Math.min(index + 1, sizeArray.lastIndex)
+            (index + 1).coerceAtMost(sizeArray.lastIndex)
         } else {
-            Math.max(index - 1, 0)
+            (index - 1).coerceAtLeast(0)
         }
     }
 }

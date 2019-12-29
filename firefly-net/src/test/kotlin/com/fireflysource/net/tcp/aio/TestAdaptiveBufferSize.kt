@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 /**
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test
 class TestAdaptiveBufferSize {
 
     @Test
+    @DisplayName("should increase or decrease the buffer size when the data size changes.")
     fun test() {
         val bufSize = AdaptiveBufferSize()
         assertEquals(1024, bufSize.getBufferSize())
@@ -24,5 +26,17 @@ class TestAdaptiveBufferSize {
 
         bufSize.update(2048)
         assertEquals(4096, bufSize.getBufferSize())
+
+        bufSize.update(4096)
+        assertEquals(4096, bufSize.getBufferSize())
+
+        bufSize.update(500)
+        assertEquals(4096, bufSize.getBufferSize())
+
+        repeat(100) { bufSize.update(512 * 1024) }
+        assertEquals(512 * 1024, bufSize.getBufferSize())
+
+        repeat(100) { bufSize.update(15) }
+        assertEquals(1024, bufSize.getBufferSize())
     }
 }
