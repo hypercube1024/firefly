@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.net.http.client.HttpClientContentProvider
@@ -118,7 +119,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
             return endStream()
         }
 
-        return asyncGlobally { generate(byteBuffer) }.asCompletableFuture()
+        return asyncGlobally(singleThread) { generate(byteBuffer) }.asCompletableFuture()
     }
 
     private suspend fun generate(byteBuffer: ByteBuffer): Int {
