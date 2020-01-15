@@ -46,17 +46,17 @@ suspend fun AsynchronousFileChannel.lockAwait(
 /**
  * Close in the I/O blocking coroutine dispatcher
  */
-fun Closeable.asyncClose() = launchGlobally(ioBlocking) {
+fun Closeable.closeAsync() = launchGlobally(ioBlocking) {
     @Suppress("BlockingMethodInNonBlockingContext")
     close()
 }
 
-fun asyncOpenFileChannel(file: Path, vararg options: OpenOption) = asyncGlobally(ioBlocking) {
+fun openFileChannelAsync(file: Path, vararg options: OpenOption) = asyncGlobally(ioBlocking) {
     @Suppress("BlockingMethodInNonBlockingContext")
     AsynchronousFileChannel.open(file, setOf(*options), ioBlockingPool)
 }
 
-fun asyncReadAllBytes(file: Path) = asyncGlobally(ioBlocking) {
+fun readAllBytesAsync(file: Path) = asyncGlobally(ioBlocking) {
     @Suppress("BlockingMethodInNonBlockingContext")
     Files.readAllBytes(file)
 }

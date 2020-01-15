@@ -3,8 +3,8 @@ package com.fireflysource.net.http.client.impl.content.provider
 import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.exception.UnsupportedOperationException
-import com.fireflysource.common.io.asyncClose
-import com.fireflysource.common.io.asyncOpenFileChannel
+import com.fireflysource.common.io.closeAsync
+import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.readAwait
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import kotlinx.coroutines.Job
@@ -27,7 +27,7 @@ class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClie
 
     init {
         readJob = launchGlobally(singleThread) {
-            val fileChannel = asyncOpenFileChannel(path, *options).await()
+            val fileChannel = openFileChannelAsync(path, *options).await()
 
             readMessageLoop@ while (true) {
                 when (val readFileMessage = readChannel.receive()) {
@@ -37,7 +37,7 @@ class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClie
                             val len = fileChannel.readAwait(buf, position)
                             if (len < 0) {
                                 future.complete(len)
-                                fileChannel.asyncClose()
+                                fileChannel.closeAsync()
                                 closed = true
                                 break@readMessageLoop
                             } else {
@@ -49,7 +49,7 @@ class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClie
                         }
                     }
                     is EndReadFile -> {
-                        fileChannel.asyncClose().join()
+                        fileChannel.closeAsync().join()
                         closed = true
                         break@readMessageLoop
                     }

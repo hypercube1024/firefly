@@ -3,7 +3,7 @@ package com.fireflysource.net.http.client.impl.content.provider
 import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.exception.UnsupportedOperationException
-import com.fireflysource.common.io.asyncClose
+import com.fireflysource.common.io.closeAsync
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -71,7 +71,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
                     is EndReadMultiPart -> {
                         open = false
                         state = State.COMPLETE
-                        parts.forEach { p -> p.asyncClose() }
+                        parts.forEach { p -> p.closeAsync() }
                         break@readMessageLoop
                     }
                 }

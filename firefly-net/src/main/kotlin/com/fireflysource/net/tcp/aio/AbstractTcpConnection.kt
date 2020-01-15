@@ -2,7 +2,7 @@ package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.func.Callback
-import com.fireflysource.common.io.asyncClose
+import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.io.readAwait
 import com.fireflysource.common.io.writeAwait
 import com.fireflysource.common.sys.Result
@@ -356,7 +356,7 @@ abstract class AbstractTcpConnection(
         if (socketChannelClosed.compareAndSet(false, true)) {
             closeTime = System.currentTimeMillis()
             try {
-                socketChannel.asyncClose()
+                socketChannel.closeAsync()
             } catch (e: Exception) {
                 log.warn(e) { "close socket channel exception. $id" }
             }

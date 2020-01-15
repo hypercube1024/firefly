@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.handler
 
-import com.fireflysource.common.io.asyncReadAllBytes
+import com.fireflysource.common.io.readAllBytesAsync
 import com.fireflysource.net.http.client.HttpClientResponse
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -43,7 +43,7 @@ class TestFileContentHandler {
 
         handler.closeAwait()
 
-        val str = asyncReadAllBytes(tmpFile).await()
+        val str = readAllBytesAsync(tmpFile).await()
         assertEquals("hello file handler", String(str))
     }
 }

@@ -1,7 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
-import com.fireflysource.common.io.asyncClose
+import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
@@ -43,8 +43,8 @@ class AioSecureTcpConnection(
             handshakeCompleteResult.accept(Result(true, applicationProtocol, null))
         } catch (e: Exception) {
             log.error(e) { "The TLS handshake failure." }
-            tcpConnection.asyncClose().join()
-            secureEngine.asyncClose().join()
+            tcpConnection.closeAsync().join()
+            secureEngine.closeAsync().join()
             handshakeCompleteResult.accept(Result(false, "", e))
             throw e
         }
