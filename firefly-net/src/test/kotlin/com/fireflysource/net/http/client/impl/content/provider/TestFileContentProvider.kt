@@ -1,9 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
-import com.fireflysource.common.io.BufferUtils
-import com.fireflysource.common.io.closeAsync
-import com.fireflysource.common.io.openFileChannelAsync
-import com.fireflysource.common.io.writeAwait
+import com.fireflysource.common.io.*
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createFileContentProvider
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -37,17 +34,16 @@ class TestFileContentProvider {
     fun test() = runBlocking {
         val capacity = 24
         val fileChannel = openFileChannelAsync(tmpFile, WRITE).await()
+        fileChannel.useAwait {
+            val writeBuffer = BufferUtils.allocate(capacity)
+            val writePos = BufferUtils.flipToFill(writeBuffer)
+            writeBuffer.putInt(1).putInt(2).putInt(3)
+                .putInt(4).putInt(5).putInt(6)
+            BufferUtils.flipToFlush(writeBuffer, writePos)
 
-        val writeBuffer = BufferUtils.allocate(capacity)
-        val writePos = BufferUtils.flipToFill(writeBuffer)
-        writeBuffer.putInt(1).putInt(2).putInt(3)
-            .putInt(4).putInt(5).putInt(6)
-        BufferUtils.flipToFlush(writeBuffer, writePos)
-
-        val writeLen = fileChannel.writeAwait(writeBuffer, 0L)
-        assertEquals(capacity, writeLen)
-
-        fileChannel.closeAsync().join()
+            val writeLen = fileChannel.writeAwait(writeBuffer, 0L)
+            assertEquals(capacity, writeLen)
+        }
 
         val provider = createFileContentProvider(tmpFile, READ) as FileContentProvider
         val readBuffer = BufferUtils.allocate(capacity)

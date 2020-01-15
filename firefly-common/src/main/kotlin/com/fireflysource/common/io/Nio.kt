@@ -4,14 +4,12 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlocking
 import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingPool
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
-import kotlinx.coroutines.CancellableContinuation
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.*
 import java.io.Closeable
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.*
+import java.nio.channels.CompletionHandler
 import java.nio.file.Files
 import java.nio.file.OpenOption
 import java.nio.file.Path
@@ -41,6 +39,18 @@ suspend fun AsynchronousFileChannel.lockAwait(
 ) = suspendCancellableCoroutine<FileLock> { cont ->
     lock(position, size, shared, cont, asyncIOHandler())
     closeOnCancel(cont)
+}
+
+suspend fun <T : Closeable?, R> T.useAwait(block: suspend (T) -> R): R {
+    try {
+        return block(this)
+    } catch (e: Throwable) {
+        throw e
+    } finally {
+        withContext(NonCancellable) {
+            this@useAwait?.closeAsync()?.join()
+        }
+    }
 }
 
 /**
