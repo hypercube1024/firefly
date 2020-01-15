@@ -28,7 +28,6 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Pengtao Qiu
  */
-@Suppress("BlockingMethodInNonBlockingContext")
 class TestAioServerAndClient {
 
     companion object {
@@ -96,6 +95,7 @@ class TestAioServerAndClient {
                                 msgCount.incrementAndGet()
 
                                 if (num == maxCount) {
+                                    @Suppress("BlockingMethodInNonBlockingContext")
                                     connection.close()
                                     break@recvLoop
                                 }

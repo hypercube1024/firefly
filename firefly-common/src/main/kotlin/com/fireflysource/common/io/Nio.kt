@@ -1,12 +1,20 @@
 package com.fireflysource.common.io
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlocking
+import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingPool
+import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.coroutine.launchGlobally
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.Closeable
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.*
+import java.nio.file.Files
+import java.nio.file.OpenOption
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 /**
@@ -33,6 +41,24 @@ suspend fun AsynchronousFileChannel.lockAwait(
 ) = suspendCancellableCoroutine<FileLock> { cont ->
     lock(position, size, shared, cont, asyncIOHandler())
     closeOnCancel(cont)
+}
+
+/**
+ * Close in the I/O blocking coroutine dispatcher
+ */
+fun Closeable.asyncClose() = launchGlobally(ioBlocking) {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    close()
+}
+
+fun asyncOpenFileChannel(file: Path, vararg options: OpenOption) = asyncGlobally(ioBlocking) {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    AsynchronousFileChannel.open(file, setOf(*options), ioBlockingPool)
+}
+
+fun asyncReadAllBytes(file: Path) = asyncGlobally(ioBlocking) {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    Files.readAllBytes(file)
 }
 
 /**
@@ -69,10 +95,11 @@ suspend fun AsynchronousFileChannel.writeAwait(
  * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
-suspend fun AsynchronousServerSocketChannel.acceptAwait() = suspendCancellableCoroutine<AsynchronousSocketChannel> { cont ->
-    accept(cont, asyncIOHandler())
-    closeOnCancel(cont)
-}
+suspend fun AsynchronousServerSocketChannel.acceptAwait() =
+    suspendCancellableCoroutine<AsynchronousSocketChannel> { cont ->
+        accept(cont, asyncIOHandler())
+        closeOnCancel(cont)
+    }
 
 /**
  * Performs [AsynchronousSocketChannel.connect] without blocking a thread and resumes when asynchronous operation completes.

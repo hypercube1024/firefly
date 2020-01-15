@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.io.asyncClose
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
@@ -36,15 +37,14 @@ class AioSecureTcpConnection(
         launchWritingEncryptedMessageJob()
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     private fun launchWritingEncryptedMessageJob() = launchGlobally(messageThread) {
         try {
             secureEngine.beginHandshake().await()
             handshakeCompleteResult.accept(Result(true, applicationProtocol, null))
         } catch (e: Exception) {
             log.error(e) { "The TLS handshake failure." }
-            tcpConnection.close()
-            secureEngine.close()
+            tcpConnection.asyncClose().join()
+            secureEngine.asyncClose().join()
             handshakeCompleteResult.accept(Result(false, "", e))
             throw e
         }
@@ -86,7 +86,6 @@ class AioSecureTcpConnection(
         }
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     override fun startReading(): TcpConnection {
         if (!tcpConnection.isReading) {
             tcpConnection.startReading()
@@ -96,6 +95,7 @@ class AioSecureTcpConnection(
                     val buf = input.receive()
 
                     readBufLoop@ while (buf.hasRemaining()) {
+                        @Suppress("BlockingMethodInNonBlockingContext")
                         val decryptedBuf = secureEngine.decode(buf)
                         if (decryptedBuf.hasRemaining()) {
                             receivedMessageConsumer.accept(decryptedBuf)

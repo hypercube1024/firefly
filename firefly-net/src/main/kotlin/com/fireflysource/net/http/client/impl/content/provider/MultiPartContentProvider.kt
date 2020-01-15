@@ -1,14 +1,17 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
-import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.exception.UnsupportedOperationException
+import com.fireflysource.common.io.asyncClose
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
-import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.io.ByteArrayOutputStream
+import java.io.Closeable
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -34,6 +37,9 @@ class MultiPartContentProvider : HttpClientContentProvider {
     private var state = State.FIRST_BOUNDARY
     private var open = true
 
+    private val readChannel: Channel<ReadMultiPartMessage> = Channel(Channel.UNLIMITED)
+    private val readJob: Job
+
     init {
         val boundary = makeBoundary()
         this.contentType = "multipart/form-data; boundary=$boundary"
@@ -49,6 +55,29 @@ class MultiPartContentProvider : HttpClientContentProvider {
 
         val lastBoundaryLine = newLine + onlyBoundaryLine
         this.lastBoundary = lastBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
+
+        readJob = launchGlobally(singleThread) {
+            readMessageLoop@ while (true) {
+                when (val readMultiPartMessage = readChannel.receive()) {
+                    is ReadMultiPartRequest -> {
+                        val (buf, future) = readMultiPartMessage
+                        try {
+                            val len = generate(buf)
+                            future.complete(len)
+                        } catch (e: Exception) {
+                            future.completeExceptionally(e)
+                        }
+                    }
+                    is EndReadMultiPart -> {
+                        open = false
+                        state = State.COMPLETE
+                        parts.forEach { p -> p.asyncClose() }
+                        break@readMessageLoop
+                    }
+                }
+
+            }
+        }
     }
 
     /**
@@ -106,8 +135,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
     }
 
     override fun close() {
-        open = false
-        state = State.COMPLETE
+        readChannel.offer(EndReadMultiPart)
     }
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
@@ -119,7 +147,9 @@ class MultiPartContentProvider : HttpClientContentProvider {
             return endStream()
         }
 
-        return asyncGlobally(singleThread) { generate(byteBuffer) }.asCompletableFuture()
+        val future = CompletableFuture<Int>()
+        readChannel.offer(ReadMultiPartRequest(byteBuffer, future))
+        return future
     }
 
     private suspend fun generate(byteBuffer: ByteBuffer): Int {
@@ -188,7 +218,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         val content: HttpClientContentProvider,
         fields: HttpFields?,
         val contentType: String
-    ) {
+    ) : Closeable {
         val headers: ByteArray
         val length: Long
 
@@ -236,9 +266,17 @@ class MultiPartContentProvider : HttpClientContentProvider {
             length = if (content.length() >= 0) headers.size + content.length() else -1
         }
 
+        override fun close() {
+            content.close()
+        }
+
     }
 
     private enum class State {
         FIRST_BOUNDARY, HEADERS, CONTENT, MIDDLE_BOUNDARY, LAST_BOUNDARY, COMPLETE
     }
 }
+
+sealed class ReadMultiPartMessage
+data class ReadMultiPartRequest(val byteBuffer: ByteBuffer, val future: CompletableFuture<Int>) : ReadMultiPartMessage()
+object EndReadMultiPart : ReadMultiPartMessage()

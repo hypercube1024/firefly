@@ -1,6 +1,8 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.asyncClose
+import com.fireflysource.common.io.asyncOpenFileChannel
 import com.fireflysource.common.io.writeAwait
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createFileContentProvider
 import kotlinx.coroutines.future.await
@@ -9,7 +11,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.nio.channels.AsynchronousFileChannel
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption.READ
@@ -32,32 +33,33 @@ class TestFileContentProvider {
         println("delete file: $tmpFile")
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     @Test
     fun test() = runBlocking {
         val capacity = 24
 
-        AsynchronousFileChannel.open(tmpFile, WRITE).use {
-            val buffer = BufferUtils.allocate(capacity)
-            val pos = BufferUtils.flipToFill(buffer)
-            buffer.putInt(1).putInt(2).putInt(3)
-                .putInt(4).putInt(5).putInt(6)
-            BufferUtils.flipToFlush(buffer, pos)
+        val fileChannel = asyncOpenFileChannel(tmpFile, WRITE).await()
 
-            val len = it.writeAwait(buffer, 0L)
-            assertEquals(capacity, len)
+        val writeBuffer = BufferUtils.allocate(capacity)
+        val writePos = BufferUtils.flipToFill(writeBuffer)
+        writeBuffer.putInt(1).putInt(2).putInt(3)
+            .putInt(4).putInt(5).putInt(6)
+        BufferUtils.flipToFlush(writeBuffer, writePos)
+
+        val writeLen = fileChannel.writeAwait(writeBuffer, 0L)
+        assertEquals(capacity, writeLen)
+
+        fileChannel.asyncClose().join()
+
+        val provider = createFileContentProvider(tmpFile, READ) as FileContentProvider
+        val readBuffer = BufferUtils.allocate(capacity)
+        val readPos = BufferUtils.flipToFill(readBuffer)
+        val readLen = provider.read(readBuffer).await()
+        BufferUtils.flipToFlush(readBuffer, readPos)
+        assertEquals(capacity, readLen)
+
+        (1..6).forEach { i ->
+            assertEquals(i, readBuffer.int)
         }
-
-        createFileContentProvider(tmpFile, READ).use { provider ->
-            val buffer = BufferUtils.allocate(capacity)
-            val pos = BufferUtils.flipToFill(buffer)
-            val len = provider.read(buffer).await()
-            BufferUtils.flipToFlush(buffer, pos)
-            assertEquals(capacity, len)
-
-            (1..6).forEach { i ->
-                assertEquals(i, buffer.int)
-            }
-        }
+        provider.closeAwait()
     }
 }

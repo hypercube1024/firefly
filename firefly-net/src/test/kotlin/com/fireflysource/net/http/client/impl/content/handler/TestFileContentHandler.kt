@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.handler
 
+import com.fireflysource.common.io.asyncReadAllBytes
 import com.fireflysource.net.http.client.HttpClientResponse
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -31,7 +32,6 @@ class TestFileContentHandler {
         println("delete file: $tmpFile")
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     @Test
     fun test() = runBlocking {
         val handler = FileContentHandler(tmpFile, WRITE)
@@ -43,6 +43,7 @@ class TestFileContentHandler {
 
         handler.closeAwait()
 
-        assertEquals("hello file handler", String(Files.readAllBytes(tmpFile)))
+        val str = asyncReadAllBytes(tmpFile).await()
+        assertEquals("hello file handler", String(str))
     }
 }

@@ -1,8 +1,8 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.`object`.Assert
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.asyncClose
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
@@ -96,8 +96,7 @@ class Http1ClientConnection(
                 COMMITTED -> generateContent(requestMessage)
                 COMPLETING -> completeContent()
                 END -> {
-                    @Suppress("BlockingMethodInNonBlockingContext")
-                    requestMessage.contentProvider?.close()
+                    requestMessage.contentProvider?.asyncClose()
                     break@genLoop
                 }
                 else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")
