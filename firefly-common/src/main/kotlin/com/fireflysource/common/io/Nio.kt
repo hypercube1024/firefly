@@ -5,6 +5,7 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingPool
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
 import kotlinx.coroutines.*
+import kotlinx.coroutines.future.await
 import java.io.Closeable
 import java.net.SocketAddress
 import java.nio.ByteBuffer
@@ -49,6 +50,18 @@ suspend fun <T : Closeable?, R> T.useAwait(block: suspend (T) -> R): R {
     } finally {
         withContext(NonCancellable) {
             this@useAwait?.closeAsync()?.join()
+        }
+    }
+}
+
+suspend fun <T : AsyncCloseable?, R> T.useAwait(block: suspend (T) -> R): R {
+    try {
+        return block(this)
+    } catch (e: Throwable) {
+        throw e
+    } finally {
+        withContext(NonCancellable) {
+            this@useAwait?.closeFuture()?.await()
         }
     }
 }

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousChannel;
 import java.util.concurrent.CompletableFuture;
 
-public interface OutputChannel extends AsynchronousChannel {
+public interface OutputChannel extends AsynchronousChannel, AsyncCloseable {
 
     /**
      * Write the content asynchronously.

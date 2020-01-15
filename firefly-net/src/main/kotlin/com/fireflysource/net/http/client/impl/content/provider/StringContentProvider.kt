@@ -51,4 +51,11 @@ class StringContentProvider(
     override fun toByteBuffer(): ByteBuffer {
         return ByteBuffer.wrap(content.toByteArray(charset))
     }
+
+    override fun closeFuture(): CompletableFuture<Void> {
+        close()
+        val future = CompletableFuture<Void>()
+        future.complete(null)
+        return future
+    }
 }

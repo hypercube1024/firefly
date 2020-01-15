@@ -39,4 +39,11 @@ open class ByteBufferContentProvider(private val content: ByteBuffer) : HttpClie
     }
 
     override fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(BufferUtils.toArray(buffer))
+
+    override fun closeFuture(): CompletableFuture<Void> {
+        close()
+        val future = CompletableFuture<Void>()
+        future.complete(null)
+        return future
+    }
 }

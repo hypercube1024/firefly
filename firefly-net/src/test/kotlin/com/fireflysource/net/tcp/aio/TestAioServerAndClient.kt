@@ -95,8 +95,7 @@ class TestAioServerAndClient {
                                 msgCount.incrementAndGet()
 
                                 if (num == maxCount) {
-                                    @Suppress("BlockingMethodInNonBlockingContext")
-                                    connection.close()
+                                    connection.closeFuture().await()
                                     break@recvLoop
                                 }
                             }

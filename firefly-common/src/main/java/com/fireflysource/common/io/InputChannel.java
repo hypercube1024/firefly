@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousChannel;
 import java.util.concurrent.CompletableFuture;
 
-public interface InputChannel extends AsynchronousChannel {
+public interface InputChannel extends AsynchronousChannel, AsyncCloseable {
 
     int END_OF_STREAM_FLAG = -1;
 

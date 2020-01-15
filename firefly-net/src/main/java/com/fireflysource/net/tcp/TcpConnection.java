@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp;
 
 import com.fireflysource.common.func.Callback;
+import com.fireflysource.common.io.AsyncCloseable;
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
@@ -20,7 +21,7 @@ import static com.fireflysource.common.sys.Result.futureToConsumer;
  *
  * @author Pengtao Qiu
  */
-public interface TcpConnection extends Connection, ApplicationProtocolSelector, TcpCoroutineDispatcher {
+public interface TcpConnection extends Connection, ApplicationProtocolSelector, TcpCoroutineDispatcher, AsyncCloseable {
 
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
@@ -84,6 +85,12 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
      * @return The current connection.
      */
     TcpConnection close(Consumer<Result<Void>> result);
+
+    default CompletableFuture<Void> closeFuture() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        close(futureToConsumer(future));
+        return future;
+    }
 
     /**
      * Close the current connection immediately. The remaining messages of the channel will not be sent.

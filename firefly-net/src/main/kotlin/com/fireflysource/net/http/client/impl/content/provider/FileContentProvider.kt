@@ -66,6 +66,15 @@ class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClie
         throw UnsupportedOperationException("The file content does not support this method")
     }
 
+    override fun closeFuture(): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        launchGlobally(singleThread) {
+            closeAwait()
+            future.complete(null)
+        }
+        return future
+    }
+
     override fun close() {
         readChannel.offer(EndReadFile)
     }

@@ -3,7 +3,7 @@ package com.fireflysource.net.http.client.impl.content.provider
 import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
 import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.exception.UnsupportedOperationException
-import com.fireflysource.common.io.closeAsync
+import com.fireflysource.common.io.AsyncCloseable
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -11,7 +11,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.io.ByteArrayOutputStream
-import java.io.Closeable
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -71,7 +70,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
                     is EndReadMultiPart -> {
                         open = false
                         state = State.COMPLETE
-                        parts.forEach { p -> p.closeAsync() }
+                        parts.forEach { part -> part.closeFuture().await() }
                         break@readMessageLoop
                     }
                 }
@@ -132,6 +131,20 @@ class MultiPartContentProvider : HttpClientContentProvider {
 
     override fun toByteBuffer(): ByteBuffer {
         throw UnsupportedOperationException("The multi part content does not support this method")
+    }
+
+    suspend fun closeAwait() {
+        close()
+        readJob.join()
+    }
+
+    override fun closeFuture(): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        launchGlobally(singleThread) {
+            closeAwait()
+            future.complete(null)
+        }
+        return future
     }
 
     override fun close() {
@@ -218,7 +231,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         val content: HttpClientContentProvider,
         fields: HttpFields?,
         val contentType: String
-    ) : Closeable {
+    ) : AsyncCloseable {
         val headers: ByteArray
         val length: Long
 
@@ -264,6 +277,10 @@ class MultiPartContentProvider : HttpClientContentProvider {
             }
 
             length = if (content.length() >= 0) headers.size + content.length() else -1
+        }
+
+        override fun closeFuture(): CompletableFuture<Void> {
+            return content.closeFuture()
         }
 
         override fun close() {
