@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
+import com.fireflysource.common.coroutine.CoroutineDispatchers
+import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.net.http.client.HttpClientFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -14,5 +15,6 @@ fun main(): Unit = runBlocking {
     println(response.stringBody)
     println()
 
-    stopAll()
+    AbstractLifeCycle.stopAll()
+    CoroutineDispatchers.stopAll()
 }

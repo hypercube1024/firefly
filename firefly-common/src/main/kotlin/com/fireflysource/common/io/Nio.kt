@@ -1,7 +1,7 @@
 package com.fireflysource.common.io
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlocking
-import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingPool
+import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingThreadPool
 import com.fireflysource.common.coroutine.asyncGlobally
 import com.fireflysource.common.coroutine.launchGlobally
 import kotlinx.coroutines.*
@@ -76,7 +76,7 @@ fun Closeable.closeAsync() = launchGlobally(ioBlocking) {
 
 fun openFileChannelAsync(file: Path, vararg options: OpenOption) = asyncGlobally(ioBlocking) {
     @Suppress("BlockingMethodInNonBlockingContext")
-    AsynchronousFileChannel.open(file, setOf(*options), ioBlockingPool)
+    AsynchronousFileChannel.open(file, setOf(*options), ioBlockingThreadPool)
 }
 
 fun readAllBytesAsync(file: Path) = asyncGlobally(ioBlocking) {

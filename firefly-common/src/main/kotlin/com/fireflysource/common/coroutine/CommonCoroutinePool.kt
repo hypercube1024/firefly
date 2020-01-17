@@ -1,6 +1,6 @@
 package com.fireflysource.common.coroutine
 
-import com.fireflysource.common.concurrent.ExecutorServiceUtils
+import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwaitTermination
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -31,7 +31,7 @@ object CoroutineDispatchers {
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolKeepAliveTime", 30).toLong()
 
 
-    val ioBlockingPool: ExecutorService by lazy {
+    val ioBlockingThreadPool: ExecutorService by lazy {
         val threadId = AtomicInteger()
         ThreadPoolExecutor(
             defaultPoolSize, ioBlockingPoolSize,
@@ -41,16 +41,23 @@ object CoroutineDispatchers {
     }
 
     val singleThreadPool: ExecutorService by lazy {
-        newSingleThreadExecutor("firefly-single-thread-pool")
+        ThreadPoolExecutor(
+            1, 1, 0, TimeUnit.MILLISECONDS,
+            LinkedTransferQueue<Runnable>()
+        ) { runnable -> Thread(runnable, "firefly-single-thread-pool") }
     }
 
     val computationThreadPool: ExecutorService by lazy {
-        newComputationThreadExecutor("firefly-computation-pool")
+        ForkJoinPool(defaultPoolSize, { pool ->
+            val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
+            worker.name = "firefly-computation-pool-" + worker.poolIndex
+            worker
+        }, null, true)
     }
 
 
     val computation: CoroutineDispatcher by lazy { computationThreadPool.asCoroutineDispatcher() }
-    val ioBlocking: CoroutineDispatcher by lazy { ioBlockingPool.asCoroutineDispatcher() }
+    val ioBlocking: CoroutineDispatcher by lazy { ioBlockingThreadPool.asCoroutineDispatcher() }
     val singleThread: CoroutineDispatcher by lazy { singleThreadPool.asCoroutineDispatcher() }
 
     val scheduler: ScheduledExecutorService by lazy {
@@ -94,6 +101,13 @@ object CoroutineDispatchers {
     fun newFixedThreadDispatcher(name: String, poolSize: Int): CoroutineDispatcher {
         return newFixedThreadExecutor(name, poolSize).asCoroutineDispatcher()
     }
+
+    fun stopAll() {
+        shutdownAndAwaitTermination(computationThreadPool, 5, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(singleThreadPool, 5, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(ioBlockingThreadPool, 5, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(scheduler, 5, TimeUnit.SECONDS)
+    }
 }
 
 class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor,
@@ -108,13 +122,13 @@ class FinalizableExecutorService(private val executor: ExecutorService) : Execut
 
     override fun destroy() {
         if (!executor.isShutdown) {
-            ExecutorServiceUtils.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
         }
     }
 
     protected fun finalize() {
         if (!executor.isShutdown) {
-            ExecutorServiceUtils.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
         }
     }
 }
@@ -130,13 +144,13 @@ class FinalizableScheduledExecutorService(private val executor: ScheduledExecuto
 
     override fun destroy() {
         if (!executor.isShutdown) {
-            ExecutorServiceUtils.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
         }
     }
 
     protected fun finalize() {
         if (!executor.isShutdown) {
-            ExecutorServiceUtils.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
         }
     }
 }
