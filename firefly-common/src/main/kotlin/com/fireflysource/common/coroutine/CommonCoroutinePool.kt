@@ -18,21 +18,26 @@ object CoroutineDispatchers {
         "com.fireflysource.common.coroutine.defaultPoolSize",
         Runtime.getRuntime().availableProcessors()
     )
+    val defaultPoolKeepAliveTime: Long =
+        Integer.getInteger("com.fireflysource.common.coroutine.defaultPoolKeepAliveTime", 30).toLong()
+
     val ioBlockingQueueSize: Int =
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingQueueSize", 16 * 1024)
     val ioBlockingPoolSize: Int = Integer.getInteger(
         "com.fireflysource.common.coroutine.ioBlockingPoolSize",
         max(32, Runtime.getRuntime().availableProcessors())
     )
+    val ioBlockingPoolKeepAliveTime: Long =
+        Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolKeepAliveTime", 30).toLong()
 
 
     val ioBlockingPool: ExecutorService by lazy {
         val threadId = AtomicInteger()
-        FinalizableExecutorService(ThreadPoolExecutor(
+        ThreadPoolExecutor(
             defaultPoolSize, ioBlockingPoolSize,
-            30L, TimeUnit.SECONDS,
+            ioBlockingPoolKeepAliveTime, TimeUnit.SECONDS,
             ArrayBlockingQueue<Runnable>(ioBlockingQueueSize)
-        ) { runnable -> Thread(runnable, "firefly-io-blocking-pool-" + threadId.getAndIncrement()) })
+        ) { runnable -> Thread(runnable, "firefly-io-blocking-pool-" + threadId.getAndIncrement()) }
     }
 
     val singleThreadPool: ExecutorService by lazy {
@@ -67,7 +72,7 @@ object CoroutineDispatchers {
         val executor = ThreadPoolExecutor(
             min(defaultPoolSize, poolSize),
             max(defaultPoolSize, poolSize),
-            30, TimeUnit.SECONDS,
+            defaultPoolKeepAliveTime, TimeUnit.SECONDS,
             LinkedTransferQueue<Runnable>()
         ) { runnable -> Thread(runnable, name) }
         return FinalizableExecutorService(executor)

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Performs [AsynchronousFileChannel.lock] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousFileChannel.lockAwait() = suspendCancellableCoroutine<FileLock> { cont ->
@@ -30,7 +30,7 @@ suspend fun AsynchronousFileChannel.lockAwait() = suspendCancellableCoroutine<Fi
 /**
  * Performs [AsynchronousFileChannel.lock] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousFileChannel.lockAwait(
@@ -101,7 +101,7 @@ suspend fun AsynchronousFileChannel.readAwait(
 /**
  * Performs [AsynchronousFileChannel.write] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousFileChannel.writeAwait(
@@ -115,7 +115,7 @@ suspend fun AsynchronousFileChannel.writeAwait(
 /**
  * Performs [AsynchronousServerSocketChannel.accept] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousServerSocketChannel.acceptAwait() =
@@ -127,7 +127,7 @@ suspend fun AsynchronousServerSocketChannel.acceptAwait() =
 /**
  * Performs [AsynchronousSocketChannel.connect] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousSocketChannel.connectAwait(
@@ -140,7 +140,7 @@ suspend fun AsynchronousSocketChannel.connectAwait(
 /**
  * Performs [AsynchronousSocketChannel.read] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousSocketChannel.readAwait(
@@ -167,7 +167,7 @@ suspend fun AsynchronousSocketChannel.readAwait(
 /**
  * Performs [AsynchronousSocketChannel.write] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousSocketChannel.writeAwait(

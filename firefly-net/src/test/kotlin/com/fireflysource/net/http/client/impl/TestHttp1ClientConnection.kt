@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 class TestHttp1ClientConnection {
 
     @Test
-    @DisplayName("should add HOST and KEEP_ALIVE headers")
+    @DisplayName("should add the HOST and KEEP_ALIVE headers")
     fun testPrepareHttp1Headers() {
         val request = AsyncHttpClientRequest()
         request.method = HttpMethod.GET.value

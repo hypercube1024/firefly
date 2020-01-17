@@ -7,12 +7,14 @@ import com.fireflysource.net.http.common.model.HttpFields
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
 
 class TestMultiPartContentProvider {
 
     @Test
+    @DisplayName("should generate multi-part format successfully")
     fun testRead() = runBlocking {
         val provider = MultiPartContentProvider()
 

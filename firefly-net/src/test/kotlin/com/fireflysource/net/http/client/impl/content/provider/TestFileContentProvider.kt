@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -31,6 +32,7 @@ class TestFileContentProvider {
     }
 
     @Test
+    @DisplayName("should read file successfully")
     fun test() = runBlocking {
         val capacity = 24
         val fileChannel = openFileChannelAsync(tmpFile, WRITE).await()

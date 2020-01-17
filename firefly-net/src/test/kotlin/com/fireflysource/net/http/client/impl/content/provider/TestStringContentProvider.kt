@@ -5,12 +5,14 @@ import com.fireflysource.net.http.client.HttpClientContentProviderFactory.create
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
 
 class TestStringContentProvider {
 
     @Test
+    @DisplayName("should get string successfully")
     fun testToByteBuffer() {
         val str = "Hello string body"
         val provider = createStringContentProvider(str, StandardCharsets.UTF_8)
@@ -19,6 +21,7 @@ class TestStringContentProvider {
     }
 
     @Test
+    @DisplayName("should read string successfully")
     fun testRead() = runBlocking {
         val str = "Hello string body"
         val provider = createStringContentProvider(str, StandardCharsets.UTF_8)
