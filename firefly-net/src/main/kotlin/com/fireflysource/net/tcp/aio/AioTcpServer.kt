@@ -109,7 +109,7 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                                     secureEngineFactory.create(tcpConnection, false, supportedProtocols)
                                 }
                                 val secureConnection =
-                                    AioSecureTcpConnection(tcpConnection, secureEngine, getMessageThread(connectionId))
+                                    AioSecureTcpConnection(tcpConnection, secureEngine)
                                 connectionConsumer.accept(secureConnection)
                             } else {
                                 connectionConsumer.accept(tcpConnection)

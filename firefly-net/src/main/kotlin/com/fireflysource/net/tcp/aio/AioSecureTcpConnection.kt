@@ -1,15 +1,14 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.function.Consumer
 
@@ -18,8 +17,7 @@ import java.util.function.Consumer
  */
 class AioSecureTcpConnection(
     private val tcpConnection: TcpConnection,
-    private val secureEngine: SecureEngine,
-    private val messageThread: CoroutineDispatcher
+    private val secureEngine: SecureEngine
 ) : TcpConnection by tcpConnection {
 
     companion object {
@@ -37,13 +35,13 @@ class AioSecureTcpConnection(
         launchWritingEncryptedMessageJob()
     }
 
-    private fun launchWritingEncryptedMessageJob() = launchGlobally(messageThread) {
+    private fun launchWritingEncryptedMessageJob() = tcpConnection.coroutineScope.launch {
         try {
             secureEngine.beginHandshake().await()
             handshakeCompleteResult.accept(Result(true, applicationProtocol, null))
         } catch (e: Exception) {
             log.error(e) { "The TLS handshake failure." }
-            tcpConnection.closeAsync().join()
+            tcpConnection.closeFuture().await()
             secureEngine.closeAsync().join()
             handshakeCompleteResult.accept(Result(false, "", e))
             throw e
@@ -71,13 +69,15 @@ class AioSecureTcpConnection(
             is Buffers -> {
                 val lastIndex = outputMessage.offset + outputMessage.length - 1
                 val encryptedBuffers =
-                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.buffers[i]) }.flatten()
+                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.buffers[i]) }
+                        .flatten()
                 tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
             }
             is BufferList -> {
                 val lastIndex = outputMessage.offset + outputMessage.length - 1
                 val encryptedBuffers =
-                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.bufferList[i]) }.flatten()
+                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.bufferList[i]) }
+                        .flatten()
                 tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
             }
             is Shutdown -> {
@@ -89,7 +89,7 @@ class AioSecureTcpConnection(
     override fun startReading(): TcpConnection {
         if (!tcpConnection.isReading) {
             tcpConnection.startReading()
-            launchGlobally(messageThread) {
+            tcpConnection.coroutineScope.launch {
                 val input = tcpConnection.inputChannel
                 recvLoop@ while (tcpConnection.isReading) {
                     val buf = input.receive()

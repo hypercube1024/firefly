@@ -74,7 +74,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                         } else {
                             secureEngineFactory.create(tcpConnection, true, supportedProtocols)
                         }
-                        AioSecureTcpConnection(tcpConnection, secureEngine, getMessageThread(connectionId))
+                        AioSecureTcpConnection(tcpConnection, secureEngine)
                     } else {
                         AioTcpConnection(connectionId, config.timeout, socketChannel, getMessageThread(connectionId))
                     }
