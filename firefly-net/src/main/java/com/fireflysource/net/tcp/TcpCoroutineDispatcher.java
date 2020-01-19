@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp;
 
 import kotlinx.coroutines.CoroutineDispatcher;
+import kotlinx.coroutines.CoroutineScope;
 
 public interface TcpCoroutineDispatcher {
 
@@ -17,4 +18,11 @@ public interface TcpCoroutineDispatcher {
      * @param runnable The runnable task.
      */
     void execute(Runnable runnable);
+
+    /**
+     * Get the coroutine scope of this connection.
+     *
+     * @return The coroutine scope.
+     */
+    CoroutineScope getCoroutineScope();
 }

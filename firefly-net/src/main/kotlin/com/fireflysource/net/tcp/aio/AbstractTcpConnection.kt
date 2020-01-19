@@ -1,6 +1,5 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.io.readAwait
@@ -11,7 +10,7 @@ import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
 import com.fireflysource.net.tcp.TcpConnection
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import java.io.IOException
@@ -31,7 +30,8 @@ abstract class AbstractTcpConnection(
     id: Int,
     maxIdleTime: Long,
     private val socketChannel: AsynchronousSocketChannel,
-    private val dispatcher: CoroutineDispatcher
+    private val dispatcher: CoroutineDispatcher,
+    private val scope: CoroutineScope = CoroutineScope(dispatcher + SupervisorJob())
 ) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), TcpConnection {
 
     companion object {
@@ -63,11 +63,17 @@ abstract class AbstractTcpConnection(
         inputChannel.offer(buf)
     }
 
-    private val flushDataJob = launchGlobally(dispatcher) {
-        while (isWriteable()) {
-            val write = flushData(outputChannel.receive())
-            if (!write) {
-                break
+    init {
+        flushDataJob()
+    }
+
+    private fun flushDataJob() {
+        scope.launch {
+            while (isWriteable()) {
+                val write = flushData(outputChannel.receive())
+                if (!write) {
+                    break
+                }
             }
         }
     }
@@ -247,7 +253,7 @@ abstract class AbstractTcpConnection(
 
     override fun startReading(): TcpConnection {
         if (readingState.compareAndSet(false, true)) {
-            launchGlobally(dispatcher) {
+            scope.launch {
                 log.info { "The TCP connection $id starts automatic reading" }
 
                 while (isReading) {
@@ -362,7 +368,7 @@ abstract class AbstractTcpConnection(
             }
 
             try {
-                flushDataJob.cancel()
+                scope.cancel()
             } catch (e: Exception) {
                 log.warn(e) { "cancel writing job exception. $id" }
             }
@@ -387,8 +393,10 @@ abstract class AbstractTcpConnection(
 
     override fun getCoroutineDispatcher(): CoroutineDispatcher = dispatcher
 
+    override fun getCoroutineScope(): CoroutineScope = scope
+
     override fun execute(runnable: Runnable) {
-        launchGlobally(dispatcher) { runnable.run() }
+        scope.launch { runnable.run() }
     }
 
     override fun isClosed(): Boolean = socketChannelClosed.get()

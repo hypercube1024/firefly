@@ -1,13 +1,11 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
-import com.fireflysource.common.coroutine.launchGlobally
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
-import com.fireflysource.net.tcp.launch
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -75,7 +73,7 @@ class TestAioServerAndClient {
         val time = measureTimeMillis {
             val maxCount = maxMsgCount / connectionNum
             val jobs = (1..connectionNum).map {
-                launchGlobally(singleThread) {
+                launch {
                     val connection = client.connect(host, port).await()
                     println("create connection. ${connection.id}")
                     connection.startReading()
@@ -85,7 +83,7 @@ class TestAioServerAndClient {
                         println("client TLS handshake success. $success")
                     }
 
-                    val readingJob = connection.launch {
+                    val readingJob = connection.coroutineScope.launch {
                         val inputChannel = connection.inputChannel
                         recvLoop@ while (true) {
                             val buf = inputChannel.receive()

@@ -18,9 +18,9 @@ import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import com.fireflysource.net.tcp.launch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
 
 class Http1ClientConnection(
@@ -44,30 +44,33 @@ class Http1ClientConnection(
     private val parser = HttpParser(handler)
 
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
-    private val acceptRequestJob = tcpConnection.launch {
-        while (true) {
-            val requestMessage = requestChannel.receive()
-
-            try {
-                encodeRequestAndFlushData(requestMessage)
-
-                // receive response data
-                handler.contentHandler = requestMessage.contentHandler
-                val response = parseResponse()
-                requestMessage.response.complete(response)
-            } catch (e: Exception) {
-                requestMessage.response.completeExceptionally(e)
-            } finally {
-                handler.reset()
-                parser.reset()
-                generator.reset()
-            }
-        }
-    }
 
 
     init {
-        tcpConnection.onClose { acceptRequestJob.cancel() }
+        acceptRequestJob()
+    }
+
+    private fun acceptRequestJob() {
+        tcpConnection.coroutineScope.launch {
+            while (true) {
+                val requestMessage = requestChannel.receive()
+
+                try {
+                    encodeRequestAndFlushData(requestMessage)
+
+                    // receive response data
+                    handler.contentHandler = requestMessage.contentHandler
+                    val response = parseResponse()
+                    requestMessage.response.complete(response)
+                } catch (e: Exception) {
+                    requestMessage.response.completeExceptionally(e)
+                } finally {
+                    handler.reset()
+                    parser.reset()
+                    generator.reset()
+                }
+            }
+        }
     }
 
     private suspend fun parseResponse(): HttpClientResponse {

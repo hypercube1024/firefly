@@ -15,10 +15,9 @@ import com.fireflysource.net.http.common.v2.encoder.Generator
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import com.fireflysource.net.tcp.launch
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
@@ -72,8 +71,8 @@ abstract class AsyncHttp2Connection(
             launchEntryFlushJob()
         }
 
-        private fun launchEntryFlushJob(): Job {
-            val entryFlushJob = tcpConnection.launch {
+        private fun launchEntryFlushJob() {
+            tcpConnection.coroutineScope.launch {
                 while (true) {
                     when (val frameEntry = frameEntryChannel.receive()) {
                         is ControlFrameEntry -> {
@@ -91,8 +90,6 @@ abstract class AsyncHttp2Connection(
                     }
                 }
             }
-            tcpConnection.onClose { entryFlushJob.cancel() }
-            return entryFlushJob
         }
 
         private suspend fun flushControlFrameEntry(frameEntry: ControlFrameEntry): Long {
@@ -176,8 +173,8 @@ abstract class AsyncHttp2Connection(
     fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> =
         flusher.sendControlFrame(stream, *frames)
 
-    fun launchParserJob(parser: Parser): Job {
-        val parsingDataJob = tcpConnection.launch {
+    fun launchParserJob(parser: Parser) {
+        tcpConnection.coroutineScope.launch {
             val inputChannel = tcpConnection.inputChannel
             recvLoop@ while (true) {
                 val buffer = inputChannel.receive()
@@ -186,10 +183,6 @@ abstract class AsyncHttp2Connection(
                 }
             }
         }
-        tcpConnection.onClose {
-            parsingDataJob.cancel()
-        }
-        return parsingDataJob
     }
 
     override fun isSecureConnection(): Boolean = tcpConnection.isSecureConnection
