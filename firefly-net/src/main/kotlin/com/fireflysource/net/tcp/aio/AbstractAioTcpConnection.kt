@@ -10,9 +10,12 @@ import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
 import com.fireflysource.net.tcp.TcpConnection
-import kotlinx.coroutines.*
+import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -26,16 +29,17 @@ import java.util.function.Consumer
 /**
  * @author Pengtao Qiu
  */
-abstract class AbstractTcpConnection(
+abstract class AbstractAioTcpConnection(
     id: Int,
     maxIdleTime: Long,
     private val socketChannel: AsynchronousSocketChannel,
-    private val dispatcher: CoroutineDispatcher,
-    private val scope: CoroutineScope = CoroutineScope(dispatcher + SupervisorJob())
-) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), TcpConnection {
+    dispatcher: CoroutineDispatcher,
+    private val aioTcpCoroutineDispatcher: TcpCoroutineDispatcher = AioTcpCoroutineDispatcher(dispatcher)
+) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), TcpConnection,
+    TcpCoroutineDispatcher by aioTcpCoroutineDispatcher {
 
     companion object {
-        private val log = SystemLogger.create(AbstractTcpConnection::class.java)
+        private val log = SystemLogger.create(AbstractAioTcpConnection::class.java)
         private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
         private val closedChannelException = ClosedChannelException()
         private val timeUnit = TimeUnit.SECONDS
@@ -67,13 +71,11 @@ abstract class AbstractTcpConnection(
         flushDataJob()
     }
 
-    private fun flushDataJob() {
-        scope.launch {
-            while (isWriteable()) {
-                val write = flushData(outputChannel.receive())
-                if (!write) {
-                    break
-                }
+    private fun flushDataJob() = coroutineScope.launch {
+        while (isWriteable()) {
+            val write = flushData(outputChannel.receive())
+            if (!write) {
+                break
             }
         }
     }
@@ -253,45 +255,47 @@ abstract class AbstractTcpConnection(
 
     override fun startReading(): TcpConnection {
         if (readingState.compareAndSet(false, true)) {
-            scope.launch {
-                log.info { "The TCP connection $id starts automatic reading" }
-
-                while (isReading) {
-                    val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
-                    try {
-                        lastReadTime = System.currentTimeMillis()
-                        val count = socketChannel.readAwait(buf, maxIdleTime, timeUnit)
-                        if (count < 0) {
-                            suspendReading()
-                            closeNow()
-                            break
-                        } else {
-                            adaptiveBufferSize.update(count)
-                            readBytes += count
-                            buf.flip()
-                            try {
-                                receivedMessageConsumer.accept(buf)
-                            } catch (e: Exception) {
-                                exceptionConsumers.forEach { it.accept(e) }
-                            }
-                        }
-                    } catch (e: InterruptedByTimeoutException) {
-                        log.warn { "Tcp connection reading timeout. $id" }
-                        suspendReading()
-                        closeNow()
-                        break
-                    } catch (e: Exception) {
-                        log.warn(e) { "Tcp connection reading exception. $id" }
-                        suspendReading()
-                        closeNow()
-                        break
-                    }
-                }
-
-                log.info { "The TCP connection $id stops receiving messages." }
-            }
+            readJob()
         }
         return this
+    }
+
+    private fun readJob() = coroutineScope.launch {
+        log.info { "The TCP connection $id starts automatic reading" }
+
+        while (isReading) {
+            val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
+            try {
+                lastReadTime = System.currentTimeMillis()
+                val count = socketChannel.readAwait(buf, maxIdleTime, timeUnit)
+                if (count < 0) {
+                    suspendReading()
+                    closeNow()
+                    break
+                } else {
+                    adaptiveBufferSize.update(count)
+                    readBytes += count
+                    buf.flip()
+                    try {
+                        receivedMessageConsumer.accept(buf)
+                    } catch (e: Exception) {
+                        exceptionConsumers.forEach { it.accept(e) }
+                    }
+                }
+            } catch (e: InterruptedByTimeoutException) {
+                log.warn { "Tcp connection reading timeout. $id" }
+                suspendReading()
+                closeNow()
+                break
+            } catch (e: Exception) {
+                log.warn(e) { "Tcp connection reading exception. $id" }
+                suspendReading()
+                closeNow()
+                break
+            }
+        }
+
+        log.info { "The TCP connection $id stops receiving messages." }
     }
 
     override fun getInputChannel(): Channel<ByteBuffer> = inputChannel
@@ -368,7 +372,7 @@ abstract class AbstractTcpConnection(
             }
 
             try {
-                scope.cancel()
+                coroutineScope.cancel()
             } catch (e: Exception) {
                 log.warn(e) { "cancel writing job exception. $id" }
             }
@@ -389,14 +393,6 @@ abstract class AbstractTcpConnection(
     override fun onException(exception: Consumer<Throwable>): TcpConnection {
         exceptionConsumers.add(exception)
         return this
-    }
-
-    override fun getCoroutineDispatcher(): CoroutineDispatcher = dispatcher
-
-    override fun getCoroutineScope(): CoroutineScope = scope
-
-    override fun execute(runnable: Runnable) {
-        scope.launch { runnable.run() }
     }
 
     override fun isClosed(): Boolean = socketChannelClosed.get()

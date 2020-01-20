@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp;
 
+import kotlinx.coroutines.CompletableJob;
 import kotlinx.coroutines.CoroutineDispatcher;
 import kotlinx.coroutines.CoroutineScope;
 
@@ -25,4 +26,11 @@ public interface TcpCoroutineDispatcher {
      * @return The coroutine scope.
      */
     CoroutineScope getCoroutineScope();
+
+    /**
+     * Get the supervisor job.
+     *
+     * @return The supervisor job.
+     */
+    CompletableJob getSupervisorJob();
 }

@@ -4,7 +4,7 @@ import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
-import com.fireflysource.net.tcp.aio.AbstractTcpConnection.Companion.startReadingException
+import com.fireflysource.net.tcp.aio.AbstractAioTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
@@ -89,31 +89,33 @@ class AioSecureTcpConnection(
     override fun startReading(): TcpConnection {
         if (!tcpConnection.isReading) {
             tcpConnection.startReading()
-            tcpConnection.coroutineScope.launch {
-                val input = tcpConnection.inputChannel
-                recvLoop@ while (tcpConnection.isReading) {
-                    val buf = input.receive()
-
-                    readBufLoop@ while (buf.hasRemaining()) {
-                        @Suppress("BlockingMethodInNonBlockingContext")
-                        val decryptedBuf = secureEngine.decode(buf)
-                        if (decryptedBuf.hasRemaining()) {
-                            receivedMessageConsumer.accept(decryptedBuf)
-                        }
-                    }
-                }
-            }
+            decryptJob()
             log.info { "stop receiving encrypted messages. id: $id" }
         }
         return this
     }
 
+    private fun decryptJob() = tcpConnection.coroutineScope.launch {
+        val input = tcpConnection.inputChannel
+        recvLoop@ while (tcpConnection.isReading) {
+            val buf = input.receive()
+
+            readBufLoop@ while (buf.hasRemaining()) {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                val decryptedBuf = secureEngine.decode(buf)
+                if (decryptedBuf.hasRemaining()) {
+                    receivedMessageConsumer.accept(decryptedBuf)
+                }
+            }
+        }
+    }
+
     override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        if (!tcpConnection.isReading) {
-            receivedMessageConsumer = messageConsumer
-        } else {
+        if (tcpConnection.isReading) {
             throw startReadingException
         }
+
+        receivedMessageConsumer = messageConsumer
         return this
     }
 
