@@ -53,10 +53,6 @@ abstract class AbstractAioTcpConnection(
     private val outputShutdownState: AtomicBoolean = AtomicBoolean(false)
     private val socketChannelClosed: AtomicBoolean = AtomicBoolean(false)
     private val closeRequest: AtomicBoolean = AtomicBoolean(false)
-
-    @Volatile
-    private var closeConsumer: Consumer<Result<Void>> = discard()
-
     private val readingState: AtomicBoolean = AtomicBoolean(false)
 
     private val adaptiveBufferSize: AdaptiveBufferSize = AdaptiveBufferSize()
@@ -73,8 +69,8 @@ abstract class AbstractAioTcpConnection(
 
     private fun flushDataJob() = coroutineScope.launch {
         while (isWriteable()) {
-            val write = flushData(outputChannel.receive())
-            if (!write) {
+            val writeable = flushData(outputChannel.receive())
+            if (!writeable) {
                 break
             }
         }
@@ -88,6 +84,7 @@ abstract class AbstractAioTcpConnection(
             is BufferList -> flushBufferList(outputMessage)
             is Shutdown -> {
                 shutdownOutputAndInput()
+                outputMessage.result.accept(Result.SUCCESS)
                 false
             }
         }
@@ -315,7 +312,6 @@ abstract class AbstractAioTcpConnection(
 
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
         if (closeRequest.compareAndSet(false, true)) {
-            closeConsumer = result
             outputChannel.offer(Shutdown(result))
         } else {
             result.accept(closeFailureResult)
@@ -384,7 +380,6 @@ abstract class AbstractAioTcpConnection(
             }
 
             log.info { "tcp connection close success. $id" }
-            closeConsumer.accept(Result.SUCCESS)
         }
         return this
     }
