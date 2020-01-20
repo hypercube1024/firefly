@@ -69,19 +69,18 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <metrics.version>4.0.5</metrics.version>
-        <jackson.version>2.9.9.1</jackson.version>
-        <msgpack.version>0.8.17</msgpack.version>
-        <redisson.version>3.11.4</redisson.version>
+        <metrics.version>4.1.2</metrics.version>
+        <jackson.version>2.10.1</jackson.version>
+        <msgpack.version>0.8.20</msgpack.version>
+        <redisson.version>3.12.0</redisson.version>
         <conscrypt.version>2.2.1</conscrypt.version>
-        <hikariCP.version>3.3.1</hikariCP.version>
-        <javassist.version>3.25.0-GA</javassist.version>
-        <slf4j.api.version>1.7.26</slf4j.api.version>
-        <spring.reactor.version>Californium-SR10</spring.reactor.version>
+        <javassist.version>3.26.0-GA</javassist.version>
+        <slf4j.api.version>1.7.30</slf4j.api.version>
+        <spring.reactor.version>Dysprosium-SR3</spring.reactor.version>
 
         <!-- test lib -->
-        <junit.version>5.4.2</junit.version>
-        <mockito.version>3.0.0</mockito.version>
+        <junit.version>5.5.2</junit.version>
+        <mockito.version>3.2.4</mockito.version>
     </properties>
 
     <dependencyManagement>
@@ -154,21 +153,10 @@
 
             <!-- db -->
             <dependency>
-                <groupId>com.zaxxer</groupId>
-                <artifactId>HikariCP</artifactId>
-                <version>${hikariCP.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>1.4.196</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>commons-dbutils</groupId>
-                <artifactId>commons-dbutils</artifactId>
-                <version>1.7</version>
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>
@@ -825,12 +813,12 @@
         <repository>
             <id>central</id>
             <name>CentralRepository</name>
-            <url>http://central.maven.org/maven2/</url>
+            <url>https://repo1.maven.org/maven2/</url>
         </repository>
         <repository>
             <id>jcentral</id>
             <name>JCenter</name>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com/</url>
         </repository>
     </repositories>
 
@@ -838,7 +826,7 @@
         <pluginRepository>
             <id>central</id>
             <name>CentralRepository</name>
-            <url>http://central.maven.org/maven2/</url>
+            <url>https://repo1.maven.org/maven2/</url>
         </pluginRepository>
         <pluginRepository>
             <id>jcentral</id>
