@@ -81,127 +81,79 @@ abstract class AbstractAioTcpConnection(
         return when (outputMessage) {
             is Buffer -> flushBuffer(outputMessage)
             is Buffers -> flushBuffers(outputMessage)
-            is BufferList -> flushBufferList(outputMessage)
-            is Shutdown -> {
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result.SUCCESS)
-                false
-            }
+            is BufferList -> flushBuffers(outputMessage)
+            is Shutdown -> shutdown(outputMessage)
         }
     }
 
-    private suspend fun flushBufferList(outputMessage: BufferList): Boolean {
-        var len = 0L
-        while (outputMessage.hasRemaining()) {
-            try {
-                val offset = outputMessage.getCurrentOffset()
-                val length = outputMessage.getCurrentLength()
-
-                val count = socketChannel.writeAwait(
-                    outputMessage.bufferList.toTypedArray(),
-                    offset,
-                    length,
-                    maxIdleTime,
-                    timeUnit
-                )
-                if (count < 0) {
-                    shutdownOutputAndInput()
-                    outputMessage.result.accept(Result(false, -1, closedChannelException))
-                    return false
-                } else {
-                    writtenBytes += count
-                    len += count
-                }
-            } catch (e: ClosedChannelException) {
-                log.warn { "The TCP connection closed. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
-            } catch (e: InterruptedByTimeoutException) {
-                log.warn { "The TCP connection writing timeout. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
-            } catch (e: Exception) {
-                log.warn(e) { "The TCP connection writing exception. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
-            }
-        }
-        outputMessage.result.accept(Result(true, len, null))
-        return true
+    private fun shutdown(outputMessage: Shutdown): Boolean {
+        shutdownOutputAndInput()
+        outputMessage.result.accept(Result.SUCCESS)
+        return false
     }
 
-    private suspend fun flushBuffers(outputMessage: Buffers): Boolean {
-        var len = 0L
-        while (outputMessage.hasRemaining()) {
+    private suspend fun flushBuffers(outputBuffers: Buffers): Boolean {
+        var totalLength = 0L
+        var success = true
+        var exception: Exception? = null
+        while (outputBuffers.hasRemaining()) {
             try {
-                val offset = outputMessage.getCurrentOffset()
-                val length = outputMessage.getCurrentLength()
-
-                val count =
-                    socketChannel.writeAwait(outputMessage.buffers, offset, length, maxIdleTime, timeUnit)
-                if (count < 0) {
-                    shutdownOutputAndInput()
-                    outputMessage.result.accept(Result(false, -1, closedChannelException))
-                    return false
+                val offset = outputBuffers.getCurrentOffset()
+                val length = outputBuffers.getCurrentLength()
+                val writtenLen =
+                    socketChannel.writeAwait(outputBuffers.getBuffers(), offset, length, maxIdleTime, timeUnit)
+                if (writtenLen < 0) {
+                    success = false
+                    exception = closedChannelException
+                    break
                 } else {
-                    writtenBytes += count
-                    len += count
+                    writtenBytes += writtenLen
+                    totalLength += writtenLen
                 }
-            } catch (e: ClosedChannelException) {
-                log.warn { "The TCP connection closed. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
-            } catch (e: InterruptedByTimeoutException) {
-                log.warn { "The TCP connection writing timeout. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
             } catch (e: Exception) {
                 log.warn(e) { "The TCP connection writing exception. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
+                success = false
+                exception = e
+                break
             }
         }
-        outputMessage.result.accept(Result(true, len, null))
-        return true
+        if (success) {
+            outputBuffers.getResult().accept(Result(true, totalLength, null))
+        } else {
+            shutdownOutputAndInput()
+            outputBuffers.getResult().accept(Result(false, -1, exception))
+        }
+        return success
     }
 
     private suspend fun flushBuffer(outputMessage: Buffer): Boolean {
-        var len = 0
+        var totalLength = 0
+        var success = true
+        var exception: Exception? = null
         while (outputMessage.buffer.hasRemaining()) {
             try {
-                val count = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
-                if (count < 0) {
-                    shutdownOutputAndInput()
-                    outputMessage.result.accept(Result(false, -1, closedChannelException))
-                    return false
+                val writtenLen = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
+                if (writtenLen < 0) {
+                    success = false
+                    exception = closedChannelException
+                    break
                 } else {
-                    writtenBytes += count
-                    len += count
+                    writtenBytes += writtenLen
+                    totalLength += writtenLen
                 }
-            } catch (e: ClosedChannelException) {
-                log.warn { "The TCP connection closed. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
-            } catch (e: InterruptedByTimeoutException) {
-                log.warn { "The TCP connection writing timeout. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
             } catch (e: Exception) {
                 log.warn(e) { "The TCP connection writing exception. id: $id" }
-                shutdownOutputAndInput()
-                outputMessage.result.accept(Result(false, -1, e))
-                return false
+                success = false
+                exception = e
+                break
             }
         }
-        outputMessage.result.accept(Result(true, len, null))
+        if (success) {
+            outputMessage.result.accept(Result(true, totalLength, null))
+        } else {
+            shutdownOutputAndInput()
+            outputMessage.result.accept(Result(false, -1, exception))
+        }
         return true
     }
 
@@ -401,62 +353,56 @@ class CloseRequestException : IllegalStateException("The close request has been 
 
 class StartReadingException : IllegalStateException("The connection has started reading.")
 
+
 sealed class OutputMessage
+
 class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage()
-class Buffers(
-    val buffers: Array<ByteBuffer>,
-    val offset: Int,
-    val length: Int,
-    val result: Consumer<Result<Long>>
+
+open class Buffers(
+    private val buffers: Array<ByteBuffer>,
+    private val offset: Int,
+    length: Int,
+    private val result: Consumer<Result<Long>>
 ) : OutputMessage() {
 
     init {
         require(offset >= 0) { "The offset must be greater than or equal the 0" }
         require(length > 0) { "The length must be greater than 0" }
-        require(offset < buffers.size) { "The offset must be less than the buffer array size" }
-        require((offset + length) <= buffers.size) { "The length must be less than or equal the buffer array size" }
+        require(offset < buffers.size) { "The offset must be less than the buffer size" }
+        require((offset + length) <= buffers.size) { "The length must be less than or equal the buffer size" }
     }
 
+    private val maxSize = offset + length
+    private val lastIndex = maxSize - 1
+
+    fun getBuffers(): Array<ByteBuffer> = buffers
+
+    fun getResult(): Consumer<Result<Long>> = result
+
     fun getCurrentOffset(): Int {
-        for (i in offset..buffers.lastIndex) {
+        val buffers = getBuffers()
+        for (i in offset..lastIndex) {
             if (buffers[i].hasRemaining()) {
                 return i
             }
         }
-        return buffers.size
+        return maxSize
     }
 
-    fun getCurrentLength(): Int = buffers.size - getCurrentOffset()
+    fun getCurrentLength(): Int {
+        return maxSize - getCurrentOffset()
+    }
 
-    fun hasRemaining(): Boolean = getCurrentOffset() < buffers.size
+    fun hasRemaining(): Boolean {
+        return getCurrentOffset() < maxSize
+    }
 }
 
 class BufferList(
-    val bufferList: List<ByteBuffer>,
-    val offset: Int,
-    val length: Int,
-    val result: Consumer<Result<Long>>
-) : OutputMessage() {
-
-    init {
-        require(offset >= 0) { "The offset must be greater than or equal the 0" }
-        require(length > 0) { "The length must be greater than 0" }
-        require(offset < bufferList.size) { "The offset must be less than the buffer list size" }
-        require((offset + length) <= bufferList.size) { "The length must be less than or equal the buffer list size" }
-    }
-
-    fun getCurrentOffset(): Int {
-        for (i in offset..bufferList.lastIndex) {
-            if (bufferList[i].hasRemaining()) {
-                return i
-            }
-        }
-        return bufferList.size
-    }
-
-    fun getCurrentLength(): Int = bufferList.size - getCurrentOffset()
-
-    fun hasRemaining(): Boolean = getCurrentOffset() < bufferList.size
-}
+    bufferList: List<ByteBuffer>,
+    offset: Int,
+    length: Int,
+    result: Consumer<Result<Long>>
+) : Buffers(bufferList.toTypedArray(), offset, length, result)
 
 class Shutdown(val result: Consumer<Result<Void>>) : OutputMessage()

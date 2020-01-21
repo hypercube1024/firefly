@@ -36,11 +36,11 @@ class TestMessage {
         val buffers = Buffers(Array(size) { ByteBuffer.allocate(16) }, offset, length, Consumer {
             println(it)
         })
-        buffers.buffers[offset].putInt(1)
+        buffers.getBuffers()[offset].putInt(1)
         assertEquals(offset, buffers.getCurrentOffset())
 
-        buffers.buffers[offset].putLong(2)
-        buffers.buffers[offset].putInt(3)
+        buffers.getBuffers()[offset].putLong(2)
+        buffers.getBuffers()[offset].putInt(3)
         assertEquals(offset + 1, buffers.getCurrentOffset())
     }
 }

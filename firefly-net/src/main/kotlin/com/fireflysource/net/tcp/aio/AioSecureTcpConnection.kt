@@ -33,6 +33,10 @@ class AioSecureTcpConnection(
 
     init {
         launchWritingEncryptedMessageJob()
+        tcpConnection.onClose {
+            secureEngine.closeAsync()
+            log.info { "secure engine close." }
+        }
     }
 
     private fun launchWritingEncryptedMessageJob() = tcpConnection.coroutineScope.launch {
@@ -54,35 +58,27 @@ class AioSecureTcpConnection(
 
     private fun writeEncryptedMessage(outputMessage: OutputMessage) {
         when (outputMessage) {
-            is Buffer -> {
-                val encryptedBuffers = secureEngine.encode(outputMessage.buffer)
-                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
-                    outputMessage.result.accept(
-                        Result(
-                            it.isSuccess,
-                            it.value.toInt(),
-                            it.throwable
-                        )
-                    )
-                }
-            }
-            is Buffers -> {
-                val lastIndex = outputMessage.offset + outputMessage.length - 1
-                val encryptedBuffers =
-                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.buffers[i]) }
-                        .flatten()
-                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
-            }
-            is BufferList -> {
-                val lastIndex = outputMessage.offset + outputMessage.length - 1
-                val encryptedBuffers =
-                    (outputMessage.offset..lastIndex).map { i -> secureEngine.encode(outputMessage.bufferList[i]) }
-                        .flatten()
-                tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
-            }
-            is Shutdown -> {
-                tcpConnection.close(outputMessage.result)
-            }
+            is Buffer -> encryptAndFlushBuffer(outputMessage)
+            is Buffers -> encryptAndFlushBuffers(outputMessage)
+            is BufferList -> encryptAndFlushBuffers(outputMessage)
+            is Shutdown -> tcpConnection.close(outputMessage.result)
+        }
+    }
+
+    private fun encryptAndFlushBuffers(buffers: Buffers) {
+        val offset = buffers.getCurrentOffset()
+        val bufferArray = buffers.getBuffers()
+        val lastIndex = buffers.getCurrentLength() - 1
+        val encryptedBuffers = (offset..lastIndex)
+            .map { i -> secureEngine.encode(bufferArray[i]) }
+            .flatten()
+        tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, buffers.getResult())
+    }
+
+    private fun encryptAndFlushBuffer(outputMessage: Buffer) {
+        val encryptedBuffers = secureEngine.encode(outputMessage.buffer)
+        tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
+            outputMessage.result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
         }
     }
 
