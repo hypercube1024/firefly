@@ -67,8 +67,8 @@ class AioSecureTcpConnection(
 
     private fun encryptAndFlushBuffers(buffers: Buffers) {
         val offset = buffers.getCurrentOffset()
+        val lastIndex = buffers.getLastIndex()
         val bufferArray = buffers.getBuffers()
-        val lastIndex = buffers.getCurrentLength() - 1
         val encryptedBuffers = (offset..lastIndex)
             .map { i -> secureEngine.encode(bufferArray[i]) }
             .flatten()

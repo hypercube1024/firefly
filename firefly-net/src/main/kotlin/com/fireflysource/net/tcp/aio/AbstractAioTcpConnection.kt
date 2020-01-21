@@ -396,6 +396,8 @@ open class Buffers(
     fun hasRemaining(): Boolean {
         return getCurrentOffset() < maxSize
     }
+
+    fun getLastIndex(): Int = lastIndex
 }
 
 class BufferList(
