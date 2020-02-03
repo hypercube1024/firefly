@@ -7,6 +7,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.frame.SettingsFrame.DEFAULT_SETTINGS_FRAME
+import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Stream
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
 import com.fireflysource.net.http.common.v2.stream.Stream
@@ -427,6 +428,10 @@ class TestAsyncHttp2Connection {
             val newStream = newStreamChannel.receive()
             assertEquals(1, newStream.id)
             assertFalse(newStream.isReset)
+            if (newStream is AsyncHttp2Stream) {
+                assertTrue(newStream.getRecvWindow() > 0)
+                assertTrue(newStream.getSendWindow() > 0)
+            }
 
             val requestHeadersFrame = requestHeadersChannel.receive()
             assertEquals(1, requestHeadersFrame.streamId)

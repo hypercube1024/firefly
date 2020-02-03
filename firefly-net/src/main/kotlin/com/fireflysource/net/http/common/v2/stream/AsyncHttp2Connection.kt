@@ -78,8 +78,17 @@ abstract class AsyncHttp2Connection(
                     is DataFrameEntry -> {
                         // TODO
                     }
+                    is WindowEntry -> onWindowUpdateEntry(frameEntry)
                 }
             }
+        }
+
+        fun onWindowUpdate(stream: Stream?, frame: WindowUpdateFrame) {
+            frameEntryChannel.offer(WindowEntry(stream, frame))
+        }
+
+        private fun onWindowUpdateEntry(frameEntry: WindowEntry) {
+            flowControl.onWindowUpdate(this@AsyncHttp2Connection, frameEntry.stream, frameEntry.frame)
         }
 
         private suspend fun flushControlFrameEntry(frameEntry: ControlFrameEntry) {
@@ -553,7 +562,7 @@ abstract class AsyncHttp2Connection(
     }
 
     fun onWindowUpdate(stream: Stream?, frame: WindowUpdateFrame) {
-        flowControl.windowUpdate(this, stream, frame)
+        flusher.onWindowUpdate(stream, frame)
     }
 
     fun updateRecvWindow(delta: Int): Int {
@@ -751,3 +760,5 @@ class ControlFrameEntry(val stream: Stream?, val frames: Array<Frame>, val resul
 
 class DataFrameEntry(val stream: Stream, val frames: Array<DataFrame>, val result: Consumer<Result<Long>>) :
     FrameEntry()
+
+class WindowEntry(val stream: Stream?, val frame: WindowUpdateFrame) : FrameEntry()

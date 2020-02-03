@@ -1,26 +1,13 @@
 package com.fireflysource.net.http.common.v2.stream
 
+import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.v2.frame.WindowUpdateFrame
 
-class SimpleFlowControlStrategy : FlowControl {
-
-    override fun onStreamCreated(stream: Stream) {
-        // TODO
-    }
+class SimpleFlowControlStrategy(
+    initialStreamRecvWindow: Int = HttpConfig.DEFAULT_WINDOW_SIZE
+) : AbstractFlowControlStrategy(initialStreamRecvWindow) {
 
     override fun onStreamDestroyed(stream: Stream) {
-        // TODO
-    }
-
-    override fun updateInitialStreamWindow(
-        http2Connection: Http2Connection?,
-        initialStreamWindow: Int,
-        local: Boolean
-    ) {
-        // TODO
-    }
-
-    override fun onWindowUpdate(http2Connection: Http2Connection, stream: Stream, frame: WindowUpdateFrame) {
         // TODO
     }
 
