@@ -71,28 +71,28 @@ abstract class AsyncHttp2Connection(
             launchEntryFlushJob()
         }
 
-        private fun launchEntryFlushJob() {
-            tcpConnection.coroutineScope.launch {
-                while (true) {
-                    when (val frameEntry = frameEntryChannel.receive()) {
-                        is ControlFrameEntry -> {
-                            try {
-                                val length = flushControlFrameEntry(frameEntry)
-                                frameEntry.result.accept(Result(true, length, null))
-                            } catch (e: Exception) {
-                                log.warn(e) { "Flush control frame exception. frames: ${frameEntry.frames.asList()}" }
-                                frameEntry.result.accept(createFailedResult(-1, e))
-                            }
-                        }
-                        is DataFrameEntry -> {
-                            // TODO
-                        }
+        private fun launchEntryFlushJob() = tcpConnection.coroutineScope.launch {
+            while (true) {
+                when (val frameEntry = frameEntryChannel.receive()) {
+                    is ControlFrameEntry -> flushControlFrameEntry(frameEntry)
+                    is DataFrameEntry -> {
+                        // TODO
                     }
                 }
             }
         }
 
-        private suspend fun flushControlFrameEntry(frameEntry: ControlFrameEntry): Long {
+        private suspend fun flushControlFrameEntry(frameEntry: ControlFrameEntry) {
+            try {
+                val length = flushControlFrames(frameEntry)
+                frameEntry.result.accept(Result(true, length, null))
+            } catch (e: Exception) {
+                log.warn(e) { "Flush control frame exception. frames: ${frameEntry.frames.asList()}" }
+                frameEntry.result.accept(createFailedResult(-1, e))
+            }
+        }
+
+        private suspend fun flushControlFrames(frameEntry: ControlFrameEntry): Long {
             val stream = frameEntry.stream
             var writeBytes = 0L
             frameLoop@ for (frame in frameEntry.frames) {
