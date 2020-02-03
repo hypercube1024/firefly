@@ -15,10 +15,9 @@ abstract class AbstractFlowControlStrategy(
     private var initialStreamSendWindow: Int = DEFAULT_WINDOW_SIZE
 
     override fun onStreamCreated(stream: Stream) {
-        if (stream is AsyncHttp2Stream) {
-            stream.updateSendWindow(initialStreamSendWindow)
-            stream.updateRecvWindow(initialStreamRecvWindow)
-        }
+        val http2Stream = stream as AsyncHttp2Stream
+        http2Stream.updateSendWindow(initialStreamSendWindow)
+        http2Stream.updateRecvWindow(initialStreamRecvWindow)
     }
 
     override fun updateInitialStreamWindow(
@@ -40,14 +39,11 @@ abstract class AbstractFlowControlStrategy(
 
         http2Connection.streams.forEach { stream ->
             if (local) {
-                if (stream is AsyncHttp2Stream) {
-                    stream.updateRecvWindow(delta)
-                    log.debug { "Updated initial stream recv window $previousInitialStreamWindow -> $initialStreamWindow for $stream" }
-                }
+                val http2Stream = stream as AsyncHttp2Stream
+                http2Stream.updateRecvWindow(delta)
+                log.debug { "Updated initial stream recv window $previousInitialStreamWindow -> $initialStreamWindow for $http2Stream" }
             } else {
-                if (http2Connection is AsyncHttp2Connection) {
-                    http2Connection.onWindowUpdate(stream, WindowUpdateFrame(stream.id, delta))
-                }
+                (http2Connection as AsyncHttp2Connection).onWindowUpdate(stream, WindowUpdateFrame(stream.id, delta))
             }
         }
     }
@@ -59,9 +55,7 @@ abstract class AbstractFlowControlStrategy(
                 stream.updateSendWindow(frame.windowDelta)
             }
         } else {
-            if (http2Connection is AsyncHttp2Connection) {
-                http2Connection.updateSendWindow(frame.windowDelta)
-            }
+            (http2Connection as AsyncHttp2Connection).updateSendWindow(frame.windowDelta)
         }
     }
 }

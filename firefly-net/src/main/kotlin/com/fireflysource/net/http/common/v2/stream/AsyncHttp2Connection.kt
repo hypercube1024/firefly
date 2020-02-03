@@ -390,10 +390,8 @@ abstract class AsyncHttp2Connection(
     override fun onReset(frame: ResetFrame) {
         log.debug { "Received $frame" }
         val stream = getStream(frame.streamId)
-        if (stream != null) {
-            if (stream is AsyncHttp2Stream) {
-                stream.process(frame, discard())
-            }
+        if (stream != null && stream is AsyncHttp2Stream) {
+            stream.process(frame, discard())
         } else {
             onResetForUnknownStream(frame)
         }
