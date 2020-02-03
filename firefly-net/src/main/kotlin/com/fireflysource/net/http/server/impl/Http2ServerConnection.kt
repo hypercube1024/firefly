@@ -14,7 +14,7 @@ class Http2ServerConnection(
     config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
-    private val listener: Http2Connection.Listener = defaultHttp2ConnectionListener
+    listener: Http2Connection.Listener = defaultHttp2ConnectionListener
 ) : AsyncHttp2Connection(2, config, tcpConnection, flowControl, listener), HttpServerConnection,
     ServerParser.Listener {
 
@@ -31,7 +31,7 @@ class Http2ServerConnection(
 
     // preface frame
     override fun onPreface() {
-        val settings = notifyPreface(this)
+        val settings = notifyPreface()
         val settingsFrame = SettingsFrame(settings, false)
 
         var windowFrame: WindowUpdateFrame? = null
@@ -44,15 +44,6 @@ class Http2ServerConnection(
             sendControlFrame(null, settingsFrame)
         } else {
             sendControlFrame(null, settingsFrame, windowFrame)
-        }
-    }
-
-    private fun notifyPreface(connection: Http2Connection): MutableMap<Int, Int> {
-        return try {
-            listener.onPreface(connection) ?: SettingsFrame.DEFAULT_SETTINGS_FRAME.settings
-        } catch (e: Exception) {
-            log.error(e) { "failure while notifying listener" }
-            SettingsFrame.DEFAULT_SETTINGS_FRAME.settings
         }
     }
 

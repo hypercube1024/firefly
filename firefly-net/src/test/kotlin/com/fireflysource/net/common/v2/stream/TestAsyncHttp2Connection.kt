@@ -429,9 +429,12 @@ class TestAsyncHttp2Connection {
             assertEquals(1, newStream.id)
             assertFalse(newStream.isReset)
             if (newStream is AsyncHttp2Stream) {
-                assertTrue(newStream.getRecvWindow() > 0)
                 assertTrue(newStream.getSendWindow() > 0)
+                assertEquals(httpConfig.initialStreamRecvWindow, newStream.getRecvWindow())
             }
+            val http2ClientConnection = http2Connection as Http2ClientConnection
+            assertTrue(http2ClientConnection.getSendWindow() > 0)
+            assertEquals(httpConfig.initialSessionRecvWindow, http2ClientConnection.getRecvWindow())
 
             val requestHeadersFrame = requestHeadersChannel.receive()
             assertEquals(1, requestHeadersFrame.streamId)

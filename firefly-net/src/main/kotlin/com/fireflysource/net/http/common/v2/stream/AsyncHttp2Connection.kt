@@ -29,7 +29,7 @@ import kotlin.math.min
 
 abstract class AsyncHttp2Connection(
     initStreamId: Int,
-    config: HttpConfig,
+    private val config: HttpConfig,
     private val tcpConnection: TcpConnection,
     private val flowControl: FlowControl,
     private val listener: Http2Connection.Listener
@@ -201,6 +201,25 @@ abstract class AsyncHttp2Connection(
     override fun getTcpConnection(): TcpConnection = tcpConnection
 
 
+    fun notifyPreface(): MutableMap<Int, Int> {
+        return try {
+            val settings = listener.onPreface(this) ?: newDefaultSettings()
+            val initialWindowSize = settings[SettingsFrame.INITIAL_WINDOW_SIZE] ?: config.initialStreamRecvWindow
+            flowControl.updateInitialStreamWindow(this, initialWindowSize, true)
+            settings
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+            newDefaultSettings()
+        }
+    }
+
+    private fun newDefaultSettings(): MutableMap<Int, Int> {
+        val settings = HashMap(SettingsFrame.DEFAULT_SETTINGS_FRAME.settings)
+        settings[SettingsFrame.INITIAL_WINDOW_SIZE] = config.initialStreamRecvWindow
+        settings[SettingsFrame.MAX_CONCURRENT_STREAMS] = config.maxConcurrentPushedStreams
+        return settings
+    }
+
     // stream management
     override fun getStreams(): MutableCollection<Stream> = http2StreamMap.values
 
@@ -225,7 +244,6 @@ abstract class AsyncHttp2Connection(
                     HeadersFrame(nextStreamId, headersFrame.metaData, priority, headersFrame.isEndStream)
                 val stream = createLocalStream(nextStreamId, listener)
                 sendNewHeadersFrame(stream, newHeadersFrame, promise)
-
             } else {
                 val stream = createLocalStream(frameStreamId, listener)
                 sendNewHeadersFrame(stream, headersFrame, promise)
@@ -260,7 +278,7 @@ abstract class AsyncHttp2Connection(
         val stream = AsyncHttp2Stream(this, streamId, true, listener)
         if (http2StreamMap.putIfAbsent(streamId, stream) == null) {
             stream.idleTimeout = streamIdleTimeout
-            flowControl.onStreamCreated(stream)
+            flowControl.onStreamCreated(stream) // TODO before preface
             log.debug { "Created local $stream" }
             return stream
         } else {
