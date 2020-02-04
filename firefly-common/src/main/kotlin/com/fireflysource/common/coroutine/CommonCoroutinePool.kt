@@ -1,31 +1,30 @@
 package com.fireflysource.common.coroutine
 
 import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwaitTermination
+import com.fireflysource.common.coroutine.CoroutineDispatchers.awaitTerminationTimeout
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.max
-import kotlin.math.min
 
 /**
  * @author Pengtao Qiu
  */
 object CoroutineDispatchers {
 
-    val defaultPoolSize: Int = Integer.getInteger(
-        "com.fireflysource.common.coroutine.defaultPoolSize",
-        Runtime.getRuntime().availableProcessors()
-    )
+    val availableProcessors = Runtime.getRuntime().availableProcessors()
+    val awaitTerminationTimeout =
+        Integer.getInteger("com.fireflysource.common.coroutine.awaitTerminationTimeout", 5).toLong()
+
+    val defaultPoolSize: Int =
+        Integer.getInteger("com.fireflysource.common.coroutine.defaultPoolSize", availableProcessors)
     val defaultPoolKeepAliveTime: Long =
         Integer.getInteger("com.fireflysource.common.coroutine.defaultPoolKeepAliveTime", 30).toLong()
 
-    val ioBlockingQueueSize: Int =
-        Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingQueueSize", 16 * 1024)
     val ioBlockingPoolSize: Int = Integer.getInteger(
         "com.fireflysource.common.coroutine.ioBlockingPoolSize",
-        max(32, Runtime.getRuntime().availableProcessors())
+        32.coerceAtLeast(availableProcessors)
     )
     val ioBlockingPoolKeepAliveTime: Long =
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolKeepAliveTime", 30).toLong()
@@ -34,9 +33,9 @@ object CoroutineDispatchers {
     val ioBlockingThreadPool: ExecutorService by lazy {
         val threadId = AtomicInteger()
         ThreadPoolExecutor(
-            defaultPoolSize, ioBlockingPoolSize,
+            availableProcessors, ioBlockingPoolSize,
             ioBlockingPoolKeepAliveTime, TimeUnit.SECONDS,
-            ArrayBlockingQueue<Runnable>(ioBlockingQueueSize)
+            LinkedTransferQueue<Runnable>()
         ) { runnable -> Thread(runnable, "firefly-io-blocking-pool-" + threadId.getAndIncrement()) }
     }
 
@@ -74,11 +73,10 @@ object CoroutineDispatchers {
         return FinalizableExecutorService(executor)
     }
 
-    fun newFixedThreadExecutor(name: String, poolSize: Int): ExecutorService {
-        require(poolSize > 0)
+    fun newFixedThreadExecutor(name: String, poolSize: Int, maxPoolSize: Int = poolSize): ExecutorService {
         val executor = ThreadPoolExecutor(
-            min(defaultPoolSize, poolSize),
-            max(defaultPoolSize, poolSize),
+            poolSize,
+            maxPoolSize,
             defaultPoolKeepAliveTime, TimeUnit.SECONDS,
             LinkedTransferQueue<Runnable>()
         ) { runnable -> Thread(runnable, name) }
@@ -98,15 +96,19 @@ object CoroutineDispatchers {
         return newSingleThreadExecutor(name).asCoroutineDispatcher()
     }
 
-    fun newFixedThreadDispatcher(name: String, poolSize: Int): CoroutineDispatcher {
-        return newFixedThreadExecutor(name, poolSize).asCoroutineDispatcher()
+    fun newFixedThreadDispatcher(name: String, poolSize: Int, maxPoolSize: Int = poolSize): CoroutineDispatcher {
+        return newFixedThreadExecutor(name, poolSize, maxPoolSize).asCoroutineDispatcher()
+    }
+
+    fun newComputationThreadDispatcher(name: String, asyncMode: Boolean = true): CoroutineDispatcher {
+        return newComputationThreadExecutor(name, asyncMode).asCoroutineDispatcher()
     }
 
     fun stopAll() {
-        shutdownAndAwaitTermination(computationThreadPool, 5, TimeUnit.SECONDS)
-        shutdownAndAwaitTermination(singleThreadPool, 5, TimeUnit.SECONDS)
-        shutdownAndAwaitTermination(ioBlockingThreadPool, 5, TimeUnit.SECONDS)
-        shutdownAndAwaitTermination(scheduler, 5, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(computationThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(singleThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(ioBlockingThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(scheduler, awaitTerminationTimeout, TimeUnit.SECONDS)
     }
 }
 
@@ -122,13 +124,13 @@ class FinalizableExecutorService(private val executor: ExecutorService) : Execut
 
     override fun destroy() {
         if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
         }
     }
 
     protected fun finalize() {
         if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
         }
     }
 }
@@ -144,13 +146,13 @@ class FinalizableScheduledExecutorService(private val executor: ScheduledExecuto
 
     override fun destroy() {
         if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
         }
     }
 
     protected fun finalize() {
         if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
         }
     }
 }

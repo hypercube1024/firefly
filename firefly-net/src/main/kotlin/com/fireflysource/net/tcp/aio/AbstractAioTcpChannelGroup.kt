@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers.awaitTerminationTimeout
 import com.fireflysource.common.coroutine.CoroutineDispatchers.defaultPoolSize
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadExecutor
@@ -44,10 +45,10 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
         group.shutdown()
         try {
             // Wait a while for existing tasks to terminate
-            if (!group.awaitTermination(10, TimeUnit.SECONDS)) {
+            if (!group.awaitTermination(awaitTerminationTimeout, TimeUnit.SECONDS)) {
                 group.shutdownNow() // Cancel currently executing tasks
                 // Wait a while for tasks to respond to being cancelled
-                if (!group.awaitTermination(10, TimeUnit.SECONDS)) {
+                if (!group.awaitTermination(awaitTerminationTimeout, TimeUnit.SECONDS)) {
                     System.err.println("The tcp client channel group did not terminate")
                 }
             }
