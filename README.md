@@ -79,41 +79,36 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-Create a HTTP server (Java version)
+Create the HTTP server and client (Java version)
 ```java
-public class HelloHTTPServer {
+public class HelloHTTPServerAndClient {
     public static void main(String[] args) {
         $.httpServer()
          .router().get("/").handler(ctx -> ctx.end("hello world!"))
          .listen("localhost", 8080);
-    }
-}
-```
 
-Create a HTTP client (Java version)
-```java
-public class HelloHTTPClient {
-    public static void main(String[] args) {
         $.httpClient().get("http://localhost:8080/").submit()
          .thenAccept(res -> System.out.println(res.getStringBody()));
     }
 }
 ```
 
-Create WebSocket server and client (Java version)
+Create the WebSocket server and client (Java version)
 ```java
-public static void main(String[] args) {
-    SimpleWebSocketServer server = $.createWebSocketServer();
-    server.webSocket("/helloWebSocket")
-          .onConnect(conn -> conn.sendText("OK."))
-          .onText((text, conn) -> System.out.println("The server received: " + text))
-          .listen("localhost", 8080);
-
-    SimpleWebSocketClient client = $.createWebSocketClient();
-    client.webSocket("ws://localhost:8080/helloWebSocket")
-          .onText((text, conn) -> System.out.println("The client received: " + text))
-          .connect()
-          .thenAccept(conn -> conn.sendText("Hello server."));
+public class HelloWebSocket {
+    public static void main(String[] args) {
+        SimpleWebSocketServer server = $.createWebSocketServer();
+        server.webSocket("/helloWebSocket")
+              .onConnect(conn -> conn.sendText("OK."))
+              .onText((text, conn) -> System.out.println("The server received: " + text))
+              .listen("localhost", 8080);
+    
+        SimpleWebSocketClient client = $.createWebSocketClient();
+        client.webSocket("ws://localhost:8080/helloWebSocket")
+              .onText((text, conn) -> System.out.println("The client received: " + text))
+              .connect()
+              .thenAccept(conn -> conn.sendText("Hello server."));
+    }
 }
 ```
 
@@ -128,9 +123,9 @@ Add maven dependency in your pom.xml
 </dependency>
 ```
 
-Create a HTTP server (Kotlin DSL version)
+Create the HTTP server and client (Kotlin DSL version)
 ```kotlin
-fun main(args: Array<String>) {
+fun main(args: Array<String>) = runBlocking {
     HttpServer {
         router {
             httpMethod = HttpMethod.GET
@@ -141,12 +136,7 @@ fun main(args: Array<String>) {
             }
         }
     }.listen("localhost", 8080)
-}
-```
 
-Create a HTTP client (Kotlin coroutine asynchronous client)
-```kotlin
-fun main(args: Array<String>) = runBlocking {
     val msg = firefly.httpClient().get("http://localhost:8080").asyncSubmit().stringBody
     println(msg)
 }
