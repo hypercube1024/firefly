@@ -20,7 +20,7 @@ import java.util.List;
 abstract public class AbstractConscryptSecureEngineFactory implements SecureEngineFactory {
 
     protected static final LazyLogger LOG = SystemLogger.create(AbstractConscryptSecureEngineFactory.class);
-    public static final String SECURE_PROTOCOL = "TLSv1.2";
+    public static final String SECURE_PROTOCOL = "TLSv1.3";
 
     private static String provideName;
 
@@ -38,10 +38,13 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
     public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random)
             throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
         long start = System.currentTimeMillis();
+
         final SSLContext sslContext = SSLContext.getInstance(SECURE_PROTOCOL, provideName);
         sslContext.init(km, tm, random);
+
         long end = System.currentTimeMillis();
-        LOG.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");
+        String protocol = sslContext.getProtocol();
+        LOG.info(() -> "Creating Conscrypt SSL context. time: " + (end - start) + "ms, protocol: " + protocol);
         return sslContext;
     }
 
@@ -68,12 +71,12 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerFactoryType == null ? "SunX509" : trustManagerFactoryType);
         tmf.init(ks);
 
-        // TLSv1 TLSv1.2
-        sslContext = SSLContext.getInstance(sslProtocol == null ? "TLSv1.2" : sslProtocol, provideName);
+        sslContext = SSLContext.getInstance(sslProtocol == null ? SECURE_PROTOCOL : sslProtocol, provideName);
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         long end = System.currentTimeMillis();
-        LOG.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");
+        String protocol = sslContext.getProtocol();
+        LOG.info(() -> "Creating Conscrypt SSL context. time: " + (end - start) + "ms, protocol: " + protocol);
         return sslContext;
     }
 

@@ -314,8 +314,7 @@ abstract public class AbstractSecureEngine implements SecureEngine {
     protected SSLEngineResult.HandshakeStatus doTasks() {
         Runnable runnable;
 
-        // We could run this in a separate thread, but do in the current for
-        // now.
+        // We could run this in a separate thread, but do in the current for now.
         while ((runnable = sslEngine.getDelegatedTask()) != null) {
             runnable.run();
         }

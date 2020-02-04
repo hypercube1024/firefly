@@ -55,7 +55,7 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      *
      * @param byteBuffer The cipher text data.
      * @return The cipher text byte buffer.
-     * @throws IOException The exception of the encoding.
+     * @throws IOException The decoding exception.
      */
     ByteBuffer decode(ByteBuffer byteBuffer) throws IOException;
 
@@ -64,7 +64,7 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      *
      * @param byteBuffer The plain text data.
      * @return The cipher text byte buffer list.
-     * @throws IOException The exception of the encoding.
+     * @throws IOException The encoding exception.
      */
     List<ByteBuffer> encode(ByteBuffer byteBuffer) throws IOException;
 
