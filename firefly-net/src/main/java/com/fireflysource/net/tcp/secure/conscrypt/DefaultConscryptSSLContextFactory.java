@@ -6,13 +6,19 @@ import javax.net.ssl.SSLContext;
  * @author Pengtao Qiu
  */
 public class DefaultConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
-    @Override
-    public SSLContext getSSLContext() {
+
+    private SSLContext sslContext;
+
+    public DefaultConscryptSSLContextFactory() {
         try {
-            return getSSLContextWithManager(null, null, null);
+            sslContext = getSSLContextWithManager(null, null, null);
         } catch (Throwable e) {
             LOG.error(e, () -> "get SSL context error");
-            return null;
         }
+    }
+
+    @Override
+    public SSLContext getSSLContext() {
+        return sslContext;
     }
 }

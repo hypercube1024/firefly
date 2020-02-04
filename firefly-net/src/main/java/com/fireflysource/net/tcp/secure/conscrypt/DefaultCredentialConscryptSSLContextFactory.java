@@ -10,13 +10,19 @@ import java.io.ByteArrayInputStream;
  * @author Pengtao Qiu
  */
 public class DefaultCredentialConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
-    @Override
-    public SSLContext getSSLContext() {
+
+    private SSLContext sslContext;
+
+    public DefaultCredentialConscryptSSLContextFactory() {
         try {
-            return getSSLContext(new ByteArrayInputStream(SecureUtils.DEFAULT_CREDENTIAL), "ptmima1234", "ptmima4321");
+            sslContext = getSSLContext(new ByteArrayInputStream(SecureUtils.DEFAULT_CREDENTIAL), "ptmima1234", "ptmima4321");
         } catch (Throwable e) {
             LOG.error(e, () -> "get SSL context error");
-            return null;
         }
+    }
+
+    @Override
+    public SSLContext getSSLContext() {
+        return sslContext;
     }
 }

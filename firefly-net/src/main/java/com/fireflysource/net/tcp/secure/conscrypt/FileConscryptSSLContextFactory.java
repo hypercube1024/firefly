@@ -9,12 +9,7 @@ import java.io.FileInputStream;
  */
 public class FileConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
 
-    private File file;
-    private String keystorePassword;
-    private String keyPassword;
-    private String keyManagerFactoryType;
-    private String trustManagerFactoryType;
-    private String sslProtocol;
+    private SSLContext sslContext;
 
     public FileConscryptSSLContextFactory(String path, String keystorePassword, String keyPassword) {
         this(new File(path), keystorePassword, keyPassword, null, null, null);
@@ -24,22 +19,15 @@ public class FileConscryptSSLContextFactory extends AbstractConscryptSecureEngin
                                           String keyManagerFactoryType,
                                           String trustManagerFactoryType,
                                           String sslProtocol) {
-        this.file = file;
-        this.keystorePassword = keystorePassword;
-        this.keyPassword = keyPassword;
-        this.keyManagerFactoryType = keyManagerFactoryType;
-        this.trustManagerFactoryType = trustManagerFactoryType;
-        this.sslProtocol = sslProtocol;
+        try (FileInputStream in = new FileInputStream(file)) {
+            sslContext = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
+        } catch (Exception e) {
+            LOG.error(e, () -> "get SSL context exception");
+        }
     }
 
     @Override
     public SSLContext getSSLContext() {
-        SSLContext ret = null;
-        try (FileInputStream in = new FileInputStream(file)) {
-            ret = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
-        } catch (Exception e) {
-            LOG.error(e, () -> "get SSL context exception");
-        }
-        return ret;
+        return sslContext;
     }
 }

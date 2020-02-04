@@ -20,6 +20,7 @@ import java.util.List;
 abstract public class AbstractConscryptSecureEngineFactory implements SecureEngineFactory {
 
     protected static final LazyLogger LOG = SystemLogger.create(AbstractConscryptSecureEngineFactory.class);
+    public static final String SECURE_PROTOCOL = "TLSv1.2";
 
     private static String provideName;
 
@@ -37,7 +38,7 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
     public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random)
             throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
         long start = System.currentTimeMillis();
-        final SSLContext sslContext = SSLContext.getInstance("TLSv1.2", provideName);
+        final SSLContext sslContext = SSLContext.getInstance(SECURE_PROTOCOL, provideName);
         sslContext.init(km, tm, random);
         long end = System.currentTimeMillis();
         LOG.info(() -> "creating Conscrypt SSL context spends " + (end - start) + "ms");

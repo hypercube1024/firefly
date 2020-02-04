@@ -10,13 +10,19 @@ import javax.net.ssl.TrustManager;
  * @author Pengtao Qiu
  */
 public class NoCheckConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
-    @Override
-    public SSLContext getSSLContext() {
+
+    private SSLContext sslContext;
+
+    public NoCheckConscryptSSLContextFactory() {
         try {
-            return getSSLContextWithManager(null, new TrustManager[]{SecureUtils.createX509TrustManagerNoCheck()}, null);
+            sslContext = getSSLContextWithManager(null, new TrustManager[]{SecureUtils.createX509TrustManagerNoCheck()}, null);
         } catch (Throwable e) {
             LOG.error(e, () -> "get SSL context error");
-            return null;
         }
+    }
+
+    @Override
+    public SSLContext getSSLContext() {
+        return sslContext;
     }
 }
