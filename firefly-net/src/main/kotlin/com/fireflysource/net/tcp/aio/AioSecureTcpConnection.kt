@@ -1,6 +1,5 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
@@ -33,10 +32,7 @@ class AioSecureTcpConnection(
 
     init {
         launchWritingEncryptedMessageJob()
-        tcpConnection.onClose {
-            secureEngine.closeAsync()
-            log.info { "secure engine close." }
-        }
+        tcpConnection.onClose { secureEngine.close() }
     }
 
     private fun launchWritingEncryptedMessageJob() = tcpConnection.coroutineScope.launch {
@@ -46,7 +42,6 @@ class AioSecureTcpConnection(
         } catch (e: Exception) {
             log.error(e) { "The TLS handshake failure." }
             tcpConnection.closeFuture().await()
-            secureEngine.closeAsync().join()
             handshakeCompleteResult.accept(Result(false, "", e))
             throw e
         }

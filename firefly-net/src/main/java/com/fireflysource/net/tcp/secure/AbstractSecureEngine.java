@@ -179,7 +179,10 @@ abstract public class AbstractSecureEngine implements SecureEngine {
 
     protected void handshakeComplete() {
         if (initialHSComplete.compareAndSet(false, true)) {
-            LOG.info("Connection {} handshake success. The application protocol is {}", tcpConnection.getId(), getApplicationProtocol());
+            String protocol = sslEngine.getSession().getProtocol();
+            String cipherSuite = sslEngine.getSession().getCipherSuite();
+            LOG.info("Connection {} handshake success. App: {}, TLS: {}, Cipher: {}",
+                    tcpConnection.getId(), getApplicationProtocol(), protocol, cipherSuite);
             handshakeResult.accept(new Result<>(true, null, null));
         }
     }
@@ -322,9 +325,11 @@ abstract public class AbstractSecureEngine implements SecureEngine {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (closed.compareAndSet(false, true)) {
             closeOutbound();
+            closeInbound();
+            LOG.info("The Secure engine closed.");
         }
     }
 
@@ -333,17 +338,11 @@ abstract public class AbstractSecureEngine implements SecureEngine {
             sslEngine.closeInbound();
         } catch (SSLException e) {
             LOG.warn("close inbound exception", e);
-        } finally {
-            try {
-                tcpConnection.close();
-            } catch (IOException ignored) {
-            }
         }
     }
 
-    protected void closeOutbound() throws IOException {
+    protected void closeOutbound() {
         sslEngine.closeOutbound();
-        tcpConnection.close();
     }
 
     @Override
