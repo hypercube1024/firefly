@@ -1,12 +1,10 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.sys.Result
-import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractAioTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.function.Consumer
@@ -19,33 +17,31 @@ class AioSecureTcpConnection(
     private val secureEngine: SecureEngine
 ) : TcpConnection by tcpConnection {
 
-    companion object {
-        private val log = SystemLogger.create(AioSecureTcpConnection::class.java)
-    }
-
     private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
     private val encryptedOutChannel: Channel<OutputMessage> = Channel(Channel.UNLIMITED)
-    private var handshakeCompleteResult: Consumer<Result<String>> = Consumer {}
     private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
         decryptedInChannel.offer(buf)
     }
 
     init {
-        launchWritingEncryptedMessageJob()
         tcpConnection.onClose { secureEngine.close() }
     }
 
-    private fun launchWritingEncryptedMessageJob() = tcpConnection.coroutineScope.launch {
-        try {
-            secureEngine.beginHandshake().await()
-            handshakeCompleteResult.accept(Result(true, applicationProtocol, null))
-        } catch (e: Exception) {
-            log.error(e) { "The TLS handshake failure." }
-            tcpConnection.closeFuture().await()
-            handshakeCompleteResult.accept(Result(false, "", e))
-            throw e
-        }
+    private fun launchDecryptionJob() = tcpConnection.coroutineScope.launch {
+        val input = tcpConnection.inputChannel
+        recvLoop@ while (tcpConnection.isReading) {
+            val buf = input.receive()
 
+            readBufLoop@ while (buf.hasRemaining()) {
+                val decryptedBuf = secureEngine.decrypt(buf)
+                if (decryptedBuf.hasRemaining()) {
+                    receivedMessageConsumer.accept(decryptedBuf)
+                }
+            }
+        }
+    }
+
+    private fun launchWritingEncryptedMessageJob() = tcpConnection.coroutineScope.launch {
         while (!isShutdownOutput) {
             writeEncryptedMessage(encryptedOutChannel.receive())
         }
@@ -65,39 +61,15 @@ class AioSecureTcpConnection(
         val lastIndex = buffers.getLastIndex()
         val bufferArray = buffers.getBuffers()
         val encryptedBuffers = (offset..lastIndex)
-            .map { i -> secureEngine.encode(bufferArray[i]) }
+            .map { i -> secureEngine.encrypt(bufferArray[i]) }
             .flatten()
         tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, buffers.getResult())
     }
 
     private fun encryptAndFlushBuffer(outputMessage: Buffer) {
-        val encryptedBuffers = secureEngine.encode(outputMessage.buffer)
+        val encryptedBuffers = secureEngine.encrypt(outputMessage.buffer)
         tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
             outputMessage.result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
-        }
-    }
-
-    override fun startReading(): TcpConnection {
-        if (!tcpConnection.isReading) {
-            tcpConnection.startReading()
-            decryptJob()
-            log.info { "stop receiving encrypted messages. id: $id" }
-        }
-        return this
-    }
-
-    private fun decryptJob() = tcpConnection.coroutineScope.launch {
-        val input = tcpConnection.inputChannel
-        recvLoop@ while (tcpConnection.isReading) {
-            val buf = input.receive()
-
-            readBufLoop@ while (buf.hasRemaining()) {
-                @Suppress("BlockingMethodInNonBlockingContext")
-                val decryptedBuf = secureEngine.decode(buf)
-                if (decryptedBuf.hasRemaining()) {
-                    receivedMessageConsumer.accept(decryptedBuf)
-                }
-            }
         }
     }
 
@@ -153,7 +125,15 @@ class AioSecureTcpConnection(
     override fun isHandshakeComplete(): Boolean = secureEngine.isHandshakeComplete
 
     override fun onHandshakeComplete(result: Consumer<Result<String>>): TcpConnection {
-        handshakeCompleteResult = result
+        secureEngine.beginHandshake()
+            .thenAccept {
+                result.accept(Result(true, applicationProtocol, null))
+                launchWritingEncryptedMessageJob()
+                launchDecryptionJob()
+            }.exceptionally { e ->
+                result.accept(Result(false, "", e))
+                null
+            }
         return this
     }
 

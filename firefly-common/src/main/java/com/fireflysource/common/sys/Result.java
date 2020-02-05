@@ -33,6 +33,10 @@ public class Result<T> {
         return new Result<>(false, null, throwable);
     }
 
+    public static Result<Void> createSuccessResult() {
+        return new Result<>(true, null, null);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> Consumer<Result<T>> discard() {
         return EMPTY;

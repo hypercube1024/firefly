@@ -3,7 +3,6 @@ package com.fireflysource.net.tcp.secure;
 import com.fireflysource.common.sys.Result;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -55,17 +54,15 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      *
      * @param byteBuffer The cipher text data.
      * @return The cipher text byte buffer.
-     * @throws IOException The decoding exception.
      */
-    ByteBuffer decode(ByteBuffer byteBuffer) throws IOException;
+    ByteBuffer decrypt(ByteBuffer byteBuffer);
 
     /**
      * Encrypt the plain text to the cipher text.
      *
      * @param byteBuffer The plain text data.
      * @return The cipher text byte buffer list.
-     * @throws IOException The encoding exception.
      */
-    List<ByteBuffer> encode(ByteBuffer byteBuffer) throws IOException;
+    List<ByteBuffer> encrypt(ByteBuffer byteBuffer);
 
 }
