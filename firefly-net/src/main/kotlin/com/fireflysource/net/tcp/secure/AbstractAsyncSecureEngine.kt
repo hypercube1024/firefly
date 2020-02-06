@@ -75,7 +75,7 @@ abstract class AbstractAsyncSecureEngine(
                 NEED_WRAP -> doHandshakeWrap()
                 NEED_UNWRAP -> doHandshakeUnwrap()
                 NEED_TASK -> runDelegatedTasks()
-                NOT_HANDSHAKING, FINISHED -> {
+                FINISHED -> {
                     handshakeComplete()
                     break@handshakeLoop
                 }

@@ -210,7 +210,7 @@ abstract class AbstractAioTcpConnection(
     }
 
     private fun readJob() = coroutineScope.launch {
-        log.info { "The TCP connection $id starts automatic reading" }
+        log.info { "The TCP connection starts reading automatically. id: $id" }
 
         while (isReading) {
             val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
@@ -316,22 +316,22 @@ abstract class AbstractAioTcpConnection(
             try {
                 socketChannel.closeAsync()
             } catch (e: Exception) {
-                log.warn(e) { "close socket channel exception. $id" }
+                log.warn(e) { "Close socket channel exception. $id" }
             }
 
             try {
                 coroutineScope.cancel()
             } catch (e: Exception) {
-                log.warn(e) { "cancel writing job exception. $id" }
+                log.warn(e) { "Cancel writing job exception. $id" }
             }
 
             try {
                 closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
-                log.warn(e) { "close callback exception. $id" }
+                log.warn(e) { "Close callback exception. $id" }
             }
 
-            log.info { "tcp connection close success. $id" }
+            log.info { "TCP connection close success. $id" }
         }
         return this
     }

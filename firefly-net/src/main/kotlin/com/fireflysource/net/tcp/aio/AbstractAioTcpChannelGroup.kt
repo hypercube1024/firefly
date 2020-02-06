@@ -37,8 +37,7 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
     abstract fun getThreadName(): String
 
     override fun init() {
-        log.info { "initialize single thread asynchronous channel group." }
-        log.info { "initialize message thread group. thread number: $defaultPoolSize" }
+        log.info { "Initialize message thread group. boss: 1, worker: $defaultPoolSize" }
     }
 
     override fun destroy() {

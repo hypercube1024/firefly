@@ -28,7 +28,8 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         Provider provider = Conscrypt.newProvider();
         provideName = provider.getName();
         Security.addProvider(provider);
-        LOG.info(() -> "add Conscrypt security provider");
+        final Conscrypt.Version version = Conscrypt.version();
+        LOG.info(() -> "Add Conscrypt security provider. version: " + version.major() + "." + version.minor() + "." + version.patch());
     }
 
     public static String getProvideName() {
