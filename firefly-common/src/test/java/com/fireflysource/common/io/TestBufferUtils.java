@@ -152,6 +152,12 @@ class TestBufferUtils {
         assertEquals(5, BufferUtils.append(to, from));
         assertEquals(2, from.remaining());
         assertEquals("1234567890", BufferUtils.toString(to));
+
+        from = BufferUtils.toBuffer("1234");
+        to = BufferUtils.allocate(from.remaining());
+        BufferUtils.append(to, from);
+        assertEquals(0, to.position());
+        assertEquals(4, to.limit());
     }
 
 
@@ -274,6 +280,44 @@ class TestBufferUtils {
         assertEquals(64, b3.capacity());
         assertEquals("Cruel", BufferUtils.toString(b3));
         assertEquals(0, b3.arrayOffset());
+
+        assertEquals(19, b.remaining());
+        b.position(19);
+        ByteBuffer b4 = BufferUtils.ensureCapacity(b, b.position() + 20);
+        BufferUtils.flipToFill(b4);
+        b4.position(b.position());
+
+        assertEquals(20, b4.remaining());
+        assertEquals(19, b4.position());
+        assertEquals(39, b4.capacity());
+
+        BufferUtils.flipToFill(b);
+        ByteBuffer b5 = BufferUtils.allocateDirect(19);
+        assertEquals(0, b5.remaining());
+        assertEquals(19, b.remaining());
+
+        BufferUtils.append(b5, b);
+        assertEquals(0, b.remaining());
+        assertEquals(19, b5.remaining());
+        BufferUtils.flipToFill(b);
+        assertEquals(19, b.remaining());
+
+        ByteBuffer b6 = BufferUtils.ensureCapacity(b5, 20);
+        assertEquals(19, b6.remaining());
+        BufferUtils.flipToFill(b6);
+        assertEquals(1, b6.remaining());
+    }
+
+    @Test
+    void testAddCapacity() {
+        ByteBuffer b = BufferUtils.toBuffer("Goodbye Cruel World");
+        b.position(19);
+        assertEquals(0, b.remaining());
+        ByteBuffer b1 = BufferUtils.addCapacity(b, 20);
+        assertEquals(b1.remaining(), 20);
+        assertEquals(19, b1.position());
+        assertEquals(39, b1.capacity());
+        assertEquals(39, b1.limit());
     }
 
     @Test

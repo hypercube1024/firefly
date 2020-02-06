@@ -2,6 +2,8 @@ package com.fireflysource.net.tcp.secure
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlocking
 import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
@@ -24,11 +26,9 @@ abstract class AbstractAsyncSecureEngine(
 
     companion object {
         private val log = SystemLogger.create(AbstractAsyncSecureEngine::class.java)
-        private val emptyBuf = ByteBuffer.allocate(0)
     }
 
-    private var inPacketBuffer = emptyBuf
-    private var inAppBuffer = newAppBuffer()
+    private var inPacketBuffer = EMPTY_BUFFER
 
     private val closed = AtomicBoolean(false)
     private var handshakeStatus = sslEngine.handshakeStatus
@@ -80,7 +80,7 @@ abstract class AbstractAsyncSecureEngine(
     }
 
     private suspend fun doHandshakeWrap() {
-        val bufferList = encrypt(emptyBuf)
+        val bufferList = encrypt(EMPTY_BUFFER)
         if (bufferList.isNotEmpty()) {
             tcpConnection.write(bufferList, 0, bufferList.size).await()
         }
@@ -153,9 +153,10 @@ abstract class AbstractAsyncSecureEngine(
         merge(receivedBuffer)
 
         if (!inPacketBuffer.hasRemaining()) {
-            return emptyBuf
+            return EMPTY_BUFFER
         }
 
+        var inAppBuffer = newAppBuffer()
         unwrap@ while (true) {
             val result = sslEngine.unwrap(inPacketBuffer, inAppBuffer)
             handshakeStatus = result.handshakeStatus
@@ -177,19 +178,8 @@ abstract class AbstractAsyncSecureEngine(
                 else -> throw SecureNetException("Unwrap packets state exception. ${result.status}")
             }
         }
-        return copyAndResetInAppBuf()
-    }
-
-    private fun copyAndResetInAppBuf(): ByteBuffer {
         inAppBuffer.flip()
-        return if (inAppBuffer.hasRemaining()) {
-            val buf = newBuffer(inAppBuffer.remaining())
-            buf.put(inAppBuffer).flip()
-            inAppBuffer = newAppBuffer()
-            buf
-        } else {
-            emptyBuf
-        }
+        return inAppBuffer
     }
 
     private fun merge(receivedBuffer: ByteBuffer) {
@@ -203,26 +193,20 @@ abstract class AbstractAsyncSecureEngine(
                         "in packet buffer: ${inPacketBuffer.remaining()}, " +
                         "received buffer: ${receivedBuffer.remaining()}"
             }
-            val ret = newBuffer(inPacketBuffer.remaining() + receivedBuffer.remaining())
-            ret.put(inPacketBuffer).put(receivedBuffer).flip()
-            ret
+            val buffer = newBuffer(inPacketBuffer.remaining() + receivedBuffer.remaining())
+            buffer.put(inPacketBuffer).put(receivedBuffer).flip()
+            buffer
         } else {
             receivedBuffer
         }
     }
 
     private fun resizeInAppBuffer(appBuffer: ByteBuffer): ByteBuffer {
-        val buffer = newBuffer(appBuffer.position() + sslEngine.session.applicationBufferSize)
-        appBuffer.flip()
-        buffer.put(appBuffer)
-        return buffer
+        return BufferUtils.addCapacity(appBuffer, sslEngine.session.applicationBufferSize);
     }
 
     private fun resizePacketBuffer(packetBuffer: ByteBuffer): ByteBuffer {
-        val buffer = newBuffer(packetBuffer.position() + sslEngine.session.packetBufferSize)
-        packetBuffer.flip()
-        buffer.put(packetBuffer)
-        return buffer
+        return BufferUtils.addCapacity(packetBuffer, sslEngine.session.packetBufferSize)
     }
 
     override fun getSupportedApplicationProtocols(): MutableList<String> =

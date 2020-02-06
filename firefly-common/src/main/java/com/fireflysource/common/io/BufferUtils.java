@@ -71,7 +71,7 @@ import java.util.stream.Collectors;
  * </p>
  */
 public class BufferUtils {
-    public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.wrap(new byte[0]);
+    public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     static final int TEMP_BUFFER_SIZE = 4096;
     static final byte SPACE = 0x20;
     static final byte MINUS = '-';
@@ -325,9 +325,9 @@ public class BufferUtils {
                 to.put(slice);
                 from.position(from.position() + put);
             }
-        } else
+        } else {
             put = 0;
-
+        }
         return put;
     }
 
@@ -767,7 +767,7 @@ public class BufferUtils {
      * @param length the length in bytes of the array to use
      * @return ByteBuffer with provided byte array, in flush mode
      */
-    public static ByteBuffer toBuffer(byte array[], int offset, int length) {
+    public static ByteBuffer toBuffer(byte[] array, int offset, int length) {
         if (array == null)
             return EMPTY_BUFFER;
         return ByteBuffer.wrap(array, offset, length);
@@ -979,23 +979,38 @@ public class BufferUtils {
         if (prefix.remaining() > buffer.remaining())
             return false;
         int bi = buffer.position();
-        for (int i = prefix.position(); i < prefix.limit(); i++)
-            if (prefix.get(i) != buffer.get(bi++))
+        for (int i = prefix.position(); i < prefix.limit(); i++) {
+            if (prefix.get(i) != buffer.get(bi++)) {
                 return false;
+            }
+        }
         return true;
     }
 
     public static ByteBuffer ensureCapacity(ByteBuffer buffer, int capacity) {
-        if (buffer == null)
+        if (buffer == null) {
             return allocate(capacity);
-
-        if (buffer.capacity() >= capacity)
+        }
+        if (buffer.capacity() >= capacity) {
             return buffer;
+        }
+        if (buffer.hasArray()) {
+            return ByteBuffer.wrap(
+                    Arrays.copyOfRange(buffer.array(), buffer.arrayOffset(), buffer.arrayOffset() + capacity),
+                    buffer.position(), buffer.remaining());
+        } else {
+            ByteBuffer newBuffer = allocateDirect(capacity);
+            append(newBuffer, buffer);
+            flipToFill(buffer);
+            return newBuffer;
+        }
+    }
 
-        if (buffer.hasArray())
-            return ByteBuffer.wrap(Arrays.copyOfRange(buffer.array(), buffer.arrayOffset(), buffer.arrayOffset() + capacity), buffer.position(), buffer.remaining());
-
-        throw new UnsupportedOperationException();
+    public static ByteBuffer addCapacity(ByteBuffer buffer, int capacity) {
+        ByteBuffer newBuffer = BufferUtils.ensureCapacity(buffer, buffer.position() + capacity);
+        BufferUtils.flipToFill(newBuffer);
+        newBuffer.position(buffer.position());
+        return newBuffer;
     }
 
 
