@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.coroutine.launchTask
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.onAcceptAsync
@@ -73,15 +74,10 @@ class TestAioServerAndClient {
         val time = measureTimeMillis {
             val maxCount = maxMsgCount / connectionNum
             val jobs = (1..connectionNum).map {
-                launch {
+                launchTask {
                     val connection = client.connect(host, port).await()
                     println("create connection. ${connection.id}")
-                    connection.startReading()
-
-                    if (connection.isSecureConnection) {
-                        val success = connection.beginHandshake().await()
-                        println("client TLS handshake success. $success")
-                    }
+                    connection.startReadingAndAwaitHandshake()
 
                     val readingJob = connection.coroutineScope.launch {
                         val inputChannel = connection.inputChannel
